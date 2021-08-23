@@ -1,0 +1,1 @@
+%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\installutil.exe /u E:\Quartz.NET\Quartz.NET.WindowsService\bin\Debug\Quartz.NET.WindowsService.exe
