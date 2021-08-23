@@ -6,10 +6,10 @@
 
 <script>
 export default {
-  name: 'RuoYiGit',
+  name: 'IZoryGit',
   data() {
     return {
-      url: 'https://gitee.com/izhaorui/Zr-admin'
+      url: 'https://gitee.com/izhaorui/ZrAdminNetCore'
     }
   },
   methods: {
