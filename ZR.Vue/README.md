@@ -2,10 +2,10 @@
 
 ```bash
 # 克隆项目
-git clone https://gitee.com/y_project/RuoYi-Vue
+git clone https://gitee.com/izory/ZrAdminNetCore
 
 # 进入项目目录
-cd ruoyi-ui
+cd ZR.Vue
 
 # 安装依赖
 npm install
@@ -17,7 +17,7 @@ npm install --registry=https://registry.npm.taobao.org
 npm run dev
 ```
 
-浏览器访问 http://localhost:80
+浏览器访问 http://localhost:8887
 
 ## 发布
 
@@ -33,16 +33,17 @@ npm run build:prod
 
 ``` shell
 server {
-    listen 8010;
-	#绑定多个域名
-    server_name 127.0.0.1;
+	#修改要监听的端口
+    listen 8080;
+	#修改要绑定的域名或IP地址
+    server_name localhost;
 
     # charset koi8-r;
     access_log  logs/logs.access.log  main;
 
 	# 后端接口 生产环境
 	location /prod-api/ {
-		proxy_pass  http://localhost:8085/;
+		proxy_pass  http://localhost:8888/;
        
 		# 后端的Web服务器可以通过X-Forwarded-For获取用户真实IP
 		proxy_set_header Host $host;
@@ -53,13 +54,14 @@ server {
 		#	proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
     }
 	
-    # vue 项目
-    location / {
-      root html/dist;
-      index index.html;
-      try_files $uri $uri/ /index.html;
-    }
-    
+	# vue项目配置
+	location / {
+		#将xxxxx路径改成你的发布路径
+		root html/zradmin_vue;
+		index index.html;
+		try_files $uri $uri/ /index.html;
+	}
+	
     error_page 404              /404.html;
 
     # redirect server error pages to the static page /50x.html
