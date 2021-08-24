@@ -27,7 +27,6 @@ namespace Infrastructure.Startups
         /// <param name="builder"></param>
         public static void UseAppStartup(this IWebHostBuilder hostBuilder)
         {
-            System.Console.WriteLine("启动类执行了");
             // 自动装载配置
             hostBuilder.ConfigureAppConfiguration((hostingContext, config) =>
             {

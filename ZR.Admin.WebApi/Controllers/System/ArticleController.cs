@@ -139,7 +139,8 @@ namespace ZR.Admin.WebApi.Controllers
                     Content = addModel.Content,
                     Tags = addModel.Tags,
                     Category_id = addModel.Category_id,
-                    UpdateTime = addModel.UpdateTime
+                    UpdateTime = addModel.UpdateTime,
+                    Status = addModel.Status
                 }).ToCreate();
 
             return SUCCESS(response);

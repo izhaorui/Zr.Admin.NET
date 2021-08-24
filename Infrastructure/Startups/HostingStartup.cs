@@ -10,7 +10,6 @@ namespace Infrastructure.Startups
     {
         public void Configure(IWebHostBuilder builder)
         {
-            System.Console.WriteLine("启动类执行了");
             // 自动装载配置
             builder.ConfigureAppConfiguration((hostingContext, config) =>
             {
