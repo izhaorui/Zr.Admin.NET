@@ -2,7 +2,7 @@
 
 ## 🍟概述
 * 本项目适合有一定NetCore和 vue基础的开发人员
-* 基于.NET 5实现的通用权限管理平台（RBAC模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
+* ZRAdmin.NET是基于.NET 5开发的权限管理及快速开发框架，整合最新技术包括Asp.NetCore WebApi、Sqlsugar、Swagger、Vue等，核心模块包括组织机构、角色用户、权限授权、定时任务、文章管理等。
 * 模块化架构设计，层次清晰，业务层推荐写到单独模块，框架升级不影响业务!
 * 代码量少、通俗易懂、功能强大、易扩展，轻松开发从现在开始！
 * 前端采用Vue2.0、Element UI。
@@ -14,9 +14,7 @@
 ~ 如果对您有帮助，您可以点右上角 “Star” 收藏一下 ，获取第一时间更新，谢谢！~
 
 ## 🍿在线体验
-体验地址：http://www.izhaorui.cn:8080/
-管理员：admin
-密  码：123456
+vue版本体验地址：http://www.izhaorui.cn:8080/ （用户名：admin，密码：123456）
 
 **由于是个人项目，资金有限，体验服是低配，请大家爱惜，轻戳，不胜感激！！！**
 
@@ -105,3 +103,6 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 ## 🎀捐赠
 如果这个项目对您有所帮助，请扫下方二维码打赏一杯咖啡。
 <img src="https://www.izhaorui.cn/static/pay.jpg"/>
+
+源码地址
+https://gitee.com/izory/ZrAdminNetCore
