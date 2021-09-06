@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-row :gutter="24">
       <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
-      <el-form :model="queryParams" label-position="left" inline ref="queryForm" v-show="showSearch" @submit.native.prevent>
+      <el-form :model="queryParams" label-position="left" inline ref="queryForm" label-width="120px" v-show="showSearch" @submit.native.prevent>
         <el-col :span="6">
           <el-form-item label="文本">
             <el-input v-model="queryParams.xxx" placeholder="" />
@@ -58,13 +58,9 @@
       <el-table-column prop="id" label="id" width="60" sortable> </el-table-column>
       <el-table-column prop="userId" label="userid" width="80"> </el-table-column>
       <!-- 显示图片 -->
-      <el-table-column prop="photo" label="图片" width="110">
+      <el-table-column prop="photo" label="图片">
         <template slot-scope="scope">
-          <el-popover placement="right" trigger="hover">
-            <!-- click显示的大图 -->
-            <img :src="scope.row.photo" />
-            <img slot="reference" :src="scope.row.photo" width="100" height="50">
-          </el-popover>
+          <el-image class="table-td-thumb" :src="scope.row.photo" :preview-src-list="[scope.row.photo]"></el-image>
         </template>
       </el-table-column>
       <el-table-column prop="content" label="介绍" width="100" :show-overflow-tooltip="true">
@@ -224,11 +220,10 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      //   delXXX().then(function () {
-
-      //   })
-      //   .then(() => {
+      //   delXXX().then((res) => {
       //     this.msgSuccess("删除成功");
+
+      //     this.handleQuery();
       //   });
     },
     /** 修改按钮操作 */
@@ -278,3 +273,8 @@ export default {
   },
 };
 </script>
+<style scoped>
+.table-td-thumb {
+  width: 80px;
+}
+</style>
