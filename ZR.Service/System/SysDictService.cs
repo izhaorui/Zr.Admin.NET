@@ -29,9 +29,9 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="dictType">实体模型</param>
         /// <returns></returns>
-        public List<SysDictType> SelectDictTypeList(SysDictType dictType)
+        public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
         {
-            return sysDictRepository.SelectDictTypeList(dictType);
+            return sysDictRepository.SelectDictTypeList(dictType, pager);
         }
 
         /// <summary>

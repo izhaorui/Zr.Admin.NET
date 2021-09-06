@@ -17,13 +17,17 @@ namespace ZR.Repository.System
         /// </summary>
         /// <param name="dictType">实体模型</param>
         /// <returns></returns>
-        public List<SysDictType> SelectDictTypeList(SysDictType dictType)
+        public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
         {
-            return Db
+            var totalNum = 0;
+            var list = Db
                 .Queryable<SysDictType>()
                 .WhereIF(!string.IsNullOrEmpty(dictType.DictName), it => it.DictName.Contains(dictType.DictName))
                 .WhereIF(!string.IsNullOrEmpty(dictType.Status), it => it.Status == dictType.Status)
-                .WhereIF(!string.IsNullOrEmpty(dictType.DictType), it => it.DictType == dictType.DictType).ToList();
+                .WhereIF(!string.IsNullOrEmpty(dictType.DictType), it => it.DictType == dictType.DictType)
+                .ToPageList(pager.PageNum, pager.PageSize, ref totalNum);
+            pager.TotalNum = totalNum;
+            return list;
         }
 
         /// <summary>

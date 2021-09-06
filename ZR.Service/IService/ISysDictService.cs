@@ -10,7 +10,7 @@ namespace ZR.Service.IService
     /// </summary>
     public interface ISysDictService: IBaseService<SysDictType>
     {
-        public List<SysDictType> SelectDictTypeList(SysDictType dictType);
+        public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager);
 
         /// <summary>
         /// 根据Id查询

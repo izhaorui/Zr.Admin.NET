@@ -36,8 +36,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysDictType dict, [FromQuery] PagerInfo pagerInfo)
         {
-            var list = SysDictService.SelectDictTypeList(dict);
-            pagerInfo.TotalNum = list.Count;
+            var list = SysDictService.SelectDictTypeList(dict, pagerInfo);
+
             var vm = new VMPageResult<SysDictType>(list, pagerInfo);
             return SUCCESS(vm, TIME_FORMAT_FULL);
         }
