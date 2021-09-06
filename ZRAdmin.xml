@@ -44,8 +44,14 @@
              </summary>
              <param name="enCode">数据库名</param>
              <param name="keywords">表名</param>
-             <param name="pagerInfo">分页信息</param>
+             <param name="pager">分页信息</param>
              <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate">
+            <summary>
+            生成代码
+            </summary>
+            <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">
             <summary>

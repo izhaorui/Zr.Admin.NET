@@ -27,6 +27,7 @@ namespace ZR.Repository.DbProvider
             {
                 connStr = NETCore.Encrypt.EncryptProvider.DESDecrypt(connStr, dbKey);
             }
+
             Db = new SqlSugarClient(new List<ConnectionConfig>()
             {
                 new ConnectionConfig(){

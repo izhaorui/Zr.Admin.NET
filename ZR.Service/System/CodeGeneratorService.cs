@@ -43,22 +43,22 @@ namespace ZR.Service.System
             return list;
         }
 
-        public List<DbTableInfo> GetTablesWithPage(string tablename, string dbName, PagerInfo info)
+        public List<DbTableInfo> GetTablesWithPage(string tablename, string dbName, PagerInfo pager)
         {
             var dbType = ConfigUtils.Instance.GetConfig("CodeGenDbType");
             List<DbTableInfo> list = new List<DbTableInfo>();
             if (dbType == "1")
             {
-                list = CodeGeneratorRepository.GetAllTables(dbName);
+                list = CodeGeneratorRepository.GetAllTables(dbName, tablename, pager);
             }
             else if (dbType.Contains("MySql"))
             {
                 //list = mysqlExtractor.GetAllTables(this.dbName, tablename, fieldNameToSort, isDescending, info);
             }
-            if (!string.IsNullOrEmpty(tablename))
-            {
-                list = list.Where(f => f.TableName.Contains(tablename)).ToList();
-            }
+            //if (!string.IsNullOrEmpty(tablename))
+            //{
+            //    list = list.Where(f => f.TableName.Contains(tablename)).ToList();
+            //}
 
             return list;
         }

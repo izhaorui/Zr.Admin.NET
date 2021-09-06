@@ -46,12 +46,12 @@
             <el-button type="primary" @click="handleSearch()">查询</el-button>
           </el-form-item>
           <el-form-item label="项目命名空间：" prop="baseSpace">
-            <el-tooltip class="item" effect="dark" content="系统会根据项目命名空间自动生成IService、Service、Models等子命名空间" placement="top">
-              <el-input v-model="codeform.baseSpace" clearable placeholder="如Yuebon.WMS" />
+            <el-tooltip class="item" effect="dark" content="系统会根据项目命名空间自动生成IService、Service、Models等子命名空间" placement="bottom">
+              <el-input v-model="codeform.baseSpace" clearable placeholder="如Zr" />
             </el-tooltip>
           </el-form-item>
           <el-form-item label="去掉表名前缀：">
-            <el-tooltip class="item" effect="dark" content="表名直接变为类名，去掉表名前缀。多个前缀用“;”隔开和结束" placement="top">
+            <el-tooltip class="item" effect="dark" content="表名直接变为类名，去掉表名前缀。多个前缀用“;”隔开和结束" placement="bottom">
               <el-input v-model="codeform.replaceTableNameStr" clearable width="300" placeholder="多个前缀用“;”隔开" />
             </el-tooltip>
           </el-form-item>
@@ -129,7 +129,7 @@ export default {
         },
       ],
       tableData: [],
-      tableloading: true,
+      tableloading: false,
       pagination: {
         pageNum: 1,
         pagesize: 20,
@@ -146,7 +146,7 @@ export default {
   created() {
     this.pagination.pageNum = 1;
     this.loadData();
-    this.loadTableData();
+    // this.loadTableData();
   },
   methods: {
     loadData: function () {
@@ -169,7 +169,7 @@ export default {
           // Sort: this.sortableData.sort,
         };
         codeGetTableList(seachdata).then((res) => {
-          this.tableData = res.data;
+          this.tableData = res.data.result;
           this.pagination.pageTotal = res.data.totalNum;
           this.tableloading = false;
         });
@@ -179,6 +179,7 @@ export default {
      * 点击查询
      */
     handleSearch: function () {
+      this.tableloading = true;
       this.pagination.pageNum = 1;
       this.loadTableData();
     },
@@ -230,20 +231,15 @@ export default {
             };
             codeGenerator(seachdata)
               .then((res) => {
-                if (res.Success) {
+                if (res.code == 100) {
                   downloadFile(
                     defaultSettings.fileUrl + res.ResData[0],
                     res.ResData[1]
                   );
-                  this.$message({
-                    message: "恭喜你，代码生成完成！",
-                    type: "success",
-                  });
+
+                  this.msgSuccess("恭喜你，代码生成完成！");
                 } else {
-                  this.$message({
-                    message: res.ErrMsg,
-                    type: "error",
-                  });
+                  this.msgError(res.msg);
                 }
                 pageLoading.close();
               })

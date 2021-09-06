@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ZR.Model;
 using ZR.Model.CodeGenerator;
+using ZR.Model.Vo;
 using ZR.Service.IService;
 using ZR.Service.System;
 
@@ -43,18 +44,30 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <param name="enCode">数据库名</param>
         /// <param name="keywords">表名</param>
-        /// <param name="pagerInfo">分页信息</param>
+        /// <param name="pager">分页信息</param>
         /// <returns></returns>
         [HttpGet("FindListTable")]
-        public IActionResult FindListTable(string enCode, string keywords, PagerInfo pagerInfo)
+        public IActionResult FindListTable(string enCode, string keywords, PagerInfo pager)
         {
             if (string.IsNullOrEmpty(enCode))
             {
                 return ToRespose(ResultCode.PARAM_ERROR);
             }
-            List<DbTableInfo> listTable = CodeGeneratorService.GetTablesWithPage(keywords, enCode, pagerInfo);
+            List<DbTableInfo> list = CodeGeneratorService.GetTablesWithPage(keywords, enCode, pager);
+            var vm = new VMPageResult<DbTableInfo>(list, pager);
 
-            return SUCCESS(listTable);
+            return SUCCESS(vm);
+        }
+
+        /// <summary>
+        /// 生成代码
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("Generate")]
+        public IActionResult Generate()
+        {
+
+            return SUCCESS(null);
         }
     }
 }
