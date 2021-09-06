@@ -67,10 +67,10 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysUser> GetSysUsersByRoleId(long roleId)
         {
-            return Db.Queryable<SysUserRole, SysUser>((t1, user) => new JoinQueryInfos(
-                JoinType.Left, t1.UserId == user.UserId))
-                .Where((t1, user) => t1.RoleId == roleId && user.DelFlag == "0")
-                .Select((t1, user) => user)
+            return Db.Queryable<SysUserRole, SysUser>((t1, u) => new JoinQueryInfos(
+                JoinType.Left, t1.UserId == u.UserId))
+                .Where((t1, u) => t1.RoleId == roleId && u.DelFlag == "0")
+                .Select((t1, u) => u)
                 .ToList();
         }
     }
