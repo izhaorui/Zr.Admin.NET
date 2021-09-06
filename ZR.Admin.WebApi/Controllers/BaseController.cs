@@ -22,6 +22,12 @@ namespace ZR.Admin.WebApi.Controllers
             return Content(jsonStr, "application/json");
         }
 
+        protected IActionResult ToRespose(ResultCode resultCode, object data = null)
+        {
+            string jsonStr = GetJsonStr(GetApiResult(resultCode, data), "");
+            return Content(jsonStr, "application/json");
+        }
+
         /// <summary>
         /// json输出带时间格式的
         /// </summary>
@@ -39,10 +45,6 @@ namespace ZR.Admin.WebApi.Controllers
             string jsonStr = GetJsonStr(ToJson(rows), timeFormatStr);
 
             return Content(jsonStr, "application/json");
-        }
-        protected string SerializeObject(object obj)
-        {
-            return JsonConvert.SerializeObject(obj);
         }
 
         /// <summary>

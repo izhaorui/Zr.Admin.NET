@@ -27,6 +27,26 @@
             <param name="data"></param>
             <returns></returns>
         </member>
+        <member name="T:ZR.Admin.WebApi.Controllers.CodeGeneratorController">
+            <summary>
+            代码生成
+            </summary>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetListDataBase">
+            <summary>
+            获取所有数据库的信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.FindListTable(System.String,System.String,ZR.Model.PagerInfo)">
+             <summary>
+            获取所有表根据数据名
+             </summary>
+             <param name="enCode">数据库名</param>
+             <param name="keywords">表名</param>
+             <param name="pagerInfo">分页信息</param>
+             <returns></returns>
+        </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">
             <summary>
             心跳

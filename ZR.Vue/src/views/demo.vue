@@ -158,7 +158,7 @@ export default {
           name: "你好",
           userId: 1000001,
           sortId: 1,
-          address: "浙江省杭州市西湖区",
+          address: "",
           content: "我是一个超长超长的文字啊",
           addtime: "2021-8-7 23:00:00",
         },
