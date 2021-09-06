@@ -13,25 +13,11 @@ namespace ZR.Service.IService
         public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager);
 
         /// <summary>
-        /// 根据Id查询
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public SysDictType SelectDictTypeById(long id);
-
-        /// <summary>
         /// 校验字典类型称是否唯一
         /// </summary>
         /// <param name="dictType">字典类型</param>
         /// <returns></returns>
         public string CheckDictTypeUnique(SysDictType dictType);
-
-        /// <summary>
-        /// 删除一个
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public int DeleteDictTypeById(long id);
 
         /// <summary>
         /// 批量删除字典数据信息

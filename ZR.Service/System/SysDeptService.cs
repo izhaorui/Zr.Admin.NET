@@ -132,7 +132,8 @@ namespace ZR.Service.System
 
                 if (child.DeptId.Equals(deptId))
                 {
-                    DeptRepository.UdateDeptChildren(child);
+                    Saveable(child, it => new { it.Ancestors });
+                    //DeptRepository.UdateDeptChildren(child);
                 }
             }
         }

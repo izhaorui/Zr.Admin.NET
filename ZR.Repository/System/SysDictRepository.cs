@@ -31,36 +31,6 @@ namespace ZR.Repository.System
         }
 
         /// <summary>
-        /// 根据Id查询
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public SysDictType SelectDictTypeById(long id)
-        {
-            return Db.Queryable<SysDictType>().First(it => it.DictId == id);
-        }
-
-        /// <summary>
-        /// 检查字典类型唯一值
-        /// </summary>
-        /// <param name="dictType"></param>
-        /// <returns></returns>
-        public SysDictType CheckDictTypeUnique(string dictType)
-        {
-            return Db.Queryable<SysDictType>().First(it => it.DictType == dictType);
-        }
-
-        /// <summary>
-        /// 删除一个
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public int DeleteDictTypeById(long id)
-        {
-            return Db.Deleteable<SysDictType>().In(id).ExecuteCommand();
-        }
-
-        /// <summary>
         /// 批量删除
         /// </summary>
         /// <param name="id"></param>
@@ -68,18 +38,6 @@ namespace ZR.Repository.System
         public int DeleteDictTypeByIds(long[] id)
         {
             return Db.Deleteable<SysDictType>().In(id).ExecuteCommand();
-        }
-
-        /// <summary>
-        /// 插入
-        /// </summary>
-        /// <param name="sysDictType"></param>
-        /// <returns></returns>
-        public long InsertDictType(SysDictType sysDictType)
-        {
-            var result = Db.Insertable(sysDictType).IgnoreColumns(it => new { sysDictType.Update_by })
-                .ExecuteReturnIdentity();
-            return result;
         }
 
         /// <summary>

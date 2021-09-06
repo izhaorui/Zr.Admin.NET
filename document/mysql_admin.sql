@@ -270,7 +270,7 @@ INSERT INTO `sys_menu` VALUES (2018, '用户添加', 100, 2, '#', NULL, 0, 0, 'F
 INSERT INTO `sys_menu` VALUES (2019, '用户查询', 100, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:user:query', '', '', '2021-02-24 10:31:33', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2020, '用户删除', 100, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:user:delete', '', '', '2021-02-24 10:32:01', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2021, '字典管理', 1, 5, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', '2021-02-24 10:37:50', 'admin', '2021-07-07 13:57:59', '');
-INSERT INTO `sys_menu` VALUES (2029, '用户角色', 1, 3, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', 'admin', '2021-04-04 18:44:25', 'admin', '2021-07-13 15:39:01', NULL);
+INSERT INTO `sys_menu` VALUES (2029, '分配用户', 1, 3, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', 'admin', '2021-04-04 18:44:25', 'admin', '2021-07-13 15:39:01', NULL);
 INSERT INTO `sys_menu` VALUES (2030, '修改排序', 102, 999, '#', NULL, 0, 0, 'F', '0', '0', 'system:menu:changeSort', '', 'admin', '2021-06-30 17:05:08', 'admin', '2021-06-30 17:07:06', NULL);
 INSERT INTO `sys_menu` VALUES (2031, '新增用户', 2029, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:roleusers:add', NULL, 'admin', '2021-06-30 17:08:12', '', NULL, NULL);
 INSERT INTO `sys_menu` VALUES (2032, '删除用户', 2029, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:roleusers:del', NULL, 'admin', '2021-06-30 17:08:48', '', NULL, NULL);

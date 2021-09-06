@@ -38,16 +38,6 @@ namespace ZR.Repository.System
         }
 
         /// <summary>
-        /// 根据DictCode查询
-        /// </summary>
-        /// <param name="dictCode"></param>
-        /// <returns></returns>
-        public SysDictData SelectDictDataById(long dictCode)
-        {
-            return Db.Queryable<SysDictData>().Where(f => f.DictCode == dictCode).First();
-        }
-
-        /// <summary>
         /// 新增保存字典数据信息
         /// </summary>
         /// <param name="dict"></param>
@@ -87,16 +77,6 @@ namespace ZR.Repository.System
         public int DeleteDictDataByIds(long[] dictCodes)
         {
             return Db.Deleteable<SysDictData>().In(dictCodes).ExecuteCommand();
-        }
-
-        /// <summary>
-        /// 查询字典数据
-        /// </summary>
-        /// <param name="dictType"></param>
-        /// <returns></returns>
-        public int CountDictDataByType(string dictType)
-        {
-            return Db.Queryable<SysDictData>().Count(f => f.DictType == dictType);
         }
 
         /// <summary>
