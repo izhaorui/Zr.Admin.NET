@@ -57,6 +57,9 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Controller.cs</LastGenOutput>
     </None>
+    <None Update="Template\InputDtoTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Template\ModelTemplate.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

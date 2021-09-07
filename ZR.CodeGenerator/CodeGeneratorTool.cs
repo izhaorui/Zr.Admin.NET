@@ -39,7 +39,7 @@ namespace ZR.CodeGenerator
         public static void Generate(string dbName, string baseNamespace, DbTableInfo dbTableInfo, string replaceTableNameStr, bool ifExsitedCovered = false)
         {
             _option.BaseNamespace = baseNamespace;
-            _option.DtosNamespace = baseNamespace + "ZR.Model.Dto";
+            _option.DtosNamespace = baseNamespace + "ZR.Model";
             _option.ModelsNamespace = baseNamespace + "ZR.Model";
             //_option.IRepositoriesNamespace = baseNamespace + ".IRepositorie";
             _option.RepositoriesNamespace = baseNamespace + "ZR.Repository";
@@ -86,14 +86,8 @@ namespace ZR.CodeGenerator
         public static void GenerateSingle(List<DbColumnInfo> listField, DbTableInfo tableInfo, bool ifExsitedCovered = false)
         {
             var modelsNamespace = _option.ModelsNamespace;
-            var modelTypeName = tableInfo.Name;//表名
+            var modelTypeName = GetModelName(tableInfo.Name); ;//表名
             var modelTypeDesc = tableInfo.Description;//表描述
-            if (!string.IsNullOrEmpty(_option.ReplaceTableNameStr))
-            {
-                modelTypeName = modelTypeName.Replace(_option.ReplaceTableNameStr.ToString(), "");
-            }
-            modelTypeName = modelTypeName.Replace("_", "");
-            modelTypeName = modelTypeName.Substring(0, 1).ToUpper() + modelTypeName.Substring(1);
 
             string keyTypeName = "string";//主键数据类型
             string modelcontent = "";//数据库模型字段
@@ -121,104 +115,75 @@ namespace ZR.CodeGenerator
                 }
                 modelcontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
 
-                //主键
-                //if (dbFieldInfo.IsIdentity)
+                //if (dbFieldInfo.DataType == "string")
                 //{
-                    //keyTypeName = dbFieldInfo.DataType;
-                    //outputDtocontent += "        /// <summary>\n";
-                    //outputDtocontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
-                    //outputDtocontent += "        /// </summary>\n";
-
-                    //outputDtocontent += string.Format("        [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey = true)]\n");
-                    //outputDtocontent += string.Format("        public {0} {1}", TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType), columnName);
-                    //outputDtocontent += " { get; set; }\n\r";
+                //    outputDtocontent += string.Format("        [MaxLength({0})]\n", dbFieldInfo.FieldMaxLength);
                 //}
-               // else //非主键
+                //outputDtocontent += string.Format("        public {0} {1}", dbFieldInfo.DataType, columnName);
+                //outputDtocontent += " { get; set; }\n\r";
+                //if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
                 //{
-                    //modelcontent += "        /// <summary>\n";
-                    //modelcontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
-                    //modelcontent += "        /// </summary>\n";
-                    ////if (dbFieldInfo.DataType == "string")
-                    ////{
-                    ////    modelcontent += string.Format("        [MaxLength({0})]\n", dbFieldInfo.FieldMaxLength);
-                    ////}
-                    //modelcontent += string.Format("        public {0} {1}", TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType), columnName);
-                    //modelcontent += " { get; set; }\n\r";
 
+                //    vueViewListContent += string.Format("        <el-table-column prop=\"{0}\" label=\"{1}\" sortable=\"custom\" width=\"120\" >\n", columnName, dbFieldInfo.ColumnDescription);
+                //    vueViewListContent += "          <template slot-scope=\"scope\">\n";
+                //    vueViewListContent += string.Format("            <el-tag :type=\"scope.row.{0} === true ? 'success' : 'info'\"  disable-transitions >", columnName);
+                //    vueViewListContent += "{{ ";
+                //    vueViewListContent += string.Format("scope.row.{0}===true?'启用':'禁用' ", columnName);
+                //    vueViewListContent += "}}</el-tag>\n";
+                //    vueViewListContent += "          </template>\n";
+                //    vueViewListContent += "        </el-table-column>\n";
 
-                    //outputDtocontent += "        /// <summary>\n";
-                    //outputDtocontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
-                    //outputDtocontent += "        /// </summary>\n";
-                    //if (dbFieldInfo.DataType == "string")
-                    //{
-                    //    outputDtocontent += string.Format("        [MaxLength({0})]\n", dbFieldInfo.FieldMaxLength);
-                    //}
-                    //outputDtocontent += string.Format("        public {0} {1}", dbFieldInfo.DataType, columnName);
-                    //outputDtocontent += " { get; set; }\n\r";
-                    //if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
-                    //{
+                //    vueViewFromContent += string.Format("        <el-form-item label=\"{0}\" :label-width=\"formLabelWidth\" prop=\"{1}\">", dbFieldInfo.ColumnDescription, columnName);
+                //    vueViewFromContent += string.Format("          <el-radio-group v-model=\"editFrom.{0}\">\n", columnName);
+                //    vueViewFromContent += "           <el-radio label=\"true\">是</el-radio>\n";
+                //    vueViewFromContent += "           <el-radio label=\"false\">否</el-radio>\n";
+                //    vueViewFromContent += "          </el-radio-group>\n";
+                //    vueViewFromContent += "        </el-form-item>\n";
 
-                    //    vueViewListContent += string.Format("        <el-table-column prop=\"{0}\" label=\"{1}\" sortable=\"custom\" width=\"120\" >\n", columnName, dbFieldInfo.ColumnDescription);
-                    //    vueViewListContent += "          <template slot-scope=\"scope\">\n";
-                    //    vueViewListContent += string.Format("            <el-tag :type=\"scope.row.{0} === true ? 'success' : 'info'\"  disable-transitions >", columnName);
-                    //    vueViewListContent += "{{ ";
-                    //    vueViewListContent += string.Format("scope.row.{0}===true?'启用':'禁用' ", columnName);
-                    //    vueViewListContent += "}}</el-tag>\n";
-                    //    vueViewListContent += "          </template>\n";
-                    //    vueViewListContent += "        </el-table-column>\n";
+                //    vueViewEditFromContent += string.Format("        {0}: 'true',\n", columnName);
+                //    vueViewEditFromBindContent += string.Format("        this.editFrom.{0} = res.ResData.{0}+''\n", columnName);
+                //}
+                //else
+                //{
+                //    vueViewListContent += string.Format("        <el-table-column prop=\"{0}\" label=\"{1}\" sortable=\"custom\" width=\"120\" />\n", columnName, dbFieldInfo.ColumnDescription);
 
-                    //    vueViewFromContent += string.Format("        <el-form-item label=\"{0}\" :label-width=\"formLabelWidth\" prop=\"{1}\">", dbFieldInfo.ColumnDescription, columnName);
-                    //    vueViewFromContent += string.Format("          <el-radio-group v-model=\"editFrom.{0}\">\n", columnName);
-                    //    vueViewFromContent += "           <el-radio label=\"true\">是</el-radio>\n";
-                    //    vueViewFromContent += "           <el-radio label=\"false\">否</el-radio>\n";
-                    //    vueViewFromContent += "          </el-radio-group>\n";
-                    //    vueViewFromContent += "        </el-form-item>\n";
+                //    vueViewFromContent += string.Format("        <el-form-item label=\"{0}\" :label-width=\"formLabelWidth\" prop=\"{1}\">\n", dbFieldInfo.ColumnDescription, columnName);
+                //    vueViewFromContent += string.Format("          <el-input v-model=\"editFrom.{0}\" placeholder=\"请输入{1}\" autocomplete=\"off\" clearable />\n", columnName, dbFieldInfo.ColumnDescription);
+                //    vueViewFromContent += "        </el-form-item>\n";
+                //    vueViewEditFromContent += string.Format("        {0}: '',\n", columnName);
+                //    vueViewEditFromBindContent += string.Format("        this.editFrom.{0} = res.ResData.{0}\n", columnName);
+                //}
+                //vueViewSaveBindContent += string.Format("        '{0}':this.editFrom.{0},\n", columnName);
+                //if (!dbFieldInfo.IsNullable)
+                //{
+                //    vueViewEditFromRuleContent += string.Format("        {0}: [\n", columnName);
+                //    vueViewEditFromRuleContent += "        {";
+                //    vueViewEditFromRuleContent += string.Format("required: true, message:\"请输入{0}\", trigger: \"blur\"", dbFieldInfo.ColumnDescription);
+                //    vueViewEditFromRuleContent += "},\n          { min: 2, max: 50, message: \"长度在 2 到 50 个字符\", trigger:\"blur\" }\n";
+                //    vueViewEditFromRuleContent += "        ],\n";
+                //}
 
-                    //    vueViewEditFromContent += string.Format("        {0}: 'true',\n", columnName);
-                    //    vueViewEditFromBindContent += string.Format("        this.editFrom.{0} = res.ResData.{0}+''\n", columnName);
-                    //}
-                    //else
-                    //{
-                    //    vueViewListContent += string.Format("        <el-table-column prop=\"{0}\" label=\"{1}\" sortable=\"custom\" width=\"120\" />\n", columnName, dbFieldInfo.ColumnDescription);
-
-                    //    vueViewFromContent += string.Format("        <el-form-item label=\"{0}\" :label-width=\"formLabelWidth\" prop=\"{1}\">\n", dbFieldInfo.ColumnDescription, columnName);
-                    //    vueViewFromContent += string.Format("          <el-input v-model=\"editFrom.{0}\" placeholder=\"请输入{1}\" autocomplete=\"off\" clearable />\n", columnName, dbFieldInfo.ColumnDescription);
-                    //    vueViewFromContent += "        </el-form-item>\n";
-                    //    vueViewEditFromContent += string.Format("        {0}: '',\n", columnName);
-                    //    vueViewEditFromBindContent += string.Format("        this.editFrom.{0} = res.ResData.{0}\n", columnName);
-                    //}
-                    //vueViewSaveBindContent += string.Format("        '{0}':this.editFrom.{0},\n", columnName);
-                    //if (!dbFieldInfo.IsNullable)
-                    //{
-                    //    vueViewEditFromRuleContent += string.Format("        {0}: [\n", columnName);
-                    //    vueViewEditFromRuleContent += "        {";
-                    //    vueViewEditFromRuleContent += string.Format("required: true, message:\"请输入{0}\", trigger: \"blur\"", dbFieldInfo.ColumnDescription);
-                    //    vueViewEditFromRuleContent += "},\n          { min: 2, max: 50, message: \"长度在 2 到 50 个字符\", trigger:\"blur\" }\n";
-                    //    vueViewEditFromRuleContent += "        ],\n";
-                    //}
-                }
 
                 //if (!inputDtoNoField.Contains(columnName) || columnName == "Id")
                 //{
-                //    InputDtocontent += "        /// <summary>\n";
-                //    InputDtocontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
-                //    InputDtocontent += "        /// </summary>\n";
-                //    //if (dbFieldInfo.FieldType == "string")
-                //    //{
-                //    //    InputDtocontent += string.Format("        [MaxLength({0})]\n", dbFieldInfo.FieldMaxLength);
-                //    //}
-                //    InputDtocontent += string.Format("        public {0} {1}", dbFieldInfo.DataType, columnName);
-                //    InputDtocontent += " { get; set; }\n\r";
+                InputDtocontent += "        /// <summary>\n";
+                InputDtocontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
+                InputDtocontent += "        /// </summary>\n";
+                //if (dbFieldInfo.FieldType == "string")
+                //{
+                //    InputDtocontent += string.Format("        [MaxLength({0})]\n", dbFieldInfo.FieldMaxLength);
+                //}
+                InputDtocontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
                 //}
                 //
-            //}
+            }
             GenerateModels(modelsNamespace, modelTypeName, tableInfo.Name, modelcontent, modelTypeDesc, keyTypeName, ifExsitedCovered);
+            GenerateInputDto(modelsNamespace, modelTypeName, modelTypeDesc, InputDtocontent, keyTypeName, ifExsitedCovered);
             //GenerateIRepository(modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
             //GenerateRepository(modelTypeName, modelTypeDesc, tableInfo.TableName, keyTypeName, ifExsitedCovered);
             //GenerateIService(modelsNamespace, modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
             //GenerateService(modelsNamespace, modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
             //GenerateOutputDto(modelTypeName, modelTypeDesc, outputDtocontent, ifExsitedCovered);
-            //GenerateInputDto(modelsNamespace, modelTypeName, modelTypeDesc, InputDtocontent, keyTypeName, ifExsitedCovered);
             //GenerateControllers(modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
             //GenerateVueViews(modelTypeName, modelTypeDesc, vueViewListContent, vueViewFromContent, vueViewEditFromContent, vueViewEditFromBindContent, vueViewSaveBindContent, vueViewEditFromRuleContent, ifExsitedCovered);
         }
@@ -238,13 +203,15 @@ namespace ZR.CodeGenerator
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
         private static void GenerateModels(string modelsNamespace, string modelTypeName, string tableName, string modelContent, string modelTypeDesc, string keyTypeName, bool ifExsitedCovered = false)
         {
-            var parentPath = "..\\";
-            var servicesPath = parentPath + _option.BaseNamespace + "\\" + modelsNamespace;
+            var parentPath = "..";
+            //../ZR.Model
+            var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + modelsNamespace;
             if (!Directory.Exists(servicesPath))
             {
-                servicesPath = parentPath + _option.ModelsNamespace;
+                //servicesPath = parentPath + "\\" + _option.ModelsNamespace;
                 Directory.CreateDirectory(servicesPath);
             }
+            // ../ZR.Model/Models/User.cs
             var fullPath = servicesPath + "\\Models\\" + modelTypeName + ".cs";
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
@@ -254,13 +221,58 @@ namespace ZR.CodeGenerator
                 .Replace("{ModelTypeName}", modelTypeName)
                 .Replace("{TableNameDesc}", modelTypeDesc)
                 .Replace("{KeyTypeName}", keyTypeName)
-                .Replace("{ModelContent}", modelContent)
+                .Replace("{PropertyName}", modelContent)
                 .Replace("{TableName}", tableName);
+            WriteAndSave(fullPath, content);
+        }
+
+
+        /// <summary>
+        /// 生成InputDto文件
+        /// </summary>
+        /// <param name="modelsNamespace"></param>
+        /// <param name="modelTypeName"></param>
+        /// <param name="modelTypeDesc"></param>
+        /// <param name="modelContent"></param>
+        /// <param name="keyTypeName"></param>
+        /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
+        private static void GenerateInputDto(string modelsNamespace, string modelTypeName, string modelTypeDesc, string modelContent, string keyTypeName, bool ifExsitedCovered = false)
+        {
+            var parentPath = "..";
+            var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + modelsNamespace;
+            if (!Directory.Exists(servicesPath))
+            {
+                //servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\Dtos";
+                Directory.CreateDirectory(servicesPath);
+            }
+            // ../ZR.Model/Dto/User.cs
+            var fullPath = servicesPath + "\\Dto\\" + modelTypeName + "Dto.cs";
+            if (File.Exists(fullPath) && !ifExsitedCovered)
+                return;
+            var content = ReadTemplate("InputDtoTemplate.txt");
+            content = content
+                .Replace("{DtosNamespace}", _option.DtosNamespace)
+                .Replace("{ModelsNamespace}", modelsNamespace)
+                .Replace("{TableNameDesc}", modelTypeDesc)
+                .Replace("{KeyTypeName}", keyTypeName)
+                .Replace("{PropertyName}", modelContent)
+                .Replace("{ModelTypeName}", modelTypeName);
             WriteAndSave(fullPath, content);
         }
         #endregion
 
         #region 帮助方法
+
+        private static string GetModelName(string modelTypeName)
+        {
+            if (!string.IsNullOrEmpty(_option.ReplaceTableNameStr))
+            {
+                modelTypeName = modelTypeName.Replace(_option.ReplaceTableNameStr.ToString(), "");
+            }
+            modelTypeName = modelTypeName.Replace("_", "");
+            modelTypeName = modelTypeName.Substring(0, 1).ToUpper() + modelTypeName.Substring(1);
+            return modelTypeName;
+        }
 
         /// <summary>
         /// 从代码模板中读取内容

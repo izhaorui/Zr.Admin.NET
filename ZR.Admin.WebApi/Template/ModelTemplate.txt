@@ -9,6 +9,6 @@ namespace {ModelsNamespace}
     [SqlSugar.SugarTable("{TableName}")]
     public class {ModelTypeName}
     {
-{ModelContent}
+{PropertyName}
     }
 }

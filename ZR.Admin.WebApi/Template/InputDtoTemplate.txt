@@ -1,0 +1,20 @@
+﻿using System;
+using System.Collections.Generic;
+using {ModelsNamespace};
+
+namespace {DtosNamespace}
+{
+    /// <summary>
+    /// {TableNameDesc}输入对象模型
+    /// </summary>
+    public class {ModelTypeName}Dto
+    {
+{PropertyName}
+    }
+
+    public class {ModelTypeName}QueryDto: PagerInfo 
+    {
+    
+    
+    }
+}
