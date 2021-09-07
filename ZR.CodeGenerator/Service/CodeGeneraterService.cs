@@ -12,24 +12,6 @@ namespace ZR.CodeGenerator.Service
 {
     public class CodeGeneraterService: DbProvider
     {
-        ///// <summary>
-        ///// 获取表所有列
-        ///// </summary>
-        ///// <param name="tableName"></param>
-        ///// <returns></returns>
-        //public List<DbFieldInfo> GetAllColumns(string tableName)
-        //{
-        //    var dbType = ConfigUtils.Instance.GetConfig("CodeGenDbType");
-        //    if (tableName == null)
-        //        throw new ArgumentException(nameof(tableName));
-        //    List<DbFieldInfo> list = new List<DbFieldInfo>();
-        //    if (dbType == "1")
-        //    {
-        //        list = CodeGeneratorRepository.GetAllColumns(tableName);
-        //    }
-        //    return list;
-        //}
-
         /// <summary>
         /// 获取所有数据库名
         /// </summary>
@@ -59,7 +41,6 @@ namespace ZR.CodeGenerator.Service
         /// </summary>
         /// <param name="dbName"></param>
         /// <param name="tableName"></param>
-        /// <param name="tableStrs"></param>
         /// <param name="pager"></param>
         /// <returns></returns>
         public List<SqlSugar.DbTableInfo> GetAllTables(string dbName, string tableName, PagerInfo pager)

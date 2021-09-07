@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,47 +33,44 @@ namespace ZR.CodeGenerator
         /// 代码生成器入口方法
         /// </summary>
         /// <param name="baseNamespace"></param>
-        /// <param name="tableList">要生成代码的表</param>
-        /// <param name="listTable"></param>
-        /// <param name="listField"></param>
+        /// <param name="dbTableInfo"></param>
         /// <param name="replaceTableNameStr">要删除表名称的字符</param>
         /// <param name="ifExsitedCovered">是否替换现有文件，为true时替换</param>
-        public static void Generate(string dbName, string baseNamespace, List<DbTableInfo> listTable, string replaceTableNameStr, bool ifExsitedCovered = false)
+        public static void Generate(string dbName, string baseNamespace, DbTableInfo dbTableInfo, string replaceTableNameStr, bool ifExsitedCovered = false)
         {
-            _option.DtosNamespace = baseNamespace + ".Dtos";
-            _option.ModelsNamespace = baseNamespace + ".Model";
-            _option.IRepositoriesNamespace = baseNamespace + ".IRepositories";
-            _option.RepositoriesNamespace = baseNamespace + ".Repositories";
-            _option.IServicsNamespace = baseNamespace + ".IServices";
-            _option.ServicesNamespace = baseNamespace + ".Services";
+            _option.BaseNamespace = baseNamespace;
+            _option.DtosNamespace = baseNamespace + "ZR.Model.Dto";
+            _option.ModelsNamespace = baseNamespace + "ZR.Model";
+            //_option.IRepositoriesNamespace = baseNamespace + ".IRepositorie";
+            _option.RepositoriesNamespace = baseNamespace + "ZR.Repository";
+            //_option.IServicsNamespace = baseNamespace + ".IService";
+            _option.ServicesNamespace = baseNamespace + "ZR.Service";
             _option.ApiControllerNamespace = baseNamespace + "Api";
             _option.ReplaceTableNameStr = replaceTableNameStr;
             //_option.TableList = listTable;
-            _option.BaseNamespace = baseNamespace;
 
             CodeGeneraterService codeGeneraterService = new CodeGeneraterService();
-            //List<DbTableInfo> listTable = dbExtractor.GetWhereTables(_option.TableList);
             string profileContent = string.Empty;
-            foreach (DbTableInfo dbTableInfo in listTable)
-            {
-                List<SqlSugar.DbColumnInfo> listField = codeGeneraterService.GetColumnInfo(dbName, dbTableInfo.TableName);
-                GenerateSingle(listField, dbTableInfo, ifExsitedCovered);
-                string tableName = dbTableInfo.TableName;
-                if (!string.IsNullOrEmpty(_option.ReplaceTableNameStr))
-                {
-                    string[] rel = _option.ReplaceTableNameStr.Split(';');
-                    for (int i = 0; i < rel.Length; i++)
-                    {
-                        if (!string.IsNullOrEmpty(rel[i].ToString()))
-                        {
-                            tableName = tableName.Replace(rel[i].ToString(), "");
-                        }
-                    }
-                }
-                tableName = tableName.Substring(0, 1).ToUpper() + tableName.Substring(1);
-                profileContent += string.Format("           CreateMap<{0}, {0}OutputDto>();\n", tableName);
-                profileContent += string.Format("           CreateMap<{0}InputDto, {0}>();\n", tableName);
-            }
+            //foreach (DbTableInfo dbTableInfo in listTable)
+            //{
+            List<DbColumnInfo> listField = codeGeneraterService.GetColumnInfo(dbName, dbTableInfo.Name);
+            GenerateSingle(listField, dbTableInfo, ifExsitedCovered);
+            //string tableName = dbTableInfo.TableName;
+            //if (!string.IsNullOrEmpty(_option.ReplaceTableNameStr))
+            //{
+            //    string[] rel = _option.ReplaceTableNameStr.Split(';');
+            //    for (int i = 0; i < rel.Length; i++)
+            //    {
+            //        if (!string.IsNullOrEmpty(rel[i].ToString()))
+            //        {
+            //            tableName = tableName.Replace(rel[i].ToString(), "");
+            //        }
+            //    }
+            //}
+            //tableName = tableName.Substring(0, 1).ToUpper() + tableName.Substring(1);
+            //profileContent += string.Format("           CreateMap<{0}, {0}OutputDto>();\n", tableName);
+            //profileContent += string.Format("           CreateMap<{0}InputDto, {0}>();\n", tableName);
+            //}
 
             //GenerateDtoProfile(_option.ModelsNamespace, profileContent, ifExsitedCovered);
         }
@@ -85,23 +83,18 @@ namespace ZR.CodeGenerator
         /// <param name="listField">表字段集合</param>
         /// <param name="tableInfo">表信息</param>
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
-        public static void GenerateSingle(List<SqlSugar.DbColumnInfo> listField, DbTableInfo tableInfo, bool ifExsitedCovered = false)
+        public static void GenerateSingle(List<DbColumnInfo> listField, DbTableInfo tableInfo, bool ifExsitedCovered = false)
         {
             var modelsNamespace = _option.ModelsNamespace;
-            var modelTypeName = tableInfo.TableName;//表名
+            var modelTypeName = tableInfo.Name;//表名
             var modelTypeDesc = tableInfo.Description;//表描述
             if (!string.IsNullOrEmpty(_option.ReplaceTableNameStr))
             {
-                string[] rel = _option.ReplaceTableNameStr.Split(';');
-                for (int i = 0; i < rel.Length; i++)
-                {
-                    if (!string.IsNullOrEmpty(rel[i].ToString()))
-                    {
-                        modelTypeName = modelTypeName.Replace(rel[i].ToString(), "");
-                    }
-                }
+                modelTypeName = modelTypeName.Replace(_option.ReplaceTableNameStr.ToString(), "");
             }
+            modelTypeName = modelTypeName.Replace("_", "");
             modelTypeName = modelTypeName.Substring(0, 1).ToUpper() + modelTypeName.Substring(1);
+
             string keyTypeName = "string";//主键数据类型
             string modelcontent = "";//数据库模型字段
             string InputDtocontent = "";//输入模型
@@ -113,23 +106,25 @@ namespace ZR.CodeGenerator
             string vueViewSaveBindContent = string.Empty;//Vue保存时输出内容
             string vueViewEditFromRuleContent = string.Empty;//Vue数据校验
 
-            foreach (SqlSugar.DbColumnInfo dbFieldInfo in listField)
+            foreach (DbColumnInfo dbFieldInfo in listField)
             {
                 string columnName = dbFieldInfo.DbColumnName.Substring(0, 1).ToUpper() + dbFieldInfo.DbColumnName.Substring(1);
 
                 modelcontent += "        /// <summary>\n";
-                modelcontent += ($"        /// {dbFieldInfo.ColumnDescription}\n");
+                modelcontent += ($"        /// 描述 :{dbFieldInfo.ColumnDescription}\n");
+                modelcontent += ($"        /// 空值 :{dbFieldInfo.IsNullable}\n");
+                modelcontent += ($"        /// 默认 :{dbFieldInfo.DefaultValue}\n");
                 modelcontent += "        /// </summary>\n";
                 if (dbFieldInfo.IsIdentity || dbFieldInfo.IsPrimarykey)
                 {
-                    modelcontent += $"        [SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPrimarykey}, IsIdentity = {dbFieldInfo.IsIdentity})]\n";
+                    modelcontent += $"        [SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPrimarykey.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIdentity.ToString().ToLower()})]\n";
                 }
                 modelcontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
 
                 //主键
-                if (dbFieldInfo.IsIdentity)
-                {
-                    keyTypeName = dbFieldInfo.DataType;
+                //if (dbFieldInfo.IsIdentity)
+                //{
+                    //keyTypeName = dbFieldInfo.DataType;
                     //outputDtocontent += "        /// <summary>\n";
                     //outputDtocontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
                     //outputDtocontent += "        /// </summary>\n";
@@ -137,18 +132,18 @@ namespace ZR.CodeGenerator
                     //outputDtocontent += string.Format("        [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey = true)]\n");
                     //outputDtocontent += string.Format("        public {0} {1}", TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType), columnName);
                     //outputDtocontent += " { get; set; }\n\r";
-                }
-                else //非主键
-                {
-                    modelcontent += "        /// <summary>\n";
-                    modelcontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
-                    modelcontent += "        /// </summary>\n";
-                    //if (dbFieldInfo.DataType == "string")
-                    //{
-                    //    modelcontent += string.Format("        [MaxLength({0})]\n", dbFieldInfo.FieldMaxLength);
-                    //}
-                    modelcontent += string.Format("        public {0} {1}", TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType), columnName);
-                    modelcontent += " { get; set; }\n\r";
+                //}
+               // else //非主键
+                //{
+                    //modelcontent += "        /// <summary>\n";
+                    //modelcontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
+                    //modelcontent += "        /// </summary>\n";
+                    ////if (dbFieldInfo.DataType == "string")
+                    ////{
+                    ////    modelcontent += string.Format("        [MaxLength({0})]\n", dbFieldInfo.FieldMaxLength);
+                    ////}
+                    //modelcontent += string.Format("        public {0} {1}", TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType), columnName);
+                    //modelcontent += " { get; set; }\n\r";
 
 
                     //outputDtocontent += "        /// <summary>\n";
@@ -216,8 +211,8 @@ namespace ZR.CodeGenerator
                 //    InputDtocontent += " { get; set; }\n\r";
                 //}
                 //
-            }
-            GenerateModels(modelsNamespace, modelTypeName, tableInfo.TableName, modelcontent, modelTypeDesc, keyTypeName, ifExsitedCovered);
+            //}
+            GenerateModels(modelsNamespace, modelTypeName, tableInfo.Name, modelcontent, modelTypeDesc, keyTypeName, ifExsitedCovered);
             //GenerateIRepository(modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
             //GenerateRepository(modelTypeName, modelTypeDesc, tableInfo.TableName, keyTypeName, ifExsitedCovered);
             //GenerateIService(modelsNamespace, modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
@@ -243,16 +238,14 @@ namespace ZR.CodeGenerator
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
         private static void GenerateModels(string modelsNamespace, string modelTypeName, string tableName, string modelContent, string modelTypeDesc, string keyTypeName, bool ifExsitedCovered = false)
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            //path = path.Substring(0, path.IndexOf("\\bin"));
-            var parentPath = path.Substring(0, path.LastIndexOf("\\"));
-            var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + modelsNamespace;
+            var parentPath = "..\\";
+            var servicesPath = parentPath + _option.BaseNamespace + "\\" + modelsNamespace;
             if (!Directory.Exists(servicesPath))
             {
-                servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\Models";
+                servicesPath = parentPath + _option.ModelsNamespace;
                 Directory.CreateDirectory(servicesPath);
             }
-            var fullPath = servicesPath + "\\" + modelTypeName + ".cs";
+            var fullPath = servicesPath + "\\Models\\" + modelTypeName + ".cs";
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
             var content = ReadTemplate("ModelTemplate.txt");

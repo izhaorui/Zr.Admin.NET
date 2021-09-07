@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,20 +75,18 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "代码生成", BusinessType = BusinessType.OTHER)]
         public IActionResult Generate(string dbName, string baseSpace, string tables, string replaceTableNameStr)
         {
+            if (string.IsNullOrEmpty(tables))
+            {
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
+            }
             if (string.IsNullOrEmpty(baseSpace))
             {
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "命名空间不能为空");
+                //baseSpace = "Zr";
             }
-            string[] tableList = tables.Split(",");
-            List<DbTableInfo> tableInfos = new List<DbTableInfo>();// CodeGeneratorService.GetAllTables(tables);
-            foreach (var item in tableList)
-            {
-                tableInfos.Add(new DbTableInfo() { TableName = item });
-            }
+            DbTableInfo dbTableInfo = new() { Name = tables };
+            CodeGeneratorTool.Generate(dbName, baseSpace, dbTableInfo, replaceTableNameStr, true);
 
-            CodeGeneratorTool.Generate(dbName, baseSpace, tableInfos, replaceTableNameStr, true);
-
-            return SUCCESS(null);
+            return SUCCESS(1);
         }
     }
 }

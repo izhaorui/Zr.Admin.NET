@@ -113,15 +113,15 @@ export default {
         replaceTableNameStr: "",
       },
       rules: {
-        baseSpace: [
-          { required: true, message: "请输入项目名称", trigger: "blur" },
-          {
-            min: 2,
-            max: 50,
-            message: "长度在 2 到 50 个字符",
-            trigger: "blur",
-          },
-        ],
+        // baseSpace: [
+        //   { required: true, message: "请输入项目名称", trigger: "blur" },
+        //   {
+        //     min: 2,
+        //     max: 50,
+        //     message: "长度在 2 到 50 个字符",
+        //     trigger: "blur",
+        //   },
+        // ],
         replaceTableNameStr: [
           { min: 0, max: 50, message: "长度小于50个字符", trigger: "blur" },
         ],

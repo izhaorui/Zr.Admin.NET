@@ -14,7 +14,7 @@ namespace ZR.CodeGenerator
         public SqlSugarClient GetSugarDbContext(string dbName)
         {
             string connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.Conn).Replace("{DbName}", dbName);
-            int dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.DbType, 0);
+            int dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.CodeGenDbType, 0);
 
             return new SqlSugarClient(new List<ConnectionConfig>()
             {
