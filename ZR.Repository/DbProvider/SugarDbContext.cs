@@ -42,6 +42,7 @@ namespace ZR.Repository.DbProvider
             //调式代码 用来打印SQL 
             Db.Aop.OnLogExecuting = (sql, pars) =>
             {
+                Console.BackgroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n" + Db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
             };
             //出错打印日志
@@ -50,6 +51,22 @@ namespace ZR.Repository.DbProvider
                 Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
                 Console.WriteLine();
             };
+        }
+
+        public SqlSugarClient GetSugarDbContext(string dbName)
+        {
+            string connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.Conn).Replace("{DbName}", dbName);
+            int dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.DbType, 0);
+
+            return new SqlSugarClient(new List<ConnectionConfig>()
+            {
+                new ConnectionConfig(){
+                    ConnectionString = connStr,
+                    DbType = (DbType)dbType,
+                    IsAutoCloseConnection = true,//开启自动释放模式和EF原理一样
+                    InitKeyType = InitKeyType.Attribute,//从特性读取主键和自增列信息
+                },
+            });
         }
     }
 }

@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ZR.CodeGenerator\ZR.CodeGenerator.csproj" />
     <ProjectReference Include="..\ZR.Service\ZR.Service.csproj" />
     <ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
   </ItemGroup>
@@ -55,6 +56,9 @@
     <None Update="Template\Controller.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Controller.cs</LastGenOutput>
+    </None>
+    <None Update="Template\ModelTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

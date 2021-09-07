@@ -42,15 +42,19 @@
              <summary>
             获取所有表根据数据名
              </summary>
-             <param name="enCode">数据库名</param>
-             <param name="keywords">表名</param>
+             <param name="dbName">数据库名</param>
+             <param name="tableName">表名</param>
              <param name="pager">分页信息</param>
              <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate">
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate(System.String,System.String,System.String,System.String)">
             <summary>
-            生成代码
+            代码生成器
             </summary>
+            <param name="dbName"></param>
+            <param name="tables">要生成代码的表</param>
+            <param name="baseSpace">项目命名空间</param>
+            <param name="replaceTableNameStr">要删除表名的字符串用英文逗号","隔开</param>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">

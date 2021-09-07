@@ -8,10 +8,16 @@ using ZR.Model.CodeGenerator;
 
 namespace ZR.Service.IService
 {
-    public interface ICodeGeneratorService
-    {
-        List<DataBaseInfo> GetAllDataBases(string dbType);
+    //public interface ICodeGeneratorService
+    //{
+    //    List<DataBaseInfo> GetAllDataBases();
 
-        List<DbTableInfo> GetTablesWithPage(string tablename, string dbName, PagerInfo info);
-    }
+    //    List<SqlSugar.DbTableInfo> GetTablesWithPage(string tablename, string dbName, PagerInfo info);
+
+    //    List<DbFieldInfo> GetAllColumns(string tableName);
+
+    //    List<DbTableInfo> GetAllTables(string tabList);
+
+    //    List<SqlSugar.DbColumnInfo> GetColumnInfo(string dbName, string tableName);
+    //}
 }

@@ -1,10 +1,14 @@
 ﻿using Infrastructure;
+using Infrastructure.Attribute;
+using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ZR.CodeGenerator;
+using ZR.CodeGenerator.Service;
 using ZR.Model;
 using ZR.Model.CodeGenerator;
 using ZR.Model.Vo;
@@ -19,11 +23,12 @@ namespace ZR.Admin.WebApi.Controllers
     [Route("codeGenerator")]
     public class CodeGeneratorController : BaseController
     {
-        public ICodeGeneratorService CodeGeneratorService;
-        public CodeGeneratorController(ICodeGeneratorService codeGeneratorService)
-        {
-            CodeGeneratorService = codeGeneratorService;
-        }
+        //public ICodeGeneratorService CodeGeneratorService;
+        //public CodeGeneratorController(ICodeGeneratorService codeGeneratorService)
+        //{
+        //    CodeGeneratorService = codeGeneratorService;
+        //}
+        private CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
 
         /// <summary>
         /// 获取所有数据库的信息
@@ -34,38 +39,53 @@ namespace ZR.Admin.WebApi.Controllers
         //[NoPermissionRequired]
         public IActionResult GetListDataBase()
         {
-            List<DataBaseInfo> listTable = CodeGeneratorService.GetAllDataBases("SqlServer");
-
-            return SUCCESS(listTable);
+            return SUCCESS(_CodeGeneraterService.GetAllDataBases());
         }
 
         /// <summary>
         ///获取所有表根据数据名
         /// </summary>
-        /// <param name="enCode">数据库名</param>
-        /// <param name="keywords">表名</param>
+        /// <param name="dbName">数据库名</param>
+        /// <param name="tableName">表名</param>
         /// <param name="pager">分页信息</param>
         /// <returns></returns>
         [HttpGet("FindListTable")]
-        public IActionResult FindListTable(string enCode, string keywords, PagerInfo pager)
+        public IActionResult FindListTable(string dbName, string tableName, PagerInfo pager)
         {
-            if (string.IsNullOrEmpty(enCode))
+            if (string.IsNullOrEmpty(dbName))
             {
-                return ToRespose(ResultCode.PARAM_ERROR);
+                dbName = "ZrAdmin";
             }
-            List<DbTableInfo> list = CodeGeneratorService.GetTablesWithPage(keywords, enCode, pager);
-            var vm = new VMPageResult<DbTableInfo>(list, pager);
+            List<SqlSugar.DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
+            var vm = new VMPageResult<SqlSugar.DbTableInfo>(list, pager);
 
             return SUCCESS(vm);
         }
 
         /// <summary>
-        /// 生成代码
+        /// 代码生成器
         /// </summary>
+        /// <param name="dbName"></param>
+        /// <param name="tables">要生成代码的表</param>
+        /// <param name="baseSpace">项目命名空间</param>
+        /// <param name="replaceTableNameStr">要删除表名的字符串用英文逗号","隔开</param>
         /// <returns></returns>
         [HttpGet("Generate")]
-        public IActionResult Generate()
+        [Log(Title = "代码生成", BusinessType = BusinessType.OTHER)]
+        public IActionResult Generate(string dbName, string baseSpace, string tables, string replaceTableNameStr)
         {
+            if (string.IsNullOrEmpty(baseSpace))
+            {
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "命名空间不能为空");
+            }
+            string[] tableList = tables.Split(",");
+            List<DbTableInfo> tableInfos = new List<DbTableInfo>();// CodeGeneratorService.GetAllTables(tables);
+            foreach (var item in tableList)
+            {
+                tableInfos.Add(new DbTableInfo() { TableName = item });
+            }
+
+            CodeGeneratorTool.Generate(dbName, baseSpace, tableInfos, replaceTableNameStr, true);
 
             return SUCCESS(null);
         }

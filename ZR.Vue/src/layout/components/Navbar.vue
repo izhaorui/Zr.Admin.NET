@@ -6,16 +6,13 @@
     <!-- 面包屑导航 -->
     <breadcrumb id="breadcrumb-container" class="breadcrumb-container" />
     <!-- <top-nav id="topmenu-container" class="topmenu-container" v-if="!topNav"/> -->
-    <!-- <el-menu class="el-menu">
-      <el-menu-item index="4" text-color="#fff"><a href="/bigdata" target="_blank">大屏数据</a></el-menu-item>
-    </el-menu> -->
 
     <div class="right-menu">
       <template v-if="device!=='mobile'">
         <search id="header-search" class="right-menu-item" />
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
         <!-- <el-tooltip content="布局大小" effect="dark" placement="bottom"> -->
-          <size-select id="size-select" class="right-menu-item hover-effect" />
+        <size-select id="size-select" class="right-menu-item hover-effect" />
         <!-- </el-tooltip> -->
       </template>
 
@@ -84,9 +81,6 @@ export default {
           location.href = "/index";
         });
       });
-    },
-    to() {
-      this.$router.replace("/bigdata");
     },
   },
 };

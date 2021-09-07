@@ -10,6 +10,7 @@ namespace ZR.Model
     /// </summary>
     public class DbFieldInfo
     {
+        public string TableName { get; set; }
         /// <summary>
         /// 初始化
         /// </summary>

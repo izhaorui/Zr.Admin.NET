@@ -39,7 +39,7 @@
               </el-select>
             </el-tooltip>
           </el-form-item>
-          <el-form-item label="数据库表名">
+          <el-form-item label="表名">
             <el-input v-model="searchform.tableName" clearable placeholder="输入要查询的表名" />
           </el-form-item>
           <el-form-item>
@@ -56,15 +56,21 @@
             </el-tooltip>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="iconfont icon-code" @click="handleGenerate()">生成代码</el-button>
+            <!-- <el-button type="primary" icon="iconfont icon-code" @click="handleGenerate()">生成代码</el-button> -->
             <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button>
           </el-form-item>
         </el-form>
       </div>
-      <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border stripe highlight-current-row style="width: 100%" :default-sort="{prop: 'TableName', order: 'ascending'}" @select="handleSelectChange" @select-all="handleSelectAllChange" @sort-change="handleSortChange">
-        <el-table-column type="selection" width="50" />
-        <el-table-column prop="tableName" label="表名" sortable="custom" width="380" />
+      <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border stripe highlight-current-row style="width: 100%" @selection-change="handleSelectChange">
+        <!-- <el-table-column type="selection" width="50" /> -->
+        <el-table-column prop="name" label="表名" sortable="custom" width="380" />
         <el-table-column prop="description" label="表描述" />
+        <el-table-column label="操作" align="center" width="200">
+          <template slot-scope="scope">
+            <el-button type="text" icon="el-icon-view">预览</el-button>
+            <el-button type="text" icon="el-icon-download" @click="handleGenerate(scope.row)">生成代码</el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <div class="pagination-container">
         <el-pagination background :current-page="pagination.pageNum" :page-sizes="[5,10,20,50,100, 200, 300, 400]" :page-size="pagination.pagesize" layout="total, sizes, prev, pager, next, jumper" :total="pagination.pageTotal" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
@@ -84,7 +90,9 @@ import { downloadFile } from "@/utils/index";
 import { Loading } from "element-ui";
 
 import defaultSettings from "@/settings";
+import template from "../../../document/template.vue";
 export default {
+  components: { template },
   name: "CodeGenerator",
   data() {
     return {
@@ -163,8 +171,8 @@ export default {
         var seachdata = {
           pageNum: this.pagination.pageNum,
           PageSize: this.pagination.pagesize,
-          Keywords: this.searchform.tableName,
-          EnCode: this.searchform.DbName,
+          tableName: this.searchform.tableName,
+          dbName: this.searchform.DbName,
           // Order: this.sortableData.order,
           // Sort: this.sortableData.sort,
         };
@@ -206,75 +214,57 @@ export default {
     /**
      * 点击生成服务端代码
      */
-    handleGenerate: async function () {
-      if (this.currentSelected.length === 0) {
-        this.$alert("请先选择要生成代码的数据表", "提示");
-        return false;
-      } else {
-        this.$refs["codeform"].validate((valid) => {
-          if (valid) {
-            var loadop = {
-              lock: true,
-              text: "正在生成代码...",
-              spinner: "el-icon-loading",
-              background: "rgba(0, 0, 0, 0.7)",
-            };
-            const pageLoading = Loading.service(loadop);
-            var currentTables = "";
-            this.currentSelected.forEach((element) => {
-              currentTables += element.TableName + ",";
-            });
-            var seachdata = {
-              tables: currentTables,
-              baseSpace: this.codeform.baseSpace,
-              replaceTableNameStr: this.codeform.replaceTableNameStr,
-            };
-            codeGenerator(seachdata)
-              .then((res) => {
-                if (res.code == 100) {
-                  downloadFile(
-                    defaultSettings.fileUrl + res.ResData[0],
-                    res.ResData[1]
-                  );
+    handleGenerate: async function (row) {
+      console.log(JSON.stringify(row));
+      // if (this.currentSelected.length === 0 || this.currentSelected.length > 3) {
+      //   this.msgError("请先选择要生成代码的数据表", "提示");
+      //   return false;
+      // } else {
+      this.$refs["codeform"].validate((valid) => {
+        if (valid) {
+          var loadop = {
+            lock: true,
+            text: "正在生成代码...",
+            spinner: "el-icon-loading",
+            background: "rgba(0, 0, 0, 0.7)",
+          };
+          const pageLoading = Loading.service(loadop);
 
-                  this.msgSuccess("恭喜你，代码生成完成！");
-                } else {
-                  this.msgError(res.msg);
-                }
-                pageLoading.close();
-              })
-              .catch((erre) => {
-                pageLoading.close();
-              });
-          } else {
-            return false;
-          }
-        });
-      }
-    },
-    /**
-     * 当表格的排序条件发生变化的时候会触发该事件
-     */
-    handleSortChange: function (column) {
-      this.sortableData.sort = column.prop;
-      if (column.order === "ascending") {
-        this.sortableData.order = "asc";
-      } else {
-        this.sortableData.order = "desc";
-      }
-      this.loadTableData();
+          var seachdata = {
+            dbName: this.searchform.DbName,
+            tables: row.name, // this.currentSelected.toString(),
+            baseSpace: this.codeform.baseSpace,
+            replaceTableNameStr: this.codeform.replaceTableNameStr,
+          };
+          codeGenerator(seachdata)
+            .then((res) => {
+              if (res.code == 200) {
+                // downloadFile(
+                //   defaultSettings.fileUrl + res.ResData[0],
+                //   res.ResData[1]
+                // );
+
+                this.msgSuccess("恭喜你，代码生成完成！");
+              } else {
+                this.msgError(res.msg);
+              }
+              pageLoading.close();
+            })
+            .catch((erre) => {
+              pageLoading.close();
+            });
+        } else {
+          return false;
+        }
+      });
+      // }
     },
     /**
      * 当用户手动勾选checkbox数据行事件
      */
     handleSelectChange: function (selection, row) {
-      this.currentSelected = selection;
-    },
-    /**
-     * 当用户手动勾选全选checkbox事件
-     */
-    handleSelectAllChange: function (selection) {
-      this.currentSelected = selection;
+      console.log(JSON.stringify(selection));
+      this.currentSelected = selection.map((item) => item.name);
     },
     /**
      * 选择每页显示数量
