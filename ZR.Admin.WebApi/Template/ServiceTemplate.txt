@@ -1,0 +1,28 @@
+﻿using Infrastructure;
+using Infrastructure.Attribute;
+using Infrastructure.Extensions;
+using SqlSugar;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using ZR.Common;
+using ZR.Model;
+using ZR.Repository;
+using ZR.Service.IService;
+
+namespace {ServicesNamespace}
+{
+    /// <summary>
+    /// {TableNameDesc}服务接口实现
+    /// </summary>
+    [AppService(ServiceType = typeof(I{ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
+    public class {ModelTypeName}Service: BaseService<{ModelTypeName}>, I{ModelTypeName}Service
+    {
+		private readonly {ModelTypeName}Repository _repository;
+        public {ModelTypeName}Service({ModelTypeName}Repository repository)
+        {
+			_repository = repository;
+        }
+    }
+}

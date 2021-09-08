@@ -1,0 +1,24 @@
+﻿using System;
+using Infrastructure.Attribute;
+using {RepositoriesNamespace}.System;
+using {ModelsNamespace};
+
+namespace {RepositoriesNamespace}
+{
+    /// <summary>
+    /// {TableNameDesc}仓储接口的实现
+    /// </summary>
+    [AppService(ServiceLifetime = LifeTime.Transient)]
+    public class {ModelTypeName}Repository : BaseRepository
+    {
+		public {ModelTypeName}Repository()
+        {
+        }
+
+        #region 业务逻辑代码
+
+        
+
+        #endregion
+    }
+}

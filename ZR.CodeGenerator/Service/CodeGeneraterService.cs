@@ -1,16 +1,12 @@
-﻿using Infrastructure;
-using SqlSugar;
-using System;
+﻿using SqlSugar;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ZR.Model;
 using ZR.Model.CodeGenerator;
 
 namespace ZR.CodeGenerator.Service
 {
-    public class CodeGeneraterService: DbProvider
+    public class CodeGeneraterService : DbProvider
     {
         /// <summary>
         /// 获取所有数据库名
@@ -18,21 +14,15 @@ namespace ZR.CodeGenerator.Service
         /// <returns></returns>
         public List<DataBaseInfo> GetAllDataBases()
         {
-            var dbType = ConfigUtils.Instance.GetConfig("CodeGenDbType");
-            List<DataBaseInfo> list = new List<DataBaseInfo>();
-            if (dbType == "1")
+            List<DataBaseInfo> list = new();
+
+            var db = GetSugarDbContext();
+            var templist = db.DbMaintenance.GetDataBaseList(db.ScopedContext);
+            templist.ForEach(item =>
             {
-                var db = GetSugarDbContext("ZrAdmin");
-                var templist = db.DbMaintenance.GetDataBaseList(db);
-                templist.ForEach(item =>
-                {
-                    list.Add(new DataBaseInfo() { DbName = item });
-                });
-            }
-            else if (dbType == "0")
-            {
-                // list = mssqlExtractor.GetAllDataBases();
-            }
+                list.Add(new DataBaseInfo() { DbName = item });
+            });
+
             return list;
         }
 
@@ -43,7 +33,7 @@ namespace ZR.CodeGenerator.Service
         /// <param name="tableName"></param>
         /// <param name="pager"></param>
         /// <returns></returns>
-        public List<SqlSugar.DbTableInfo> GetAllTables(string dbName, string tableName, PagerInfo pager)
+        public List<DbTableInfo> GetAllTables(string dbName, string tableName, PagerInfo pager)
         {
             var tableList = GetSugarDbContext(dbName).DbMaintenance.GetTableInfoList(true);
             if (!string.IsNullOrEmpty(tableName))
@@ -62,7 +52,7 @@ namespace ZR.CodeGenerator.Service
         /// <returns></returns>
         public List<DbColumnInfo> GetColumnInfo(string dbName, string tableName)
         {
-           return GetSugarDbContext(dbName).DbMaintenance.GetColumnInfosByTableName(tableName, true);
+            return GetSugarDbContext(dbName).DbMaintenance.GetColumnInfosByTableName(tableName, true);
         }
 
     }

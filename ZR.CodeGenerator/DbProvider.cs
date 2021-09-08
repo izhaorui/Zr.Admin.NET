@@ -10,13 +10,23 @@ namespace ZR.CodeGenerator
 {
     public class DbProvider
     {
+        protected static SqlSugarScope CodeDb;
 
-        public SqlSugarClient GetSugarDbContext(string dbName)
+        /// <summary>
+        /// 获取动态连接字符串
+        /// </summary>
+        /// <param name="dbName">数据库名</param>
+        /// <returns></returns>
+        public SqlSugarScope GetSugarDbContext(string dbName = "")
         {
-            string connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.Conn).Replace("{DbName}", dbName);
+            string connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.Conn).Replace("{database}", dbName);
             int dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.CodeGenDbType, 0);
-
-            return new SqlSugarClient(new List<ConnectionConfig>()
+            if (string.IsNullOrEmpty(dbName))
+            {
+                connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
+                dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.DbType, 0);
+            }
+            var db = new SqlSugarScope(new List<ConnectionConfig>()
             {
                 new ConnectionConfig(){
                     ConnectionString = connStr,
@@ -25,6 +35,9 @@ namespace ZR.CodeGenerator
                     InitKeyType = InitKeyType.Attribute,//从特性读取主键和自增列信息
                 },
             });
+
+            CodeDb = db;
+            return db;
         }
     }
 }

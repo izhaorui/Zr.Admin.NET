@@ -1,0 +1,13 @@
+﻿using System;
+using ZR.Model.System;
+using ZR.Model;
+
+namespace {IServicsNamespace}
+{
+    /// <summary>
+    /// 定义{TableNameDesc}服务接口
+    /// </summary>
+    public interface I{ModelTypeName}Service: IBaseService<{ModelTypeName}>
+    {
+    }
+}

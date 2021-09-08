@@ -37,7 +37,6 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpGet("GetListDataBase")]
         //[YuebonAuthorize("GetListDataBase")]
-        //[NoPermissionRequired]
         public IActionResult GetListDataBase()
         {
             return SUCCESS(_CodeGeneraterService.GetAllDataBases());
@@ -53,12 +52,8 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpGet("FindListTable")]
         public IActionResult FindListTable(string dbName, string tableName, PagerInfo pager)
         {
-            if (string.IsNullOrEmpty(dbName))
-            {
-                dbName = "ZrAdmin";
-            }
-            List<SqlSugar.DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
-            var vm = new VMPageResult<SqlSugar.DbTableInfo>(list, pager);
+            List<DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
+            var vm = new VMPageResult<DbTableInfo>(list, pager);
 
             return SUCCESS(vm);
         }
@@ -81,7 +76,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
             if (string.IsNullOrEmpty(baseSpace))
             {
-                //baseSpace = "Zr";
+                baseSpace = "ZR.Admin";
             }
             DbTableInfo dbTableInfo = new() { Name = tables };
             CodeGeneratorTool.Generate(dbName, baseSpace, dbTableInfo, replaceTableNameStr, true);

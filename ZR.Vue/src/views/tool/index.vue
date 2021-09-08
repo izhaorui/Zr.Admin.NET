@@ -32,30 +32,26 @@
     <el-card>
       <div class="list-btn-container">
         <el-form ref="codeform" :inline="true" :rules="rules" :model="codeform" class="demo-form-inline" size="small">
-          <el-form-item label="数据库">
-            <el-tooltip class="item" effect="dark" content="默认为系统访问数据库" placement="top">
-              <el-select v-model="searchform.DbName" clearable placeholder="请选择" @change="handleShowTable">
-                <el-option v-for="item in selectedDataBase" :key="item.Id" :label="item.dbName" :value="item.dbName" />
-              </el-select>
-            </el-tooltip>
+          <el-form-item label="数据库" prop="dbName">
+            <el-select v-model="codeform.dbName" clearable placeholder="请选择" @change="handleShowTable">
+              <el-option v-for="item in selectedDataBase" :key="item.Id" :label="item.dbName" :value="item.dbName" />
+            </el-select>
           </el-form-item>
           <el-form-item label="表名">
             <el-input v-model="searchform.tableName" clearable placeholder="输入要查询的表名" />
           </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch()">查询</el-button>
-          </el-form-item>
-          <el-form-item label="项目命名空间：" prop="baseSpace">
+          <!-- <el-form-item label="项目命名空间：" prop="baseSpace">
             <el-tooltip class="item" effect="dark" content="系统会根据项目命名空间自动生成IService、Service、Models等子命名空间" placement="bottom">
               <el-input v-model="codeform.baseSpace" clearable placeholder="如Zr" />
             </el-tooltip>
-          </el-form-item>
+          </el-form-item> -->
           <el-form-item label="去掉表名前缀：">
             <el-tooltip class="item" effect="dark" content="表名直接变为类名，去掉表名前缀。多个前缀用“;”隔开和结束" placement="bottom">
               <el-input v-model="codeform.replaceTableNameStr" clearable width="300" placeholder="多个前缀用“;”隔开" />
             </el-tooltip>
           </el-form-item>
           <el-form-item>
+            <el-button type="primary" @click="handleSearch()">查询</el-button>
             <!-- <el-button type="primary" icon="iconfont icon-code" @click="handleGenerate()">生成代码</el-button> -->
             <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button>
           </el-form-item>
@@ -105,7 +101,7 @@ export default {
         DbType: "",
       },
       searchform: {
-        DbName: "",
+        dbName: "",
         tableName: "",
       },
       codeform: {
@@ -122,6 +118,9 @@ export default {
         //     trigger: "blur",
         //   },
         // ],
+        dbName: [
+          { required: true, message: "请选择数据库名称", trigger: "blur" },
+        ],
         replaceTableNameStr: [
           { min: 0, max: 50, message: "长度小于50个字符", trigger: "blur" },
         ],
@@ -166,15 +165,13 @@ export default {
      * 加载页面table数据
      */
     loadTableData: function () {
-      if (this.searchform.dataBaseName !== "") {
+      if (this.codeform.dataBaseName !== "") {
         this.tableloading = true;
         var seachdata = {
           pageNum: this.pagination.pageNum,
           PageSize: this.pagination.pagesize,
-          tableName: this.searchform.tableName,
-          dbName: this.searchform.DbName,
-          // Order: this.sortableData.order,
-          // Sort: this.sortableData.sort,
+          tableName: this.codeform.tableName,
+          dbName: this.codeform.dbName,
         };
         codeGetTableList(seachdata).then((res) => {
           this.tableData = res.data.result;
@@ -187,9 +184,15 @@ export default {
      * 点击查询
      */
     handleSearch: function () {
-      this.tableloading = true;
-      this.pagination.pageNum = 1;
-      this.loadTableData();
+      this.$refs["codeform"].validate((valid) => {
+        if (valid) {
+          this.tableloading = true;
+          this.pagination.pageNum = 1;
+          this.loadTableData();
+        }else{
+          return false;
+        }
+      });
     },
     handleShowTable: function () {
       this.pagination.pageNum = 1;
@@ -231,7 +234,7 @@ export default {
           const pageLoading = Loading.service(loadop);
 
           var seachdata = {
-            dbName: this.searchform.DbName,
+            dbName: this.codeform.dbName,
             tables: row.name, // this.currentSelected.toString(),
             baseSpace: this.codeform.baseSpace,
             replaceTableNameStr: this.codeform.replaceTableNameStr,
