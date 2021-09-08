@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Business\IService\" />
+    <Folder Include="Business\" />
   </ItemGroup>
 
 </Project>
