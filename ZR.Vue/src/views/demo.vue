@@ -36,13 +36,13 @@
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
+        <el-button type="primary" v-hasPermi="['Article:add']" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
+        <el-button type="success" v-hasPermi="['Article:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
+        <el-button type="danger" v-hasPermi="['Article:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
       <!-- <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport">导入</el-button>
@@ -54,30 +54,27 @@
     </el-row>
 
     <!-- 数据区域 -->
-    <el-table :data="dataList" ref="table" border>
-      <el-table-column prop="id" label="id" width="60" sortable> </el-table-column>
-      <el-table-column prop="userId" label="userid" width="80"> </el-table-column>
-      <!-- 显示图片 -->
-      <el-table-column prop="photo" label="图片">
-        <template slot-scope="scope">
-          <el-image class="table-td-thumb" :src="scope.row.photo" :preview-src-list="[scope.row.photo]"></el-image>
-        </template>
-      </el-table-column>
-      <el-table-column prop="content" label="介绍" width="100" :show-overflow-tooltip="true">
-      </el-table-column>
-      <el-table-column sortable prop="isStart" align="center" label="状态" width="90">
-        <template>
-          <el-tag size="mini" type="success" disable-transitions>标签</el-tag>
-        </template>
-      </el-table-column>
+    <el-table :data="dataList" ref="table" border @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="50" />
+      <el-table-column prop="cid" label="Cid" align="center" width="100" />
+      <el-table-column prop="title" label="文章标题" align="center" width="100" :show-overflow-tooltip="true" />
+      <el-table-column prop="content" label="文章内容" align="center" width="100" />
+      <el-table-column prop="userId" label="用户id" align="center" width="100" />
+      <el-table-column prop="status" label="文章状态1、已发布 2、草稿" align="center" width="100" :show-overflow-tooltip="true" />
+      <el-table-column prop="fmt_type" label="编辑器类型markdown,html" align="center" width="100" :show-overflow-tooltip="true" />
+      <el-table-column prop="tags" label="文章标签" align="center" width="100" :show-overflow-tooltip="true" />
+      <el-table-column prop="hits" label="点击量" align="center" width="100" />
+      <el-table-column prop="category_id" label="目录id" align="center" width="100" />
+      <el-table-column prop="createTime" label="创建时间" align="center" width="100" />
+      <el-table-column prop="updateTime" label="修改时间" align="center" width="100" />
+      <el-table-column prop="authorName" label="作者名" align="center" width="100" :show-overflow-tooltip="true" />
 
-      <el-table-column prop="addtime" label="创建时间"> </el-table-column>
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)">详情</el-button>
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
+          <el-button size="mini" v-hasPermi="['Article:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
           <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left:10px">
-            <el-button slot="reference" size="mini" type="text" icon="el-icon-delete">删除</el-button>
+            <el-button slot="reference" v-hasPermi="['Article:del']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
           </el-popconfirm>
         </template>
       </el-table-column>
@@ -87,35 +84,57 @@
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-row>
-          <el-col :span="12">
-            <el-form-item label="用户Id" prop="userId">
-              <el-input v-model.number="form.userId" placeholder="" :disabled="form.userId > 0" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="用户昵称" prop="name">
-              <el-input v-model="form.name" placeholder="" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="顺序" prop="sortId">
-              <el-input-number v-model="form.sortId" controls-position="right" :min="0" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictValue">{{dict.dictLabel}}</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="备注" prop="content">
-              <el-input v-model="form.content" :rows="2" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-col :span="12">
+          <el-form-item label="Cid" :label-width="labelWidth" prop="cid">
+            <el-input v-model="form.cid" placeholder="请输入Cid" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="文章标题" :label-width="labelWidth" prop="title">
+            <el-input v-model="form.title" placeholder="请输入文章标题" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="文章内容" :label-width="labelWidth" prop="content">
+            <el-input v-model="form.content" placeholder="请输入文章内容" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="用户id" :label-width="labelWidth" prop="userId">
+            <el-input v-model="form.userId" placeholder="请输入用户id" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="文章状态1、已发布 2、草稿" :label-width="labelWidth" prop="status">
+            <el-input v-model="form.status" placeholder="请输入文章状态1、已发布 2、草稿" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="编辑器类型markdown,html" :label-width="labelWidth" prop="fmt_type">
+            <el-input v-model="form.fmt_type" placeholder="请输入编辑器类型markdown,html" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="文章标签" :label-width="labelWidth" prop="tags">
+            <el-input v-model="form.tags" placeholder="请输入文章标签" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="点击量" :label-width="labelWidth" prop="hits">
+            <el-input v-model="form.hits" placeholder="请输入点击量" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="目录id" :label-width="labelWidth" prop="category_id">
+            <el-input v-model="form.category_id" placeholder="请输入目录id" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="作者名" :label-width="labelWidth" prop="authorName">
+            <el-input v-model="form.authorName" placeholder="请输入作者名" />
+          </el-form-item>
+        </el-col>
+
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -126,13 +145,17 @@
   </div>
 </template>
 <script>
-// import { listXXXX} from '@/api/xxxx.js'
+// import { listArticle,addArticle,delArticle,editArticle } from '@/api/Article.js'
 
 export default {
-  name: "demo",
+  name: "Article",
   data() {
     return {
       labelWidth: "70px",
+      // 选中数组
+      ids: [],
+      // 非多个禁用
+      multiple: true,
       // 遮罩层
       loading: true,
       // 显示搜索条件
@@ -150,34 +173,14 @@ export default {
       // xxx下拉框
       statusOptions: [],
       // 数据列表
-      dataList: [
-        {
-          id: 1,
-          photo:
-            "https://ss1.baidu.com/-4o3dSag_xI4khGko9WTAnF6hhy/zhidao/pic/item/d788d43f8794a4c2b124d0000df41bd5ad6e3991.jpg",
-          name: "你好",
-          userId: 1000001,
-          sortId: 1,
-          address: "",
-          content: "我是一个超长超长的文字啊",
-          addtime: "2021-8-7 23:00:00",
-        },
-      ],
+      dataList: [],
       // 总记录数
       total: 0,
       // 提交按钮是否显示
       btnSubmitVisible: true,
       // 表单校验
       rules: {
-        name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
-        userId: [
-          {
-            type: "number",
-            required: true,
-            message: "id不能为空,且不能为非数字",
-            trigger: "blur",
-          },
-        ],
+        Cid: [{ required: true, message: "请输入", trigger: "blur" }],
       },
     };
   },
@@ -193,12 +196,14 @@ export default {
     // 查询数据
     getList() {
       console.log(JSON.stringify(this.queryParams));
-      // listXXXX(this.addDateRange(this.queryParams, this.timeRange)).then(res => {
-      //   if (res.code == 200) {
-      //     this.dataList = res.data.result;
-      //     this.total = res.data.totalCount;
-      //   }
-      // })
+      listArticle(this.addDateRange(this.queryParams, this.timeRange)).then(
+        (res) => {
+          if (res.code == 200) {
+            this.dataList = res.data.result;
+            this.total = res.data.totalCount;
+          }
+        }
+      );
     },
     // 取消按钮
     cancel() {
@@ -208,8 +213,20 @@ export default {
     // 重置数据表单
     reset() {
       this.form = {
-        Id: undefined,
-        // TODO 其他列字段
+        Cid: "",
+        Title: "",
+        Content: "",
+        UserId: "",
+        Status: "",
+        Fmt_type: "",
+        Tags: "",
+        Hits: "",
+        Category_id: "",
+        CreateTime: "",
+        UpdateTime: "",
+        AuthorName: "",
+
+        //需个性化处理内容
       };
       this.resetForm("form");
     },
@@ -221,6 +238,11 @@ export default {
         pageNum: 1,
         //TODO 重置字段
       };
+    },
+    // 多选框选中数据
+    handleSelectionChange(selection) {
+      this.ids = selection.map((item) => item.Cid);
+      this.multiple = !selection.length;
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -236,10 +258,10 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      //   delXXX().then((res) => {
-      //     this.msgSuccess("删除成功");
-      //     this.handleQuery();
-      //   });
+      delArticle().then((res) => {
+        this.msgSuccess("删除成功");
+        this.handleQuery();
+      });
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -263,7 +285,7 @@ export default {
         if (valid) {
           console.log(JSON.stringify(this.form));
           // TODO 记得改成表的主键
-          if (this.form.Id != undefined) {
+          if (this.form.Cid != undefined) {
             //TODO 编辑业务代码
           } else {
             //TODO 新增业务代码

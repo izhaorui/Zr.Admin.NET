@@ -51,8 +51,6 @@ namespace ZR.CodeGenerator
 
             CodeGeneraterService codeGeneraterService = new CodeGeneraterService();
             string profileContent = string.Empty;
-            //foreach (DbTableInfo dbTableInfo in listTable)
-            //{
             List<DbColumnInfo> listField = codeGeneraterService.GetColumnInfo(dbName, dbTableInfo.Name);
             GenerateSingle(listField, dbTableInfo, ifExsitedCovered);
             //string tableName = dbTableInfo.TableName;
@@ -70,7 +68,6 @@ namespace ZR.CodeGenerator
             //tableName = tableName.Substring(0, 1).ToUpper() + tableName.Substring(1);
             //profileContent += string.Format("           CreateMap<{0}, {0}OutputDto>();\n", tableName);
             //profileContent += string.Format("           CreateMap<{0}InputDto, {0}>();\n", tableName);
-            //}
 
             //GenerateDtoProfile(_option.ModelsNamespace, profileContent, ifExsitedCovered);
         }
@@ -90,7 +87,7 @@ namespace ZR.CodeGenerator
             var modelTypeDesc = tableInfo.Description;//表描述
             var primaryKey = "id";//主键
 
-            string keyTypeName = "string";//主键数据类型
+            string keyTypeName = "int";//主键数据类型
             string modelcontent = "";//数据库模型字段
             string InputDtocontent = "";//输入模型
             string outputDtocontent = "";//输出模型
@@ -105,75 +102,34 @@ namespace ZR.CodeGenerator
             {
                 string columnName = dbFieldInfo.DbColumnName.Substring(0, 1).ToUpper() + dbFieldInfo.DbColumnName.Substring(1);
 
-                modelcontent += "        /// <summary>\n";
-                modelcontent += ($"        /// 描述 :{dbFieldInfo.ColumnDescription}\n");
-                modelcontent += ($"        /// 空值 :{dbFieldInfo.IsNullable}\n");
-                modelcontent += ($"        /// 默认 :{dbFieldInfo.DefaultValue}\n");
-                modelcontent += "        /// </summary>\n";
-                if (dbFieldInfo.IsIdentity || dbFieldInfo.IsPrimarykey)
-                {
-                    primaryKey = columnName;
-                    modelcontent += $"        [SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPrimarykey.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIdentity.ToString().ToLower()})]\n";
-                }
-                modelcontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
+                modelcontent = GetModelTemplate(ref primaryKey, dbFieldInfo, columnName);
 
-                //if (dbFieldInfo.DataType == "string")
-                //{
-                //    outputDtocontent += string.Format("        [MaxLength({0})]\n", dbFieldInfo.FieldMaxLength);
-                //}
-                //outputDtocontent += string.Format("        public {0} {1}", dbFieldInfo.DataType, columnName);
-                //outputDtocontent += " { get; set; }\n\r";
                 if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
                 {
-
-                    vueViewListContent += string.Format("        <el-table-column prop=\"{0}\" label=\"{1}\" sortable=\"custom\" width=\"120\" >\n", columnName, dbFieldInfo.ColumnDescription);
-                    vueViewListContent += "          <template slot-scope=\"scope\">\n";
-                    vueViewListContent += string.Format("            <el-tag :type=\"scope.row.{0} === true ? 'success' : 'info'\"  disable-transitions >", columnName);
-                    vueViewListContent += "{{ ";
-                    vueViewListContent += string.Format("scope.row.{0}===true?'启用':'禁用' ", columnName);
-                    vueViewListContent += "}}</el-tag>\n";
-                    vueViewListContent += "          </template>\n";
-                    vueViewListContent += "        </el-table-column>\n";
-
-                    vueViewFromContent += string.Format("        <el-form-item label=\"{0}\" :label-width=\"labelWidth\" prop=\"{1}\">", dbFieldInfo.ColumnDescription, columnName);
-                    vueViewFromContent += string.Format("          <el-radio-group v-model=\"editFrom.{0}\">\n", columnName);
-                    vueViewFromContent += "           <el-radio label=\"true\">是</el-radio>\n";
-                    vueViewFromContent += "           <el-radio label=\"false\">否</el-radio>\n";
-                    vueViewFromContent += "          </el-radio-group>\n";
-                    vueViewFromContent += "        </el-form-item>\n";
-
                     vueViewEditFromContent += string.Format("        {0}: 'true',\n", columnName);
                     vueViewEditFromBindContent += string.Format("        this.editFrom.{0} = res.data.{0}+''\n", columnName);
                 }
                 else
                 {
-                    //table-column
-                    vueViewListContent += $"        <el-table-column prop=\"{FirstLowerCase(columnName)}\" label=\"{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" />\n";
-
-                    //form-item
-                    vueViewFromContent += $"        <el-form-item label=\"{ GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" :label-width=\"labelWidth\" prop=\"{FirstLowerCase(columnName)}\">\n";
-                    vueViewFromContent += $"          <el-input v-model=\"form.{FirstLowerCase(columnName)}\" placeholder=\"请输入{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" clearable />\n";
-                    vueViewFromContent += "        </el-form-item>\n";
                     vueViewEditFromContent += string.Format("        {0}: '',\n", columnName);
                     vueViewEditFromBindContent += string.Format("        this.editFrom.{0} = res.ResData.{0}\n", columnName);
                 }
                 //vueViewSaveBindContent += string.Format("        '{0}':this.editFrom.{0},\n", columnName);
-                
+                vueViewFromContent += GetVueViewFromContent(dbFieldInfo, columnName);
+                vueViewListContent += GetTableColumn(dbFieldInfo, columnName);
                 //Rule 规则验证
-                //if (!dbFieldInfo.IsNullable)
-                //{
-                //    vueViewEditFromRuleContent += string.Format("        {0}: [\n", columnName);
-                //    vueViewEditFromRuleContent += "        {";
-                //    vueViewEditFromRuleContent += string.Format("required: true, message:\"请输入{0}\", trigger: \"blur\"", dbFieldInfo.ColumnDescription);
-                //    vueViewEditFromRuleContent += "},\n          { min: 2, max: 50, message: \"长度在 2 到 50 个字符\", trigger:\"blur\" }\n";
-                //    vueViewEditFromRuleContent += "        ],\n";
-                //}
-
+                if (!dbFieldInfo.IsNullable)
+                {
+                    vueViewEditFromRuleContent += $"        {columnName}: [\n";
+                    vueViewEditFromRuleContent += $"        {{ required: true, message:\"请输入{dbFieldInfo.ColumnDescription}\", trigger: \"blur\"}},\n";
+                    //vueViewEditFromRuleContent += "        { min: 2, max: 50, message: \"长度在 2 到 50 个字符\", trigger:\"blur\" }\n";
+                    vueViewEditFromRuleContent += "        ],\n";
+                }
 
                 //if (!inputDtoNoField.Contains(columnName) || columnName == "Id")
                 //{
                 InputDtocontent += "        /// <summary>\n";
-                InputDtocontent += string.Format("        /// 设置或获取{0}\n", dbFieldInfo.ColumnDescription);
+                InputDtocontent += $"       /// 设置或获取{dbFieldInfo.ColumnDescription}\n";
                 InputDtocontent += "        /// </summary>\n";
                 InputDtocontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
                 //}
@@ -191,6 +147,82 @@ namespace ZR.CodeGenerator
             GenerateVueViews(modelTypeName, primaryKey, modelTypeDesc, vueViewListContent, vueViewFromContent, vueViewEditFromContent, vueViewEditFromBindContent, vueViewSaveBindContent, vueViewEditFromRuleContent, ifExsitedCovered);
         }
 
+        private static string GetModelTemplate(ref string primaryKey, DbColumnInfo dbFieldInfo, string columnName)
+        {
+            var modelcontent = "";
+            modelcontent += "        /// <summary>\n";
+            modelcontent += $"        /// 描述 :{dbFieldInfo.ColumnDescription}\n";
+            modelcontent += $"        /// 空值 :{dbFieldInfo.IsNullable}\n";
+            modelcontent += $"        /// 默认 :{dbFieldInfo.DefaultValue}\n";
+            modelcontent += "        /// </summary>\n";
+            if (dbFieldInfo.IsIdentity || dbFieldInfo.IsPrimarykey)
+            {
+                primaryKey = columnName;
+                modelcontent += $"        [SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPrimarykey.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIdentity.ToString().ToLower()})]\n";
+            }
+            modelcontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
+            return modelcontent;
+        }
+        //
+        //form-item
+        private static string GetVueViewFromContent(DbColumnInfo dbFieldInfo, string columnName)
+        {
+            string vueViewFromContent = "";
+            if (dbFieldInfo.DataType == "datetime")
+            {
+                vueViewFromContent = "";
+            }
+            else if (columnName.Contains("iocn,image"))
+            {
+                //TODO 图片
+            }
+            else if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
+            {
+                vueViewFromContent += $"    <el-col :span=\"12\">\n";
+                vueViewFromContent += $"       <el-form-item label=\"{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" :label-width=\"labelWidth\" prop=\"{FirstLowerCase(columnName)}\">";
+                vueViewFromContent += $"          <el-radio-group v-model=\"form.{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\">\n";
+                vueViewFromContent += "           <el-radio label=\"true\">是</el-radio>\n";
+                vueViewFromContent += "           <el-radio label=\"false\">否</el-radio>\n";
+                vueViewFromContent += "          </el-radio-group>\n";
+                vueViewFromContent += "        </el-form-item>\n";
+                vueViewFromContent += "     </el-col>\n";
+            }
+            else
+            {
+                vueViewFromContent += $"    <el-col :span=\"12\">\n";
+                vueViewFromContent += $"        <el-form-item label=\"{ GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" :label-width=\"labelWidth\" prop=\"{FirstLowerCase(columnName)}\">\n";
+                vueViewFromContent += $"           <el-input v-model=\"form.{FirstLowerCase(columnName)}\" placeholder=\"请输入{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" />\n";
+                vueViewFromContent += "         </el-form-item>\n";
+                vueViewFromContent += "     </el-col>\n";
+            }
+
+            return vueViewFromContent;
+        }
+
+        //table-column
+        private static string GetTableColumn(DbColumnInfo dbFieldInfo, string columnName)
+        {
+            string vueViewListContent = "";
+            string showToolTip = dbFieldInfo.DataType == "varchar" ? ":show-overflow-tooltip=\"true\"" : "";
+
+            if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
+            {
+                vueViewListContent += $"        <el-table-column prop=\"{FirstLowerCase(columnName)}\" label=\"{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" width=\"120\" >\n";
+                vueViewListContent += "          <template slot-scope=\"scope\">\n";
+                vueViewListContent += string.Format("            <el-tag :type=\"scope.row.{0} === true ? 'success' : 'info'\"  disable-transitions >", columnName);
+                vueViewListContent += "{{ ";
+                vueViewListContent += string.Format("scope.row.{0}===true?'启用':'禁用' ", columnName);
+                vueViewListContent += "}}</el-tag>\n";
+                vueViewListContent += "          </template>\n";
+                vueViewListContent += "        </el-table-column>\n";
+            }
+            else
+            {
+                //table-column
+                vueViewListContent += $"        <el-table-column prop=\"{FirstLowerCase(columnName)}\" label=\"{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\"  align=\"center\" width=\"100\" {showToolTip} />\n";
+            }
+            return vueViewListContent;
+        }
 
         #region 生成Model
 

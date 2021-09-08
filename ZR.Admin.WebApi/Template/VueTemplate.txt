@@ -83,7 +83,7 @@
   </div>
 </template>
 <script>
-// import { list{ModelTypeName},Add{ModelTypeName},Del{ModelTypeName},Edit{ModelTypeName} } from '@/api/{ModelTypeName}.js'
+// import { list{ModelTypeName},add{ModelTypeName},del{ModelTypeName},edit{ModelTypeName} } from '@/api/{ModelTypeName}.js'
 
 export default {
   name: '{ModelTypeName}',
@@ -118,15 +118,7 @@ export default {
       btnSubmitVisible: true,
       // 表单校验
       rules: {
-        name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
-        userId: [
-          {
-            type: "number",
-            required: true,
-            message: "id不能为空,且不能为非数字",
-            trigger: "blur",
-          },
-        ],
+        {VueViewEditFromRuleContent}
       },
     };
   },
