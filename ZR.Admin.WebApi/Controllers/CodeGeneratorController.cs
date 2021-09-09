@@ -9,9 +9,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ZR.CodeGenerator;
+using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
 using ZR.Model;
-using ZR.Model.CodeGenerator;
 using ZR.Model.Vo;
 using ZR.Service.IService;
 using ZR.Service.System;
@@ -21,7 +21,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 代码生成
     /// </summary>
-    [Route("codeGenerator")]
+    [Route("tool/gen")]
     public class CodeGeneratorController : BaseController
     {
         //public ICodeGeneratorService CodeGeneratorService;
@@ -35,11 +35,13 @@ namespace ZR.Admin.WebApi.Controllers
         /// 获取所有数据库的信息
         /// </summary>
         /// <returns></returns>
-        [HttpGet("GetListDataBase")]
+        [HttpGet("getDbList")]
         //[YuebonAuthorize("GetListDataBase")]
         public IActionResult GetListDataBase()
         {
-            return SUCCESS(_CodeGeneraterService.GetAllDataBases());
+            var dbList = _CodeGeneraterService.GetAllDataBases();
+            var defaultDb = dbList.Count > 0 ? dbList[0] : null;
+            return SUCCESS(new { dbList, defaultDb });
         }
 
         /// <summary>
@@ -59,27 +61,35 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 代码生成器
+        /// 获取表格列
         /// </summary>
         /// <param name="dbName"></param>
-        /// <param name="tables">要生成代码的表</param>
-        /// <param name="baseSpace">项目命名空间</param>
-        /// <param name="replaceTableNameStr">要删除表名的字符串用英文逗号","隔开</param>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        [HttpGet("QueryColumnInfo")]
+        public IActionResult QueryColumnInfo(string dbName, string tableName)
+        {
+            if (string.IsNullOrEmpty(dbName) || string.IsNullOrEmpty(tableName))
+                return ToRespose(ResultCode.PARAM_ERROR);
+
+            return SUCCESS(_CodeGeneraterService.GetColumnInfo(dbName, tableName));
+        }
+
+        /// <summary>
+        /// 代码生成器
+        /// </summary>
+        /// <param name="dto">数据传输对象</param>
         /// <returns></returns>
         [HttpGet("Generate")]
         [Log(Title = "代码生成", BusinessType = BusinessType.OTHER)]
-        public IActionResult Generate(string dbName, string baseSpace, string tables, string replaceTableNameStr)
+        public IActionResult Generate([FromQuery] GenerateDto dto)
         {
-            if (string.IsNullOrEmpty(tables))
+            if (string.IsNullOrEmpty(dto.tables))
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
-            if (string.IsNullOrEmpty(baseSpace))
-            {
-                baseSpace = "ZR.Admin";
-            }
-            DbTableInfo dbTableInfo = new() { Name = tables };
-            CodeGeneratorTool.Generate(dbName, baseSpace, dbTableInfo, replaceTableNameStr, true);
+            DbTableInfo dbTableInfo = new() { Name = dto.tables };
+            CodeGeneratorTool.Generate(dbTableInfo, dto);
 
             return SUCCESS(1);
         }

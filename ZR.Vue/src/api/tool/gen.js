@@ -70,7 +70,7 @@ export function genCode(tableName) {
 // 同步数据库
 export function synchDb(tableName) {
   return request({
-    url: '/tool/gen/synchDb/' + tableName,
+    url: 'tool/gen/synchDb/' + tableName,
     method: 'get'
   })
 }
@@ -80,9 +80,9 @@ export function synchDb(tableName) {
 /**
    * 创建数据库连接
    */
- export function createGetDBConn(data) {
+export function createGetDBConn(data) {
   return request({
-    url: 'CodeGenerator/CreateDBConn',
+    url: 'tool/gen/CreateDBConn',
     method: 'post',
     data: data,
   })
@@ -92,7 +92,7 @@ export function synchDb(tableName) {
    */
 export function codeGetDBList() {
   return request({
-    url: 'CodeGenerator/GetListDataBase',
+    url: 'tool/gen/getDbList',
     method: 'get',
   })
 }
@@ -101,7 +101,7 @@ export function codeGetDBList() {
    */
 export function codeGetTableList(data) {
   return request({
-    url: 'CodeGenerator/FindListTable',
+    url: 'tool/gen/FindListTable',
     method: 'get',
     params: data,
   })
@@ -111,12 +111,26 @@ export function codeGetTableList(data) {
    */
 export async function codeGenerator(data) {
   return await request({
-    url: 'CodeGenerator/Generate',
-    method: 'get',
-    params: data,
+    url: '/tool/gen/Generate',
+    method: 'post',
+    data: data,
     timeout: 0,
   })
 }
+
+/**
+ * 获取表格列信息
+ * @param {*} data
+ * @returns
+ */
+export function queryColumnInfo(data) {
+  return request({
+    url: 'tool/gen/queryColumnInfo',
+    method: 'GET',
+    params: data,
+  })
+}
+
 /**
  *
 * 数据库解密

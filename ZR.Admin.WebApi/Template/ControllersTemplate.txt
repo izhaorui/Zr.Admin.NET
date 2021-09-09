@@ -17,7 +17,7 @@ using ZR.Model;
 namespace ZRAdmin.Controllers
 {
     /// <summary>
-    /// T4代码自动生成
+    /// 代码自动生成
     /// </summary>
 	
     [Verify]
@@ -39,7 +39,7 @@ namespace ZRAdmin.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "<#=ModelName#>:list")]
+        [ActionPermissionFilter(Permission = "<#=Permission#>:list")]
         public IActionResult Query([FromQuery] <#=ModelName#>QueryDto parm)
         {
             //开始拼装查询条件
@@ -59,7 +59,7 @@ namespace ZRAdmin.Controllers
         /// <param name="{primaryKey}"></param>
         /// <returns></returns>
         [HttpGet("{{primaryKey}}")]
-        public IActionResult Get(int {primaryKey})
+        public IActionResult Get({KeyTypeName} {primaryKey})
         {
             var response = _<#=ServiceName#>.GetId({primaryKey});
 
@@ -71,7 +71,7 @@ namespace ZRAdmin.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        [ActionPermissionFilter(Permission = "<#=ModelName#>:add")]
+        [ActionPermissionFilter(Permission = "<#=Permission#>:add")]
         [Log(Title = "<#=FileName#>添加", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] <#=ModelName#>Dto parm)
         {
@@ -91,7 +91,7 @@ namespace ZRAdmin.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPut("edit")]
-        [ActionPermissionFilter(Permission = "<#=ModelName#>:update")]
+        [ActionPermissionFilter(Permission = "<#=Permission#>:update")]
         [Log(Title = "<#=FileName#>修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] <#=ModelName#>Dto parm)
         {
@@ -109,9 +109,9 @@ namespace ZRAdmin.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpDelete("{{primaryKey}}")]
-        [ActionPermissionFilter(Permission = "<#=ModelName#>:delete")]
+        [ActionPermissionFilter(Permission = "<#=Permission#>:delete")]
         [Log(Title = "<#=FileName#>删除", BusinessType = BusinessType.DELETE)]
-        public IActionResult Delete(int {primaryKey} = 0)
+        public IActionResult Delete({KeyTypeName} {primaryKey} = 0)
         {
             if ({primaryKey} <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
 

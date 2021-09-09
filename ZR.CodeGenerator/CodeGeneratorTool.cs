@@ -1,14 +1,12 @@
 ﻿using SqlSugar;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using ZR.CodeGenerator.CodeGenerator;
+using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
-using ZR.Model;
 
 namespace ZR.CodeGenerator
 {
@@ -27,52 +25,35 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// InputDto输入实体是不包含字段
         /// </summary>
-        private static string inputDtoNoField = "DeleteMark,CreatorTime,CreatorUserId,CompanyId,DeptId,LastModifyTime,LastModifyUserId,DeleteTime,DeleteUserId,";
+        private static string[] inputDtoNoField = new string[] { "DeleteMark", "CreateTime", "updateTime", "addtime" };
+        private static string[] imageFiled = new string[] { "icon", "img", "image", "url", "pic" };
+        private static string[] selectFiled = new string[] { "status", "type", "state" };
+        private static string[] radioFiled = new string[] { "status", "state", "is" };
 
         /// <summary>
         /// 代码生成器入口方法
         /// </summary>
-        /// <param name="baseNamespace"></param>
         /// <param name="dbTableInfo"></param>
-        /// <param name="replaceTableNameStr">要删除表名称的字符</param>
-        /// <param name="ifExsitedCovered">是否替换现有文件，为true时替换</param>
-        public static void Generate(string dbName, string baseNamespace, DbTableInfo dbTableInfo, string replaceTableNameStr, bool ifExsitedCovered = false)
+        /// <param name="dto"></param>
+        public static void Generate(DbTableInfo dbTableInfo, GenerateDto dto)
         {
-            _option.BaseNamespace = baseNamespace;
-            _option.DtosNamespace = baseNamespace + "ZR.Model";
-            _option.ModelsNamespace = baseNamespace + "ZR.Model";
-            //_option.IRepositoriesNamespace = baseNamespace + ".IRepositorie";
-            _option.RepositoriesNamespace = baseNamespace + "ZR.Repository";
-            _option.IServicsNamespace = baseNamespace + "ZR.Service";
-            _option.ServicesNamespace = baseNamespace + "ZR.Service";
-            _option.ApiControllerNamespace = baseNamespace + "ZR.Admin.WebApi";
-            _option.ReplaceTableNameStr = replaceTableNameStr;
+            //_option.BaseNamespace = baseNamespace;
+            _option.DtosNamespace = "ZR.Model";
+            _option.ModelsNamespace = "ZR.Model";
+            _option.RepositoriesNamespace = "ZR.Repository";
+            _option.IServicsNamespace = "ZR.Service";
+            _option.ServicesNamespace = "ZR.Service";
+            _option.ApiControllerNamespace = "ZR.Admin.WebApi";
+            _option.ReplaceTableNameStr = dto.replaceTableNameStr;
             //_option.TableList = listTable;
 
             CodeGeneraterService codeGeneraterService = new CodeGeneraterService();
-            string profileContent = string.Empty;
-            List<DbColumnInfo> listField = codeGeneraterService.GetColumnInfo(dbName, dbTableInfo.Name);
-            GenerateSingle(listField, dbTableInfo, ifExsitedCovered);
-            //string tableName = dbTableInfo.TableName;
-            //if (!string.IsNullOrEmpty(_option.ReplaceTableNameStr))
-            //{
-            //    string[] rel = _option.ReplaceTableNameStr.Split(';');
-            //    for (int i = 0; i < rel.Length; i++)
-            //    {
-            //        if (!string.IsNullOrEmpty(rel[i].ToString()))
-            //        {
-            //            tableName = tableName.Replace(rel[i].ToString(), "");
-            //        }
-            //    }
-            //}
-            //tableName = tableName.Substring(0, 1).ToUpper() + tableName.Substring(1);
-            //profileContent += string.Format("           CreateMap<{0}, {0}OutputDto>();\n", tableName);
-            //profileContent += string.Format("           CreateMap<{0}InputDto, {0}>();\n", tableName);
+
+            List<DbColumnInfo> listField = codeGeneraterService.GetColumnInfo(dto.dbName, dbTableInfo.Name);
+            GenerateSingle(listField, dbTableInfo, dto);
 
             //GenerateDtoProfile(_option.ModelsNamespace, profileContent, ifExsitedCovered);
         }
-
-
 
         /// <summary>
         /// 单表生成代码
@@ -80,19 +61,19 @@ namespace ZR.CodeGenerator
         /// <param name="listField">表字段集合</param>
         /// <param name="tableInfo">表信息</param>
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
-        public static void GenerateSingle(List<DbColumnInfo> listField, DbTableInfo tableInfo, bool ifExsitedCovered = false)
+        public static void GenerateSingle(List<DbColumnInfo> listField, DbTableInfo tableInfo, GenerateDto dto)
         {
-            var modelsNamespace = _option.ModelsNamespace;
-            var modelTypeName = GetModelName(tableInfo.Name); ;//表名
+            bool ifExsitedCovered = dto.coverd;
+            var modelTypeName = GetModelName(tableInfo.Name).Replace(_option.ReplaceTableNameStr, "");//表名
             var modelTypeDesc = tableInfo.Description;//表描述
             var primaryKey = "id";//主键
 
             string keyTypeName = "int";//主键数据类型
-            string modelcontent = "";//数据库模型字段
-            string InputDtocontent = "";//输入模型
-            string outputDtocontent = "";//输出模型
+            string modelContent = "";//数据库模型字段
+            string InputDtoContent = "";//输入模型
+            string outputDtoContent = "";//输出模型
             string vueViewListContent = string.Empty;//Vue列表输出内容
-            string vueViewFromContent = string.Empty;//Vue表单输出内容 
+            string vueViewFormContent = string.Empty;//Vue表单输出内容 
             string vueViewEditFromContent = string.Empty;//Vue变量输出内容
             string vueViewEditFromBindContent = string.Empty;//Vue显示初始化输出内容
             string vueViewSaveBindContent = string.Empty;//Vue保存时输出内容
@@ -100,55 +81,81 @@ namespace ZR.CodeGenerator
 
             foreach (DbColumnInfo dbFieldInfo in listField)
             {
-                string columnName = dbFieldInfo.DbColumnName.Substring(0, 1).ToUpper() + dbFieldInfo.DbColumnName.Substring(1);
-
-                modelcontent = GetModelTemplate(ref primaryKey, dbFieldInfo, columnName);
+                string columnName = FirstLowerCase(dbFieldInfo.DbColumnName);
 
                 if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
                 {
-                    vueViewEditFromContent += string.Format("        {0}: 'true',\n", columnName);
-                    vueViewEditFromBindContent += string.Format("        this.editFrom.{0} = res.data.{0}+''\n", columnName);
+                    vueViewEditFromContent += $"        {columnName}: 'true',\n";
+                    vueViewEditFromBindContent += $"        this.form.{columnName} = res.data.{0}+''\n";
                 }
                 else
                 {
-                    vueViewEditFromContent += string.Format("        {0}: '',\n", columnName);
-                    vueViewEditFromBindContent += string.Format("        this.editFrom.{0} = res.ResData.{0}\n", columnName);
+                    vueViewEditFromContent += $"        {columnName}: undefined,\n";
+                    vueViewEditFromBindContent += $"        {columnName} = row.{columnName}\n";
                 }
                 //vueViewSaveBindContent += string.Format("        '{0}':this.editFrom.{0},\n", columnName);
-                vueViewFromContent += GetVueViewFromContent(dbFieldInfo, columnName);
-                vueViewListContent += GetTableColumn(dbFieldInfo, columnName);
-                //Rule 规则验证
-                if (!dbFieldInfo.IsNullable)
+                if (dbFieldInfo.IsIdentity || dbFieldInfo.IsPrimarykey)
                 {
-                    vueViewEditFromRuleContent += $"        {columnName}: [\n";
-                    vueViewEditFromRuleContent += $"        {{ required: true, message:\"请输入{dbFieldInfo.ColumnDescription}\", trigger: \"blur\"}},\n";
-                    //vueViewEditFromRuleContent += "        { min: 2, max: 50, message: \"长度在 2 到 50 个字符\", trigger:\"blur\" }\n";
-                    vueViewEditFromRuleContent += "        ],\n";
+                    primaryKey = columnName;
+                    keyTypeName = dbFieldInfo.DataType;
                 }
-
-                //if (!inputDtoNoField.Contains(columnName) || columnName == "Id")
-                //{
-                InputDtocontent += "        /// <summary>\n";
-                InputDtocontent += $"       /// 设置或获取{dbFieldInfo.ColumnDescription}\n";
-                InputDtocontent += "        /// </summary>\n";
-                InputDtocontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
-                //}
-                //
+                modelContent += GetModelTemplate(dbFieldInfo);
+                vueViewFormContent += GetVueViewFormContent(dbFieldInfo, columnName);
+                vueViewListContent += GetTableColumn(dbFieldInfo, columnName);
+                vueViewEditFromRuleContent += GetFormRules(dbFieldInfo, columnName);
+                InputDtoContent += GetDtoContent(dbFieldInfo, columnName);
             }
-            //GenerateModels(modelsNamespace, modelTypeName, tableInfo.Name, modelcontent, modelTypeDesc, keyTypeName, ifExsitedCovered);
-            //GenerateInputDto(modelsNamespace, modelTypeName, modelTypeDesc, InputDtocontent, keyTypeName, ifExsitedCovered);
-            //GenerateRepository(modelTypeName, modelTypeDesc, tableInfo.Name, keyTypeName, ifExsitedCovered);
-            //GenerateIService(modelsNamespace, modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
-            //GenerateService(modelsNamespace, modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
-            //GenerateControllers(modelTypeName, primaryKey, modelTypeDesc, keyTypeName, ifExsitedCovered);
-
+            if (dto.genFiles.Contains(1))
+            {
+                GenerateModels(_option.ModelsNamespace, modelTypeName, tableInfo.Name, modelContent, modelTypeDesc, keyTypeName, ifExsitedCovered);
+            }
+            if (dto.genFiles.Contains(2))
+            {
+                GenerateInputDto(_option.ModelsNamespace, modelTypeName, modelTypeDesc, InputDtoContent, keyTypeName, ifExsitedCovered);
+            }
+            if (dto.genFiles.Contains(3))
+            {
+                GenerateRepository(modelTypeName, modelTypeDesc, tableInfo.Name, keyTypeName, ifExsitedCovered);
+            }
+            if (dto.genFiles.Contains(4))
+            {
+                GenerateIService(_option.ModelsNamespace, modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
+                GenerateService(_option.ModelsNamespace, modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
+            }
+            if (dto.genFiles.Contains(5))
+            {
+                GenerateControllers(modelTypeName, primaryKey, modelTypeDesc, keyTypeName, ifExsitedCovered);
+            }
+            if (dto.genFiles.Contains(6))
+            {
+                GenerateVueViews(modelTypeName, primaryKey, modelTypeDesc, vueViewListContent, vueViewFormContent, vueViewEditFromContent, vueViewEditFromBindContent, vueViewSaveBindContent, vueViewEditFromRuleContent, ifExsitedCovered);
+            }
             //GenerateIRepository(modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
             //GenerateOutputDto(modelTypeName, modelTypeDesc, outputDtocontent, ifExsitedCovered);
-            GenerateVueViews(modelTypeName, primaryKey, modelTypeDesc, vueViewListContent, vueViewFromContent, vueViewEditFromContent, vueViewEditFromBindContent, vueViewSaveBindContent, vueViewEditFromRuleContent, ifExsitedCovered);
         }
 
-        private static string GetModelTemplate(ref string primaryKey, DbColumnInfo dbFieldInfo, string columnName)
+        #region Template
+
+        //rules
+        private static string GetFormRules(DbColumnInfo dbFieldInfo, string columnName)
         {
+            string vueViewEditFromRuleContent = "";
+            //Rule 规则验证
+            if (!dbFieldInfo.IsNullable && !dbFieldInfo.IsIdentity)
+            {
+                vueViewEditFromRuleContent += $"        {columnName}: [\n";
+                vueViewEditFromRuleContent += $"        {{ required: true, message:\"请输入{dbFieldInfo.ColumnDescription}\", trigger: \"blur\"}},\n";
+                //vueViewEditFromRuleContent += "        { min: 2, max: 50, message: \"长度在 2 到 50 个字符\", trigger:\"blur\" }\n";
+                vueViewEditFromRuleContent += "        ],\n";
+            }
+
+            return vueViewEditFromRuleContent;
+        }
+
+        //model 属性
+        private static string GetModelTemplate(DbColumnInfo dbFieldInfo)
+        {
+            string columnName = dbFieldInfo.DbColumnName.Substring(0, 1).ToUpper() + dbFieldInfo.DbColumnName.Substring(1);
             var modelcontent = "";
             modelcontent += "        /// <summary>\n";
             modelcontent += $"        /// 描述 :{dbFieldInfo.ColumnDescription}\n";
@@ -157,43 +164,57 @@ namespace ZR.CodeGenerator
             modelcontent += "        /// </summary>\n";
             if (dbFieldInfo.IsIdentity || dbFieldInfo.IsPrimarykey)
             {
-                primaryKey = columnName;
                 modelcontent += $"        [SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPrimarykey.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIdentity.ToString().ToLower()})]\n";
             }
             modelcontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
             return modelcontent;
         }
-        //
-        //form-item
-        private static string GetVueViewFromContent(DbColumnInfo dbFieldInfo, string columnName)
+        //DTO model
+        private static string GetDtoContent(DbColumnInfo dbFieldInfo, string columnName)
         {
+            string InputDtoContent = "";
+            if (!inputDtoNoField.Any(x => x.ToLower().Contains(columnName)) || !dbFieldInfo.IsIdentity)
+            {
+                InputDtoContent += "        /// <summary>\n";
+                InputDtoContent += $"       /// 设置或获取{dbFieldInfo.ColumnDescription}\n";
+                InputDtoContent += "        /// </summary>\n";
+                InputDtoContent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
+            }
+
+            return InputDtoContent;
+        }
+
+        //form-item
+        private static string GetVueViewFormContent(DbColumnInfo dbFieldInfo, string columnName)
+        {
+            columnName = FirstLowerCase(columnName);
+            string labelName = GetLabelName(dbFieldInfo.ColumnDescription, columnName);
             string vueViewFromContent = "";
             if (dbFieldInfo.DataType == "datetime")
             {
-                vueViewFromContent = "";
+                vueViewFromContent += "";
             }
-            else if (columnName.Contains("iocn,image"))
+            else if (((IList)imageFiled).Contains(columnName))
             {
                 //TODO 图片
             }
-            else if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
+            else if (radioFiled.Any(f => columnName.Contains(f)) && (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint"))
             {
-                vueViewFromContent += $"    <el-col :span=\"12\">\n";
-                vueViewFromContent += $"       <el-form-item label=\"{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" :label-width=\"labelWidth\" prop=\"{FirstLowerCase(columnName)}\">";
-                vueViewFromContent += $"          <el-radio-group v-model=\"form.{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\">\n";
-                vueViewFromContent += "           <el-radio label=\"true\">是</el-radio>\n";
-                vueViewFromContent += "           <el-radio label=\"false\">否</el-radio>\n";
+                vueViewFromContent += $"     <el-col :span=\"12\">\n";
+                vueViewFromContent += $"       <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">";
+                vueViewFromContent += $"         <el-radio-group v-model=\"form.{columnName}\">\n";
+                vueViewFromContent += "           <el-radio v-for=\"dict in statusOptions\" :key=\"dict.dictValue\" :label=\"dict.dictValue\">{{dict.dictLabel}}</el-radio>\n";
                 vueViewFromContent += "          </el-radio-group>\n";
                 vueViewFromContent += "        </el-form-item>\n";
-                vueViewFromContent += "     </el-col>\n";
+                vueViewFromContent += "      </el-col>\n";
             }
             else
             {
-                vueViewFromContent += $"    <el-col :span=\"12\">\n";
+                vueViewFromContent += $"     <el-col :span=\"12\">\n";
                 vueViewFromContent += $"        <el-form-item label=\"{ GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" :label-width=\"labelWidth\" prop=\"{FirstLowerCase(columnName)}\">\n";
                 vueViewFromContent += $"           <el-input v-model=\"form.{FirstLowerCase(columnName)}\" placeholder=\"请输入{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" />\n";
                 vueViewFromContent += "         </el-form-item>\n";
-                vueViewFromContent += "     </el-col>\n";
+                vueViewFromContent += "      </el-col>\n";
             }
 
             return vueViewFromContent;
@@ -202,27 +223,36 @@ namespace ZR.CodeGenerator
         //table-column
         private static string GetTableColumn(DbColumnInfo dbFieldInfo, string columnName)
         {
+            columnName = FirstLowerCase(columnName);
+            string label = GetLabelName(dbFieldInfo.ColumnDescription, columnName);
             string vueViewListContent = "";
-            string showToolTip = dbFieldInfo.DataType == "varchar" ? ":show-overflow-tooltip=\"true\"" : "";
+            string showToolTip = dbFieldInfo.DataType.Contains("varchar") ? ":show-overflow-tooltip=\"true\"" : "";
 
-            if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
+            if (imageFiled.Any(f => columnName.ToLower().Contains(f)))
             {
-                vueViewListContent += $"        <el-table-column prop=\"{FirstLowerCase(columnName)}\" label=\"{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" width=\"120\" >\n";
+                vueViewListContent += $"      <el-table-column prop=\"{ columnName}\" label=\"图片\">\n";
+                vueViewListContent += "         <template slot-scope=\"scope\">\n";
+                vueViewListContent += $"            <el-image class=\"table-td-thumb\" :src=\"scope.row.{columnName}\" :preview-src-list=\"[scope.row.{columnName}]\"></el-image>\n";
+                vueViewListContent += "         </template>\n";
+                vueViewListContent += "       </el-table-column>\n";
+            }
+            else if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
+            {
+                vueViewListContent += $"        <el-table-column prop=\"{columnName}\" label=\"{label}\" width=\"120\" >\n";
                 vueViewListContent += "          <template slot-scope=\"scope\">\n";
-                vueViewListContent += string.Format("            <el-tag :type=\"scope.row.{0} === true ? 'success' : 'info'\"  disable-transitions >", columnName);
-                vueViewListContent += "{{ ";
-                vueViewListContent += string.Format("scope.row.{0}===true?'启用':'禁用' ", columnName);
-                vueViewListContent += "}}</el-tag>\n";
+                vueViewListContent += $"            <el-tag :type=\"scope.row.{columnName} === true ? 'success' : 'info'\"  disable-transitions >";
+                vueViewListContent += $"                {{scope.row.{columnName}===true?'启用':'禁用'}} </el-tag>\n";
                 vueViewListContent += "          </template>\n";
                 vueViewListContent += "        </el-table-column>\n";
             }
             else
             {
                 //table-column
-                vueViewListContent += $"        <el-table-column prop=\"{FirstLowerCase(columnName)}\" label=\"{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\"  align=\"center\" width=\"100\" {showToolTip} />\n";
+                vueViewListContent += $"      <el-table-column prop=\"{FirstLowerCase(columnName)}\" label=\"{GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\"  align=\"center\" width=\"100\" {showToolTip} />\n";
             }
             return vueViewListContent;
         }
+        #endregion
 
         #region 生成Model
 
@@ -240,14 +270,14 @@ namespace ZR.CodeGenerator
         {
             var parentPath = "..";
             //../ZR.Model
-            var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + modelsNamespace;
+            var servicesPath = parentPath + "\\" + modelsNamespace + "\\Models\\";
             if (!Directory.Exists(servicesPath))
             {
-                //servicesPath = parentPath + "\\" + _option.ModelsNamespace;
                 Directory.CreateDirectory(servicesPath);
             }
             // ../ZR.Model/Models/User.cs
-            var fullPath = servicesPath + "\\Models\\" + modelTypeName + ".cs";
+            var fullPath = servicesPath + modelTypeName + ".cs";
+            Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
             var content = ReadTemplate("ModelTemplate.txt");
@@ -274,14 +304,14 @@ namespace ZR.CodeGenerator
         private static void GenerateInputDto(string modelsNamespace, string modelTypeName, string modelTypeDesc, string modelContent, string keyTypeName, bool ifExsitedCovered = false)
         {
             var parentPath = "..";
-            var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + modelsNamespace;
+            var servicesPath = parentPath + "\\" + modelsNamespace + "\\Dto\\";
             if (!Directory.Exists(servicesPath))
             {
-                //servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\Dtos";
                 Directory.CreateDirectory(servicesPath);
             }
             // ../ZR.Model/Dto/User.cs
-            var fullPath = servicesPath + "\\Dto\\" + modelTypeName + "Dto.cs";
+            var fullPath = servicesPath + modelTypeName + "Dto.cs";
+            Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
             var content = ReadTemplate("InputDtoTemplate.txt");
@@ -308,20 +338,19 @@ namespace ZR.CodeGenerator
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
         private static void GenerateRepository(string modelTypeName, string modelTypeDesc, string tableName, string keyTypeName, bool ifExsitedCovered = false)
         {
-            //var path = AppDomain.CurrentDomain.BaseDirectory;
-            var parentPath = "..";// path.Substring(0, path.LastIndexOf("\\"));
-            var repositoryPath = parentPath + "\\" + _option.BaseNamespace + "\\" + _option.RepositoriesNamespace;
+            var parentPath = "..";
+            var repositoryPath = parentPath + "\\" + _option.RepositoriesNamespace + "\\Repositories\\";
             if (!Directory.Exists(repositoryPath))
             {
-                //repositoryPath = parentPath + "\\" + _option.BaseNamespace + "\\Repositories";
                 Directory.CreateDirectory(repositoryPath);
             }
             var fullPath = repositoryPath + "\\" + modelTypeName + "Repository.cs";
+            Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
             var content = ReadTemplate("RepositoryTemplate.txt");
             content = content.Replace("{ModelsNamespace}", _option.ModelsNamespace)
-                .Replace("{IRepositoriesNamespace}", _option.IRepositoriesNamespace)
+                //.Replace("{IRepositoriesNamespace}", _option.IRepositoriesNamespace)
                 .Replace("{RepositoriesNamespace}", _option.RepositoriesNamespace)
                 .Replace("{ModelTypeName}", modelTypeName)
                 .Replace("{TableNameDesc}", modelTypeDesc)
@@ -343,16 +372,14 @@ namespace ZR.CodeGenerator
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
         private static void GenerateIService(string modelsNamespace, string modelTypeName, string modelTypeDesc, string keyTypeName, bool ifExsitedCovered = false)
         {
-            //var path = AppDomain.CurrentDomain.BaseDirectory;
-            //path = path.Substring(0, path.IndexOf("\\bin"));
-            var parentPath = "..";// path.Substring(0, path.LastIndexOf("\\"));
-            var iServicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + _option.IServicsNamespace;
+            var parentPath = "..";
+            var iServicesPath = parentPath + "\\" + _option.IServicsNamespace + "\\Business\\IBusService\\";
             if (!Directory.Exists(iServicesPath))
             {
-                iServicesPath = parentPath + "\\" + _option.BaseNamespace + "\\IBusService";
                 Directory.CreateDirectory(iServicesPath);
             }
-            var fullPath = $"{iServicesPath}\\Business\\IService\\I{modelTypeName}Service.cs";
+            var fullPath = $"{iServicesPath}\\I{modelTypeName}Service.cs";
+            Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
             var content = ReadTemplate("IServiceTemplate.txt");
@@ -375,16 +402,13 @@ namespace ZR.CodeGenerator
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
         private static void GenerateService(string modelsNamespace, string modelTypeName, string modelTypeDesc, string keyTypeName, bool ifExsitedCovered = false)
         {
-            //var path = AppDomain.CurrentDomain.BaseDirectory;
-            //path = path.Substring(0, path.IndexOf("\\bin"));
-            var parentPath = "..";// path.Substring(0, path.LastIndexOf("\\"));
-            var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + _option.ServicesNamespace;
+            var parentPath = "..";
+            var servicesPath = parentPath + "\\" + _option.ServicesNamespace + "\\Business\\";
             if (!Directory.Exists(servicesPath))
             {
-                servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\Business";
                 Directory.CreateDirectory(servicesPath);
             }
-            var fullPath = servicesPath + "\\Business\\" + modelTypeName + "Service.cs";
+            var fullPath = servicesPath + modelTypeName + "Service.cs";
             Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
@@ -414,18 +438,13 @@ namespace ZR.CodeGenerator
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
         private static void GenerateControllers(string modelTypeName, string primaryKey, string modelTypeDesc, string keyTypeName, bool ifExsitedCovered = false)
         {
-            //var servicesNamespace = _option.DtosNamespace;
-            //var fileClassName = _option.BaseNamespace.Substring(_option.BaseNamespace.IndexOf('.') + 1);
-            //var path = AppDomain.CurrentDomain.BaseDirectory;
-            //path = path.Substring(0, path.IndexOf("\\bin"));
-            var parentPath = "..";//path.Substring(0, path.LastIndexOf("\\"));
-            var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + _option.ApiControllerNamespace;
+            var parentPath = "..";
+            var servicesPath = parentPath + "\\" + _option.ApiControllerNamespace + "\\Controllers\\business\\";
             if (!Directory.Exists(servicesPath))
             {
-                servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\Controllers\\";
                 Directory.CreateDirectory(servicesPath);
             }
-            var fullPath = servicesPath + "\\Controllers\\business\\" + modelTypeName + "Controller.cs";
+            var fullPath = servicesPath + modelTypeName + "Controller.cs";
             Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
@@ -437,6 +456,7 @@ namespace ZR.CodeGenerator
                 .Replace("<#=FileName#>", modelTypeDesc)
                 .Replace("<#=ServiceName#>", modelTypeName + "Service")
                 .Replace("<#=ModelName#>", modelTypeName)
+                .Replace("<#=Permission#>", modelTypeName.ToLower())
                 .Replace("{primaryKey}", primaryKey)
                 .Replace("{KeyTypeName}", keyTypeName);
             WriteAndSave(fullPath, content);
@@ -459,14 +479,12 @@ namespace ZR.CodeGenerator
         private static void GenerateVueViews(string modelTypeName, string primaryKey, string modelTypeDesc, string vueViewListContent, string vueViewFromContent, string vueViewEditFromContent, string vueViewEditFromBindContent, string vueViewSaveBindContent, string vueViewEditFromRuleContent, bool ifExsitedCovered = false)
         {
             var servicesNamespace = _option.DtosNamespace;
-            var fileClassName = _option.BaseNamespace.Substring(_option.BaseNamespace.IndexOf('.') + 1);
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            //path = path.Substring(0, path.IndexOf("\\bin"));
+            var path = "..\\CodeGenerate\\";
             var parentPath = path.Substring(0, path.LastIndexOf("\\"));
             var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + servicesNamespace;
             if (!Directory.Exists(servicesPath))
             {
-                servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\vue\\" + modelTypeName.ToLower();
+                servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\views\\" + FirstLowerCase(modelTypeName);
                 Directory.CreateDirectory(servicesPath);
             }
             var fullPath = servicesPath + "\\" + "index.vue";
@@ -474,12 +492,12 @@ namespace ZR.CodeGenerator
                 return;
             var content = ReadTemplate("VueTemplate.txt");
             content = content
-                .Replace("{BaseNamespace}", fileClassName.ToLower())
-                .Replace("{fileClassName}", modelTypeName.ToLower())
-                .Replace("{ModelTypeNameToLower}", modelTypeName.ToLower())
+                //.Replace("{BaseNamespace}", fileClassName.ToLower())
+                .Replace("{fileClassName}", FirstLowerCase(modelTypeName))
+                .Replace("{ModelTypeNameToLower}", FirstLowerCase(modelTypeName))
                 .Replace("{VueViewListContent}", vueViewListContent)
                 .Replace("{VueViewFromContent}", vueViewFromContent)
-                .Replace("{ModelTypeName}", modelTypeName)
+                .Replace("{ModelTypeName}", FirstLowerCase(modelTypeName))
                 .Replace("{VueViewEditFromContent}", vueViewEditFromContent)
                 .Replace("{VueViewEditFromBindContent}", vueViewEditFromBindContent)
                 .Replace("{VueViewSaveBindContent}", vueViewSaveBindContent)
@@ -487,14 +505,14 @@ namespace ZR.CodeGenerator
                 .Replace("{VueViewEditFromRuleContent}", vueViewEditFromRuleContent);
             WriteAndSave(fullPath, content);
 
-            fullPath = servicesPath + "\\" + modelTypeName.ToLower() + ".js";
+            fullPath = servicesPath + "\\" + FirstLowerCase(modelTypeName) + ".js";
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
             content = ReadTemplate("VueJsTemplate.txt");
             content = content
-                .Replace("{ModelTypeName}", modelTypeName)
-                .Replace("{ModelTypeDesc}", modelTypeDesc)
-                .Replace("{fileClassName}", fileClassName);
+                .Replace("{ModelTypeName}", FirstLowerCase(modelTypeName))
+                .Replace("{ModelTypeDesc}", modelTypeDesc);
+            //.Replace("{fileClassName}", fileClassName)
             WriteAndSave(fullPath, content);
         }
 
@@ -502,6 +520,12 @@ namespace ZR.CodeGenerator
 
         #region 帮助方法
 
+
+        /// <summary>
+        /// 如果有前缀替换将前缀替换成空，替换下划线"_"为空再将首字母大写
+        /// </summary>
+        /// <param name="modelTypeName"></param>
+        /// <returns></returns>
         private static string GetModelName(string modelTypeName)
         {
             if (!string.IsNullOrEmpty(_option.ReplaceTableNameStr))
@@ -512,15 +536,22 @@ namespace ZR.CodeGenerator
             modelTypeName = modelTypeName.Substring(0, 1).ToUpper() + modelTypeName.Substring(1);
             return modelTypeName;
         }
+        /// <summary>
+        /// 首字母转小写，输出前端
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         private static string FirstLowerCase(string str)
         {
-            if (string.IsNullOrEmpty(str))
-            {
-                return str;
-            }
-            str = str.Substring(0, 1).ToLower() + str.Substring(1);
-            return str;
+            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToLower() + str[1..];
         }
+
+        /// <summary>
+        /// 获取前端标签名
+        /// </summary>
+        /// <param name="columnDescription"></param>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
         private static string GetLabelName(string columnDescription, string columnName)
         {
             return string.IsNullOrEmpty(columnDescription) ? columnName : columnDescription;

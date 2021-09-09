@@ -62,7 +62,7 @@
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)">详情</el-button>
           <el-button size="mini"  v-hasPermi="['{ModelTypeName}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
           <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left:10px">
-            <el-button slot="reference"  v-hasPermi="['{ModelTypeName}:del']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
+            <el-button slot="reference"  v-hasPermi="['{ModelTypeName}:delete']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
           </el-popconfirm>
         </template>
       </el-table-column>
@@ -83,7 +83,7 @@
   </div>
 </template>
 <script>
-// import { list{ModelTypeName},add{ModelTypeName},del{ModelTypeName},edit{ModelTypeName} } from '@/api/{ModelTypeName}.js'
+import { list{ModelTypeName},add{ModelTypeName},del{ModelTypeName},edit{ModelTypeName} } from '@{ModelTypeName}.js'
 
 export default {
   name: '{ModelTypeName}',
@@ -197,10 +197,7 @@ export default {
 
       // TODO 给表单赋值
       this.form = {
-        content: row.content,
-        userId: row.userId,
-        name: row.name,
-        sortId: row.sortId,
+        {VueViewEditFromBindContent}
       };
     },
     /** 提交按钮 */

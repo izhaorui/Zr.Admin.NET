@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <Folder Include="Business\" />
+    <Folder Include="Business\IBusService\" />
   </ItemGroup>
 
 </Project>

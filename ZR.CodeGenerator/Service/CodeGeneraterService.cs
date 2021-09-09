@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using ZR.Model;
-using ZR.Model.CodeGenerator;
 
 namespace ZR.CodeGenerator.Service
 {
@@ -12,18 +11,12 @@ namespace ZR.CodeGenerator.Service
         /// 获取所有数据库名
         /// </summary>
         /// <returns></returns>
-        public List<DataBaseInfo> GetAllDataBases()
+        public List<string> GetAllDataBases()
         {
-            List<DataBaseInfo> list = new();
-
             var db = GetSugarDbContext();
             var templist = db.DbMaintenance.GetDataBaseList(db.ScopedContext);
-            templist.ForEach(item =>
-            {
-                list.Add(new DataBaseInfo() { DbName = item });
-            });
 
-            return list;
+            return templist;
         }
 
         /// <summary>

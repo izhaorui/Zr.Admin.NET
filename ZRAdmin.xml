@@ -47,14 +47,19 @@
              <param name="pager">分页信息</param>
              <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate(System.String,System.String,System.String,System.String)">
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.QueryColumnInfo(System.String,System.String)">
+            <summary>
+            获取表格列
+            </summary>
+            <param name="dbName"></param>
+            <param name="tableName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate(ZR.CodeGenerator.Model.GenerateDto)">
             <summary>
             代码生成器
             </summary>
-            <param name="dbName"></param>
-            <param name="tables">要生成代码的表</param>
-            <param name="baseSpace">项目命名空间</param>
-            <param name="replaceTableNameStr">要删除表名的字符串用英文逗号","隔开</param>
+            <param name="dto">数据传输对象</param>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">
