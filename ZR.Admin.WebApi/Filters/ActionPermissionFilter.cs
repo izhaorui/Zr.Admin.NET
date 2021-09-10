@@ -54,7 +54,7 @@ namespace ZR.Admin.WebApi.Filters
                 bool isDemoMode = ConfigUtils.Instance.GetAppConfig("DemoMode", false);
 
                 //演示公开环境屏蔽权限
-                string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear" };
+                string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "gen" };
                 if (isDemoMode && (denyPerms.Any(f => Permission.ToLower().Contains(f.ToLower())) || Permission.Equals("system")))
                 {
                     context.Result = new JsonResult(new { code = ResultCode.FORBIDDEN, msg = "演示模式 , 不允许操作" });

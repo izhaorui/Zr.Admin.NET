@@ -27,7 +27,7 @@
           </el-form-item>
         </el-form>
       </div>
-      <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border stripe highlight-current-row style="width: 100%">
+      <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border stripe highlight-current-row height="500px" style="width: 100%;">
         <!-- <el-table-column type="selection" width="50" /> -->
         <el-table-column prop="name" label="表名" sortable="custom" width="380" />
         <el-table-column prop="description" label="表描述" />
@@ -50,7 +50,7 @@
             <el-checkbox :label="3">生成Repository</el-checkbox>
             <el-checkbox :label="4">生成Service</el-checkbox>
             <el-checkbox :label="5">生成Controller</el-checkbox>
-            <el-checkbox :label="6">生成Views和js</el-checkbox>
+            <el-checkbox :label="6">生成Views和api</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
 
@@ -58,11 +58,7 @@
           <el-radio v-model="coverd" :label="true">是</el-radio>
           <el-radio v-model="coverd" :label="false">否</el-radio>
         </el-form-item>
-        <el-form-item label="生成查询的列">
-          <!-- <el-checkbox-group v-model="checkedQueryColumn">
-            <el-checkbox :label="item.dbColumnName" v-for="item in columnData" :key="item.dbColumnName">{{item.dbColumnName}}</el-checkbox>
-          </el-checkbox-group> -->
-
+        <!-- <el-form-item label="生成查询的列">
           <el-table :data="columnData" height="300px">
             <el-table-column type="selection" width="60" />
             <el-table-column label="字段列名" prop="dbColumnName" />
@@ -81,7 +77,7 @@
                 </el-select>
               </template>
             </el-table-column>
-            <!-- <el-table-column label="显示类型">
+            <el-table-column label="显示类型">
               <el-select v-model="selectType">
                 <el-option value="input">文本框</el-option>
                 <el-option value="textArea">文本域</el-option>
@@ -91,9 +87,9 @@
                 <el-option value="upload">图片上传</el-option>
                 <el-option value="fileUpload">文件上传</el-option>
               </el-select>
-            </el-table-column> -->
+            </el-table-column>
           </el-table>
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="handleGenerate">确 定</el-button>
@@ -105,7 +101,7 @@
 
 <script>
 import {
-  createGetDBConn,
+  // createGetDBConn,
   codeGetDBList,
   codeGetTableList,
   codeGenerator,
@@ -113,12 +109,8 @@ import {
 } from "@/api/tool/gen";
 // import { downloadFile } from "@/utils/index";
 import { Loading } from "element-ui";
-import template from "../../../document/template.vue";
-
-// import defaultSettings from "@/settings";
 
 export default {
-  components: { template },
   name: "CodeGenerator",
   data() {
     return {
@@ -207,12 +199,11 @@ export default {
       this.loadTableData();
     },
     handlePreview() {
-      this.msgSuccess("敬请期待");
+      this.msgError("敬请期待");
     },
     handleShowDialog(row) {
-      console.log(row);
       this.showGenerate = true;
-      this.currentSelected = row.name;
+      this.currentSelected = row;
 
       queryColumnInfo({
         dbName: this.codeform.dbName,
@@ -220,12 +211,7 @@ export default {
       }).then((res) => {
         if (res.code === 200) {
           const columnData = res.data;
-
-          // for (let i = 0; i < columnData.length; i++) {
-          //   this.$set(columnData[i], "selectType", 1);
-          // }
           this.columnData = columnData;
-          // this.checkedQueryColumn = res.data.map((r) => r.dbColumnName);
         }
       });
     },
@@ -233,7 +219,7 @@ export default {
      * 点击生成服务端代码
      */
     handleGenerate: async function () {
-      console.log(JSON.stringify(this.checkedCodeGenerateForm));
+      console.log(JSON.stringify(this.currentSelected));
       if (!this.currentSelected) {
         this.msgError("请先选择要生成代码的数据表");
         return false;
@@ -250,7 +236,7 @@ export default {
 
           var seachdata = {
             dbName: this.codeform.dbName,
-            tables: this.currentSelected.name,
+            tableName: this.currentSelected.name,
             baseSpace: this.codeform.baseSpace,
             replaceTableNameStr: this.codeform.replaceTableNameStr,
             genFiles: this.checkedCodeGenerateForm,
@@ -258,7 +244,7 @@ export default {
             queryColumn: this.checkedQueryColumn,
           };
           console.log(JSON.stringify(seachdata));
-          //return;
+
           codeGenerator(seachdata)
             .then((res) => {
               if (res.code == 200) {

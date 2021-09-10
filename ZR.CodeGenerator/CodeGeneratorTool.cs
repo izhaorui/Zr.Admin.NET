@@ -64,7 +64,7 @@ namespace ZR.CodeGenerator
         public static void GenerateSingle(List<DbColumnInfo> listField, DbTableInfo tableInfo, GenerateDto dto)
         {
             bool ifExsitedCovered = dto.coverd;
-            var modelTypeName = GetModelName(tableInfo.Name).Replace(_option.ReplaceTableNameStr, "");//表名
+            var modelTypeName = GetModelName(tableInfo.Name);
             var modelTypeDesc = tableInfo.Description;//表描述
             var primaryKey = "id";//主键
 
@@ -107,7 +107,7 @@ namespace ZR.CodeGenerator
             }
             if (dto.genFiles.Contains(1))
             {
-                GenerateModels(_option.ModelsNamespace, modelTypeName, tableInfo.Name, modelContent, modelTypeDesc, keyTypeName, ifExsitedCovered);
+                //GenerateModels(_option.ModelsNamespace, modelTypeName, tableInfo.Name, modelContent, modelTypeDesc, keyTypeName, ifExsitedCovered);
             }
             if (dto.genFiles.Contains(2))
             {
@@ -478,16 +478,14 @@ namespace ZR.CodeGenerator
         /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
         private static void GenerateVueViews(string modelTypeName, string primaryKey, string modelTypeDesc, string vueViewListContent, string vueViewFromContent, string vueViewEditFromContent, string vueViewEditFromBindContent, string vueViewSaveBindContent, string vueViewEditFromRuleContent, bool ifExsitedCovered = false)
         {
-            var servicesNamespace = _option.DtosNamespace;
-            var path = "..\\CodeGenerate\\";
-            var parentPath = path.Substring(0, path.LastIndexOf("\\"));
-            var servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\" + servicesNamespace;
+            var parentPath = "..\\CodeGenerate";//若要生成到项目中将路径改成 “..\\ZR.Vue\\src”
+            var servicesPath = parentPath + "\\views\\" + FirstLowerCase(modelTypeName);
             if (!Directory.Exists(servicesPath))
             {
-                servicesPath = parentPath + "\\" + _option.BaseNamespace + "\\views\\" + FirstLowerCase(modelTypeName);
                 Directory.CreateDirectory(servicesPath);
             }
             var fullPath = servicesPath + "\\" + "index.vue";
+            Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
             var content = ReadTemplate("VueTemplate.txt");
@@ -505,7 +503,11 @@ namespace ZR.CodeGenerator
                 .Replace("{VueViewEditFromRuleContent}", vueViewEditFromRuleContent);
             WriteAndSave(fullPath, content);
 
+            //api js
+            servicesPath = parentPath + "\\api\\";
+            Directory.CreateDirectory(servicesPath);
             fullPath = servicesPath + "\\" + FirstLowerCase(modelTypeName) + ".js";
+            Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !ifExsitedCovered)
                 return;
             content = ReadTemplate("VueJsTemplate.txt");

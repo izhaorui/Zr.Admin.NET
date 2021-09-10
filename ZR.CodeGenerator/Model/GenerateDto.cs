@@ -8,7 +8,7 @@ namespace ZR.CodeGenerator.Model
 {
     public class GenerateDto
     {
-        public string queryColumn { get; set; }
+        public string[] queryColumn { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -20,7 +20,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 要生成代码的表
         /// </summary>
-        public string tables { get; set; }
+        public string tableName { get; set; }
         /// <summary>
         /// 要删除表名的字符串用
         /// </summary>

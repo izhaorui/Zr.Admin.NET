@@ -1,20 +1,15 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
-using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using ZR.Admin.WebApi.Filters;
 using ZR.CodeGenerator;
 using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
 using ZR.Model;
 using ZR.Model.Vo;
-using ZR.Service.IService;
-using ZR.Service.System;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -24,11 +19,6 @@ namespace ZR.Admin.WebApi.Controllers
     [Route("tool/gen")]
     public class CodeGeneratorController : BaseController
     {
-        //public ICodeGeneratorService CodeGeneratorService;
-        //public CodeGeneratorController(ICodeGeneratorService codeGeneratorService)
-        //{
-        //    CodeGeneratorService = codeGeneratorService;
-        //}
         private CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
 
         /// <summary>
@@ -36,7 +26,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("getDbList")]
-        //[YuebonAuthorize("GetListDataBase")]
+        [ActionPermissionFilter(Permission = "tool:gen:list")]
         public IActionResult GetListDataBase()
         {
             var dbList = _CodeGeneraterService.GetAllDataBases();
@@ -51,7 +41,8 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="tableName">表名</param>
         /// <param name="pager">分页信息</param>
         /// <returns></returns>
-        [HttpGet("FindListTable")]
+        [HttpGet("getTableList")]
+        [ActionPermissionFilter(Permission = "tool:gen:list")]
         public IActionResult FindListTable(string dbName, string tableName, PagerInfo pager)
         {
             List<DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
@@ -66,7 +57,8 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="dbName"></param>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        [HttpGet("QueryColumnInfo")]
+        [HttpGet("getColumnInfo")]
+        [ActionPermissionFilter(Permission = "tool:gen:list")]
         public IActionResult QueryColumnInfo(string dbName, string tableName)
         {
             if (string.IsNullOrEmpty(dbName) || string.IsNullOrEmpty(tableName))
@@ -80,18 +72,19 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <param name="dto">数据传输对象</param>
         /// <returns></returns>
-        [HttpGet("Generate")]
-        [Log(Title = "代码生成", BusinessType = BusinessType.OTHER)]
-        public IActionResult Generate([FromQuery] GenerateDto dto)
+        [HttpPost("genCode")]
+        [Log(Title = "代码生成", BusinessType = BusinessType.GENCODE)]
+        [ActionPermissionFilter(Permission = "tool:gen:code")]
+        public IActionResult Generate([FromBody] GenerateDto dto)
         {
-            if (string.IsNullOrEmpty(dto.tables))
+            if (string.IsNullOrEmpty(dto.tableName))
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
-            DbTableInfo dbTableInfo = new() { Name = dto.tables };
+            DbTableInfo dbTableInfo = new() { Name = dto.tableName };
             CodeGeneratorTool.Generate(dbTableInfo, dto);
 
-            return SUCCESS(1);
+            return SUCCESS(dbTableInfo);
         }
     }
 }
