@@ -1,7 +1,7 @@
 ﻿using System;
 using Infrastructure.Attribute;
 using {RepositoriesNamespace}.System;
-using {ModelsNamespace};
+using {ModelsNamespace}.Models;
 
 namespace {RepositoriesNamespace}
 {

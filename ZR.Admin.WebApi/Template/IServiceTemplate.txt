@@ -1,8 +1,7 @@
 ﻿using System;
-using ZR.Model.System;
-using ZR.Model;
+using ZR.Model.Models;
 
-namespace {IServicsNamespace}
+namespace {IServicsNamespace}.Business
 {
     /// <summary>
     /// 定义{TableNameDesc}服务接口

@@ -1,85 +1,59 @@
-﻿import http from '@/utils/request'
-import defaultSettings from '@/settings'
+﻿import request from '@/utils/request'
 
 /**
    * {ModelTypeDesc}分页查询
    * @param {查询条件} data
    */
-export function get{ModelTypeName}ListWithPager(data) {
-  return http.request({
-    url: '{ModelTypeName}/FindWithPagerAsync',
-    method: 'post',
-    data: data,
-    baseURL: defaultSettings.api{fileClassName}Url // 直接通过覆盖的方式
-  })
-}/**
-   * 获取所有可用的{ModelTypeDesc}
-   */
-export function getAll{ModelTypeName}List() {
-  return http.request({
-    url: '{ModelTypeName}/GetAllEnable',
+export function list{ModelTypeName}(data) {
+  return request({
+    url: 'bus/{ModelTypeName}/list',
     method: 'get',
-    baseURL: defaultSettings.api{fileClassName}Url // 直接通过覆盖的方式
-  })
-}
-/**
-   * 新增或修改保存{ModelTypeDesc}
-   * @param data
-   */
-export function save{ModelTypeName}(data, url) {
-  return http.request({
-    url: url,
-    method: 'post',
-    data: data,
-    baseURL: defaultSettings.api{fileClassName}Url // 直接通过覆盖的方式
-  })
-}
-/**
-   * 获取{ModelTypeDesc}详情
-   * @param {Id} {ModelTypeDesc}Id
-   */
-export function get{ModelTypeName}Detail(id) {
-  return http({
-    url: '{ModelTypeName}/GetById',
-    method: 'get',
-    params: { id: id },
-    baseURL: defaultSettings.api{fileClassName}Url // 直接通过覆盖的方式
-  })
-}
-/**
-   * 批量设置启用状态
-   * @param {id集合} ids
-   */
-export function set{ModelTypeName}Enable(data) {
-  return http({
-    url: '{ModelTypeName}/SetEnabledMarktBatchAsync',
-    method: 'post',
-    data: data,
-    baseURL: defaultSettings.api{fileClassName}Url // 直接通过覆盖的方式
-  })
-}
-/**
-   * 批量软删除
-   * @param {id集合} ids
-   */
-export function deleteSoft{ModelTypeName}(data) {
-  return http({
-    url: '{ModelTypeName}/DeleteSoftBatchAsync',
-    method: 'post',
-    data: data,
-    baseURL: defaultSettings.api{fileClassName}Url // 直接通过覆盖的方式
+    params: data,
   })
 }
 
 /**
-   * 批量删除
-   * @param {id集合} ids
+   * 新增{ModelTypeDesc}
+   * @param data
    */
-export function delete{ModelTypeName}(data) {
-  return http({
-    url: '{ModelTypeName}/DeleteBatchAsync',
-    method: 'delete',
+export function add{ModelTypeName}(data) {
+  return request({
+    url: '/bus/{ModelTypeName}',
+    method: 'post',
     data: data,
-    baseURL: defaultSettings.api{fileClassName}Url // 直接通过覆盖的方式
+  })
+}
+
+/**
+   * 修改{ModelTypeDesc}
+   * @param data
+   */
+export function update{ModelTypeName}(data) {
+  return request({
+    url: '/bus/{ModelTypeName}',
+    method: 'PUT',
+    data: data,
+  })
+}
+
+/**
+   * 获取{ModelTypeDesc}详情
+   * @param {Id} {ModelTypeDesc}Id
+   */
+export function get{ModelTypeName}(id) {
+  return request({
+    url: '/bus/{ModelTypeName}/' + id,
+    method: 'get'
+  })
+}
+
+/**
+   * 删除
+   * @param {主键} pid
+   */
+export function del{ModelTypeName}(pid) {
+  return request({
+    url: '/bus/{ModelTypeName}/' + pid,
+    method: 'delete'
   })
 }

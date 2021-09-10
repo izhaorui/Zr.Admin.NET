@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace {ModelsNamespace}
+namespace {ModelsNamespace}.Models
 {
     /// <summary>
     /// {TableNameDesc}，数据实体对象

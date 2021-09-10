@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Controllers;
-using ZR.Service;
+using ZR.Service.Business;
 using SqlSugar;
 using Infrastructure;
 using Infrastructure.Attribute;
@@ -12,7 +12,8 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Model;
+using ZR.Model.Dto;
+using ZR.Model.Models;
 
 namespace ZRAdmin.Controllers
 {
@@ -59,6 +60,7 @@ namespace ZRAdmin.Controllers
         /// <param name="{primaryKey}"></param>
         /// <returns></returns>
         [HttpGet("{{primaryKey}}")]
+        [ActionPermissionFilter(Permission = "<#=Permission#>:query")]
         public IActionResult Get({KeyTypeName} {primaryKey})
         {
             var response = _<#=ServiceName#>.GetId({primaryKey});

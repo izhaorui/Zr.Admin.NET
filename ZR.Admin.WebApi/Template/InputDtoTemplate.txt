@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using {ModelsNamespace};
+using {ModelsNamespace}.Dto;
 
-namespace {DtosNamespace}
+namespace {DtosNamespace}.Dto
 {
     /// <summary>
     /// {TableNameDesc}输入对象模型

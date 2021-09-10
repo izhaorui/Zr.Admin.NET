@@ -36,20 +36,14 @@
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" v-hasPermi="['{ModelTypeName}:add']" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
+        <el-button type="primary" v-hasPermi="['{Permission}:add']" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" v-hasPermi="['{ModelTypeName}:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
+        <el-button type="success" v-hasPermi="['{Permission}:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" v-hasPermi="['{ModelTypeName}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
+        <el-button type="danger" v-hasPermi="['{Permission}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
-      <!-- <el-col :span="1.5">
-        <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport">导入</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>
-      </el-col> -->
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -59,10 +53,9 @@
       {VueViewListContent}
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)">详情</el-button>
-          <el-button size="mini"  v-hasPermi="['{ModelTypeName}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
+          <el-button size="mini"  v-hasPermi="['{Permission}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
           <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left:10px">
-            <el-button slot="reference"  v-hasPermi="['{ModelTypeName}:delete']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
+            <el-button slot="reference"  v-hasPermi="['{Permission}:delete']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
           </el-popconfirm>
         </template>
       </el-table-column>
@@ -70,8 +63,8 @@
     <pagination :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改菜单对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+    <el-dialog :title="title" :visible.sync="open" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         {VueViewFromContent}
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
@@ -83,15 +76,23 @@
   </div>
 </template>
 <script>
-import { list{ModelTypeName},add{ModelTypeName},del{ModelTypeName},edit{ModelTypeName} } from '@{ModelTypeName}.js'
+import { 
+    list{ModelTypeName},
+    add{ModelTypeName},
+    del{ModelTypeName},
+    update{ModelTypeName},
+    get{ModelTypeName} 
+} from '@/api/{fileClassName}.js'
 
 export default {
   name: '{ModelTypeName}',
   data() {
     return {
-      labelWidth: "70px",
+      labelWidth: "100px",
 	  // 选中数组
       ids: [],
+      // 非单个禁用
+      single: true,
       // 非多个禁用
       multiple: true,
       // 遮罩层
@@ -166,6 +167,7 @@ export default {
 	// 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map((item) => item.{primaryKey});
+      this.single = selection.length!=1
       this.multiple = !selection.length;
     },
     /** 搜索按钮操作 */
@@ -190,26 +192,33 @@ export default {
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      this.open = true;
-      this.title = "编辑";
-      //TODO 业务代码
-      console.log(JSON.stringify(row));
-
-      // TODO 给表单赋值
-      this.form = {
-        {VueViewEditFromBindContent}
-      };
+      const {primaryKey} = row.{primaryKey} || this.ids;
+      get{ModelTypeName}({primaryKey}).then((res) => {
+        if(res.code == 200){
+            this.form = res.data;
+            this.open = true;
+            this.title = "修改数据";
+        }
+      });
     },
     /** 提交按钮 */
     submitForm: function () {
       this.$refs["form"].validate((valid) => {
         if (valid) {
           console.log(JSON.stringify(this.form));
-          // TODO 记得改成表的主键
+          
           if (this.form.{primaryKey} != undefined) {
-            //TODO 编辑业务代码
+            update{ModelTypeName}(this.form).then((res) => {
+                this.msgSuccess("修改成功");
+                this.open = false;
+                this.getList();
+            });
           } else {
-            //TODO 新增业务代码
+            add{ModelTypeName}(this.form).then((res) => {
+                this.msgSuccess("新增成功");
+                this.open = false;
+                this.getList();
+            });
           }
         }
       });
@@ -225,9 +234,7 @@ export default {
         name: row.name,
         sortId: row.sortId,
       };
-    },
-    handleImport() {},
-    handleExport() {},
+    }
   },
 };
 </script>
