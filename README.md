@@ -32,7 +32,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 
 日志管理：NLog、登录日志、操作日志
 
-工具类：验证码、丰富公共功能
+工具类：验证码、丰富公共功能、代码生成
 
 ## 🍄快速启动
 需要安装：VS2019（最新版）、npm或yarn（最新版）
@@ -59,6 +59,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 13. [X] 在线构建器：拖动表单元素生成相应的VUE代码。
 14. [X] 任务系统：基于Quartz.NET定时任务执行。
 15. [X] 文章管理：可以写文章记录。
+16. [X] 代码生成：可以一键生成前后端代码。
 
 ## 🍎演示图
 
@@ -82,7 +83,15 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 	<tr>
         <td><img src="https://www.izhaorui.cn/images/zradmin/9.png"/></td>
         <td><img src="https://www.izhaorui.cn/images/zradmin/10.png"/></td>
-    </tr>		
+    </tr>
+	<tr>
+        <td><img src="https://www.izhaorui.cn/images/zradmin/11.png"/></td>
+        <td><img src="https://www.izhaorui.cn/images/zradmin/12.png"/></td>
+    </tr>
+	<tr>
+        <td><img src="https://www.izhaorui.cn/images/zradmin/13.png"/></td>
+        <td><img src="https://www.izhaorui.cn/images/zradmin/14.png"/></td>
+    </tr>
 </table>
 
 ## 🎉优势

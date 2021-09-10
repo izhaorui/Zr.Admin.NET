@@ -28,13 +28,12 @@
         </el-form>
       </div>
       <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border stripe highlight-current-row height="500px" style="width: 100%;">
-        <!-- <el-table-column type="selection" width="50" /> -->
         <el-table-column prop="name" label="表名" sortable="custom" width="380" />
         <el-table-column prop="description" label="表描述" />
         <el-table-column label="操作" align="center" width="200">
           <template slot-scope="scope">
             <el-button type="text" icon="el-icon-view" @click="handlePreview()">预览</el-button>
-            <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)">生成代码</el-button>
+            <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)" v-hasPermi="['tool:gen:code']">生成代码</el-button>
           </template>
         </el-table-column>
       </el-table>
