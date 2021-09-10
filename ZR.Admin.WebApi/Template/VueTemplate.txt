@@ -65,7 +65,7 @@
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :visible.sync="open" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        {VueViewFromContent}
+        {VueViewFormContent}
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -119,7 +119,7 @@ export default {
       btnSubmitVisible: true,
       // 表单校验
       rules: {
-        {VueViewEditFromRuleContent}
+        {VueViewEditFormRuleContent}
       },
     };
   },
@@ -150,7 +150,7 @@ export default {
     // 重置数据表单
     reset() {
       this.form = {
-        {VueViewEditFromContent}
+        {VueViewEditFormContent}
 		//需个性化处理内容
       };
       this.resetForm("form");
@@ -184,7 +184,7 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-	  del{ModelTypeName}().then((res) => {
+	  del{ModelTypeName}(row.{primaryKey}).then((res) => {
 		this.msgSuccess("删除成功");
 		this.handleQuery();
 	  });
@@ -207,7 +207,7 @@ export default {
         if (valid) {
           console.log(JSON.stringify(this.form));
           
-          if (this.form.{primaryKey} != undefined) {
+          if (this.form.{primaryKey} != undefined || this.title === '修改数据') {
             update{ModelTypeName}(this.form).then((res) => {
                 this.msgSuccess("修改成功");
                 this.open = false;

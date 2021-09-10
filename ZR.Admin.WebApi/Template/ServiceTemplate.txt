@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ZR.Common;
-using ZR.Model.Models;
-using ZR.Repository;
-using ZR.Service.IService;
+using {ModelsNamespace}.Models;
+using {IRepositoriesNamespace};
+using {ServicesNamespace}.IService;
 
 namespace {ServicesNamespace}.Business
 {

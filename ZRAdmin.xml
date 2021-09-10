@@ -920,46 +920,5 @@
             </summary>
             <param name="services"></param>
         </member>
-        <member name="T:ZRAdmin.Controllers.UserInfoController">
-            <summary>
-            代码自动生成
-            </summary>
-        </member>
-        <member name="F:ZRAdmin.Controllers.UserInfoController._UserInfoService">
-            <summary>
-            接口
-            </summary>
-        </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Query(ZR.Model.Dto.UserInfoQueryDto)">
-            <summary>
-            查询列表
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Get(System.Int32)">
-            <summary>
-            查询详情
-            </summary>
-            <param name="luid"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Create(ZR.Model.Dto.UserInfoDto)">
-            <summary>
-            添加
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Update(ZR.Model.Dto.UserInfoDto)">
-            <summary>
-            更新
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Delete(System.Int32)">
-            <summary>
-            删除
-            </summary>
-            <returns></returns>
-        </member>
     </members>
 </doc>

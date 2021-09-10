@@ -1,5 +1,5 @@
 ﻿using System;
-using ZR.Model.Models;
+using {ModelsNamespace}.Models;
 
 namespace {IServicsNamespace}.Business
 {

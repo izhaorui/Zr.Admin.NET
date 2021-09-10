@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using {ModelsNamespace}.Dto;
+using {ModelsNamespace}.Models;
 
 namespace {DtosNamespace}.Dto
 {

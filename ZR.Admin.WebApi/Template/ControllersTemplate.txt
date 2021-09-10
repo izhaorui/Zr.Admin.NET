@@ -12,8 +12,8 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Model.Dto;
-using ZR.Model.Models;
+using {ModelsNamespace}.Dto;
+using {ModelsNamespace}.Models;
 
 namespace ZRAdmin.Controllers
 {
@@ -108,6 +108,7 @@ namespace ZRAdmin.Controllers
             var response = _<#=ServiceName#>.Update(w => w.{primaryKey} == updateModel.{primaryKey}, it => new <#=ModelName#>()
             {
                 //TODO 字段映射
+                {updateColumn}
             });
 
             return SUCCESS(response);
