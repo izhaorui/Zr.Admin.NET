@@ -92,16 +92,23 @@ namespace ZRAdmin.Controllers
         /// 更新<#=FileName#>
         /// </summary>
         /// <returns></returns>
-        [HttpPut("edit")]
+        [HttpPut]
         [ActionPermissionFilter(Permission = "<#=Permission#>:update")]
         [Log(Title = "<#=FileName#>修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] <#=ModelName#>Dto parm)
         {
+            if (parm == null)
+            {
+                throw new CustomException("请求实体不能为空");
+            }
             //从 Dto 映射到 实体
-            var addModel = parm.Adapt<<#=ModelName#>>().ToCreate();
-            //addModel.CreateID = User.Identity.Name;
-            //TODO 字段映射
-            var response = _<#=ServiceName#>.Update(addModel);
+            var updateModel = parm.Adapt<<#=ModelName#>>().ToCreate();
+            //updateModel.CreateID = User.Identity.Name;
+
+            var response = _<#=ServiceName#>.Update(w => w.{primaryKey} == updateModel.{primaryKey}, it => new <#=ModelName#>()
+            {
+                //TODO 字段映射
+            });
 
             return SUCCESS(response);
         }

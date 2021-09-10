@@ -91,7 +91,7 @@ namespace ZR.CodeGenerator
                 else
                 {
                     vueViewEditFromContent += $"        {columnName}: undefined,\n";
-                    vueViewEditFromBindContent += $"        {columnName} = row.{columnName}\n";
+                    vueViewEditFromBindContent += $"        {columnName}: row.{columnName},\n";
                 }
                 //vueViewSaveBindContent += string.Format("        '{0}':this.editFrom.{0},\n", columnName);
                 if (dbFieldInfo.IsIdentity || dbFieldInfo.IsPrimarykey)
@@ -107,7 +107,7 @@ namespace ZR.CodeGenerator
             }
             if (dto.genFiles.Contains(1))
             {
-                //GenerateModels(_option.ModelsNamespace, modelTypeName, tableInfo.Name, modelContent, modelTypeDesc, keyTypeName, ifExsitedCovered);
+                GenerateModels(_option.ModelsNamespace, modelTypeName, tableInfo.Name, modelContent, modelTypeDesc, keyTypeName, ifExsitedCovered);
             }
             if (dto.genFiles.Contains(2))
             {
@@ -490,12 +490,11 @@ namespace ZR.CodeGenerator
                 return;
             var content = ReadTemplate("VueTemplate.txt");
             content = content
-                //.Replace("{BaseNamespace}", fileClassName.ToLower())
                 .Replace("{fileClassName}", FirstLowerCase(modelTypeName))
-                .Replace("{ModelTypeNameToLower}", FirstLowerCase(modelTypeName))
                 .Replace("{VueViewListContent}", vueViewListContent)
                 .Replace("{VueViewFromContent}", vueViewFromContent)
-                .Replace("{ModelTypeName}", FirstLowerCase(modelTypeName))
+                .Replace("{ModelTypeName}", modelTypeName)
+                .Replace("{Permission}", modelTypeName.ToLower())
                 .Replace("{VueViewEditFromContent}", vueViewEditFromContent)
                 .Replace("{VueViewEditFromBindContent}", vueViewEditFromBindContent)
                 .Replace("{VueViewSaveBindContent}", vueViewSaveBindContent)
@@ -512,7 +511,8 @@ namespace ZR.CodeGenerator
                 return;
             content = ReadTemplate("VueJsTemplate.txt");
             content = content
-                .Replace("{ModelTypeName}", FirstLowerCase(modelTypeName))
+                .Replace("{ModelTypeName}", modelTypeName)
+                .Replace("{ModelName}", GetModelName(modelTypeName))
                 .Replace("{ModelTypeDesc}", modelTypeDesc);
             //.Replace("{fileClassName}", fileClassName)
             WriteAndSave(fullPath, content);
@@ -535,7 +535,7 @@ namespace ZR.CodeGenerator
                 modelTypeName = modelTypeName.Replace(_option.ReplaceTableNameStr.ToString(), "");
             }
             modelTypeName = modelTypeName.Replace("_", "");
-            modelTypeName = modelTypeName.Substring(0, 1).ToUpper() + modelTypeName.Substring(1);
+            modelTypeName = modelTypeName.Substring(0, 1).ToUpper() + modelTypeName[1..];
             return modelTypeName;
         }
         /// <summary>
