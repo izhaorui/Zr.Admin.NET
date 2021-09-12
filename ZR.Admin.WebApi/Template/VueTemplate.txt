@@ -223,18 +223,6 @@ export default {
         }
       });
     },
-    // 详情
-    handleView(row) {
-      this.open = true;
-      this.title = "详情";
-      // TODO 给表单赋值
-      this.form = {
-        content: row.content,
-        userId: row.userId,
-        name: row.name,
-        sortId: row.sortId,
-      };
-    }
   },
 };
 </script>

@@ -22,90 +22,90 @@ namespace ZRAdmin.Controllers
     /// </summary>
 	
     [Verify]
-    [Route("bus/<#=ModelName#>")]
-    public class <#=ControllerName#>Controller: BaseController
+    [Route("bus/{ModelName}")]
+    public class {ControllerName}Controller: BaseController
 	{
         /// <summary>
-        /// <#=FileName#>接口
+        /// {FileName}接口
         /// </summary>
-        private readonly I<#=ServiceName#> _<#=ServiceName#>;
+        private readonly I{ServiceName} _{ServiceName};
 
-        public <#=ControllerName#>Controller(I<#=ServiceName#> <#=ServiceName#>)
+        public {ControllerName}Controller(I{ServiceName} {ServiceName})
         {
-            _<#=ServiceName#> = <#=ServiceName#>;
+            _{ServiceName} = {ServiceName};
         }
 
         /// <summary>
-        /// 查询<#=FileName#>列表
+        /// 查询{FileName}列表
         /// </summary>
         /// <returns></returns>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "<#=Permission#>:list")]
-        public IActionResult Query([FromQuery] <#=ModelName#>QueryDto parm)
+        [ActionPermissionFilter(Permission = "{Permission}:list")]
+        public IActionResult Query([FromQuery] {ModelName}QueryDto parm)
         {
             //开始拼装查询条件
-            var predicate = Expressionable.Create<<#=ModelName#>>();
+            var predicate = Expressionable.Create<{ModelName}>();
 
             //TODO 搜索条件
             //predicate = predicate.And(m => m.Name.Contains(parm.Name));
 
-            var response = _<#=ServiceName#>.GetPages(predicate.ToExpression(), parm);
+            var response = _{ServiceName}.GetPages(predicate.ToExpression(), parm);
 
             return SUCCESS(response);
         }
 
         /// <summary>
-        /// 查询<#=FileName#>详情
+        /// 查询{FileName}详情
         /// </summary>
         /// <param name="{primaryKey}"></param>
         /// <returns></returns>
         [HttpGet("{{primaryKey}}")]
-        [ActionPermissionFilter(Permission = "<#=Permission#>:query")]
+        [ActionPermissionFilter(Permission = "{Permission}:query")]
         public IActionResult Get({KeyTypeName} {primaryKey})
         {
-            var response = _<#=ServiceName#>.GetId({primaryKey});
+            var response = _{ServiceName}.GetId({primaryKey});
 
             return SUCCESS(response);
         }
 
         /// <summary>
-        /// 添加<#=FileName#>
+        /// 添加{FileName}
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        [ActionPermissionFilter(Permission = "<#=Permission#>:add")]
-        [Log(Title = "<#=FileName#>添加", BusinessType = BusinessType.INSERT)]
-        public IActionResult Create([FromBody] <#=ModelName#>Dto parm)
+        [ActionPermissionFilter(Permission = "{Permission}:add")]
+        [Log(Title = "{FileName}添加", BusinessType = BusinessType.INSERT)]
+        public IActionResult Create([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
             {
                 throw new CustomException("请求参数错误");
             }
             //从 Dto 映射到 实体
-            var addModel = parm.Adapt<<#=ModelName#>>().ToCreate();
+            var addModel = parm.Adapt<{ModelName}>().ToCreate();
             //addModel.CreateID = User.Identity.Name;
 
-            return SUCCESS(_<#=ServiceName#>.Add(addModel));
+            return SUCCESS(_{ServiceName}.Add(addModel));
         }
 
         /// <summary>
-        /// 更新<#=FileName#>
+        /// 更新{FileName}
         /// </summary>
         /// <returns></returns>
         [HttpPut]
-        [ActionPermissionFilter(Permission = "<#=Permission#>:update")]
-        [Log(Title = "<#=FileName#>修改", BusinessType = BusinessType.UPDATE)]
-        public IActionResult Update([FromBody] <#=ModelName#>Dto parm)
+        [ActionPermissionFilter(Permission = "{Permission}:update")]
+        [Log(Title = "{FileName}修改", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Update([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
             {
                 throw new CustomException("请求实体不能为空");
             }
             //从 Dto 映射到 实体
-            var updateModel = parm.Adapt<<#=ModelName#>>().ToCreate();
+            var updateModel = parm.Adapt<{ModelName}>().ToCreate();
             //updateModel.CreateID = User.Identity.Name;
 
-            var response = _<#=ServiceName#>.Update(w => w.{primaryKey} == updateModel.{primaryKey}, it => new <#=ModelName#>()
+            var response = _{ServiceName}.Update(w => w.{primaryKey} == updateModel.{primaryKey}, it => new {ModelName}()
             {
                 //TODO 字段映射
                 {updateColumn}
@@ -115,18 +115,18 @@ namespace ZRAdmin.Controllers
         }
 
         /// <summary>
-        /// 删除<#=FileName#>
+        /// 删除{FileName}
         /// </summary>
         /// <returns></returns>
         [HttpDelete("{{primaryKey}}")]
-        [ActionPermissionFilter(Permission = "<#=Permission#>:delete")]
-        [Log(Title = "<#=FileName#>删除", BusinessType = BusinessType.DELETE)]
+        [ActionPermissionFilter(Permission = "{Permission}:delete")]
+        [Log(Title = "{FileName}删除", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete({KeyTypeName} {primaryKey} = 0)
         {
             if ({primaryKey} <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
 
-            // 删除<#=FileName#>
-            var response = _<#=ServiceName#>.Delete({primaryKey});
+            // 删除{FileName}
+            var response = _{ServiceName}.Delete({primaryKey});
 
             return SUCCESS(response);
         }
