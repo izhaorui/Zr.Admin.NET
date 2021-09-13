@@ -920,42 +920,42 @@
             </summary>
             <param name="services"></param>
         </member>
-        <member name="T:ZRAdmin.Controllers.UserInfoController">
+        <member name="T:ZRAdmin.Controllers.GendemoController">
             <summary>
             代码自动生成
             </summary>
         </member>
-        <member name="F:ZRAdmin.Controllers.UserInfoController._UserInfoService">
+        <member name="F:ZRAdmin.Controllers.GendemoController._GendemoService">
             <summary>
             接口
             </summary>
         </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Query(ZR.Model.Dto.UserInfoQueryDto)">
+        <member name="M:ZRAdmin.Controllers.GendemoController.Query(ZR.Model.Dto.GendemoQueryDto)">
             <summary>
             查询列表
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Get(System.Int32)">
+        <member name="M:ZRAdmin.Controllers.GendemoController.Get(System.Int32)">
             <summary>
             查询详情
             </summary>
-            <param name="Luid"></param>
+            <param name="Id"></param>
             <returns></returns>
         </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Create(ZR.Model.Dto.UserInfoDto)">
+        <member name="M:ZRAdmin.Controllers.GendemoController.Create(ZR.Model.Dto.GendemoDto)">
             <summary>
             添加
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Update(ZR.Model.Dto.UserInfoDto)">
+        <member name="M:ZRAdmin.Controllers.GendemoController.Update(ZR.Model.Dto.GendemoDto)">
             <summary>
             更新
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZRAdmin.Controllers.UserInfoController.Delete(System.Int32)">
+        <member name="M:ZRAdmin.Controllers.GendemoController.Delete(System.Int32)">
             <summary>
             删除
             </summary>

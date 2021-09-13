@@ -32,7 +32,7 @@
         <el-button type="primary" v-hasPermi="['{Permission}:add']" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" v-hasPermi="['{Permission}:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
+        <el-button type="success" :disabled="single" v-hasPermi="['{Permission}:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button type="danger" v-hasPermi="['{Permission}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
@@ -53,7 +53,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination class="mt10" background :total="total" :current-page.sync="queryParams.pageNum" :page-size="queryParams.pageSize" :page-sizes="[20, 30, 50, 100]"  @size-change="handleSizeChange" @current-change="getList" />
+    <el-pagination class="mt10" background :total="total" :current-page.sync="queryParams.pageNum" :page-size="queryParams.pageSize" :page-sizes="[20, 30, 50, 100]" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange" @current-change="getList" />
 
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
@@ -231,15 +231,5 @@ export default {
 <style scoped>
 .table-td-thumb {
   width: 80px;
-}
-.icon {
-  width: 100px;
-}
-.uploader-icon {
-  width: 50px;
-  height: 50px;
-  line-height: 50px;
-  border: 1px dashed #ccc;
-  margin-bottom: 10px;
 }
 </style>
