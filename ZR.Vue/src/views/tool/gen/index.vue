@@ -1,44 +1,42 @@
 <template>
   <div class="app-container">
-    <el-card>
-      <div>
-        <el-form ref="codeform" :inline="true" :rules="rules" :model="codeform" size="small">
-          <el-form-item label="数据库" prop="dbName">
-            <el-select v-model="codeform.dbName" clearable placeholder="请选择" @change="handleShowTable">
-              <el-option v-for="item in selectedDataBase" :key="item" :label="item" :value="item" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="表名">
-            <el-input v-model="codeform.tableName" clearable placeholder="输入要查询的表名" />
-          </el-form-item>
-          <!-- <el-form-item label="项目命名空间：" prop="baseSpace">
+
+    <el-form ref="codeform" :inline="true" :rules="rules" :model="codeform" size="small">
+      <el-form-item label="数据库" prop="dbName">
+        <el-select v-model="codeform.dbName" clearable placeholder="请选择" @change="handleShowTable">
+          <el-option v-for="item in selectedDataBase" :key="item" :label="item" :value="item" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="表名">
+        <el-input v-model="codeform.tableName" clearable placeholder="输入要查询的表名" />
+      </el-form-item>
+      <!-- <el-form-item label="项目命名空间：" prop="baseSpace">
             <el-tooltip class="item" effect="dark" content="系统会根据项目命名空间自动生成IService、Service、Models等子命名空间" placement="bottom">
               <el-input v-model="codeform.baseSpace" clearable placeholder="如Zr" />
             </el-tooltip>
           </el-form-item> -->
-          <el-form-item label="去掉表名前缀：">
-            <el-tooltip class="item" effect="dark" content="表名直接变为类名，去掉表名前缀。" placement="bottom">
-              <el-input v-model="codeform.replaceTableNameStr" clearable width="300" placeholder="例如：sys_" />
-            </el-tooltip>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch()">查询</el-button>
-            <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-      <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border stripe highlight-current-row height="500px" style="width: 100%;">
-        <el-table-column prop="name" label="表名" sortable="custom" width="380" />
-        <el-table-column prop="description" label="表描述" />
-        <el-table-column label="操作" align="center" width="200">
-          <template slot-scope="scope">
-            <el-button type="text" icon="el-icon-view" @click="handlePreview()">预览</el-button>
-            <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)" v-hasPermi="['tool:gen:code']">生成代码</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <el-pagination background :current-page="pagination.pageNum" :page-sizes="[5,10,20,50,100, 200, 300, 400]" :page-size="pagination.pagesize" layout="total, sizes, prev, pager, next, jumper" :total="pagination.pageTotal" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
-    </el-card>
+      <el-form-item label="去掉表名前缀：">
+        <el-tooltip class="item" effect="dark" content="表名直接变为类名，去掉表名前缀。" placement="bottom">
+          <el-input v-model="codeform.replaceTableNameStr" clearable width="300" placeholder="例如：sys_" />
+        </el-tooltip>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleSearch()">查询</el-button>
+        <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border stripe highlight-current-row height="500px" style="width: 100%;">
+      <el-table-column prop="name" label="表名" sortable="custom" width="380" />
+      <el-table-column prop="description" label="表描述" />
+      <el-table-column label="操作" align="center" width="200">
+        <template slot-scope="scope">
+          <el-button type="text" icon="el-icon-view" @click="handlePreview()">预览</el-button>
+          <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)" v-hasPermi="['tool:gen:code']">生成代码</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination background :current-page="pagination.pageNum" :page-sizes="[5,10,20,50,100, 200, 300, 400]" :page-size="pagination.pagesize" layout="total, sizes, prev, pager, next, jumper" :total="pagination.pageTotal" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
 
     <el-dialog :visible.sync="showGenerate" title="代码生成" width="800px">
       <el-form ref="codeGenerateForm" label-width="140px">

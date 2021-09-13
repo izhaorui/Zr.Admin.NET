@@ -15,7 +15,7 @@ namespace {DtosNamespace}.Dto
 
     public class {ModelTypeName}QueryDto: PagerInfo 
     {
-    
-    
+        public DateTime? BeginTime { get; set; }
+        public DateTime? EndTime { get; set; }
     }
 }

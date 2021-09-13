@@ -31,7 +31,7 @@ namespace ZR.CodeGenerator.Service
             var tableList = GetSugarDbContext(dbName).DbMaintenance.GetTableInfoList(true);
             if (!string.IsNullOrEmpty(tableName))
             {
-                tableList = tableList.Where(f => f.Name.Contains(tableName)).ToList();
+                tableList = tableList.Where(f => f.Name.ToLower().Contains(tableName.ToLower())).ToList();
             }
             pager.TotalNum = tableList.Count;
             return tableList.Skip(pager.PageSize * (pager.PageNum - 1)).Take(pager.PageSize).OrderBy(f => f.Name).ToList();
