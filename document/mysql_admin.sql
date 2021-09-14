@@ -443,8 +443,7 @@ CREATE TABLE `sys_role_menu`  (
 -- ----------------------------
 -- Records of sys_role_menu
 -- ----------------------------
-INSERT INTO `sys_role_menu` VALUES (0, 2009, NULL, NULL);
-INSERT INTO `sys_role_menu` VALUES (0, 2012, NULL, NULL);
+
 INSERT INTO `sys_role_menu` VALUES (2, 1, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 2, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 3, NULL, '2021-07-07 16:32:32');
@@ -454,6 +453,7 @@ INSERT INTO `sys_role_menu` VALUES (2, 101, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 102, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 103, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 104, NULL, '2021-07-07 16:32:32');
+INSERT INTO `sys_role_menu` VALUES (2, 106, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 108, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 110, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 112, NULL, '2021-07-07 16:32:32');
@@ -465,32 +465,16 @@ INSERT INTO `sys_role_menu` VALUES (2, 1008, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 1013, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 2013, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 2019, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 2029, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 2037, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 2040, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 2044, NULL, '2021-07-07 16:32:32');
 INSERT INTO `sys_role_menu` VALUES (2, 2053, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (3, 2055, 'admin', '2021-08-23 14:32:06');
+
 INSERT INTO `sys_role_menu` VALUES (3, 2056, 'admin', '2021-08-23 14:32:06');
 INSERT INTO `sys_role_menu` VALUES (3, 2057, 'admin', '2021-08-23 14:32:06');
 INSERT INTO `sys_role_menu` VALUES (3, 2062, 'admin', '2021-08-23 14:32:06');
 INSERT INTO `sys_role_menu` VALUES (3, 2063, 'admin', '2021-08-23 14:32:06');
 INSERT INTO `sys_role_menu` VALUES (3, 2064, 'admin', '2021-08-23 14:32:06');
-INSERT INTO `sys_role_menu` VALUES (112, 4, NULL, '2021-08-23 14:28:02');
-INSERT INTO `sys_role_menu` VALUES (116, 2, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 110, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2006, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2007, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2009, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2010, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2011, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2014, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2015, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2016, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2017, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2036, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2037, NULL, '2021-07-02 21:51:42');
-INSERT INTO `sys_role_menu` VALUES (116, 2038, NULL, '2021-07-02 21:51:42');
 
 SET FOREIGN_KEY_CHECKS = 1;
 
