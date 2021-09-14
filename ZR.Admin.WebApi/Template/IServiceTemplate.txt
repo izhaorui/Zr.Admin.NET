@@ -1,0 +1,12 @@
+﻿using System;
+using {ModelsNamespace}.Models;
+
+namespace {IServicsNamespace}.Business
+{
+    /// <summary>
+    /// 定义{TableNameDesc}服务接口
+    /// </summary>
+    public interface I{ModelTypeName}Service: IBaseService<{ModelTypeName}>
+    {
+    }
+}

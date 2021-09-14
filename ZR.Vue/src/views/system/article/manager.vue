@@ -71,8 +71,6 @@ export default {
       showSearch: true,
       // 查询参数
       queryParams: {
-        useridx: undefined,
-        name: undefined,
       },
       // 弹出层标题
       title: "",

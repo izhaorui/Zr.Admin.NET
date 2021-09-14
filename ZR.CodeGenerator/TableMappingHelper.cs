@@ -34,6 +34,8 @@ namespace ZR.CodeGenerator.CodeGenerator
         public static string GetClassNamePrefix(string tableName)
         {
             string[] arr = tableName.Split('_');
+            if (arr.Length <= 0) return tableName;
+
             StringBuilder sb = new StringBuilder();
             for (int i = 1; i < arr.Length; i++)
             {

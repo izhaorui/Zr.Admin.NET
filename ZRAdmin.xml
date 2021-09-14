@@ -27,6 +27,41 @@
             <param name="data"></param>
             <returns></returns>
         </member>
+        <member name="T:ZR.Admin.WebApi.Controllers.CodeGeneratorController">
+            <summary>
+            代码生成
+            </summary>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetListDataBase">
+            <summary>
+            获取所有数据库的信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.FindListTable(System.String,System.String,ZR.Model.PagerInfo)">
+             <summary>
+            获取所有表根据数据名
+             </summary>
+             <param name="dbName">数据库名</param>
+             <param name="tableName">表名</param>
+             <param name="pager">分页信息</param>
+             <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.QueryColumnInfo(System.String,System.String)">
+            <summary>
+            获取表格列
+            </summary>
+            <param name="dbName"></param>
+            <param name="tableName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate(ZR.CodeGenerator.Model.GenerateDto)">
+            <summary>
+            代码生成器
+            </summary>
+            <param name="dto">数据传输对象</param>
+            <returns></returns>
+        </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">
             <summary>
             心跳

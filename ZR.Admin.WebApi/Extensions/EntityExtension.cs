@@ -10,13 +10,13 @@ namespace ZR.Admin.WebApi.Extensions
         {
             var types = source.GetType();
 
-            var worker = new IdWorker(1, 1);
-            if (types.GetProperty("ID") != null)
-            {
-                long id = worker.NextId();
+            //var worker = new IdWorker(1, 1);
+            //if (types.GetProperty("ID") != null)
+            //{
+            //    long id = worker.NextId();
 
-                types.GetProperty("ID").SetValue(source, id.ToString(), null);
-            }
+            //    types.GetProperty("ID").SetValue(source, id.ToString(), null);
+            //}
 
             if (types.GetProperty("CreateTime") != null)
             {

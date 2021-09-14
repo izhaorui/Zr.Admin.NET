@@ -7,7 +7,9 @@ namespace Infrastructure
     public class OptionsSetting
     {
         public static string ConnAdmin = "Conn_admin";
+        public static string Conn = "ConnDynamic";
         public static string DbType = "DbType";
+        public static string CodeGenDbType = "CodeGenDbType";
         public static string DbKey = "DbKey";
 
         public string Conn_Admin { get; set; }

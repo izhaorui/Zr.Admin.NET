@@ -21,11 +21,11 @@
   },
   "dependencies": {
     "@riophae/vue-treeselect": "0.4.0",
-    "axios": "^0.21.1",
+    "axios": "^0.21.4",
     "clipboard": "2.0.4",
     "core-js": "3.6.5",
     "echarts": "^5.1.1",
-    "element-ui": "2.13.2",
+    "element-ui": "2.15.6",
     "file-saver": "2.0.1",
     "fuse.js": "3.4.4",
     "js-beautify": "1.10.2",

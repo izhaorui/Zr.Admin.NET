@@ -87,35 +87,41 @@
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-row>
-          <el-col :span="12">
-            <el-form-item label="用户Id" prop="userId">
-              <el-input v-model.number="form.userId" placeholder="" :disabled="form.userId > 0" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="用户昵称" prop="name">
-              <el-input v-model="form.name" placeholder="" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="顺序" prop="sortId">
-              <el-input-number v-model="form.sortId" controls-position="right" :min="0" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictValue">{{dict.dictLabel}}</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="备注" prop="content">
-              <el-input v-model="form.content" :rows="2" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+
+        <el-form-item label="主键" prop="userId">
+          <el-input v-model.number="form.userId" placeholder="" :disabled="form.userId > 0" />
+        </el-form-item>
+
+        <el-form-item label="单行文本" prop="name">
+          <el-input v-model="form.name" placeholder="" />
+        </el-form-item>
+
+        <el-form-item label="number" prop="sortId">
+          <el-input-number v-model="form.sortId" controls-position="right" :min="0" />
+        </el-form-item>
+
+        <el-form-item label="单选按钮" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictValue">{{dict.dictLabel}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="photo" :label-width="labelWidth" prop="photo">
+          <el-upload class="avatar-uploader" action="/api/upload/saveFile/" :show-file-list="false" :on-success="handleFileSuccess" :before-upload="beforeFileUpload">
+            <img v-if="form.photo" :src="form.photo" class="icon">
+            <i v-else class="el-icon-plus uploader-icon"></i>
+          </el-upload>
+          <el-input v-model="form.photo"></el-input>
+        </el-form-item>
+
+        <el-form-item label="时间控件" :label-width="labelWidth" prop="lastLoginTime">
+          <el-date-picker v-model="form.lastLoginTime" type="datetime" placeholder="选择日期时间" default-time="12:00:00"> </el-date-picker>
+        </el-form-item>
+
+        <el-form-item label="多行文本" prop="content">
+          <el-input v-model="form.content" :rows="2" type="textarea" placeholder="请输入内容" />
+        </el-form-item>
+
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -132,7 +138,7 @@ export default {
   name: "demo",
   data() {
     return {
-      labelWidth: "70px",
+      labelWidth: "100px",
       // 遮罩层
       loading: true,
       // 显示搜索条件

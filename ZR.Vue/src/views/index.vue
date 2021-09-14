@@ -23,7 +23,7 @@
           <div slot="header" class="clearfix">
             <span>技术选型</span>
           </div>
-          <el-col :span="6">
+          <el-col :span="10">
             <h4>后端技术</h4>
             <ul>
               <li>NET5</li>
@@ -35,7 +35,7 @@
               <li>...</li>
             </ul>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="10">
             <h4>前端技术</h4>
             <ul>
               <li>Vue</li>

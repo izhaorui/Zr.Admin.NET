@@ -29,7 +29,7 @@ namespace ZR.Repository.System
                 .WhereIF(!string.IsNullOrEmpty(user.UserName), it => it.UserName.Contains(user.UserName))
                 .WhereIF(!string.IsNullOrEmpty(user.Status), it => it.Status == user.Status)
                 .WhereIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, it => it.Create_time >= user.BeginTime)
-                .WhereIF(user.EndTime != DateTime.MinValue && user.BeginTime != null, it => it.EndTime <= user.EndTime)
+                .WhereIF(user.EndTime != DateTime.MinValue && user.BeginTime != null, it => it.Create_time <= user.EndTime)
                 .WhereIF(user.DeptId != 0, it => it.DeptId == user.DeptId)
                 .OrderBy(it => it.UserId)
                 .ToPageList(pager.PageNum, pager.PageSize, ref totalCount);

@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+using {ModelsNamespace}.Dto;
+using {ModelsNamespace}.Models;
+
+namespace {DtosNamespace}.Dto
+{
+    /// <summary>
+    /// {TableNameDesc}输入对象模型
+    /// </summary>
+    public class {ModelTypeName}Dto
+    {
+{PropertyName}
+    }
+
+    public class {ModelTypeName}QueryDto: PagerInfo 
+    {
+        public DateTime? BeginTime { get; set; }
+        public DateTime? EndTime { get; set; }
+    }
+}

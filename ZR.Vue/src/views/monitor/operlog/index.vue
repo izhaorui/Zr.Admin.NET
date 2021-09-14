@@ -38,7 +38,7 @@
     </el-row>
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="30" align="center" />
+      <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="日志编号" align="center" prop="operId" />
       <el-table-column label="系统模块" align="center" prop="title" :show-overflow-tooltip="true"/>
       <!-- <el-table-column label="操作类型" align="center" prop="businessType" :formatter="typeFormat" /> -->
@@ -121,11 +121,10 @@ import {
   cleanOperlog,
   exportOperlog,
 } from "@/api/monitor/operlog";
-import template from "../../../../document/template.vue";
 import DateRangePicker from '@/components/DateRangePicker'
 
 export default {
-  components: { template ,DateRangePicker},
+  components: { DateRangePicker},
   name: "Operlog",
   data() {
     return {
