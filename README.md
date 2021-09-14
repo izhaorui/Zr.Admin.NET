@@ -111,6 +111,9 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 - 提交代码
 - 新建 Pull Request
 
+## 联系作者
+QQ：599854767
+
 ## 🎀捐赠
 如果这个项目对您有所帮助，请扫下方二维码打赏一杯咖啡。
 <img src="https://www.izhaorui.cn/static/pay.jpg"/>
