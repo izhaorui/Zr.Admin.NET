@@ -6,6 +6,7 @@ using {ModelsNamespace}.Models;
 namespace {RepositoriesNamespace}
 {
     /// <summary>
+    /// 代码生成器生成
     /// {TableNameDesc}仓储接口的实现
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]

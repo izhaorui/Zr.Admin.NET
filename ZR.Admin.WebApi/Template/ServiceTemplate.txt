@@ -14,7 +14,7 @@ using {ServicesNamespace}.IService;
 namespace {ServicesNamespace}.Business
 {
     /// <summary>
-    /// {TableNameDesc}服务接口实现
+    /// 代码生成器生成
     /// </summary>
     [AppService(ServiceType = typeof(I{ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
     public class {ModelTypeName}Service: BaseService<{ModelTypeName}>, I{ModelTypeName}Service
@@ -24,5 +24,9 @@ namespace {ServicesNamespace}.Business
         {
 			_repository = repository;
         }
+
+        #region 业务逻辑代码
+
+        #endregion
     }
 }

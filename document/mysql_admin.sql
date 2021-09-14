@@ -315,8 +315,8 @@ INSERT INTO sys_menu VALUES (2052, '删除', 105, 3, '#', NULL, 0, 0, 'F', '0', 
 
 INSERT INTO sys_menu VALUES (2054, '用户修改', 100, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:user:edit', '', '', SYSDATE(), '', NULL, NULL);
 
-INSERT INTO sys_menu VALUES (2056, '创建文章', 5, 999, 'publish', 'article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2057, '文章列表', 5, 999, 'manager', 'article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'documentation', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (2056, '创建文章', 5, 999, 'publish', 'system/article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (2057, '文章列表', 5, 999, 'manager', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'documentation', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (2060, '任务日志', 2, 2, '/job/log', 'monitor/job/log', 0, 0, 'C', '0', '0', NULL, 'log', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (2062, '新增', 2057, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:add', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (2063, '修改', 2057, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:update', '', '', SYSDATE(), '', NULL, NULL);
