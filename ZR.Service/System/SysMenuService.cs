@@ -7,7 +7,7 @@ using ZR.Model.System.Vo;
 using ZR.Model.Vo;
 using ZR.Model.Vo.System;
 using ZR.Repository.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Service
 {

@@ -12,7 +12,7 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 using ZR.Tasks;
 
 namespace ZR.Admin.WebApi.Controllers

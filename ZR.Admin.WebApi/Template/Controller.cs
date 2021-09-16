@@ -11,7 +11,7 @@ using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 using Infrastructure.Model;
 using SqlSugar;
 using Mapster;

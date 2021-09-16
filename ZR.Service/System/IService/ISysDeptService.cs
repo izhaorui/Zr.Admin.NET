@@ -4,7 +4,7 @@ using System.Text;
 using ZR.Model.System;
 using ZR.Model.Vo.System;
 
-namespace ZR.Service.IService
+namespace ZR.Service.System.IService
 {
     public interface ISysDeptService : IBaseService<SysDept>
     {

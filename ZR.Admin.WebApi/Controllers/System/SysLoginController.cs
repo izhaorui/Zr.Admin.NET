@@ -12,7 +12,7 @@ using Infrastructure;
 using Infrastructure.Attribute;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 using Hei.Captcha;
 using ZR.Common;
 

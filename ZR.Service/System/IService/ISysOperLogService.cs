@@ -4,7 +4,7 @@ using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Service.System;
 
-namespace ZR.Service.IService
+namespace ZR.Service.System.IService
 {
     public interface ISysOperLogService : IBaseService<SysOperLog>
     {

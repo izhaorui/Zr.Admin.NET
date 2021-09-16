@@ -4,7 +4,7 @@ using ZR.Model.System;
 using ZR.Model.System.Vo;
 using ZR.Model.Vo.System;
 
-namespace ZR.Service.IService
+namespace ZR.Service.System.IService
 {
     public interface ISysMenuService: IBaseService<SysMenu>
     {

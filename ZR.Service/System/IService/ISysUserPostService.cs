@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using ZR.Model.System;
 
-namespace ZR.Service.IService
+namespace ZR.Service.System.IService
 {
     public interface ISysUserPostService: IBaseService<SysUserPost>
     {

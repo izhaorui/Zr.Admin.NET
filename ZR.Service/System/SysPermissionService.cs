@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using ZR.Model.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {

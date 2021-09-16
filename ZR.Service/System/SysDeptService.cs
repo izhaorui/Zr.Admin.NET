@@ -10,7 +10,7 @@ using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.Vo.System;
 using ZR.Repository.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {

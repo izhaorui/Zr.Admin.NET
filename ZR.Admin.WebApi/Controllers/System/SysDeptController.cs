@@ -7,7 +7,7 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Service;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {

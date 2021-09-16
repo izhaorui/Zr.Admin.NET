@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using ZR.Model;
 using ZR.Model.System;
 
-namespace ZR.Service.IService
+namespace ZR.Service.System.IService
 {
     public interface ISysUserService : IBaseService<SysUser>
     {

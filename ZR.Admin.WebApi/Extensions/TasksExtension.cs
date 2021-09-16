@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz.Spi;
 using System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 using ZR.Tasks;
 
 namespace ZR.Admin.WebApi.Extensions
