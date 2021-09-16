@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ZR.Model.Dto.System
+namespace ZR.Model.System.Dto
 {
     public class LoginBodyDto
     {

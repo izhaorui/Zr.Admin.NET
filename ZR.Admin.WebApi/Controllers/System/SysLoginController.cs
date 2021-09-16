@@ -11,7 +11,7 @@ using Infrastructure.Model;
 using Infrastructure;
 using Infrastructure.Attribute;
 using ZR.Model.System;
-using ZR.Model.Dto.System;
+using ZR.Model.System.Dto;
 using ZR.Service.IService;
 using Hei.Captcha;
 using ZR.Common;

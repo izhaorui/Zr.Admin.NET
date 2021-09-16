@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ZR.Model.System;
 
-namespace ZR.Model.Dto.System
+namespace ZR.Model.System.Dto
 {
     public class SysRoleDto: SysBase
     {

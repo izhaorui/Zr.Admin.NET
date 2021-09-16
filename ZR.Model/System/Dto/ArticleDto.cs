@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ZR.Model.Dto.System
+namespace ZR.Model.System.Dto
 {
     public class ArticleQueryDto: PagerInfo
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using ZR.Common;
 using ZR.Model;
-using ZR.Model.Dto.System;
+using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Repository.System;
 using ZR.Service.IService;

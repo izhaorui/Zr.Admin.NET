@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
-using ZR.Model.Dto.System;
+using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Service.IService;
 using ZR.Tasks;

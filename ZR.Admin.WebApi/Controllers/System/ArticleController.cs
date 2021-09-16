@@ -16,7 +16,7 @@ using ZR.Service.IService;
 using Infrastructure.Model;
 using SqlSugar;
 using Mapster;
-using ZR.Model.Dto.System;
+using ZR.Model.System.Dto;
 using Infrastructure.Enums;
 using Infrastructure;
 using ZR.Admin.WebApi.Extensions;

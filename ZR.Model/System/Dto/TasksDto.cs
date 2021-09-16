@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace ZR.Model.Dto.System
+namespace ZR.Model.System.Dto
 {
     public class TasksQueryDto
     {

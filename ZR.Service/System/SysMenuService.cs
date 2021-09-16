@@ -1,7 +1,7 @@
 ﻿using Infrastructure.Attribute;
 using System.Collections.Generic;
 using System.Linq;
-using ZR.Model.Dto.System;
+using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Model.System.Vo;
 using ZR.Model.Vo;

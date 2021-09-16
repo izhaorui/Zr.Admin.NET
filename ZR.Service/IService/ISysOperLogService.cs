@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using ZR.Model;
-using ZR.Model.Dto.System;
+using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Service.System;
 

@@ -5,7 +5,7 @@ using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model.Dto.System;
+using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Service;
 using ZR.Service.IService;

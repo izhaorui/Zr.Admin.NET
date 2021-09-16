@@ -13,7 +13,6 @@ using {ModelsNamespace}.Models;
 using {ServicesNamespace}.Business;
 using {ApiControllerNamespace}.Extensions;
 using {ApiControllerNamespace}.Filters;
-using {ApiControllerNamespace}.Controllers;
 
 namespace {ApiControllerNamespace}.Controllers
 {
@@ -40,7 +39,7 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpGet("list")]
         [ActionPermissionFilter(Permission = "{Permission}:list")]
-        public IActionResult Query([FromQuery] {ModelName}QueryDto parm)
+        public IActionResult Query{ModelName}([FromQuery] {ModelName}QueryDto parm)
         {
             //开始拼装查询条件
             var predicate = Expressionable.Create<{ModelName}>();
@@ -60,7 +59,7 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpGet("{{PrimaryKey}}")]
         [ActionPermissionFilter(Permission = "{Permission}:query")]
-        public IActionResult Get({KeyTypeName} {PrimaryKey})
+        public IActionResult Get{ModelName}({KeyTypeName} {PrimaryKey})
         {
             var response = _{ModelName}Service.GetId({PrimaryKey});
 
@@ -74,7 +73,7 @@ namespace {ApiControllerNamespace}.Controllers
         [HttpPost]
         [ActionPermissionFilter(Permission = "{Permission}:add")]
         [Log(Title = "{TableDesc}添加", BusinessType = BusinessType.INSERT)]
-        public IActionResult Create([FromBody] {ModelName}Dto parm)
+        public IActionResult Add{ModelName}([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
             {
@@ -94,7 +93,7 @@ namespace {ApiControllerNamespace}.Controllers
         [HttpPut]
         [ActionPermissionFilter(Permission = "{Permission}:update")]
         [Log(Title = "{TableDesc}修改", BusinessType = BusinessType.UPDATE)]
-        public IActionResult Update([FromBody] {ModelName}Dto parm)
+        public IActionResult Update{ModelName}([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
             {
@@ -120,7 +119,7 @@ namespace {ApiControllerNamespace}.Controllers
         [HttpDelete("{{PrimaryKey}}")]
         [ActionPermissionFilter(Permission = "{Permission}:delete")]
         [Log(Title = "{TableDesc}删除", BusinessType = BusinessType.DELETE)]
-        public IActionResult Delete({KeyTypeName} {PrimaryKey} = 0)
+        public IActionResult Delete{ModelName}({KeyTypeName} {PrimaryKey} = 0)
         {
             if ({PrimaryKey} <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
 
