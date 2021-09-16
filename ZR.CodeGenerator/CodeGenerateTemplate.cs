@@ -8,10 +8,18 @@ using ZR.CodeGenerator.CodeGenerator;
 
 namespace ZR.CodeGenerator
 {
+    /// <summary>
+    /// 代码生成模板
+    /// </summary>
     public class CodeGenerateTemplate
     {
         #region Template
 
+        /// <summary>
+        /// 生成vuejs模板，目前只有上传文件方法
+        /// </summary>
+        /// <param name="dbColumnInfo"></param>
+        /// <returns></returns>
         public static string GetVueJsMethod(DbColumnInfo dbColumnInfo)
         {
             string columnName = CodeGeneratorTool.FirstLowerCase(dbColumnInfo.DbColumnName);

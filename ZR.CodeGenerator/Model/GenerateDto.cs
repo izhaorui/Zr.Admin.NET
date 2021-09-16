@@ -29,6 +29,9 @@ namespace ZR.CodeGenerator.Model
         /// 要生成的文件
         /// </summary>
         public int[] genFiles { get; set; }
+        /// <summary>
+        /// 如果目标文件存在，是否覆盖。默认为false
+        /// </summary>
         public bool coverd { get; set; } = true;
     }
 }

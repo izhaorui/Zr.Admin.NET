@@ -2,41 +2,40 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ZR.Admin.WebApi.Filters;
-using ZR.Admin.WebApi.Controllers;
-using ZR.Service.Business;
 using SqlSugar;
 using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
-using ZR.Admin.WebApi.Extensions;
 using {ModelsNamespace}.Dto;
 using {ModelsNamespace}.Models;
+using {ServicesNamespace}.Business;
+using {ApiControllerNamespace}.Extensions;
+using {ApiControllerNamespace}.Filters;
+using {ApiControllerNamespace}.Controllers;
 
-namespace ZRAdmin.Controllers
+namespace {ApiControllerNamespace}.Controllers
 {
     /// <summary>
     /// 代码自动生成
     /// </summary>
-	
     [Verify]
     [Route("bus/{ModelName}")]
-    public class {ControllerName}Controller: BaseController
+    public class {ModelName}Controller: BaseController
 	{
         /// <summary>
-        /// {FileName}接口
+        /// {TableDesc}接口
         /// </summary>
-        private readonly I{ServiceName} _{ServiceName};
+        private readonly I{ModelName}Service _{ModelName}Service;
 
-        public {ControllerName}Controller(I{ServiceName} {ServiceName})
+        public {ModelName}Controller(I{ModelName}Service {ModelName}Service)
         {
-            _{ServiceName} = {ServiceName};
+            _{ModelName}Service = {ModelName}Service;
         }
 
         /// <summary>
-        /// 查询{FileName}列表
+        /// 查询{TableDesc}列表
         /// </summary>
         /// <returns></returns>
         [HttpGet("list")]
@@ -49,32 +48,32 @@ namespace ZRAdmin.Controllers
             //TODO 搜索条件
             //predicate = predicate.And(m => m.Name.Contains(parm.Name));
 
-            var response = _{ServiceName}.GetPages(predicate.ToExpression(), parm);
+            var response = _{ModelName}Service.GetPages(predicate.ToExpression(), parm);
 
             return SUCCESS(response);
         }
 
         /// <summary>
-        /// 查询{FileName}详情
+        /// 查询{TableDesc}详情
         /// </summary>
-        /// <param name="{primaryKey}"></param>
+        /// <param name="{PrimaryKey}"></param>
         /// <returns></returns>
-        [HttpGet("{{primaryKey}}")]
+        [HttpGet("{{PrimaryKey}}")]
         [ActionPermissionFilter(Permission = "{Permission}:query")]
-        public IActionResult Get({KeyTypeName} {primaryKey})
+        public IActionResult Get({KeyTypeName} {PrimaryKey})
         {
-            var response = _{ServiceName}.GetId({primaryKey});
+            var response = _{ModelName}Service.GetId({PrimaryKey});
 
             return SUCCESS(response);
         }
 
         /// <summary>
-        /// 添加{FileName}
+        /// 添加{TableDesc}
         /// </summary>
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "{Permission}:add")]
-        [Log(Title = "{FileName}添加", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "{TableDesc}添加", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
@@ -85,16 +84,16 @@ namespace ZRAdmin.Controllers
             var addModel = parm.Adapt<{ModelName}>().ToCreate();
             //addModel.CreateID = User.Identity.Name;
 
-            return SUCCESS(_{ServiceName}.Add(addModel));
+            return SUCCESS(_{ModelName}Service.Add(addModel));
         }
 
         /// <summary>
-        /// 更新{FileName}
+        /// 更新{TableDesc}
         /// </summary>
         /// <returns></returns>
         [HttpPut]
         [ActionPermissionFilter(Permission = "{Permission}:update")]
-        [Log(Title = "{FileName}修改", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "{TableDesc}修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
@@ -105,28 +104,27 @@ namespace ZRAdmin.Controllers
             var updateModel = parm.Adapt<{ModelName}>().ToCreate();
             //updateModel.CreateID = User.Identity.Name;
 
-            var response = _{ServiceName}.Update(w => w.{primaryKey} == updateModel.{primaryKey}, it => new {ModelName}()
+            var response = _{ModelName}Service.Update(w => w.{PrimaryKey} == updateModel.{PrimaryKey}, it => new {ModelName}()
             {
                 //TODO 字段映射
-                {updateColumn}
+                {UpdateColumn}
             });
 
             return SUCCESS(response);
         }
 
         /// <summary>
-        /// 删除{FileName}
+        /// 删除{TableDesc}
         /// </summary>
         /// <returns></returns>
-        [HttpDelete("{{primaryKey}}")]
+        [HttpDelete("{{PrimaryKey}}")]
         [ActionPermissionFilter(Permission = "{Permission}:delete")]
-        [Log(Title = "{FileName}删除", BusinessType = BusinessType.DELETE)]
-        public IActionResult Delete({KeyTypeName} {primaryKey} = 0)
+        [Log(Title = "{TableDesc}删除", BusinessType = BusinessType.DELETE)]
+        public IActionResult Delete({KeyTypeName} {PrimaryKey} = 0)
         {
-            if ({primaryKey} <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
+            if ({PrimaryKey} <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
 
-            // 删除{FileName}
-            var response = _{ServiceName}.Delete({primaryKey});
+            var response = _{ModelName}Service.Delete({PrimaryKey});
 
             return SUCCESS(response);
         }

@@ -4,11 +4,11 @@
    * {ModelTypeDesc}分页查询
    * @param {查询条件} data
    */
-export function list{ModelTypeName}(data) {
+export function list{ModelTypeName}(query) {
   return request({
     url: 'bus/{ModelTypeName}/list',
     method: 'get',
-    params: data,
+    params: query,
   })
 }
 

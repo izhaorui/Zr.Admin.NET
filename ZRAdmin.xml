@@ -920,5 +920,46 @@
             </summary>
             <param name="services"></param>
         </member>
+        <member name="T:ZRAdmin.Controllers.GiftController">
+            <summary>
+            代码自动生成
+            </summary>
+        </member>
+        <member name="F:ZRAdmin.Controllers.GiftController._GiftService">
+            <summary>
+            接口
+            </summary>
+        </member>
+        <member name="M:ZRAdmin.Controllers.GiftController.Query(ZR.Model.Dto.GiftQueryDto)">
+            <summary>
+            查询列表
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZRAdmin.Controllers.GiftController.Get(System.Int32)">
+            <summary>
+            查询详情
+            </summary>
+            <param name="GiftId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZRAdmin.Controllers.GiftController.Create(ZR.Model.Dto.GiftDto)">
+            <summary>
+            添加
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZRAdmin.Controllers.GiftController.Update(ZR.Model.Dto.GiftDto)">
+            <summary>
+            更新
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZRAdmin.Controllers.GiftController.Delete(System.Int32)">
+            <summary>
+            删除
+            </summary>
+            <returns></returns>
+        </member>
     </members>
 </doc>
