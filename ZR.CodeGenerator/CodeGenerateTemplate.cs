@@ -42,8 +42,14 @@ namespace ZR.CodeGenerator
             if (!dbFieldInfo.IsNullable && !dbFieldInfo.IsIdentity)
             {
                 vueViewEditFromRuleContent += $"        {dbFieldInfo.DbColumnName}: [\n";
-                vueViewEditFromRuleContent += $"        {{ required: true, message:\"请输入{dbFieldInfo.ColumnDescription}\", trigger: \"blur\"}},\n";
+                vueViewEditFromRuleContent += $"        {{ required: true, message: '请输入{dbFieldInfo.ColumnDescription}', trigger: \"blur\"}},\n";
                 //vueViewEditFromRuleContent += "        { min: 2, max: 50, message: \"长度在 2 到 50 个字符\", trigger:\"blur\" }\n";
+                vueViewEditFromRuleContent += "        ],\n";
+            }
+            else if (TableMappingHelper.IsNumber(dbFieldInfo.DataType))
+            {
+                vueViewEditFromRuleContent += $"        {dbFieldInfo.DbColumnName}: [\n";
+                vueViewEditFromRuleContent += $"        {{ type: 'number', message: '{dbFieldInfo.DbColumnName}必须为数字值', trigger: \"blur\"}},\n";
                 vueViewEditFromRuleContent += "        ],\n";
             }
 
@@ -98,24 +104,26 @@ namespace ZR.CodeGenerator
                 //图片
                 vueViewFromContent += $"       <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">\n";
                 vueViewFromContent += $"         <el-upload class=\"avatar-uploader\" name=\"file\" action=\"/api/upload/saveFile/\" :show-file-list=\"false\" :on-success=\"handleUpload{columnName}Success\" :before-upload=\"beforeFileUpload\">\n";
-                vueViewFromContent += $"        <img v-if=\"form.{columnName}\" :src=\"form.{columnName}\" class=\"icon\">\n";
-                vueViewFromContent += "         <i v-else class=\"el-icon-plus uploader-icon\"></i>\n";
-                vueViewFromContent += "         </el-upload>\n";
-                vueViewFromContent += $"        <el-input v-model=\"form.{columnName}\" placeholder=\"请上传文件或手动输入文件地址\"></el-input>\n";
+                vueViewFromContent += $"            <img v-if=\"form.{columnName}\" :src=\"form.{columnName}\" class=\"icon\">\n";
+                vueViewFromContent += "             <i v-else class=\"el-icon-plus uploader-icon\"></i>\n";
+                vueViewFromContent += "          </el-upload>\n";
+                vueViewFromContent += $"         <el-input v-model=\"form.{columnName}\" placeholder=\"请上传文件或手动输入文件地址\"></el-input>\n";
                 vueViewFromContent += "        </el-form-item>\n";
             }
             else if (CodeGeneratorTool.radioFiled.Any(f => columnName.Contains(f)) && (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint" || dbFieldInfo.DataType == "int"))
             {
-                vueViewFromContent += $"       <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">";
+                vueViewFromContent += $"       <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">\n";
                 vueViewFromContent += $"         <el-radio-group v-model=\"form.{columnName}\">\n";
-                vueViewFromContent += "           <el-radio v-for=\"dict in statusOptions\" :key=\"dict.dictValue\" :label=\"dict.dictValue\">{{dict.dictLabel}}</el-radio>\n";
+                vueViewFromContent += "           <el-radio :key=\"1\" :label=\"1\">是</el-radio>\n";
+                vueViewFromContent += "           <el-radio :key=\"0\" :label=\"0\">否</el-radio>\n";
                 vueViewFromContent += "          </el-radio-group>\n";
                 vueViewFromContent += "        </el-form-item>\n";
             }
             else
             {
+                string inputNumTxt = TableMappingHelper.IsNumber(dbFieldInfo.DataType) ? ".number" : "";
                 vueViewFromContent += $"        <el-form-item label=\"{ CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" :label-width=\"labelWidth\" prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\">\n";
-                vueViewFromContent += $"           <el-input v-model=\"form.{CodeGeneratorTool.FirstLowerCase(columnName)}\" placeholder=\"{placeHolder}\" {labelDisabled}/>\n";
+                vueViewFromContent += $"           <el-input v-model{inputNumTxt}=\"form.{CodeGeneratorTool.FirstLowerCase(columnName)}\" placeholder=\"{placeHolder}\" {labelDisabled}/>\n";
                 vueViewFromContent += "        </el-form-item>\n";
             }
 

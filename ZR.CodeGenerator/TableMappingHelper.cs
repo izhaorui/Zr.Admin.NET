@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Infrastructure.Extensions;
 using ZR.Common.Extension;
@@ -107,6 +108,12 @@ namespace ZR.CodeGenerator.CodeGenerator
                     break;
             }
             return sTempDatatype;
+        }
+
+        public static bool IsNumber(string tableDataType)
+        {
+            string[] arr = new string[] { "int", "long" };
+            return arr.Any(f => f.Replace("?", "").Contains(GetPropertyDatatype(tableDataType)));
         }
     }
 }

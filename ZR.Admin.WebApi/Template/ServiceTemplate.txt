@@ -9,7 +9,6 @@ using System.Text;
 using ZR.Common;
 using {ModelsNamespace}.Models;
 using {IRepositoriesNamespace};
-using {ServicesNamespace}.IService;
 
 namespace {ServicesNamespace}.Business
 {

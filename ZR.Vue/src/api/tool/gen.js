@@ -30,7 +30,7 @@ export function codeGetDBList() {
 /**
    * 获取数据库表
    */
-export function codeGetTableList(data) {
+export function listDbTable(data) {
   return request({
     url: 'tool/gen/getTableList',
     method: 'get',
@@ -53,13 +53,31 @@ export async function codeGenerator(data) {
  * @param {*} data
  * @returns
  */
-export function queryColumnInfo(data) {
+export function queryColumnInfo(tableId) {
   return request({
-    url: 'tool/gen/getColumnInfo',
+    url: 'tool/gen/Column/' + tableId,
     method: 'GET',
-    params: data,
   })
 }
+
+
+// 查询表详细信息
+export function getGenTable(params) {
+  return request({
+    url: 'tool/gen/getGenTable',
+    method: 'get',
+    params: params
+  })
+}
+// 导入表
+export function importTable(data) {
+  return request({
+    url: '/tool/gen/importTable',
+    method: 'post',
+    params: data
+  })
+}
+
 
 // /**
 //  *

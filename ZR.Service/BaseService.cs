@@ -65,7 +65,7 @@ namespace ZR.Service
         }
 
         /// <summary>
-        /// 添加或更新数据
+        /// 添加或更新数据，不推荐使用了
         /// </summary>
         /// <param name="parm">List<T></param>
         /// <returns></returns>

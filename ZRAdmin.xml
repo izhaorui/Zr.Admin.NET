@@ -27,6 +27,47 @@
             <param name="data"></param>
             <returns></returns>
         </member>
+        <member name="T:ZR.Admin.WebApi.Controllers.GiftController">
+            <summary>
+            代码自动生成
+            </summary>
+        </member>
+        <member name="F:ZR.Admin.WebApi.Controllers.GiftController._GiftService">
+            <summary>
+            接口
+            </summary>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.QueryGift(ZR.Model.Dto.GiftQueryDto)">
+            <summary>
+            查询列表
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.GetGift(System.Int32)">
+            <summary>
+            查询详情
+            </summary>
+            <param name="GiftId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.AddGift(ZR.Model.Dto.GiftDto)">
+            <summary>
+            添加
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.UpdateGift(ZR.Model.Dto.GiftDto)">
+            <summary>
+            更新
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.DeleteGift(System.Int32)">
+            <summary>
+            删除
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:ZR.Admin.WebApi.Controllers.CodeGeneratorController">
             <summary>
             代码生成
@@ -47,19 +88,41 @@
              <param name="pager">分页信息</param>
              <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.QueryColumnInfo(System.String,System.String)">
-            <summary>
-            获取表格列
-            </summary>
-            <param name="dbName"></param>
-            <param name="tableName"></param>
-            <returns></returns>
-        </member>
         <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate(ZR.CodeGenerator.Model.GenerateDto)">
             <summary>
             代码生成器
             </summary>
             <param name="dto">数据传输对象</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetGenTable(System.String,ZR.Model.PagerInfo)">
+            <summary>
+            获取表详细信息
+            </summary>
+            <param name="tableName"></param>
+            <param name="pagerInfo">分页信息</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetColumnList(System.Int64)">
+            <summary>
+            查询表字段列表
+            </summary>
+            <param name="tableId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Remove(System.String)">
+            <summary>
+            代码生成删除
+            </summary>
+            <param name="tableIds"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.ImportTableSave(System.String,System.String)">
+            <summary>
+            导入表
+            </summary>
+            <param name="tables"></param>
+            <param name="dbName"></param>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">
