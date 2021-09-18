@@ -66,9 +66,9 @@ namespace ZR.CodeGenerator
             modelcontent += "        /// </summary>\n";
             if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
             {
-                modelcontent += $"        [SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPk.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIncrement.ToString().ToLower()})]\n";
+                modelcontent += $"[SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPk.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIncrement.ToString().ToLower()})]\n";
             }
-            modelcontent += $"        public {dbFieldInfo.CsharpType} {dbFieldInfo.CsharpField} {{ get; set; }}\n\r";
+            modelcontent += $"public {dbFieldInfo.CsharpType} {dbFieldInfo.CsharpField} {{ get; set; }}\n\r";
             return modelcontent;
         }
         //DTO model
@@ -91,7 +91,10 @@ namespace ZR.CodeGenerator
             string vueViewFromContent = "";
             string labelDisabled = dbFieldInfo.IsPk ? ":disabled=\"true\"" : "";
             string placeHolder = dbFieldInfo.IsIncrement ? "" : $"请输入{labelName}";
-
+            if (!dbFieldInfo.IsInsert || !dbFieldInfo.IsEdit)
+            {
+                return vueViewFromContent;
+            }
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 //时间
@@ -143,12 +146,11 @@ namespace ZR.CodeGenerator
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string vueViewListContent = "";
             string showToolTip = dbFieldInfo.ColumnType.Contains("varchar") ? ":show-overflow-tooltip=\"true\"" : "";
-            if (!dbFieldInfo.IsQuery)
+            if (!dbFieldInfo.IsList)
             {
-                return vueViewListContent;
-            }
 
-            if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
+            }
+            else if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
             {
                 vueViewListContent += $"      <el-table-column prop=\"{ columnName}\" label=\"图片\">\n";
                 vueViewListContent += "         <template slot-scope=\"scope\">\n";
@@ -167,8 +169,7 @@ namespace ZR.CodeGenerator
             //}
             else
             {
-                //table-column
-                vueViewListContent += $"      <el-table-column prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\" label=\"{label}\"  align=\"center\" width=\"100\" {showToolTip} />\n";
+                vueViewListContent += $"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\" width=\"100\" {showToolTip} />\n";
             }
             return vueViewListContent;
         }

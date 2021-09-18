@@ -42,12 +42,12 @@
           <span>{{(queryParams.pageNum - 1) * queryParams.pageSize + scope.$index + 1}}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="tableName" label="表名" sortable="custom" width="380" />
+      <el-table-column prop="tableName" label="表名" sortable="custom" width="180" />
       <el-table-column prop="tableComment" label="表描述" />
       <el-table-column prop="className" label="实体" />
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column prop="updateTime" label="更新时间" />
-      <el-table-column label="操作" align="center" width="240">
+      <el-table-column label="操作" align="center" width="340">
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-view" @click="handlePreview()">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)">编辑</el-button>
@@ -192,8 +192,8 @@ export default {
             // dbName: this.codeform.dbName,
             tableId: this.currentSelected.tableId,
             tableName: this.currentSelected.name,
-            baseSpace: this.codeform.baseSpace,
-            replaceTableNameStr: this.codeform.replaceTableNameStr,
+            // baseSpace: this.codeform.baseSpace,
+            // replaceTableNameStr: this.codeform.replaceTableNameStr,
             genFiles: this.checkedCodeGenerateForm,
             coverd: this.coverd,
             queryColumn: this.checkedQueryColumn,

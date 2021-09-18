@@ -81,7 +81,6 @@ namespace {ApiControllerNamespace}.Controllers
             }
             //从 Dto 映射到 实体
             var addModel = parm.Adapt<{ModelName}>().ToCreate();
-            //addModel.CreateID = User.Identity.Name;
 
             return SUCCESS(_{ModelName}Service.Add(addModel));
         }
@@ -100,12 +99,11 @@ namespace {ApiControllerNamespace}.Controllers
                 throw new CustomException("请求实体不能为空");
             }
             //从 Dto 映射到 实体
-            var updateModel = parm.Adapt<{ModelName}>().ToCreate();
-            //updateModel.CreateID = User.Identity.Name;
+            var updateModel = parm.Adapt<{ModelName}>().ToUpdate();
 
             var response = _{ModelName}Service.Update(w => w.{PrimaryKey} == updateModel.{PrimaryKey}, it => new {ModelName}()
             {
-                //TODO 字段映射
+                //Update 字段映射
                 {UpdateColumn}
             });
 

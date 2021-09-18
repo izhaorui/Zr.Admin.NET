@@ -91,17 +91,17 @@ namespace ZR.CodeGenerator
                 {
                     vueViewEditFromContent += $"        {columnName}: undefined,\n";
                 }
-                //vueViewSaveBindContent += string.Format("        '{0}':this.editFrom.{0},\n", columnName);
+                
                 //主键
                 if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
                 {
                     primaryKey = columnName.Substring(0, 1).ToUpper() + columnName[1..];
                     keyTypeName = dbFieldInfo.CsharpType;
                 }
-                else
+                //编辑字段
+                if (dbFieldInfo.IsEdit && (!dbFieldInfo.IsPk || !dbFieldInfo.IsIncrement))
                 {
-                    var tempColumnName = columnName.Substring(0, 1).ToUpper() + columnName[1..];
-                    updateColumn += $"              {tempColumnName} = parm.{tempColumnName},\n";
+                    updateColumn += $"              {dbFieldInfo.CsharpField} = parm.{dbFieldInfo.CsharpField},\n";
                 }
 
                 modelContent += CodeGenerateTemplate.GetModelTemplate(dbFieldInfo);

@@ -37,22 +37,7 @@ namespace ZR.Model.System.Dto
         public string CsharpType { get; set; }
         public string CsharpField { get; set; }
         public bool IsPk { get; set; }
-        ///// <summary>
-        ///// 是否必填（1是）
-        ///// </summary>
-        //public bool IsRequired { get; set; }
-        //public bool IsIncrement { get; set; }
-        ///// <summary>
-        ///// 是否插入
-        ///// </summary>
         public bool IsInsert { get; set; }
-        ///// <summary>
-        ///// 是否需要编辑
-        ///// </summary>
-        public bool IsEdit { get; set; }
-        ///// <summary>
-        ///// isList
-        ///// </summary>
         public bool IsList { get; set; }
         //public bool IsQuery { get; set; }
         ///// <summary>

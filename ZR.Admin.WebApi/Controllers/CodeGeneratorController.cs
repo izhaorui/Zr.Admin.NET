@@ -93,17 +93,17 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:gen:code")]
         public IActionResult Generate([FromBody] GenerateDto dto)
         {
-            if (string.IsNullOrEmpty(dto.tableName) || dto.TableId <= 0)
+            if (dto.TableId <= 0)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             var getTableColumn = GenTableColumnService.GenTableColumns(dto.TableId);
             genTableInfo.Columns = getTableColumn;
-            DbTableInfo dbTableInfo = new() { Name = dto.tableName };
+            //DbTableInfo dbTableInfo = new() { Name = dto.tableName };
             CodeGeneratorTool.Generate(genTableInfo, dto);
 
-            return SUCCESS(dbTableInfo);
+            return SUCCESS(genTableInfo);
         }
 
         /// <summary>
