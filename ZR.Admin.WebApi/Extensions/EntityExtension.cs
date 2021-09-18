@@ -49,27 +49,27 @@ namespace ZR.Admin.WebApi.Extensions
             return source;
         }
 
-        //public static TSource ToUpdate<TSource>(this TSource source, UserSessionVM userSession)
-        //{
-        //    var types = source.GetType();
+        public static TSource ToUpdate<TSource>(this TSource source, HttpContext context = null)
+        {
+            var types = source.GetType();
 
-        //    if (types.GetProperty("UpdateTime") != null)
-        //    {
-        //        types.GetProperty("UpdateTime").SetValue(source, DateTime.Now, null);
-        //    }
+            if (types.GetProperty("UpdateTime") != null)
+            {
+                types.GetProperty("UpdateTime").SetValue(source, DateTime.Now, null);
+            }
 
-        //    if (types.GetProperty("UpdateID") != null)
-        //    {
-        //        types.GetProperty("UpdateID").SetValue(source, userSession.UserID, null);
-        //    }
+            //if (types.GetProperty("UpdateID") != null)
+            //{
+            //    types.GetProperty("UpdateID").SetValue(source, userSession.UserID, null);
+            //}
 
-        //    if (types.GetProperty("UpdateName") != null)
-        //    {
-        //        types.GetProperty("UpdateName").SetValue(source, userSession.UserName, null);
-        //    }
+            if (types.GetProperty("UpdateBy") != null)
+            {
+                types.GetProperty("UpdateBy").SetValue(source,context.GetName(), null);
+            }
 
-        //    return source;
-        //}
+            return source;
+        }
 
     }
 }

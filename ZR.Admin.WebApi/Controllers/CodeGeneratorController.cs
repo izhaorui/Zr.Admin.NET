@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.CodeGenerator;
 using ZR.CodeGenerator.CodeGenerator;
@@ -13,6 +15,7 @@ using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
 using ZR.Common;
 using ZR.Model;
+using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
 using ZR.Model.Vo;
 using ZR.Service.System.IService;
@@ -90,12 +93,15 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:gen:code")]
         public IActionResult Generate([FromBody] GenerateDto dto)
         {
-            if (string.IsNullOrEmpty(dto.tableName))
+            if (string.IsNullOrEmpty(dto.tableName) || dto.TableId <= 0)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
+            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
+            var getTableColumn = GenTableColumnService.GenTableColumns(dto.TableId);
+            genTableInfo.Columns = getTableColumn;
             DbTableInfo dbTableInfo = new() { Name = dto.tableName };
-            CodeGeneratorTool.Generate(dbTableInfo, dto);
+            CodeGeneratorTool.Generate(genTableInfo, dto);
 
             return SUCCESS(dbTableInfo);
         }
@@ -133,7 +139,7 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 代码生成删除
+        /// 删除代码生成
         /// </summary>
         /// <param name="tableIds"></param>
         /// <returns></returns>
@@ -143,8 +149,9 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Remove(string tableIds)
         {
             long[] tableId = Tools.SpitLongArrary(tableIds);
-            //TODO 带做 删除表
-            return SUCCESS("");
+           
+            GenTableService.DeleteGenTableByIds(tableId);
+            return SUCCESS(1);
         }
 
         /// <summary>
@@ -165,59 +172,99 @@ namespace ZR.Admin.WebApi.Controllers
             string[] tableNames = tables.Split(',', StringSplitOptions.RemoveEmptyEntries);
             string userName = User.Identity.Name;
 
-            foreach (var item in tableNames)
+            foreach (var tableName in tableNames)
             {
-                var tabInfo = _CodeGeneraterService.GetTableInfo(dbName, item);
+                var tabInfo = _CodeGeneraterService.GetTableInfo(dbName, tableName);
                 if (tabInfo != null)
                 {
                     GenTable genTable = new()
                     {
-                        TableName = item,
+                        BaseNameSpace = "ZR.",
+                        ModuleName = "bus",
+                        ClassName = CodeGeneratorTool.GetClassName(tableName),
+                        BusinessName = CodeGeneratorTool.GetClassName(tableName),
+                        FunctionAuthor = ConfigUtils.Instance.GetConfig("gen:author"),
+                        FunctionName = tabInfo.Description,
+                        TableName = tableName,
                         TableComment = tabInfo.Description,
-                        ClassName = CodeGeneratorTool.GetModelClassName(item),
-                        CreateBy = userName,
-                        CreateTime = DateTime.Now
+                        Create_by = userName,
                     };
-                    int rows = GenTableService.InsertGenTable(genTable);
+                    int rows = GenTableService.ImportGenTable(genTable);
                     if (rows > 0)
                     {
                         //保存列信息
-                        List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dbName, item);
+                        List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dbName, tableName);
                         List<GenTableColumn> genTableColumns = new();
-                        long tableId = 0;
                         foreach (var column in dbColumnInfos)
                         {
-                            tableId = column.TableId;
-
                             GenTableColumn genTableColumn = new()
                             {
-                                ColumnName = column.DbColumnName,
+                                ColumnName = CodeGeneratorTool.FirstLowerCase(column.DbColumnName),
                                 ColumnComment = column.ColumnDescription,
                                 IsPk = column.IsPrimarykey,
                                 ColumnType = column.DataType,
                                 TableId = rows,
-                                TableName = item,
+                                TableName = tableName,
                                 CsharpType = TableMappingHelper.GetPropertyDatatype(column.DataType),
                                 CsharpField = column.DbColumnName.Substring(0, 1).ToUpper() + column.DbColumnName[1..],
                                 IsRequired = column.IsNullable,
                                 IsIncrement = column.IsIdentity,
-                                CreateBy = userName,
-                                CreateTime = DateTime.Now,
+                                Create_by = userName,
+                                Create_time = DateTime.Now,
                                 IsInsert = true,
                                 IsEdit = true,
                                 IsList = true,
-                                IsQuery = false
+                                IsQuery = false,
+                                HtmlType = GenConstants.HTML_INPUT
                             };
+
+                            if (CodeGeneratorTool.imageFiled.Any(f => column.DbColumnName.ToLower().Contains(f.ToLower())))
+                            {
+                                genTableColumn.HtmlType = GenConstants.HTML_IMAGE_UPLOAD;
+                            }
+                            if (genTableColumn.CsharpType.ToLower().Contains("datetime"))
+                            {
+                                genTableColumn.HtmlType = GenConstants.HTML_DATETIME;
+                            }
+                            if (CodeGeneratorTool.radioFiled.Any(f => column.DbColumnName.Contains(f)))
+                            {
+                                genTableColumn.HtmlType = GenConstants.HTML_RADIO;
+                            }
+                            if (column.Length > 200)
+                            {
+                                genTableColumn.HtmlType = GenConstants.HTML_TEXTAREA;
+                            }
+                            
                             genTableColumns.Add(genTableColumn);
                         }
 
-                        GenTableColumnService.DeleteGenTableColumn(tableId);
+                        GenTableColumnService.DeleteGenTableColumnByTableName(tableName);
                         GenTableColumnService.InsertGenTableColumn(genTableColumns);
                     }
                 }
             }
 
             return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 代码生成保存
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut()]
+        //[Log(Title = "代码生成", BusinessType = BusinessType.UPDATE)]
+        [ActionPermissionFilter(Permission = "tool:gen:edit")]
+        public IActionResult EditSave([FromBody]GenTableDto genTableDto)
+        {
+            if (genTableDto == null) throw new CustomException("请求参数错误");
+            var genTable = genTableDto.Adapt<GenTable>().ToUpdate();
+            
+            int rows = GenTableService.UpdateGenTable(genTable);
+            if (rows > 0)
+            {
+                GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
+            }
+            return SUCCESS(rows);
         }
     }
 }

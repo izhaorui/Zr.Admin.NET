@@ -8,7 +8,7 @@ namespace ZR.Model.System.Generate
     /// 代码生成表
     /// </summary>
     [SqlSugar.SugarTable("gen_table")]
-    public class GenTable
+    public class GenTable: SysBase
     {
         [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public int TableId { get; set; }
@@ -18,7 +18,7 @@ namespace ZR.Model.System.Generate
         public string SubTableFkName { get; set; }
         public string ClassName { get; set; }
         public string TplCategory { get; set; }
-        public string PackageName { get; set; }
+        public string BaseNameSpace { get; set; }
         public string ModuleName { get; set; }
         public string BusinessName { get; set; }
         public string FunctionName { get; set; }
@@ -26,9 +26,9 @@ namespace ZR.Model.System.Generate
         public string GenType { get; set; }
         public string Options { get; set; }
 
-        [SqlSugar.SugarColumn(IsOnlyIgnoreUpdate = true)]
-        public string CreateBy { get; set; }
-        [SqlSugar.SugarColumn(IsOnlyIgnoreUpdate = true)]
-        public DateTime CreateTime { get; set; }
+
+        /** 表列信息 */
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public List<GenTableColumn> Columns { get; set; }
     }
 }

@@ -1,10 +1,12 @@
-﻿using SqlSugar;
+﻿using Infrastructure;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
+using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator
 {
@@ -33,7 +35,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbTableInfo"></param>
         /// <param name="dto"></param>
-        public static void Generate(DbTableInfo dbTableInfo, GenerateDto dto)
+        public static void Generate(GenTable dbTableInfo, GenerateDto dto)
         {
             _option.BaseNamespace = "ZR.";
             //_option.TableList = listTable;
@@ -46,9 +48,9 @@ namespace ZR.CodeGenerator
             _option.ServicesNamespace = _option.BaseNamespace + "Service";
             _option.ApiControllerNamespace = _option.BaseNamespace + "Admin.WebApi";
 
-            CodeGeneraterService codeGeneraterService = new();
-            List<DbColumnInfo> listField = codeGeneraterService.GetColumnInfo(dto.dbName, dbTableInfo.Name);
-            GenerateSingle(listField, dbTableInfo, dto);
+            //CodeGeneraterService codeGeneraterService = new();
+            //List<DbColumnInfo> listField = codeGeneraterService.GetColumnInfo(dto.dbName, dbTableInfo.TableName);
+            GenerateSingle(dbTableInfo?.Columns, dbTableInfo, dto);
 
             //GenerateDtoProfile(_option.ModelsNamespace, profileContent, ifExsitedCovered);
         }
@@ -59,9 +61,9 @@ namespace ZR.CodeGenerator
         /// <param name="listField">表字段集合</param>
         /// <param name="tableInfo">表信息</param>
         /// <param name="dto"></param>
-        public static void GenerateSingle(List<DbColumnInfo> listField, DbTableInfo tableInfo, GenerateDto dto)
+        public static void GenerateSingle(List<GenTableColumn> listField, GenTable tableInfo, GenerateDto dto)
         {
-            var modelTypeName = GetModelClassName(tableInfo.Name);//表名对应C# 实体类名
+            var modelTypeName = tableInfo.ClassName;//表名对应C# 实体类名
             var primaryKey = "id";//主键
 
             string keyTypeName = "int";//主键数据类型
@@ -77,26 +79,24 @@ namespace ZR.CodeGenerator
             string vueViewEditFromRuleContent = string.Empty;//Vue数据校验
             string vueJsMethod = string.Empty;//Vue js自定义方法
 
-            foreach (DbColumnInfo dbFieldInfo in listField)
+            foreach (GenTableColumn dbFieldInfo in listField)
             {
-                string columnName = FirstLowerCase(dbFieldInfo.DbColumnName);
+                string columnName = dbFieldInfo.ColumnName;
 
-                if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
+                if (dbFieldInfo.ColumnType == "bool" || dbFieldInfo.ColumnType == "tinyint")
                 {
                     vueViewEditFromContent += $"        {columnName}: 'true',\n";
-                    //vueViewEditFromBindContent += $"        this.form.{columnName} = res.data.{0}+''\n";
                 }
                 else
                 {
                     vueViewEditFromContent += $"        {columnName}: undefined,\n";
-                    //vueViewEditFromBindContent += $"        {columnName}: row.{columnName},\n";
                 }
                 //vueViewSaveBindContent += string.Format("        '{0}':this.editFrom.{0},\n", columnName);
                 //主键
-                if (dbFieldInfo.IsIdentity || dbFieldInfo.IsPrimarykey)
+                if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
                 {
                     primaryKey = columnName.Substring(0, 1).ToUpper() + columnName[1..];
-                    keyTypeName = dbFieldInfo.DataType;
+                    keyTypeName = dbFieldInfo.CsharpType;
                 }
                 else
                 {
@@ -104,7 +104,6 @@ namespace ZR.CodeGenerator
                     updateColumn += $"              {tempColumnName} = parm.{tempColumnName},\n";
                 }
 
-                dbFieldInfo.DbColumnName = columnName;
                 modelContent += CodeGenerateTemplate.GetModelTemplate(dbFieldInfo);
                 vueViewFormContent += CodeGenerateTemplate.GetVueViewFormContent(dbFieldInfo);
                 vueJsMethod += CodeGenerateTemplate.GetVueJsMethod(dbFieldInfo);
@@ -117,8 +116,8 @@ namespace ZR.CodeGenerator
             replaceDto.PrimaryKey = primaryKey;
             replaceDto.ModelTypeName = modelTypeName;
             replaceDto.ModelProperty = modelContent;
-            replaceDto.TableName = tableInfo.Name;
-            replaceDto.TableDesc = tableInfo.Description;
+            replaceDto.TableName = tableInfo.TableName;
+            replaceDto.TableDesc = tableInfo.TableComment;
             replaceDto.InputDtoProperty = InputDtoContent;
             replaceDto.updateColumn = updateColumn;
             replaceDto.VueJsMethod = vueJsMethod;
@@ -407,19 +406,29 @@ namespace ZR.CodeGenerator
 
         /// <summary>
         /// 如果有前缀替换将前缀替换成空，替换下划线"_"为空再将首字母大写
+        /// 表名转换成C#类名
         /// </summary>
-        /// <param name="modelTypeName"></param>
+        /// <param name="tableName"></param>
         /// <returns></returns>
-        public static string GetModelClassName(string modelTypeName)
+        public static string GetClassName(string tableName)
         {
-            if (!string.IsNullOrEmpty(_option.ReplaceTableNameStr))
+            bool autoRemovePre = ConfigUtils.Instance.GetAppConfig("gen:autoPre", false);
+            string tablePrefix = ConfigUtils.Instance.GetAppConfig<string>("gen:tablePrefix");
+
+            if (!string.IsNullOrEmpty(tablePrefix) && autoRemovePre)
             {
-                modelTypeName = modelTypeName.Replace(_option.ReplaceTableNameStr.ToString(), "");
+                string[] searcList = tablePrefix.Split(",",StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < searcList.Length; i++)
+                {
+                    if (!string.IsNullOrEmpty(searcList[i].ToString()))
+                    {
+                        tableName = tableName.Replace(searcList[i].ToString(), "");
+                    }
+                }
             }
-            modelTypeName = modelTypeName.Replace("_", "");
-            modelTypeName = modelTypeName.Substring(0, 1).ToUpper() + modelTypeName[1..];
-            return modelTypeName;
+            return tableName.Substring(0, 1).ToUpper() + tableName[1..].Replace("_", "");
         }
+
         /// <summary>
         /// 首字母转小写，输出前端
         /// </summary>

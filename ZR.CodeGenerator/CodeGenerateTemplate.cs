@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ZR.CodeGenerator.CodeGenerator;
+using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator
 {
@@ -20,11 +21,11 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbColumnInfo"></param>
         /// <returns></returns>
-        public static string GetVueJsMethod(DbColumnInfo dbColumnInfo)
+        public static string GetVueJsMethod(GenTableColumn dbColumnInfo)
         {
-            string columnName = CodeGeneratorTool.FirstLowerCase(dbColumnInfo.DbColumnName);
+            string columnName = dbColumnInfo.ColumnName;
             string js = "";
-            if (CodeGeneratorTool.imageFiled.Any(f => columnName.Contains(f)))
+            if (dbColumnInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
             {
                 js += $"handleUpload{columnName}Success(res, file) {{\n";
                 js += $"     this.form.{columnName} = URL.createObjectURL(file.raw);\n";
@@ -35,21 +36,20 @@ namespace ZR.CodeGenerator
         }
 
         //rules
-        public static string GetFormRules(DbColumnInfo dbFieldInfo)
+        public static string GetFormRules(GenTableColumn dbFieldInfo)
         {
             string vueViewEditFromRuleContent = "";
             //Rule 规则验证
-            if (!dbFieldInfo.IsNullable && !dbFieldInfo.IsIdentity)
+            if (!dbFieldInfo.IsPk && !dbFieldInfo.IsIncrement)
             {
-                vueViewEditFromRuleContent += $"        {dbFieldInfo.DbColumnName}: [\n";
-                vueViewEditFromRuleContent += $"        {{ required: true, message: '请输入{dbFieldInfo.ColumnDescription}', trigger: \"blur\"}},\n";
-                //vueViewEditFromRuleContent += "        { min: 2, max: 50, message: \"长度在 2 到 50 个字符\", trigger:\"blur\" }\n";
+                vueViewEditFromRuleContent += $"        {dbFieldInfo.ColumnName}: [\n";
+                vueViewEditFromRuleContent += $"        {{ required: true, message: '请输入{dbFieldInfo.ColumnComment}', trigger: \"blur\"}},\n";
                 vueViewEditFromRuleContent += "        ],\n";
             }
-            else if (TableMappingHelper.IsNumber(dbFieldInfo.DataType))
+            else if (TableMappingHelper.IsNumber(dbFieldInfo.ColumnType) && dbFieldInfo.IsRequired)
             {
-                vueViewEditFromRuleContent += $"        {dbFieldInfo.DbColumnName}: [\n";
-                vueViewEditFromRuleContent += $"        {{ type: 'number', message: '{dbFieldInfo.DbColumnName}必须为数字值', trigger: \"blur\"}},\n";
+                vueViewEditFromRuleContent += $"        {dbFieldInfo.ColumnName}: [\n";
+                vueViewEditFromRuleContent += $"        {{ type: 'number', message: '{dbFieldInfo.ColumnName}必须为数字值', trigger: \"blur\"}},\n";
                 vueViewEditFromRuleContent += "        ],\n";
             }
 
@@ -57,49 +57,49 @@ namespace ZR.CodeGenerator
         }
 
         //model 属性
-        public static string GetModelTemplate(DbColumnInfo dbFieldInfo)
+        public static string GetModelTemplate(GenTableColumn dbFieldInfo)
         {
-            string columnName = dbFieldInfo.DbColumnName.Substring(0, 1).ToUpper() + dbFieldInfo.DbColumnName[1..];
             var modelcontent = "";
             modelcontent += "        /// <summary>\n";
-            modelcontent += $"        /// 描述 :{dbFieldInfo.ColumnDescription}\n";
-            modelcontent += $"        /// 空值 :{dbFieldInfo.IsNullable}\n";
-            modelcontent += $"        /// 默认 :{dbFieldInfo.DefaultValue}\n";
+            modelcontent += $"        /// 描述 :{dbFieldInfo.ColumnComment}\n";
+            modelcontent += $"        /// 空值 :{dbFieldInfo.IsRequired}\n";
             modelcontent += "        /// </summary>\n";
-            if (dbFieldInfo.IsIdentity || dbFieldInfo.IsPrimarykey)
+            if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
             {
-                modelcontent += $"        [SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPrimarykey.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIdentity.ToString().ToLower()})]\n";
+                modelcontent += $"        [SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPk.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIncrement.ToString().ToLower()})]\n";
             }
-            modelcontent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
+            modelcontent += $"        public {dbFieldInfo.CsharpType} {dbFieldInfo.CsharpField} {{ get; set; }}\n\r";
             return modelcontent;
         }
         //DTO model
-        public static string GetDtoContent(DbColumnInfo dbFieldInfo)
+        public static string GetDtoContent(GenTableColumn dbFieldInfo)
         {
-            string columnName = dbFieldInfo.DbColumnName.Substring(0, 1).ToUpper() + dbFieldInfo.DbColumnName[1..];
             string InputDtoContent = "";
-            InputDtoContent += $"        public {TableMappingHelper.GetPropertyDatatype(dbFieldInfo.DataType)} {columnName} {{ get; set; }}\n\r";
+            if (dbFieldInfo.IsInsert || dbFieldInfo.IsEdit)
+            {
+                InputDtoContent += $"        public {dbFieldInfo.CsharpType} {dbFieldInfo.CsharpField} {{ get; set; }}\n\r";
+            }
 
             return InputDtoContent;
         }
 
         //form-item
-        public static string GetVueViewFormContent(DbColumnInfo dbFieldInfo)
+        public static string GetVueViewFormContent(GenTableColumn dbFieldInfo)
         {
-            string columnName = CodeGeneratorTool.FirstLowerCase(dbFieldInfo.DbColumnName);
-            string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnDescription, columnName);
+            string columnName = dbFieldInfo.ColumnName;
+            string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string vueViewFromContent = "";
-            string labelDisabled = dbFieldInfo.IsIdentity ? ":disabled=\"true\"" : "";
-            string placeHolder = dbFieldInfo.IsIdentity ? "" : $"请输入{CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnDescription, columnName)}";
+            string labelDisabled = dbFieldInfo.IsPk ? ":disabled=\"true\"" : "";
+            string placeHolder = dbFieldInfo.IsIncrement ? "" : $"请输入{labelName}";
 
-            if (dbFieldInfo.DataType == "datetime")
+            if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 //时间
                 vueViewFromContent += $"       <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">\n";
                 vueViewFromContent += $"         <el-date-picker v-model=\"form.{columnName}\"  type=\"datetime\"  placeholder=\"选择日期时间\"  default-time=\"12:00:00\"> </el-date-picker>\n";
                 vueViewFromContent += "        </el-form-item>\n";
             }
-            else if (CodeGeneratorTool.imageFiled.Any(f => columnName.Contains(f)))
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_IMAGE_UPLOAD)
             {
                 //图片
                 vueViewFromContent += $"       <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">\n";
@@ -110,7 +110,7 @@ namespace ZR.CodeGenerator
                 vueViewFromContent += $"         <el-input v-model=\"form.{columnName}\" placeholder=\"请上传文件或手动输入文件地址\"></el-input>\n";
                 vueViewFromContent += "        </el-form-item>\n";
             }
-            else if (CodeGeneratorTool.radioFiled.Any(f => columnName.Contains(f)) && (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint" || dbFieldInfo.DataType == "int"))
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_RADIO)
             {
                 vueViewFromContent += $"       <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">\n";
                 vueViewFromContent += $"         <el-radio-group v-model=\"form.{columnName}\">\n";
@@ -119,10 +119,16 @@ namespace ZR.CodeGenerator
                 vueViewFromContent += "          </el-radio-group>\n";
                 vueViewFromContent += "        </el-form-item>\n";
             }
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_TEXTAREA)
+            {
+                vueViewFromContent += $"        <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">\n";
+                vueViewFromContent += $"           <el-input type=\"textarea\" v-model=\"form.{columnName}\" placeholder=\"请输入内容\"/>\n";
+                vueViewFromContent += "        </el-form-item>\n";
+            }
             else
             {
-                string inputNumTxt = TableMappingHelper.IsNumber(dbFieldInfo.DataType) ? ".number" : "";
-                vueViewFromContent += $"        <el-form-item label=\"{ CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\" :label-width=\"labelWidth\" prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\">\n";
+                string inputNumTxt = TableMappingHelper.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";
+                vueViewFromContent += $"        <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\">\n";
                 vueViewFromContent += $"           <el-input v-model{inputNumTxt}=\"form.{CodeGeneratorTool.FirstLowerCase(columnName)}\" placeholder=\"{placeHolder}\" {labelDisabled}/>\n";
                 vueViewFromContent += "        </el-form-item>\n";
             }
@@ -131,14 +137,18 @@ namespace ZR.CodeGenerator
         }
 
         //table-column
-        public static string GetTableColumn(DbColumnInfo dbFieldInfo)
+        public static string GetTableColumn(GenTableColumn dbFieldInfo)
         {
-            string columnName = CodeGeneratorTool.FirstLowerCase(dbFieldInfo.DbColumnName);
-            string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnDescription, columnName);
+            string columnName = dbFieldInfo.ColumnName;
+            string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string vueViewListContent = "";
-            string showToolTip = dbFieldInfo.DataType.Contains("varchar") ? ":show-overflow-tooltip=\"true\"" : "";
+            string showToolTip = dbFieldInfo.ColumnType.Contains("varchar") ? ":show-overflow-tooltip=\"true\"" : "";
+            if (!dbFieldInfo.IsQuery)
+            {
+                return vueViewListContent;
+            }
 
-            if (CodeGeneratorTool.imageFiled.Any(f => columnName.ToLower().Contains(f)))
+            if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
             {
                 vueViewListContent += $"      <el-table-column prop=\"{ columnName}\" label=\"图片\">\n";
                 vueViewListContent += "         <template slot-scope=\"scope\">\n";
@@ -146,19 +156,19 @@ namespace ZR.CodeGenerator
                 vueViewListContent += "         </template>\n";
                 vueViewListContent += "       </el-table-column>\n";
             }
-            else if (dbFieldInfo.DataType == "bool" || dbFieldInfo.DataType == "tinyint")
-            {
-                vueViewListContent += $"        <el-table-column prop=\"{columnName}\" label=\"{label}\" width=\"120\" >\n";
-                vueViewListContent += "          <template slot-scope=\"scope\">\n";
-                vueViewListContent += $"            <el-tag :type=\"scope.row.{columnName} === true ? 'success' : 'info'\"  disable-transitions >";
-                vueViewListContent += $"                {{scope.row.{columnName}===true?'启用':'禁用'}} </el-tag>\n";
-                vueViewListContent += "          </template>\n";
-                vueViewListContent += "        </el-table-column>\n";
-            }
+            //else if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_RADIO))
+            //{
+            //    vueViewListContent += $"        <el-table-column prop=\"{columnName}\" label=\"{label}\" width=\"120\" >\n";
+            //    vueViewListContent += "          <template slot-scope=\"scope\">\n";
+            //    vueViewListContent += $"            <el-tag :type=\"scope.row.{columnName} === true ? 'success' : 'info'\"  disable-transitions >";
+            //    vueViewListContent += $"                {{scope.row.{columnName}===true?'启用':'禁用'}} </el-tag>\n";
+            //    vueViewListContent += "          </template>\n";
+            //    vueViewListContent += "        </el-table-column>\n";
+            //}
             else
             {
                 //table-column
-                vueViewListContent += $"      <el-table-column prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\" label=\"{CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnDescription, columnName)}\"  align=\"center\" width=\"100\" {showToolTip} />\n";
+                vueViewListContent += $"      <el-table-column prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\" label=\"{label}\"  align=\"center\" width=\"100\" {showToolTip} />\n";
             }
             return vueViewListContent;
         }

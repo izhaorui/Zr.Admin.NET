@@ -12,19 +12,23 @@ namespace ZR.Service.System.IService
     {
         List<GenTable> SelectDbTableListByNamess(string[] tableNames);
 
-        int InsertGenTable(GenTable tables);
+        int ImportGenTable(GenTable tables);
 
-        int DeleteGenTable(GenTable table);
+        int DeleteGenTableByIds(long[] tableIds);
+        int DeleteGenTableByTbName(string tableName);
         PagedInfo<GenTable> GetGenTables(GenTable genTable, Model.PagerInfo pagerInfo);
         GenTable GetGenTableInfo(long tableId);
+        int UpdateGenTable(GenTable genTable);
     }
 
     public interface IGenTableColumnService
-    {
+    {        
         int InsertGenTableColumn(List<GenTableColumn> tableColumn);
 
         int DeleteGenTableColumn(long tableId);
-
+        int DeleteGenTableColumn(long[] tableIds);
+        int DeleteGenTableColumnByTableName(string tableName);
         List<GenTableColumn> GenTableColumns(long tableId);
+        int UpdateGenTableColumn(List<GenTableColumn> tableColumn);
     }
 }

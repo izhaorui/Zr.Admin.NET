@@ -77,6 +77,22 @@ export function importTable(data) {
     params: data
   })
 }
+// 删除表数据
+export function delTable(tableId) {
+  return request({
+    url: '/tool/gen/' + tableId,
+    method: 'delete'
+  })
+}
+
+// 修改代码生成表信息
+export function updateGenTable(data) {
+  return request({
+    url: '/tool/gen/',
+    method: 'put',
+    data: data
+  })
+}
 
 
 // /**

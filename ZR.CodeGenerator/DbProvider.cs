@@ -19,8 +19,8 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public SqlSugarScope GetSugarDbContext(string dbName = "")
         {
-            string connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.Conn).Replace("{database}", dbName);
-            int dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.CodeGenDbType, 0);
+            string connStr = ConfigUtils.Instance.GetConfig(OptionsSetting.Gen_conn).Replace("{database}", dbName);
+            int dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.Gen_conn_dbType, 0);
             if (string.IsNullOrEmpty(dbName))
             {
                 connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);

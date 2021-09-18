@@ -55,45 +55,45 @@ namespace ZR.CodeGenerator.CodeGenerator
                 case "number":
                 case "integer":
                 case "smallint":
-                    sTempDatatype = "int?";
+                    sTempDatatype = "int";
                     break;
 
                 case "bigint":
-                    sTempDatatype = "long?";
+                    sTempDatatype = "long";
                     break;
 
                 case "tinyint":
-                    sTempDatatype = "byte?";
+                    sTempDatatype = "byte";
                     break;
 
                 case "numeric":
                 case "real":
-                    sTempDatatype = "Single?";
+                    sTempDatatype = "Single";
                     break;
 
                 case "float":
-                    sTempDatatype = "float?";
+                    sTempDatatype = "float";
                     break;
 
                 case "decimal":
                 case "numer(8,2)":
-                    sTempDatatype = "decimal?";
+                    sTempDatatype = "decimal";
                     break;
 
                 case "bit":
-                    sTempDatatype = "bool?";
+                    sTempDatatype = "bool";
                     break;
 
                 case "date":
                 case "datetime":
                 case "datetime2":
                 case "smalldatetime":
-                    sTempDatatype = "DateTime?";
+                    sTempDatatype = "DateTime";
                     break;
 
                 case "money":
                 case "smallmoney":
-                    sTempDatatype = "double?";
+                    sTempDatatype = "double";
                     break;
 
                 case "char":
@@ -113,7 +113,7 @@ namespace ZR.CodeGenerator.CodeGenerator
         public static bool IsNumber(string tableDataType)
         {
             string[] arr = new string[] { "int", "long" };
-            return arr.Any(f => f.Replace("?", "").Contains(GetPropertyDatatype(tableDataType)));
+            return arr.Any(f => f.Contains(GetPropertyDatatype(tableDataType)));
         }
     }
 }

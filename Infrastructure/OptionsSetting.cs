@@ -11,6 +11,8 @@ namespace Infrastructure
         public static string DbType = "DbType";
         public static string CodeGenDbType = "CodeGenDbType";
         public static string DbKey = "DbKey";
+        public static string Gen_conn = "gen:conn";
+        public static string Gen_conn_dbType = "gen:dbType";
 
         public string Conn_Admin { get; set; }
 

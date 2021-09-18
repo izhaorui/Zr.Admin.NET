@@ -5,8 +5,6 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ZR.Model.System.Generate;
 using ZR.Service.System.IService;
 
@@ -18,14 +16,31 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(IGenTableService), ServiceLifetime = LifeTime.Transient)]
     public class GenTableService : BaseService<GenTable>, IGenTableService
     {
+        public IGenTableColumnService GenTableColumnService;
+        public GenTableService(IGenTableColumnService genTableColumnService)
+        {
+            GenTableColumnService = genTableColumnService;
+        }
+
         /// <summary>
         /// 删除表
         /// </summary>
-        /// <param name="table"></param>
+        /// <param name="tableIds">需要删除的表id</param>
         /// <returns></returns>
-        public int DeleteGenTable(GenTable table)
+        public int DeleteGenTableByIds(long[] tableIds)
         {
-            return Db.Deleteable<GenTable>().Where(f => f.TableName == table.TableName).ExecuteCommand();
+            Db.Deleteable<GenTable>().Where(f => tableIds.Contains(f.TableId)).ExecuteCommand();
+            return GenTableColumnService.DeleteGenTableColumn(tableIds);
+        }
+
+        /// <summary>
+        /// 删除表根据表名
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        public int DeleteGenTableByTbName(string tableName)
+        {
+            return Db.Deleteable<GenTable>().Where(f => f.TableName == tableName).ExecuteCommand();
         }
 
         /// <summary>
@@ -57,11 +72,15 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="table"></param>
         /// <returns></returns>
-        public int InsertGenTable(GenTable table)
+        public int ImportGenTable(GenTable table)
         {
             var db = Db;
-            DeleteGenTable(table);
-            return db.Insertable(table).ExecuteReturnIdentity();
+            table.Create_time = db.GetDate();
+            //导入前删除现有表
+            //DeleteGenTableByIds(new long[] { table.TableId });
+            DeleteGenTableByTbName(table.TableName);
+
+            return db.Insertable(table).IgnoreColumns(ignoreNullColumn: true).ExecuteReturnIdentity();
         }
 
         /// <summary>
@@ -72,6 +91,13 @@ namespace ZR.Service.System
         public List<GenTable> SelectDbTableListByNamess(string[] tableNames)
         {
             throw new NotImplementedException();
+        }
+
+        public int UpdateGenTable(GenTable genTable)
+        {
+            var db = Db;
+            genTable.Update_time = db.GetDate();
+            return db.Updateable(genTable).IgnoreColumns(ignoreAllNullColumns: true).ExecuteCommand();
         }
     }
 
@@ -88,7 +114,26 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableColumn(long tableId)
         {
-            return Db.Deleteable<GenTableColumn>().Where(f => f.TableId == tableId).ExecuteCommand();
+            return DeleteGenTableColumn(new long[] { tableId });
+        }
+        /// <summary>
+        /// 根据表id批量删除表字段
+        /// </summary>
+        /// <param name="tableId"></param>
+        /// <returns></returns>
+        public int DeleteGenTableColumn(long[] tableId)
+        {
+            return Db.Deleteable<GenTableColumn>().Where(f => tableId.Contains(f.TableId)).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 根据表名删除字段
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        public int DeleteGenTableColumnByTableName(string tableName)
+        {
+            return Db.Deleteable<GenTableColumn>().Where(f => f.TableName == tableName).ExecuteCommand();
         }
 
         /// <summary>
@@ -98,7 +143,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public List<GenTableColumn> GenTableColumns(long tableId)
         {
-            return GetAll().OrderBy(x => x.Sort).ToList();
+            return Db.Queryable<GenTableColumn>().Where(f => f.TableId == tableId).OrderBy(x => x.Sort).ToList();
         }
 
         /// <summary>
@@ -108,7 +153,17 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int InsertGenTableColumn(List<GenTableColumn> tableColumn)
         {
-            return Db.Insertable(tableColumn).ExecuteCommand();
+            return Db.Insertable(tableColumn).IgnoreColumns(x => new { x.Remark}).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 批量更新表字段
+        /// </summary>
+        /// <param name="tableColumn"></param>
+        /// <returns></returns>
+        public int UpdateGenTableColumn(List<GenTableColumn> tableColumn)
+        {
+            return Db.Updateable(tableColumn).IgnoreColumns(x => new { x.Remark }).ExecuteCommand();
         }
     }
 }

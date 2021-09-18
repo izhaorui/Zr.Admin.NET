@@ -14,12 +14,12 @@
             <el-tooltip class="item" effect="dark" content="系统会根据项目命名空间自动生成IService、Service、Models等子命名空间" placement="bottom">
               <el-input v-model="queryParams.baseSpace" clearable placeholder="如Zr" />
             </el-tooltip>
-          </el-form-item> -->
+          </el-form-item>
       <el-form-item label="去掉表名前缀：">
         <el-tooltip class="item" effect="dark" content="表名直接变为类名，去掉表名前缀。" placement="bottom">
           <el-input v-model="queryParams.replaceTableNameStr" clearable width="300" placeholder="例如：sys_" />
         </el-tooltip>
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item>
         <el-button type="primary" @click="handleSearch()">查询</el-button>
         <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button>
@@ -32,10 +32,10 @@
       </el-col>
 
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" v-hasPermi="['tool:gen:delete']">删除</el-button>
+        <el-button type="danger" :disabled="multiple" plain icon="el-icon-delete" @click="handleDelete" size="mini" v-hasPermi="['tool:gen:delete']">删除</el-button>
       </el-col>
     </el-row>
-    <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border stripe highlight-current-row height="500px" style="width: 100%;">
+    <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border @selection-change="handleSelectionChange" highlight-current-row height="500px">
       <el-table-column type="selection" align="center" width="55"></el-table-column>
       <el-table-column label="序号" type="index" width="50" align="center">
         <template slot-scope="scope">
@@ -51,6 +51,11 @@
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-view" @click="handlePreview()">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)">编辑</el-button>
+
+          <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left:10px">
+            <el-button slot="reference" v-hasPermi="['tool:gen:delete']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
+          </el-popconfirm>
+
           <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)" v-hasPermi="['tool:gen:code']">生成代码</el-button>
         </template>
       </el-table-column>
@@ -87,7 +92,7 @@
 </template>
 
 <script>
-import { codeGenerator, getGenTable } from "@/api/tool/gen";
+import { codeGenerator, getGenTable, delTable } from "@/api/tool/gen";
 import importTable from "./importTable";
 import { Loading } from "element-ui";
 
@@ -128,6 +133,10 @@ export default {
       checkedQueryColumn: [],
       //是否覆盖原先代码
       coverd: true,
+      // 选中的表
+      tableIds: [],
+      // 非多个禁用
+      multiple: true
     };
   },
   created() {
@@ -159,7 +168,6 @@ export default {
     handleShowDialog(row) {
       this.showGenerate = true;
       this.currentSelected = row;
-
     },
     /**
      * 点击生成服务端代码
@@ -181,7 +189,8 @@ export default {
           const pageLoading = Loading.service(loadop);
 
           var seachdata = {
-            dbName: this.codeform.dbName,
+            // dbName: this.codeform.dbName,
+            tableId: this.currentSelected.tableId,
             tableName: this.currentSelected.name,
             baseSpace: this.codeform.baseSpace,
             replaceTableNameStr: this.codeform.replaceTableNameStr,
@@ -235,6 +244,21 @@ export default {
     // 导入代码生成
     openImportTable() {
       this.$refs.import.show();
+    },
+    handleDelete(row) {
+      const tableIds = row.tableId || this.tableIds;
+      delTable(tableIds.toString()).then(res => {
+        if (res.code == 200) {
+          this.msgSuccess('删除成功')
+
+          this.handleSearch();
+        }
+      })
+    },
+    handleSelectionChange(section) {
+      this.tableIds = section.map((item) => item.tableId);
+      this.multiple = !section.length;
+      console.log(this.tableIds)
     },
   },
 };

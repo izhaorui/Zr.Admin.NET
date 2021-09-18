@@ -39,7 +39,6 @@ namespace ZR.Model.System
         /// [Computed]计算属性，打上此标签，对象地insert，update等操作会忽略此列
         /// </summary>
         [SugarColumn(IsIgnore = true)]
-        //[Computed]
         [JsonIgnore]
         public DateTime? BeginTime { get; set; }
 
@@ -47,7 +46,6 @@ namespace ZR.Model.System
         /// 用于搜索使用
         /// </summary>
         [SugarColumn(IsIgnore = true)]
-        //[Computed]
         [JsonIgnore]
         public DateTime? EndTime { get; set; }
     }

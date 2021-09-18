@@ -27,47 +27,6 @@
             <param name="data"></param>
             <returns></returns>
         </member>
-        <member name="T:ZR.Admin.WebApi.Controllers.GiftController">
-            <summary>
-            代码自动生成
-            </summary>
-        </member>
-        <member name="F:ZR.Admin.WebApi.Controllers.GiftController._GiftService">
-            <summary>
-            接口
-            </summary>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.QueryGift(ZR.Model.Dto.GiftQueryDto)">
-            <summary>
-            查询列表
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.GetGift(System.Int32)">
-            <summary>
-            查询详情
-            </summary>
-            <param name="GiftId"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.AddGift(ZR.Model.Dto.GiftDto)">
-            <summary>
-            添加
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.UpdateGift(ZR.Model.Dto.GiftDto)">
-            <summary>
-            更新
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GiftController.DeleteGift(System.Int32)">
-            <summary>
-            删除
-            </summary>
-            <returns></returns>
-        </member>
         <member name="T:ZR.Admin.WebApi.Controllers.CodeGeneratorController">
             <summary>
             代码生成
@@ -112,7 +71,7 @@
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Remove(System.String)">
             <summary>
-            代码生成删除
+            删除代码生成
             </summary>
             <param name="tableIds"></param>
             <returns></returns>
@@ -123,6 +82,12 @@
             </summary>
             <param name="tables"></param>
             <param name="dbName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.EditSave(ZR.Model.System.Dto.GenTableDto)">
+            <summary>
+            代码生成保存
+            </summary>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">

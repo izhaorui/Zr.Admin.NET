@@ -8,6 +8,7 @@ namespace ZR.CodeGenerator.Model
 {
     public class GenerateDto
     {
+        public long TableId { get; set; }
         public string[] queryColumn { get; set; }
         /// <summary>
         /// 
