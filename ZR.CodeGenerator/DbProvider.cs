@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace ZR.CodeGenerator
 {
+    /// <summary>
+    /// 代码生成数据库连接
+    /// </summary>
     public class DbProvider
     {
         protected static SqlSugarScope CodeDb;
@@ -19,12 +22,13 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public SqlSugarScope GetSugarDbContext(string dbName = "")
         {
-            string connStr = ConfigUtils.Instance.GetConfig(OptionsSetting.Gen_conn).Replace("{database}", dbName);
+            string connStr = ConfigUtils.Instance.GetConfig(OptionsSetting.Gen_conn);
             int dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.Gen_conn_dbType, 0);
+            connStr = connStr.Replace("{database}", dbName);
             if (string.IsNullOrEmpty(dbName))
             {
                 connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
-                dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.DbType, 0);
+                dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.DbType);
             }
             var db = new SqlSugarScope(new List<ConnectionConfig>()
             {

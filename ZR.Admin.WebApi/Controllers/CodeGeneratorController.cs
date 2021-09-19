@@ -67,12 +67,12 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(vm);
         }
 
-        /// <summary>
-        /// 获取表格列
-        /// </summary>
-        /// <param name="dbName"></param>
-        /// <param name="tableName"></param>
-        /// <returns></returns>
+        ///// <summary>
+        ///// 获取表格列
+        ///// </summary>
+        ///// <param name="dbName"></param>
+        ///// <param name="tableName"></param>
+        ///// <returns></returns>
         //[HttpGet("getColumnInfo")]
         //[ActionPermissionFilter(Permission = "tool:gen:list")]
         //public IActionResult QueryColumnInfo(string dbName, string tableName)
@@ -183,7 +183,7 @@ namespace ZR.Admin.WebApi.Controllers
                         ModuleName = "bus",
                         ClassName = CodeGeneratorTool.GetClassName(tableName),
                         BusinessName = CodeGeneratorTool.GetClassName(tableName),
-                        FunctionAuthor = ConfigUtils.Instance.GetConfig("gen:author"),
+                        FunctionAuthor = ConfigUtils.Instance.GetConfig(OptionsSetting.Gen_author),
                         FunctionName = tabInfo.Description,
                         TableName = tableName,
                         TableComment = tabInfo.Description,

@@ -6,14 +6,12 @@ namespace Infrastructure
     /// </summary>
     public class OptionsSetting
     {
-        public static string ConnAdmin = "Conn_admin";
-        public static string Conn = "ConnDynamic";
-        public static string DbType = "DbType";
-        public static string CodeGenDbType = "CodeGenDbType";
+        public static string ConnAdmin = "conn_zrAdmin";
+        public static string DbType = "conn_admin_Type";
         public static string DbKey = "DbKey";
         public static string Gen_conn = "gen:conn";
         public static string Gen_conn_dbType = "gen:dbType";
-
+        public static string Gen_author = "gen:author";
         public string Conn_Admin { get; set; }
 
         public string AppName { get; set; }
