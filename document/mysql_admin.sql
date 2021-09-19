@@ -598,3 +598,65 @@ INSERT INTO `articleCategory` VALUES (7, 'vue', '2021-08-19 00:00:00.000000', 3)
 INSERT INTO `articleCategory` VALUES (8, 'sqlserver', '2021-08-19 00:00:00.000000', 4);
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+
+-- ----------------------------
+-- 18、代码生成业务表
+-- ----------------------------
+drop table if exists gen_table;
+create table gen_table (
+  tableId          bigint(20)      not null auto_increment    comment '编号',
+  tableName        varchar(200)    default ''                 comment '表名称',
+  tableComment     varchar(500)    default ''                 comment '表描述',
+  subTableName    varchar(64)     default null               comment '关联子表的表名',
+  subTableFkName varchar(64)     default null               comment '子表关联的外键名',
+  className        varchar(100)    default ''                 comment '实体类名称',
+  tplCategory      varchar(200)    default 'crud'             comment '使用的模板（crud单表操作 tree树表操作）',
+  baseNameSpace      varchar(100)                               comment '生成命名空间前缀',
+  moduleName       varchar(30)                                comment '生成模块名',
+  businessName     varchar(30)                                comment '生成业务名',
+  functionName     varchar(50)                                comment '生成功能名',
+  functionAuthor   varchar(50)                                comment '生成功能作者',
+  genType          char(1)         default '0'                comment '生成代码方式（0zip压缩包 1自定义路径）',
+  genPath          varchar(200)    default '/'                comment '生成路径（不填默认项目路径）',
+  options           varchar(1000)                              comment '其它生成选项',
+  create_by         varchar(64)     default ''                 comment '创建者',
+  create_time 	    datetime                                   comment '创建时间',
+  update_by         varchar(64)     default ''                 comment '更新者',
+  update_time       datetime                                   comment '更新时间',
+  remark            varchar(500)    default null               comment '备注',
+  primary key (table_id)
+) engine=innodb auto_increment=1 comment = '代码生成业务表';
+
+
+-- ----------------------------
+-- 19、代码生成业务表字段
+-- ----------------------------
+drop table if exists gen_table_column;
+create table gen_table_column (
+  columnId         bigint(20)      not null auto_increment    comment '编号',
+  tableId          varchar(64)                                comment '归属表编号',
+  tableName		   varchar(20)								  comment '表名',
+  columnName       varchar(200)                               comment '列名称',
+  columnComment    varchar(500)                               comment '列描述',
+  columnType       varchar(100)                               comment '列类型',
+  csharpType         varchar(500)                               comment 'JAVA类型',
+  csharpField        varchar(200)                               comment 'JAVA字段名',
+  isPk             char(1)                                    comment '是否主键（1是）',
+  isIncrement      char(1)                                    comment '是否自增（1是）',
+  isRequired       char(1)                                    comment '是否必填（1是）',
+  isInsert         char(1)                                    comment '是否为插入字段（1是）',
+  isEdit           char(1)                                    comment '是否编辑字段（1是）',
+  isList           char(1)                                    comment '是否列表字段（1是）',
+  isQuery          char(1)                                    comment '是否查询字段（1是）',
+  queryType        varchar(200)    default 'EQ'               comment '查询方式（等于、不等于、大于、小于、范围）',
+  htmlType         varchar(200)                               comment '显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）',
+  dictType         varchar(200)    default ''                 comment '字典类型',
+  sort              int                                        comment '排序',
+  create_by         varchar(64)     default ''                 comment '创建者',
+  create_time 	    datetime                                   comment '创建时间',
+  update_by         varchar(64)     default ''                 comment '更新者',
+  update_time       datetime                                   comment '更新时间',
+  remark			varchar(200),
+  primary key (column_id)
+) engine=innodb auto_increment=1 comment = '代码生成业务表字段';
