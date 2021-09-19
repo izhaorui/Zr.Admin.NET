@@ -1,11 +1,9 @@
 ﻿using Infrastructure;
-using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ZR.CodeGenerator.Model;
-using ZR.CodeGenerator.Service;
 using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator
@@ -64,9 +62,9 @@ namespace ZR.CodeGenerator
         public static void GenerateSingle(List<GenTableColumn> listField, GenTable tableInfo, GenerateDto dto)
         {
             var modelTypeName = tableInfo.ClassName;//表名对应C# 实体类名
-            var primaryKey = "id";//主键
 
-            string keyTypeName = "int";//主键数据类型
+            string PKName = "id";
+            string PKType = "int";
             string modelContent = "";//数据库模型字段
             string InputDtoContent = "";//输入模型
             //string outputDtoContent = "";//输出模型
@@ -74,32 +72,25 @@ namespace ZR.CodeGenerator
             string vueViewListContent = string.Empty;//Vue列表输出内容
             string vueViewFormContent = string.Empty;//Vue表单输出内容 
             string vueViewEditFromContent = string.Empty;//Vue变量输出内容
-            string vueViewEditFromBindContent = string.Empty;//Vue显示初始化输出内容
-            string vueViewSaveBindContent = string.Empty;//Vue保存时输出内容
             string vueViewEditFromRuleContent = string.Empty;//Vue数据校验
             string vueJsMethod = string.Empty;//Vue js自定义方法
 
+            //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in listField)
             {
                 string columnName = dbFieldInfo.ColumnName;
 
-                if (dbFieldInfo.ColumnType == "bool" || dbFieldInfo.ColumnType == "tinyint")
-                {
-                    vueViewEditFromContent += $"        {columnName}: 'true',\n";
-                }
-                else
+                if (dbFieldInfo.IsInsert || dbFieldInfo.IsEdit)
                 {
                     vueViewEditFromContent += $"        {columnName}: undefined,\n";
                 }
-                
-                //主键
                 if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
                 {
-                    primaryKey = columnName.Substring(0, 1).ToUpper() + columnName[1..];
-                    keyTypeName = dbFieldInfo.CsharpType;
+                    PKName = dbFieldInfo.CsharpField;
+                    PKType = dbFieldInfo.CsharpType;
                 }
                 //编辑字段
-                if (dbFieldInfo.IsEdit && (!dbFieldInfo.IsPk || !dbFieldInfo.IsIncrement))
+                if (dbFieldInfo.IsEdit)
                 {
                     updateColumn += $"              {dbFieldInfo.CsharpField} = parm.{dbFieldInfo.CsharpField},\n";
                 }
@@ -112,8 +103,8 @@ namespace ZR.CodeGenerator
                 InputDtoContent += CodeGenerateTemplate.GetDtoContent(dbFieldInfo);
             }
             ReplaceDto replaceDto = new();
-            replaceDto.KeyTypeName = keyTypeName;
-            replaceDto.PrimaryKey = primaryKey;
+            replaceDto.PKName = PKName;
+            replaceDto.PKType = PKType;
             replaceDto.ModelTypeName = modelTypeName;
             replaceDto.ModelProperty = modelContent;
             replaceDto.TableName = tableInfo.TableName;
@@ -121,10 +112,10 @@ namespace ZR.CodeGenerator
             replaceDto.InputDtoProperty = InputDtoContent;
             replaceDto.updateColumn = updateColumn;
             replaceDto.VueJsMethod = vueJsMethod;
-            replaceDto.VueViewEditFormContent = vueViewEditFromContent;
-            replaceDto.VueViewFormContent = vueViewFormContent;
+            replaceDto.VueViewEditFormHtml = vueViewEditFromContent;
+            replaceDto.VueViewFormHtml = vueViewFormContent;
             replaceDto.VueViewEditFormRuleContent = vueViewEditFromRuleContent;
-            replaceDto.VueViewListContent = vueViewListContent;
+            replaceDto.VueViewListHtml = vueViewListContent;
 
             if (dto.genFiles.Contains(1))
             {
@@ -161,13 +152,8 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 生成Models文件
         /// </summary>
-        /// <param name="modelsNamespace">命名空间</param>
-        /// <param name="modelTypeName">类名</param>
-        /// <param name="tableName">表名称</param>
-        /// <param name="modelTypeDesc">表描述</param>
-        /// <param name="modelContent">数据库表实体内容</param>
-        /// <param name="keyTypeName">主键数据类型</param>
-        /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
+        /// <param name="generateDto"></param>
+        /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var parentPath = "..";
@@ -187,7 +173,7 @@ namespace ZR.CodeGenerator
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
-                .Replace("{KeyTypeName}", replaceDto.KeyTypeName)
+                .Replace("{KeyTypeName}", replaceDto.PKName)
                 .Replace("{PropertyName}", replaceDto.ModelProperty)
                 .Replace("{TableName}", replaceDto.TableName);
             WriteAndSave(fullPath, content);
@@ -199,7 +185,7 @@ namespace ZR.CodeGenerator
         /// 生成InputDto文件
         /// </summary>
         /// <param name="generateDto"></param>
-        /// <param name="replaceDto"></param>
+        /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var parentPath = "..";
@@ -218,7 +204,6 @@ namespace ZR.CodeGenerator
                 .Replace("{DtosNamespace}", _option.DtosNamespace)
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
-                .Replace("{KeyTypeName}", replaceDto.KeyTypeName)
                 .Replace("{PropertyName}", replaceDto.InputDtoProperty)
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName);
             WriteAndSave(fullPath, content);
@@ -231,11 +216,8 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 生成Repository层代码文件
         /// </summary>
-        /// <param name="modelTypeName"></param>
-        /// <param name="modelTypeDesc"></param>
-        /// <param name="tableName">表名</param>
-        /// <param name="keyTypeName"></param>
-        /// <param name="ifExsitedCovered">如果目标文件存在，是否覆盖。默认为false</param>
+        /// <param name="generateDto"></param>
+        /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var parentPath = "..";
@@ -254,8 +236,8 @@ namespace ZR.CodeGenerator
                 .Replace("{RepositoriesNamespace}", _option.RepositoriesNamespace)
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
-                .Replace("{TableName}", replaceDto.TableName)
-                .Replace("{KeyTypeName}", replaceDto.KeyTypeName);
+                .Replace("{TableName}", replaceDto.TableName);
+
             WriteAndSave(fullPath, content);
             return Tuple.Create(fullPath, content);
         }
@@ -266,6 +248,8 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 生成IService文件
         /// </summary>
+        /// <param name="generateDto"></param>
+        /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateIService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var parentPath = "..";
@@ -284,8 +268,8 @@ namespace ZR.CodeGenerator
                 .Replace("{DtosNamespace}", _option.DtosNamespace)
                 .Replace("{IServicsNamespace}", _option.IServicsNamespace)
                 .Replace("{RepositoriesNamespace}", _option.RepositoriesNamespace)
-                .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{KeyTypeName}", replaceDto.KeyTypeName);
+                .Replace("{ModelTypeName}", replaceDto.ModelTypeName);
+
             WriteAndSave(fullPath, content);
             return Tuple.Create(fullPath, content);
         }
@@ -313,8 +297,8 @@ namespace ZR.CodeGenerator
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{ServicesNamespace}", _option.ServicesNamespace)
-                .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{KeyTypeName}", replaceDto.KeyTypeName);
+                .Replace("{ModelTypeName}", replaceDto.ModelTypeName);
+
             WriteAndSave(fullPath, content);
             return Tuple.Create(fullPath, content);
         }
@@ -345,9 +329,9 @@ namespace ZR.CodeGenerator
                 .Replace("{TableDesc}", replaceDto.TableDesc)
                 .Replace("{ModelName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.ModelTypeName.ToLower())
-                .Replace("{PrimaryKey}", replaceDto.PrimaryKey)
+                .Replace("{PrimaryKey}", replaceDto.PKName)
                 .Replace("{UpdateColumn}", replaceDto.updateColumn)
-                .Replace("{KeyTypeName}", replaceDto.KeyTypeName);
+                .Replace("{KeyTypeName}", replaceDto.PKType);
             WriteAndSave(fullPath, content);
             return Tuple.Create(fullPath, content);
         }
@@ -372,15 +356,15 @@ namespace ZR.CodeGenerator
             var content = ReadTemplate("VueTemplate.txt");
             content = content
                 .Replace("{fileClassName}", FirstLowerCase(replaceDto.ModelTypeName))
-                .Replace("{VueViewListContent}", replaceDto.VueViewListContent)//查询 table列
-                .Replace("{VueViewFormContent}", replaceDto.VueViewFormContent)//添加、修改表单
+                .Replace("{VueViewListContent}", replaceDto.VueViewListHtml)//查询 table列
+                .Replace("{VueViewFormContent}", replaceDto.VueViewFormHtml)//添加、修改表单
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.ModelTypeName.ToLower())
-                .Replace("{VueViewEditFormContent}", replaceDto.VueViewEditFormContent)
+                .Replace("{VueViewEditFormContent}", replaceDto.VueViewEditFormHtml)
                 .Replace("{vueJsMethod}", replaceDto.VueJsMethod)
                 //.Replace("{VueViewEditFromBindContent}", vueViewEditFromBindContent)
                 //.Replace("{VueViewSaveBindContent}", vueViewSaveBindContent)
-                .Replace("{primaryKey}", FirstLowerCase(replaceDto.PrimaryKey))
+                .Replace("{primaryKey}", FirstLowerCase(replaceDto.PKName))
                 .Replace("{VueViewEditFormRuleContent}", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
             WriteAndSave(fullPath, content);
 
@@ -412,17 +396,17 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string GetClassName(string tableName)
         {
-            bool autoRemovePre = ConfigUtils.Instance.GetAppConfig("gen:autoPre", false);
-            string tablePrefix = ConfigUtils.Instance.GetAppConfig<string>("gen:tablePrefix");
+            bool autoRemovePre = ConfigUtils.Instance.GetAppConfig(GenConstants.Gen_autoPre, false);
+            string tablePrefix = ConfigUtils.Instance.GetAppConfig<string>(GenConstants.Gen_tablePrefix);
 
             if (!string.IsNullOrEmpty(tablePrefix) && autoRemovePre)
             {
-                string[] searcList = tablePrefix.Split(",",StringSplitOptions.RemoveEmptyEntries);
+                string[] searcList = tablePrefix.Split(",", StringSplitOptions.RemoveEmptyEntries);
                 for (int i = 0; i < searcList.Length; i++)
                 {
                     if (!string.IsNullOrEmpty(searcList[i].ToString()))
                     {
-                        tableName = tableName.Replace(searcList[i].ToString(), "");
+                        tableName = tableName.Replace(searcList[i], "");
                     }
                 }
             }

@@ -36,7 +36,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 
 ## 🍄快速启动
 需要安装：VS2019（最新版）、npm或yarn（最新版）
-准备工作：将document文件夹下面的admin.sql脚本导入到数据库中，修改ZRAdmin项目里面的Conn_Admin数据库连接字符串以及DbType选择对应的数据库类型，目前仅MySQL验证了
+准备工作：将document文件夹下面的admin.sql脚本导入到数据库中，修改ZR.Admin.WebApi项目里面配置文件中的conn_zrAdmin数据库连接字符串以及DbType选择对应的数据库类型，目前仅支持MySQL、SQL server
 启动后台：打开项目根目录的startup.bat即可启动（数据库默认MySQL）
 启动前端：打开ZR.Vue文件夹，运行npm install命令，再运行npm run serve启动
 浏览器访问：http://localhost:8887 （默认前端端口为：8887，后台端口为：8888）
@@ -91,6 +91,10 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 	<tr>
         <td><img src="https://www.izhaorui.cn/images/zradmin/13.png"/></td>
         <td><img src="https://www.izhaorui.cn/images/zradmin/14.png"/></td>
+    </tr>
+	<tr>
+        <td><img src="https://www.izhaorui.cn/images/zradmin/15.png"/></td>
+        <td><img src="https://www.izhaorui.cn/images/zradmin/16.png"/></td>
     </tr>
 </table>
 

@@ -18,11 +18,11 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 主键字段
         /// </summary>
-        public string PrimaryKey { get; set; }
+        public string PKName { get; set; }
         /// <summary>
         /// 主键类型
         /// </summary>
-        public string KeyTypeName { get; set; }
+        public string PKType { get; set; }
         /// <summary>
         /// 控制器权限
         /// </summary>
@@ -52,9 +52,19 @@ namespace ZR.CodeGenerator.Model
         public string InputDtoProperty { get; set; }
 
         //vue、api
-        public string VueViewEditFormContent { get; set; }
-        public string VueViewListContent { get; set; }
-        public string VueViewFormContent { get; set; }
+        public string VueViewEditFormHtml { get; set; }
+        /// <summary>
+        /// 前端列表查询html
+        /// </summary>
+        public string VueViewListHtml { get; set; }
+        /// <summary>
+        /// 前端添加、编辑表格html
+        /// </summary>
+        public string VueViewFormHtml { get; set; }
+        /// <summary>
+        /// 前端搜索表单html
+        /// </summary>
+        public string VueQueryFormHtml { get; set; }
         public string VueJsMethod { get; set; }
         public string VueViewEditFormRuleContent { get; set; }
     }

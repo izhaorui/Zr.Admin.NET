@@ -11,6 +11,12 @@ namespace ZR.CodeGenerator
     /// </summary>
     public class GenConstants
     {
+        public static string Gen_conn = "gen:conn";
+        public static string Gen_conn_dbType = "gen:dbType";
+        public static string Gen_author = "gen:author";
+        public static string Gen_autoPre = "gen:autoPre";
+        public static string Gen_tablePrefix = "gen:tablePrefix";
+
         /** 单表（增删改查） */
         public static string TPL_CRUD = "crud";
 
