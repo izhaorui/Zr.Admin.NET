@@ -153,7 +153,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int InsertGenTableColumn(List<GenTableColumn> tableColumn)
         {
-            return Db.Insertable(tableColumn).IgnoreColumns(x => new { x.Remark}).ExecuteCommand();
+            return Db.Insertable(tableColumn).IgnoreColumns(x => new { x.Remark }).ExecuteCommand();
         }
 
         /// <summary>
@@ -163,7 +163,31 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int UpdateGenTableColumn(List<GenTableColumn> tableColumn)
         {
-            return Db.Updateable(tableColumn).IgnoreColumns(x => new { x.Remark }).ExecuteCommand();
+            foreach (var item in tableColumn)
+            {
+                Db.Updateable<GenTableColumn>()
+                    .Where(f => f.TableId == item.TableId)
+                    .SetColumns(it => new GenTableColumn()
+                    {
+                        ColumnComment = item.ColumnComment,
+                        CsharpField = item.CsharpField,
+                        CsharpType = item.CsharpType,
+                        IsQuery = item.IsQuery,
+                        IsEdit = item.IsEdit,
+                        IsInsert = item.IsInsert,
+                        IsList = item.IsList,
+                        QueryType = item.QueryType,
+                        HtmlType = item.HtmlType,
+                        IsRequired = item.IsRequired,
+                        Sort = item.Sort,
+                        Update_time = DateTime.Now,
+                        DictType = item.DictType
+                    })
+                    .Where(f => f.ColumnId == item.ColumnId)
+                    .ExecuteCommand();
+            }
+
+            return 1;
         }
     }
 }

@@ -58,5 +58,9 @@ namespace ZR.Model.System.Generate
         /// </summary>
         public string QueryType { get; set; } = "EQ";
         public int Sort { get; set; }
+        /// <summary>
+        /// 字典类型
+        /// </summary>
+        public string DictType { get; set; }
     }
 }

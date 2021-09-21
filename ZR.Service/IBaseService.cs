@@ -42,6 +42,8 @@ namespace ZR.Service
         /// <returns></returns>
         int Add(T parm);
 
+        int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = false);
+
         /// <summary>
         /// 批量添加数据
         /// </summary>

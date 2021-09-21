@@ -13,8 +13,12 @@ namespace {DtosNamespace}.Dto
 {PropertyName}
     }
 
+    /// <summary>
+    /// {TableNameDesc}查询对象模型
+    /// </summary>
     public class {ModelTypeName}QueryDto: PagerInfo 
     {
+{QueryProperty}
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
     }

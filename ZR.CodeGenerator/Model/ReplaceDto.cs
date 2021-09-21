@@ -39,7 +39,14 @@ namespace ZR.CodeGenerator.Model
         /// 表描述、说明
         /// </summary>
         public string TableDesc { get; set; }
-        public string updateColumn { get; set; }
+        /// <summary>
+        /// 修改列
+        /// </summary>
+        public string UpdateColumn { get; set; }
+        /// <summary>
+        /// 插入列
+        /// </summary>
+        public string InsertColumn { get; set; }
 
 
         /// <summary>
@@ -65,7 +72,25 @@ namespace ZR.CodeGenerator.Model
         /// 前端搜索表单html
         /// </summary>
         public string VueQueryFormHtml { get; set; }
+        /// <summary>
+        /// vue js方法
+        /// </summary>
         public string VueJsMethod { get; set; }
+        /// <summary>
+        /// vue 添加、编辑表单规则
+        /// </summary>
         public string VueViewEditFormRuleContent { get; set; }
+        /// <summary>
+        /// 查询条件
+        /// </summary>
+        public string QueryCondition { get; set; }
+        /// <summary>
+        /// 查询属性
+        /// </summary>
+        public string QueryProperty { get; set; }
+        /// <summary>
+        /// vue data内容
+        /// </summary>
+        public string VueDataContent { get; set; }
     }
 }

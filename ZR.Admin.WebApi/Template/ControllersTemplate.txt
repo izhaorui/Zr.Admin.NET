@@ -80,9 +80,12 @@ namespace {ApiControllerNamespace}.Controllers
                 throw new CustomException("请求参数错误");
             }
             //从 Dto 映射到 实体
-            var addModel = parm.Adapt<{ModelName}>().ToCreate();
+            var model = parm.Adapt<{ModelName}>().ToCreate();
 
-            return SUCCESS(_{ModelName}Service.Add(addModel));
+            return SUCCESS(_{ModelName}Service.Add(model, it => new
+            {
+                {InsertColumn}
+            }));
         }
 
         /// <summary>
@@ -99,9 +102,9 @@ namespace {ApiControllerNamespace}.Controllers
                 throw new CustomException("请求实体不能为空");
             }
             //从 Dto 映射到 实体
-            var updateModel = parm.Adapt<{ModelName}>().ToUpdate();
+            var model = parm.Adapt<{ModelName}>().ToUpdate();
 
-            var response = _{ModelName}Service.Update(w => w.{PrimaryKey} == updateModel.{PrimaryKey}, it => new {ModelName}()
+            var response = _{ModelName}Service.Update(w => w.{PrimaryKey} == model.{PrimaryKey}, it => new {ModelName}()
             {
                 //Update 字段映射
                 {UpdateColumn}

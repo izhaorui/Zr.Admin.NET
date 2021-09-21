@@ -22,7 +22,7 @@
                 <el-option label="string" value="string" />
                 <el-option label="double" value="double" />
                 <el-option label="decimal" value="decimal" />
-                <el-option label="dateTime" value="DateTime" />
+                <el-option label="DateTime" value="DateTime" />
               </el-select>
             </template>
           </el-table-column>
@@ -31,25 +31,29 @@
               <el-input v-model="scope.row.csharpField"></el-input>
             </template>
           </el-table-column>
-
+          <el-table-column label="必填" min-width="5%">
+            <template slot-scope="scope">
+              <el-checkbox v-model="scope.row.isRequired"></el-checkbox>
+            </template>
+          </el-table-column>
           <el-table-column label="插入" min-width="5%">
             <template slot-scope="scope">
-              <el-checkbox true-label="1" v-model="scope.row.isInsert"></el-checkbox>
+              <el-checkbox v-model="scope.row.isInsert" :disabled="scope.row.isPk"></el-checkbox>
             </template>
           </el-table-column>
           <el-table-column label="编辑" min-width="5%">
             <template slot-scope="scope">
-              <el-checkbox true-label="1" v-model="scope.row.isEdit"></el-checkbox>
+              <el-checkbox v-model="scope.row.isEdit" :disabled="scope.row.isPk"></el-checkbox>
             </template>
           </el-table-column>
           <el-table-column label="列表" min-width="5%">
             <template slot-scope="scope">
-              <el-checkbox true-label="1" v-model="scope.row.isList"></el-checkbox>
+              <el-checkbox v-model="scope.row.isList"></el-checkbox>
             </template>
           </el-table-column>
           <el-table-column label="查询" min-width="5%">
             <template slot-scope="scope">
-              <el-checkbox true-label="1" v-model="scope.row.isQuery"></el-checkbox>
+              <el-checkbox v-model="scope.row.isQuery"></el-checkbox>
             </template>
           </el-table-column>
           <el-table-column label="查询方式" min-width="10%">
@@ -64,11 +68,6 @@
                 <el-option label="LIKE" value="LIKE" />
                 <el-option label="BETWEEN" value="BETWEEN" />
               </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column label="必填" min-width="5%">
-            <template slot-scope="scope">
-              <el-checkbox true-label="1" v-model="scope.row.isRequired"></el-checkbox>
             </template>
           </el-table-column>
           <el-table-column label="显示类型" min-width="12%">
@@ -114,7 +113,7 @@
 <script>
 import { updateGenTable, queryColumnInfo } from "@/api/tool/gen";
 import { listType } from "@/api/system/dict/type";
-import { listMenu as getMenuTreeselect } from "@/api/system/menu";
+// import { listMenu as getMenuTreeselect } from "@/api/system/menu";
 import basicInfoForm from "./basicInfoForm";
 import genInfoForm from "./genInfoForm";
 import Sortable from "sortablejs";
@@ -176,13 +175,13 @@ export default {
         if (validateResult) {
           const genTable = Object.assign({}, basicForm.model, genForm.model);
           genTable.columns = this.cloumns;
-          genTable.params = {
-            treeCode: genTable.treeCode,
-            treeName: genTable.treeName,
-            treeParentCode: genTable.treeParentCode,
-            parentMenuId: genTable.parentMenuId,
-          };
-          console.log(genTable)
+          // genTable.params = {
+          //   treeCode: genTable.treeCode,
+          //   treeName: genTable.treeName,
+          //   treeParentCode: genTable.treeParentCode,
+          //   parentMenuId: genTable.parentMenuId,
+          // };
+          console.log(JSON.stringify(genTable))
           updateGenTable(genTable).then((res) => {
             this.msgSuccess(res.msg);
             if (res.code === 200) {

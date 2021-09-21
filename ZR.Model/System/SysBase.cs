@@ -22,10 +22,10 @@ namespace ZR.Model.System
         [SugarColumn(IsOnlyIgnoreInsert = true)]
         public string Update_by { get; set; }
 
+        //[JsonIgnore]
         [SugarColumn(IsOnlyIgnoreInsert = true)]//设置后插入数据不会有此字段
-        [JsonIgnore]
         [JsonProperty(propertyName: "UpdateTime")]
-        public DateTime Update_time { get; set; } = DateTime.Now;
+        public DateTime Update_time { get; set; }
 
         public string Remark { get; set; }
 

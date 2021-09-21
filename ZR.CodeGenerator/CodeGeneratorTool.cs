@@ -23,7 +23,7 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// InputDto输入实体是不包含字段
         /// </summary>
-        public static readonly string[] inputDtoNoField = new string[] { "DeleteMark", "CreateTime", "updateTime", "addtime" };
+        public static readonly string[] inputDtoNoField = new string[] { "createTime", "updateTime", "addtime" };
         public static readonly string[] imageFiled = new string[] { "icon", "img", "image", "url", "pic", "photo" };
         public static readonly string[] selectFiled = new string[] { "status", "type", "state", "sex", "gender" };
         public static readonly string[] radioFiled = new string[] { "status", "state", "isShow", "isHidden", "ishide" };
@@ -46,11 +46,7 @@ namespace ZR.CodeGenerator
             _option.ServicesNamespace = _option.BaseNamespace + "Service";
             _option.ApiControllerNamespace = _option.BaseNamespace + "Admin.WebApi";
 
-            //CodeGeneraterService codeGeneraterService = new();
-            //List<DbColumnInfo> listField = codeGeneraterService.GetColumnInfo(dto.dbName, dbTableInfo.TableName);
             GenerateSingle(dbTableInfo?.Columns, dbTableInfo, dto);
-
-            //GenerateDtoProfile(_option.ModelsNamespace, profileContent, ifExsitedCovered);
         }
 
         /// <summary>
@@ -61,19 +57,12 @@ namespace ZR.CodeGenerator
         /// <param name="dto"></param>
         public static void GenerateSingle(List<GenTableColumn> listField, GenTable tableInfo, GenerateDto dto)
         {
-            var modelTypeName = tableInfo.ClassName;//表名对应C# 实体类名
-
             string PKName = "id";
             string PKType = "int";
-            string modelContent = "";//数据库模型字段
-            string InputDtoContent = "";//输入模型
-            //string outputDtoContent = "";//输出模型
-            string updateColumn = "";//修改数据映射字段
-            string vueViewListContent = string.Empty;//Vue列表输出内容
-            string vueViewFormContent = string.Empty;//Vue表单输出内容 
-            string vueViewEditFromContent = string.Empty;//Vue变量输出内容
-            string vueViewEditFromRuleContent = string.Empty;//Vue数据校验
-            string vueJsMethod = string.Empty;//Vue js自定义方法
+            ReplaceDto replaceDto = new();
+            replaceDto.ModelTypeName = tableInfo.ClassName;//表名对应C# 实体类名
+            replaceDto.TableName = tableInfo.TableName;
+            replaceDto.TableDesc = tableInfo.TableComment;
 
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in listField)
@@ -82,7 +71,7 @@ namespace ZR.CodeGenerator
 
                 if (dbFieldInfo.IsInsert || dbFieldInfo.IsEdit)
                 {
-                    vueViewEditFromContent += $"        {columnName}: undefined,\n";
+                    replaceDto.VueViewEditFormHtml += $"{columnName}: undefined,\r\n";
                 }
                 if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
                 {
@@ -92,30 +81,35 @@ namespace ZR.CodeGenerator
                 //编辑字段
                 if (dbFieldInfo.IsEdit)
                 {
-                    updateColumn += $"              {dbFieldInfo.CsharpField} = parm.{dbFieldInfo.CsharpField},\n";
+                    replaceDto.UpdateColumn += $"{dbFieldInfo.CsharpField} = model.{dbFieldInfo.CsharpField}, ";
+                }
+                //新增字段
+                if (dbFieldInfo.IsInsert)
+                {
+                    replaceDto.InsertColumn += $"it.{dbFieldInfo.CsharpField}, ";
+                }
+                //查询
+                //if (dbFieldInfo.IsQuery)
+                //{
+                //    replaceDto.Querycondition += $"predicate = predicate.And(m => m.{dbFieldInfo.CsharpField}.Contains(parm.Name));";
+                //}
+                if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT && !string.IsNullOrEmpty(dbFieldInfo.DictType))
+                {
+                    replaceDto.VueDataContent += $"// {dbFieldInfo.ColumnComment}选项列表\n";
+                    replaceDto.VueDataContent += $"{FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],";
                 }
 
-                modelContent += CodeGenerateTemplate.GetModelTemplate(dbFieldInfo);
-                vueViewFormContent += CodeGenerateTemplate.GetVueViewFormContent(dbFieldInfo);
-                vueJsMethod += CodeGenerateTemplate.GetVueJsMethod(dbFieldInfo);
-                vueViewListContent += CodeGenerateTemplate.GetTableColumn(dbFieldInfo);
-                vueViewEditFromRuleContent += CodeGenerateTemplate.GetFormRules(dbFieldInfo);
-                InputDtoContent += CodeGenerateTemplate.GetDtoContent(dbFieldInfo);
+                replaceDto.QueryProperty += CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo);
+                replaceDto.ModelProperty += CodeGenerateTemplate.GetModelTemplate(dbFieldInfo);
+                replaceDto.VueViewFormHtml += CodeGenerateTemplate.GetVueViewFormContent(dbFieldInfo);
+                replaceDto.VueJsMethod += CodeGenerateTemplate.GetVueJsMethod(dbFieldInfo);
+                replaceDto.VueViewListHtml += CodeGenerateTemplate.GetTableColumn(dbFieldInfo);
+                replaceDto.VueViewEditFormRuleContent += CodeGenerateTemplate.GetFormRules(dbFieldInfo);
+                replaceDto.InputDtoProperty += CodeGenerateTemplate.GetDtoProperty(dbFieldInfo);
+                replaceDto.VueQueryFormHtml += CodeGenerateTemplate.GetQueryFormHtml(dbFieldInfo);
             }
-            ReplaceDto replaceDto = new();
             replaceDto.PKName = PKName;
             replaceDto.PKType = PKType;
-            replaceDto.ModelTypeName = modelTypeName;
-            replaceDto.ModelProperty = modelContent;
-            replaceDto.TableName = tableInfo.TableName;
-            replaceDto.TableDesc = tableInfo.TableComment;
-            replaceDto.InputDtoProperty = InputDtoContent;
-            replaceDto.updateColumn = updateColumn;
-            replaceDto.VueJsMethod = vueJsMethod;
-            replaceDto.VueViewEditFormHtml = vueViewEditFromContent;
-            replaceDto.VueViewFormHtml = vueViewFormContent;
-            replaceDto.VueViewEditFormRuleContent = vueViewEditFromRuleContent;
-            replaceDto.VueViewListHtml = vueViewListContent;
 
             if (dto.genFiles.Contains(1))
             {
@@ -205,6 +199,7 @@ namespace ZR.CodeGenerator
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
                 .Replace("{PropertyName}", replaceDto.InputDtoProperty)
+                .Replace("{QueryProperty}", replaceDto.QueryProperty)
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName);
             WriteAndSave(fullPath, content);
             return Tuple.Create(fullPath, content);
@@ -330,7 +325,8 @@ namespace ZR.CodeGenerator
                 .Replace("{ModelName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.ModelTypeName.ToLower())
                 .Replace("{PrimaryKey}", replaceDto.PKName)
-                .Replace("{UpdateColumn}", replaceDto.updateColumn)
+                .Replace("{UpdateColumn}", replaceDto.UpdateColumn)
+                .Replace("{InsertColumn}", replaceDto.InsertColumn)
                 .Replace("{KeyTypeName}", replaceDto.PKType);
             WriteAndSave(fullPath, content);
             return Tuple.Create(fullPath, content);
@@ -362,7 +358,8 @@ namespace ZR.CodeGenerator
                 .Replace("{Permission}", replaceDto.ModelTypeName.ToLower())
                 .Replace("{VueViewEditFormContent}", replaceDto.VueViewEditFormHtml)
                 .Replace("{vueJsMethod}", replaceDto.VueJsMethod)
-                //.Replace("{VueViewEditFromBindContent}", vueViewEditFromBindContent)
+                .Replace("{vueQueryFormHtml}", replaceDto.VueQueryFormHtml)
+                .Replace("{VueDataContent}", replaceDto.VueDataContent)
                 //.Replace("{VueViewSaveBindContent}", vueViewSaveBindContent)
                 .Replace("{primaryKey}", FirstLowerCase(replaceDto.PKName))
                 .Replace("{VueViewEditFormRuleContent}", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
@@ -458,7 +455,6 @@ namespace ZR.CodeGenerator
             sr?.Close();
             sr?.Dispose();
             return str;
-
         }
 
         /// <summary>

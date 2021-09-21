@@ -1,24 +1,8 @@
 ﻿<template>
   <div class="app-container">
-      <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
+    <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
-      <el-form-item label="文本文字">
-        <el-input v-model="queryParams.xxx" placeholder="" />
-      </el-form-item>
-      <el-form-item label="数字">
-        <el-input v-model.number="queryParams.xxx" placeholder="" />
-      </el-form-item>
-      
-      <el-form-item label="下拉框">
-        <el-select v-model="queryParams.xxx" placeholder="">
-          <el-option v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
-        </el-select>
-      </el-form-item>
-      
-      <el-form-item label="时间范围">
-        <el-date-picker size="small" style="width: 240px" v-model="timeRange" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期">
-        </el-date-picker>
-      </el-form-item>
+      {vueQueryFormHtml}
 
       <el-row class="mb8" style="text-align:center">
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -47,7 +31,7 @@
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
           <el-button size="mini"  v-hasPermi="['{Permission}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
-          <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left:10px">
+          <el-popconfirm title="确定删除吗？" @confirm="handleDelete(scope.row)" style="margin-left:10px">
             <el-button slot="reference"  v-hasPermi="['{Permission}:delete']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
           </el-popconfirm>
         </template>
@@ -103,8 +87,7 @@ export default {
       form: {},
       // 时间范围数组
       timeRange: [],
-      // xxx下拉框
-      statusOptions: [],
+      {VueDataContent}
       // 数据列表
       dataList: [],
       // 总记录数

@@ -57,7 +57,10 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 types.GetProperty("UpdateTime").SetValue(source, DateTime.Now, null);
             }
-
+            if (types.GetProperty("Update_Time") != null)
+            {
+                types.GetProperty("Update_Time").SetValue(source, DateTime.Now, null);
+            }
             //if (types.GetProperty("UpdateID") != null)
             //{
             //    types.GetProperty("UpdateID").SetValue(source, userSession.UserID, null);
@@ -66,6 +69,10 @@ namespace ZR.Admin.WebApi.Extensions
             if (types.GetProperty("UpdateBy") != null)
             {
                 types.GetProperty("UpdateBy").SetValue(source,context.GetName(), null);
+            }
+            if (types.GetProperty("Update_by") != null)
+            {
+                types.GetProperty("Update_by").SetValue(source, context.GetName(), null);
             }
 
             return source;

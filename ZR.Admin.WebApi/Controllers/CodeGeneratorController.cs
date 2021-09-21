@@ -67,22 +67,6 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(vm);
         }
 
-        ///// <summary>
-        ///// 获取表格列
-        ///// </summary>
-        ///// <param name="dbName"></param>
-        ///// <param name="tableName"></param>
-        ///// <returns></returns>
-        //[HttpGet("getColumnInfo")]
-        //[ActionPermissionFilter(Permission = "tool:gen:list")]
-        //public IActionResult QueryColumnInfo(string dbName, string tableName)
-        //{
-        //    if (string.IsNullOrEmpty(dbName) || string.IsNullOrEmpty(tableName))
-        //        return ToRespose(ResultCode.PARAM_ERROR);
-
-        //    return SUCCESS(_CodeGeneraterService.GetColumnInfo(dbName, tableName));
-        //}
-
         /// <summary>
         /// 代码生成器
         /// </summary>
@@ -149,7 +133,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Remove(string tableIds)
         {
             long[] tableId = Tools.SpitLongArrary(tableIds);
-           
+
             GenTableService.DeleteGenTableByIds(tableId);
             return SUCCESS(1);
         }
@@ -207,7 +191,7 @@ namespace ZR.Admin.WebApi.Controllers
                                 TableName = tableName,
                                 CsharpType = TableMappingHelper.GetPropertyDatatype(column.DataType),
                                 CsharpField = column.DbColumnName.Substring(0, 1).ToUpper() + column.DbColumnName[1..],
-                                IsRequired = column.IsNullable,
+                                IsRequired = !column.IsNullable,
                                 IsIncrement = column.IsIdentity,
                                 Create_by = userName,
                                 Create_time = DateTime.Now,
@@ -222,19 +206,23 @@ namespace ZR.Admin.WebApi.Controllers
                             {
                                 genTableColumn.HtmlType = GenConstants.HTML_IMAGE_UPLOAD;
                             }
-                            if (genTableColumn.CsharpType.ToLower().Contains("datetime"))
+                            else if (genTableColumn.CsharpType.ToLower().Contains("datetime"))
                             {
                                 genTableColumn.HtmlType = GenConstants.HTML_DATETIME;
                             }
-                            if (CodeGeneratorTool.radioFiled.Any(f => column.DbColumnName.Contains(f)))
+                            else if (CodeGeneratorTool.radioFiled.Any(f => column.DbColumnName.Contains(f)))
                             {
                                 genTableColumn.HtmlType = GenConstants.HTML_RADIO;
                             }
-                            if (column.Length > 200)
+                            else if (CodeGeneratorTool.selectFiled.Any(f => column.DbColumnName.Contains(f)))
+                            {
+                                genTableColumn.HtmlType = GenConstants.HTML_SELECT;
+                            }
+                            else if (column.Length > 300)
                             {
                                 genTableColumn.HtmlType = GenConstants.HTML_TEXTAREA;
                             }
-                            
+
                             genTableColumns.Add(genTableColumn);
                         }
 
@@ -251,14 +239,14 @@ namespace ZR.Admin.WebApi.Controllers
         /// 代码生成保存
         /// </summary>
         /// <returns></returns>
-        [HttpPut()]
+        [HttpPut]
         //[Log(Title = "代码生成", BusinessType = BusinessType.UPDATE)]
         [ActionPermissionFilter(Permission = "tool:gen:edit")]
-        public IActionResult EditSave([FromBody]GenTableDto genTableDto)
+        public IActionResult EditSave([FromBody] GenTableDto genTableDto)
         {
             if (genTableDto == null) throw new CustomException("请求参数错误");
-            var genTable = genTableDto.Adapt<GenTable>().ToUpdate();
-            
+            var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
+
             int rows = GenTableService.UpdateGenTable(genTable);
             if (rows > 0)
             {

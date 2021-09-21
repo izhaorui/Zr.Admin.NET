@@ -2,24 +2,9 @@
   <div class="app-container">
 
     <el-form ref="codeform" :inline="true" :rules="rules" :model="queryParams" size="small">
-      <!-- <el-form-item label="数据库" prop="dbName">
-        <el-select v-model="queryParams.dbName" clearable placeholder="请选择" @change="handleShowTable">
-          <el-option v-for="item in selectedDataBase" :key="item" :label="item" :value="item" />
-        </el-select>
-      </el-form-item> -->
       <el-form-item label="表名">
         <el-input v-model="queryParams.tableName" clearable placeholder="输入要查询的表名" />
       </el-form-item>
-      <!-- <el-form-item label="项目命名空间：" prop="baseSpace">
-            <el-tooltip class="item" effect="dark" content="系统会根据项目命名空间自动生成IService、Service、Models等子命名空间" placement="bottom">
-              <el-input v-model="queryParams.baseSpace" clearable placeholder="如Zr" />
-            </el-tooltip>
-          </el-form-item>
-      <el-form-item label="去掉表名前缀：">
-        <el-tooltip class="item" effect="dark" content="表名直接变为类名，去掉表名前缀。" placement="bottom">
-          <el-input v-model="queryParams.replaceTableNameStr" clearable width="300" placeholder="例如：sys_" />
-        </el-tooltip>
-      </el-form-item> -->
       <el-form-item>
         <el-button type="primary" @click="handleSearch()">查询</el-button>
         <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button>
@@ -30,7 +15,6 @@
       <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-upload" size="mini" @click="openImportTable" v-hasPermi="['tool:gen:import']">导入</el-button>
       </el-col>
-
       <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" plain icon="el-icon-delete" @click="handleDelete" size="mini" v-hasPermi="['tool:gen:delete']">删除</el-button>
       </el-col>
@@ -47,12 +31,12 @@
       <el-table-column prop="className" label="实体" />
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column prop="updateTime" label="更新时间" />
-      <el-table-column label="操作" align="center" width="340">
+      <el-table-column label="操作" align="center" width="300">
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-view" @click="handlePreview()">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)">编辑</el-button>
 
-          <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left:10px">
+          <el-popconfirm title="确定删除吗？" @confirm="handleDelete(scope.row)" style="margin-left:10px">
             <el-button slot="reference" v-hasPermi="['tool:gen:delete']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
           </el-popconfirm>
 

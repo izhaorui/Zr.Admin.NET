@@ -27,6 +27,47 @@
             <param name="data"></param>
             <returns></returns>
         </member>
+        <member name="T:ZR.Admin.WebApi.Controllers.GendemoController">
+            <summary>
+            代码自动生成
+            </summary>
+        </member>
+        <member name="F:ZR.Admin.WebApi.Controllers.GendemoController._GendemoService">
+            <summary>
+            测试接口
+            </summary>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.QueryGendemo(ZR.Model.Dto.GendemoQueryDto)">
+            <summary>
+            查询测试列表
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.GetGendemo(System.Int32)">
+            <summary>
+            查询测试详情
+            </summary>
+            <param name="Id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.AddGendemo(ZR.Model.Dto.GendemoDto)">
+            <summary>
+            添加测试
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.UpdateGendemo(ZR.Model.Dto.GendemoDto)">
+            <summary>
+            更新测试
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.DeleteGendemo(System.Int32)">
+            <summary>
+            删除测试
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:ZR.Admin.WebApi.Controllers.CodeGeneratorController">
             <summary>
             代码生成
