@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using ZR.CodeGenerator.CodeGenerator;
 using ZR.Model.System.Generate;
 
@@ -14,16 +15,27 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbColumnInfo"></param>
         /// <returns></returns>
-        public static string GetVueJsMethod(GenTableColumn dbColumnInfo)
+        public static string GetVueJsMethod(GenTableColumn dbFieldInfo)
         {
-            string columnName = dbColumnInfo.ColumnName;
+            string columnName = dbFieldInfo.ColumnName;
             string js = "";
-            if (dbColumnInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
+            if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
             {
-                js += $"handleUpload{columnName}Success(res, file) {{\r\n";
+                js += "    //文件上传成功方法\r\n";
+                js += $"      handleUpload{columnName}Success(res, file) {{\r\n";
                 js += $"      this.form.{columnName} = URL.createObjectURL(file.raw);\r\n";
                 js += "      // this.$refs.upload.clearFiles();\r\n";
                 js += "    },\r";
+            }
+            //有下拉框选项初列表查询数据
+            if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT && !string.IsNullOrEmpty(dbFieldInfo.DictType))
+            {
+                var sb = new System.Text.StringBuilder(500);
+                sb.AppendLine(@$"    // {dbFieldInfo.ColumnComment}字典翻译");
+                sb.AppendLine($"    {columnName}Format(row, column) {{");
+                sb.AppendLine(@$"      return this.selectDictLabel(this.{columnName}Options, row.{columnName});");
+                sb.AppendLine(@"    },");
+                js += sb.ToString();
             }
             return js;
         }
@@ -78,7 +90,7 @@ namespace ZR.CodeGenerator
         public static string GetDtoProperty(GenTableColumn dbFieldInfo)
         {
             string InputDtoContent = "";
-            if (CodeGeneratorTool.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
+            if (GenConstants.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
             {
                 return InputDtoContent;
             }
@@ -97,7 +109,7 @@ namespace ZR.CodeGenerator
         public static string GetQueryDtoProperty(GenTableColumn dbFieldInfo)
         {
             string QueryDtoContent = "";
-            if (dbFieldInfo.IsQuery && !CodeGeneratorTool.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
+            if (dbFieldInfo.IsQuery && !GenConstants.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
             {
                 QueryDtoContent += $"        public {dbFieldInfo.CsharpType} {dbFieldInfo.CsharpField} {{ get; set; }}\r\n";
             }
@@ -113,7 +125,7 @@ namespace ZR.CodeGenerator
             string vueViewFromContent = "";
             string labelDisabled = dbFieldInfo.IsPk ? ":disabled=\"true\"" : "";
             string placeHolder = dbFieldInfo.IsIncrement ? "" : $"请输入{labelName}";
-            if (CodeGeneratorTool.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
+            if (GenConstants.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
             {
                 return vueViewFromContent;
             }
@@ -156,16 +168,17 @@ namespace ZR.CodeGenerator
             }
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT && !string.IsNullOrEmpty(dbFieldInfo.DictType))
             {
+                string value = TableMappingHelper.IsNumber(dbFieldInfo.CsharpType) ? "parseInt(item.dictValue)" : "item.dictValue";
                 vueViewFromContent += $"        <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">\r\n";
-                vueViewFromContent += $"           <el-select v-model=\"form.{columnName}\" > ";
-                vueViewFromContent += $"            <el-option v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"item.dictValue\"></el-option>\r\n";
-                vueViewFromContent += "           </el-select>\r\n";
+                vueViewFromContent += $"          <el-select v-model=\"form.{columnName}\">\r\n";
+                vueViewFromContent += $"            <el-option v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"{value}\"></el-option>\r\n";
+                vueViewFromContent += "          </el-select>\r\n";
                 vueViewFromContent += "        </el-form-item>\r\n";
             }
             else
             {
                 string inputNumTxt = TableMappingHelper.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";
-                vueViewFromContent += $"        <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\">\r\n";
+                vueViewFromContent += $"        <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\">\r\n";
                 vueViewFromContent += $"           <el-input v-model{inputNumTxt}=\"form.{CodeGeneratorTool.FirstLowerCase(columnName)}\" placeholder=\"{placeHolder}\" {labelDisabled}/>\r\n";
                 vueViewFromContent += "         </el-form-item>\r\n";
             }
@@ -208,13 +221,11 @@ namespace ZR.CodeGenerator
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string vueViewListContent = "";
             string showToolTip = dbFieldInfo.ColumnType.Contains("varchar") ? ":show-overflow-tooltip=\"true\"" : "";
-            if (!dbFieldInfo.IsList)
+            string formatter = !string.IsNullOrEmpty(dbFieldInfo.DictType) ? $" :formatter=\"{columnName}Format\"" : "";
+            
+            if (dbFieldInfo.IsList && dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
             {
-
-            }
-            else if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
-            {
-                vueViewListContent += $"      <el-table-column prop=\"{ columnName}\" label=\"图片\">\r\n";
+                vueViewListContent += $"      <el-table-column prop=\"{columnName}\" label=\"图片\">\r\n";
                 vueViewListContent += "         <template slot-scope=\"scope\">\r\n";
                 vueViewListContent += $"            <el-image class=\"table-td-thumb\" :src=\"scope.row.{columnName}\" :preview-src-list=\"[scope.row.{columnName}]\"></el-image>\r\n";
                 vueViewListContent += "         </template>\r\n";
@@ -229,9 +240,9 @@ namespace ZR.CodeGenerator
             //    vueViewListContent += "          </template>\r\n";
             //    vueViewListContent += "        </el-table-column>\r\n";
             //}
-            else
+            else if(dbFieldInfo.IsList)
             {
-                vueViewListContent += $"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\" width=\"100\" {showToolTip} />\r\n";
+                vueViewListContent += $"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\" {showToolTip}{formatter}/>\r\n";
             }
             return vueViewListContent;
         }

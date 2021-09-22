@@ -7,18 +7,10 @@ namespace Infrastructure
     public class OptionsSetting
     {
         public static string ConnAdmin = "conn_zrAdmin";
-        public static string DbType = "conn_admin_Type";
+        public static string ConnDbType = "dbType";
         public static string DbKey = "DbKey";
-        public string Conn_Admin { get; set; }
-
-        public string AppName { get; set; }
-        /// <summary>
-        /// 主库
-        /// </summary>
-        public string Master { get; set; }
 
         public string Redis { get; set; }
-
         public string Database { get; set; }
         /// <summary>
         /// 是否演示模式

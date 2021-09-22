@@ -143,7 +143,7 @@ export default {
         //TODO 重置字段
       };
     },
-	// 多选框选中数据
+	 // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map((item) => item.{primaryKey});
       this.single = selection.length!=1
@@ -167,8 +167,8 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const ${primaryKey}s = row.${primaryKey} || this.ids;
-      del{ModelTypeName}(${primaryKey}s).then((res) => {
+      const {primaryKey}s = row.{primaryKey} || this.ids;
+      del{ModelTypeName}({primaryKey}s.toString()).then((res) => {
         this.msgSuccess("删除成功");
         this.handleQuery();
       });

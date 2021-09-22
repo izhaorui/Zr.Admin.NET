@@ -28,7 +28,7 @@ namespace ZR.CodeGenerator
             if (string.IsNullOrEmpty(dbName))
             {
                 connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
-                dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.DbType);
+                dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.ConnDbType);
             }
             var db = new SqlSugarScope(new List<ConnectionConfig>()
             {

@@ -13,6 +13,7 @@ using {ModelsNamespace}.Models;
 using {ServicesNamespace}.Business;
 using {ApiControllerNamespace}.Extensions;
 using {ApiControllerNamespace}.Filters;
+using ZR.Common;
 
 namespace {ApiControllerNamespace}.Controllers
 {
@@ -59,7 +60,7 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpGet("{{PrimaryKey}}")]
         [ActionPermissionFilter(Permission = "{Permission}:query")]
-        public IActionResult Get{ModelName}({KeyTypeName} {PrimaryKey})
+        public IActionResult Get{ModelName}({PKCsharpType} {PrimaryKey})
         {
             var response = _{ModelName}Service.GetId({PrimaryKey});
 
@@ -117,14 +118,15 @@ namespace {ApiControllerNamespace}.Controllers
         /// 删除{TableDesc}
         /// </summary>
         /// <returns></returns>
-        [HttpDelete("{{PrimaryKey}}")]
+        [HttpDelete("{ids}")]
         [ActionPermissionFilter(Permission = "{Permission}:delete")]
         [Log(Title = "{TableDesc}删除", BusinessType = BusinessType.DELETE)]
-        public IActionResult Delete{ModelName}({KeyTypeName} {PrimaryKey} = 0)
+        public IActionResult Delete{ModelName}(string ids)
         {
-            if ({PrimaryKey} <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
+            int[] idsArr = Tools.SpitIntArrary(ids);
+            if (idsArr.Length <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
 
-            var response = _{ModelName}Service.Delete({PrimaryKey});
+            var response = _{ModelName}Service.Delete(idsArr);
 
             return SUCCESS(response);
         }

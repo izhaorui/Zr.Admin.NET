@@ -2,7 +2,9 @@
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Mapster;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -31,10 +33,12 @@ namespace ZR.Admin.WebApi.Controllers
         private CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
         private IGenTableService GenTableService;
         private IGenTableColumnService GenTableColumnService;
-        public CodeGeneratorController(IGenTableService genTableService, IGenTableColumnService genTableColumnService)
+        private IWebHostEnvironment WebHostEnvironment;
+        public CodeGeneratorController(IGenTableService genTableService, IGenTableColumnService genTableColumnService, IWebHostEnvironment webHostEnvironment)
         {
             GenTableService = genTableService;
             GenTableColumnService = genTableColumnService;
+            WebHostEnvironment = webHostEnvironment;
         }
 
         /// <summary>
@@ -84,10 +88,13 @@ namespace ZR.Admin.WebApi.Controllers
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             var getTableColumn = GenTableColumnService.GenTableColumns(dto.TableId);
             genTableInfo.Columns = getTableColumn;
-            //DbTableInfo dbTableInfo = new() { Name = dto.tableName };
-            CodeGeneratorTool.Generate(genTableInfo, dto);
 
-            return SUCCESS(genTableInfo);
+            dto.ParentPath = WebHostEnvironment.WebRootPath + "\\Generatecode\\" + DateTime.Now.ToString("yyyyMMdd") + "\\";
+
+            CodeGeneratorTool.Generate(genTableInfo, dto);
+            string zipPath = CodeGeneratorTool.ZipGenCode(dto);
+
+            return SUCCESS(new { zipPath });
         }
 
         /// <summary>
@@ -134,8 +141,8 @@ namespace ZR.Admin.WebApi.Controllers
         {
             long[] tableId = Tools.SpitLongArrary(tableIds);
 
-            GenTableService.DeleteGenTableByIds(tableId);
-            return SUCCESS(1);
+            int result = GenTableService.DeleteGenTableByIds(tableId);
+            return SUCCESS(result);
         }
 
         /// <summary>
@@ -173,70 +180,28 @@ namespace ZR.Admin.WebApi.Controllers
                         TableComment = tabInfo.Description,
                         Create_by = userName,
                     };
-                    int rows = GenTableService.ImportGenTable(genTable);
-                    if (rows > 0)
+                    genTable.TableId = GenTableService.ImportGenTable(genTable);
+
+                    if (genTable.TableId > 0)
                     {
                         //保存列信息
                         List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dbName, tableName);
-                        List<GenTableColumn> genTableColumns = new();
-                        foreach (var column in dbColumnInfos)
-                        {
-                            GenTableColumn genTableColumn = new()
-                            {
-                                ColumnName = CodeGeneratorTool.FirstLowerCase(column.DbColumnName),
-                                ColumnComment = column.ColumnDescription,
-                                IsPk = column.IsPrimarykey,
-                                ColumnType = column.DataType,
-                                TableId = rows,
-                                TableName = tableName,
-                                CsharpType = TableMappingHelper.GetPropertyDatatype(column.DataType),
-                                CsharpField = column.DbColumnName.Substring(0, 1).ToUpper() + column.DbColumnName[1..],
-                                IsRequired = !column.IsNullable,
-                                IsIncrement = column.IsIdentity,
-                                Create_by = userName,
-                                Create_time = DateTime.Now,
-                                IsInsert = !column.IsIdentity && !column.IsPrimarykey,
-                                IsEdit = !column.IsIdentity && !column.IsPrimarykey,
-                                IsList = true,
-                                IsQuery = false,
-                                HtmlType = GenConstants.HTML_INPUT
-                            };
-
-                            if (CodeGeneratorTool.imageFiled.Any(f => column.DbColumnName.ToLower().Contains(f.ToLower())))
-                            {
-                                genTableColumn.HtmlType = GenConstants.HTML_IMAGE_UPLOAD;
-                            }
-                            else if (genTableColumn.CsharpType.ToLower().Contains("datetime"))
-                            {
-                                genTableColumn.HtmlType = GenConstants.HTML_DATETIME;
-                            }
-                            else if (CodeGeneratorTool.radioFiled.Any(f => column.DbColumnName.Contains(f)))
-                            {
-                                genTableColumn.HtmlType = GenConstants.HTML_RADIO;
-                            }
-                            else if (CodeGeneratorTool.selectFiled.Any(f => column.DbColumnName.Contains(f)))
-                            {
-                                genTableColumn.HtmlType = GenConstants.HTML_SELECT;
-                            }
-                            else if (column.Length > 300)
-                            {
-                                genTableColumn.HtmlType = GenConstants.HTML_TEXTAREA;
-                            }
-
-                            genTableColumns.Add(genTableColumn);
-                        }
+                        List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos);
 
                         GenTableColumnService.DeleteGenTableColumnByTableName(tableName);
                         GenTableColumnService.InsertGenTableColumn(genTableColumns);
+                        genTable.Columns = genTableColumns;
+
+                        return SUCCESS(genTable);
                     }
                 }
             }
 
-            return SUCCESS(1);
+            return ToRespose(ResultCode.FAIL);
         }
 
         /// <summary>
-        /// 代码生成保存
+        /// 修改保存代码生成业务
         /// </summary>
         /// <returns></returns>
         [HttpPut]

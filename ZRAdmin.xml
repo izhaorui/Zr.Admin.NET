@@ -27,44 +27,44 @@
             <param name="data"></param>
             <returns></returns>
         </member>
-        <member name="T:ZR.Admin.WebApi.Controllers.GendemoController">
+        <member name="T:ZR.Admin.WebApi.Controllers.UserInfoController">
             <summary>
             代码自动生成
             </summary>
         </member>
-        <member name="F:ZR.Admin.WebApi.Controllers.GendemoController._GendemoService">
+        <member name="F:ZR.Admin.WebApi.Controllers.UserInfoController._UserInfoService">
             <summary>
-            测试接口
+            用户信息接口
             </summary>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.QueryGendemo(ZR.Model.Dto.GendemoQueryDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.QueryUserInfo(ZR.Model.Dto.UserInfoQueryDto)">
             <summary>
-            查询测试列表
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.GetGendemo(System.Int32)">
-            <summary>
-            查询测试详情
-            </summary>
-            <param name="Id"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.AddGendemo(ZR.Model.Dto.GendemoDto)">
-            <summary>
-            添加测试
+            查询用户信息列表
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.UpdateGendemo(ZR.Model.Dto.GendemoDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.GetUserInfo(System.Int32)">
             <summary>
-            更新测试
+            查询用户信息详情
+            </summary>
+            <param name="Luid"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.AddUserInfo(ZR.Model.Dto.UserInfoDto)">
+            <summary>
+            添加用户信息
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.DeleteGendemo(System.Int32)">
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.UpdateUserInfo(ZR.Model.Dto.UserInfoDto)">
             <summary>
-            删除测试
+            更新用户信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.DeleteUserInfo(System.String)">
+            <summary>
+            删除用户信息
             </summary>
             <returns></returns>
         </member>
@@ -127,7 +127,7 @@
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.EditSave(ZR.Model.System.Dto.GenTableDto)">
             <summary>
-            代码生成保存
+            修改保存代码生成业务
             </summary>
             <returns></returns>
         </member>
@@ -790,47 +790,6 @@
             存储文件
             </summary>
             <param name="formFile"></param>
-            <returns></returns>
-        </member>
-        <member name="T:ZR.Admin.WebApi.Controllers.SysFile1Controller">
-            <summary>
-            T4代码自动生成
-            </summary>
-        </member>
-        <member name="F:ZR.Admin.WebApi.Controllers.SysFile1Controller._SysFileService">
-            <summary>
-            文件管理接口
-            </summary>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Query(ZR.Model.System.Dto.SysFileQueryDto)">
-            <summary>
-            查询文件管理列表
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Get(System.String)">
-            <summary>
-            查询文件管理详情
-            </summary>
-            <param name="id"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Create(ZR.Model.System.SysFile)">
-            <summary>
-            添加文件管理
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Update(ZR.Model.System.SysFile)">
-            <summary>
-            更新文件管理
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Delete(System.Int32)">
-            <summary>
-            删除文件管理
-            </summary>
             <returns></returns>
         </member>
         <member name="T:ZR.Admin.WebApi.Extensions.HttpContextExtension">
