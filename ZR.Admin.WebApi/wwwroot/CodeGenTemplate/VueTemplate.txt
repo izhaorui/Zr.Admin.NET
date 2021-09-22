@@ -30,14 +30,14 @@
       {VueViewListContent}
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
-          <el-button size="mini"  v-hasPermi="['{Permission}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
+          <el-button v-hasPermi="['{Permission}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
           <el-popconfirm title="确定删除吗？" @confirm="handleDelete(scope.row)" style="margin-left:10px">
-            <el-button slot="reference"  v-hasPermi="['{Permission}:delete']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
+            <el-button slot="reference"  v-hasPermi="['{Permission}:delete']" type="text" icon="el-icon-delete">删除</el-button>
           </el-popconfirm>
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination class="mt10" background :total="total" :current-page.sync="queryParams.pageNum" :page-size="queryParams.pageSize" :page-sizes="[20, 30, 50, 100]" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange" @current-change="getList" />
+    <pagination class="mt10" background :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
@@ -67,7 +67,7 @@ export default {
     return {
       labelWidth: "100px",
       formLabelWidth:"100px",
-	  // 选中数组
+      // 选中{primaryKey}数组
       ids: [],
       // 非单个禁用
       single: true,
@@ -129,7 +129,7 @@ export default {
     reset() {
       this.form = {
         {VueViewEditFormContent}
-		//需个性化处理内容
+		//TODO 根据实际内容调整
       };
       this.resetForm("form");
     },
@@ -142,8 +142,9 @@ export default {
         pageSize: 20,
         //TODO 重置字段
       };
+      this.handleQuery();
     },
-	 // 多选框选中数据
+    // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map((item) => item.{primaryKey});
       this.single = selection.length!=1

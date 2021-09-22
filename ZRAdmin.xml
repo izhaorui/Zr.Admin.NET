@@ -27,44 +27,44 @@
             <param name="data"></param>
             <returns></returns>
         </member>
-        <member name="T:ZR.Admin.WebApi.Controllers.UserInfoController">
+        <member name="T:ZR.Admin.WebApi.Controllers.GendemoController">
             <summary>
             代码自动生成
             </summary>
         </member>
-        <member name="F:ZR.Admin.WebApi.Controllers.UserInfoController._UserInfoService">
+        <member name="F:ZR.Admin.WebApi.Controllers.GendemoController._GendemoService">
             <summary>
-            用户信息接口
+            代码生成测试表接口
             </summary>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.QueryUserInfo(ZR.Model.Dto.UserInfoQueryDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.QueryGendemo(ZR.Model.Dto.GendemoQueryDto)">
             <summary>
-            查询用户信息列表
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.GetUserInfo(System.Int32)">
-            <summary>
-            查询用户信息详情
-            </summary>
-            <param name="Luid"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.AddUserInfo(ZR.Model.Dto.UserInfoDto)">
-            <summary>
-            添加用户信息
+            查询代码生成测试表列表
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.UpdateUserInfo(ZR.Model.Dto.UserInfoDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.GetGendemo(System.Int32)">
             <summary>
-            更新用户信息
+            查询代码生成测试表详情
+            </summary>
+            <param name="Id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.AddGendemo(ZR.Model.Dto.GendemoDto)">
+            <summary>
+            添加代码生成测试表
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.DeleteUserInfo(System.String)">
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.UpdateGendemo(ZR.Model.Dto.GendemoDto)">
             <summary>
-            删除用户信息
+            更新代码生成测试表
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.DeleteGendemo(System.String)">
+            <summary>
+            删除代码生成测试表
             </summary>
             <returns></returns>
         </member>
