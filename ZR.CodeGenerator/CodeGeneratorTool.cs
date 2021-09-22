@@ -125,12 +125,12 @@ namespace ZR.CodeGenerator
                 //}
                 if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
                 {
-                    replaceDto.VueDataContent += $"// {dbFieldInfo.ColumnComment}选项列表\n";
-                    replaceDto.VueDataContent += $"{FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],";
+                    replaceDto.VueDataContent += $"      // {dbFieldInfo.ColumnComment}选项列表\n";
+                    replaceDto.VueDataContent += $"      {FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],";
 
-                    replaceDto.MountedMethod += $" this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{\n";
-                    replaceDto.MountedMethod += $"   this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;\n";
-                    replaceDto.MountedMethod += " })\n";
+                    replaceDto.MountedMethod += $"   this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{\n";
+                    replaceDto.MountedMethod += $"      this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;\n";
+                    replaceDto.MountedMethod += "    })\n";
                 }
 
                 replaceDto.QueryProperty += CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo);
@@ -592,7 +592,7 @@ namespace ZR.CodeGenerator
                     genTableColumn.IsEdit = true;
                 }
                 //列表字段
-                if (GenConstants.COLUMNNAME_NOT_LIST.Any(f => column.DbColumnName.Contains(f) && !column.IsPrimarykey))
+                if (!GenConstants.COLUMNNAME_NOT_LIST.Any(f => column.DbColumnName.Contains(f) && !column.IsPrimarykey))
                 {
                     genTableColumn.IsList = true;
                 }
