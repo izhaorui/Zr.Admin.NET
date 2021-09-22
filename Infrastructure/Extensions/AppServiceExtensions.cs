@@ -59,7 +59,7 @@ namespace Infrastructure.Extensions
                             services.AddTransient(serviceType, type);
                             break;
                     }
-                    Console.WriteLine($"注册：{serviceType}");
+                    //Console.WriteLine($"注册：{serviceType}");
                 }
                 else
                 {

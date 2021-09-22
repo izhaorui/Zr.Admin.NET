@@ -92,5 +92,9 @@ namespace ZR.CodeGenerator.Model
         /// vue data内容
         /// </summary>
         public string VueDataContent { get; set; }
+        /// <summary>
+        /// vue mounted 方法
+        /// </summary>
+        public string MountedMethod { get; set; }
     }
 }

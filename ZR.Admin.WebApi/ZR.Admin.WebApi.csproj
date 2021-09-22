@@ -15,6 +15,11 @@
   <ItemGroup>
     <Compile Remove="Filters\GlobalExceptionFilter.cs" />
     <Compile Remove="Middleware\RequestIPMiddleware.cs" />
+    <Compile Remove="Template\Controller.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Template\Controller.tt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,10 +58,6 @@
     <None Update="ip2region.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Template\Controller.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>Controller.cs</LastGenOutput>
-    </None>
     <None Update="Template\ControllersTemplate.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -86,6 +87,7 @@
   <ItemGroup>
     <Folder Include="Controllers\business\" />
     <Folder Include="wwwroot\" />
+    <Folder Include="wwwroot\Generatecode\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -100,14 +102,6 @@
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Template\Controller.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Controller.tt</DependentUpon>
-    </Compile>
   </ItemGroup>
 
 </Project>

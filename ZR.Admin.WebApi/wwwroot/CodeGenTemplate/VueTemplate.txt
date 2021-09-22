@@ -107,6 +107,7 @@ export default {
     // this.getDicts("sys_normal_disable").then((response) => {
     //   this.statusOptions = response.data;
     // });
+    {MountedMethod}
   },
   methods: {
     // 查询数据
@@ -142,7 +143,7 @@ export default {
         //TODO 重置字段
       };
     },
-	// 多选框选中数据
+	 // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map((item) => item.{primaryKey});
       this.single = selection.length!=1
@@ -166,10 +167,11 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-	  del{ModelTypeName}(row.{primaryKey}).then((res) => {
-		this.msgSuccess("删除成功");
-		this.handleQuery();
-	  });
+      const {primaryKey}s = row.{primaryKey} || this.ids;
+      del{ModelTypeName}({primaryKey}s.toString()).then((res) => {
+        this.msgSuccess("删除成功");
+        this.handleQuery();
+      });
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -184,7 +186,6 @@ export default {
       });
     },
     beforeFileUpload(file) { },
-    //文件上传成功方法
     {vueJsMethod}
     /** 提交按钮 */
     submitForm: function () {

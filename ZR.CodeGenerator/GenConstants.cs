@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
 namespace ZR.CodeGenerator
 {
@@ -16,6 +12,24 @@ namespace ZR.CodeGenerator
         public static string Gen_author = "gen:author";
         public static string Gen_autoPre = "gen:autoPre";
         public static string Gen_tablePrefix = "gen:tablePrefix";
+
+        /// <summary>
+        /// InputDto输入实体是不包含字段
+        /// </summary>
+        public static readonly string[] inputDtoNoField = new string[] { "createTime", "updateTime", "addtime" };
+        /// <summary>
+        /// 图片字段
+        /// </summary>
+        public static readonly string[] imageFiled = new string[] { "icon", "img", "image", "url", "pic", "photo", "avatar" };
+        /// <summary>
+        /// 下拉框字段
+        /// </summary>
+        public static readonly string[] selectFiled = new string[] { "status", "type", "state", "sex", "gender" };
+        /// <summary>
+        /// 单选按钮字段
+        /// </summary>
+        public static readonly string[] radioFiled = new string[] { "status", "state", "is"};
+
 
         /** 单表（增删改查） */
         public static string TPL_CRUD = "crud";
@@ -55,14 +69,14 @@ namespace ZR.CodeGenerator
             "bit", "bigint", "float", "double", "decimal" };
 
         /** 页面不需要编辑字段 */
-        public static string[] COLUMNNAME_NOT_EDIT = { "id", "create_by", "create_time", "del_flag" };
+        public static string[] COLUMNNAME_NOT_EDIT = { "id", "create_by", "create_time", "delFlag" };
 
         /** 页面不需要显示的列表字段 */
-        public static string[] COLUMNNAME_NOT_LIST = { "id", "create_by", "create_time", "del_flag", "update_by",
-            "update_time" };
+        public static string[] COLUMNNAME_NOT_LIST = { "id", "create_by", "create_time", "delFlag", "update_by",
+            "update_time" , "password"};
 
         /** 页面不需要查询字段 */
-        public static string[] COLUMNNAME_NOT_QUERY = { "id", "create_by", "create_time", "del_flag", "update_by",
+        public static string[] COLUMNNAME_NOT_QUERY = { "id", "create_by", "create_time", "delFlag", "update_by",
             "update_time", "remark" };
 
         /** Entity基类字段 */
@@ -102,16 +116,13 @@ namespace ZR.CodeGenerator
         public static string TYPE_STRING = "string";
 
         /** 整型 */
-        public static string TYPE_INTEGER = "Integer";
+        public static string TYPE_INT = "int";
 
         /** 长整型 */
-        public static string TYPE_LONG = "Long";
+        public static string TYPE_LONG = "long";
 
         /** 浮点型 */
         public static string TYPE_DOUBLE = "Double";
-
-        /** 高精度计算类型 */
-        public static string TYPE_BIGDECIMAL = "BigDecimal";
 
         /** 时间类型 */
         public static string TYPE_DATE = "Date";

@@ -22,7 +22,7 @@ namespace ZR.Repository.DbProvider
         {
             string connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
             string dbKey = ConfigUtils.Instance.GetAppConfig<string>(OptionsSetting.DbKey);
-            string dbType = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.DbType);
+            int dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.ConnDbType);
             if (!string.IsNullOrEmpty(dbKey))
             {
                 connStr = NETCore.Encrypt.EncryptProvider.DESDecrypt(connStr, dbKey);
@@ -32,7 +32,7 @@ namespace ZR.Repository.DbProvider
             {
                 new ConnectionConfig(){
                     ConnectionString = connStr,
-                    DbType = (DbType)Convert.ToInt32(dbType),
+                    DbType = (DbType)dbType,
                     IsAutoCloseConnection = true,//开启自动释放模式和EF原理一样
                     InitKeyType = InitKeyType.Attribute,//从特性读取主键和自增列信息
                     ConfigId = 0

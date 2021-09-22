@@ -25,7 +25,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 要删除表名的字符串用
         /// </summary>
-        public string replaceTableNameStr { get; set; }
+        //public string replaceTableNameStr { get; set; }
         /// <summary>
         /// 要生成的文件
         /// </summary>
@@ -34,5 +34,16 @@ namespace ZR.CodeGenerator.Model
         /// 如果目标文件存在，是否覆盖。默认为false
         /// </summary>
         public bool coverd { get; set; } = true;
+
+        #region 存储路径
+        //public string ModelPath { get; set; }
+        //public string ServicePath { get; set; }
+        //public string RepositoryPath { get; set; }
+        //public string ApiPath { get; set; }
+        //public string VuePath { get; set; }
+        //public string VueApiPath { get; set; }
+
+        public string ParentPath { get; set; } = "..";
+        #endregion
     }
 }

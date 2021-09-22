@@ -253,13 +253,15 @@ INSERT INTO sys_menu VALUES (108, '日志管理', 1, 9, 'log', '', 0, 0, 'M', '0
 INSERT INTO sys_menu VALUES (105, '字典管理', 1, 5, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (106, '分配用户', 1, 3, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
 
+-- 一级菜单 缓存监控
+INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 5, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', SYSDATE(), '', NULL, '缓存监控菜单');
+
 -- 一级菜单 系统工具
 INSERT INTO sys_menu VALUES (114, '表单构建', 3, 1, 'build', 'tool/build/index', 0, 0, 'C', '0', '0', 'tool:build:list', 'build', '', SYSDATE(), '', NULL, '表单构建菜单');
 INSERT INTO sys_menu VALUES (115, '代码生成', 3, 1, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', SYSDATE(), '', NULL, '代码生成菜单');
 INSERT INTO sys_menu VALUES (116, '系统接口', 3, 3, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', SYSDATE(), '', NULL, '系统接口菜单');
+INSERT INTO sys_menu VALUES (117, '编辑表格', 3, 3, 'editTable', 'tool/gen/editTable', 0, 0, 'C', '1', '0', 'tool:gen:edittable', '', '', SYSDATE(), '', NULL, '代码生成编辑表格菜单');
 
--- 一级菜单 缓存监控
-INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 5, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', SYSDATE(), '', NULL, '缓存监控菜单');
 
 -- 日志管理
 INSERT INTO sys_menu VALUES (500, '操作日志', 108, 1, 'operlog', 'monitor/operlog/index', 0, 0, 'C', '0', '0', 'monitor:operlog:list', 'form', '', SYSDATE(), '', NULL, '操作日志菜单');
@@ -633,30 +635,32 @@ create table gen_table (
 -- 19、代码生成业务表字段
 -- ----------------------------
 drop table if exists gen_table_column;
-create table gen_table_column (
-  columnId         bigint(20)      not null auto_increment    comment '编号',
-  tableId          varchar(64)                                comment '归属表编号',
-  tableName		   varchar(20)								  comment '表名',
-  columnName       varchar(200)                               comment '列名称',
-  columnComment    varchar(500)                               comment '列描述',
-  columnType       varchar(100)                               comment '列类型',
-  csharpType         varchar(500)                               comment 'JAVA类型',
-  csharpField        varchar(200)                               comment 'JAVA字段名',
-  isPk             char(1)                                    comment '是否主键（1是）',
-  isIncrement      char(1)                                    comment '是否自增（1是）',
-  isRequired       char(1)                                    comment '是否必填（1是）',
-  isInsert         char(1)                                    comment '是否为插入字段（1是）',
-  isEdit           char(1)                                    comment '是否编辑字段（1是）',
-  isList           char(1)                                    comment '是否列表字段（1是）',
-  isQuery          char(1)                                    comment '是否查询字段（1是）',
-  queryType        varchar(200)    default 'EQ'               comment '查询方式（等于、不等于、大于、小于、范围）',
-  htmlType         varchar(200)                               comment '显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）',
-  dictType         varchar(200)    default ''                 comment '字典类型',
-  sort              int                                        comment '排序',
-  create_by         varchar(64)     default ''                 comment '创建者',
-  create_time 	    datetime                                   comment '创建时间',
-  update_by         varchar(64)     default ''                 comment '更新者',
-  update_time       datetime                                   comment '更新时间',
-  remark			varchar(200),
-  primary key (column_id)
-) engine=innodb auto_increment=1 comment = '代码生成业务表字段';
+CREATE TABLE `gen_table_column`  (
+  `columnId` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '编号',
+  `tableName` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '表名',
+  `tableId` bigint(20) NULL DEFAULT NULL COMMENT '归属表编号',
+  `columnName` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '列名称',
+  `columnComment` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '列描述',
+  `columnType` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '列类型',
+  `csharpType` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'C#类型',
+  `csharpField` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'C#字段名',
+  `isPk` tinyint(1) NULL DEFAULT NULL COMMENT '是否主键（1是）',
+  `isIncrement` tinyint(1) NULL DEFAULT NULL COMMENT '是否自增（1是）',
+  `isRequired` tinyint(1) NULL DEFAULT NULL COMMENT '是否必填（1是）',
+  `isInsert` tinyint(1) NULL DEFAULT NULL COMMENT '是否为插入字段（1是）',
+  `isEdit` tinyint(1) NULL DEFAULT NULL COMMENT '是否编辑字段（1是）',
+  `isList` tinyint(1) NULL DEFAULT NULL COMMENT '是否列表字段（1是）',
+  `isQuery` tinyint(4) NULL DEFAULT NULL COMMENT '是否查询字段（1是）',
+  `queryType` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT 'EQ' COMMENT '查询方式（等于、不等于、大于、小于、范围）',
+  `htmlType` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）',
+  `dictType` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '字典类型',
+  `sort` int(11) NULL DEFAULT NULL COMMENT '排序',
+  `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '创建者',
+  `create_time` datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '更新者',
+  `update_time` datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`columnId`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 63 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '代码生成业务表字段' ROW_FORMAT = Dynamic;
+
+SET FOREIGN_KEY_CHECKS = 1;
