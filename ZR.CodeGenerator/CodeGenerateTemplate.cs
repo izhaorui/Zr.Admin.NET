@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using ZR.CodeGenerator.CodeGenerator;
 using ZR.Model.System.Generate;
 
@@ -207,7 +208,7 @@ namespace ZR.CodeGenerator
             string columnName = dbFieldInfo.ColumnName;
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string vueViewListContent = "";
-            string showToolTip = dbFieldInfo.ColumnType.Contains("varchar") ? ":show-overflow-tooltip=\"true\"" : "";
+            string showToolTip = dbFieldInfo.CsharpType == "string" ? ":show-overflow-tooltip=\"true\"" : "";
             if (!dbFieldInfo.IsList)
             {
 
