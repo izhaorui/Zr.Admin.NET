@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.CodeGenerator;
@@ -83,9 +84,9 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
-            dto.ZipPath = WebHostEnvironment.WebRootPath + "\\Generatecode\\";
-            dto.GenCodePath = dto.ZipPath + DateTime.Now.ToString("yyyyMMdd") + "\\";
-   
+            dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
+            dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
+
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             var getTableColumn = GenTableColumnService.GenTableColumns(dto.TableId);
             genTableInfo.Columns = getTableColumn;
@@ -168,8 +169,8 @@ namespace ZR.Admin.WebApi.Controllers
                 {
                     GenTable genTable = new()
                     {
-                        BaseNameSpace = "ZR.",
-                        ModuleName = "bus",
+                        BaseNameSpace = "ZR.",//导入默认命名空间前缀
+                        ModuleName = "bus",//导入默认模块名
                         ClassName = CodeGeneratorTool.GetClassName(tableName),
                         BusinessName = CodeGeneratorTool.GetClassName(tableName),
                         FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),

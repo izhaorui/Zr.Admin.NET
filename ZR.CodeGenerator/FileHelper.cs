@@ -103,7 +103,7 @@ namespace ZR.CodeGenerator
             {
                 strDirectory += Path.DirectorySeparatorChar;
             }
-
+            Console.WriteLine("strDirectory=" + strDirectory);
             Crc32 crc = new Crc32();
 
             string[] filenames = Directory.GetFileSystemEntries(strDirectory, filetype);
@@ -112,8 +112,9 @@ namespace ZR.CodeGenerator
                 if (Directory.Exists(file))// 先当作目录处理如果存在这个目录就递归Copy该目录下面的文件
                 {
                     string pPath = parentPath;
-                    pPath += file.Substring(file.LastIndexOf("\\") + 1);
-                    pPath += "\\";
+                    pPath += file[(file.LastIndexOf("/") + 1)..];
+                    pPath += "/";
+                    Console.WriteLine("递归路径" + pPath);
                     ZipSetp(file, s, pPath, filetype);
                 }
                 else // 否则直接压缩文件
@@ -123,7 +124,7 @@ namespace ZR.CodeGenerator
                     {
                         byte[] buffer = new byte[fs.Length];
                         fs.Read(buffer, 0, buffer.Length);
-                        string fileName = parentPath + file[(file.LastIndexOf("\\") + 1)..];
+                        string fileName = parentPath + file[(file.LastIndexOf("/") + 1)..];
                         ZipEntry entry = new ZipEntry(fileName);
                         entry.DateTime = DateTime.Now;
                         entry.Size = fs.Length;
