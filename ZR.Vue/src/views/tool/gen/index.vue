@@ -77,6 +77,8 @@
 
 <script>
 import { codeGenerator, getGenTable, delTable } from "@/api/tool/gen";
+import { downLoadZip } from "@/utils/zipdownload.js";
+
 import importTable from "./importTable";
 import { Loading } from "element-ui";
 
@@ -120,7 +122,7 @@ export default {
       // 选中的表
       tableIds: [],
       // 非多个禁用
-      multiple: true
+      multiple: true,
     };
   },
   created() {
@@ -186,13 +188,11 @@ export default {
 
           codeGenerator(seachdata)
             .then((res) => {
-              if (res.code == 200) {
-                // downloadFile(
-                //   defaultSettings.fileUrl + res.ResData[0],
-                //   res.ResData[1]
-                // );
+              const { code, data } = res;
+              if (code == 200) {
                 this.showGenerate = false;
                 this.msgSuccess("恭喜你，代码生成完成！");
+                downLoadZip(data.zipPath, '');
               } else {
                 this.msgError(res.msg);
               }
@@ -231,18 +231,18 @@ export default {
     },
     handleDelete(row) {
       const tableIds = row.tableId || this.tableIds;
-      delTable(tableIds.toString()).then(res => {
+      delTable(tableIds.toString()).then((res) => {
         if (res.code == 200) {
-          this.msgSuccess('删除成功')
+          this.msgSuccess("删除成功");
 
           this.handleSearch();
         }
-      })
+      });
     },
     handleSelectionChange(section) {
       this.tableIds = section.map((item) => item.tableId);
       this.multiple = !section.length;
-      console.log(this.tableIds)
+      console.log(this.tableIds);
     },
   },
 };
