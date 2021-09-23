@@ -45,40 +45,6 @@ namespace ZR.CodeGenerator
         }
 
         /// <summary>
-        /// 打包压缩代码
-        /// </summary>
-        /// <param name="dto"></param>
-        /// <returns></returns>
-        public static string ZipGenCode(GenerateDto dto)
-        {
-            try
-            {
-                string zipPath = Environment.CurrentDirectory + "\\wwwroot\\Generatecode\\";
-                //生成压缩包
-                string zipReturnFileName = dto.baseSpace + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
-
-                if (!Directory.Exists(zipPath))
-                {
-                    Directory.CreateDirectory(zipPath);
-                }
-                string zipFileName = zipPath + "\\" + zipReturnFileName;
-                if (File.Exists(zipFileName))
-                {
-                    File.Delete(zipFileName);
-                }
-                Console.WriteLine(zipFileName);
-                FileHelper.ZipFileDirectory(dto.ParentPath, zipFileName, 7, "", "", "*.*");
-                FileHelper.DeleteDirectory(dto.ParentPath);
-                return zipFileName;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return "";
-            }
-        }
-
-        /// <summary>
         /// 单表生成代码
         /// </summary>
         /// <param name="listField">表字段集合</param>
@@ -125,12 +91,12 @@ namespace ZR.CodeGenerator
                 //}
                 if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
                 {
-                    replaceDto.VueDataContent += $"// {dbFieldInfo.ColumnComment}选项列表\n";
-                    replaceDto.VueDataContent += $"{FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],";
+                    replaceDto.VueDataContent += $"      // {dbFieldInfo.ColumnComment}选项列表\n";
+                    replaceDto.VueDataContent += $"      {FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],";
 
-                    replaceDto.MountedMethod += $" this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{\n";
-                    replaceDto.MountedMethod += $"   this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;\n";
-                    replaceDto.MountedMethod += " })\n";
+                    replaceDto.MountedMethod += $"   this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{\n";
+                    replaceDto.MountedMethod += $"      this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;\n";
+                    replaceDto.MountedMethod += "    })\n";
                 }
 
                 replaceDto.QueryProperty += CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo);
@@ -149,19 +115,19 @@ namespace ZR.CodeGenerator
             {
                 Tuple<string, string> tuple = GenerateModels(replaceDto, dto);
                 genPathList.Add(tuple.Item1);
-                //WriteAndSave(tuple.Item1, tuple.Item2);
+                WriteAndSave(tuple.Item1, tuple.Item2);
             }
             if (dto.genFiles.Contains(2))
             {
                 Tuple<string, string> tuple = GenerateInputDto(replaceDto, dto);
                 genPathList.Add(tuple.Item1);
-                //WriteAndSave(tuple.Item1, tuple.Item2);
+                WriteAndSave(tuple.Item1, tuple.Item2);
             }
             if (dto.genFiles.Contains(3))
             {
                 Tuple<string, string> tuple = GenerateRepository(replaceDto, dto);
                 genPathList.Add(tuple.Item1);
-                //WriteAndSave(tuple.Item1, tuple.Item2);
+                WriteAndSave(tuple.Item1, tuple.Item2);
             }
             if (dto.genFiles.Contains(4))
             {
@@ -169,20 +135,20 @@ namespace ZR.CodeGenerator
                 Tuple<string, string> tuple_1 = GenerateService(replaceDto, dto);
                 genPathList.Add(tuple.Item1);
                 genPathList.Add(tuple_1.Item1);
-                //WriteAndSave(tuple.Item1, tuple.Item2);
-                //WriteAndSave(tuple_1.Item1, tuple_1.Item2);
+                WriteAndSave(tuple.Item1, tuple.Item2);
+                WriteAndSave(tuple_1.Item1, tuple_1.Item2);
             }
             if (dto.genFiles.Contains(5))
             {
                 Tuple<string, string> tuple = GenerateControllers(replaceDto, dto);
                 genPathList.Add(tuple.Item1);
-                //WriteAndSave(tuple.Item1, tuple.Item2);
+                WriteAndSave(tuple.Item1, tuple.Item2);
             }
             if (dto.genFiles.Contains(6))
             {
                 Tuple<string, string> tuple = GenerateVueViews(replaceDto, dto);
                 genPathList.Add(tuple.Item1);
-                //WriteAndSave(tuple.Item1, tuple.Item2);
+                WriteAndSave(tuple.Item1, tuple.Item2);
             }
             return genPathList;
             //GenerateIRepository(modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
@@ -199,7 +165,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.ParentPath;
+            var parentPath = generateDto.GenCodePath;
             //../ZR.Model
             var servicesPath = parentPath + "\\" + _option.ModelsNamespace + "\\Models\\";
             if (!Directory.Exists(servicesPath))
@@ -230,7 +196,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.ParentPath;
+            var parentPath = generateDto.GenCodePath;
             var servicesPath = parentPath + "\\" + _option.ModelsNamespace + "\\Dto\\";
             if (!Directory.Exists(servicesPath))
             {
@@ -263,7 +229,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.ParentPath;
+            var parentPath = generateDto.GenCodePath;
             var repositoryPath = parentPath + "\\" + _option.RepositoriesNamespace + "\\Repositories\\";
             if (!Directory.Exists(repositoryPath))
             {
@@ -295,7 +261,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateIService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.ParentPath;
+            var parentPath = generateDto.GenCodePath;
             var iServicesPath = parentPath + "\\" + _option.IServicsNamespace + "\\Business\\IBusService\\";
             if (!Directory.Exists(iServicesPath))
             {
@@ -322,7 +288,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static Tuple<string, string> GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.ParentPath;
+            var parentPath = generateDto.GenCodePath;
             var servicesPath = parentPath + "\\" + _option.ServicesNamespace + "\\Business\\";
             if (!Directory.Exists(servicesPath))
             {
@@ -354,7 +320,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static Tuple<string, string> GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.ParentPath;
+            var parentPath = generateDto.GenCodePath;
             var servicesPath = parentPath + "\\" + _option.ApiControllerNamespace + "\\Controllers\\business\\";
             if (!Directory.Exists(servicesPath))
             {
@@ -386,7 +352,7 @@ namespace ZR.CodeGenerator
         private static Tuple<string, string> GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             //var parentPath = "..\\CodeGenerate";//若要生成到项目中将路径改成 “..\\ZR.Vue\\src”
-            var parentPath = $"{generateDto.ParentPath}\\ZR.Vue\\src";
+            var parentPath = $"{generateDto.GenCodePath}\\ZR.Vue\\src";
             var servicesPath = parentPath + "\\views\\" + FirstLowerCase(replaceDto.ModelTypeName);
             if (!Directory.Exists(servicesPath))
             {
@@ -512,6 +478,7 @@ namespace ZR.CodeGenerator
         /// <param name="content"></param>
         private static void WriteAndSave(string fileName, string content)
         {
+            Console.WriteLine(fileName);
             try
             {
                 //实例化一个文件流--->与写入文件相关联
@@ -592,7 +559,7 @@ namespace ZR.CodeGenerator
                     genTableColumn.IsEdit = true;
                 }
                 //列表字段
-                if (GenConstants.COLUMNNAME_NOT_LIST.Any(f => column.DbColumnName.Contains(f) && !column.IsPrimarykey))
+                if (!GenConstants.COLUMNNAME_NOT_LIST.Any(f => column.DbColumnName.Contains(f) && !column.IsPrimarykey))
                 {
                     genTableColumn.IsList = true;
                 }
@@ -600,6 +567,40 @@ namespace ZR.CodeGenerator
                 genTableColumns.Add(genTableColumn);
             }
             return genTableColumns;
+        }
+
+        /// <summary>
+        /// 压缩代码
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        public static string ZipGenCode(GenerateDto dto)
+        {
+            try
+            {
+                //生成压缩包
+                string zipReturnFileName = "ZR." + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
+
+                if (!Directory.Exists(dto.GenCodePath))
+                {
+                    Directory.CreateDirectory(dto.GenCodePath);
+                }
+                string zipFileName = dto.ZipPath + "\\" + zipReturnFileName;
+                if (File.Exists(zipFileName))
+                {
+                    File.Delete(zipFileName);
+                }
+
+                FileHelper.ZipFileDirectory(dto.GenCodePath, zipFileName, 7, "", "", "*.*");
+                //FileHelper.DeleteDirectory(dto.GenCodePath);
+                dto.ZipFileName = zipReturnFileName;
+                return zipReturnFileName;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return "";
+            }
         }
 
     }
