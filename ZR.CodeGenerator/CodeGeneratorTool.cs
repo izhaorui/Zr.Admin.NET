@@ -163,10 +163,7 @@ namespace ZR.CodeGenerator
                 WriteAndSave(tuple.Item1, tuple.Item2);
             }
             return genPathList;
-            //GenerateIRepository(modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
-            //GenerateOutputDto(modelTypeName, modelTypeDesc, outputDtocontent, ifExsitedCovered);
         }
-
 
         #region 生成Model
 
@@ -312,7 +309,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static Tuple<string, string> GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", "business");
+            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", generateDto.GenTable.ModuleName);
             CreateDirectory(servicesPath);
 
             var fullPath = Path.Combine(servicesPath, $"{replaceDto.ModelTypeName}Controller.cs");
@@ -329,6 +326,7 @@ namespace ZR.CodeGenerator
                 .Replace("{PrimaryKey}", replaceDto.PKName)
                 .Replace("{UpdateColumn}", replaceDto.UpdateColumn)
                 .Replace("{InsertColumn}", replaceDto.InsertColumn)
+                .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
                 .Replace("{PKCsharpType}", replaceDto.PKType);
 
             return Tuple.Create(fullPath, content);
@@ -341,10 +339,10 @@ namespace ZR.CodeGenerator
         private static Tuple<string, string> GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var parentPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src");
-            var servicesPath = Path.Combine(parentPath, "views", replaceDto.ViewsFileName);
+            var servicesPath = Path.Combine(parentPath, "views", generateDto.GenTable.ModuleName, replaceDto.ViewsFileName);
             CreateDirectory(servicesPath);
 
-            var fullPath = Path.Combine(servicesPath, $"{replaceDto.ViewsFileName}.vue");
+            var fullPath = Path.Combine(servicesPath, "index.vue");
 
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
@@ -376,10 +374,11 @@ namespace ZR.CodeGenerator
 
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
-            
+
             var content = ReadTemplate("VueJsTemplate.txt")
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{ModelTypeDesc}", replaceDto.TableDesc);
+                .Replace("{ModelTypeDesc}", replaceDto.TableDesc)
+                .Replace("{ModuleName}", generateDto.GenTable.ModuleName);
 
             return Tuple.Create(fullPath, content);
         }
@@ -618,7 +617,7 @@ namespace ZR.CodeGenerator
             try
             {
                 //生成压缩包
-                string zipReturnFileName = "ZR." + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
+                string zipReturnFileName = dto.GenTable.BaseNameSpace + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
 
                 CreateDirectory(dto.GenCodePath);
                 string zipFileName = Path.Combine(dto.ZipPath, zipReturnFileName);
