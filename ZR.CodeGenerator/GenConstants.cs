@@ -72,7 +72,7 @@ namespace ZR.CodeGenerator
         public static string[] COLUMNNAME_NOT_EDIT = { "id", "create_by", "create_time", "delFlag" };
 
         /** 页面不需要显示的列表字段 */
-        public static string[] COLUMNNAME_NOT_LIST = { "id", "create_by", "create_time", "delFlag", "update_by",
+        public static string[] COLUMNNAME_NOT_LIST = { "create_by", "create_time", "delFlag", "update_by",
             "update_time" , "password"};
 
         /** 页面不需要查询字段 */

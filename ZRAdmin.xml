@@ -97,9 +97,9 @@
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetGenTable(System.String,ZR.Model.PagerInfo)">
             <summary>
-            获取表详细信息
+            获取代码生成表列表
             </summary>
-            <param name="tableName"></param>
+            <param name="tableName">表名</param>
             <param name="pagerInfo">分页信息</param>
             <returns></returns>
         </member>
@@ -107,7 +107,7 @@
             <summary>
             查询表字段列表
             </summary>
-            <param name="tableId"></param>
+            <param name="tableId">genTable表id</param>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Remove(System.String)">

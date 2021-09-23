@@ -64,7 +64,7 @@ export function queryColumnInfo(tableId) {
 // 查询表详细信息
 export function getGenTable(params) {
   return request({
-    url: 'tool/gen/getGenTable',
+    url: 'tool/gen/listGenTable',
     method: 'get',
     params: params
   })

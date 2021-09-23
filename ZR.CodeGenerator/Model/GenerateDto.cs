@@ -9,7 +9,7 @@ namespace ZR.CodeGenerator.Model
     public class GenerateDto
     {
         public long TableId { get; set; }
-        public string[] queryColumn { get; set; }
+        public string[] QueryColumn { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -17,7 +17,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 项目命名空间
         /// </summary>
-        public string baseSpace { get; set; }
+        //public string baseSpace { get; set; }
         /// <summary>
         /// 要生成代码的表
         /// </summary>
@@ -43,7 +43,19 @@ namespace ZR.CodeGenerator.Model
         //public string VuePath { get; set; }
         //public string VueApiPath { get; set; }
 
-        public string ParentPath { get; set; } = "..";
+        //public string ParentPath { get; set; } = "..";
+        /// <summary>
+        /// 代码生成路径
+        /// </summary>
+        public string GenCodePath { get; set; }
+        /// <summary>
+        /// 代码生成压缩包路径
+        /// </summary>
+        public string ZipPath { get; set; }
+        /// <summary>
+        /// 代码生成压缩包名称
+        /// </summary>
+        public string ZipFileName { get; set; }
         #endregion
     }
 }

@@ -35,11 +35,7 @@
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-view" @click="handlePreview()">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)">编辑</el-button>
-
-          <el-popconfirm title="确定删除吗？" @confirm="handleDelete(scope.row)" style="margin-left:10px">
-            <el-button slot="reference" v-hasPermi="['tool:gen:delete']" size="mini" type="text" icon="el-icon-delete">删除</el-button>
-          </el-popconfirm>
-
+          <el-button type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:gen:delete']">删除</el-button>
           <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)" v-hasPermi="['tool:gen:code']">生成代码</el-button>
         </template>
       </el-table-column>
@@ -77,7 +73,7 @@
 
 <script>
 import { codeGenerator, getGenTable, delTable } from "@/api/tool/gen";
-import { downLoadZip } from "@/utils/zipdownload.js";
+import { downLoadZip, downloadFile } from "@/utils/zipdownload.js";
 
 import importTable from "./importTable";
 import { Loading } from "element-ui";
@@ -192,7 +188,11 @@ export default {
               if (code == 200) {
                 this.showGenerate = false;
                 this.msgSuccess("恭喜你，代码生成完成！");
-                downLoadZip(data.zipPath, '');
+                // downLoadZip(data.zipPath, '');
+                downloadFile(
+                  process.env.VUE_APP_BASE_API + data.zipPath,
+                  data.fileName
+                );
               } else {
                 this.msgError(res.msg);
               }
@@ -206,21 +206,6 @@ export default {
         }
       });
     },
-    /**
-     * 选择每页显示数量
-     */
-    // handleSizeChange(val) {
-    //   this.pagination.pagesize = val;
-    //   this.pagination.pageNum = 1;
-    //   this.loadTableData();
-    // },
-    /**
-     * 选择当页面
-     */
-    // handleCurrentChange(val) {
-    //   this.pagination.pageNum = val;
-    //   this.loadTableData();
-    // },
     cancel() {
       this.showGenerate = false;
       this.currentSelected = {};
@@ -231,13 +216,26 @@ export default {
     },
     handleDelete(row) {
       const tableIds = row.tableId || this.tableIds;
-      delTable(tableIds.toString()).then((res) => {
-        if (res.code == 200) {
-          this.msgSuccess("删除成功");
+      this.$confirm("此操作将永久删除该文件, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          delTable(tableIds.toString()).then((res) => {
+            if (res.code == 200) {
+              this.msgSuccess("删除成功");
 
-          this.handleSearch();
-        }
-      });
+              this.handleSearch();
+            }
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除",
+          });
+        });
     },
     handleSelectionChange(section) {
       this.tableIds = section.map((item) => item.tableId);

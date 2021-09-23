@@ -8,11 +8,9 @@ using Microsoft.Extensions.Hosting;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.CodeGenerator;
-using ZR.CodeGenerator.CodeGenerator;
 using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
 using ZR.Common;
@@ -85,31 +83,31 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
+            dto.ZipPath = WebHostEnvironment.WebRootPath + "\\Generatecode\\";
+            dto.GenCodePath = dto.ZipPath + DateTime.Now.ToString("yyyyMMdd") + "\\";
+   
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             var getTableColumn = GenTableColumnService.GenTableColumns(dto.TableId);
             genTableInfo.Columns = getTableColumn;
 
-            dto.ParentPath = WebHostEnvironment.WebRootPath + "\\Generatecode\\" + DateTime.Now.ToString("yyyyMMdd") + "\\";
-
+            //生成代码
             CodeGeneratorTool.Generate(genTableInfo, dto);
-            string zipPath = CodeGeneratorTool.ZipGenCode(dto);
+            //下载文件
+            CodeGeneratorTool.ZipGenCode(dto);
 
-            return SUCCESS(new { zipPath });
+            //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
+            return SUCCESS(new { zipPath = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
         }
 
         /// <summary>
-        /// 获取表详细信息
+        /// 获取代码生成表列表
         /// </summary>
-        /// <param name="tableName"></param>
+        /// <param name="tableName">表名</param>
         /// <param name="pagerInfo">分页信息</param>
         /// <returns></returns>
-        [HttpGet("getGenTable")]
+        [HttpGet("listGenTable")]
         public IActionResult GetGenTable(string tableName, PagerInfo pagerInfo)
         {
-            //if (string.IsNullOrEmpty(tableName))
-            //{
-            //    throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
-            //}
             //查询原表数据，部分字段映射到代码生成表字段
             var rows = GenTableService.GetGenTables(new GenTable() { TableName = tableName }, pagerInfo);
 
@@ -119,7 +117,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <summary>
         /// 查询表字段列表
         /// </summary>
-        /// <param name="tableId"></param>
+        /// <param name="tableId">genTable表id</param>
         /// <returns></returns>
         [HttpGet("column/{tableId}")]
         public IActionResult GetColumnList(long tableId)
