@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Infrastructure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
@@ -43,12 +44,13 @@ namespace ZR.Admin.WebApi.Framework
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(KEY);
+            var expires = ConfigUtils.Instance.GetAppConfig("sysConfig:tokenExpire", 10);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 //Issuer = "",
                 //Audience = "",
-                Expires = DateTime.Now.AddDays(7),
+                Expires = DateTime.Now.AddMinutes(expires),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
