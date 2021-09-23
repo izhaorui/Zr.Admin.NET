@@ -22,7 +22,7 @@ namespace ZR.CodeGenerator
             if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
             {
                 js += "    //文件上传成功方法\r\n";
-                js += $"      handleUpload{columnName}Success(res, file) {{\r\n";
+                js += $"    handleUpload{dbFieldInfo.CsharpField}Success(res, file) {{\r\n";
                 js += $"      this.form.{columnName} = URL.createObjectURL(file.raw);\r\n";
                 js += "      // this.$refs.upload.clearFiles();\r\n";
                 js += "    },\r";
@@ -144,7 +144,7 @@ namespace ZR.CodeGenerator
             {
                 //图片
                 vueViewFromContent += $"       <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">\r\n";
-                vueViewFromContent += $"         <el-upload class=\"avatar-uploader\" name=\"file\" action=\"/api/upload/saveFile/\" :show-file-list=\"false\" :on-success=\"handleUpload{columnName}Success\" :before-upload=\"beforeFileUpload\">\r\n";
+                vueViewFromContent += $"         <el-upload class=\"avatar-uploader\" name=\"file\" action=\"/api/upload/saveFile/\" :show-file-list=\"false\" :on-success=\"handleUpload{dbFieldInfo.CsharpField}Success\" :before-upload=\"beforeFileUpload\">\r\n";
                 vueViewFromContent += $"            <img v-if=\"form.{columnName}\" :src=\"form.{columnName}\" class=\"icon\">\r\n";
                 vueViewFromContent += "             <i v-else class=\"el-icon-plus uploader-icon\"></i>\r\n";
                 vueViewFromContent += "          </el-upload>\r\n";
