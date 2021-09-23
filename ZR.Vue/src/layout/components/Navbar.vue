@@ -14,6 +14,9 @@
         <!-- <el-tooltip content="布局大小" effect="dark" placement="bottom"> -->
         <size-select id="size-select" class="right-menu-item hover-effect" />
         <!-- </el-tooltip> -->
+        <el-tooltip content="源码地址" effect="dark" placement="bottom">
+          <zr-git id="ruoyi-git" class="right-menu-item hover-effect" />
+        </el-tooltip>
       </template>
 
       <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
@@ -44,6 +47,7 @@ import Hamburger from "@/components/Hamburger";
 import Screenfull from "@/components/Screenfull";
 import SizeSelect from "@/components/SizeSelect";
 import Search from "@/components/HeaderSearch";
+import ZrGit from "@/components/Zr/Git";
 
 export default {
   components: {
@@ -52,6 +56,7 @@ export default {
     Screenfull,
     SizeSelect,
     Search,
+    ZrGit,
   },
   computed: {
     ...mapGetters(["sidebar", "avatar", "device"]),
