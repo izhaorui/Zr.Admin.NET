@@ -25,7 +25,7 @@ namespace ZR.Model.System
         //[JsonIgnore]
         [SugarColumn(IsOnlyIgnoreInsert = true)]//设置后插入数据不会有此字段
         [JsonProperty(propertyName: "UpdateTime")]
-        public DateTime Update_time { get; set; }
+        public DateTime? Update_time { get; set; }
 
         public string Remark { get; set; }
 
