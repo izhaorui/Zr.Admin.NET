@@ -128,7 +128,7 @@ export default {
     // 重置数据表单
     reset() {
       this.form = {
-        {VueViewEditFormContent}
+        {VueViewFormResetHtml}
 		//TODO 根据实际内容调整
       };
       this.resetForm("form");

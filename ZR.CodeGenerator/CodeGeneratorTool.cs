@@ -3,6 +3,7 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -59,9 +60,10 @@ namespace ZR.CodeGenerator
             List<string> genPathList = new();
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = tableInfo.ClassName;//表名对应C# 实体类名
-            replaceDto.TableName = tableInfo.TableName;
-            replaceDto.TableDesc = tableInfo.TableComment;
-
+            replaceDto.TableName = tableInfo.TableName;//表名
+            replaceDto.TableDesc = tableInfo.TableComment;//表说明描述
+            replaceDto.Permission = tableInfo.ClassName.ToLower();//权限
+            replaceDto.ViewsFileName = FirstLowerCase(replaceDto.ModelTypeName);
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in listField)
             {
@@ -69,7 +71,7 @@ namespace ZR.CodeGenerator
 
                 if (dbFieldInfo.IsInsert || dbFieldInfo.IsEdit)
                 {
-                    replaceDto.VueViewEditFormHtml += $"{columnName}: undefined,\r\n";
+                    replaceDto.VueViewFormResetHtml += $"        {columnName}: undefined,\r\n";
                 }
                 if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
                 {
@@ -155,6 +157,11 @@ namespace ZR.CodeGenerator
                 WriteAndSave(tuple.Item1, tuple.Item2);
                 WriteAndSave(tuple_1.Item1, tuple_1.Item2);
             }
+            if (dto.genFiles.Contains(7))
+            {
+                Tuple<string, string> tuple = GenerateSql(replaceDto, dto);
+                WriteAndSave(tuple.Item1, tuple.Item2);
+            }
             return genPathList;
             //GenerateIRepository(modelTypeName, modelTypeDesc, keyTypeName, ifExsitedCovered);
             //GenerateOutputDto(modelTypeName, modelTypeDesc, outputDtocontent, ifExsitedCovered);
@@ -170,9 +177,8 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.GenCodePath;
             //../ZR.Model
-            var servicesPath = Path.Combine(parentPath, _option.ModelsNamespace, "Models");
+            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models");
             Console.WriteLine("创建文件夹" + servicesPath);
             CreateDirectory(servicesPath);
             // ../ZR.Model/Models/User.cs
@@ -180,8 +186,8 @@ namespace ZR.CodeGenerator
 
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("ModelTemplate.txt");
-            content = content
+
+            var content = ReadTemplate("ModelTemplate.txt")
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
@@ -199,16 +205,15 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.GenCodePath;
-            var servicesPath = Path.Combine(parentPath, _option.ModelsNamespace, "Dto");
+            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto");
             CreateDirectory(servicesPath);
             // ../ZR.Model/Dto/User.cs
             var fullPath = Path.Combine(servicesPath, $"{replaceDto.ModelTypeName}Dto.cs");
 
             if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, ""); ;
-            var content = ReadTemplate("InputDtoTemplate.txt");
-            content = content
+                return Tuple.Create(fullPath, "");
+
+            var content = ReadTemplate("InputDtoTemplate.txt")
                 .Replace("{DtosNamespace}", _option.DtosNamespace)
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
@@ -229,16 +234,16 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.GenCodePath;
-            var repositoryPath = Path.Combine(parentPath, _option.RepositoriesNamespace, "Repositories");
+            var repositoryPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, "Repositories");
             CreateDirectory(repositoryPath);
 
             var fullPath = Path.Combine(repositoryPath, $"{replaceDto.ModelTypeName}Repository.cs");
 
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("RepositoryTemplate.txt");
-            content = content.Replace("{ModelsNamespace}", _option.ModelsNamespace)
+
+            var content = ReadTemplate("RepositoryTemplate.txt")
+                .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{RepositoriesNamespace}", _option.RepositoriesNamespace)
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
@@ -257,16 +262,15 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static Tuple<string, string> GenerateIService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.GenCodePath;
-            var iServicesPath = Path.Combine(parentPath, _option.IServicsNamespace, "Business", "IBusService");
+            var iServicesPath = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, "Business", "IBusService");
             CreateDirectory(iServicesPath);
 
             var fullPath = Path.Combine(iServicesPath, $"I{replaceDto.ModelTypeName}Service.cs");
             Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("IServiceTemplate.txt");
-            content = content.Replace("{ModelsNamespace}", _option.ModelsNamespace)
+            var content = ReadTemplate("IServiceTemplate.txt")
+                .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{TableNameDesc}", replaceDto.TableDesc)
                 .Replace("{DtosNamespace}", _option.DtosNamespace)
                 .Replace("{IServicsNamespace}", _option.IServicsNamespace)
@@ -281,15 +285,14 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static Tuple<string, string> GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.GenCodePath;
-            var servicesPath = Path.Combine(parentPath, _option.ServicesNamespace, "Business");
+            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, "Business");
             CreateDirectory(servicesPath);
             var fullPath = Path.Combine(servicesPath, $"{replaceDto.ModelTypeName}Service.cs");
             Console.WriteLine(fullPath);
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("ServiceTemplate.txt");
-            content = content
+
+            var content = ReadTemplate("ServiceTemplate.txt")
                 .Replace("{IRepositoriesNamespace}", _option.IRepositoriesNamespace)
                 .Replace("{DtosNamespace}", _option.DtosNamespace)
                 .Replace("{IServicsNamespace}", _option.IServicsNamespace)
@@ -309,21 +312,20 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static Tuple<string, string> GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = generateDto.GenCodePath;
-            var servicesPath = Path.Combine(parentPath, _option.ApiControllerNamespace, "Controllers", "business");
+            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", "business");
             CreateDirectory(servicesPath);
 
             var fullPath = Path.Combine(servicesPath, $"{replaceDto.ModelTypeName}Controller.cs");
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("ControllersTemplate.txt");
-            content = content
+
+            var content = ReadTemplate("ControllersTemplate.txt")
                 .Replace("{ApiControllerNamespace}", _option.ApiControllerNamespace)
                 .Replace("{ServicesNamespace}", _option.ServicesNamespace)
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{TableDesc}", replaceDto.TableDesc)
                 .Replace("{ModelName}", replaceDto.ModelTypeName)
-                .Replace("{Permission}", replaceDto.ModelTypeName.ToLower())
+                .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{PrimaryKey}", replaceDto.PKName)
                 .Replace("{UpdateColumn}", replaceDto.UpdateColumn)
                 .Replace("{InsertColumn}", replaceDto.InsertColumn)
@@ -339,21 +341,21 @@ namespace ZR.CodeGenerator
         private static Tuple<string, string> GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var parentPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src");
-            var servicesPath = Path.Combine(parentPath, "views", FirstLowerCase(replaceDto.ModelTypeName));
+            var servicesPath = Path.Combine(parentPath, "views", replaceDto.ViewsFileName);
             CreateDirectory(servicesPath);
 
-            var fullPath = Path.Combine(servicesPath, "index.vue");
+            var fullPath = Path.Combine(servicesPath, $"{replaceDto.ViewsFileName}.vue");
 
             if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, ""); ;
-            var content = ReadTemplate("VueTemplate.txt");
-            content = content
-                .Replace("{fileClassName}", FirstLowerCase(replaceDto.ModelTypeName))
+                return Tuple.Create(fullPath, "");
+
+            var content = ReadTemplate("VueTemplate.txt")
+                .Replace("{fileClassName}", replaceDto.ViewsFileName)
                 .Replace("{VueViewListContent}", replaceDto.VueViewListHtml)//查询 table列
                 .Replace("{VueViewFormContent}", replaceDto.VueViewFormHtml)//添加、修改表单
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{Permission}", replaceDto.ModelTypeName.ToLower())
-                .Replace("{VueViewEditFormContent}", replaceDto.VueViewEditFormHtml)
+                .Replace("{Permission}", replaceDto.Permission)
+                .Replace("{VueViewFormResetHtml}", replaceDto.VueViewFormResetHtml)
                 .Replace("{vueJsMethod}", replaceDto.VueJsMethod)
                 .Replace("{vueQueryFormHtml}", replaceDto.VueQueryFormHtml)
                 .Replace("{VueDataContent}", replaceDto.VueDataContent)
@@ -370,13 +372,31 @@ namespace ZR.CodeGenerator
             string servicesPath = Path.Combine(parentPath, "api");
             CreateDirectory(servicesPath);
 
-            string fullPath = Path.Combine(servicesPath, FirstLowerCase(replaceDto.ModelTypeName) + ".js");
+            string fullPath = Path.Combine(servicesPath, replaceDto.ViewsFileName + ".js");
 
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("VueJsTemplate.txt");
-            content = content
+            
+            var content = ReadTemplate("VueJsTemplate.txt")
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
+                .Replace("{ModelTypeDesc}", replaceDto.TableDesc);
+
+            return Tuple.Create(fullPath, content);
+        }
+
+        #endregion
+
+        #region 生成SQL
+
+        public static Tuple<string, string> GenerateSql(ReplaceDto replaceDto, GenerateDto generateDto)
+        {
+            string fullPath = Path.Combine(generateDto.GenCodePath, replaceDto.ViewsFileName + ".sql");
+
+            if (File.Exists(fullPath) && !generateDto.coverd)
+                return Tuple.Create(fullPath, "");
+            var content = ReadTemplate("SqlTemplate.txt")
+                .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
+                .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{ModelTypeDesc}", replaceDto.TableDesc);
 
             return Tuple.Create(fullPath, content);
@@ -607,7 +627,7 @@ namespace ZR.CodeGenerator
                     File.Delete(zipFileName);
                 }
 
-                FileHelper.ZipFileDirectory(dto.GenCodePath, zipFileName, 7, "", "", "*.*");
+                ZipFile.CreateFromDirectory(dto.GenCodePath, zipFileName);
                 FileHelper.DeleteDirectory(dto.GenCodePath);
                 dto.ZipFileName = zipReturnFileName;
                 return zipReturnFileName;

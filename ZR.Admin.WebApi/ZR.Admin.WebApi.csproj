@@ -86,7 +86,6 @@
 
   <ItemGroup>
     <Folder Include="Controllers\business\" />
-    <Folder Include="wwwroot\" />
     <Folder Include="wwwroot\Generatecode\" />
   </ItemGroup>
 

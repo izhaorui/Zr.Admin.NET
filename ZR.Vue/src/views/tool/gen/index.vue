@@ -53,7 +53,8 @@
             <el-checkbox :label="3">生成Repository</el-checkbox>
             <el-checkbox :label="4">生成Service</el-checkbox>
             <el-checkbox :label="5">生成Controller</el-checkbox>
-            <el-checkbox :label="6">生成Views和api</el-checkbox>
+            <el-checkbox :label="6">生成Vue和api</el-checkbox>
+            <el-checkbox :label="7">生成Sql文件</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
 
@@ -73,7 +74,7 @@
 
 <script>
 import { codeGenerator, getGenTable, delTable } from "@/api/tool/gen";
-import { downLoadZip, downloadFile } from "@/utils/zipdownload.js";
+import { downloadFile } from "@/utils/zipdownload.js";
 
 import importTable from "./importTable";
 import { Loading } from "element-ui";
@@ -92,7 +93,7 @@ export default {
         replaceTableNameStr: "",
       },
       showGenerate: false,
-      checkedCodeGenerateForm: [1, 2, 3, 4, 5, 6],
+      checkedCodeGenerateForm: [1, 2, 3, 4, 5, 6, 7],
       rules: {
         dbName: [
           { required: true, message: "请选择数据库名称", trigger: "blur" },
@@ -171,11 +172,8 @@ export default {
           const pageLoading = Loading.service(loadop);
 
           var seachdata = {
-            // dbName: this.codeform.dbName,
             tableId: this.currentSelected.tableId,
             tableName: this.currentSelected.name,
-            // baseSpace: this.codeform.baseSpace,
-            // replaceTableNameStr: this.codeform.replaceTableNameStr,
             genFiles: this.checkedCodeGenerateForm,
             coverd: this.coverd,
             queryColumn: this.checkedQueryColumn,
@@ -188,7 +186,6 @@ export default {
               if (code == 200) {
                 this.showGenerate = false;
                 this.msgSuccess("恭喜你，代码生成完成！");
-                // downLoadZip(data.zipPath, '');
                 downloadFile(
                   process.env.VUE_APP_BASE_API + data.zipPath,
                   data.fileName

@@ -88,9 +88,9 @@ namespace ZR.Admin.WebApi.Controllers
             dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
 
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            var getTableColumn = GenTableColumnService.GenTableColumns(dto.TableId);
-            genTableInfo.Columns = getTableColumn;
+            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
 
+            dto.GenTable = genTableInfo;
             //生成代码
             CodeGeneratorTool.Generate(genTableInfo, dto);
             //下载文件

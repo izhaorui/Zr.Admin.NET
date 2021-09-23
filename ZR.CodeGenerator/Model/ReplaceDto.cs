@@ -59,7 +59,7 @@ namespace ZR.CodeGenerator.Model
         public string InputDtoProperty { get; set; }
 
         //vue、api
-        public string VueViewEditFormHtml { get; set; }
+        public string VueViewFormResetHtml { get; set; }
         /// <summary>
         /// 前端列表查询html
         /// </summary>
@@ -96,5 +96,9 @@ namespace ZR.CodeGenerator.Model
         /// vue mounted 方法
         /// </summary>
         public string MountedMethod { get; set; }
+        /// <summary>
+        /// views、js文件名
+        /// </summary>
+        public string ViewsFileName { get; set; }
     }
 }

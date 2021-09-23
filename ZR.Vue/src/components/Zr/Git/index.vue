@@ -9,7 +9,7 @@ export default {
   name: 'IZoryGit',
   data() {
     return {
-      url: 'https://gitee.com/izhaorui/ZrAdminNetCore'
+      url: 'https://gitee.com/izory/ZrAdminNetCore'
     }
   },
   methods: {
