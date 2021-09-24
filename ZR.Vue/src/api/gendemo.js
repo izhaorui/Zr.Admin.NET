@@ -1,19 +1,19 @@
 import request from '@/utils/request'
 
 /**
-   * 分页查询
+   * 代码生成测试表分页查询
    * @param {查询条件} data
    */
-export function listGendemo(data) {
+export function listGendemo(query) {
   return request({
-    url: '/bus/Gendemo/list',
+    url: 'bus/Gendemo/list',
     method: 'get',
-    params: data,
+    params: query,
   })
 }
 
 /**
-   * 新增
+   * 新增代码生成测试表
    * @param data
    */
 export function addGendemo(data) {
@@ -25,7 +25,7 @@ export function addGendemo(data) {
 }
 
 /**
-   * 修改
+   * 修改代码生成测试表
    * @param data
    */
 export function updateGendemo(data) {
@@ -37,8 +37,8 @@ export function updateGendemo(data) {
 }
 
 /**
-   * 获取详情
-   * @param {Id} Id
+   * 获取代码生成测试表详情
+   * @param {Id} 代码生成测试表Id
    */
 export function getGendemo(id) {
   return request({
