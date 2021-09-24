@@ -201,7 +201,7 @@ namespace ZR.CodeGenerator
                 .Replace("{Author}", replaceDto.Author)
                 .Replace("{DateTime}", replaceDto.AddTime);
 
-            //generateDto.GenCodes.Add(new GenCode(2, "数据传输实体类", fullPath, content));
+            generateDto.GenCodes.Add(new GenCode(2, "数据传输实体类", fullPath, content));
         }
         #endregion
 
@@ -255,7 +255,7 @@ namespace ZR.CodeGenerator
                 .Replace("{Author}", replaceDto.Author)
                 .Replace("{DateTime}", replaceDto.AddTime);
 
-            //generateDto.GenCodes.Add(new GenCode(4, "接口层", fullPath, content));
+            generateDto.GenCodes.Add(new GenCode(4, "接口层", fullPath, content));
         }
 
         /// <summary>

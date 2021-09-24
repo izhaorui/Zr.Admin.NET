@@ -194,7 +194,7 @@ namespace ZR.CodeGenerator
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 sb.AppendLine("      <el-form-item label=\"时间\">");
-                sb.AppendLine("        <el-date-picker v-model=\"dateRange\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\" end-placeholder=\"结束日期\"></el-date-picker>");
+                sb.AppendLine("        <el-date-picker v-model=\"timeRange\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\" end-placeholder=\"结束日期\"></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
             }
             else

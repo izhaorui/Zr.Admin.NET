@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 /**
-   * 代码生成测试表分页查询
+   * 代码生成测试分页查询
    * @param {查询条件} data
    */
 export function listGendemo(query) {
@@ -13,7 +13,7 @@ export function listGendemo(query) {
 }
 
 /**
-   * 新增代码生成测试表
+   * 新增代码生成测试
    * @param data
    */
 export function addGendemo(data) {
@@ -25,7 +25,7 @@ export function addGendemo(data) {
 }
 
 /**
-   * 修改代码生成测试表
+   * 修改代码生成测试
    * @param data
    */
 export function updateGendemo(data) {
@@ -37,8 +37,8 @@ export function updateGendemo(data) {
 }
 
 /**
-   * 获取代码生成测试表详情
-   * @param {Id} 代码生成测试表Id
+   * 获取代码生成测试详情
+   * @param {Id} {ModelTypeDesc}Id
    */
 export function getGendemo(id) {
   return request({

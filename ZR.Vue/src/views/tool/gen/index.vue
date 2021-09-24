@@ -19,7 +19,7 @@
         <el-button type="danger" :disabled="multiple" plain icon="el-icon-delete" @click="handleDelete" size="mini" v-hasPermi="['tool:gen:delete']">删除</el-button>
       </el-col>
     </el-row>
-    <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border @selection-change="handleSelectionChange" highlight-current-row height="500px">
+    <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border @selection-change="handleSelectionChange" highlight-current-row height="480px">
       <el-table-column type="selection" align="center" width="55"></el-table-column>
       <el-table-column label="序号" type="index" width="50" align="center">
         <template slot-scope="scope">
@@ -45,7 +45,7 @@
     <!-- 预览界面 -->
     <el-dialog :title="preview.title" :visible.sync="preview.open" width="80%" top="5vh" append-to-body>
       <el-tabs v-model="preview.activeName">
-        <el-tab-pane v-for="(item, key) in preview.data" :label="item.title" :name="item.type.toString()" :key="key">
+        <el-tab-pane v-for="(item, key) in preview.data" :label="item.title" :name="key.toString()" :key="key">
           <pre v-html="highlightedCode(item.content)">
           </pre>
         </el-tab-pane>
@@ -115,7 +115,7 @@ export default {
         open: false,
         title: "代码预览",
         data: {},
-        activeName: "1",
+        activeName: "0",
       },
       showGenerate: false,
       checkedCodeGenerateForm: [1, 2, 3, 4, 5, 6, 7, 8],
@@ -199,10 +199,10 @@ export default {
           var seachdata = {
             tableId: this.currentSelected.tableId,
             tableName: this.currentSelected.name,
-            genFiles: this.checkedCodeGenerateForm,
+            genCodeFiles: this.checkedCodeGenerateForm,
             coverd: this.coverd,
             dbType: this.dbType,
-            queryColumn: this.checkedQueryColumn,
+            // queryColumn: this.checkedQueryColumn,
           };
           console.log(JSON.stringify(seachdata));
 
