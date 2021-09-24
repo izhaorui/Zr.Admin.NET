@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Infrastructure.Extensions;
 using ZR.Common.Extension;
@@ -44,69 +45,33 @@ namespace ZR.CodeGenerator.CodeGenerator
             return sb.ToString();
         }
 
-        public static string GetPropertyDatatype(string sDatatype)
+        /// <summary>
+        /// 获取C# 类型
+        /// </summary>
+        /// <param name="sDatatype"></param>
+        /// <returns></returns>
+        public static string GetCSharpDatatype(string sDatatype)
         {
-            string sTempDatatype = string.Empty;
             sDatatype = sDatatype.ToLower();
-            switch (sDatatype)
+            string sTempDatatype = sDatatype switch
             {
-                case "int":
-                case "number":
-                case "integer":
-                case "smallint":
-                    sTempDatatype = "int?";
-                    break;
-
-                case "bigint":
-                    sTempDatatype = "long?";
-                    break;
-
-                case "tinyint":
-                    sTempDatatype = "byte?";
-                    break;
-
-                case "numeric":
-                case "real":
-                    sTempDatatype = "Single?";
-                    break;
-
-                case "float":
-                    sTempDatatype = "float?";
-                    break;
-
-                case "decimal":
-                case "numer(8,2)":
-                    sTempDatatype = "decimal?";
-                    break;
-
-                case "bit":
-                    sTempDatatype = "bool?";
-                    break;
-
-                case "date":
-                case "datetime":
-                case "datetime2":
-                case "smalldatetime":
-                    sTempDatatype = "DateTime?";
-                    break;
-
-                case "money":
-                case "smallmoney":
-                    sTempDatatype = "double?";
-                    break;
-
-                case "char":
-                case "varchar":
-                case "nvarchar2":
-                case "text":
-                case "nchar":
-                case "nvarchar":
-                case "ntext":
-                default:
-                    sTempDatatype = "string";
-                    break;
-            }
+                "int" or "number" or "integer" or "smallint" => "int",
+                "bigint" => "long",
+                "tinyint" => "byte",
+                "numeric" or "real" or "float" => "float",
+                "decimal" or "numer(8,2)" => "decimal",
+                "bit" => "bool",
+                "date" or "datetime" or "datetime2" or "smalldatetime" => "DateTime",
+                "money" or "smallmoney" => "double",
+                _ => "string",
+            };
             return sTempDatatype;
+        }
+
+        public static bool IsNumber(string tableDataType)
+        {
+            string[] arr = new string[] { "int", "long" };
+            return arr.Any(f => f.Contains(GetCSharpDatatype(tableDataType)));
         }
     }
 }

@@ -1,15 +1,25 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
+using Mapster;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using SqlSugar;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.CodeGenerator;
 using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
+using ZR.Common;
 using ZR.Model;
+using ZR.Model.System.Dto;
+using ZR.Model.System.Generate;
 using ZR.Model.Vo;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -20,6 +30,15 @@ namespace ZR.Admin.WebApi.Controllers
     public class CodeGeneratorController : BaseController
     {
         private CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
+        private IGenTableService GenTableService;
+        private IGenTableColumnService GenTableColumnService;
+        private IWebHostEnvironment WebHostEnvironment;
+        public CodeGeneratorController(IGenTableService genTableService, IGenTableColumnService genTableColumnService, IWebHostEnvironment webHostEnvironment)
+        {
+            GenTableService = genTableService;
+            GenTableColumnService = genTableColumnService;
+            WebHostEnvironment = webHostEnvironment;
+        }
 
         /// <summary>
         /// 获取所有数据库的信息
@@ -52,22 +71,6 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 获取表格列
-        /// </summary>
-        /// <param name="dbName"></param>
-        /// <param name="tableName"></param>
-        /// <returns></returns>
-        [HttpGet("getColumnInfo")]
-        [ActionPermissionFilter(Permission = "tool:gen:list")]
-        public IActionResult QueryColumnInfo(string dbName, string tableName)
-        {
-            if (string.IsNullOrEmpty(dbName) || string.IsNullOrEmpty(tableName))
-                return ToRespose(ResultCode.PARAM_ERROR);
-
-            return SUCCESS(_CodeGeneraterService.GetColumnInfo(dbName, tableName));
-        }
-
-        /// <summary>
         /// 代码生成器
         /// </summary>
         /// <param name="dto">数据传输对象</param>
@@ -77,14 +80,143 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:gen:code")]
         public IActionResult Generate([FromBody] GenerateDto dto)
         {
-            if (string.IsNullOrEmpty(dto.tableName))
+            if (dto.TableId <= 0)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
-            DbTableInfo dbTableInfo = new() { Name = dto.tableName };
-            CodeGeneratorTool.Generate(dbTableInfo, dto);
+            dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
+            dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
 
-            return SUCCESS(dbTableInfo);
+            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
+            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
+
+            dto.GenTable = genTableInfo;
+            //生成代码
+            CodeGeneratorTool.Generate(genTableInfo, dto);
+            //下载文件
+            CodeGeneratorTool.ZipGenCode(dto);
+
+            //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
+            return SUCCESS(new { zipPath = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
+        }
+
+        /// <summary>
+        /// 获取代码生成表列表
+        /// </summary>
+        /// <param name="tableName">表名</param>
+        /// <param name="pagerInfo">分页信息</param>
+        /// <returns></returns>
+        [HttpGet("listGenTable")]
+        public IActionResult GetGenTable(string tableName, PagerInfo pagerInfo)
+        {
+            //查询原表数据，部分字段映射到代码生成表字段
+            var rows = GenTableService.GetGenTables(new GenTable() { TableName = tableName }, pagerInfo);
+
+            return SUCCESS(rows);
+        }
+
+        /// <summary>
+        /// 查询表字段列表
+        /// </summary>
+        /// <param name="tableId">genTable表id</param>
+        /// <returns></returns>
+        [HttpGet("column/{tableId}")]
+        public IActionResult GetColumnList(long tableId)
+        {
+            var tableColumns = GenTableColumnService.GenTableColumns(tableId);
+            var tableInfo = GenTableService.GetGenTableInfo(tableId);
+            return SUCCESS(new { result = tableColumns, info = tableInfo });
+        }
+
+        /// <summary>
+        /// 删除代码生成
+        /// </summary>
+        /// <param name="tableIds"></param>
+        /// <returns></returns>
+        [Log(Title = "代码生成", BusinessType = BusinessType.DELETE)]
+        [HttpDelete("{tableIds}")]
+        [ActionPermissionFilter(Permission = "tool:gen:remove")]
+        public IActionResult Remove(string tableIds)
+        {
+            long[] tableId = Tools.SpitLongArrary(tableIds);
+
+            int result = GenTableService.DeleteGenTableByIds(tableId);
+            return SUCCESS(result);
+        }
+
+        /// <summary>
+        /// 导入表
+        /// </summary>
+        /// <param name="tables"></param>
+        /// <param name="dbName"></param>
+        /// <returns></returns>
+        [HttpPost("importTable")]
+        [Log(Title = "代码生成", BusinessType = BusinessType.IMPORT)]
+        [ActionPermissionFilter(Permission = "tool:gen:import")]
+        public IActionResult ImportTableSave(string tables, string dbName)
+        {
+            if (string.IsNullOrEmpty(tables))
+            {
+                throw new CustomException("表不能为空");
+            }
+            string[] tableNames = tables.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            string userName = User.Identity.Name;
+
+            foreach (var tableName in tableNames)
+            {
+                var tabInfo = _CodeGeneraterService.GetTableInfo(dbName, tableName);
+                if (tabInfo != null)
+                {
+                    GenTable genTable = new()
+                    {
+                        BaseNameSpace = "ZR.",//导入默认命名空间前缀
+                        ModuleName = "business",//导入默认模块名
+                        ClassName = CodeGeneratorTool.GetClassName(tableName),
+                        BusinessName = CodeGeneratorTool.GetClassName(tableName),
+                        FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
+                        FunctionName = tabInfo.Description,
+                        TableName = tableName,
+                        TableComment = tabInfo.Description,
+                        Create_by = userName,
+                    };
+                    genTable.TableId = GenTableService.ImportGenTable(genTable);
+
+                    if (genTable.TableId > 0)
+                    {
+                        //保存列信息
+                        List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dbName, tableName);
+                        List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos);
+
+                        GenTableColumnService.DeleteGenTableColumnByTableName(tableName);
+                        GenTableColumnService.InsertGenTableColumn(genTableColumns);
+                        genTable.Columns = genTableColumns;
+
+                        return SUCCESS(genTable);
+                    }
+                }
+            }
+
+            return ToRespose(ResultCode.FAIL);
+        }
+
+        /// <summary>
+        /// 修改保存代码生成业务
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut]
+        //[Log(Title = "代码生成", BusinessType = BusinessType.UPDATE)]
+        [ActionPermissionFilter(Permission = "tool:gen:edit")]
+        public IActionResult EditSave([FromBody] GenTableDto genTableDto)
+        {
+            if (genTableDto == null) throw new CustomException("请求参数错误");
+            var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
+
+            int rows = GenTableService.UpdateGenTable(genTable);
+            if (rows > 0)
+            {
+                GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
+            }
+            return SUCCESS(rows);
         }
     }
 }

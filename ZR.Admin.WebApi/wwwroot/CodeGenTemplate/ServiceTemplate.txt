@@ -1,0 +1,31 @@
+﻿using Infrastructure;
+using Infrastructure.Attribute;
+using Infrastructure.Extensions;
+using SqlSugar;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using ZR.Common;
+using {ModelsNamespace}.Models;
+using {IRepositoriesNamespace};
+
+namespace {ServicesNamespace}.Business
+{
+    /// <summary>
+    /// 代码生成器生成
+    /// </summary>
+    [AppService(ServiceType = typeof(I{ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
+    public class {ModelTypeName}Service: BaseService<{ModelTypeName}>, I{ModelTypeName}Service
+    {
+		private readonly {ModelTypeName}Repository _repository;
+        public {ModelTypeName}Service({ModelTypeName}Repository repository)
+        {
+			_repository = repository;
+        }
+
+        #region 业务逻辑代码
+
+        #endregion
+    }
+}

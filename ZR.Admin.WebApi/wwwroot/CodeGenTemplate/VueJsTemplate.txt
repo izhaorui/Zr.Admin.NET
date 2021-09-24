@@ -1,0 +1,59 @@
+﻿import request from '@/utils/request'
+
+/**
+   * {ModelTypeDesc}分页查询
+   * @param {查询条件} data
+   */
+export function list{ModelTypeName}(query) {
+  return request({
+    url: '{ModuleName}/{ModelTypeName}/list',
+    method: 'get',
+    params: query,
+  })
+}
+
+/**
+   * 新增{ModelTypeDesc}
+   * @param data
+   */
+export function add{ModelTypeName}(data) {
+  return request({
+    url: '{ModuleName}/{ModelTypeName}',
+    method: 'post',
+    data: data,
+  })
+}
+
+/**
+   * 修改{ModelTypeDesc}
+   * @param data
+   */
+export function update{ModelTypeName}(data) {
+  return request({
+    url: '{ModuleName}/{ModelTypeName}',
+    method: 'PUT',
+    data: data,
+  })
+}
+
+/**
+   * 获取{ModelTypeDesc}详情
+   * @param {Id} {ModelTypeDesc}Id
+   */
+export function get{ModelTypeName}(id) {
+  return request({
+    url: '{ModuleName}/{ModelTypeName}/' + id,
+    method: 'get'
+  })
+}
+
+/**
+   * 删除
+   * @param {主键} pid
+   */
+export function del{ModelTypeName}(pid) {
+  return request({
+    url: '{ModuleName}/{ModelTypeName}/' + pid,
+    method: 'delete'
+  })
+}

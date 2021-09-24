@@ -49,6 +49,6 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 要生数据的表，用“，”分割
         /// </summary>
-        public string TableList { get; set; }
+        //public string TableList { get; set; }
     }
 }

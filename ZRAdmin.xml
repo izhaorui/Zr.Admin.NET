@@ -47,19 +47,47 @@
              <param name="pager">分页信息</param>
              <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.QueryColumnInfo(System.String,System.String)">
-            <summary>
-            获取表格列
-            </summary>
-            <param name="dbName"></param>
-            <param name="tableName"></param>
-            <returns></returns>
-        </member>
         <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate(ZR.CodeGenerator.Model.GenerateDto)">
             <summary>
             代码生成器
             </summary>
             <param name="dto">数据传输对象</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetGenTable(System.String,ZR.Model.PagerInfo)">
+            <summary>
+            获取代码生成表列表
+            </summary>
+            <param name="tableName">表名</param>
+            <param name="pagerInfo">分页信息</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetColumnList(System.Int64)">
+            <summary>
+            查询表字段列表
+            </summary>
+            <param name="tableId">genTable表id</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Remove(System.String)">
+            <summary>
+            删除代码生成
+            </summary>
+            <param name="tableIds"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.ImportTableSave(System.String,System.String)">
+            <summary>
+            导入表
+            </summary>
+            <param name="tables"></param>
+            <param name="dbName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.EditSave(ZR.Model.System.Dto.GenTableDto)">
+            <summary>
+            修改保存代码生成业务
+            </summary>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">
@@ -92,7 +120,7 @@
             文章接口
             </summary>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.ArticleController.Query(ZR.Model.Dto.System.ArticleQueryDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.ArticleController.Query(ZR.Model.System.Dto.ArticleQueryDto)">
             <summary>
             查询文章列表
             </summary>
@@ -175,7 +203,7 @@
             <param name="infoIds"></param>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.monitor.SysOperlogController.OperList(ZR.Model.Dto.System.SysOperLogDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.monitor.SysOperlogController.OperList(ZR.Model.System.Dto.SysOperLogDto)">
             <summary>
             查询操作日志
             </summary>
@@ -345,7 +373,7 @@
             登录
             </summary>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.System.SysLoginController.Login(ZR.Model.Dto.System.LoginBodyDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.System.SysLoginController.Login(ZR.Model.System.Dto.LoginBodyDto)">
             <summary>
             登录
             </summary>
@@ -424,7 +452,7 @@
             <param name="menuId"></param>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.System.SysMenuController.ChangeSort(ZR.Model.Dto.System.MenuDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.System.SysMenuController.ChangeSort(ZR.Model.System.Dto.MenuDto)">
             <summary>
             保存排序
             </summary>
@@ -481,7 +509,7 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.System.SysProfileController.UpdateProfile(ZR.Model.Dto.System.SysUserDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.System.SysProfileController.UpdateProfile(ZR.Model.System.Dto.SysUserDto)">
             <summary>
             修改用户
             </summary>
@@ -620,13 +648,13 @@
             <param name="roleId"></param>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.System.SysUserRoleController.Create(ZR.Model.Dto.System.RoleUsersCreateDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.System.SysUserRoleController.Create(ZR.Model.System.Dto.RoleUsersCreateDto)">
             <summary>
             添加角色用户
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.System.SysUserRoleController.Delete(ZR.Model.Dto.System.RoleUsersCreateDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.System.SysUserRoleController.Delete(ZR.Model.System.Dto.RoleUsersCreateDto)">
             <summary>
             删除角色用户
             </summary>
@@ -640,7 +668,7 @@
             <param name="roleId"></param>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.System.TasksLogController.GetList(ZR.Model.PagerInfo,ZR.Model.Dto.System.TasksLogQueryDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.System.TasksLogController.GetList(ZR.Model.PagerInfo,ZR.Model.System.Dto.TasksLogQueryDto)">
             <summary>
             查询日志
             </summary>
@@ -666,7 +694,7 @@
             计划任务
             </summary>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.TasksController.Query(ZR.Model.Dto.System.TasksQueryDto,ZR.Model.PagerInfo)">
+        <member name="M:ZR.Admin.WebApi.Controllers.TasksController.Query(ZR.Model.System.Dto.TasksQueryDto,ZR.Model.PagerInfo)">
             <summary>
             查询计划任务列表
             </summary>
@@ -679,13 +707,13 @@
             <param name="id">编码</param>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.TasksController.Create(ZR.Model.Dto.System.TasksCreateDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.TasksController.Create(ZR.Model.System.Dto.TasksCreateDto)">
             <summary>
             添加任务
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.TasksController.Update(ZR.Model.Dto.System.TasksUpdateDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.TasksController.Update(ZR.Model.System.Dto.TasksUpdateDto)">
             <summary>
             更新任务
             </summary>
@@ -721,47 +749,6 @@
             存储文件
             </summary>
             <param name="formFile"></param>
-            <returns></returns>
-        </member>
-        <member name="T:ZR.Admin.WebApi.Controllers.SysFile1Controller">
-            <summary>
-            T4代码自动生成
-            </summary>
-        </member>
-        <member name="F:ZR.Admin.WebApi.Controllers.SysFile1Controller._SysFileService">
-            <summary>
-            文件管理接口
-            </summary>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Query(ZR.Model.Dto.System.SysFileQueryDto)">
-            <summary>
-            查询文件管理列表
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Get(System.String)">
-            <summary>
-            查询文件管理详情
-            </summary>
-            <param name="id"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Create(ZR.Model.System.SysFile)">
-            <summary>
-            添加文件管理
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Update(ZR.Model.System.SysFile)">
-            <summary>
-            更新文件管理
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.SysFile1Controller.Delete(System.Int32)">
-            <summary>
-            删除文件管理
-            </summary>
             <returns></returns>
         </member>
         <member name="T:ZR.Admin.WebApi.Extensions.HttpContextExtension">

@@ -8,7 +8,7 @@ using Infrastructure.Extensions;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {

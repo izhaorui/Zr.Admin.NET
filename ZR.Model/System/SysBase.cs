@@ -22,10 +22,10 @@ namespace ZR.Model.System
         [SugarColumn(IsOnlyIgnoreInsert = true)]
         public string Update_by { get; set; }
 
+        //[JsonIgnore]
         [SugarColumn(IsOnlyIgnoreInsert = true)]//设置后插入数据不会有此字段
-        [JsonIgnore]
         [JsonProperty(propertyName: "UpdateTime")]
-        public DateTime Update_time { get; set; } = DateTime.Now;
+        public DateTime? Update_time { get; set; }
 
         public string Remark { get; set; }
 
@@ -39,7 +39,6 @@ namespace ZR.Model.System
         /// [Computed]计算属性，打上此标签，对象地insert，update等操作会忽略此列
         /// </summary>
         [SugarColumn(IsIgnore = true)]
-        //[Computed]
         [JsonIgnore]
         public DateTime? BeginTime { get; set; }
 
@@ -47,7 +46,6 @@ namespace ZR.Model.System
         /// 用于搜索使用
         /// </summary>
         [SugarColumn(IsIgnore = true)]
-        //[Computed]
         [JsonIgnore]
         public DateTime? EndTime { get; set; }
     }

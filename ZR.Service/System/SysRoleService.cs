@@ -7,8 +7,7 @@ using System.Linq;
 using System.Text;
 using ZR.Model.System;
 using ZR.Repository.System;
-using ZR.Service.IService;
-using ZR.Service.System;
+using ZR.Service.System.IService;
 
 namespace ZR.Service
 {

@@ -33,10 +33,27 @@ namespace ZR.CodeGenerator.Service
             {
                 tableList = tableList.Where(f => f.Name.ToLower().Contains(tableName.ToLower())).ToList();
             }
+            tableList = tableList.Where(f => !new string[] { "gen", "sys_" }.Contains(f.Name)).ToList();
             pager.TotalNum = tableList.Count;
             return tableList.Skip(pager.PageSize * (pager.PageNum - 1)).Take(pager.PageSize).OrderBy(f => f.Name).ToList();
         }
 
+        /// <summary>
+        /// 获取单表数据
+        /// </summary>
+        /// <param name="dbName"></param>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        public DbTableInfo GetTableInfo(string dbName, string tableName)
+        {
+            var tableList = GetSugarDbContext(dbName).DbMaintenance.GetTableInfoList(true);
+            if (!string.IsNullOrEmpty(tableName))
+            {
+                return tableList.Where(f => f.Name.ToLower() == (tableName.ToLower())).FirstOrDefault();
+            }
+
+            return null;
+        }
         /// <summary>
         /// 获取列信息
         /// </summary>

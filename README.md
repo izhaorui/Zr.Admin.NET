@@ -3,15 +3,13 @@
 ## 🍟概述
 * 本项目适合有一定NetCore和 vue基础的开发人员
 * 基于.NET 5实现的通用权限管理平台（RBAC模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
-* 模块化架构设计，层次清晰，业务层推荐写到单独模块，框架升级不影响业务!
-* 代码量少、通俗易懂、功能强大、易扩展，轻松开发从现在开始！
+* 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让web开发更快速、简单高效，解决70%的重复工作，专注您的业务，轻松开发从现在开始！
 * 前端采用Vue2.0、Element UI。
 * 后端采用Net5、Sqlsugar、MySQL。
 * 权限认证使用Jwt，支持多终端认证系统。
 * 支持加载动态权限菜单，多方式轻松权限控制
-* 基于若依vue分离版本(java版本)修改
 
-> 如果对您有帮助，点击右上角⭐Star⭐关注 ，感谢支持开源！
+> 如果对您有帮助，您可以点右上角 “Star” 收藏一下 ，这样作者才有继续免费下去的动力，谢谢！~
 
 ## 🍿在线体验
 体验地址：http://www.izhaorui.cn:8080/
@@ -36,7 +34,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 
 ## 🍄快速启动
 需要安装：VS2019（最新版）、npm或yarn（最新版）
-准备工作：将document文件夹下面的admin.sql脚本导入到数据库中，修改ZRAdmin项目里面的Conn_Admin数据库连接字符串以及DbType选择对应的数据库类型，目前仅MySQL验证了
+准备工作：将document文件夹下面的admin.sql脚本导入到数据库中，修改ZR.Admin.WebApi项目里面配置文件中的conn_zrAdmin数据库连接字符串以及DbType选择对应的数据库类型，目前仅支持MySQL、SQL server
 启动后台：打开项目根目录的startup.bat即可启动（数据库默认MySQL）
 启动前端：打开ZR.Vue文件夹，运行npm install命令，再运行npm run serve启动
 浏览器访问：http://localhost:8887 （默认前端端口为：8887，后台端口为：8888）
@@ -59,7 +57,30 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 13. [X] 在线构建器：拖动表单元素生成相应的VUE代码。
 14. [X] 任务系统：基于Quartz.NET定时任务执行。
 15. [X] 文章管理：可以写文章记录。
-16. [X] 代码生成：可以一键生成前后端代码。
+16. [X] 代码生成：可以一键生成前后端代码(.cs、.vue、.js)，自定义配置前端展示控件、让开发更快捷高效。
+
+## 项目结构
+
+ZRAdmin解决方案包含：
+
+Infrastructure[基础类库]：包框架的核心组件，包含一系列快速开发中经常用到的Utility辅助工具功能，部分核心功能的实现；
+
+ZR.Service[服务层类库]：提供WebApi接口调用；
+
+ZR.Tasks[定时任务类库]：提供项目定时任务实现功能；
+
+ZR.Repository[仓库层类库]：方便提供有执行存储过程的操作；
+
+ZR.Model[实体层类库]，提供项目中的数据库表、数据传输对象；
+
+ZR.CodeGenerator[代码生成功能]，包含代码生成的模板、方法、代码生成的下载。
+
+ZR.Admin.WebApi[webapi接口]：为Vue版或其他三方系统提供接口服务。
+
+ZR.Vue[前端UI]：vue版本UI层。
+
+DataBase是最新数据库备份文件，目前支持MS SQL Server和MySql。
+
 
 ## 🍎演示图
 
@@ -92,6 +113,10 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
         <td><img src="https://www.izhaorui.cn/images/zradmin/13.png"/></td>
         <td><img src="https://www.izhaorui.cn/images/zradmin/14.png"/></td>
     </tr>
+	<tr>
+        <td><img src="https://www.izhaorui.cn/images/zradmin/15.png"/></td>
+        <td><img src="https://www.izhaorui.cn/images/zradmin/16.png"/></td>
+    </tr>
 </table>
 
 ## 🎉优势
@@ -100,6 +125,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 2. 后台系统无需任何二次开发，直接发布即可使用
 3. 前台与后台系统分离，分别为不同的系统（域名可独立）
 4. 全局异常统一处理
+5. 自定义的代码生成功能
 
 ## 💐 特别鸣谢
 - 👉Ruoyi.vue：[Ruoyi](http://www.ruoyi.vip/)

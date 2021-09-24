@@ -55,6 +55,18 @@ namespace ZR.Service
         }
 
         /// <summary>
+        /// 添加
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <param name="iClumns">插入列</param>
+        /// <param name="ignoreNull">忽略null列</param>
+        /// <returns></returns>
+        public int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true)
+        {
+            return Db.Insertable(parm).InsertColumns(iClumns).IgnoreColumns(ignoreNullColumn: ignoreNull).ExecuteCommand();
+        }
+
+        /// <summary>
         /// 批量添加数据
         /// </summary>
         /// <param name="parm">List<T></param>
@@ -65,7 +77,7 @@ namespace ZR.Service
         }
 
         /// <summary>
-        /// 添加或更新数据
+        /// 添加或更新数据，不推荐使用了
         /// </summary>
         /// <param name="parm">List<T></param>
         /// <returns></returns>
@@ -166,7 +178,7 @@ namespace ZR.Service
         /// 查询所有数据(无分页,请慎用)
         /// </summary>
         /// <returns></returns>
-        public List<T> GetAll(bool useCache = false,  int cacheSecond = 3600)
+        public List<T> GetAll(bool useCache = false, int cacheSecond = 3600)
         {
             return Db.Queryable<T>().WithCacheIF(useCache, cacheSecond).ToList();
         }

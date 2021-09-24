@@ -8,7 +8,7 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.Vo;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 using ZR.Admin.WebApi.Extensions;
 
 namespace ZR.Admin.WebApi.Controllers.System

@@ -44,7 +44,7 @@ export const constantRoutes = [
   },
   {
     path: '/demo',
-    component: (resolve) => require(['@/views/demo'], resolve),
+    component: (resolve) => require(['@/views/gendemo/index'], resolve),
     hidden: true
   },
   {
