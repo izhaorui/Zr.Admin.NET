@@ -6,7 +6,7 @@ import request from '@/utils/request'
    */
 export function listGendemo(query) {
   return request({
-    url: 'bus/Gendemo/list',
+    url: 'business/Gendemo/list',
     method: 'get',
     params: query,
   })
@@ -18,7 +18,7 @@ export function listGendemo(query) {
    */
 export function addGendemo(data) {
   return request({
-    url: '/bus/Gendemo',
+    url: 'business/Gendemo',
     method: 'post',
     data: data,
   })
@@ -30,7 +30,7 @@ export function addGendemo(data) {
    */
 export function updateGendemo(data) {
   return request({
-    url: '/bus/Gendemo',
+    url: 'business/Gendemo',
     method: 'PUT',
     data: data,
   })
@@ -42,7 +42,7 @@ export function updateGendemo(data) {
    */
 export function getGendemo(id) {
   return request({
-    url: '/bus/Gendemo/' + id,
+    url: 'business/Gendemo/' + id,
     method: 'get'
   })
 }
@@ -53,7 +53,7 @@ export function getGendemo(id) {
    */
 export function delGendemo(pid) {
   return request({
-    url: '/bus/Gendemo/' + pid,
+    url: 'business/Gendemo/' + pid,
     method: 'delete'
   })
 }

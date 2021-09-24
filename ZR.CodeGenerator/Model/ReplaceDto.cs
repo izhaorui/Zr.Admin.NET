@@ -100,5 +100,7 @@ namespace ZR.CodeGenerator.Model
         /// views、js文件名
         /// </summary>
         public string ViewsFileName { get; set; }
+        public string Author { get; set; }
+        public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
     }
 }

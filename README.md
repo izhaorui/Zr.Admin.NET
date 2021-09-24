@@ -63,8 +63,6 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 
 ZRAdmin解决方案包含：
 
-Infrastructure[基础类库]：包框架的核心组件，包含一系列快速开发中经常用到的Utility辅助工具功能，部分核心功能的实现；
-
 ZR.Service[服务层类库]：提供WebApi接口调用；
 
 ZR.Tasks[定时任务类库]：提供项目定时任务实现功能；

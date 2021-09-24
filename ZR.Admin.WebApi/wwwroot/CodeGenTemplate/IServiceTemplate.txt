@@ -4,7 +4,10 @@ using {ModelsNamespace}.Models;
 namespace {IServicsNamespace}.Business
 {
     /// <summary>
-    /// 定义{TableNameDesc}服务接口
+    /// {FunctionName}service接口
+    ///
+    /// @author {Author}
+    /// @date {DateTime}
     /// </summary>
     public interface I{ModelTypeName}Service: IBaseService<{ModelTypeName}>
     {

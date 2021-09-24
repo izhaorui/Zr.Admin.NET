@@ -18,14 +18,17 @@ using ZR.Common;
 namespace {ApiControllerNamespace}.Controllers
 {
     /// <summary>
-    /// 代码自动生成
+    /// {FunctionName}Controller
+    ///
+    /// @author {Author}
+    /// @date {DateTime}
     /// </summary>
     [Verify]
     [Route("{ModuleName}/{ModelName}")]
     public class {ModelName}Controller: BaseController
-	{
+    {
         /// <summary>
-        /// {TableDesc}接口
+        /// {FunctionName}接口
         /// </summary>
         private readonly I{ModelName}Service _{ModelName}Service;
 
@@ -35,7 +38,7 @@ namespace {ApiControllerNamespace}.Controllers
         }
 
         /// <summary>
-        /// 查询{TableDesc}列表
+        /// 查询{FunctionName}列表
         /// </summary>
         /// <returns></returns>
         [HttpGet("list")]
@@ -54,7 +57,7 @@ namespace {ApiControllerNamespace}.Controllers
         }
 
         /// <summary>
-        /// 查询{TableDesc}详情
+        /// 查询{FunctionName}详情
         /// </summary>
         /// <param name="{PrimaryKey}"></param>
         /// <returns></returns>
@@ -68,7 +71,7 @@ namespace {ApiControllerNamespace}.Controllers
         }
 
         /// <summary>
-        /// 添加{TableDesc}
+        /// 添加{FunctionName}
         /// </summary>
         /// <returns></returns>
         [HttpPost]
@@ -90,7 +93,7 @@ namespace {ApiControllerNamespace}.Controllers
         }
 
         /// <summary>
-        /// 更新{TableDesc}
+        /// 更新{FunctionName}
         /// </summary>
         /// <returns></returns>
         [HttpPut]
@@ -115,7 +118,7 @@ namespace {ApiControllerNamespace}.Controllers
         }
 
         /// <summary>
-        /// 删除{TableDesc}
+        /// 删除{FunctionName}
         /// </summary>
         /// <returns></returns>
         [HttpDelete("{ids}")]

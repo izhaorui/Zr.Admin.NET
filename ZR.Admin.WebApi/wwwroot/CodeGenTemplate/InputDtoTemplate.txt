@@ -6,7 +6,7 @@ using {ModelsNamespace}.Models;
 namespace {DtosNamespace}.Dto
 {
     /// <summary>
-    /// {TableNameDesc}输入对象模型
+    /// {FunctionName}输入对象模型
     /// </summary>
     public class {ModelTypeName}Dto
     {
@@ -14,7 +14,7 @@ namespace {DtosNamespace}.Dto
     }
 
     /// <summary>
-    /// {TableNameDesc}查询对象模型
+    /// {FunctionName}查询对象模型
     /// </summary>
     public class {ModelTypeName}QueryDto: PagerInfo 
     {

@@ -119,7 +119,7 @@
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.ImportTableSave(System.String,System.String)">
             <summary>
-            导入表
+            导入表结构（保存）
             </summary>
             <param name="tables"></param>
             <param name="dbName"></param>
@@ -129,6 +129,13 @@
             <summary>
             修改保存代码生成业务
             </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Preview(System.Int64)">
+            <summary>
+            预览代码
+            </summary>
+            <param name="tableId"></param>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">

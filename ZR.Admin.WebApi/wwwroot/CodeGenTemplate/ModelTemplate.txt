@@ -4,7 +4,10 @@ using System.Collections.Generic;
 namespace {ModelsNamespace}.Models
 {
     /// <summary>
-    /// {TableNameDesc}，数据实体对象
+    /// {FunctionName}，数据实体对象
+    ///
+    /// @author {Author}
+    /// @date {DateTime}
     /// </summary>
     [SqlSugar.SugarTable("{TableName}")]
     public class {ModelTypeName}

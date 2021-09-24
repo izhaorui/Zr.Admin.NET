@@ -6,20 +6,15 @@ using {ModelsNamespace}.Models;
 namespace {RepositoriesNamespace}
 {
     /// <summary>
-    /// 代码生成器生成
-    /// {TableNameDesc}仓储接口的实现
+    /// {FunctionName}仓储接口的实现
+    ///
+    /// @author {Author}
+    /// @date {DateTime}
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
     public class {ModelTypeName}Repository : BaseRepository
     {
-		public {ModelTypeName}Repository()
-        {
-        }
-
         #region 业务逻辑代码
-
-        
-
         #endregion
     }
 }

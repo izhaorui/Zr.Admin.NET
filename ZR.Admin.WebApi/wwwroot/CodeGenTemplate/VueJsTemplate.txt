@@ -1,7 +1,7 @@
 ﻿import request from '@/utils/request'
 
 /**
-   * {ModelTypeDesc}分页查询
+   * {FunctionName}分页查询
    * @param {查询条件} data
    */
 export function list{ModelTypeName}(query) {
@@ -13,7 +13,7 @@ export function list{ModelTypeName}(query) {
 }
 
 /**
-   * 新增{ModelTypeDesc}
+   * 新增{FunctionName}
    * @param data
    */
 export function add{ModelTypeName}(data) {
@@ -25,7 +25,7 @@ export function add{ModelTypeName}(data) {
 }
 
 /**
-   * 修改{ModelTypeDesc}
+   * 修改{FunctionName}
    * @param data
    */
 export function update{ModelTypeName}(data) {
@@ -37,7 +37,7 @@ export function update{ModelTypeName}(data) {
 }
 
 /**
-   * 获取{ModelTypeDesc}详情
+   * 获取{FunctionName}详情
    * @param {Id} {ModelTypeDesc}Id
    */
 export function get{ModelTypeName}(id) {

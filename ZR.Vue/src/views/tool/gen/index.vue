@@ -33,7 +33,7 @@
       <el-table-column prop="updateTime" label="更新时间" />
       <el-table-column label="操作" align="center" width="300">
         <template slot-scope="scope">
-          <el-button type="text" icon="el-icon-view" @click="handlePreview()">预览</el-button>
+          <el-button type="text" icon="el-icon-view" @click="handlePreview(scope.row)">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)">编辑</el-button>
           <el-button type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:gen:delete']">删除</el-button>
           <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)" v-hasPermi="['tool:gen:code']">生成代码</el-button>
@@ -42,19 +42,29 @@
     </el-table>
     <pagination :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" :total="total" @pagination="handleSearch" />
 
+    <!-- 预览界面 -->
+    <el-dialog :title="preview.title" :visible.sync="preview.open" width="80%" top="5vh" append-to-body>
+      <el-tabs v-model="preview.activeName">
+        <el-tab-pane v-for="(item, key) in preview.data" :label="item.title" :name="item.type.toString()" :key="key">
+          <pre v-html="highlightedCode(item.content)">
+          </pre>
+        </el-tab-pane>
+      </el-tabs>
+    </el-dialog>
     <import-table ref="import" @ok="handleSearch" />
 
     <el-dialog :visible.sync="showGenerate" title="代码生成" width="800px">
       <el-form ref="codeGenerateForm" label-width="140px">
         <el-form-item label="要生成的文件">
           <el-checkbox-group v-model="checkedCodeGenerateForm">
-            <el-checkbox :label="1">生成Model</el-checkbox>
-            <el-checkbox :label="2">生成Dto</el-checkbox>
-            <el-checkbox :label="3">生成Repository</el-checkbox>
-            <el-checkbox :label="4">生成Service</el-checkbox>
-            <el-checkbox :label="5">生成Controller</el-checkbox>
-            <el-checkbox :label="6">生成Vue和api</el-checkbox>
-            <el-checkbox :label="7">生成Sql文件</el-checkbox>
+            <el-checkbox :label="1">生成实体类Model</el-checkbox>
+            <el-checkbox :label="2">生成表单数据传输类Dto</el-checkbox>
+            <el-checkbox :label="3">生成仓储层Repository</el-checkbox>
+            <el-checkbox :label="4">生成服务类Service和接口</el-checkbox>
+            <el-checkbox :label="5">生成控制器Controller</el-checkbox>
+            <el-checkbox :label="6">生成Vue页面</el-checkbox>
+            <el-checkbox :label="7">生成Vue页面数据访问api</el-checkbox>
+            <el-checkbox :label="8">生成Sql文件</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
 
@@ -78,15 +88,21 @@
 </template>
 
 <script>
-import { codeGenerator, getGenTable, delTable } from "@/api/tool/gen";
+import {
+  codeGenerator,
+  getGenTable,
+  delTable,
+  previewTable,
+} from "@/api/tool/gen";
 import { downloadFile } from "@/utils/zipdownload.js";
-
 import importTable from "./importTable";
 import { Loading } from "element-ui";
+import hljs from 'highlight.js'
+import 'highlight.js/styles/idea.css'  //这里有多个样式，自己可以根据需要切换
 
 export default {
   name: "CodeGenerator",
-  components: { importTable },
+  components: { importTable, hljs },
   data() {
     return {
       queryParams: {
@@ -94,8 +110,15 @@ export default {
         pageSize: 20,
         tableName: "",
       },
+      // 预览参数
+      preview: {
+        open: false,
+        title: "代码预览",
+        data: {},
+        activeName: "1",
+      },
       showGenerate: false,
-      checkedCodeGenerateForm: [1, 2, 3, 4, 5, 6, 7],
+      checkedCodeGenerateForm: [1, 2, 3, 4, 5, 6, 7, 8],
       rules: {},
       // 表数据
       tableData: [],
@@ -139,8 +162,16 @@ export default {
       console.log(row);
       this.$router.push("/tool/editTable?tableId=" + row.tableId);
     },
-    handlePreview() {
-      this.msgError("敬请期待");
+    // 代码预览
+    handlePreview(row) {
+      // this.msgError("敬请期待");
+      previewTable(row.tableId).then((res) => {
+        if (res.code === 200) {
+          this.preview.open = true;
+          this.preview.data = res.data;
+          console.log(res);
+        }
+      });
     },
     handleShowDialog(row) {
       this.showGenerate = true;
@@ -233,6 +264,12 @@ export default {
       this.tableIds = section.map((item) => item.tableId);
       this.multiple = !section.length;
       console.log(this.tableIds);
+    },
+    /** 高亮显示 */
+    highlightedCode(code, key) {
+      // var language = vmName.substring(vmName.indexOf(".") + 1, vmName.length);
+      const result = hljs.highlightAuto(code || "");
+      return result.value || "&nbsp;";
     },
   },
 };
