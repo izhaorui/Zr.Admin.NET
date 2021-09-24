@@ -27,6 +27,47 @@
             <param name="data"></param>
             <returns></returns>
         </member>
+        <member name="T:ZR.Admin.WebApi.Controllers.UserInfoController">
+            <summary>
+            代码自动生成
+            </summary>
+        </member>
+        <member name="F:ZR.Admin.WebApi.Controllers.UserInfoController._UserInfoService">
+            <summary>
+            用户信息接口
+            </summary>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.QueryUserInfo(ZR.Model.Dto.UserInfoQueryDto)">
+            <summary>
+            查询用户信息列表
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.GetUserInfo(System.Int32)">
+            <summary>
+            查询用户信息详情
+            </summary>
+            <param name="Luid"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.AddUserInfo(ZR.Model.Dto.UserInfoDto)">
+            <summary>
+            添加用户信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.UpdateUserInfo(ZR.Model.Dto.UserInfoDto)">
+            <summary>
+            更新用户信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.UserInfoController.DeleteUserInfo(System.String)">
+            <summary>
+            删除用户信息
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:ZR.Admin.WebApi.Controllers.CodeGeneratorController">
             <summary>
             代码生成
@@ -78,7 +119,7 @@
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.ImportTableSave(System.String,System.String)">
             <summary>
-            导入表
+            导入表结构（保存）
             </summary>
             <param name="tables"></param>
             <param name="dbName"></param>
@@ -88,6 +129,13 @@
             <summary>
             修改保存代码生成业务
             </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Preview(System.Int64)">
+            <summary>
+            预览代码
+            </summary>
+            <param name="tableId"></param>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">

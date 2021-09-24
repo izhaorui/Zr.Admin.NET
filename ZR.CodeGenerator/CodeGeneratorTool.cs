@@ -3,11 +3,7 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using ZR.CodeGenerator.CodeGenerator;
 using ZR.CodeGenerator.Model;
 using ZR.Model.System.Generate;
 
@@ -15,8 +11,6 @@ namespace ZR.CodeGenerator
 {
     /// <summary>
     /// 代码生成器。
-    /// <remarks>
-    /// 根据指定的实体域名空间生成Repositories和Services层的基础代码文件。
     /// </remarks>
     /// </summary>
     public class CodeGeneratorTool
@@ -31,7 +25,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbTableInfo"></param>
         /// <param name="dto"></param>
-        public static List<string> Generate(GenTable dbTableInfo, GenerateDto dto)
+        public static void Generate(GenTable dbTableInfo, GenerateDto dto)
         {
             _option.BaseNamespace = dbTableInfo.BaseNameSpace;
             _option.DtosNamespace = _option.BaseNamespace + "Model";
@@ -42,9 +36,7 @@ namespace ZR.CodeGenerator
             _option.ServicesNamespace = _option.BaseNamespace + "Service";
             _option.ApiControllerNamespace = _option.BaseNamespace + "Admin.WebApi";
 
-            List<string> list = GenerateSingle(dbTableInfo?.Columns, dbTableInfo, dto);
-
-            return list;
+            GenerateSingle(dbTableInfo?.Columns, dbTableInfo, dto);
         }
 
         /// <summary>
@@ -53,17 +45,18 @@ namespace ZR.CodeGenerator
         /// <param name="listField">表字段集合</param>
         /// <param name="tableInfo">表信息</param>
         /// <param name="dto"></param>
-        public static List<string> GenerateSingle(List<GenTableColumn> listField, GenTable tableInfo, GenerateDto dto)
+        public static void GenerateSingle(List<GenTableColumn> listField, GenTable tableInfo, GenerateDto dto)
         {
             string PKName = "id";
             string PKType = "int";
-            List<string> genPathList = new();
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = tableInfo.ClassName;//表名对应C# 实体类名
             replaceDto.TableName = tableInfo.TableName;//表名
             replaceDto.TableDesc = tableInfo.TableComment;//表说明描述
-            replaceDto.Permission = tableInfo.ClassName.ToLower();//权限
+            replaceDto.Permission = $"{tableInfo.ModuleName}:{tableInfo.ClassName.ToLower()}";//权限
             replaceDto.ViewsFileName = FirstLowerCase(replaceDto.ModelTypeName);
+            replaceDto.Author = tableInfo.FunctionAuthor;
+
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in listField)
             {
@@ -96,9 +89,9 @@ namespace ZR.CodeGenerator
                 if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
                 {
                     replaceDto.VueDataContent += $"      // {dbFieldInfo.ColumnComment}选项列表\n";
-                    replaceDto.VueDataContent += $"      {FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],";
+                    replaceDto.VueDataContent += $"      {FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],\n";
 
-                    replaceDto.MountedMethod += $"   this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{\n";
+                    replaceDto.MountedMethod += $"    this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{\n";
                     replaceDto.MountedMethod += $"      this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;\n";
                     replaceDto.MountedMethod += "    })\n";
                 }
@@ -115,110 +108,100 @@ namespace ZR.CodeGenerator
             replaceDto.PKName = PKName;
             replaceDto.PKType = PKType;
 
-            if (dto.genFiles.Contains(1))
+            if (dto.GenCodeFiles.Contains(1))
             {
-                Tuple<string, string> tuple = GenerateModels(replaceDto, dto);
-                genPathList.Add(tuple.Item1);
-                WriteAndSave(tuple.Item1, tuple.Item2);
+                GenerateModels(replaceDto, dto);
             }
-            if (dto.genFiles.Contains(2))
+            if (dto.GenCodeFiles.Contains(2))
             {
-                Tuple<string, string> tuple = GenerateInputDto(replaceDto, dto);
-                genPathList.Add(tuple.Item1);
-                WriteAndSave(tuple.Item1, tuple.Item2);
+                GenerateInputDto(replaceDto, dto);
             }
-            if (dto.genFiles.Contains(3))
+            if (dto.GenCodeFiles.Contains(3))
             {
-                Tuple<string, string> tuple = GenerateRepository(replaceDto, dto);
-                genPathList.Add(tuple.Item1);
-                WriteAndSave(tuple.Item1, tuple.Item2);
+                GenerateRepository(replaceDto, dto);
             }
-            if (dto.genFiles.Contains(4))
+            if (dto.GenCodeFiles.Contains(4))
             {
-                Tuple<string, string> tuple = GenerateIService(replaceDto, dto);
-                Tuple<string, string> tuple_1 = GenerateService(replaceDto, dto);
-                genPathList.Add(tuple.Item1);
-                genPathList.Add(tuple_1.Item1);
-                WriteAndSave(tuple.Item1, tuple.Item2);
-                WriteAndSave(tuple_1.Item1, tuple_1.Item2);
+                GenerateIService(replaceDto, dto);
+                GenerateService(replaceDto, dto);
             }
-            if (dto.genFiles.Contains(5))
+            if (dto.GenCodeFiles.Contains(5))
             {
-                Tuple<string, string> tuple = GenerateControllers(replaceDto, dto);
-                genPathList.Add(tuple.Item1);
-                WriteAndSave(tuple.Item1, tuple.Item2);
+                GenerateControllers(replaceDto, dto);
             }
-            if (dto.genFiles.Contains(6))
+            if (dto.GenCodeFiles.Contains(6))
             {
-                Tuple<string, string> tuple = GenerateVueViews(replaceDto, dto);
-                Tuple<string, string> tuple_1 = GenerateVueJs(replaceDto, dto);
-                genPathList.Add(tuple.Item1);
-                genPathList.Add(tuple_1.Item1);
-                WriteAndSave(tuple.Item1, tuple.Item2);
-                WriteAndSave(tuple_1.Item1, tuple_1.Item2);
+                GenerateVueViews(replaceDto, dto);
             }
-            if (dto.genFiles.Contains(7))
+            if (dto.GenCodeFiles.Contains(7))
             {
-                Tuple<string, string> tuple = GenerateSql(replaceDto, dto);
-                WriteAndSave(tuple.Item1, tuple.Item2);
+                GenerateVueJs(replaceDto, dto);
             }
-            return genPathList;
+            if (dto.GenCodeFiles.Contains(8))
+            {
+                GenerateSql(replaceDto, dto);
+            }
+            if (dto.IsPreview == 1)
+            {
+                return;
+            }
+            foreach (var item in dto.GenCodes)
+            {
+                FileHelper.WriteAndSave(item.Path, item.Content);
+            }
         }
 
         #region 生成Model
 
         /// <summary>
-        /// 生成Models文件
+        /// 生成实体类Model
         /// </summary>
         /// <param name="generateDto"></param>
         /// <param name="replaceDto">替换实体</param>
-        private static Tuple<string, string> GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
+        private static void GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            //../ZR.Model
-            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models");
-            Console.WriteLine("创建文件夹" + servicesPath);
-            CreateDirectory(servicesPath);
             // ../ZR.Model/Models/User.cs
-            var fullPath = Path.Combine(servicesPath, replaceDto.ModelTypeName + ".cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models", replaceDto.ModelTypeName + ".cs");
 
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
 
-            var content = ReadTemplate("ModelTemplate.txt")
+            var content = FileHelper.ReadTemplate("ModelTemplate.txt")
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{TableNameDesc}", replaceDto.TableDesc)
+                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
                 .Replace("{KeyTypeName}", replaceDto.PKName)
                 .Replace("{PropertyName}", replaceDto.ModelProperty)
-                .Replace("{TableName}", replaceDto.TableName);
+                .Replace("{TableName}", replaceDto.TableName)
+                .Replace("{Author}", replaceDto.Author)
+                .Replace("{DateTime}", replaceDto.AddTime);
 
-            return Tuple.Create(fullPath, content);
+            generateDto.GenCodes.Add(new GenCode(1, "实体类", fullPath, content));
         }
 
         /// <summary>
-        /// 生成InputDto文件
+        /// 生成表单提交输入参数Dto
         /// </summary>
         /// <param name="generateDto"></param>
         /// <param name="replaceDto">替换实体</param>
-        private static Tuple<string, string> GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
+        private static void GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto");
-            CreateDirectory(servicesPath);
-            // ../ZR.Model/Dto/User.cs
-            var fullPath = Path.Combine(servicesPath, $"{replaceDto.ModelTypeName}Dto.cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto", $"{replaceDto.ModelTypeName}Dto.cs");
 
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
 
-            var content = ReadTemplate("InputDtoTemplate.txt")
+            var content = FileHelper.ReadTemplate("InputDtoTemplate.txt")
                 .Replace("{DtosNamespace}", _option.DtosNamespace)
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
-                .Replace("{TableNameDesc}", replaceDto.TableDesc)
+                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
                 .Replace("{PropertyName}", replaceDto.InputDtoProperty)
                 .Replace("{QueryProperty}", replaceDto.QueryProperty)
-                .Replace("{ModelTypeName}", replaceDto.ModelTypeName);
+                .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
+                .Replace("{Author}", replaceDto.Author)
+                .Replace("{DateTime}", replaceDto.AddTime);
 
-            return Tuple.Create(fullPath, content);
+            //generateDto.GenCodes.Add(new GenCode(2, "数据传输实体类", fullPath, content));
         }
         #endregion
 
@@ -229,24 +212,23 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="generateDto"></param>
         /// <param name="replaceDto">替换实体</param>
-        private static Tuple<string, string> GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
+        private static void GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var repositoryPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, "Repositories");
-            CreateDirectory(repositoryPath);
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, "Repositories", $"{replaceDto.ModelTypeName}Repository.cs");
 
-            var fullPath = Path.Combine(repositoryPath, $"{replaceDto.ModelTypeName}Repository.cs");
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
 
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
-
-            var content = ReadTemplate("RepositoryTemplate.txt")
+            var content = FileHelper.ReadTemplate("RepositoryTemplate.txt")
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{RepositoriesNamespace}", _option.RepositoriesNamespace)
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{TableNameDesc}", replaceDto.TableDesc)
-                .Replace("{TableName}", replaceDto.TableName);
+                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
+                .Replace("{TableName}", replaceDto.TableName)
+                .Replace("{Author}", replaceDto.Author)
+                .Replace("{DateTime}", replaceDto.AddTime);
 
-            return Tuple.Create(fullPath, content);
+            generateDto.GenCodes.Add(new GenCode(3, "仓储层", fullPath, content));
         }
 
         #endregion
@@ -257,48 +239,47 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="generateDto"></param>
         /// <param name="replaceDto">替换实体</param>
-        private static Tuple<string, string> GenerateIService(ReplaceDto replaceDto, GenerateDto generateDto)
+        private static void GenerateIService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var iServicesPath = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, "Business", "IBusService");
-            CreateDirectory(iServicesPath);
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, "Business", "IBusService", $"I{replaceDto.ModelTypeName}Service.cs");
 
-            var fullPath = Path.Combine(iServicesPath, $"I{replaceDto.ModelTypeName}Service.cs");
-            Console.WriteLine(fullPath);
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("IServiceTemplate.txt")
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
+            var content = FileHelper.ReadTemplate("IServiceTemplate.txt")
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
-                .Replace("{TableNameDesc}", replaceDto.TableDesc)
+                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
                 .Replace("{DtosNamespace}", _option.DtosNamespace)
                 .Replace("{IServicsNamespace}", _option.IServicsNamespace)
                 .Replace("{RepositoriesNamespace}", _option.RepositoriesNamespace)
-                .Replace("{ModelTypeName}", replaceDto.ModelTypeName);
+                .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
+                .Replace("{Author}", replaceDto.Author)
+                .Replace("{DateTime}", replaceDto.AddTime);
 
-            return Tuple.Create(fullPath, content);
+            //generateDto.GenCodes.Add(new GenCode(4, "接口层", fullPath, content));
         }
 
         /// <summary>
         /// 生成Service文件
         /// </summary>
-        private static Tuple<string, string> GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
+        private static void GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, "Business");
-            CreateDirectory(servicesPath);
-            var fullPath = Path.Combine(servicesPath, $"{replaceDto.ModelTypeName}Service.cs");
-            Console.WriteLine(fullPath);
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, "Business", $"{replaceDto.ModelTypeName}Service.cs");
 
-            var content = ReadTemplate("ServiceTemplate.txt")
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
+
+            var content = FileHelper.ReadTemplate("ServiceTemplate.txt")
                 .Replace("{IRepositoriesNamespace}", _option.IRepositoriesNamespace)
                 .Replace("{DtosNamespace}", _option.DtosNamespace)
                 .Replace("{IServicsNamespace}", _option.IServicsNamespace)
-                .Replace("{TableNameDesc}", replaceDto.TableDesc)
+                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
                 .Replace("{ServicesNamespace}", _option.ServicesNamespace)
-                .Replace("{ModelTypeName}", replaceDto.ModelTypeName);
+                .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
+                .Replace("{Author}", replaceDto.Author)
+                .Replace("{DateTime}", replaceDto.AddTime);
 
-            return Tuple.Create(fullPath, content);
+            generateDto.GenCodes.Add(new GenCode(4, "服务层", fullPath, content));
         }
 
         #endregion
@@ -307,47 +288,42 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 生成控制器ApiControllers文件
         /// </summary>
-        private static Tuple<string, string> GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
+        private static void GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var servicesPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", generateDto.GenTable.ModuleName);
-            CreateDirectory(servicesPath);
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Controller.cs");
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
 
-            var fullPath = Path.Combine(servicesPath, $"{replaceDto.ModelTypeName}Controller.cs");
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
-
-            var content = ReadTemplate("ControllersTemplate.txt")
+            var content = FileHelper.ReadTemplate("ControllersTemplate.txt")
                 .Replace("{ApiControllerNamespace}", _option.ApiControllerNamespace)
                 .Replace("{ServicesNamespace}", _option.ServicesNamespace)
                 .Replace("{ModelsNamespace}", _option.ModelsNamespace)
-                .Replace("{TableDesc}", replaceDto.TableDesc)
+                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
                 .Replace("{ModelName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{PrimaryKey}", replaceDto.PKName)
                 .Replace("{UpdateColumn}", replaceDto.UpdateColumn)
                 .Replace("{InsertColumn}", replaceDto.InsertColumn)
                 .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
-                .Replace("{PKCsharpType}", replaceDto.PKType);
+                .Replace("{PKCsharpType}", replaceDto.PKType)
+                .Replace("{Author}", replaceDto.Author)
+                .Replace("{DateTime}", replaceDto.AddTime);
 
-            return Tuple.Create(fullPath, content);
+            generateDto.GenCodes.Add(new GenCode(5, "控制器", fullPath, content));
         }
         #endregion
 
-        #region 生成Vue页面
+        #region 生成Vue页面 & api
         /// <summary>
-        /// 生成Vue页面
-        private static Tuple<string, string> GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
+        /// 6、生成Vue页面
+        private static void GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var parentPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src");
-            var servicesPath = Path.Combine(parentPath, "views", generateDto.GenTable.ModuleName, replaceDto.ViewsFileName);
-            CreateDirectory(servicesPath);
+            var fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", generateDto.GenTable.ModuleName, replaceDto.ViewsFileName, "index.vue");
 
-            var fullPath = Path.Combine(servicesPath, "index.vue");
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
 
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
-
-            var content = ReadTemplate("VueTemplate.txt")
+            var content = FileHelper.ReadTemplate("VueTemplate.txt")
                 .Replace("{fileClassName}", replaceDto.ViewsFileName)
                 .Replace("{VueViewListContent}", replaceDto.VueViewListHtml)//查询 table列
                 .Replace("{VueViewFormContent}", replaceDto.VueViewFormHtml)//添加、修改表单
@@ -357,43 +333,56 @@ namespace ZR.CodeGenerator
                 .Replace("{vueJsMethod}", replaceDto.VueJsMethod)
                 .Replace("{vueQueryFormHtml}", replaceDto.VueQueryFormHtml)
                 .Replace("{VueDataContent}", replaceDto.VueDataContent)
-                .Replace("{primaryKey}", FirstLowerCase(replaceDto.PKName))
+                .Replace("{PrimaryKey}", FirstLowerCase(replaceDto.PKName))
                 .Replace("{MountedMethod}", replaceDto.MountedMethod)
                 .Replace("{VueViewEditFormRuleContent}", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
 
-            return Tuple.Create(fullPath, content);
+            generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, content));
         }
-        public static Tuple<string, string> GenerateVueJs(ReplaceDto replaceDto, GenerateDto generateDto)
+        /// <summary>
+        /// 7、生成vue页面api
+        /// </summary>
+        /// <param name="replaceDto"></param>
+        /// <param name="generateDto"></param>
+        /// <returns></returns>
+        public static void GenerateVueJs(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            //api js
-            var parentPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src");
-            string servicesPath = Path.Combine(parentPath, "api");
-            CreateDirectory(servicesPath);
+            string fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", replaceDto.ViewsFileName + ".js");
 
-            string fullPath = Path.Combine(servicesPath, replaceDto.ViewsFileName + ".js");
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
 
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
-
-            var content = ReadTemplate("VueJsTemplate.txt")
+            var content = FileHelper.ReadTemplate("VueJsTemplate.txt")
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{ModelTypeDesc}", replaceDto.TableDesc)
+                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
                 .Replace("{ModuleName}", generateDto.GenTable.ModuleName);
 
-            return Tuple.Create(fullPath, content);
+            generateDto.GenCodes.Add(new GenCode(7, "api.js", fullPath, content));
         }
 
         #endregion
 
-        #region 生成SQL
+        #region 8、生成SQL
 
-        public static Tuple<string, string> GenerateSql(ReplaceDto replaceDto, GenerateDto generateDto)
+        public static void GenerateSql(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             string fullPath = Path.Combine(generateDto.GenCodePath, replaceDto.ViewsFileName + ".sql");
 
-            if (File.Exists(fullPath) && !generateDto.coverd)
-                return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("SqlTemplate.txt")
+            if (File.Exists(fullPath) && !generateDto.Coverd)
+                return;
+            var tempName = "";
+            switch (generateDto.DbType)
+            {
+                case 0:
+                    tempName = "MySqlTemplate";
+                    break;
+                case 1:
+                    tempName = "SqlTemplate";
+                    break;
+                default:
+                    break;
+            }
+            var content = FileHelper.ReadTemplate($"{tempName}.txt")
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{ModelTypeDesc}", replaceDto.TableDesc)
@@ -401,7 +390,7 @@ namespace ZR.CodeGenerator
                 .Replace("{ViewsFileName}", replaceDto.ViewsFileName)
                 .Replace("{FunctionName}", generateDto.GenTable.FunctionName);
 
-            return Tuple.Create(fullPath, content);
+            generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, content));
         }
 
         #endregion
@@ -453,94 +442,6 @@ namespace ZR.CodeGenerator
         {
             return string.IsNullOrEmpty(columnDescription) ? columnName : columnDescription;
         }
-        /// <summary>
-        /// 从代码模板中读取内容
-        /// </summary>
-        /// <param name="templateName">模板名称，应包括文件扩展名称。比如：template.txt</param>
-        /// <returns></returns>
-        private static string ReadTemplate(string templateName)
-        {
-            string path = Environment.CurrentDirectory;
-            string fullName = $"{path}/wwwroot/CodeGenTemplate/{templateName}";
-
-            Console.WriteLine("开始读取模板=" + fullName);
-            string temp = fullName;
-            string str = "";
-            if (!File.Exists(temp))
-            {
-                return str;
-            }
-            StreamReader sr = null;
-            try
-            {
-                sr = new StreamReader(temp);
-                str = sr.ReadToEnd(); // 读取文件
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"读取模板出错了{ex.Message}");
-            }
-            sr?.Close();
-            sr?.Dispose();
-            return str;
-        }
-
-        /// <summary>
-        /// 写文件
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <param name="content"></param>
-        private static void WriteAndSave(string fileName, string content)
-        {
-            fileName = fileName.Replace("\\", "/").Replace("//", "/");
-            Console.WriteLine("写入文件：" + fileName);
-            try
-            {
-                //实例化一个文件流--->与写入文件相关联
-                using var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
-                //实例化一个StreamWriter-->与fs相关联
-                using var sw = new StreamWriter(fs);
-                //开始写入
-                sw.Write(content);
-                //清空缓冲区
-                sw.Flush();
-                //关闭流
-                sw.Close();
-                fs.Close();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("写入文件出错了:" + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// 创建文件夹
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        public static bool CreateDirectory(string path)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                path = path.Replace("\\", "/").Replace("//", "/");
-            }
-            try
-            {
-                if (!Directory.Exists(path))
-                {
-                    DirectoryInfo info = Directory.CreateDirectory(path);
-                    Console.WriteLine("不存在创建文件夹" + info);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"创建文件夹出错了,{ex.Message}");
-                return false;
-            }
-            return true;
-        }
-
         #endregion
 
         /// <summary>
@@ -561,7 +462,7 @@ namespace ZR.CodeGenerator
                     ColumnType = column.DataType,
                     TableId = genTable.TableId,
                     TableName = genTable.TableName,
-                    CsharpType = TableMappingHelper.GetCSharpDatatype(column.DataType),
+                    CsharpType = GetCSharpDatatype(column.DataType),
                     CsharpField = column.DbColumnName.Substring(0, 1).ToUpper() + column.DbColumnName[1..],
                     IsRequired = !column.IsNullable,
                     IsIncrement = column.IsIdentity,
@@ -611,35 +512,32 @@ namespace ZR.CodeGenerator
         }
 
         /// <summary>
-        /// 压缩代码
+        /// 获取C# 类型
         /// </summary>
-        /// <param name="dto"></param>
+        /// <param name="sDatatype"></param>
         /// <returns></returns>
-        public static string ZipGenCode(GenerateDto dto)
+        public static string GetCSharpDatatype(string sDatatype)
         {
-            try
+            sDatatype = sDatatype.ToLower();
+            string sTempDatatype = sDatatype switch
             {
-                //生成压缩包
-                string zipReturnFileName = dto.GenTable.BaseNameSpace + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
-
-                CreateDirectory(dto.GenCodePath);
-                string zipFileName = Path.Combine(dto.ZipPath, zipReturnFileName);
-                if (File.Exists(zipFileName))
-                {
-                    File.Delete(zipFileName);
-                }
-
-                ZipFile.CreateFromDirectory(dto.GenCodePath, zipFileName);
-                FileHelper.DeleteDirectory(dto.GenCodePath);
-                dto.ZipFileName = zipReturnFileName;
-                return zipReturnFileName;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("压缩文件出错。" + ex.Message);
-                return "";
-            }
+                "int" or "number" or "integer" or "smallint" => "int",
+                "bigint" => "long",
+                "tinyint" => "byte",
+                "numeric" or "real" or "float" => "float",
+                "decimal" or "numer(8,2)" => "decimal",
+                "bit" => "bool",
+                "date" or "datetime" or "datetime2" or "smalldatetime" => "DateTime",
+                "money" or "smallmoney" => "double",
+                _ => "string",
+            };
+            return sTempDatatype;
         }
 
+        public static bool IsNumber(string tableDataType)
+        {
+            string[] arr = new string[] { "int", "long" };
+            return arr.Any(f => f.Contains(GetCSharpDatatype(tableDataType)));
+        }
     }
 }

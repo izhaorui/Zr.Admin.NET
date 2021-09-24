@@ -1,141 +1,142 @@
-﻿using ICSharpCode.SharpZipLib.Checksum;
-using ICSharpCode.SharpZipLib.Zip;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using ZR.CodeGenerator.Model;
 
 namespace ZR.CodeGenerator
 {
     public class FileHelper
     {
         /// <summary>
-        /// 制作压缩包（多个文件压缩到一个压缩包，支持加密、注释）
+        /// 创建文件夹
         /// </summary>
-        /// <param name="fileNames">要压缩的文件</param>
-        /// <param name="topDirectoryName">压缩文件目录</param>
-        /// <param name="zipedFileName">压缩包文件名</param>
-        /// <param name="compresssionLevel">压缩级别 1-9</param>
-        /// <param name="password">密码</param>
-        /// <param name="comment">注释</param>
-        public static void ZipFiles(string[] fileNames, string topDirectoryName, string zipedFileName, int? compresssionLevel, string password = "", string comment = "")
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static bool CreateDirectory(string path)
         {
-            using (ZipOutputStream zos = new ZipOutputStream(File.Open(zipedFileName, FileMode.OpenOrCreate)))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                if (compresssionLevel.HasValue)
+                path = path.Replace("\\", "/").Replace("//", "/");
+            }
+            try
+            {
+                if (!Directory.Exists(path))
                 {
-                    zos.SetLevel(compresssionLevel.Value);//设置压缩级别
-                }
-
-                if (!string.IsNullOrEmpty(password))
-                {
-                    zos.Password = password;//设置zip包加密密码
-                }
-
-                if (!string.IsNullOrEmpty(comment))
-                {
-                    zos.SetComment(comment);//设置zip包的注释
-                }
-
-                foreach (string file in fileNames)
-                {
-                    //string fileName = string.Format("{0}/{1}", topDirectoryName, file);
-                    string fileName =  file;
-                    
-                    if (File.Exists(fileName))
-                    {
-                        FileInfo item = new FileInfo(fileName);
-                        FileStream fs = File.OpenRead(item.FullName);
-                        byte[] buffer = new byte[fs.Length];
-                        fs.Read(buffer, 0, buffer.Length);
-
-                        ZipEntry entry = new ZipEntry(item.Name);
-                        zos.PutNextEntry(entry);
-                        zos.Write(buffer, 0, buffer.Length);
-                    }
+                    DirectoryInfo info = Directory.CreateDirectory(path);
+                    Console.WriteLine("不存在创建文件夹" + info);
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"创建文件夹出错了,{ex.Message}");
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
-        /// 压缩多层目录
+        /// 写文件
         /// </summary>
-        /// <param name="topDirectoryName">压缩文件目录</param>
-        /// <param name="zipedFileName">压缩包文件名</param>
-        /// <param name="compresssionLevel">压缩级别 1-9 </param>
-        /// <param name="password">密码</param>
-        /// <param name="comment">注释</param>
-        /// <param name="filetype">文件类型</param>
-        public static void ZipFileDirectory(string topDirectoryName, string zipedFileName, int compresssionLevel, string password, string comment, string filetype)
+        /// <param name="path">完整路径带扩展名的</param>
+        /// <param name="content"></param>
+        public static void WriteAndSave(string path, string content)
         {
-            using (System.IO.FileStream ZipFile = File.Open(zipedFileName, FileMode.OpenOrCreate))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                using (ZipOutputStream zos = new ZipOutputStream(ZipFile))
-                {
-                    if (compresssionLevel != 0)
-                    {
-                        zos.SetLevel(compresssionLevel);//设置压缩级别
-                    }
-                    if (!string.IsNullOrEmpty(password))
-                    {
-                        zos.Password = password;//设置zip包加密密码
-                    }
-                    if (!string.IsNullOrEmpty(comment))
-                    {
-                        zos.SetComment(comment);//设置zip包的注释
-                    }
-                    ZipSetp(topDirectoryName, zos, "", filetype);
-                }
+                path = path.Replace("\\", "/").Replace("//", "/");
+            }
+            if (!Directory.Exists(Path.GetDirectoryName(path)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+            }
+            Console.WriteLine("写入文件：" + path);
+            try
+            {
+                //实例化一个文件流--->与写入文件相关联
+                using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
+                //实例化一个StreamWriter-->与fs相关联
+                using var sw = new StreamWriter(fs);
+                //开始写入
+                sw.Write(content);
+                //清空缓冲区
+                sw.Flush();
+                //关闭流
+                sw.Close();
+                fs.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("写入文件出错了:" + ex.Message);
             }
         }
 
-        /// <summary>
-        /// 递归遍历目录
-        /// </summary>
-        /// <param name="strDirectory">The directory.</param>
-        /// <param name="s">The ZipOutputStream Object.</param>
-        /// <param name="parentPath">The parent path.</param>
-        private static void ZipSetp(string strDirectory, ZipOutputStream s, string parentPath, string filetype)
-        {
-            if (strDirectory[^1] != Path.DirectorySeparatorChar)
-            {
-                strDirectory += Path.DirectorySeparatorChar;
-            }
-            Console.WriteLine("strDirectory=" + strDirectory);
-            Crc32 crc = new Crc32();
 
-            string[] filenames = Directory.GetFileSystemEntries(strDirectory, filetype);
-            foreach (string file in filenames)// 遍历所有的文件和目录
+        /// <summary>
+        /// 从代码模板中读取内容
+        /// </summary>
+        /// <param name="templateName">模板名称，应包括文件扩展名称。比如：template.txt</param>
+        /// <returns></returns>
+        public static string ReadTemplate(string templateName)
+        {
+            string path = Environment.CurrentDirectory;
+            string fullName = $"{path}/wwwroot/CodeGenTemplate/{templateName}";
+
+            Console.WriteLine("开始读取模板=" + fullName);
+            string temp = fullName;
+            string str = "";
+            if (!File.Exists(temp))
             {
-                if (Directory.Exists(file))// 先当作目录处理如果存在这个目录就递归Copy该目录下面的文件
+                return str;
+            }
+            StreamReader sr = null;
+            try
+            {
+                sr = new StreamReader(temp);
+                str = sr.ReadToEnd(); // 读取文件
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"读取模板出错了{ex.Message}");
+            }
+            sr?.Close();
+            sr?.Dispose();
+            return str;
+        }
+
+
+        /// <summary>
+        /// 压缩代码
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        public static string ZipGenCode(GenerateDto dto)
+        {
+            try
+            {
+                //生成压缩包
+                string zipReturnFileName = dto.GenTable.BaseNameSpace + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
+
+                CreateDirectory(dto.GenCodePath);
+                string zipFileName = Path.Combine(dto.ZipPath, zipReturnFileName);
+                if (File.Exists(zipFileName))
                 {
-                    string pPath = parentPath;
-                    pPath += file[(file.LastIndexOf("/") + 1)..];
-                    pPath += "/";
-                    Console.WriteLine("递归路径" + pPath);
-                    ZipSetp(file, s, pPath, filetype);
+                    File.Delete(zipFileName);
                 }
-                else // 否则直接压缩文件
-                {
-                    //打开压缩文件
-                    using (FileStream fs = File.OpenRead(file))
-                    {
-                        byte[] buffer = new byte[fs.Length];
-                        fs.Read(buffer, 0, buffer.Length);
-                        string fileName = parentPath + file[(file.LastIndexOf("/") + 1)..];
-                        ZipEntry entry = new ZipEntry(fileName);
-                        entry.DateTime = DateTime.Now;
-                        entry.Size = fs.Length;
-                        fs.Close();
-                        crc.Reset();
-                        crc.Update(buffer);
-                        entry.Crc = crc.Value;
-                        s.PutNextEntry(entry);
-                        s.Write(buffer, 0, buffer.Length);
-                    }
-                }
+
+                ZipFile.CreateFromDirectory(dto.GenCodePath, zipFileName);
+                DeleteDirectory(dto.GenCodePath);
+                dto.ZipFileName = zipReturnFileName;
+                return zipReturnFileName;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("压缩文件出错。" + ex.Message);
+                return "";
             }
         }
 

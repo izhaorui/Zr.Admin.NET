@@ -94,6 +94,13 @@ export function updateGenTable(data) {
   })
 }
 
+// 预览生成代码
+export function previewTable(tableId) {
+  return request({
+    url: '/tool/gen/preview/' + tableId,
+    method: 'get'
+  })
+}
 
 // /**
 //  *

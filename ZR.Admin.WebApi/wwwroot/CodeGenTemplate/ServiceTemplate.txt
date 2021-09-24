@@ -13,15 +13,18 @@ using {IRepositoriesNamespace};
 namespace {ServicesNamespace}.Business
 {
     /// <summary>
-    /// 代码生成器生成
+    /// {FunctionName}Service业务层处理
+    ///
+    /// @author {Author}
+    /// @date {DateTime}
     /// </summary>
     [AppService(ServiceType = typeof(I{ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
     public class {ModelTypeName}Service: BaseService<{ModelTypeName}>, I{ModelTypeName}Service
     {
-		private readonly {ModelTypeName}Repository _repository;
+        private readonly {ModelTypeName}Repository _repository;
         public {ModelTypeName}Service({ModelTypeName}Repository repository)
         {
-			_repository = repository;
+            _repository = repository;
         }
 
         #region 业务逻辑代码

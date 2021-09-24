@@ -2,8 +2,7 @@
   <div class="app-container">
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
-      {vueQueryFormHtml}
-
+{vueQueryFormHtml}
       <el-row class="mb8" style="text-align:center">
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -27,7 +26,7 @@
     <!-- 数据区域 -->
     <el-table :data="dataList" ref="table" border  @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" />
-      {VueViewListContent}
+{VueViewListContent}
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
           <el-button v-hasPermi="['{Permission}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
@@ -42,7 +41,7 @@
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
       <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
-        {VueViewFormContent}
+{VueViewFormContent}
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
         <el-button @click="cancel">取 消</el-button>
@@ -67,7 +66,7 @@ export default {
     return {
       labelWidth: "100px",
       formLabelWidth:"100px",
-      // 选中{primaryKey}数组
+      // 选中{PrimaryKey}数组
       ids: [],
       // 非单个禁用
       single: true,
@@ -96,18 +95,15 @@ export default {
       btnSubmitVisible: true,
       // 表单校验
       rules: {
-        {VueViewEditFormRuleContent}
+{VueViewEditFormRuleContent}
       },
     };
   },
   mounted() {
     // 列表数据查询
     this.getList();
-    // 下拉框绑定
-    // this.getDicts("sys_normal_disable").then((response) => {
-    //   this.statusOptions = response.data;
-    // });
-    {MountedMethod}
+
+{MountedMethod}
   },
   methods: {
     // 查询数据
@@ -128,7 +124,7 @@ export default {
     // 重置数据表单
     reset() {
       this.form = {
-        {VueViewFormResetHtml}
+{VueViewFormResetHtml}
 		//TODO 根据实际内容调整
       };
       this.resetForm("form");
@@ -146,15 +142,9 @@ export default {
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.ids = selection.map((item) => item.{primaryKey});
+      this.ids = selection.map((item) => item.{PrimaryKey});
       this.single = selection.length!=1
       this.multiple = !selection.length;
-    },
-    /** 选择每页显示数量*/
-    handleSizeChange(val) {
-      this.queryParams.pageSize = val;
-      this.queryParams.pageNum = 1;
-      this.handleQuery();
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -168,8 +158,8 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const {primaryKey}s = row.{primaryKey} || this.ids;
-      del{ModelTypeName}({primaryKey}s.toString()).then((res) => {
+      const {PrimaryKey}s = row.{PrimaryKey} || this.ids;
+      del{ModelTypeName}({PrimaryKey}s.toString()).then((res) => {
         this.msgSuccess("删除成功");
         this.handleQuery();
       });
@@ -177,12 +167,12 @@ export default {
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const {primaryKey} = row.{primaryKey} || this.ids;
-      get{ModelTypeName}({primaryKey}).then((res) => {
+      const {PrimaryKey} = row.{PrimaryKey} || this.ids;
+      get{ModelTypeName}({PrimaryKey}).then((res) => {
         if(res.code == 200){
-            this.form = res.data;
-            this.open = true;
-            this.title = "修改数据";
+           this.form = res.data;
+           this.open = true;
+           this.title = "修改数据";
         }
       });
     },
@@ -194,7 +184,7 @@ export default {
         if (valid) {
           console.log(JSON.stringify(this.form));
           
-          if (this.form.{primaryKey} != undefined || this.title === '修改数据') {
+          if (this.form.{PrimaryKey} != undefined || this.title === '修改数据') {
             update{ModelTypeName}(this.form).then((res) => {
                 this.msgSuccess("修改成功");
                 this.open = false;
