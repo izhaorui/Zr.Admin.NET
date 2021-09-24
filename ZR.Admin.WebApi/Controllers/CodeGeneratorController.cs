@@ -170,7 +170,7 @@ namespace ZR.Admin.WebApi.Controllers
                     GenTable genTable = new()
                     {
                         BaseNameSpace = "ZR.",//导入默认命名空间前缀
-                        ModuleName = "bus",//导入默认模块名
+                        ModuleName = "business",//导入默认模块名
                         ClassName = CodeGeneratorTool.GetClassName(tableName),
                         BusinessName = CodeGeneratorTool.GetClassName(tableName),
                         FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),

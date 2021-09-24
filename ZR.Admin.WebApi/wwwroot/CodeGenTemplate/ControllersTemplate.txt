@@ -21,7 +21,7 @@ namespace {ApiControllerNamespace}.Controllers
     /// 代码自动生成
     /// </summary>
     [Verify]
-    [Route("bus/{ModelName}")]
+    [Route("{ModuleName}/{ModelName}")]
     public class {ModelName}Controller: BaseController
 	{
         /// <summary>

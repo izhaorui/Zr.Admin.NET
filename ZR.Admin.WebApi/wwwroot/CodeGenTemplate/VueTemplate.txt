@@ -19,14 +19,14 @@
         <el-button type="success" :disabled="single" v-hasPermi="['{Permission}:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" v-hasPermi="['{Permission}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
+        <el-button type="danger" :disabled="multiple" v-hasPermi="['{Permission}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 数据区域 -->
     <el-table :data="dataList" ref="table" border  @selection-change="handleSelectionChange">
-	  <el-table-column type="selection" width="50" />
+      <el-table-column type="selection" width="50" />
       {VueViewListContent}
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
