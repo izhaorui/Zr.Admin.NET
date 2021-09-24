@@ -29,45 +29,45 @@
         </member>
         <member name="T:ZR.Admin.WebApi.Controllers.GendemoController">
              <summary>
-             代码生成测试Controller
+             代码生成演示Controller
             
-             @author ruirui
+             @author zhaorui
              @date 2021-09-24
              </summary>
         </member>
         <member name="F:ZR.Admin.WebApi.Controllers.GendemoController._GendemoService">
             <summary>
-            代码生成测试接口
+            代码生成演示接口
             </summary>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.QueryGendemo(ZR.Model.Dto.GendemoQueryDto)">
             <summary>
-            查询代码生成测试列表
+            查询代码生成演示列表
             </summary>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.GetGendemo(System.Int32)">
             <summary>
-            查询代码生成测试详情
+            查询代码生成演示详情
             </summary>
             <param name="Id"></param>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.AddGendemo(ZR.Model.Dto.GendemoDto)">
             <summary>
-            添加代码生成测试
+            添加代码生成演示
             </summary>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.UpdateGendemo(ZR.Model.Dto.GendemoDto)">
             <summary>
-            更新代码生成测试
+            更新代码生成演示
             </summary>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.DeleteGendemo(System.String)">
             <summary>
-            删除代码生成测试
+            删除代码生成演示
             </summary>
             <returns></returns>
         </member>

@@ -16,7 +16,7 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// InputDto输入实体是不包含字段
         /// </summary>
-        public static readonly string[] inputDtoNoField = new string[] { "createTime", "updateTime", "addtime" };
+        public static readonly string[] inputDtoNoField = new string[] { "createTime", "updateTime", "addtime", "create_time", "update_time" };
         /// <summary>
         /// 图片字段
         /// </summary>

@@ -29,12 +29,12 @@ namespace ZR.CodeGenerator
                 sb.AppendLine($"    }},");
             }
             //有下拉框选项初列表查询数据
-            if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT && !string.IsNullOrEmpty(dbFieldInfo.DictType))
+            if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
             {
                 sb.AppendLine(@$"    // {dbFieldInfo.ColumnComment}字典翻译");
                 sb.AppendLine($"    {columnName}Format(row, column) {{");
                 sb.AppendLine(@$"      return this.selectDictLabel(this.{columnName}Options, row.{columnName});");
-                sb.Append(@"    },");
+                sb.AppendLine(@"    },");
 
             }
             return sb.ToString();
@@ -74,7 +74,7 @@ namespace ZR.CodeGenerator
         public static string GetModelRequired(GenTableColumn dbFieldInfo)
         {
             string str = "";
-            if (!dbFieldInfo.IsRequired && (dbFieldInfo.CsharpType == "int" || dbFieldInfo.CsharpType == "long" || dbFieldInfo.CsharpType == "DateTime"))
+            if (!dbFieldInfo.IsRequired && (CodeGeneratorTool.IsNumber(dbFieldInfo.ColumnType) || dbFieldInfo.CsharpType == "DateTime"))
             {
                 str = "?";
             }
@@ -104,7 +104,7 @@ namespace ZR.CodeGenerator
         public static string GetQueryDtoProperty(GenTableColumn dbFieldInfo)
         {
             string QueryDtoContent = "";
-            if (dbFieldInfo.IsQuery && !GenConstants.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
+            if (dbFieldInfo.IsQuery && !GenConstants.inputDtoNoField.Any(f => f.ToLower().Contains(dbFieldInfo.CsharpField.ToLower())))
             {
                 QueryDtoContent += $"        public {dbFieldInfo.CsharpType} {dbFieldInfo.CsharpField} {{ get; set; }}\r\n";
             }
@@ -120,7 +120,7 @@ namespace ZR.CodeGenerator
             string labelDisabled = dbFieldInfo.IsPk ? ":disabled=\"true\"" : "";
             string placeHolder = dbFieldInfo.IsIncrement ? "" : $"请输入{labelName}";
             StringBuilder sb = new StringBuilder();
-            if (GenConstants.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
+            if (GenConstants.inputDtoNoField.Any(f => f.ToLower().Contains(dbFieldInfo.CsharpField.ToLower())))
             {
                 return sb.ToString();
             }
