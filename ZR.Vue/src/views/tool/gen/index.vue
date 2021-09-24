@@ -63,6 +63,11 @@
           <el-radio v-model="coverd" :label="false">否</el-radio>
         </el-form-item>
 
+        <el-form-item label="数据库类型">
+          <el-radio v-model="dbType" :label="0">mySql</el-radio>
+          <el-radio v-model="dbType" :label="1">sqlServer</el-radio>
+        </el-form-item>
+
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="handleGenerate">确 定</el-button>
@@ -87,21 +92,11 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 20,
-        dbName: "",
         tableName: "",
-        baseSpace: "",
-        replaceTableNameStr: "",
       },
       showGenerate: false,
       checkedCodeGenerateForm: [1, 2, 3, 4, 5, 6, 7],
-      rules: {
-        dbName: [
-          { required: true, message: "请选择数据库名称", trigger: "blur" },
-        ],
-        replaceTableNameStr: [
-          { min: 0, max: 50, message: "长度小于50个字符", trigger: "blur" },
-        ],
-      },
+      rules: {},
       // 表数据
       tableData: [],
       // 是否显示加载
@@ -109,13 +104,12 @@ export default {
       total: 0,
       // 选中行的表
       currentSelected: {},
-      selectedDataBase: [],
-      // 列信息
-      // columnData: [],
       // 选中的列
       checkedQueryColumn: [],
       //是否覆盖原先代码
       coverd: true,
+      // 生成SQL脚本的数据库类型
+      dbType: 0,
       // 选中的表
       tableIds: [],
       // 非多个禁用
@@ -176,6 +170,7 @@ export default {
             tableName: this.currentSelected.name,
             genFiles: this.checkedCodeGenerateForm,
             coverd: this.coverd,
+            dbType: this.dbType,
             queryColumn: this.checkedQueryColumn,
           };
           console.log(JSON.stringify(seachdata));

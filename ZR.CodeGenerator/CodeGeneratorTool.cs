@@ -62,7 +62,7 @@ namespace ZR.CodeGenerator
             replaceDto.ModelTypeName = tableInfo.ClassName;//表名对应C# 实体类名
             replaceDto.TableName = tableInfo.TableName;//表名
             replaceDto.TableDesc = tableInfo.TableComment;//表说明描述
-            replaceDto.Permission = tableInfo.ClassName.ToLower();//权限
+            replaceDto.Permission = $"{tableInfo.ModuleName}:{tableInfo.ClassName.ToLower()}";//权限
             replaceDto.ViewsFileName = FirstLowerCase(replaceDto.ModelTypeName);
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in listField)
@@ -393,7 +393,19 @@ namespace ZR.CodeGenerator
 
             if (File.Exists(fullPath) && !generateDto.coverd)
                 return Tuple.Create(fullPath, "");
-            var content = ReadTemplate("SqlTemplate.txt")
+            var tempName = "";
+            switch (generateDto.DbType)
+            {
+                case 0:
+                    tempName = "MySqlTemplate";
+                    break;
+                case 1:
+                    tempName = "SqlTemplate";
+                    break;
+                default:
+                    break;
+            }
+            var content = ReadTemplate($"{tempName}.txt")
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{ModelTypeDesc}", replaceDto.TableDesc)

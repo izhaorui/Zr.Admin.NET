@@ -20,6 +20,10 @@ namespace ZR.CodeGenerator.Model
         /// 如果目标文件存在，是否覆盖。默认为false
         /// </summary>
         public bool coverd { get; set; } = true;
+        /// <summary>
+        /// 生成代码的数据库类型 0、mysql 1、sqlserver
+        /// </summary>
+        public int DbType { get; set; }
         public GenTable GenTable { get; set; }
         #region 存储路径
         //public string ModelPath { get; set; }
