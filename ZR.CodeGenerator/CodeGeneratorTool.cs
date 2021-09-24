@@ -396,7 +396,10 @@ namespace ZR.CodeGenerator
             var content = ReadTemplate("SqlTemplate.txt")
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.Permission)
-                .Replace("{ModelTypeDesc}", replaceDto.TableDesc);
+                .Replace("{ModelTypeDesc}", replaceDto.TableDesc)
+                .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
+                .Replace("{ViewsFileName}", replaceDto.ViewsFileName)
+                .Replace("{FunctionName}", generateDto.GenTable.FunctionName);
 
             return Tuple.Create(fullPath, content);
         }

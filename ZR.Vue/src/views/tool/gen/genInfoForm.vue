@@ -6,29 +6,29 @@
           <span slot="label">生成模板</span>
           <el-select v-model="info.tplCategory" @change="tplSelectChange">
             <el-option label="单表（增删改查）" value="crud" />
-            <el-option label="树表（增删改查）" value="tree" />
-            <el-option label="主子表（增删改查）" value="sub" />
+            <!-- <el-option label="树表（增删改查）" value="tree" />
+            <el-option label="主子表（增删改查）" value="sub" /> -->
           </el-select>
         </el-form-item>
       </el-col>
-      <!--
+      
       <el-col :span="12">
         <el-form-item prop="baseNameSpace">
           <span slot="label">
             生成命名空间前缀
-            <el-tooltip content="比如 ZR.Model，目前不支持更换" placement="top">
+            <el-tooltip content="比如 ZR." placement="top">
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
           <el-input v-model="info.baseNameSpace" />
         </el-form-item>
-      </el-col> -->
+      </el-col>
 
       <el-col :span="12">
         <el-form-item prop="moduleName">
           <span slot="label">
             生成模块名
-            <el-tooltip content="可理解为子系统名，例如 system" placement="top">
+            <el-tooltip content="可理解为子系统名，例如 system、user、tool" placement="top">
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
@@ -72,7 +72,7 @@
         </el-form-item>
       </el-col> -->
 
-      <!-- <el-col :span="12">
+      <el-col :span="12">
         <el-form-item prop="genType">
           <span slot="label">
             生成代码方式
@@ -81,9 +81,9 @@
             </el-tooltip>
           </span>
           <el-radio v-model="info.genType" label="0">zip压缩包</el-radio>
-          <el-radio v-model="info.genType" label="1">自定义路径</el-radio>
+          <!-- <el-radio v-model="info.genType" label="1">自定义路径</el-radio> -->
         </el-form-item>
-      </el-col> -->
+      </el-col>
 
       <el-col :span="24" v-if="info.genType == '1'">
         <el-form-item prop="genPath">
@@ -208,9 +208,6 @@ export default {
       rules: {
         tplCategory: [
           { required: true, message: "请选择生成模板", trigger: "blur" },
-        ],
-        packageName: [
-          { required: true, message: "请输入生成包路径", trigger: "blur" },
         ],
         moduleName: [
           { required: true, message: "请输入生成模块名", trigger: "blur" },
