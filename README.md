@@ -137,7 +137,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 
 ## 💐 特别鸣谢
 - 👉Ruoyi.vue：[Ruoyi](http://www.ruoyi.vip/)
-- 👉SqlSugar：[SqlSugar]https://gitee.com/dotnetchina/SqlSugar
+- 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
 
 ## 😎联系作者
 QQ：599854767
