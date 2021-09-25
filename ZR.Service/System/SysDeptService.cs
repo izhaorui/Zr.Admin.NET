@@ -10,7 +10,7 @@ using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.Vo.System;
 using ZR.Repository.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
@@ -132,7 +132,8 @@ namespace ZR.Service.System
 
                 if (child.DeptId.Equals(deptId))
                 {
-                    DeptRepository.UdateDeptChildren(child);
+                    Saveable(child, it => new { it.Ancestors });
+                    //DeptRepository.UdateDeptChildren(child);
                 }
             }
         }

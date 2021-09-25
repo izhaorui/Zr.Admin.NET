@@ -8,7 +8,7 @@ namespace ZR.Model.System
     [SqlSugar.SugarTable("sys_oper_log")]
     public class SysOperLog
     {
-        [SqlSugar.SugarColumn(IsPrimaryKey = true)]
+        [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long OperId { get; set; }
         /** 操作模块 */
         //@Excel(name = "操作模块")

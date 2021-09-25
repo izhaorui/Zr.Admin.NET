@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using ZR.Model.System;
 using ZR.Repository.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
@@ -14,7 +14,7 @@ namespace ZR.Service.System
     /// </summary>
     [AppService(ServiceType = typeof(ISysDictService), ServiceLifetime = LifeTime.Transient)]
     public class SysDictService : BaseService<SysDictType>, ISysDictService
-    { 
+    {
         private SysDictRepository sysDictRepository;
         private SysDictDataRepository DictDataRepository;
 
@@ -29,19 +29,9 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="dictType">实体模型</param>
         /// <returns></returns>
-        public List<SysDictType> SelectDictTypeList(SysDictType dictType)
+        public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
         {
-            return sysDictRepository.SelectDictTypeList(dictType);
-        }
-
-        /// <summary>
-        /// 根据Id查询
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public SysDictType SelectDictTypeById(long id)
-        {
-            return sysDictRepository.SelectDictTypeById(id);
+            return sysDictRepository.SelectDictTypeList(dictType, pager);
         }
 
         /// <summary>
@@ -51,22 +41,12 @@ namespace ZR.Service.System
         /// <returns></returns>
         public string CheckDictTypeUnique(SysDictType dictType)
         {
-            SysDictType sysDictType = sysDictRepository.CheckDictTypeUnique(dictType.DictType);
+            SysDictType sysDictType = GetFirst(f => f.DictType == dictType.DictType);
             if (sysDictType != null && sysDictType.DictId != dictType.DictId)
             {
                 return UserConstants.NOT_UNIQUE;
             }
             return UserConstants.UNIQUE;
-        }
-
-        /// <summary>
-        /// 删除一个
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public int DeleteDictTypeById(long id)
-        {
-            return sysDictRepository.DeleteDictTypeById(id);
         }
 
         /// <summary>
@@ -78,8 +58,8 @@ namespace ZR.Service.System
         {
             foreach (var dictId in dictIds)
             {
-                SysDictType dictType = SelectDictTypeById(dictId);
-                if (DictDataRepository.CountDictDataByType(dictType.DictType) > 0)
+                SysDictType dictType = GetFirst(x => x.DictId == dictId);
+                if (GetCount(f => f.DictType == dictType.DictType) > 0)
                 {
                     throw new CustomException($"{dictType.DictName}已分配,不能删除");
                 }
@@ -99,7 +79,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public long InsertDictType(SysDictType sysDictType)
         {
-            return sysDictRepository.InsertDictType(sysDictType);
+            return Saveable(sysDictType, iColumns: it => new { sysDictType.Update_by }).DictId;
         }
 
         /// <summary>
@@ -109,7 +89,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int UpdateDictType(SysDictType sysDictType)
         {
-            SysDictType oldDict = sysDictRepository.SelectDictTypeById(sysDictType.DictId);
+            SysDictType oldDict = GetFirst(x => x.DictId == sysDictType.DictId);
             if (sysDictType.DictType != oldDict.DictType)
             {
                 //同步修改 dict_data表里面的DictType值

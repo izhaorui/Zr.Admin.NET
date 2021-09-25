@@ -11,7 +11,7 @@ namespace ZR.Model.System
     public class SysLogininfor: SysBase
     {
         //[Key]
-        [SugarColumn(IsPrimaryKey = true)]
+        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long infoId { get; set; }
 
         /// <summary>

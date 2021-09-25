@@ -3,8 +3,6 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
-using ZR.Model;
 
 namespace ZR.Service
 {
@@ -43,6 +41,8 @@ namespace ZR.Service
         /// <param name="parm"></param>
         /// <returns></returns>
         int Add(T parm);
+
+        int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = false);
 
         /// <summary>
         /// 批量添加数据
@@ -138,7 +138,7 @@ namespace ZR.Service
         /// <param name="where"></param>
         /// <param name="parm"></param>
         /// <returns></returns>
-        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm);
+        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, Model.PagerInfo parm);
 
         /// <summary>
         /// 根据条件查询分页
@@ -148,7 +148,7 @@ namespace ZR.Service
         /// <param name="order"></param>
         /// <param name="orderEnum"></param>
         /// <returns></returns>
-        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderEnum = "Asc");
+        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, Model.PagerInfo parm, Expression<Func<T, object>> order, string orderEnum = "Asc");
 
         /// <summary>
         /// 根据条件查询数据

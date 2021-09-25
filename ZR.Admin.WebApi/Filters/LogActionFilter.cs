@@ -12,7 +12,7 @@ using System.Linq;
 using System.Text;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Model.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Filters
 {

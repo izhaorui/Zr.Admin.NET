@@ -10,13 +10,13 @@ namespace ZR.Admin.WebApi.Extensions
         {
             var types = source.GetType();
 
-            var worker = new IdWorker(1, 1);
-            if (types.GetProperty("ID") != null)
-            {
-                long id = worker.NextId();
+            //var worker = new IdWorker(1, 1);
+            //if (types.GetProperty("ID") != null)
+            //{
+            //    long id = worker.NextId();
 
-                types.GetProperty("ID").SetValue(source, id.ToString(), null);
-            }
+            //    types.GetProperty("ID").SetValue(source, id.ToString(), null);
+            //}
 
             if (types.GetProperty("CreateTime") != null)
             {
@@ -49,27 +49,34 @@ namespace ZR.Admin.WebApi.Extensions
             return source;
         }
 
-        //public static TSource ToUpdate<TSource>(this TSource source, UserSessionVM userSession)
-        //{
-        //    var types = source.GetType();
+        public static TSource ToUpdate<TSource>(this TSource source, HttpContext context = null)
+        {
+            var types = source.GetType();
 
-        //    if (types.GetProperty("UpdateTime") != null)
-        //    {
-        //        types.GetProperty("UpdateTime").SetValue(source, DateTime.Now, null);
-        //    }
+            if (types.GetProperty("UpdateTime") != null)
+            {
+                types.GetProperty("UpdateTime").SetValue(source, DateTime.Now, null);
+            }
+            if (types.GetProperty("Update_Time") != null)
+            {
+                types.GetProperty("Update_Time").SetValue(source, DateTime.Now, null);
+            }
+            //if (types.GetProperty("UpdateID") != null)
+            //{
+            //    types.GetProperty("UpdateID").SetValue(source, userSession.UserID, null);
+            //}
 
-        //    if (types.GetProperty("UpdateID") != null)
-        //    {
-        //        types.GetProperty("UpdateID").SetValue(source, userSession.UserID, null);
-        //    }
+            if (types.GetProperty("UpdateBy") != null)
+            {
+                types.GetProperty("UpdateBy").SetValue(source,context.GetName(), null);
+            }
+            if (types.GetProperty("Update_by") != null)
+            {
+                types.GetProperty("Update_by").SetValue(source, context.GetName(), null);
+            }
 
-        //    if (types.GetProperty("UpdateName") != null)
-        //    {
-        //        types.GetProperty("UpdateName").SetValue(source, userSession.UserName, null);
-        //    }
-
-        //    return source;
-        //}
+            return source;
+        }
 
     }
 }

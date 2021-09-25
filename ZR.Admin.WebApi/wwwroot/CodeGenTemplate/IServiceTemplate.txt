@@ -1,0 +1,15 @@
+﻿using System;
+using {ModelsNamespace}.Models;
+
+namespace {IServicsNamespace}.Business
+{
+    /// <summary>
+    /// {FunctionName}service接口
+    ///
+    /// @author {Author}
+    /// @date {DateTime}
+    /// </summary>
+    public interface I{ModelTypeName}Service: IBaseService<{ModelTypeName}>
+    {
+    }
+}

@@ -8,7 +8,7 @@ using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.Vo;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -36,8 +36,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysDictType dict, [FromQuery] PagerInfo pagerInfo)
         {
-            var list = SysDictService.SelectDictTypeList(dict);
-            pagerInfo.TotalNum = list.Count;
+            var list = SysDictService.SelectDictTypeList(dict, pagerInfo);
+
             var vm = new VMPageResult<SysDictType>(list, pagerInfo);
             return SUCCESS(vm, TIME_FORMAT_FULL);
         }
@@ -51,7 +51,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dict:query")]
         public IActionResult GetInfo(long dictId = 0)
         {
-            return SUCCESS(SysDictService.SelectDictTypeById(dictId));
+            return SUCCESS(SysDictService.GetFirst(f => f.DictId == dictId));
         }
 
         /// <summary>

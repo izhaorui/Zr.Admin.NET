@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Middleware
 {

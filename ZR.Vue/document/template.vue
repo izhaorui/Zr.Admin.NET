@@ -2,9 +2,13 @@
   <div class="app-container">
     <el-row :gutter="24">
       <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
-      <el-form :model="queryParams" label-position="left" inline ref="queryForm" v-show="showSearch" @submit.native.prevent>
+<<<<<<< HEAD
+      <el-form :model="queryParams" label-position="left" inline ref="queryForm" label-width="120px" v-show="showSearch" @submit.native.prevent>
+=======
+      <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
+>>>>>>> db49575a0ded0eef5e8a68461da1448cdacb3d69
         <el-col :span="6">
-          <el-form-item label="文本">
+          <el-form-item label="文本文字">
             <el-input v-model="queryParams.xxx" placeholder="" />
           </el-form-item>
         </el-col>
@@ -16,18 +20,18 @@
         <el-col :span="6">
           <el-form-item label="下拉框">
             <el-select v-model="queryParams.xxx" placeholder="">
-              <el-option v-for="dict in options" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
+              <el-option v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item label="时间范围">
-            <el-date-picker v-model="queryParams.timeRange" type="datetimerange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期">
+            <el-date-picker size="small" style="width: 240px" v-model="timeRange" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期">
             </el-date-picker>
           </el-form-item>
         </el-col>
         <el-col :span="24" style="text-align:center;">
-          <el-button type="cyan" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
           <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
         </el-col>
       </el-form>
@@ -44,13 +48,13 @@
       <el-col :span="1.5">
         <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
-      <el-col :span="1.5">
+      <!-- <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport">导入</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport">导出</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch"></right-toolbar>
+      </el-col> -->
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <!-- 数据区域 -->
@@ -58,13 +62,9 @@
       <el-table-column prop="id" label="id" width="60" sortable> </el-table-column>
       <el-table-column prop="userId" label="userid" width="80"> </el-table-column>
       <!-- 显示图片 -->
-      <el-table-column prop="photo" label="图片" width="110">
+      <el-table-column prop="photo" label="图片">
         <template slot-scope="scope">
-          <el-popover placement="right" trigger="hover">
-            <!-- click显示的大图 -->
-            <img :src="scope.row.photo" />
-            <img slot="reference" :src="scope.row.photo" width="100" height="50">
-          </el-popover>
+          <el-image class="table-td-thumb" :src="scope.row.photo" :preview-src-list="[scope.row.photo]"></el-image>
         </template>
       </el-table-column>
       <el-table-column prop="content" label="介绍" width="100" :show-overflow-tooltip="true">
@@ -90,7 +90,7 @@
 
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
           <el-col :span="12">
             <el-form-item label="用户Id" prop="userId">
@@ -110,7 +110,7 @@
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in options" :key="dict.dictValue" :label="dict.dictValue">{{dict.dictLabel}}</el-radio>
+                <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictValue">{{dict.dictLabel}}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -136,23 +136,23 @@ export default {
   name: "demo",
   data() {
     return {
+      labelWidth: "70px",
       // 遮罩层
       loading: true,
       // 显示搜索条件
       showSearch: true,
       // 查询参数
-      queryParams: {
-        useridx: undefined,
-        name: undefined,
-      },
+      queryParams: {},
       // 弹出层标题
       title: "",
       // 是否显示弹出层
       open: false,
       // 表单参数
       form: {},
+      // 时间范围数组
+      timeRange: [],
       // xxx下拉框
-      options: [],
+      statusOptions: [],
       // 数据列表
       dataList: [
         {
@@ -174,18 +174,30 @@ export default {
       // 表单校验
       rules: {
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
-        userId: [{ required: true, message: "id不能为空", trigger: "blur" }],
+        userId: [
+          {
+            type: "number",
+            required: true,
+            message: "id不能为空,且不能为非数字",
+            trigger: "blur",
+          },
+        ],
       },
     };
   },
   mounted() {
+    // 列表数据查询
     this.getList();
+    // 下拉框绑定
+    // this.getDicts("sys_normal_disable").then((response) => {
+    //   this.statusOptions = response.data;
+    // });
   },
   methods: {
     // 查询数据
     getList() {
       console.log(JSON.stringify(this.queryParams));
-      // listXXXX().then(res => {
+      // listXXXX(this.addDateRange(this.queryParams, this.timeRange)).then(res => {
       //   if (res.code == 200) {
       //     this.dataList = res.data.result;
       //     this.total = res.data.totalCount;
@@ -199,7 +211,6 @@ export default {
     },
     // 重置数据表单
     reset() {
-      this.btnSubmitVisible = true;
       this.form = {
         Id: undefined,
         // TODO 其他列字段
@@ -208,7 +219,12 @@ export default {
     },
     /** 重置查询操作 */
     resetQuery() {
+      this.timeRange = [];
       this.resetForm("queryForm");
+      this.queryParams = {
+        pageNum: 1,
+        //TODO 重置字段
+      };
     },
     /** 搜索按钮操作 */
     handleQuery() {
@@ -224,11 +240,13 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      //   delXXX().then(function () {
-
-      //   })
-      //   .then(() => {
+      //   delXXX().then((res) => {
       //     this.msgSuccess("删除成功");
+<<<<<<< HEAD
+
+=======
+>>>>>>> db49575a0ded0eef5e8a68461da1448cdacb3d69
+      //     this.handleQuery();
       //   });
     },
     /** 修改按钮操作 */
@@ -278,3 +296,8 @@ export default {
   },
 };
 </script>
+<style scoped>
+.table-td-thumb {
+  width: 80px;
+}
+</style>

@@ -5,7 +5,7 @@ using System.Text;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Repository.System;
-using ZR.Service.IService;
+using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
@@ -53,9 +53,9 @@ namespace ZR.Service.System
         public SysDictData SelectDictDataById(long dictCode)
         {
             string CK = $"SelectDictDataByCode_{dictCode}";
-            if (!(CacheHelper.GetCache(CK) is SysDictData list))
+            if (CacheHelper.GetCache(CK) is not SysDictData list)
             {
-                list = SysDictDataRepository.SelectDictDataById(dictCode);
+                list = GetFirst(f => f.DictCode == dictCode);
                 CacheHelper.SetCache(CK, list, 5);
             }
             return list;

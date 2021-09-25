@@ -11,8 +11,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Model\" />
-    <Folder Include="Template\" />
+    <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Template\ModelTemplate.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

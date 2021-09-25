@@ -22,11 +22,12 @@ namespace ZR.Repository.DbProvider
         {
             string connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
             string dbKey = ConfigUtils.Instance.GetAppConfig<string>(OptionsSetting.DbKey);
-            int dbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.DbType, 0);
+            int dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.ConnDbType);
             if (!string.IsNullOrEmpty(dbKey))
             {
                 connStr = NETCore.Encrypt.EncryptProvider.DESDecrypt(connStr, dbKey);
             }
+
             Db = new SqlSugarClient(new List<ConnectionConfig>()
             {
                 new ConnectionConfig(){
@@ -41,6 +42,7 @@ namespace ZR.Repository.DbProvider
             //调式代码 用来打印SQL 
             Db.Aop.OnLogExecuting = (sql, pars) =>
             {
+                Console.BackgroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n" + Db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
             };
             //出错打印日志

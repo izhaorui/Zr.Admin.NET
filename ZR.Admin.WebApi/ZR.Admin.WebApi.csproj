@@ -15,6 +15,11 @@
   <ItemGroup>
     <Compile Remove="Filters\GlobalExceptionFilter.cs" />
     <Compile Remove="Middleware\RequestIPMiddleware.cs" />
+    <Compile Remove="Template\Controller.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Template\Controller.tt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ZR.CodeGenerator\ZR.CodeGenerator.csproj" />
     <ProjectReference Include="..\ZR.Service\ZR.Service.csproj" />
     <ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
   </ItemGroup>
@@ -52,27 +58,49 @@
     <None Update="ip2region.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Template\Controller.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>Controller.cs</LastGenOutput>
+    <None Update="Template\ControllersTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Template\InputDtoTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Template\IServiceTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Template\ModelTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Template\RepositoryTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Template\ServiceTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Template\VueJsTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Template\VueTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Controllers\business\" />
-    <Folder Include="wwwroot\" />
+    <Folder Include="wwwroot\Generatecode\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Template\RepositoryTemplate.txt" />
+    <Resource Include="Template\ServiceTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Template\VueJsTemplate.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Template\Controller.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Controller.tt</DependentUpon>
-    </Compile>
   </ItemGroup>
 
 </Project>
