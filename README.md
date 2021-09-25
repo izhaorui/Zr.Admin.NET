@@ -144,7 +144,7 @@ QQ：599854767
 
 ## 🎀捐赠
 如果这个项目对您有所帮助，请扫下方二维码打赏一杯咖啡。
-![](http://ss.izhaorui.cn/pay.jpg)
+<img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/pay.jpg"/>
 
 源码地址
 https://gitee.com/izory/ZrAdminNetCore
