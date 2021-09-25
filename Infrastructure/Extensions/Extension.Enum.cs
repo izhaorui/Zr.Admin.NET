@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 //using Newtonsoft.Json;
 
-namespace ZR.Common.Extension
+namespace Infrastructure.Extensions
 {
     public static partial class Extensions
     {

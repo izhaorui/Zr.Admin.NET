@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ZR.Common
+namespace Infrastructure
 {
     public class DateTimeHelper
     {

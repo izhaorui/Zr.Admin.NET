@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Infrastructure.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using ZR.Common.Extension;
 
-namespace ZR.Common
+namespace Infrastructure
 {
     public class ComputerHelper
     {

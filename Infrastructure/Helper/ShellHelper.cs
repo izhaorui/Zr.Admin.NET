@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace ZR.Common
+namespace Infrastructure
 {
     public class ShellHelper
     {

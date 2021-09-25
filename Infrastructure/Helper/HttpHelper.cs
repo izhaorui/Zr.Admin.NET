@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ZR.Common
+namespace Infrastructure
 {
     public class HttpHelper
     {

@@ -4,7 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ZR.Common
+namespace Infrastructure
 {
     public class FileUtil
     {

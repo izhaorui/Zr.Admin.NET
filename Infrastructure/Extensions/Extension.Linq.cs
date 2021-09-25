@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ZR.Common.Extension
+namespace Infrastructure.Extensions
 {
     public static class LinqExtensions
     {
