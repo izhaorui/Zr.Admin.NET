@@ -91,39 +91,39 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 
 <table>
     <tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/1.png"/></td>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/2.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/1.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/2.png"/></td>
     </tr>
     <tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/3.png"/></td>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/4.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/3.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/4.png"/></td>
     </tr>
     <tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/5.png"/></td>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/6.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/5.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/6.png"/></td>
     </tr>
 	<tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/7.png"/></td>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/8.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/7.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/8.png"/></td>
     </tr>	
 	<tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/9.png"/></td>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/10.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/9.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/10.png"/></td>
     </tr>
 	<tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/11.png"/></td>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/12.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/11.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/12.png"/></td>
     </tr>
 	<tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/13.png"/></td>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/14.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/13.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/14.png"/></td>
     </tr>
 	<tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/15.png"/></td>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/16.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/15.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/16.png"/></td>
     </tr>
 	<tr>
-        <td><img src="https://www.izhaorui.cn/images/zradmin/17.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/17.png"/></td>
     </tr>
 </table>
 
@@ -144,7 +144,7 @@ QQ：599854767
 
 ## 🎀捐赠
 如果这个项目对您有所帮助，请扫下方二维码打赏一杯咖啡。
-<img src="https://www.izhaorui.cn/static/pay.jpg"/>
+![](http://ss.izhaorui.cn/pay.jpg)
 
 源码地址
 https://gitee.com/izory/ZrAdminNetCore
