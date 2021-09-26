@@ -9,8 +9,8 @@
       <el-col :span="20">
         <el-form style="display:flex" :inline="true" @submit.native.prevent>
           <el-form-item>
-            <el-button type="primary" @click="handleGetUserTable" v-hasPermi="['system:roleusers:add']">添加用户</el-button>
-            <el-button type="danger" @click="handleDelete" v-hasPermi="['system:roleusers:del']">删除用户</el-button>
+            <el-button type="primary" size="mini" @click="handleGetUserTable" v-hasPermi="['system:roleusers:add']">添加用户</el-button>
+            <el-button type="danger" size="mini" @click="handleDelete" v-hasPermi="['system:roleusers:del']">删除用户</el-button>
           </el-form-item>
           <el-form-item style="margin-left:auto">
             <el-input v-model="search" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" />
