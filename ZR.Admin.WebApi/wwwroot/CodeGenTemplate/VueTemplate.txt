@@ -53,12 +53,12 @@
 </template>
 <script>
 import { 
-    list{ModelTypeName},
-    add{ModelTypeName},
-    del{ModelTypeName},
-    update{ModelTypeName},
-    get{ModelTypeName} 
-} from '@/api/{fileClassName}.js'
+  list{ModelTypeName},
+  add{ModelTypeName},
+  del{ModelTypeName},
+  update{ModelTypeName},
+  get{ModelTypeName} 
+} from '@/api/{fileClassName}.js';
 
 export default {
   name: '{ModelTypeName}',

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using ZR.CodeGenerator.Model;
 using ZR.Model.System.Generate;
 
@@ -57,6 +58,9 @@ namespace ZR.CodeGenerator
             replaceDto.ViewsFileName = FirstLowerCase(replaceDto.ModelTypeName);
             replaceDto.Author = tableInfo.FunctionAuthor;
 
+            StringBuilder sb1 = new StringBuilder();
+            StringBuilder sb2 = new StringBuilder();
+
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in listField)
             {
@@ -86,14 +90,15 @@ namespace ZR.CodeGenerator
                 //{
                 //    replaceDto.Querycondition += $"predicate = predicate.And(m => m.{dbFieldInfo.CsharpField}.Contains(parm.Name));";
                 //}
+
                 if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
                 {
-                    replaceDto.VueDataContent += $"      // {dbFieldInfo.ColumnComment}选项列表\n";
-                    replaceDto.VueDataContent += $"      {FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],\n";
+                    sb1.AppendLine($"      // {dbFieldInfo.ColumnComment}选项列表");
+                    sb1.AppendLine($"      {FirstLowerCase(dbFieldInfo.CsharpField)}Options: [],");
 
-                    replaceDto.MountedMethod += $"    this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{\n";
-                    replaceDto.MountedMethod += $"      this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;\n";
-                    replaceDto.MountedMethod += "    })\n";
+                    sb2.AppendLine($"    this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{");
+                    sb2.AppendLine($"      this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;");
+                    sb2.AppendLine("    })");
                 }
 
                 replaceDto.QueryProperty += CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo);
@@ -105,6 +110,9 @@ namespace ZR.CodeGenerator
                 replaceDto.InputDtoProperty += CodeGenerateTemplate.GetDtoProperty(dbFieldInfo);
                 replaceDto.VueQueryFormHtml += CodeGenerateTemplate.GetQueryFormHtml(dbFieldInfo);
             }
+            replaceDto.VueDataContent = sb1.ToString();
+            replaceDto.MountedMethod = sb2.ToString();
+
             replaceDto.PKName = PKName;
             replaceDto.PKType = PKType;
 
@@ -201,7 +209,7 @@ namespace ZR.CodeGenerator
                 .Replace("{Author}", replaceDto.Author)
                 .Replace("{DateTime}", replaceDto.AddTime);
 
-            //generateDto.GenCodes.Add(new GenCode(2, "数据传输实体类", fullPath, content));
+            generateDto.GenCodes.Add(new GenCode(2, "数据传输实体类", fullPath, content));
         }
         #endregion
 
@@ -255,7 +263,7 @@ namespace ZR.CodeGenerator
                 .Replace("{Author}", replaceDto.Author)
                 .Replace("{DateTime}", replaceDto.AddTime);
 
-            //generateDto.GenCodes.Add(new GenCode(4, "接口层", fullPath, content));
+            generateDto.GenCodes.Add(new GenCode(4, "接口层", fullPath, content));
         }
 
         /// <summary>
