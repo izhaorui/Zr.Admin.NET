@@ -1,7 +1,7 @@
 <template>
   <div class="login">
     <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
-      <h3 class="title">ZrAdmin.NET</h3>
+      <h3 class="title">ZrAdmin.NET管理系统</h3>
       <el-form-item prop="username">
         <el-input v-model="loginForm.username" type="text" auto-complete="off" placeholder="账号">
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
@@ -29,9 +29,9 @@
       </el-form-item>
     </el-form>
     <!--  底部  -->
-    <!-- <div class="el-login-footer">
-      <span>Copyright © 2018-2020 ruoyi.vip All Rights Reserved.</span>
-    </div> -->
+    <div class="el-login-footer">
+      <span>Copyright ©2021 <a href="https://gitee.com/izory/ZrAdminNetCore" target="_black">ZrAdmin.NET</a> All Rights Reserved.</span>
+    </div>
   </div>
 </template>
 
