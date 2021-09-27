@@ -94,23 +94,23 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:menu:edit")]
         public IActionResult MenuEdit([FromBody] SysMenu MenuDto)
         {
-            if (MenuDto == null) { return OutputJson(ApiResult.Error(101, "请求参数错误")); }
+            if (MenuDto == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
             //if (UserConstants.NOT_UNIQUE.Equals(sysMenuService.CheckMenuNameUnique(MenuDto)))
             //{
-            //    return OutputJson(ApiResult.Error($"修改菜单'{MenuDto.menuName}'失败，菜单名称已存在"));
+            //    return ToResponse(ApiResult.Error($"修改菜单'{MenuDto.menuName}'失败，菜单名称已存在"));
             //}
             if (UserConstants.YES_FRAME.Equals(MenuDto.isFrame) && !MenuDto.path.StartsWith("http"))
             {
-                return OutputJson(ApiResult.Error($"修改菜单'{MenuDto.menuName}'失败，地址必须以http(s)://开头"));
+                return ToResponse(ApiResult.Error($"修改菜单'{MenuDto.menuName}'失败，地址必须以http(s)://开头"));
             }
             if (MenuDto.menuId.Equals(MenuDto.parentId))
             {
-                return OutputJson(ApiResult.Error($"修改菜单'{MenuDto.menuName}'失败，上级菜单不能选择自己"));
+                return ToResponse(ApiResult.Error($"修改菜单'{MenuDto.menuName}'失败，上级菜单不能选择自己"));
             }
             MenuDto.Update_by = User.Identity.Name;
             int result = sysMenuService.EditMenu(MenuDto);
 
-            return OutputJson(result);
+            return ToResponse(result);
         }
 
         /// <summary>
@@ -123,20 +123,20 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:menu:add")]
         public IActionResult MenuAdd([FromBody] SysMenu MenuDto)
         {
-            if (MenuDto == null) { return OutputJson(ApiResult.Error(101, "请求参数错误")); }
+            if (MenuDto == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
             if (UserConstants.NOT_UNIQUE.Equals(sysMenuService.CheckMenuNameUnique(MenuDto)))
             {
-                return OutputJson(ApiResult.Error($"新增菜单'{MenuDto.menuName}'失败，菜单名称已存在"));
+                return ToResponse(ApiResult.Error($"新增菜单'{MenuDto.menuName}'失败，菜单名称已存在"));
             }
             if (UserConstants.YES_FRAME.Equals(MenuDto.isFrame) && !MenuDto.path.StartsWith("http"))
             {
-                return OutputJson(ApiResult.Error($"新增菜单'{MenuDto.menuName}'失败，地址必须以http(s)://开头"));
+                return ToResponse(ApiResult.Error($"新增菜单'{MenuDto.menuName}'失败，地址必须以http(s)://开头"));
             }
 
             MenuDto.Create_by = User.Identity.Name;
             int result = sysMenuService.AddMenu(MenuDto);
 
-            return OutputJson(result);
+            return ToResponse(result);
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
             int result = sysMenuService.DeleteMenuById(menuId);
 
-            return OutputJson(result);
+            return ToResponse(result);
         }
 
         /// <summary>
@@ -172,10 +172,10 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
         public IActionResult ChangeSort([FromBody] MenuDto MenuDto)
         {
-            if (MenuDto == null) { return OutputJson(ApiResult.Error(101, "请求参数错误")); }
+            if (MenuDto == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
             int result = sysMenuService.ChangeSortMenu(MenuDto);
-            return OutputJson(result);
+            return ToResponse(result);
         }
     }
 }

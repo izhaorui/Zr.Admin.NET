@@ -125,7 +125,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             long uid = HttpContext.GetUId();
             var menus = sysMenuService.SelectMenuTreeByUserId(uid);
 
-            return OutputJson(ToJson(1, sysMenuService.BuildMenus(menus)));
+            return ToResponse(ToJson(1, sysMenuService.BuildMenus(menus)));
         }
 
         /// <summary>

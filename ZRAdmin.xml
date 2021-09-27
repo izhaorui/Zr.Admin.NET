@@ -4,7 +4,7 @@
         <name>ZR.Admin.WebApi</name>
     </assembly>
     <members>
-        <member name="M:ZR.Admin.WebApi.Controllers.BaseController.OutputJson(Infrastructure.Model.ApiResult,System.String)">
+        <member name="M:ZR.Admin.WebApi.Controllers.BaseController.ToResponse(Infrastructure.Model.ApiResult,System.String)">
             <summary>
             json输出带时间格式的
             </summary>

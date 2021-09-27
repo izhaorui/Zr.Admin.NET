@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Infrastructure.Attribute;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +8,7 @@ using ZR.Model.System;
 
 namespace ZR.Repository.System
 {
+    [AppService(ServiceLifetime = LifeTime.Transient)]
     public class SysPostRepository : BaseRepository<SysPost>
     {
     }

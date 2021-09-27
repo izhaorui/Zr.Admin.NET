@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Model;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using ZR.Model;
 
 namespace ZR.Repository
 {
@@ -58,28 +60,41 @@ namespace ZR.Repository
                     Console.WriteLine();
                 };
 
-                base.Context = Db.GetConnection(configId);//根据类传入的ConfigId自动选择
+                Context = Db.GetConnection(configId);//根据类传入的ConfigId自动选择
             }
         }
 
         #region add
+        /// <summary>
+        /// 插入指定列使用
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <param name="iClumns"></param>
+        /// <param name="ignoreNull"></param>
+        /// <returns></returns>
         public int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true)
         {
-            return base.Context.Insertable(parm).InsertColumns(iClumns).IgnoreColumns(ignoreNullColumn: ignoreNull).ExecuteCommand();
+            return Context.Insertable(parm).InsertColumns(iClumns).IgnoreColumns(ignoreNullColumn: ignoreNull).ExecuteCommand();
         }
-        public int Insert(T t, bool IgnoreNullColumn = true)
+        /// <summary>
+        /// 插入实体
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="IgnoreNullColumn">默认忽略null列</param>
+        /// <returns></returns>
+        public int Add(T t)
         {
-            return base.Context.Insertable(t).IgnoreColumns(IgnoreNullColumn).ExecuteCommand();
+            return Context.Insertable(t).ExecuteCommand();
         }
 
         public int InsertIgnoreNullColumn(T t)
         {
-            return base.Context.Insertable(t).IgnoreColumns(true).ExecuteCommand();
+            return Context.Insertable(t).IgnoreColumns(true).ExecuteCommand();
         }
 
         public int InsertIgnoreNullColumn(T t, params string[] columns)
         {
-            return base.Context.Insertable(t).IgnoreColumns(columns).ExecuteCommand();
+            return Context.Insertable(t).IgnoreColumns(columns).ExecuteCommand();
         }
 
         //public int Insert(SqlSugarClient client, T t)
@@ -237,9 +252,9 @@ namespace ZR.Repository
 
         #region delete
 
-        public bool Delete(Expression<Func<T, bool>> expression)
+        public bool DeleteExp(Expression<Func<T, bool>> expression)
         {
-            return base.Context.Deleteable<T>().Where(expression).ExecuteCommand() > 0;
+            return Context.Deleteable<T>().Where(expression).ExecuteCommand() > 0;
         }
 
         //public bool Delete<PkType>(PkType[] primaryKeyValues)
@@ -247,47 +262,46 @@ namespace ZR.Repository
         //    return base.Context.Deleteable<T>().In(primaryKeyValues).ExecuteCommand() > 0;
         //}
 
-        public bool Delete(object[] obj)
+        public int Delete(object[] obj)
         {
-            return base.Context.Deleteable<T>().In(obj).ExecuteCommand() > 0;
+            return Context.Deleteable<T>().In(obj).ExecuteCommand();
         }
-        public bool Delete(object id)
+        public int Delete(object id)
         {
-            return base.Context.Deleteable<T>(id).ExecuteCommand() > 0;
+            return Context.Deleteable<T>(id).ExecuteCommand();
         }
-        public bool Delete()
+        public bool DeleteTable()
         {
-            return base.Context.Deleteable<T>().ExecuteCommand() > 0;
+            return Context.Deleteable<T>().ExecuteCommand() > 0;
         }
 
         #endregion delete
 
         #region query
 
-        public bool IsAny(Expression<Func<T, bool>> expression)
+        public bool Any(Expression<Func<T, bool>> expression)
         {
-            //base.Context.Queryable<T>().Any();
-            return base.Context.Queryable<T>().Where(expression).Any();
+            return Context.Queryable<T>().Where(expression).Any();
         }
 
         public ISugarQueryable<T> Queryable()
         {
-            return base.Context.Queryable<T>();
+            return Context.Queryable<T>();
         }
 
         public ISugarQueryable<ExpandoObject> Queryable(string tableName, string shortName)
         {
-            return base.Context.Queryable(tableName, shortName);
+            return Context.Queryable(tableName, shortName);
         }
 
         public List<T> QueryableToList(Expression<Func<T, bool>> expression)
         {
-            return base.Context.Queryable<T>().Where(expression).ToList();
+            return Context.Queryable<T>().Where(expression).ToList();
         }
 
         public Task<List<T>> QueryableToListAsync(Expression<Func<T, bool>> expression)
         {
-            return base.Context.Queryable<T>().Where(expression).ToListAsync();
+            return Context.Queryable<T>().Where(expression).ToListAsync();
         }
 
         //public string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere)
@@ -296,32 +310,27 @@ namespace ZR.Repository
         //    return query.JilToJson();
         //}
 
-        public T QueryableToEntity(Expression<Func<T, bool>> expression)
-        {
-            return base.Context.Queryable<T>().Where(expression).First();
-        }
-
         public List<T> QueryableToList(string tableName)
         {
-            return base.Context.Queryable<T>(tableName).ToList();
+            return Context.Queryable<T>(tableName).ToList();
         }
 
         public List<T> QueryableToList(string tableName, Expression<Func<T, bool>> expression)
         {
-            return base.Context.Queryable<T>(tableName).Where(expression).ToList();
+            return Context.Queryable<T>(tableName).Where(expression).ToList();
         }
 
         public (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10)
         {
             int totalNumber = 0;
-            var list = base.Context.Queryable<T>().Where(expression).ToPageList(pageIndex, pageSize, ref totalNumber);
+            var list = Context.Queryable<T>().Where(expression).ToPageList(pageIndex, pageSize, ref totalNumber);
             return (list, totalNumber);
         }
 
         public (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, string order, int pageIndex = 0, int pageSize = 10)
         {
             int totalNumber = 0;
-            var list = base.Context.Queryable<T>().Where(expression).OrderBy(order).ToPageList(pageIndex, pageSize, ref totalNumber);
+            var list = Context.Queryable<T>().Where(expression).OrderBy(order).ToPageList(pageIndex, pageSize, ref totalNumber);
             return (list, totalNumber);
         }
 
@@ -331,38 +340,19 @@ namespace ZR.Repository
 
             if (orderBy.Equals("DESC", StringComparison.OrdinalIgnoreCase))
             {
-                var list = base.Context.Queryable<T>().Where(expression).OrderBy(orderFiled, OrderByType.Desc).ToPageList(pageIndex, pageSize, ref totalNumber);
+                var list = Context.Queryable<T>().Where(expression).OrderBy(orderFiled, OrderByType.Desc).ToPageList(pageIndex, pageSize, ref totalNumber);
                 return (list, totalNumber);
             }
             else
             {
-                var list = base.Context.Queryable<T>().Where(expression).OrderBy(orderFiled, OrderByType.Asc).ToPageList(pageIndex, pageSize, ref totalNumber);
+                var list = Context.Queryable<T>().Where(expression).OrderBy(orderFiled, OrderByType.Asc).ToPageList(pageIndex, pageSize, ref totalNumber);
                 return (list, totalNumber);
             }
         }
 
-        //public (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Bootstrap.BootstrapParams bootstrap)
-        //{
-        //    int totalNumber = 0;
-        //    if (bootstrap.offset != 0)
-        //    {
-        //        bootstrap.offset = bootstrap.offset / bootstrap.limit + 1;
-        //    }
-        //    if (bootstrap.order.Equals("DESC", StringComparison.OrdinalIgnoreCase))
-        //    {
-        //        var list = base.Context.Queryable<T>().Where(expression).OrderBy(bootstrap.sort).ToPageList(bootstrap.offset, bootstrap.limit, ref totalNumber);
-        //        return (list, totalNumber);
-        //    }
-        //    else
-        //    {
-        //        var list = base.Context.Queryable<T>().Where(expression).OrderBy(bootstrap.sort).ToPageList(bootstrap.offset, bootstrap.limit, ref totalNumber);
-        //        return (list, totalNumber);
-        //    }
-        //}
-
         public List<T> SqlQueryToList(string sql, object obj = null)
         {
-            return base.Context.Ado.SqlQuery<T>(sql, obj);
+            return Context.Ado.SqlQuery<T>(sql, obj);
         }
         /// <summary>
         /// 获得一条数据
@@ -383,15 +373,32 @@ namespace ZR.Repository
         {
             return Context.Queryable<T>().InSingle(pkValue);
         }
-
         /// <summary>
-        /// 获得一条数据
+        /// 根据条件查询分页数据
         /// </summary>
-        /// <param name="parm">string</param>
+        /// <param name="where"></param>
+        /// <param name="parm"></param>
         /// <returns></returns>
-        public T GetFirst(string parm)
+        public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm)
         {
-            return Context.Queryable<T>().Where(parm).First();
+            var source = Context.Queryable<T>().Where(where);
+
+            return source.ToPage(parm);
+        }
+
+        public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderEnum = "Asc")
+        {
+            var source = Context.Queryable<T>().Where(where).OrderByIF(orderEnum == "Asc", order, OrderByType.Asc).OrderByIF(orderEnum == "Desc", order, OrderByType.Desc);
+
+            return source.ToPage(parm);
+        }
+        /// <summary>
+        /// 查询所有数据(无分页,请慎用)
+        /// </summary>
+        /// <returns></returns>
+        public List<T> GetAll(bool useCache = false, int cacheSecond = 3600)
+        {
+            return Context.Queryable<T>().WithCacheIF(useCache, cacheSecond).ToList();
         }
         #endregion query
 
@@ -423,9 +430,33 @@ namespace ZR.Repository
         //    return result;
         //}
 
-        public string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere)
+        //public string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere)
+        //{
+        //    throw new NotImplementedException();
+        //}
+    }
+
+    public static class QueryableExtension
+    {
+        /// <summary>
+        /// 读取列表
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public static PagedInfo<T> ToPage<T>(this ISugarQueryable<T> source, PagerInfo parm)
         {
-            throw new NotImplementedException();
+            var page = new PagedInfo<T>();
+            var total = source.Count();
+            page.TotalCount = total;
+            page.PageSize = parm.PageSize;
+            page.PageIndex = parm.PageNum;
+
+            //page.DataSource = source.OrderByIF(!string.IsNullOrEmpty(parm.Sort), $"{parm.OrderBy} {(parm.Sort == "descending" ? "desc" : "asc")}").ToPageList(parm.PageNum, parm.PageSize);
+            page.Result = source.ToPageList(parm.PageNum, parm.PageSize);
+            return page;
         }
+
     }
 }

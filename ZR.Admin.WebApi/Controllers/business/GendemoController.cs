@@ -127,7 +127,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult DeleteGendemo(string ids)
         {
             int[] idsArr = Tools.SpitIntArrary(ids);
-            if (idsArr.Length <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
+            if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
             var response = _GendemoService.Delete(idsArr);
 

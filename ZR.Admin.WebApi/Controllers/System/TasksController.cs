@@ -142,7 +142,7 @@ namespace ZR.Admin.WebApi.Controllers
                 Update_by = User.Identity.Name,
                 Update_time = DateTime.Now
             });
-            if (response > 0)
+            if (response)
             {
                 //先暂停原先的任务
                 var respon = await _schedulerServer.UpdateTaskScheduleAsync(tasksQz, tasksQz.JobGroup);
@@ -177,7 +177,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 _tasksQzService.Delete(id);
             }
-            return OutputJson(taskResult);
+            return ToResponse(taskResult);
         }
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace ZR.Admin.WebApi.Controllers
                 _tasksQzService.Update(tasksQz);
             }
 
-            return OutputJson(taskResult);
+            return ToResponse(taskResult);
         }
 
         /// <summary>
@@ -239,7 +239,7 @@ namespace ZR.Admin.WebApi.Controllers
                 _tasksQzService.Update(tasksQz);
             }
 
-            return OutputJson(taskResult);
+            return ToResponse(taskResult);
         }
 
         /// <summary>
@@ -264,7 +264,7 @@ namespace ZR.Admin.WebApi.Controllers
                 //_tasksQzService.Update(tasksQz);
             }
 
-            return OutputJson(taskResult);
+            return ToResponse(taskResult);
         }
     }
 }

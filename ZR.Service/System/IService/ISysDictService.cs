@@ -8,7 +8,7 @@ namespace ZR.Service.System.IService
     /// <summary>
     /// 
     /// </summary>
-    public interface ISysDictService : IBaseService<SysDictType>
+    public interface ISysDictService
     {
         public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager);
 
@@ -39,5 +39,12 @@ namespace ZR.Service.System.IService
         /// <param name="sysDictType"></param>
         /// <returns></returns>
         public int UpdateDictType(SysDictType sysDictType);
+
+        /// <summary>
+        /// 获取字典信息
+        /// </summary>
+        /// <param name="dictId"></param>
+        /// <returns></returns>
+        SysDictType GetInfo(long dictId);
     }
 }

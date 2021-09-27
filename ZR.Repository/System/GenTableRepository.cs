@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Infrastructure.Attribute;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,11 +8,12 @@ using ZR.Model.System.Generate;
 
 namespace ZR.Repository.System
 {
+    [AppService(ServiceLifetime = LifeTime.Transient)]
     public class GenTableRepository : BaseRepository<GenTable>
     {
 
     }
-
+    [AppService(ServiceLifetime = LifeTime.Transient)]
     public class GenTableColumnRepository : BaseRepository<GenTableColumn>
     {
         /// <summary>

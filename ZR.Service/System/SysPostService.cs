@@ -13,7 +13,7 @@ namespace ZR.Service.System
     /// 岗位管理
     /// </summary>
     [AppService(ServiceType = typeof(ISysPostService), ServiceLifetime = LifeTime.Transient)]
-    public class SysPostService : BaseRepository<SysPost>, ISysPostService
+    public class SysPostService : BaseService<SysPost>, ISysPostService
     {
         public SysPostRepository PostRepository;
         public SysPostService(SysPostRepository postRepository)

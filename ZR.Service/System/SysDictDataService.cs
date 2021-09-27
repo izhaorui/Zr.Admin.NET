@@ -37,7 +37,7 @@ namespace ZR.Service.System
         public List<SysDictData> SelectDictDataByType(string dictType)
         {
             string CK = $"SelectDictDataByType_{dictType}";
-            if (!(CacheHelper.GetCache(CK) is List<SysDictData> list))
+            if (CacheHelper.GetCache(CK) is not List<SysDictData> list)
             {
                 list = SysDictDataRepository.SelectDictDataByType(dictType);
                 CacheHelper.SetCache(CK, list, 30);

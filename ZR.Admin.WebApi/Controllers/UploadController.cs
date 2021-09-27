@@ -43,7 +43,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
 
             string accessPath = $"{OptionsSetting.Upload.UploadUrl}/{finalFilePath.Replace("wwwroot", "").Replace("\\", "/")}";
-            return OutputJson(ToJson(1, accessPath));
+            return ToResponse(ToJson(1, accessPath));
         }
     }
 }

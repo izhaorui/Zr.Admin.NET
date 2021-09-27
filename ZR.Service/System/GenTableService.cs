@@ -67,11 +67,7 @@ namespace ZR.Service.System
             var predicate = Expressionable.Create<GenTable>();
             predicate = predicate.AndIF(genTable.TableName.IfNotEmpty(), it => it.TableName.Contains(genTable.TableName));
 
-            (List<GenTable>, int) ts = GenTableRepository.QueryableToPage(predicate.ToExpression(), pagerInfo.PageNum, pagerInfo.PageSize);
-
-            PagedInfo<GenTable> pagedInfo = new(ts.Item1, pagerInfo.PageNum, pagerInfo.PageSize);
-            pagedInfo.TotalCount = ts.Item2;
-            return pagedInfo;
+            return GenTableRepository.GetPages(predicate.ToExpression(), pagerInfo);
         }
 
         /// <summary>

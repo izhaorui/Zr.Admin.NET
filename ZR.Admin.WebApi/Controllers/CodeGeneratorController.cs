@@ -196,7 +196,7 @@ namespace ZR.Admin.WebApi.Controllers
                 }
             }
 
-            return ToRespose(ResultCode.FAIL);
+            return ToResponse(ResultCode.FAIL);
         }
 
         /// <summary>

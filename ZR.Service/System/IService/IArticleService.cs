@@ -8,7 +8,7 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface IArticleService //: IBaseService<Article>
+    public interface IArticleService : IBaseService<Article>
     {
 
     }

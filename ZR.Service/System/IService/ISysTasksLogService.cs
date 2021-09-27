@@ -3,7 +3,7 @@ using ZR.Repository;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysTasksLogService: IBaseRepository<SysTasksLog>
+    public interface ISysTasksLogService : IBaseService<SysTasksLog>
     {
         /// <summary>
         /// 记录任务执行日志

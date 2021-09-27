@@ -24,6 +24,7 @@
 
     <el-table v-loading="loading" :data="deptList" row-key="deptId" default-expand-all :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column prop="deptName" label="部门名称" width="260"></el-table-column>
+      <el-table-column prop="leader" label="负责人" width="100"></el-table-column>
       <el-table-column prop="orderNum" label="排序" width="200"></el-table-column>
       <el-table-column prop="status" label="状态" :formatter="statusFormat" width="100"></el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="200">

@@ -61,7 +61,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             int result = tasksLogService.Delete(jobIdArr);
 
-            return OutputJson(ToJson(result, result));
+            return ToResponse(ToJson(result, result));
         }
 
         /// <summary>

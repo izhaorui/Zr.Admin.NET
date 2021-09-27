@@ -28,7 +28,7 @@ namespace ZR.Service.System
                 logModel.CreateTime = DateTime.Now;
             }
 
-            Insert(logModel, true);
+            Add(logModel);
             return logModel;
         }
     }

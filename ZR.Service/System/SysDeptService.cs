@@ -18,7 +18,7 @@ namespace ZR.Service.System
     /// 部门管理
     /// </summary>
     [AppService(ServiceType = typeof(ISysDeptService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDeptService :ISysDeptService
+    public class SysDeptService : BaseService<SysDept>, ISysDeptService
     {
         public SysDeptRepository DeptRepository;
 
@@ -76,7 +76,7 @@ namespace ZR.Service.System
             }
 
             dept.Ancestors = info.Ancestors + "," + dept.ParentId;
-            return DeptRepository.Insert(dept, true);
+            return DeptRepository.Add(dept);
         }
 
         /// <summary>
@@ -86,8 +86,8 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int UpdateDept(SysDept dept)
         {
-            SysDept newParentDept = DeptRepository.GetSingle(it => it.ParentId == dept.ParentId);
-            SysDept oldDept = DeptRepository.GetSingle(m => m.DeptId == dept.DeptId);
+            SysDept newParentDept = DeptRepository.GetFirst(it => it.ParentId == dept.ParentId);
+            SysDept oldDept = DeptRepository.GetFirst(m => m.DeptId == dept.DeptId);
             if (newParentDept != null && oldDept != null)
             {
                 string newAncestors = newParentDept.Ancestors + "," + newParentDept.DeptId;
@@ -129,12 +129,10 @@ namespace ZR.Service.System
             foreach (var child in children)
             {
                 child.Ancestors = child.Ancestors.Replace(oldAncestors, newAncestors);
-
-                if (child.DeptId.Equals(deptId))
-                {
-                    //TODO Saveable(child, it => new { it.Ancestors });
-                    //DeptRepository.UdateDeptChildren(child);
-                }
+            }
+            if (children.Count > 0)
+            {
+                //DeptRepository.UdateDeptChildren(child);
             }
         }
 

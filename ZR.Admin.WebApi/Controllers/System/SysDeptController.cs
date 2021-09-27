@@ -97,10 +97,10 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (UserConstants.NOT_UNIQUE.Equals(DeptService.CheckDeptNameUnique(dept)))
             {
-                return OutputJson(GetApiResult(ResultCode.CUSTOM_ERROR, $"新增部门{dept.DeptName}失败，部门名称已存在"));
+                return ToResponse(GetApiResult(ResultCode.CUSTOM_ERROR, $"新增部门{dept.DeptName}失败，部门名称已存在"));
             }
             dept.Create_by = User.Identity.Name;
-            return OutputJson(ToJson(DeptService.InsertDept(dept)));
+            return ToResponse(ToJson(DeptService.InsertDept(dept)));
         }
 
         /// <summary>
@@ -115,14 +115,14 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (UserConstants.NOT_UNIQUE.Equals(DeptService.CheckDeptNameUnique(dept)))
             {
-                return OutputJson(GetApiResult(ResultCode.CUSTOM_ERROR, $"修改部门{dept.DeptName}失败，部门名称已存在"));
+                return ToResponse(GetApiResult(ResultCode.CUSTOM_ERROR, $"修改部门{dept.DeptName}失败，部门名称已存在"));
             }
             else if (dept.ParentId.Equals(dept.DeptId))
             {
-                return OutputJson(GetApiResult(ResultCode.CUSTOM_ERROR, $"修改部门{dept.DeptName}失败，上级部门不能是自己"));
+                return ToResponse(GetApiResult(ResultCode.CUSTOM_ERROR, $"修改部门{dept.DeptName}失败，上级部门不能是自己"));
             }
             dept.Update_by = User.Identity.Name;
-            return OutputJson(ToJson(DeptService.UpdateDept(dept)));
+            return ToResponse(ToJson(DeptService.UpdateDept(dept)));
         }
 
         /// <summary>
@@ -134,13 +134,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "部门管理", BusinessType = BusinessType.DELETE)]
         public IActionResult Remove(long deptId)
         {
-            if (DeptService.GetCount(it => it.ParentId == deptId && it.DelFlag == "0") > 0)
+            if (DeptService.Queryable().Count(it => it.ParentId == deptId && it.DelFlag == "0") > 0)
             {
-                return OutputJson(GetApiResult(ResultCode.CUSTOM_ERROR, $"存在下级部门，不允许删除"));
+                return ToResponse(GetApiResult(ResultCode.CUSTOM_ERROR, $"存在下级部门，不允许删除"));
             }
-            if (UserService.GetCount(it => it.DeptId == deptId && it.DelFlag == "0") > 0)
+            if (DeptService.Queryable().Count(it => it.DeptId == deptId && it.DelFlag == "0") > 0)
             {
-                return OutputJson(GetApiResult(ResultCode.CUSTOM_ERROR, $"部门存在用户，不允许删除"));
+                return ToResponse(GetApiResult(ResultCode.CUSTOM_ERROR, $"部门存在用户，不允许删除"));
             }
             
             return SUCCESS(DeptService.Delete(deptId));

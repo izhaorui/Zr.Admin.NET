@@ -44,8 +44,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public long InsertDictData(SysDictData dict)
         {
-            var result = Context.Insertable(dict).IgnoreColumns(it => new { dict.Update_by })
-                .ExecuteReturnIdentity();
+            var result = InsertReturnBigIdentity(dict);
             return result;
         }
 
@@ -76,7 +75,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteDictDataByIds(long[] dictCodes)
         {
-            return Context.Deleteable<SysDictData>().In(dictCodes).ExecuteCommand();
+            return Delete(dictCodes);
         }
 
         /// <summary>

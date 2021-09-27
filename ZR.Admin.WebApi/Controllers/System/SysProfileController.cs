@@ -84,7 +84,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             user.Update_time = DateTime.Now;
 
             int result = UserService.ChangeUser(user);
-            return OutputJson(result);
+            return ToResponse(result);
         }
 
         /// <summary>
@@ -103,11 +103,11 @@ namespace ZR.Admin.WebApi.Controllers.System
             string newMd5 = NETCore.Encrypt.EncryptProvider.Md5(newPassword);
             if (user.Password != oldMd5)
             {
-                return OutputJson(ApiResult.Error("修改密码失败，旧密码错误"));
+                return ToResponse(ApiResult.Error("修改密码失败，旧密码错误"));
             }
             if (user.Password == newMd5)
             {
-                return OutputJson(ApiResult.Error("新密码不能和旧密码相同"));
+                return ToResponse(ApiResult.Error("新密码不能和旧密码相同"));
             }
             if (UserService.ResetPwd(loginUser.UserId, newMd5) > 0)
             {
@@ -116,7 +116,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return SUCCESS(1);
             }
 
-            return OutputJson(ApiResult.Error("修改密码异常，请联系管理员"));
+            return ToResponse(ApiResult.Error("修改密码异常，请联系管理员"));
         }
 
         /// <summary>

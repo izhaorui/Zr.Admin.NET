@@ -13,7 +13,7 @@ namespace ZR.Service.System
     /// 字典类型
     /// </summary>
     [AppService(ServiceType = typeof(ISysDictService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDictService : BaseService<SysDictType>, ISysDictService
+    public class SysDictService : ISysDictService
     {
         private SysDictRepository DictRepository;
         private SysDictDataRepository DictDataRepository;
@@ -79,7 +79,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public long InsertDictType(SysDictType sysDictType)
         {
-            return DictRepository.InsertReturnEntity(sysDictType).DictId;
+            return DictRepository.InsertReturnBigIdentity(sysDictType);
         }
 
         /// <summary>
@@ -96,6 +96,16 @@ namespace ZR.Service.System
                 DictDataRepository.UpdateDictDataType(oldDict.DictType, sysDictType.DictType);
             }
             return DictRepository.UpdateDictType(sysDictType);
+        }
+
+        /// <summary>
+        /// 获取字典信息
+        /// </summary>
+        /// <param name="dictId"></param>
+        /// <returns></returns>
+        public SysDictType GetInfo(long dictId)
+        {
+            return DictRepository.GetFirst(f => f.DictId == dictId);
         }
     }
 }

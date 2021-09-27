@@ -1,4 +1,5 @@
-﻿using SqlSugar;
+﻿using Infrastructure.Model;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using ZR.Model;
 
 namespace ZR.Repository
 {
@@ -14,7 +16,7 @@ namespace ZR.Repository
     {
         #region add
         int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);
-        int Insert(T t, bool IgnoreNullColumn = true);
+        int Add(T t);
 
         int InsertIgnoreNullColumn(T t);
 
@@ -87,21 +89,30 @@ namespace ZR.Repository
 
         #region delete
 
-        bool Delete(Expression<Func<T, bool>> expression);
+        bool DeleteExp(Expression<Func<T, bool>> expression);
 
         //bool Delete<PkType>(PkType[] primaryKeyValues);
-
-        bool Delete(object[] obj);
-        bool Delete(object id);
-        bool Delete();
+        int Delete(object[] obj);
+        int Delete(object id);
+        bool DeleteTable();
 
         #endregion delete
 
         #region query
+        /// <summary>
+        /// 根据条件查询分页数据
+        /// </summary>
+        /// <param name="where"></param>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm);
 
-        bool IsAny(Expression<Func<T, bool>> expression);
+        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderEnum = "Asc");
+        
+        bool Any(Expression<Func<T, bool>> expression);
 
         ISugarQueryable<T> Queryable();
+        List<T> GetAll(bool useCache = false, int cacheSecond = 3600);
 
         //ISugarQueryable<ExpandoObject> Queryable(string tableName, string shortName);
 
@@ -114,8 +125,6 @@ namespace ZR.Repository
         //string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere);
 
         List<T> QueryableToList(string tableName);
-
-        T QueryableToEntity(Expression<Func<T, bool>> expression);
 
         List<T> QueryableToList(string tableName, Expression<Func<T, bool>> expression);
 
@@ -141,7 +150,7 @@ namespace ZR.Repository
         /// </summary>
         /// <param name="parm">string</param>
         /// <returns></returns>
-        T GetFirst(string parm);
+        //T GetFirst(string parm);
 
         #endregion query
 

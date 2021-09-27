@@ -6,7 +6,7 @@ using ZR.Repository;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysPostService: IBaseRepository<SysPost>
+    public interface ISysPostService : IBaseService<SysPost>
     {
         string CheckPostNameUnique(SysPost sysPost);
         string CheckPostCodeUnique(SysPost sysPost);
