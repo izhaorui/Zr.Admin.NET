@@ -1,8 +1,9 @@
 ﻿using ZR.Model.System;
+using ZR.Repository;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysTasksLogService : IBaseService<SysTasksLog>
+    public interface ISysTasksLogService: IBaseRepository<SysTasksLog>
     {
         /// <summary>
         /// 记录任务执行日志

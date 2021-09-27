@@ -12,7 +12,7 @@ namespace ZR.Repository.System
     /// 系统菜单
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class SysMenuRepository : BaseRepository
+    public class SysMenuRepository : BaseRepository<SysMenu>
     {
         /// <summary>
         /// 获取所有菜单（菜单管理）
@@ -20,7 +20,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysMenu> SelectMenuList(SysMenu menu)
         {
-            return Db.Queryable<SysMenu>()
+            return Context.Queryable<SysMenu>()
                 .WhereIF(!string.IsNullOrEmpty(menu.menuName), it => it.menuName.Contains(menu.menuName))
                 .WhereIF(!string.IsNullOrEmpty(menu.visible), it => it.visible == menu.visible)
                 .WhereIF(!string.IsNullOrEmpty(menu.status), it => it.status == menu.status)
@@ -36,7 +36,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysMenu> SelectMenuListByUserId(SysMenu sysMenu, long userId)
         {
-            return Db.Queryable<SysMenu, SysRoleMenu, SysUserRole, SysRole>((menu, roleMenu, userRole, role) => new JoinQueryInfos(
+            return Context.Queryable<SysMenu, SysRoleMenu, SysUserRole, SysRole>((menu, roleMenu, userRole, role) => new JoinQueryInfos(
                  JoinType.Left, menu.menuId == roleMenu.Menu_id,
                  JoinType.Left, roleMenu.Role_id == userRole.RoleId,
                  JoinType.Left, userRole.RoleId == role.RoleId
@@ -60,7 +60,7 @@ namespace ZR.Repository.System
         {
             var menuTypes = new string[] { "M", "C" };
 
-            return Db.Queryable<SysMenu>()
+            return Context.Queryable<SysMenu>()
                 .Where(f => f.status == "0" && menuTypes.Contains(f.menuType))
                 .OrderBy(it => new { it.parentId, it.orderNum }).ToList();
         }
@@ -73,7 +73,7 @@ namespace ZR.Repository.System
         public List<SysMenu> SelectMenuTreeByRoleIds(List<long> roleIds)
         {
             var menuTypes = new string[] { "M", "C"};
-            return Db.Queryable<SysMenu, SysRoleMenu>((menu, roleMenu) => new JoinQueryInfos(
+            return Context.Queryable<SysMenu, SysRoleMenu>((menu, roleMenu) => new JoinQueryInfos(
                  JoinType.Left, menu.menuId == roleMenu.Menu_id
                  ))
                 .Where((menu, roleMenu) => roleIds.Contains(roleMenu.Role_id) && menuTypes.Contains(menu.menuType) && menu.status == "0")
@@ -90,7 +90,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysMenu SelectMenuById(int menuId)
         {
-            return Db.Queryable<SysMenu>().Where(it => it.menuId == menuId).Single();
+            return Context.Queryable<SysMenu>().Where(it => it.menuId == menuId).Single();
         }
 
         /// <summary>
@@ -100,6 +100,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int AddMenu(SysMenu menu)
         {
+            var Db = Context;
             menu.Create_time = Db.GetDate();
             menu.menuId = Db.Insertable(menu).ExecuteReturnIdentity();
             return 1;
@@ -112,7 +113,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int EditMenu(SysMenu menu)
         {
-            return Db.Updateable(menu).ExecuteCommand();
+            return Context.Updateable(menu).ExecuteCommand();
         }
 
         /// <summary>
@@ -122,7 +123,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteMenuById(int menuId)
         {
-            return Db.Deleteable<SysMenu>().Where(it => it.menuId == menuId).ExecuteCommand();
+            return Context.Deleteable<SysMenu>().Where(it => it.menuId == menuId).ExecuteCommand();
         }
 
         /// <summary>
@@ -132,7 +133,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int ChangeSortMenu(MenuDto menuDto)
         {
-            var result = Db.Updateable(new SysMenu() { menuId = menuDto.MenuId, orderNum = menuDto.orderNum })
+            var result = Context.Updateable(new SysMenu() { menuId = menuDto.MenuId, orderNum = menuDto.orderNum })
                 .UpdateColumns(it => new { it.orderNum }).ExecuteCommand();
             return result;
         }
@@ -144,7 +145,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysMenu> SelectMenuPermsByUserId(long userId)
         {
-            return Db.Queryable<SysMenu, SysRoleMenu, SysUserRole, SysRole>((m, rm, ur, r) => new JoinQueryInfos(
+            return Context.Queryable<SysMenu, SysRoleMenu, SysUserRole, SysRole>((m, rm, ur, r) => new JoinQueryInfos(
                 JoinType.Left, m.menuId == rm.Menu_id,
                 JoinType.Left, rm.Role_id == ur.RoleId,
                 JoinType.Left, ur.RoleId == r.RoleId
@@ -161,7 +162,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysMenu CheckMenuNameUnique(SysMenu menu)
         {
-            return Db.Queryable<SysMenu>()
+            return Context.Queryable<SysMenu>()
                 .Where(it => it.menuName == menu.menuName && it.parentId == menu.parentId).Single();
         }
 
@@ -172,7 +173,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int HasChildByMenuId(long menuId)
         {
-            return Db.Queryable<SysMenu>().Where(it => it.parentId == menuId).Count();
+            return Context.Queryable<SysMenu>().Where(it => it.parentId == menuId).Count();
         }
 
         #region RoleMenu
@@ -184,7 +185,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int CheckMenuExistRole(long menuId)
         {
-            return Db.Queryable<SysRoleMenu>().Where(it => it.Menu_id == menuId).Count();
+            return Context.Queryable<SysRoleMenu>().Where(it => it.Menu_id == menuId).Count();
         }
 
         #endregion

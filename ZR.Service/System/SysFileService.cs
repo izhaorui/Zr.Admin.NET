@@ -8,7 +8,7 @@ namespace ZR.Service.System
     /// 文件管理
     /// </summary>
     [AppService(ServiceType = typeof(ISysFileService), ServiceLifetime = LifeTime.Transient)]
-    public class SysFileService: BaseService<SysFile>, ISysFileService
+    public class SysFileService : ISysFileService
     {
 
     }

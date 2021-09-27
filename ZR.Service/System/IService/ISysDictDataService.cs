@@ -5,7 +5,7 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysDictDataService : IBaseService<SysDictData>
+    public interface ISysDictDataService
     {
         public List<SysDictData> SelectDictDataList(SysDictData dictData);
         public List<SysDictData> SelectDictDataByType(string dictType);

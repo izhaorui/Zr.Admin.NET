@@ -8,7 +8,7 @@ using ZR.Model.System;
 namespace ZR.Repository.System
 {
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class SysLogininfoRepository : BaseRepository
+    public class SysLogininfoRepository : BaseRepository<SysLogininfor>
     {
         /// <summary>
         /// 查询登录日志
@@ -19,7 +19,7 @@ namespace ZR.Repository.System
         public List<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager)
         {
             int totalCount = 0;
-            var list = Db.Queryable<SysLogininfor>()
+            var list = Context.Queryable<SysLogininfor>()
                 .Where(it => it.loginTime >= logininfoDto.BeginTime && it.loginTime <= logininfoDto.EndTime)
                 .WhereIF(logininfoDto.ipaddr.IfNotEmpty(), f => f.ipaddr == logininfoDto.ipaddr)
                 .WhereIF(logininfoDto.userName.IfNotEmpty(), f => f.userName.Contains(logininfoDto.userName))
@@ -38,7 +38,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public void AddLoginInfo(SysLogininfor sysLogininfor)
         {
-            int result = Db.Insertable(sysLogininfor)
+            int result = Context.Insertable(sysLogininfor)
                 .IgnoreColumns(it => new { it.Create_by, it.Create_time, it.Remark })
                 .ExecuteReturnIdentity();
         }
@@ -50,7 +50,7 @@ namespace ZR.Repository.System
         {
             string sql = "truncate table sys_logininfor";
 
-            Db.Ado.ExecuteCommand(sql);
+            Context.Ado.ExecuteCommand(sql);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteLogininforByIds(long[] ids)
         {
-            return Db.Deleteable<SysLogininfor>().In(ids).ExecuteCommand();
+            return Context.Deleteable<SysLogininfor>().In(ids).ExecuteCommand();
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysUser Login(LoginBodyDto user)
         {
-            return Db.Queryable<SysUser>().First(it => it.UserName == user.Username && it.Password == user.Password);
+            return Context.Queryable<SysUser>().First(it => it.UserName == user.Username && it.Password == user.Password);
         }
 
         /// <summary>
@@ -81,7 +81,8 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public void UpdateLoginInfo(LoginBodyDto user, long userId)
         {
-            Db.Updateable(new SysUser() { LoginIP = user.LoginIP, LoginDate = Db.GetDate(), UserId = userId })
+            var db = Context;
+            db.Updateable(new SysUser() { LoginIP = user.LoginIP, LoginDate = db.GetDate(), UserId = userId })
                 .UpdateColumns(it => new { it.LoginIP, it.LoginDate })
                 .ExecuteCommand();
         }

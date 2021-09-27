@@ -7,7 +7,7 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface IArticleCategoryService : IBaseService<ArticleCategory>
+    public interface IArticleCategoryService //: IBaseService<ArticleCategory>
     {
         List<ArticleCategory> BuildCategoryTree(List<ArticleCategory> categories);
     }

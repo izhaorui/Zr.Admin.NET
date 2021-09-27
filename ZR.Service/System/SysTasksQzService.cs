@@ -5,7 +5,7 @@ using ZR.Service.System.IService;
 namespace ZR.Service.System
 {
     [AppService(ServiceType = typeof(ISysTasksQzService), ServiceLifetime = LifeTime.Transient)]
-    public class SysTasksQzService : BaseService<SysTasksQz>, ISysTasksQzService
+    public class SysTasksQzService : ISysTasksQzService
     {
 
     }

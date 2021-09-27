@@ -51,7 +51,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dict:query")]
         public IActionResult GetInfo(long dictId = 0)
         {
-            return SUCCESS(SysDictService.GetFirst(f => f.DictId == dictId));
+            return SUCCESS(SysDictService(f => f.DictId == dictId));
         }
 
         /// <summary>

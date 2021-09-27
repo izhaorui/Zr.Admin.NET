@@ -18,7 +18,7 @@ namespace ZR.Service.System
     /// 部门管理
     /// </summary>
     [AppService(ServiceType = typeof(ISysDeptService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDeptService : BaseService<SysDept>, ISysDeptService
+    public class SysDeptService :ISysDeptService
     {
         public SysDeptRepository DeptRepository;
 
@@ -40,7 +40,7 @@ namespace ZR.Service.System
             predicate = predicate.AndIF(dept.DeptName.IfNotEmpty(), it => it.DeptName.Contains(dept.DeptName));
             predicate = predicate.AndIF(dept.Status.IfNotEmpty(), it => it.Status == dept.Status);
 
-            var response = GetWhere(predicate.ToExpression());
+            var response = DeptRepository.GetList(predicate.ToExpression());
 
             return response;
         }
@@ -53,7 +53,7 @@ namespace ZR.Service.System
         public string CheckDeptNameUnique(SysDept dept)
         {
             long deptId = dept.DeptId == 0 ? -1L : dept.DeptId;
-            SysDept info = GetFirst(it => it.DeptName == dept.DeptName && it.ParentId == dept.ParentId);
+            SysDept info = DeptRepository.GetFirst(it => it.DeptName == dept.DeptName && it.ParentId == dept.ParentId);
             if (info != null && info.DeptId != deptId)
             {
                 return UserConstants.NOT_UNIQUE;
@@ -68,7 +68,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int InsertDept(SysDept dept)
         {
-            SysDept info = GetFirst(it => it.DeptId == dept.ParentId);
+            SysDept info = DeptRepository.GetSingle(it => it.DeptId == dept.ParentId);
             //如果父节点不为正常状态,则不允许新增子节点
             if (!UserConstants.DEPT_NORMAL.Equals(info.Status))
             {
@@ -76,7 +76,7 @@ namespace ZR.Service.System
             }
 
             dept.Ancestors = info.Ancestors + "," + dept.ParentId;
-            return Add(dept);
+            return DeptRepository.Insert(dept, true);
         }
 
         /// <summary>
@@ -86,8 +86,8 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int UpdateDept(SysDept dept)
         {
-            SysDept newParentDept = GetFirst(it => it.ParentId == dept.ParentId);
-            SysDept oldDept = GetFirst(m => m.DeptId == dept.DeptId);
+            SysDept newParentDept = DeptRepository.GetSingle(it => it.ParentId == dept.ParentId);
+            SysDept oldDept = DeptRepository.GetSingle(m => m.DeptId == dept.DeptId);
             if (newParentDept != null && oldDept != null)
             {
                 string newAncestors = newParentDept.Ancestors + "," + newParentDept.DeptId;
@@ -95,7 +95,7 @@ namespace ZR.Service.System
                 dept.Ancestors = newAncestors;
                 UpdateDeptChildren(dept.DeptId, newAncestors, oldAncestors);
             }
-            int result = Update(dept);
+            int result = DeptRepository.Context.Updateable(dept).ExecuteCommand();
             if (UserConstants.DEPT_NORMAL.Equals(dept.Status))
             {
                 // 如果该部门是启用状态，则启用该部门的所有上级部门
@@ -111,7 +111,7 @@ namespace ZR.Service.System
         private void UpdateParentDeptStatus(SysDept dept)
         {
             string updateBy = dept.Update_by;
-            dept = GetFirst(it => it.DeptId == dept.DeptId);
+            dept = DeptRepository.GetFirst(it => it.DeptId == dept.DeptId);
             dept.Update_by = updateBy;
             //DeptRepository.UpdateParentDeptStatus(dept);
         }
@@ -132,7 +132,7 @@ namespace ZR.Service.System
 
                 if (child.DeptId.Equals(deptId))
                 {
-                    Saveable(child, it => new { it.Ancestors });
+                    //TODO Saveable(child, it => new { it.Ancestors });
                     //DeptRepository.UdateDeptChildren(child);
                 }
             }

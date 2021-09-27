@@ -10,7 +10,7 @@ namespace ZR.Service.System
     /// 文章目录
     /// </summary>
     [AppService(ServiceType = typeof(IArticleCategoryService), ServiceLifetime = LifeTime.Transient)]
-    public class ArticleCategoryService : BaseService<ArticleCategory>, IArticleCategoryService
+    public class ArticleCategoryService : IArticleCategoryService
     {
         /// <summary>
         /// 构建前端所需要树结构

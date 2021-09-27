@@ -6,7 +6,7 @@ using ZR.Model.Vo.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysDeptService : IBaseService<SysDept>
+    public interface ISysDeptService //: IBaseService<SysDept>
     {
         public List<SysDept> GetSysDepts(SysDept dept);
         public string CheckDeptNameUnique(SysDept dept);

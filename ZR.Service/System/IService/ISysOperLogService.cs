@@ -6,7 +6,7 @@ using ZR.Service.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysOperLogService : IBaseService<SysOperLog>
+    public interface ISysOperLogService
     {
         public void InsertOperlog(SysOperLog operLog);
 

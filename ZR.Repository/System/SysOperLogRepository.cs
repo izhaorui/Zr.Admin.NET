@@ -8,7 +8,7 @@ using ZR.Model.System;
 namespace ZR.Repository.System
 {
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class SysOperLogRepository : BaseRepository
+    public class SysOperLogRepository : BaseRepository<SysOperLog>
     {
         /// <summary>
         /// 查询操作日志
@@ -19,7 +19,7 @@ namespace ZR.Repository.System
         public List<SysOperLog> GetSysOperLog(SysOperLogDto sysOper, PagerInfo pagerInfo)
         {
             int totalCount = 0;
-            var list = Db.Queryable<SysOperLog>()
+            var list = Context.Queryable<SysOperLog>()
                 .Where(it => it.operTime >= sysOper.BeginTime && it.operTime <= sysOper.EndTime)
                 .WhereIF(sysOper.Title.IfNotEmpty(), it => it.title.Contains(sysOper.Title))
                 .WhereIF(sysOper.operName.IfNotEmpty(), it => it.operName.Contains(sysOper.operName))
@@ -38,7 +38,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public void AddSysOperLog(SysOperLog sysOperLog)
         {
-            Db.Insertable(sysOperLog).ExecuteCommandAsync();
+            Context.Insertable(sysOperLog).ExecuteCommandAsync();
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace ZR.Repository.System
         public void ClearOperLog()
         {
             string sql = "truncate table sys_oper_log";
-            Db.Ado.ExecuteCommand(sql);
+            Context.Ado.ExecuteCommand(sql);
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteOperLogByIds(long[] operIds)
         {
-            return Db.Deleteable<SysOperLog>().In(operIds).ExecuteCommand();
+            return Context.Deleteable<SysOperLog>().In(operIds).ExecuteCommand();
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysOperLog SelectOperLogById(long operId)
         {
-            return Db.Queryable<SysOperLog>().InSingle(operId);
+            return Context.Queryable<SysOperLog>().InSingle(operId);
         }
     }
 }

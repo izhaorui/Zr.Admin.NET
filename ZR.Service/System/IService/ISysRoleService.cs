@@ -6,7 +6,7 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysRoleService: IBaseService<SysRole>
+    public interface ISysRoleService
     {
         /// <summary>
         /// 根据条件分页查询角色数据

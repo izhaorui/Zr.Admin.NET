@@ -11,7 +11,7 @@ using ZR.Service.System.IService;
 namespace ZR.Service
 {
     [AppService(ServiceType = typeof(ISysUserService), ServiceLifetime = LifeTime.Transient)]
-    public class SysUserService : BaseService<SysUser>, ISysUserService
+    public class SysUserService : ISysUserService
     {
         private readonly SysUserRepository UserRepository;
         private readonly ISysRoleService RoleService;
@@ -101,7 +101,7 @@ namespace ZR.Service
                 UserRoleService.InsertUserRole(user);
             }
             // 删除用户与岗位关联
-            UserPostService.Delete(it => it.UserId == user.UserId);
+            UserPostService.Delete(user.UserId);
             // 新增用户与岗位管理
             UserPostService.InsertUserPost(user);
             return UserRepository.UpdateUser(user);

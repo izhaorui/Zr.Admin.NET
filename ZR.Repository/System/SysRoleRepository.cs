@@ -9,7 +9,7 @@ namespace ZR.Repository.System
     /// 角色操作类
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class SysRoleRepository : BaseRepository
+    public class SysRoleRepository : BaseRepository<SysRole>
     {
         /// <summary>
         /// 根据条件分页查询角色数据
@@ -17,7 +17,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysRole> SelectRoleList(SysRole sysRole)
         {
-            return Db.Queryable<SysRole>()
+            return Context.Queryable<SysRole>()
                 .Where(role => role.DelFlag == "0")
                 .WhereIF(!string.IsNullOrEmpty(sysRole.RoleName), role => role.RoleName.Contains(sysRole.RoleName))
                 .WhereIF(!string.IsNullOrEmpty(sysRole.Status), role => role.Status == sysRole.Status)
@@ -33,7 +33,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysRole> SelectRolePermissionByUserId(long userId)
         {
-            return Db.Queryable<SysRole>()
+            return Context.Queryable<SysRole>()
                 .Where(role => role.DelFlag == "0")
                 .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == userId).Any())
                 .OrderBy(role => role.RoleSort)
@@ -46,7 +46,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysRole> SelectRoleAll()
         {
-            return Db.Queryable<SysRole>().OrderBy(it => it.RoleSort).ToList();
+            return Context.Queryable<SysRole>().OrderBy(it => it.RoleSort).ToList();
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysRole SelectRoleById(long roleId)
         {
-            return Db.Queryable<SysRole>().InSingle(roleId);
+            return Context.Queryable<SysRole>().InSingle(roleId);
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteRoleByRoleIds(long[] roleId)
         {
-            return Db.Deleteable<SysRole>().In(roleId).ExecuteCommand();
+            return Context.Deleteable<SysRole>().In(roleId).ExecuteCommand();
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysRole> SelectUserRoleListByUserId(long userId)
         {
-            return Db.Queryable<SysUserRole, SysRole>((ur, r) => new SqlSugar.JoinQueryInfos(
+            return Context.Queryable<SysUserRole, SysRole>((ur, r) => new SqlSugar.JoinQueryInfos(
                     SqlSugar.JoinType.Left, ur.RoleId == r.RoleId
                 )).Where((ur, r) => ur.UserId == userId)
                 .Select((ur, r) => r).ToList();
@@ -91,7 +91,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysRoleMenu> SelectRoleMenuByRoleId(long roleId)
         {
-            return Db.Queryable<SysRoleMenu>().Where(it => it.Role_id == roleId).ToList();
+            return Context.Queryable<SysRoleMenu>().Where(it => it.Role_id == roleId).ToList();
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int AddRoleMenu(List<SysRoleMenu> sysRoleMenus)
         {
-            return Db.Insertable(sysRoleMenus).ExecuteCommand();
+            return Context.Insertable(sysRoleMenus).ExecuteCommand();
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteRoleMenuByRoleId(long roleId)
         {
-            return Db.Deleteable<SysRoleMenu>().Where(it => it.Role_id == roleId).ExecuteCommand();
+            return Context.Deleteable<SysRoleMenu>().Where(it => it.Role_id == roleId).ExecuteCommand();
         }
 
         #endregion
@@ -123,8 +123,8 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public long InsertRole(SysRole sysRole)
         {
-            sysRole.Create_time = Db.GetDate();
-            return Db.Insertable(sysRole).ExecuteReturnBigIdentity();
+            sysRole.Create_time = Context.GetDate();
+            return Context.Insertable(sysRole).ExecuteReturnBigIdentity();
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int UpdateSysRole(SysRole sysRole)
         {
-            var db = Db;
+            var db = Context;
             sysRole.Update_time = db.GetDate();
 
             return db.Updateable<SysRole>()
@@ -156,7 +156,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int UpdateRoleStatus(SysRole role)
         {
-            return Db.Updateable(role).UpdateColumns(t => new { t.Status }).ExecuteCommand();
+            return Context.Updateable(role).UpdateColumns(t => new { t.Status }).ExecuteCommand();
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysRole CheckRoleKeyUnique(string roleKey)
         {
-            return Db.Queryable<SysRole>().Where(it => it.RoleKey == roleKey).Single();
+            return Context.Queryable<SysRole>().Where(it => it.RoleKey == roleKey).Single();
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysRole CheckRoleNameUnique(string roleName)
         {
-            return Db.Queryable<SysRole>().Where(it => it.RoleName == roleName).Single();
+            return Context.Queryable<SysRole>().Where(it => it.RoleName == roleName).Single();
         }
     }
 }

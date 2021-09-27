@@ -15,22 +15,22 @@ namespace ZR.Service
 
         #region 事务
 
-        /// <summary>
-        /// 启用事务
-        /// </summary>
-        void BeginTran();
+        ///// <summary>
+        ///// 启用事务
+        ///// </summary>
+        //void BeginTran();
 
 
-        /// <summary>
-        /// 提交事务
-        /// </summary>
-        void CommitTran();
+        ///// <summary>
+        ///// 提交事务
+        ///// </summary>
+        //void CommitTran();
 
 
-        /// <summary>
-        /// 回滚事务
-        /// </summary>
-        void RollbackTran();
+        ///// <summary>
+        ///// 回滚事务
+        ///// </summary>
+        //void RollbackTran();
 
         #endregion
 

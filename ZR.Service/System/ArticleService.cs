@@ -8,7 +8,7 @@ namespace ZR.Service.System
     /// 
     /// </summary>
     [AppService(ServiceType = typeof(IArticleService), ServiceLifetime = LifeTime.Transient)]
-    public class ArticleService : BaseService<Article>, IArticleService
+    public class ArticleService : IArticleService
     {
 
     }

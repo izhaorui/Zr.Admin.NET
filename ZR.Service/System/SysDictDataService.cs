@@ -10,7 +10,7 @@ using ZR.Service.System.IService;
 namespace ZR.Service.System
 {
     [AppService(ServiceType = typeof(ISysDictDataService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDictDataService: BaseService<SysDictData>, ISysDictDataService
+    public class SysDictDataService: ISysDictDataService
     {
 
         private readonly SysDictDataRepository SysDictDataRepository;
@@ -55,7 +55,7 @@ namespace ZR.Service.System
             string CK = $"SelectDictDataByCode_{dictCode}";
             if (CacheHelper.GetCache(CK) is not SysDictData list)
             {
-                list = GetFirst(f => f.DictCode == dictCode);
+                list = SysDictDataRepository.GetFirst(f => f.DictCode == dictCode);
                 CacheHelper.SetCache(CK, list, 5);
             }
             return list;

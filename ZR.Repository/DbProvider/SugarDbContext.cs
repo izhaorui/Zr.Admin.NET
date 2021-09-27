@@ -15,18 +15,12 @@ namespace ZR.Repository.DbProvider
 
         /// <summary>
         /// 使用SugarSql获取连接对象
-        /// 构造方法有问题
         /// </summary>
         /// <returns></returns>
         public SugarDbContext()
         {
             string connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
-            string dbKey = ConfigUtils.Instance.GetAppConfig<string>(OptionsSetting.DbKey);
             int dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.ConnDbType);
-            if (!string.IsNullOrEmpty(dbKey))
-            {
-                connStr = NETCore.Encrypt.EncryptProvider.DESDecrypt(connStr, dbKey);
-            }
 
             Db = new SqlSugarClient(new List<ConnectionConfig>()
             {
@@ -39,18 +33,18 @@ namespace ZR.Repository.DbProvider
                 },
             });
 
-            //调式代码 用来打印SQL 
-            Db.Aop.OnLogExecuting = (sql, pars) =>
-            {
-                Console.BackgroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n" + Db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
-            };
-            //出错打印日志
-            Db.Aop.OnError = (e) =>
-            {
-                Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
-                Console.WriteLine();
-            };
+            ////调式代码 用来打印SQL 
+            //Db.Aop.OnLogExecuting = (sql, pars) =>
+            //{
+            //    Console.BackgroundColor = ConsoleColor.Yellow;
+            //    Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n" + Db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
+            //};
+            ////出错打印日志
+            //Db.Aop.OnError = (e) =>
+            //{
+            //    Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
+            //    Console.WriteLine();
+            //};
         }
     }
 }

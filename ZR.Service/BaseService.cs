@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using ZR.Model;
+using ZR.Repository;
 using ZR.Repository.DbProvider;
 
 namespace ZR.Service
@@ -13,33 +14,39 @@ namespace ZR.Service
     /// 基础服务定义
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class BaseService<T> : SugarDbContext, IBaseService<T> where T : class, new()
+    public class BaseService<T> : BaseRepository<T> where T : class,new()//, IBaseService<T> where T : class, new()
     {
+        //private readonly IBaseRepository<T> BaseRepository;
+        //public BaseService(IBaseRepository<T> baseRepository)
+        //{
+        //    BaseRepository = baseRepository;
+        //}
+
         #region 事务
 
-        /// <summary>
-        /// 启用事务
-        /// </summary>
-        public void BeginTran()
-        {
-            Db.Ado.BeginTran();
-        }
+        ///// <summary>
+        ///// 启用事务
+        ///// </summary>
+        //public void BeginTran()
+        //{
+        //    Context.Ado.BeginTran();
+        //}
 
-        /// <summary>
-        /// 提交事务
-        /// </summary>
-        public void CommitTran()
-        {
-            Db.Ado.CommitTran();
-        }
+        ///// <summary>
+        ///// 提交事务
+        ///// </summary>
+        //public void CommitTran()
+        //{
+        //    Context.Ado.CommitTran();
+        //}
 
-        /// <summary>
-        /// 回滚事务
-        /// </summary>
-        public void RollbackTran()
-        {
-            Db.Ado.RollbackTran();
-        }
+        ///// <summary>
+        ///// 回滚事务
+        ///// </summary>
+        //public void RollbackTran()
+        //{
+        //    Context.Ado.RollbackTran();
+        //}
 
         #endregion
 
@@ -51,7 +58,7 @@ namespace ZR.Service
         /// <returns></returns>
         public int Add(T parm)
         {
-            return Db.Insertable(parm).RemoveDataCache().ExecuteCommand();
+            return base.Add(parm);// Context.Insertable(parm).RemoveDataCache().ExecuteCommand();
         }
 
         /// <summary>
@@ -61,10 +68,10 @@ namespace ZR.Service
         /// <param name="iClumns">插入列</param>
         /// <param name="ignoreNull">忽略null列</param>
         /// <returns></returns>
-        public int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true)
-        {
-            return Db.Insertable(parm).InsertColumns(iClumns).IgnoreColumns(ignoreNullColumn: ignoreNull).ExecuteCommand();
-        }
+        //public int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true)
+        //{
+        //    return Add(parm);
+        //}
 
         /// <summary>
         /// 批量添加数据
@@ -73,7 +80,7 @@ namespace ZR.Service
         /// <returns></returns>
         public int Add(List<T> parm)
         {
-            return Db.Insertable(parm).RemoveDataCache().ExecuteCommand();
+            return Context.Insertable(parm).RemoveDataCache().ExecuteCommand();
         }
 
         /// <summary>
@@ -83,7 +90,7 @@ namespace ZR.Service
         /// <returns></returns>
         public T Saveable(T parm, Expression<Func<T, object>> uClumns = null, Expression<Func<T, object>> iColumns = null)
         {
-            var command = Db.Saveable(parm);
+            var command = Context.Saveable(parm);
 
             if (uClumns != null)
             {
@@ -105,7 +112,7 @@ namespace ZR.Service
         /// <returns></returns>
         public List<T> Saveable(List<T> parm, Expression<Func<T, object>> uClumns = null, Expression<Func<T, object>> iColumns = null)
         {
-            var command = Db.Saveable(parm);
+            var command = Context.Saveable(parm);
 
             if (uClumns != null)
             {
@@ -128,10 +135,10 @@ namespace ZR.Service
         /// </summary>
         /// <param name="where">条件表达式树</param>
         /// <returns></returns>
-        public bool Any(Expression<Func<T, bool>> where)
-        {
-            return Db.Queryable<T>().Any(where);
-        }
+        //public bool Any(Expression<Func<T, bool>> where)
+        //{
+        //    return base.Context.Any(where);
+        //}
 
         /// <summary>
         /// 根据条件合计字段
@@ -140,7 +147,7 @@ namespace ZR.Service
         /// <returns></returns>
         public TResult Sum<TResult>(Expression<Func<T, bool>> where, Expression<Func<T, TResult>> field)
         {
-            return Db.Queryable<T>().Where(where).Sum(field);
+            return base.Context.Queryable<T>().Where(where).Sum(field);
         }
 
         /// <summary>
@@ -148,10 +155,10 @@ namespace ZR.Service
         /// </summary>
         /// <param name="pkValue">主键值</param>
         /// <returns>泛型实体</returns>
-        public T GetId(object pkValue)
-        {
-            return Db.Queryable<T>().InSingle(pkValue);
-        }
+        //public T GetId(object pkValue)
+        //{
+        //    return base.Context.Queryable<T>().InSingle(pkValue);
+        //}
 
         /// <summary>
         /// 根据主键查询多条数据
@@ -160,7 +167,7 @@ namespace ZR.Service
         /// <returns></returns>
         public List<T> GetIn(object[] ids)
         {
-            return Db.Queryable<T>().In(ids).ToList();
+            return Context.Queryable<T>().In(ids).ToList();
         }
 
         /// <summary>
@@ -170,7 +177,7 @@ namespace ZR.Service
         /// <returns></returns>
         public int GetCount(Expression<Func<T, bool>> where)
         {
-            return Db.Queryable<T>().Count(where);
+            return Context.Queryable<T>().Count(where);
 
         }
 
@@ -180,7 +187,7 @@ namespace ZR.Service
         /// <returns></returns>
         public List<T> GetAll(bool useCache = false, int cacheSecond = 3600)
         {
-            return Db.Queryable<T>().WithCacheIF(useCache, cacheSecond).ToList();
+            return Context.Queryable<T>().WithCacheIF(useCache, cacheSecond).ToList();
         }
 
         /// <summary>
@@ -188,9 +195,9 @@ namespace ZR.Service
         /// </summary>
         /// <param name="where">Expression<Func<T, bool>></param>
         /// <returns></returns>
-        public T GetFirst(Expression<Func<T, bool>> where)
+        public T GetFirst2(Expression<Func<T, bool>> where)
         {
-            return Db.Queryable<T>().Where(where).First();
+            return base.GetFirst(where);// Context.Queryable<T>().Where(where).First();
         }
 
         /// <summary>
@@ -198,11 +205,10 @@ namespace ZR.Service
         /// </summary>
         /// <param name="parm">string</param>
         /// <returns></returns>
-        public T GetFirst(string parm)
-        {
-            return Db.Queryable<T>().Where(parm).First();
-        }
-
+        //public T GetFirst(string parm)
+        //{
+        //    return Context.Queryable<T>().Where(parm).First();
+        //}
 
         /// <summary>
         /// 根据条件查询分页数据
@@ -212,14 +218,14 @@ namespace ZR.Service
         /// <returns></returns>
         public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm)
         {
-            var source = Db.Queryable<T>().Where(where);
+            var source = Context.Queryable<T>().Where(where);
 
             return source.ToPage(parm);
         }
 
         public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderEnum = "Asc")
         {
-            var source = Db.Queryable<T>().Where(where).OrderByIF(orderEnum == "Asc", order, OrderByType.Asc).OrderByIF(orderEnum == "Desc", order, OrderByType.Desc);
+            var source = Context.Queryable<T>().Where(where).OrderByIF(orderEnum == "Asc", order, OrderByType.Asc).OrderByIF(orderEnum == "Desc", order, OrderByType.Desc);
 
             return source.ToPage(parm);
         }
@@ -231,7 +237,7 @@ namespace ZR.Service
         /// <returns></returns>
         public List<T> GetWhere(Expression<Func<T, bool>> where, bool useCache = false, int cacheSecond = 3600)
         {
-            var query = Db.Queryable<T>().Where(where).WithCacheIF(useCache, cacheSecond);
+            var query = Context.Queryable<T>().Where(where).WithCacheIF(useCache, cacheSecond);
             return query.ToList();
         }
 
@@ -242,7 +248,7 @@ namespace ZR.Service
 		/// <returns></returns>
         public List<T> GetWhere(Expression<Func<T, bool>> where, Expression<Func<T, object>> order, string orderEnum = "Asc", bool useCache = false, int cacheSecond = 3600)
         {
-            var query = Db.Queryable<T>().Where(where).OrderByIF(orderEnum == "Asc", order, OrderByType.Asc).OrderByIF(orderEnum == "Desc", order, OrderByType.Desc).WithCacheIF(useCache, cacheSecond);
+            var query = Context.Queryable<T>().Where(where).OrderByIF(orderEnum == "Asc", order, OrderByType.Asc).OrderByIF(orderEnum == "Desc", order, OrderByType.Desc).WithCacheIF(useCache, cacheSecond);
             return query.ToList();
         }
 
@@ -250,74 +256,74 @@ namespace ZR.Service
 
         #region 修改操作
 
-        /// <summary>
-        /// 修改一条数据
-        /// </summary>
-        /// <param name="parm">T</param>
-        /// <returns></returns>
-        public int Update(T parm)
-        {
-            return Db.Updateable(parm).RemoveDataCache().ExecuteCommand();
-        }
+        ///// <summary>
+        ///// 修改一条数据
+        ///// </summary>
+        ///// <param name="parm">T</param>
+        ///// <returns></returns>
+        //public int Update(T parm)
+        //{
+        //    return Context.Updateable(parm).RemoveDataCache().ExecuteCommand();
+        //}
 
-        /// <summary>
-        /// 批量修改
-        /// </summary>
-        /// <param name="parm">T</param>
-        /// <returns></returns>
-        public int Update(List<T> parm)
-        {
-            return Db.Updateable(parm).RemoveDataCache().ExecuteCommand();
-        }
+        ///// <summary>
+        ///// 批量修改
+        ///// </summary>
+        ///// <param name="parm">T</param>
+        ///// <returns></returns>
+        //public int Update(List<T> parm)
+        //{
+        //    return Context.Updateable(parm).RemoveDataCache().ExecuteCommand();
+        //}
 
-        /// <summary>
-        /// 按查询条件更新
-        /// </summary>
-        /// <param name="where"></param>
-        /// <param name="columns"></param>
-        /// <returns></returns>
-        public int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
-        {
-            return Db.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand();
-        }
+        ///// <summary>
+        ///// 按查询条件更新
+        ///// </summary>
+        ///// <param name="where"></param>
+        ///// <param name="columns"></param>
+        ///// <returns></returns>
+        //public int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
+        //{
+        //    return Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand();
+        //}
 
         #endregion
 
         #region 删除操作
 
-        /// <summary>
-        /// 删除一条或多条数据
-        /// </summary>
-        /// <param name="parm">string</param>
-        /// <returns></returns>
-        public int Delete(object id)
-        {
-            return Db.Deleteable<T>(id).RemoveDataCache().ExecuteCommand();
-        }
+        ///// <summary>
+        ///// 删除一条或多条数据
+        ///// </summary>
+        ///// <param name="parm">string</param>
+        ///// <returns></returns>
+        //public int Delete(object id)
+        //{
+        //    return Context.Deleteable<T>(id).RemoveDataCache().ExecuteCommand();
+        //}
 
-        /// <summary>
-        /// 删除一条或多条数据
-        /// </summary>
-        /// <param name="parm">string</param>
-        /// <returns></returns>
-        public int Delete(object[] ids)
-        {
-            return Db.Deleteable<T>().In(ids).RemoveDataCache().ExecuteCommand();
-        }
+        ///// <summary>
+        ///// 删除一条或多条数据
+        ///// </summary>
+        ///// <param name="parm">string</param>
+        ///// <returns></returns>
+        //public int Delete(object[] ids)
+        //{
+        //    return Context.Deleteable<T>().In(ids).RemoveDataCache().ExecuteCommand();
+        //}
 
-        /// <summary>
-        /// 根据条件删除一条或多条数据
-        /// </summary>
-        /// <param name="where">过滤条件</param>
-        /// <returns></returns>
-        public int Delete(Expression<Func<T, bool>> where)
-        {
-            return Db.Deleteable<T>().Where(where).RemoveDataCache().ExecuteCommand();
-        }
+        ///// <summary>
+        ///// 根据条件删除一条或多条数据
+        ///// </summary>
+        ///// <param name="where">过滤条件</param>
+        ///// <returns></returns>
+        //public int Delete(Expression<Func<T, bool>> where)
+        //{
+        //    return Context.Deleteable<T>().Where(where).RemoveDataCache().ExecuteCommand();
+        //}
 
         public int DeleteTable()
         {
-            return Db.Deleteable<T>().RemoveDataCache().ExecuteCommand();
+            return Context.Deleteable<T>().RemoveDataCache().ExecuteCommand();
         }
         #endregion
 

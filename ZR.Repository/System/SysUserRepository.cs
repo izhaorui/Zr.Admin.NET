@@ -10,7 +10,7 @@ namespace ZR.Repository.System
     /// 用户管理
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class SysUserRepository : BaseRepository
+    public class SysUserRepository : BaseRepository<SysUser>
     {
         /// <summary>
         /// 根据条件分页查询用户列表
@@ -25,7 +25,7 @@ namespace ZR.Repository.System
             left join sys_dept d on u.deptId = d.deptId
             WHERE u.delFlag = '0' ";
             int totalCount = 0;
-            var list = Db.SqlQueryable<SysUser>(sql)
+            var list = Context.SqlQueryable<SysUser>(sql)
                 .WhereIF(!string.IsNullOrEmpty(user.UserName), it => it.UserName.Contains(user.UserName))
                 .WhereIF(!string.IsNullOrEmpty(user.Status), it => it.Status == user.Status)
                 .WhereIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, it => it.Create_time >= user.BeginTime)
@@ -44,7 +44,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysUser SelectUserById(long userId)
         {
-            return Db.Queryable<SysUser>().Where(f => f.UserId == userId).First();
+            return Context.Queryable<SysUser>().Where(f => f.UserId == userId).First();
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int CheckUserNameUnique(string userName)
         {
-            return Db.Queryable<SysUser>().Where(it => it.UserName == userName).Count();
+            return Context.Queryable<SysUser>().Where(it => it.UserName == userName).Count();
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace ZR.Repository.System
         public int AddUser(SysUser sysUser)
         {
             sysUser.Create_time = DateTime.Now;
-            return Db.Insertable(sysUser).ExecuteReturnIdentity();
+            return Context.Insertable(sysUser).ExecuteReturnIdentity();
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int ResetPwd(long userid, string password)
         {
-            return Db.Updateable(new SysUser() { UserId = userid, Password = password })
+            return Context.Updateable(new SysUser() { UserId = userid, Password = password })
                 .UpdateColumns(it => new { it.Password }).ExecuteCommand();
         }
 
@@ -87,7 +87,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int ChangeUserStatus(SysUser user)
         {
-            return Db.Updateable(user).UpdateColumns(t => new { t.Status })
+            return Context.Updateable(user).UpdateColumns(t => new { t.Status })
                 .ExecuteCommand();
         }
 
@@ -98,7 +98,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteUser(long userid)
         {
-            return Db.Updateable(new SysUser() { UserId = userid, DelFlag = "2" })
+            return Context.Updateable(new SysUser() { UserId = userid, DelFlag = "2" })
                 .UpdateColumns(t => t.DelFlag)
                 .ExecuteCommand();
         }
@@ -110,7 +110,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int UpdateUser(SysUser user)
         {
-            return Db.Updateable(user)
+            return Context.Updateable(user)
                 //.SetColumns(t => new SysUser()
                 //{
                 //    UserName = user.UserName,
@@ -136,7 +136,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int UpdatePhoto(SysUser user)
         {
-            return Db.Updateable<SysUser>()
+            return Context.Updateable<SysUser>()
                 .SetColumns(t => new SysUser()
                 {
                     Avatar = user.Avatar

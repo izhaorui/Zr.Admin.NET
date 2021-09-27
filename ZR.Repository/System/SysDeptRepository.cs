@@ -8,7 +8,7 @@ namespace ZR.Repository.System
     /// 部门管理
     /// </summary>
     [AppService(ServiceLifetime=  LifeTime.Transient)]
-    public class SysDeptRepository : BaseRepository
+    public class SysDeptRepository : BaseRepository<SysDept>
     {
         /// <summary>
         /// 
@@ -19,12 +19,12 @@ namespace ZR.Repository.System
         {
             string sql = "select * from sys_dept where find_in_set(@deptId, ancestors)";
 
-            return Db.SqlQueryable<SysDept>(sql).AddParameters(new { @deptId = deptId }).ToList();
+            return Context.SqlQueryable<SysDept>(sql).AddParameters(new { @deptId = deptId }).ToList();
         }
 
         public int UdateDeptChildren(SysDept dept)
         {
-            return Db.Updateable(dept).UpdateColumns(it => new { it.Ancestors }).ExecuteCommand();
+            return Context.Updateable(dept).UpdateColumns(it => new { it.Ancestors }).ExecuteCommand();
         }
     }
 }
