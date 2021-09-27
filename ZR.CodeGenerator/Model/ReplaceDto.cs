@@ -8,13 +8,6 @@ namespace ZR.CodeGenerator.Model
 {
     public class ReplaceDto
     {
-        //public string ModelsNamespace { get; set; }
-        //public string DtosNamespace { get; set; }
-        //public string RepositoriesNamespace { get; set; }
-        //public string IRepositoriesNamespace { get; set; }
-        //public string IServicsNamespace { get; set; }
-        //public string ServicesNamespace { get; set; }
-
         /// <summary>
         /// 主键字段
         /// </summary>
@@ -35,10 +28,6 @@ namespace ZR.CodeGenerator.Model
         /// 数据库表名
         /// </summary>
         public string TableName { get; set; }
-        /// <summary>
-        /// 表描述、说明
-        /// </summary>
-        public string TableDesc { get; set; }
         /// <summary>
         /// 修改列
         /// </summary>

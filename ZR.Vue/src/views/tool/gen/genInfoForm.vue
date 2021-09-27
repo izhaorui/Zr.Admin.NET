@@ -60,7 +60,7 @@
         </el-form-item>
       </el-col>
 
-      <!-- <el-col :span="12">
+      <el-col :span="12">
         <el-form-item>
           <span slot="label">
             上级菜单
@@ -70,7 +70,7 @@
           </span>
           <treeselect :append-to-body="true" v-model="info.parentMenuId" :options="menus" :normalizer="normalizer" :show-count="true" placeholder="请选择系统菜单" />
         </el-form-item>
-      </el-col> -->
+      </el-col>
 
       <el-col :span="12">
         <el-form-item prop="genType">

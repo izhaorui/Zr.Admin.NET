@@ -6,8 +6,8 @@ namespace ZR.Model.Models
     /// <summary>
     /// 代码生成演示，数据实体对象
     ///
-    /// @author zhaorui
-    /// @date 2021-09-24
+    /// @author zr
+    /// @date 2021-09-27
     /// </summary>
     [SqlSugar.SugarTable("gen_demo")]
     public class Gendemo

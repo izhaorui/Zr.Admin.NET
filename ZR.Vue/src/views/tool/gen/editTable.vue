@@ -113,7 +113,7 @@
 <script>
 import { updateGenTable, queryColumnInfo } from "@/api/tool/gen";
 import { listType } from "@/api/system/dict/type";
-// import { listMenu as getMenuTreeselect } from "@/api/system/menu";
+import { listMenu as getMenuTreeselect } from "@/api/system/menu";
 import basicInfoForm from "./basicInfoForm";
 import genInfoForm from "./genInfoForm";
 import Sortable from "sortablejs";
@@ -161,9 +161,9 @@ export default {
           this.dictOptions = response.data.result;
         });
         /** 查询菜单下拉列表 */
-        // getMenuTreeselect().then((response) => {
-        //   this.menus = this.handleTree(response.data, "menuId");
-        // });
+        getMenuTreeselect().then((response) => {
+          this.menus = this.handleTree(response.data, "menuId");
+        });
       }
     },
     /** 提交按钮 */

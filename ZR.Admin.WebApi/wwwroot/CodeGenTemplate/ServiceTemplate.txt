@@ -21,10 +21,10 @@ namespace {ServicesNamespace}.Business
     [AppService(ServiceType = typeof(I{ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
     public class {ModelTypeName}Service: BaseService<{ModelTypeName}>, I{ModelTypeName}Service
     {
-        private readonly {ModelTypeName}Repository _repository;
+        private readonly {ModelTypeName}Repository _{ModelTypeName}repository;
         public {ModelTypeName}Service({ModelTypeName}Repository repository)
         {
-            _repository = repository;
+            _{ModelTypeName}repository = repository;
         }
 
         #region 业务逻辑代码

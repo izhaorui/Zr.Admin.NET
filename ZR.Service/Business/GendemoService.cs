@@ -15,19 +15,17 @@ namespace ZR.Service.Business
     /// <summary>
     /// 代码生成演示Service业务层处理
     ///
-    /// @author zhaorui
-    /// @date 2021-09-24
+    /// @author zr
+    /// @date 2021-09-27
     /// </summary>
     [AppService(ServiceType = typeof(IGendemoService), ServiceLifetime = LifeTime.Transient)]
-    public class GendemoService : BaseService<Gendemo>, IGendemoService
+    public class GendemoService: BaseService<Gendemo>, IGendemoService
     {
-        //private readonly SqlSugarClient _client;
-
-        //public GendemoService(SqlSugarClient client, int db =1) : base(db)
-        //{
-        //    _client = client;
-        //}
-
+        private readonly GendemoRepository _repository;
+        public GendemoService(GendemoRepository repository)
+        {
+            _repository = repository;
+        }
         #region 业务逻辑代码
 
         #endregion

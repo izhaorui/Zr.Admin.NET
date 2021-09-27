@@ -31,8 +31,8 @@
              <summary>
              代码生成演示Controller
             
-             @author zhaorui
-             @date 2021-09-24
+             @author zr
+             @date 2021-09-27
              </summary>
         </member>
         <member name="F:ZR.Admin.WebApi.Controllers.GendemoController._GendemoService">

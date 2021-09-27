@@ -5,6 +5,7 @@ using Mapster;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -89,7 +90,8 @@ namespace ZR.Admin.WebApi.Controllers
 
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
-
+            Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTableInfo.Options);
+            dto.ParentMenuId = (long)options.GetValueOrDefault("parentMenuId", 0);
             dto.GenTable = genTableInfo;
             //生成代码
             CodeGeneratorTool.Generate(genTableInfo, dto);
@@ -211,6 +213,7 @@ namespace ZR.Admin.WebApi.Controllers
             if (genTableDto == null) throw new CustomException("请求参数错误");
             var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
 
+            genTable.Options = JsonConvert.SerializeObject(new { parentMenuId = genTableDto.ParentMenuId });
             int rows = GenTableService.UpdateGenTable(genTable);
             if (rows > 0)
             {
