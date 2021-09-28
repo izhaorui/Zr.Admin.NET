@@ -324,11 +324,11 @@ INSERT INTO sys_menu VALUES (2063, '修改', 2057, 2, '#', NULL, 0, 0, 'F', '0',
 INSERT INTO sys_menu VALUES (2064, '删除', 2057, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:delete', '', '', SYSDATE(), '', NULL, NULL);
 
 --代码生成页面权限
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2070, '编辑', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:edit', '', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2071, '预览', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:preview', '', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2072, '删除', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:remove', '', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2073, '导入', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:import', '', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2074, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:code', '', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2070, '编辑', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:edit', '', '', SYSDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2071, '预览', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:preview', '', '', SYSDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2072, '删除', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:remove', '', '', SYSDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2073, '导入', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:import', '', '', SYSDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2074, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:code', '', '', SYSDATE());
 
 
 -- ----------------------------
