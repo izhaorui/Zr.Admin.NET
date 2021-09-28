@@ -251,7 +251,7 @@ INSERT INTO sys_menu VALUES (103, '部门管理', 1, 4, 'dept', 'system/dept/ind
 INSERT INTO sys_menu VALUES (104, '岗位管理', 1, 5, 'post', 'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', SYSDATE(), '', NULL, '岗位管理菜单');
 INSERT INTO sys_menu VALUES (108, '日志管理', 1, 9, 'log', '', 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
 INSERT INTO sys_menu VALUES (105, '字典管理', 1, 5, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (106, '分配用户', 1, 3, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (106, '权限分配', 1, 3, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
 
 -- 一级菜单 缓存监控
 INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 5, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', SYSDATE(), '', NULL, '缓存监控菜单');
@@ -260,8 +260,7 @@ INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 5, 'cache', 'monitor/cache/
 INSERT INTO sys_menu VALUES (114, '表单构建', 3, 1, 'build', 'tool/build/index', 0, 0, 'C', '0', '0', 'tool:build:list', 'build', '', SYSDATE(), '', NULL, '表单构建菜单');
 INSERT INTO sys_menu VALUES (115, '代码生成', 3, 1, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', SYSDATE(), '', NULL, '代码生成菜单');
 INSERT INTO sys_menu VALUES (116, '系统接口', 3, 3, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', SYSDATE(), '', NULL, '系统接口菜单');
-INSERT INTO sys_menu VALUES (117, '编辑表格', 3, 3, 'editTable', 'tool/gen/editTable', 0, 0, 'C', '1', '0', 'tool:gen:edittable', '', '', SYSDATE(), '', NULL, '代码生成编辑表格菜单');
-
+INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 4, '/sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'message', '', GETDATE(), '', NULL, '发送邮件菜单');
 
 -- 日志管理
 INSERT INTO sys_menu VALUES (500, '操作日志', 108, 1, 'operlog', 'monitor/operlog/index', 0, 0, 'C', '0', '0', 'monitor:operlog:list', 'form', '', SYSDATE(), '', NULL, '操作日志菜单');
@@ -323,6 +322,13 @@ INSERT INTO sys_menu VALUES (2060, '任务日志', 2, 2, '/job/log', 'monitor/jo
 INSERT INTO sys_menu VALUES (2062, '新增', 2057, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:add', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (2063, '修改', 2057, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:update', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (2064, '删除', 2057, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:delete', '', '', SYSDATE(), '', NULL, NULL);
+
+--代码生成页面权限
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2070, '编辑', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:edit', '', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2071, '预览', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:preview', '', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2072, '删除', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:remove', '', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2073, '导入', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:import', '', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2074, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:code', '', '', GETDATE());
 
 
 -- ----------------------------

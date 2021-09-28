@@ -16,7 +16,7 @@
         <el-button type="info" plain icon="el-icon-upload" size="mini" @click="openImportTable" v-hasPermi="['tool:gen:import']">导入</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" :disabled="multiple" plain icon="el-icon-delete" @click="handleDelete" size="mini" v-hasPermi="['tool:gen:delete']">删除</el-button>
+        <el-button type="danger" :disabled="multiple" plain icon="el-icon-delete" @click="handleDelete" size="mini" v-hasPermi="['tool:gen:remove']">删除</el-button>
       </el-col>
     </el-row>
     <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border @selection-change="handleSelectionChange" highlight-current-row height="480px">
@@ -33,9 +33,9 @@
       <el-table-column prop="updateTime" label="更新时间" />
       <el-table-column label="操作" align="center" width="300">
         <template slot-scope="scope">
-          <el-button type="text" icon="el-icon-view" @click="handlePreview(scope.row)">预览</el-button>
-          <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)">编辑</el-button>
-          <el-button type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:gen:delete']">删除</el-button>
+          <el-button type="text" icon="el-icon-view" @click="handlePreview(scope.row)" v-hasPermi="['tool:gen:preview']">预览</el-button>
+          <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)" v-hasPermi="['tool:gen:edit']">编辑</el-button>
+          <el-button type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:gen:remove']">删除</el-button>
           <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)" v-hasPermi="['tool:gen:code']">生成代码</el-button>
         </template>
       </el-table-column>
