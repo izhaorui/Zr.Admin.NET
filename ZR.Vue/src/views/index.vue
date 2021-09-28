@@ -1,24 +1,28 @@
 <template>
   <div class="app-container home">
     <el-row :gutter="20">
-      <el-col :span="8">
+      <el-col :span="10">
         <el-card>
           <div slot="header" class="clearfix">
             <span>系统公告</span>
           </div>
           <el-row>
-            <p>欢迎各位大佬拉取分支开发新功能</p>
-            <p>各位大佬轻点点，服务器低配</p>
-            <p>开源地址:
-              <el-link type="primary" href="https://gitee.com/izory/ZrAdminNetCore" target="_blank">
+            <p>👀欢迎各位大佬拉取分支开发新功能</p>
+            <p>🎃各位大佬轻点点，服务器低配</p>
+            <p>🎉免费开源地址
+              <!-- <el-link type="primary" href="https://gitee.com/izory/ZrAdminNetCore" target="_blank">
                 https://gitee.com/izory/ZrAdminNetCore
-              </el-link>
+              </el-link> -->
             </p>
-            <h3>如果觉得不错欢迎给个“star”</h3>
+            <p>
+              <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://gitee.com/izory/ZrAdminNetCore')">访问码云</el-button>
+              <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://github.com/izhaorui/ZrAdmin.NET')">Github</el-button>
+            </p>
+            <h3>如果觉得不错欢迎给个⭐Star⭐收藏一下 ，这样作者才有继续免费下去的动力，谢谢！</h3>
           </el-row>
         </el-card>
       </el-col>
-      <el-col :span="8">
+      <el-col :span="6">
         <el-card>
           <div slot="header" class="clearfix">
             <span>技术选型</span>
@@ -55,7 +59,7 @@
             <span>捐赠支持</span>
           </div>
           <div class="body">
-            <span class="tip">如果觉得有用你可以请作者喝杯咖啡表示鼓励</span>
+            <span class="tip">如果觉得有用你可以请作者喝杯咖啡☕表示鼓励</span>
             <img src="http://ss.izhaorui.cn/pay.jpg" alt="donate" width="100%" />
           </div>
         </el-card>

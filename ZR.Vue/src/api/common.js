@@ -8,3 +8,16 @@ export function upload(data) {
     headers: { "Content-Type": "multipart/form-data" },
   })
 }
+
+/**
+ * 发送邮件
+ * @param {*} data
+ * @returns
+ */
+export function sendEmail(data) {
+  return request({
+    url: '/home/SendEmail',
+    method: 'POST',
+    data: data,
+  })
+}

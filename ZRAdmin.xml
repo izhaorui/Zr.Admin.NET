@@ -161,6 +161,13 @@
             <param name="content"></param>
             <returns></returns>
         </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.HomeController.SendEmail(Infrastructure.Model.SendEmailDto)">
+            <summary>
+            发送邮件
+            </summary>
+            <param name="sendEmailVo">请求参数接收实体</param>
+            <returns></returns>
+        </member>
         <member name="T:ZR.Admin.WebApi.Controllers.ArticleController">
             <summary>
             T4代码自动生成
