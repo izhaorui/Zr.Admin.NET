@@ -12,7 +12,7 @@ namespace {RepositoriesNamespace}
     /// @date {DateTime}
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class {ModelTypeName}Repository : BaseRepository<ModelTypeName>
+    public class {ModelTypeName}Repository : BaseRepository<{ModelTypeName}>
     {
         #region 业务逻辑代码
         #endregion
