@@ -15,15 +15,20 @@ import permission from './directive/permission'
 import './assets/icons' // icon
 import './permission' // permission control
 import { getDicts } from "@/api/system/dict/data";
-// import { getConfigKey } from "@/api/system/config";
+import { getConfigKey } from "@/api/system/config";
 import { parseTime, resetForm, addDateRange, selectDictLabel, selectDictLabels, download, handleTree } from "@/utils/ruoyi";
+//分页组件
 import Pagination from "@/components/Pagination";
 //自定义表格工具扩展
 import RightToolbar from "@/components/RightToolbar"
+// 字典标签组件
+import DictTag from '@/components/DictTag'
+// 字典数据组件
+// import DictData from '@/components/DictData'
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts
-// Vue.prototype.getConfigKey = getConfigKey
+Vue.prototype.getConfigKey = getConfigKey
 Vue.prototype.parseTime = parseTime
 Vue.prototype.resetForm = resetForm
 Vue.prototype.addDateRange = addDateRange
@@ -47,6 +52,7 @@ Vue.prototype.msgInfo = function (msg) {
 // 全局组件挂载
 Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
+Vue.component('DictTag', DictTag)
 
 Vue.use(permission)
 

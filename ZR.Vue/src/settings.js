@@ -1,8 +1,12 @@
 module.exports = {
   title: 'ZrAdmin.NET',
+  /**
+   * 侧边栏主题 深色主题theme-dark，浅色主题theme-light
+   */
+   sideTheme: 'theme-dark',
 
   /**
-   * 是否系统布局配置
+   * 显示是否系统布局配置
    */
   showSettings: false,
 

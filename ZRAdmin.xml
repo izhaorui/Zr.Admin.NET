@@ -281,10 +281,56 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="T:ZR.Admin.WebApi.Controllers.System.SysConfigController">
+        <member name="T:ZR.Admin.WebApi.Controllers.SysConfigController">
+             <summary>
+             参数配置Controller
+            
+             @author zhaorui
+             @date 2021-09-29
+             </summary>
+        </member>
+        <member name="F:ZR.Admin.WebApi.Controllers.SysConfigController._SysConfigService">
             <summary>
-            配置文件
+            参数配置接口
             </summary>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.SysConfigController.QuerySysConfig(ZR.Model.Dto.SysConfigQueryDto)">
+            <summary>
+            查询参数配置列表
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.SysConfigController.GetSysConfig(System.Int32)">
+            <summary>
+            查询参数配置详情
+            </summary>
+            <param name="ConfigId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.SysConfigController.GetConfigKey(System.String)">
+            <summary>
+            根据参数键名查询参数值
+            </summary>
+            <param name="configKey"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.SysConfigController.AddSysConfig(ZR.Model.Dto.SysConfigDto)">
+            <summary>
+            添加参数配置
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.SysConfigController.UpdateSysConfig(ZR.Model.Dto.SysConfigDto)">
+            <summary>
+            更新参数配置
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.SysConfigController.DeleteSysConfig(System.String)">
+            <summary>
+            删除参数配置
+            </summary>
+            <returns></returns>
         </member>
         <member name="T:ZR.Admin.WebApi.Controllers.System.SysDeptController">
             <summary>

@@ -79,9 +79,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException(ResultCode.PARAM_ERROR, "请求参数错误");
             }
             //从 Dto 映射到 实体
-            var user = userDto.Adapt<SysUser>();
-            user.Update_by = User.Identity.Name;
-            user.Update_time = DateTime.Now;
+            var user = userDto.Adapt<SysUser>().ToUpdate(HttpContext);
 
             int result = UserService.ChangeUser(user);
             return ToResponse(result);

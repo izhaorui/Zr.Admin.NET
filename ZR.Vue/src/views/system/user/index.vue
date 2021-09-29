@@ -346,9 +346,9 @@ export default {
     this.getDicts("sys_user_sex").then((response) => {
       this.sexOptions = response.data;
     });
-    // this.getConfigKey("sys.user.initPassword").then(response => {
-    //   this.initPassword = response.msg;
-    // });
+    this.getConfigKey("sys.user.initPassword").then(response => {
+      this.initPassword = response.data;
+    });
   },
   methods: {
     /** 查询用户列表 */
