@@ -260,7 +260,8 @@ INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 5, 'cache', 'monitor/cache/
 INSERT INTO sys_menu VALUES (114, '表单构建', 3, 1, 'build', 'tool/build/index', 0, 0, 'C', '0', '0', 'tool:build:list', 'build', '', SYSDATE(), '', NULL, '表单构建菜单');
 INSERT INTO sys_menu VALUES (115, '代码生成', 3, 1, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', SYSDATE(), '', NULL, '代码生成菜单');
 INSERT INTO sys_menu VALUES (116, '系统接口', 3, 3, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', SYSDATE(), '', NULL, '系统接口菜单');
-INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 4, '/sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'message', '', GETDATE(), '', NULL, '发送邮件菜单');
+INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 4, '/sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'message', '', SYSDATE(), '', NULL, '发送邮件菜单');
+INSERT INTO sys_menu VALUES (118, '编辑表格', 3, 5, '/tool/gen/editTable', 'tool/gen/editTable', 0, 0, 'C', '1', '0', 'tool:gen:edit', '', '', SYSDATE(), '', NULL, '');
 
 -- 日志管理
 INSERT INTO sys_menu VALUES (500, '操作日志', 108, 1, 'operlog', 'monitor/operlog/index', 0, 0, 'C', '0', '0', 'monitor:operlog:list', 'form', '', SYSDATE(), '', NULL, '操作日志菜单');
@@ -324,11 +325,10 @@ INSERT INTO sys_menu VALUES (2063, '修改', 2057, 2, '#', NULL, 0, 0, 'F', '0',
 INSERT INTO sys_menu VALUES (2064, '删除', 2057, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:delete', '', '', SYSDATE(), '', NULL, NULL);
 
 --代码生成页面权限
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2070, '编辑', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:edit', '', '', SYSDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2071, '预览', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:preview', '', '', SYSDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2072, '删除', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:remove', '', '', SYSDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2073, '导入', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:import', '', '', SYSDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2074, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:ten:code', '', '', SYSDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2071, '预览', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:preview', '', '', SYSDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2072, '删除', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:remove', '', '', SYSDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2073, '导入', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:import', '', '', SYSDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2074, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:code', '', '', SYSDATE());
 
 
 -- ----------------------------
@@ -517,7 +517,7 @@ CREATE TABLE `sys_user`  (
 -- Records of sys_user
 -- ----------------------------
 INSERT INTO `sys_user` VALUES (1, 0, 'admin', '管理员', '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '127.0.0.1', '2021-08-23 14:03:17', 'admin', '2020-11-26 11:52:59', 'admin', '2021-08-03 10:11:24', '管理员');
-INSERT INTO `sys_user` VALUES (2, 200, 'zr', 'zr', '0', NULL, NULL, '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', '0001-01-01 00:00:00', 'admin', '2021-07-05 17:29:13', 'admin', '2021-08-02 16:53:04', '普通用户2');
+INSERT INTO `sys_user` VALUES (2, 0, 'zr', 'zr', '0', NULL, NULL, '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', '0001-01-01 00:00:00', 'admin', '2021-07-05 17:29:13', 'admin', '2021-08-02 16:53:04', '普通用户2');
 INSERT INTO `sys_user` VALUES (3, 100, 'editor', '编辑人员', '0', NULL, NULL, '2', 'http://www.izhaorui.cn/static/pay.jpg', 'E10ADC3949BA59ABBE56E057F20F883E', '0', '0', '127.0.0.1', '2021-08-19 09:27:46', 'admin', '2021-08-18 18:24:53', '', NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
