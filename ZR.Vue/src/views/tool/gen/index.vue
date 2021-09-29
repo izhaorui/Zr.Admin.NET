@@ -160,7 +160,7 @@ export default {
      */
     handleEditTable(row) {
       console.log(row);
-      this.$router.push("/tool/editTable?tableId=" + row.tableId);
+      this.$router.push("/tool/gen/editTable?tableId=" + row.tableId);
     },
     // 代码预览
     handlePreview(row) {
