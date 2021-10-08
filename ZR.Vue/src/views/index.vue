@@ -65,6 +65,11 @@
         </el-card>
       </el-col>
     </el-row>
+    <el-row>
+      <el-col :span="5">
+        <img src="http://ss.izhaorui.cn/red.jpg" width="100%"/>
+      </el-col>
+    </el-row>
     <el-divider />
   </div>
 </template>
