@@ -32,7 +32,7 @@
         <theme-picker style="float: right;height: 26px;margin: -3px 8px 0 0;" @change="themeChange" />
       </div>
 
-      <el-divider/>
+      <el-divider />
       <div class="drawer-item">
         <span>开启 Tags-Views</span>
         <el-switch v-model="tagsView" class="drawer-switch" />
@@ -107,6 +107,7 @@ export default {
         key: "theme",
         value: val,
       });
+      this.theme = val;
     },
     handleTheme(val) {
       this.$store.dispatch("settings/changeSetting", {
@@ -118,6 +119,12 @@ export default {
     // 保存配置好
     saveSetting() {
       // this.$modal.loading("正在保存到本地，请稍后...");
+      const loading = this.$loading({
+        lock: true,
+        text: "正在保存到本地，请稍后...",
+        spinner: "el-icon-loading",
+        background: "rgba(0, 0, 0, 0.7)",
+      });
       localStorage.setItem(
         "layout-setting",
         `{
@@ -129,7 +136,7 @@ export default {
           }`
       );
       this.msgSuccess("保存成功");
-      // setTimeout(this.$modal.closeLoading(), 1000);
+      setTimeout(loading.close(), 2000);
     },
     resetSetting() {
       // this.$modal.loading("正在清除设置缓存并刷新，请稍后...");

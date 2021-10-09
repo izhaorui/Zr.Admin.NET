@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-logo-container" :class="{'collapse':collapse}">
+  <!-- <div class="sidebar-logo-container" :class="{'collapse':collapse}" :style="{ backgroundColor: sideTheme === 'theme-dark' ? variables.menuBackground : variables.menuLightBackground }">
     <transition name="sidebarLogoFade">
       <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" class="sidebar-logo">
@@ -10,30 +10,48 @@
         <h1 class="sidebar-title">{{ title }} </h1>
       </router-link>
     </transition>
+  </div> -->
+  <div class="sidebar-logo-container" :class="{'collapse':collapse}" :style="{ backgroundColor: sideTheme === 'theme-dark' ? variables.menuBackground : variables.menuLightBackground }">
+    <transition name="sidebarLogoFade">
+      <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
+        <img v-if="logo" :src="logo" class="sidebar-logo" />
+        <h1 v-else class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' ? variables.logoTitleColor : variables.logoLightTitleColor }">{{ title }} </h1>
+      </router-link>
+      <router-link v-else key="expand" class="sidebar-logo-link" to="/">
+        <img v-if="logo" :src="logo" class="sidebar-logo" />
+        <h1 class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' ? variables.logoTitleColor : variables.logoLightTitleColor }">{{ title }} </h1>
+      </router-link>
+    </transition>
   </div>
 </template>
 
 <script>
-import logoImg from '@/assets/logo/logo.png'
+import logoImg from "@/assets/logo/logo.png";
+import variables from "@/assets/styles/variables.scss";
 
 export default {
-  name: 'SidebarLogo',
+  name: "SidebarLogo",
   props: {
     collapse: {
       type: Boolean,
-      required: true
-    }
+      required: true,
+    },
+  },
+  computed: {
+    variables() {
+      return variables;
+    },
+    sideTheme() {
+      return this.$store.state.settings.sideTheme;
+    },
   },
   data() {
     return {
-      title: 'ZrAdmin.NET',
-      logo: logoImg
-    }
-  },
-  mounted(){
-    // this.title = this.$store.getters.name;
+      title: "ZrAdmin.NET",
+      logo: logoImg,
+    };
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>

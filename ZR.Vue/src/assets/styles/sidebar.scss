@@ -3,22 +3,26 @@
   .main-container {
     min-height: 100%;
     transition: margin-left .28s;
-    margin-left: $sideBarWidth;
+    margin-left: $base-sidebar-width;
     position: relative;
   }
 
   .sidebar-container {
+    -webkit-transition: width .28s;
     transition: width 0.28s;
-    width: $sideBarWidth !important;
-    background-color: $menuBg;
+    width: $base-sidebar-width !important;
+    background-color: $base-menu-background;
     height: 100%;
     position: fixed;
-    font-size: 0;
+    font-size: 0px;
     top: 0;
     bottom: 0;
     left: 0;
     z-index: 1001;
     overflow: hidden;
+    // 有改动
+    -webkit-box-shadow: 2px 0 7px rgba(0,21,41 , .15);
+    box-shadow: 2px 0 7px rgba(0,21,41 , .15);
 
     // reset element-ui css
     .horizontal-collapse-transition {
@@ -30,7 +34,7 @@
     }
 
     .el-scrollbar__bar.is-vertical {
-      right: 0;
+      right: 0px;
     }
 
     .el-scrollbar {
@@ -63,25 +67,39 @@
       width: 100% !important;
     }
 
+    .el-menu-item, .el-submenu__title {
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+
     // menu hover
     .submenu-title-noDropdown,
     .el-submenu__title {
       &:hover {
-        background-color: $menuHover !important;
+        background-color: rgba(0, 0, 0, 0.06) !important;
       }
     }
 
-    .is-active>.el-submenu__title {
-      color: $subMenuActiveText !important;
+    & .theme-dark .is-active > .el-submenu__title {
+      color: $base-menu-color-active !important;
     }
 
     & .nest-menu .el-submenu>.el-submenu__title,
     & .el-submenu .el-menu-item {
-      min-width: $sideBarWidth !important;
-      background-color: $subMenuBg !important;
+      min-width: $base-sidebar-width !important;
 
       &:hover {
-        background-color: $subMenuHover !important;
+        background-color: rgba(0, 0, 0, 0.06) !important;
+      }
+    }
+
+    & .theme-dark .nest-menu .el-submenu>.el-submenu__title,
+    & .theme-dark .el-submenu .el-menu-item {
+      background-color: $base-sub-menu-background !important;
+
+      &:hover {
+        background-color: $base-sub-menu-hover !important;
       }
     }
   }
@@ -118,9 +136,6 @@
           margin-left: 20px;
         }
 
-        .el-submenu__icon-arrow {
-          display: none;
-        }
       }
     }
 
@@ -140,25 +155,25 @@
   }
 
   .el-menu--collapse .el-menu .el-submenu {
-    min-width: $sideBarWidth !important;
+    min-width: $base-sidebar-width !important;
   }
 
   // mobile responsive
   .mobile {
     .main-container {
-      margin-left: 0;
+      margin-left: 0px;
     }
 
     .sidebar-container {
       transition: transform .28s;
-      width: $sideBarWidth !important;
+      width: $base-sidebar-width !important;
     }
 
     &.hideSidebar {
       .sidebar-container {
         pointer-events: none;
         transition-duration: 0.3s;
-        transform: translate3d(-$sideBarWidth, 0, 0);
+        transform: translate3d(-$base-sidebar-width, 0, 0);
       }
     }
   }
@@ -184,7 +199,7 @@
   .el-menu-item {
     &:hover {
       // you can use $subMenuHover
-      background-color: $menuHover !important;
+      background-color: rgba(0, 0, 0, 0.06) !important;
     }
   }
 
