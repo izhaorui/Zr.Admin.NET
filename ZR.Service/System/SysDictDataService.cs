@@ -78,7 +78,9 @@ namespace ZR.Service.System
         /// <returns></returns>
         public long UpdateDictData(SysDictData dict)
         {
-            return SysDictDataRepository.UpdateDictData(dict);
+            var result = SysDictDataRepository.UpdateDictData(dict);
+            CacheHelper.Remove($"SelectDictDataByCode_{dict.DictCode}");
+            return result;
         }
 
         /// <summary>

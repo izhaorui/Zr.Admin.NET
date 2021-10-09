@@ -53,10 +53,9 @@
       <el-table-column prop="path" label="路由地址" :show-overflow-tooltip="true"></el-table-column>
       <el-table-column prop="component" label="组件路径" :show-overflow-tooltip="true"></el-table-column>
       <el-table-column prop="visible" label="显示" :formatter="visibleFormat" width="70"></el-table-column>
-      <el-table-column prop="status" label="状态" width="70">
+      <el-table-column label="状态" align="center" prop="status" width="70">
         <template slot-scope="scope">
-          <el-tag v-if="scope.row.status === '0'">正常</el-tag>
-          <el-tag type="warning" v-else>停用</el-tag>
+          <dict-tag :options="statusOptions" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center">

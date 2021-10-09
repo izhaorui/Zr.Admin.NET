@@ -63,7 +63,9 @@ namespace ZR.Repository.System
                     DictSort = dict.DictSort,
                     DictLabel = dict.DictLabel,
                     DictValue = dict.DictValue,
-                    Status = dict.Status
+                    Status = dict.Status,
+                    CssClass = dict.CssClass,
+                    ListClass = dict.ListClass
                 })
                 .Where(f => f.DictCode == dict.DictCode).ExecuteCommand();
         }
