@@ -18,12 +18,17 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:menu:add']">新增</el-button>
-        <el-button type="primary" plain icon="el-icon-edit" size="mini" @click="handleShowSort" v-hasPermi="['system:menu:changeSort']">修改排序</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="info" plain icon="el-icon-edit" size="mini" @click="handleShowSort" v-hasPermi="['system:menu:changeSort']">修改排序</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="info" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">展开/折叠</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="menuList" row-key="menuId" border :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+    <el-table v-if="refreshTable" v-loading="loading" :data="menuList" :default-expand-all="isExpandAll" row-key="menuId" border :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column prop="menuName" label="菜单名称" :show-overflow-tooltip="true" width="160"></el-table-column>
       <el-table-column prop="icon" label="图标" align="center" width="80">
         <template slot-scope="scope">
@@ -50,8 +55,8 @@
       <el-table-column prop="visible" label="显示" :formatter="visibleFormat" width="70"></el-table-column>
       <el-table-column prop="status" label="状态" width="70">
         <template slot-scope="scope">
-          <el-tag v-if="scope.row.status === '0'" >正常</el-tag>
-          <el-tag type="warning" v-else >停用</el-tag>
+          <el-tag v-if="scope.row.status === '0'">正常</el-tag>
+          <el-tag type="warning" v-else>停用</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center">
@@ -229,6 +234,10 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 是否展开，默认全部折叠
+      isExpandAll: false,
+      // 重新渲染表格状态
+      refreshTable: true,
       // 显示状态数据字典
       visibleOptions: [],
       // 菜单状态数据字典
@@ -423,6 +432,14 @@ export default {
      */
     handleShowSort() {
       this.showEditSort = !this.showEditSort;
+    },
+    //展开/折叠操作
+    toggleExpandAll() {
+      this.refreshTable = false;
+      this.isExpandAll = !this.isExpandAll;
+      this.$nextTick(() => {
+        this.refreshTable = true;
+      });
     },
   },
 };

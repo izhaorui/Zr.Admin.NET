@@ -42,6 +42,7 @@ export default {
 
   methods: {
     async setTheme(val) {
+      console.log('%c setTheme Color','color:' + val)
       const oldVal = this.chalk ? this.theme : ORIGINAL_THEME
       if (typeof val !== 'string') return
       const themeCluster = this.getThemeCluster(val.replace('#', ''))

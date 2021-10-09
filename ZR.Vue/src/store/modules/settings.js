@@ -1,11 +1,11 @@
 import defaultSettings from '@/settings'
 
-const { sideTheme, showSettings, tagsView, fixedHeader, sidebarLogo } = defaultSettings
+const { theme, sideTheme, showSettings, tagsView, fixedHeader, sidebarLogo } = defaultSettings
 
 const storageSetting = JSON.parse(localStorage.getItem('layout-setting')) || ''
 const state = {
-  theme: storageSetting.theme || '#409EFF',
-  sideTheme: storageSetting.sideTheme || sideTheme,
+  theme: storageSetting.theme || theme,//主题颜色
+  sideTheme: storageSetting.sideTheme || sideTheme,//侧边主题样式
   showSettings: showSettings,
   tagsView: storageSetting.tagsView === undefined ? tagsView : storageSetting.tagsView,
   fixedHeader: storageSetting.fixedHeader === undefined ? fixedHeader : storageSetting.fixedHeader,

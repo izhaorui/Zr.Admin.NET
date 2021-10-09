@@ -149,18 +149,20 @@ export default {
   height: 100%;
   // background-image: url("../assets/image/login-background.jpg");
   background-size: cover;
-  background-color: #2d3a4b;
+  background-color: rgba(56,157,170,.82);
 }
 .title {
   margin: 0px auto 30px auto;
   text-align: center;
-  color: #707070;
+  // color: #707070;
+  color: #fff;
 }
 
 .login-form {
   border-radius: 6px;
-  background: #ffffff;
-  width: 400px;
+  // background: #ffffff;
+  background-color: hsla(0,0%,100%,.3);
+  width: 350px;
   padding: 25px 25px 5px 25px;
   .el-input {
     height: 38px;

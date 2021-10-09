@@ -135,7 +135,6 @@ export default {
             "theme":"${this.theme}"
           }`
       );
-      this.msgSuccess("保存成功");
       setTimeout(loading.close(), 2000);
     },
     resetSetting() {
