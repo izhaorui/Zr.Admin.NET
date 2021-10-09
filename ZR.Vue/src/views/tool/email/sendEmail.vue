@@ -1,6 +1,6 @@
 <template>
   <el-row>
-    <el-form class="mt10" ref="form" :model="form" label-width="100px" :rules="rules">
+    <el-form class="mt10" ref="form" :model="form" label-width="100px" :rules="rules" style="width:600px">
       <el-form-item label="收件邮箱" prop="toUser">
         <el-input v-model="form.toUser">
         </el-input>
