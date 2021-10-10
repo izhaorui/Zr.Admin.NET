@@ -24,7 +24,7 @@
         <el-button v-hasPermi="['system:task:delete']" plain type="danger" icon="el-icon-remove" size="mini" @click="handleDelete(null)" :disabled="single">删除</el-button>
       </el-col>-->
       <el-col :span="1.5">
-        <el-button type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog({id: 1})">日志</el-button>
+        <el-button v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog({id: 1})">日志</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="searchToggle" @queryTable="handleQuery"></right-toolbar>
     </el-row>
@@ -46,7 +46,7 @@
         <el-table-column label="操作" align="center" width="300" class-name="small-padding fixed-width">
           <template slot-scope="scope">
 
-            <el-button type="text" size="mini" icon="el-icon-view">
+            <el-button type="text" size="mini" icon="el-icon-view" v-hasPermi="['monitor:job:query']">
               <router-link :to="{path: '/job/log', query: {jobId: scope.row.id}}">日志</router-link>
             </el-button>
 
