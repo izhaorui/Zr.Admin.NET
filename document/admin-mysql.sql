@@ -231,7 +231,7 @@ CREATE TABLE `sys_menu`  (
   `update_time` datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '备注',
   PRIMARY KEY (`menuId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2055 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '菜单权限表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2000 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '菜单权限表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_menu
@@ -240,96 +240,98 @@ CREATE TABLE `sys_menu`  (
 INSERT INTO sys_menu VALUES (1, '系统管理', 0, 1, 'system', NULL, 0, 0, 'M', '0', '0', '', 'system', '', SYSDATE(), '', NULL, '系统管理目录');
 INSERT INTO sys_menu VALUES (2, '系统监控', 0, 2, 'monitor', NULL, 0, 0, 'M', '0', '0', '', 'monitor', '', SYSDATE(), '', NULL, '系统监控目录');
 INSERT INTO sys_menu VALUES (3, '系统工具', 0, 3, 'tool', NULL, 0, 0, 'M', '0', '0', '', 'tool', '', SYSDATE(), '', NULL, '系统工具目录');
-INSERT INTO sys_menu VALUES (5, '文章管理', 0, 4, 'article', NULL, 0, 0, 'M', '0', '0', NULL, 'documentation', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (4, '外部打开', 0, 5, 'http://www.izhaorui.cn', NULL, 1, 0, 'M', '0', '0', '', 'link', '', SYSDATE(), '', NULL, 'Zr官网地址');
+INSERT INTO sys_menu VALUES (4, '文章管理', 0, 4, 'article', NULL, 0, 0, 'M', '0', '0', NULL, 'documentation', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (5, '外部打开', 0, 5, 'http://www.izhaorui.cn', NULL, 1, 0, 'M', '0', '0', '', 'link', '', SYSDATE(), '', NULL, 'Zr官网地址');
+INSERT INTO sys_menu VALUES (6, '控制台', 0, 0, 'dashboard', 'index_v1', 0, 0, 'C', '0', '0', '', 'dashboard', '', SYSDATE(), '', NULL, '');
 
--- 一级菜单 系统管理
-INSERT INTO sys_menu VALUES (100, '用户管理', 1, 2, 'user', 'system/user/index', 0, 0, 'C', '0', '0', 'system:user:list', 'user', '', SYSDATE(), '', NULL, '用户管理菜单');
+-- 二级菜单 系统管理
+INSERT INTO sys_menu VALUES (100, '用户管理', 1, 1, 'user', 'system/user/index', 0, 0, 'C', '0', '0', 'system:user:list', 'user', '', SYSDATE(), '', NULL, '用户管理菜单');
 INSERT INTO sys_menu VALUES (101, '权限管理', 1, 2, 'role', 'system/role/index', 0, 0, 'C', '0', '0', 'system:role:list', 'peoples', '', SYSDATE(), '', NULL, '角色管理菜单');
 INSERT INTO sys_menu VALUES (102, '菜单管理', 1, 3, 'menu', 'system/menu/index', 0, 0, 'C', '0', '0', 'system:menu:list', 'tree-table', '', SYSDATE(), '', NULL, '菜单管理菜单');
 INSERT INTO sys_menu VALUES (103, '部门管理', 1, 4, 'dept', 'system/dept/index', 0, 0, 'C', '0', '0', 'system:dept:list', 'tree', '', SYSDATE(), '', NULL, '部门管理菜单');
 INSERT INTO sys_menu VALUES (104, '岗位管理', 1, 5, 'post', 'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', SYSDATE(), '', NULL, '岗位管理菜单');
-INSERT INTO sys_menu VALUES (108, '日志管理', 1, 9, 'log', '', 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
-INSERT INTO sys_menu VALUES (105, '字典管理', 1, 5, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (106, '权限分配', 1, 3, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
-
--- 一级菜单 缓存监控
-INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 5, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', SYSDATE(), '', NULL, '缓存监控菜单');
-
--- 一级菜单 系统工具
-INSERT INTO sys_menu VALUES (114, '表单构建', 3, 1, 'build', 'tool/build/index', 0, 0, 'C', '0', '0', 'tool:build:list', 'build', '', SYSDATE(), '', NULL, '表单构建菜单');
-INSERT INTO sys_menu VALUES (115, '代码生成', 3, 1, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', SYSDATE(), '', NULL, '代码生成菜单');
-INSERT INTO sys_menu VALUES (116, '系统接口', 3, 3, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', SYSDATE(), '', NULL, '系统接口菜单');
-INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 4, '/sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'message', '', SYSDATE(), '', NULL, '发送邮件菜单');
-INSERT INTO sys_menu VALUES (118, '编辑表格', 3, 5, '/tool/gen/editTable', 'tool/gen/editTable', 0, 0, 'C', '1', '0', 'tool:gen:edit', '', '', SYSDATE(), '', NULL, '');
-
--- 日志管理
+INSERT INTO sys_menu VALUES (105, '字典管理', 1, 6, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', SYSDATE(), '', NULL, '');
+INSERT INTO sys_menu VALUES (106, '权限分配', 1, 7, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
+INSERT into sys_menu VALUES (107, '参数设置', 1, 8, 'config','system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit', '', SYSDATE(), '', NULL, '');
+INSERT INTO sys_menu VALUES (108, '日志管理', 1, 9, 'log', ''                     , 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
+INSERT INTO sys_menu VALUES (110, '定时任务', 2, 10, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', SYSDATE(), '', NULL, '定时任务菜单');
+INSERT INTO sys_menu VALUES (112, '服务监控', 2, 11, 'server', 'monitor/server/index', 0, 0, 'C', '0', '0', 'monitor:server:list', 'server', '', SYSDATE(), '', NULL, '服务监控菜单');
+INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 12, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', SYSDATE(), '', NULL, '缓存监控菜单');
+INSERT INTO sys_menu VALUES (114, '表单构建', 3, 13, 'build', 'tool/build/index', 0, 0, 'C', '0', '0', 'tool:build:list', 'build', '', SYSDATE(), '', NULL, '表单构建菜单');
+INSERT INTO sys_menu VALUES (115, '代码生成', 3, 14, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', SYSDATE(), '', NULL, '代码生成菜单');
+INSERT INTO sys_menu VALUES (116, '系统接口', 3, 15, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', SYSDATE(), '', NULL, '系统接口菜单');
+INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 16, '/sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'message', '', SYSDATE(), '', NULL, '发送邮件菜单');
+INSERT INTO sys_menu VALUES (119, '文章列表', 4, 1, 'index', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'list', '', SYSDATE(), '', NULL, NULL);
+-- 三级菜单日志管理
 INSERT INTO sys_menu VALUES (500, '操作日志', 108, 1, 'operlog', 'monitor/operlog/index', 0, 0, 'C', '0', '0', 'monitor:operlog:list', 'form', '', SYSDATE(), '', NULL, '操作日志菜单');
 INSERT INTO sys_menu VALUES (501, '登录日志', 108, 2, 'logininfor', 'monitor/logininfor/index', 0, 0, 'C', '0', '0', 'monitor:logininfor:list', 'logininfor', '', SYSDATE(), '', NULL, '登录日志菜单');
 
-INSERT INTO sys_menu VALUES (110, '定时任务', 2, 1, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', SYSDATE(), '', NULL, '定时任务菜单');
-INSERT INTO sys_menu VALUES (112, '服务监控', 2, 4, 'server', 'monitor/server/index', 0, 0, 'C', '0', '0', 'monitor:server:list', 'server', '', SYSDATE(), '', NULL, '服务监控菜单');
 
-
+-- 用户管理 按钮
+INSERT INTO sys_menu VALUES (1001, '用户查询', 100, 1, '', '', 0, 0, 'F', '0', '0', 'system:user:query', '', '', SYSDATE(), '', NULL, '');
+INSERT INTO sys_menu VALUES (1002, '用户添加', 100, 2, '', '', 0, 0, 'F', '0', '0', 'system:user:add', '', '', SYSDATE(), '', NULL, '');
+INSERT INTO sys_menu VALUES (1003, '用户修改', 100, 3, '', '', 0, 0, 'F', '0', '0', 'system:user:edit', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1004, '用户删除', 100, 4, '', '', 0, 0, 'F', '0', '0', 'system:user:delete', '', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1005, '用户导出', 100, 5, '', '', 0, 0, 'F', '0', '0', 'system:user:export', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1006, '用户导入', 100, 6, '', '', 0, 0, 'F', '0', '0', 'system:user:import', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1007, '重置密码', 100, 7, '', '', 0, 0, 'F', '0', '0', 'system:user:resetPwd', '#', '', SYSDATE(), '', NULL, '');
+-- 权限管理 按钮
 INSERT INTO sys_menu VALUES (1008, '角色查询', 101, 1, '', '', 0, 0, 'F', '0', '0', 'system:role:query', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1009, '角色新增', 101, 2, '', '', 0, 0, 'F', '0', '0', 'system:role:add', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1010, '角色修改', 101, 3, '', '', 0, 0, 'F', '0', '0', 'system:role:edit', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1011, '角色删除', 101, 4, '', '', 0, 0, 'F', '0', '0', 'system:role:remove', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1012, '角色导出', 101, 5, '', '', 0, 0, 'F', '0', '0', 'system:role:export', '#', '', SYSDATE(), '', NULL, '');
+-- 菜单管理 按钮
 INSERT INTO sys_menu VALUES (1013, '菜单查询', 102, 1, '', '', 0, 0, 'F', '0', '0', 'system:menu:query', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1014, '菜单新增', 102, 2, '', '', 0, 0, 'F', '0', '0', 'system:menu:add', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1015, '菜单修改', 102, 3, '', '', 0, 0, 'F', '0', '0', 'system:menu:edit', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1016, '菜单删除', 102, 4, '', '', 0, 0, 'F', '0', '0', 'system:menu:remove', '#', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (2013, '控制台', 0, 0, 'dashboard', 'index_v1', 0, 0, 'C', '0', '0', '', 'dashboard', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (2018, '用户添加', 100, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:user:add', '', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (2019, '用户查询', 100, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:user:query', '', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (2020, '用户删除', 100, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:user:delete', '', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (2030, '修改排序', 102, 999, '#', NULL, 0, 0, 'F', '0', '0', 'system:menu:changeSort', '', '', SYSDATE(), '', NULL, NULL);
--- 分配用户菜单 权限
-INSERT INTO sys_menu VALUES (2031, '新增用户', 106, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:roleusers:add', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2032, '删除用户', 106, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:roleusers:del', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2053, '查询', 106, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:roleusers:query', '', '', SYSDATE(), '', NULL, NULL);
-
-INSERT INTO sys_menu VALUES (2033, '新增', 110, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:task:add', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2034, '删除', 110, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:task:delete', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2035, '修改', 110, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:task:edit', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2036, '启动', 110, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:task:start', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2037, '查询', 110, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:task:list', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2038, '运行', 110, 5, '#', NULL, 0, 0, 'F', '0', '0', 'system:task:run', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2039, '停止', 110, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:task:stop', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2040, '查询', 103, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:dept:query', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2041, '新增', 103, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:dept:add', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2042, '修改', 103, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:dept:update', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2043, '删除', 103, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:dept:remove', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2044, '查询', 104, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:post:list', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2045, '添加', 104, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:post:add', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2046, '岗位删除', 104, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:post:remove', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2047, '岗位编辑', 104, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:post:edit', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2048, '删除日志', 500, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:remove', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2049, '删除日志', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:remove', '', '', SYSDATE(), '', NULL, NULL);
--- 字典管理页面-权限
-INSERT INTO sys_menu VALUES (2050, '新增', 105, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:dict:add', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2051, '修改', 105, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:dict:edit', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2052, '删除', 105, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:dict:remove', NULL, '', SYSDATE(), '', NULL, NULL);
-
-INSERT INTO sys_menu VALUES (2054, '用户修改', 100, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:user:edit', '', '', SYSDATE(), '', NULL, NULL);
-
-INSERT INTO sys_menu VALUES (2056, '创建文章', 5, 999, 'publish', 'system/article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2057, '文章列表', 5, 999, 'manager', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'documentation', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2060, '任务日志', 2, 2, '/job/log', 'monitor/job/log', 0, 0, 'C', '0', '0', NULL, 'log', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2062, '新增', 2057, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:add', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2063, '修改', 2057, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:update', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (2064, '删除', 2057, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:delete', '', '', SYSDATE(), '', NULL, NULL);
-
---代码生成页面权限
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2071, '预览', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:preview', '', '', SYSDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2072, '删除', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:remove', '', '', SYSDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2073, '导入', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:import', '', '', SYSDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2074, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:code', '', '', SYSDATE());
-
+INSERT INTO sys_menu VALUES (1017, '修改排序', 102, 5, '', '', 0, 0, 'F', '0', '0', 'system:menu:changeSort', '', '', SYSDATE(), '', NULL, NULL);
+-- 部门管理 按钮
+INSERT INTO sys_menu VALUES (1018, '部门查询', 103, 1, '', '', 0, 0, 'F', '0', '0', 'system:dept:query', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1019, '部门新增', 103, 2, '', '', 0, 0, 'F', '0', '0', 'system:dept:add', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1020, '部门修改', 103, 3, '', '', 0, 0, 'F', '0', '0', 'system:dept:update', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1021, '部门删除', 103, 4, '', '', 0, 0, 'F', '0', '0', 'system:dept:remove', NULL, '', SYSDATE(), '', NULL, NULL);
+-- 岗位管理 按钮
+INSERT INTO sys_menu VALUES (1022, '岗位查询', 104, 1, '', '', 0, 0, 'F', '0', '0', 'system:post:list', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1023, '岗位添加', 104, 2, '', '', 0, 0, 'F', '0', '0', 'system:post:add', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1024, '岗位删除', 104, 3, '', '', 0, 0, 'F', '0', '0', 'system:post:remove', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1025, '岗位编辑', 104, 4, '', '', 0, 0, 'F', '0', '0', 'system:post:edit', '', '', SYSDATE(), '', NULL, NULL);
+-- 字典管理 按钮
+INSERT INTO sys_menu VALUES (1026, '字典新增', 105, 1, '', '', 0, 0, 'F', '0', '0', 'system:dict:add', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1027, '字典修改', 105, 2, '', '', 0, 0, 'F', '0', '0', 'system:dict:edit', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1028, '字典删除', 105, 3, '', '', 0, 0, 'F', '0', '0', 'system:dict:remove', NULL, '', SYSDATE(), '', NULL, NULL);
+-- 分配用户 按钮
+INSERT INTO sys_menu VALUES (1029, '新增用户', 106, 1, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:add', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1030, '删除用户', 106, 2, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:del', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1031, '查询用户', 106, 3, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:query', '', '', SYSDATE(), '', NULL, NULL);
+-- 定时任务 按钮
+INSERT INTO sys_menu values (1040, '任务查询', 110, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:list', '#', 'admin', sysdate(), '', null, '');
+INSERT INTO sys_menu VALUES (1032, '任务新增', 110, 2, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:add', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1034, '任务删除', 110, 3, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:delete', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1035, '任务修改', 110, 4, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:edit', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1036, '任务启动', 110, 5, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:start', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1038, '任务运行', 110, 7, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:run', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1039, '任务停止', 110, 8, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:stop', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1047, '任务日志', 2, 0, '/job/log', 'monitor/job/log', 0, 0, 'C', '1', '0', 'monitor:job:query', 'log', '', SYSDATE(), '', NULL, NULL);
+-- 操作日志 按钮
+INSERT INTO sys_menu values (1041, '操作查询', 500, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:query',      '#', 'admin', sysdate(), '', null, '');
+INSERT INTO sys_menu VALUES (1042, '操作删除', 500, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:remove', NULL, '', SYSDATE(), '', NULL, NULL);
+-- 登录日志 按钮
+INSERT INTO sys_menu values (1044, '登录查询', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:query',   '#', 'admin', sysdate(), '', null, '');
+INSERT INTO sys_menu VALUES (1045, '登录删除', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:remove', '', '', SYSDATE(), '', NULL, NULL);
+-- 文章管理 按钮
+INSERT INTO sys_menu VALUES (1048, '文章新增', 119, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:add', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1049, '文章修改', 119, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:update', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1050, '文章删除', 119, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:delete', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1051, '发布文章', 4  , 4, 'publish', 'system/article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', SYSDATE(), '', NULL, NULL);
+-- 代码生成 按钮
+insert into sys_menu VALUES (1060, '生成查询', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:query',  '', '', sysdate(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1061, '生成修改', 3, 1, '/gen/editTable', 'tool/gen/editTable', 0, 0, 'C', '1', '0', 'tool:gen:edit', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1062, '生成删除', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:remove', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1063, '导入代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:import', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1064, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:code', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1065, '预览代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:preview', '', '', SYSDATE(), '', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_oper_log
@@ -607,6 +609,29 @@ INSERT INTO `articleCategory` VALUES (8, 'sqlserver', '2021-08-19 00:00:00.00000
 
 SET FOREIGN_KEY_CHECKS = 1;
 
+
+-- ----------------------------
+-- 13、参数配置表
+-- ----------------------------
+drop table if exists sys_config;
+create table sys_config (
+  configId         int(5)          not null auto_increment    comment '参数主键',
+  configName       varchar(100)    default ''                 comment '参数名称',
+  configKey        varchar(100)    default ''                 comment '参数键名',
+  configValue      varchar(500)    default ''                 comment '参数键值',
+  configType       char(1)         default 'N'                comment '系统内置（Y是 N否）',
+  create_by         varchar(64)     default ''                 comment '创建者',
+  create_time       datetime                                   comment '创建时间',
+  update_by         varchar(64)     default ''                 comment '更新者',
+  update_time       datetime                                   comment '更新时间',
+  remark            varchar(500)    default null               comment '备注',
+  primary key (configId)
+) engine=innodb auto_increment=100 comment = '参数配置表';
+
+insert into sys_config values(1, '主框架页-默认皮肤样式名称',     'sys.index.skinName',            'skin-blue',     'Y', 'admin', sysdate(), '', null, '蓝色 skin-blue、绿色 skin-green、紫色 skin-purple、红色 skin-red、黄色 skin-yellow' );
+insert into sys_config values(2, '用户管理-账号初始密码',         'sys.user.initPassword',         '123456',        'Y', 'admin', sysdate(), '', null, '初始化密码 123456' );
+insert into sys_config values(3, '主框架页-侧边栏主题',           'sys.index.sideTheme',           'theme-dark',    'Y', 'admin', sysdate(), '', null, '深色主题theme-dark，浅色主题theme-light' );
+insert into sys_config values(4, '账号自助-验证码开关',           'sys.account.captchaOnOff',      'true',          'Y', 'admin', sysdate(), '', null, '是否开启验证码功能（true开启，false关闭）');
 
 -- ----------------------------
 -- 18、代码生成业务表
