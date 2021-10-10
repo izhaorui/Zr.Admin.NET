@@ -4,7 +4,7 @@ import Cookies from 'js-cookie'
 
 import Element from 'element-ui'
 import 'normalize.css/normalize.css' // a modern alternative to CSS resets
-import '@/assets/styles/element-variables.scss'
+import './assets/styles/element-variables.scss'
 import '@/assets/styles/index.scss' // global css
 
 import App from './App'

@@ -97,8 +97,8 @@ import {
 import { downloadFile } from "@/utils/zipdownload.js";
 import importTable from "./importTable";
 import { Loading } from "element-ui";
-import hljs from 'highlight.js'
-import 'highlight.js/styles/idea.css'  //这里有多个样式，自己可以根据需要切换
+import hljs from "highlight.js";
+import "highlight.js/styles/idea.css"; //这里有多个样式，自己可以根据需要切换
 
 export default {
   name: "CodeGenerator",
@@ -159,8 +159,11 @@ export default {
      * 编辑表格
      */
     handleEditTable(row) {
-      console.log(row);
-      this.$router.push("/tool/gen/editTable?tableId=" + row.tableId);
+      this.$router.push({
+        path: "/gen/editTable",
+        params: { tableId: row.tableId },
+      });
+      // this.$router.push({ path: "/job/log", params: param });
     },
     // 代码预览
     handlePreview(row) {
