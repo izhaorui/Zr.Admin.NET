@@ -3,7 +3,7 @@ module.exports = {
   /**
    * 主题颜色
    */
-  theme: '#409EFF',
+  theme: '#13C2C2',
   /**
    * 侧边栏主题 深色主题theme-dark，浅色主题theme-light
    */

@@ -14,6 +14,7 @@ using ZR.Service.Business;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
+using Infrastructure.Extensions;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -21,11 +22,11 @@ namespace ZR.Admin.WebApi.Controllers
     /// 代码生成演示Controller
     ///
     /// @author zr
-    /// @date 2021-09-27
+    /// @date 2021-10-10
     /// </summary>
     [Verify]
     [Route("business/Gendemo")]
-    public class GendemoController: BaseController
+    public class GendemoController : BaseController
     {
         /// <summary>
         /// 代码生成演示接口
@@ -76,7 +77,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "business:gendemo:add")]
-        [Log(Title = "{TableDesc}添加", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "代码生成演示添加", BusinessType = BusinessType.INSERT)]
         public IActionResult AddGendemo([FromBody] GendemoDto parm)
         {
             if (parm == null)
@@ -84,11 +85,15 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("请求参数错误");
             }
             //从 Dto 映射到 实体
-            var model = parm.Adapt<Gendemo>().ToCreate();
+            var model = parm.Adapt<Gendemo>().ToCreate(HttpContext);
 
             return SUCCESS(_GendemoService.Add(model, it => new
             {
-                it.Name, it.Icon, it.ShowStatus, it.Sex, it.Sort, 
+                it.Name,
+                it.Icon,
+                it.ShowStatus,
+                it.Sex,
+                it.Sort,
             }));
         }
 
@@ -98,7 +103,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPut]
         [ActionPermissionFilter(Permission = "business:gendemo:update")]
-        [Log(Title = "{TableDesc}修改", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "代码生成演示修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdateGendemo([FromBody] GendemoDto parm)
         {
             if (parm == null)
@@ -106,12 +111,16 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("请求实体不能为空");
             }
             //从 Dto 映射到 实体
-            var model = parm.Adapt<Gendemo>().ToUpdate();
+            var model = parm.Adapt<Gendemo>().ToUpdate(HttpContext);
 
             var response = _GendemoService.Update(w => w.Id == model.Id, it => new Gendemo()
             {
                 //Update 字段映射
-                Name = model.Name, Icon = model.Icon, ShowStatus = model.ShowStatus, Sex = model.Sex, Sort = model.Sort, 
+                Name = model.Name,
+                Icon = model.Icon,
+                ShowStatus = model.ShowStatus,
+                Sex = model.Sex,
+                Sort = model.Sort,
             });
 
             return SUCCESS(response);
@@ -123,7 +132,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpDelete("{ids}")]
         [ActionPermissionFilter(Permission = "business:gendemo:delete")]
-        [Log(Title = "{TableDesc}删除", BusinessType = BusinessType.DELETE)]
+        [Log(Title = "代码生成演示删除", BusinessType = BusinessType.DELETE)]
         public IActionResult DeleteGendemo(string ids)
         {
             int[] idsArr = Tools.SpitIntArrary(ids);

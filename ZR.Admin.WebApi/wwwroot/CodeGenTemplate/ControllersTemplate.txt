@@ -77,7 +77,7 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "{Permission}:add")]
-        [Log(Title = "{FunctionName}添加", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "{FunctionName}", BusinessType = BusinessType.INSERT)]
         public IActionResult Add{ModelName}([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
@@ -89,7 +89,7 @@ namespace {ApiControllerNamespace}.Controllers
 
             return SUCCESS(_{ModelName}Service.Add(model, it => new
             {
-                {InsertColumn}
+{InsertColumn}
             }));
         }
 
@@ -99,7 +99,7 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpPut]
         [ActionPermissionFilter(Permission = "{Permission}:update")]
-        [Log(Title = "{FunctionName}修改", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "{FunctionName}", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update{ModelName}([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
@@ -112,7 +112,7 @@ namespace {ApiControllerNamespace}.Controllers
             var response = _{ModelName}Service.Update(w => w.{PrimaryKey} == model.{PrimaryKey}, it => new {ModelName}()
             {
                 //Update 字段映射
-                {UpdateColumn}
+{UpdateColumn}
             });
 
             return SUCCESS(response);
@@ -124,7 +124,7 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpDelete("{ids}")]
         [ActionPermissionFilter(Permission = "{Permission}:delete")]
-        [Log(Title = "{FunctionName}删除", BusinessType = BusinessType.DELETE)]
+        [Log(Title = "{FunctionName}", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete{ModelName}(string ids)
         {
             int[] idsArr = Tools.SpitIntArrary(ids);

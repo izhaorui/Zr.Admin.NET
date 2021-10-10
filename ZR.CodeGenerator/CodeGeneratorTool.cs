@@ -77,12 +77,12 @@ namespace ZR.CodeGenerator
                 //编辑字段
                 if (dbFieldInfo.IsEdit)
                 {
-                    replaceDto.UpdateColumn += $"{dbFieldInfo.CsharpField} = model.{dbFieldInfo.CsharpField}, ";
+                    replaceDto.UpdateColumn += $"                {dbFieldInfo.CsharpField} = model.{dbFieldInfo.CsharpField}, \n";
                 }
                 //新增字段
                 if (dbFieldInfo.IsInsert)
                 {
-                    replaceDto.InsertColumn += $"it.{dbFieldInfo.CsharpField}, ";
+                    replaceDto.InsertColumn += $"                it.{dbFieldInfo.CsharpField}, \n";
                 }
                 //TODO 查询
                 //if (dbFieldInfo.IsQuery)
@@ -309,8 +309,8 @@ namespace ZR.CodeGenerator
                 .Replace("{ModelName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{PrimaryKey}", replaceDto.PKName)
-                .Replace("{UpdateColumn}", replaceDto.UpdateColumn)
-                .Replace("{InsertColumn}", replaceDto.InsertColumn)
+                .Replace("{UpdateColumn}", replaceDto.UpdateColumn.TrimEnd('\n'))
+                .Replace("{InsertColumn}", replaceDto.InsertColumn.TrimEnd('\n'))
                 .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
                 .Replace("{PKCsharpType}", replaceDto.PKType)
                 .Replace("{Author}", replaceDto.Author)
