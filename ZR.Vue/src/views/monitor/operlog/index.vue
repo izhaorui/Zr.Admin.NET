@@ -119,7 +119,7 @@ import {
   list,
   delOperlog,
   cleanOperlog,
-  exportOperlog,
+  // exportOperlog,
 } from "@/api/monitor/operlog";
 import DateRangePicker from '@/components/DateRangePicker'
 
@@ -253,18 +253,18 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      const queryParams = this.queryParams;
-      this.$confirm("是否确认导出所有操作日志数据项?", "警告", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(function () {
-          return exportOperlog(queryParams);
-        })
-        .then((response) => {
-          this.download(response.msg);
-        });
+      // const queryParams = this.queryParams;
+      // this.$confirm("是否确认导出所有操作日志数据项?", "警告", {
+      //   confirmButtonText: "确定",
+      //   cancelButtonText: "取消",
+      //   type: "warning",
+      // })
+      //   .then(function () {
+      //     return exportOperlog(queryParams);
+      //   })
+      //   .then((response) => {
+      //     this.download(response.msg);
+      //   });
     },
   },
 };

@@ -15,13 +15,13 @@
     </el-row>
     <el-row class="mb8" :gutter="20">
       <el-col :span="1.5">
-        <el-button v-hasPermi="['system:task:add']" plain type="primary" icon="el-icon-plus" size="mini" @click="handleCreate">新增</el-button>
+        <el-button v-hasPermi="['monitor:job:add']" plain type="primary" icon="el-icon-plus" size="mini" @click="handleCreate">新增</el-button>
       </el-col>
       <!-- <el-col :span="1.5">
-        <el-button v-hasPermi="['PRIV_TASKS_UPDATE']" plain type="success" icon="el-icon-edit" size="mini" @click="handleRun(null)" :disabled="single">运行一次</el-button>
+        <el-button v-hasPermi="['monitor:job:edit']" plain type="success" icon="el-icon-edit" size="mini" @click="handleRun(null)" :disabled="single">运行一次</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button v-hasPermi="['system:task:delete']" plain type="danger" icon="el-icon-remove" size="mini" @click="handleDelete(null)" :disabled="single">删除</el-button>
+        <el-button v-hasPermi="['monitor:job:delete']" plain type="danger" icon="el-icon-remove" size="mini" @click="handleDelete(null)" :disabled="single">删除</el-button>
       </el-col>-->
       <el-col :span="1.5">
         <el-button v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog({id: 1})">日志</el-button>
@@ -36,7 +36,6 @@
         <el-table-column prop="jobGroup" :show-overflow-tooltip="true" align="center" label="任务分组" />
         <el-table-column prop="assemblyName" align="center" label="程序集名称" :show-overflow-tooltip="true" />
         <el-table-column prop="className" align="center" label="任务类名" :show-overflow-tooltip="true" />
-        <!-- <el-table-column prop="runTimes" align="center" label="执行次数" width="120" /> -->
         <el-table-column prop="cron" align="center" label="运行表达式" />
         <el-table-column sortable prop="isStart" align="center" label="状态" width="90">
           <template slot-scope="scope">
@@ -50,12 +49,12 @@
               <router-link :to="{path: '/job/log', query: {jobId: scope.row.id}}">日志</router-link>
             </el-button>
 
-            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['system:task:run']" size="mini" icon="el-icon-remove" title="运行" @click="handleRun(scope.row)">运行</el-button>
-            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['system:task:stop']" size="mini" icon="el-icon-video-pause" style="color:red" title="停止" @click="handleStop(scope.row)">停止</el-button>
+            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:run']" size="mini" icon="el-icon-remove" title="运行" @click="handleRun(scope.row)">运行</el-button>
+            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:stop']" size="mini" icon="el-icon-video-pause" style="color:red" title="停止" @click="handleStop(scope.row)">停止</el-button>
 
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['system:task:start']" size="mini" icon="el-icon-video-play" title="启动" @click="handleStart(scope.row)">启动</el-button>
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['system:task:edit']" size="mini" icon="el-icon-edit" style="color:gray" title="编辑" @click="handleUpdate(scope.row)">编辑</el-button>
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['system:task:delete']" size="mini" icon="el-icon-delete" style="color:red" title="删除" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:start']" size="mini" icon="el-icon-video-play" title="启动" @click="handleStart(scope.row)">启动</el-button>
+            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:edit']" size="mini" icon="el-icon-edit" style="color:gray" title="编辑" @click="handleUpdate(scope.row)">编辑</el-button>
+            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:delete']" size="mini" icon="el-icon-delete" style="color:red" title="删除" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
