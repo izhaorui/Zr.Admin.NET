@@ -11,7 +11,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using SqlSugar.IOC;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Middleware;
@@ -116,12 +120,54 @@ namespace ZR.Admin.WebApi
         /// 注册Services服务
         /// </summary>
         /// <param name="services"></param>
-        private static void InjectRepositories(IServiceCollection services)
+        private void InjectRepositories(IServiceCollection services)
         {
             services.AddAppService();
 
             //开启计划任务
             services.AddTaskSchedulers();
+
+            string connStr = Configuration.GetConnectionString(OptionsSetting.ConnAdmin);
+            string connStrBus = Configuration.GetConnectionString(OptionsSetting.ConnBus);
+            string dbKey = Configuration[OptionsSetting.DbKey];
+            int dbType = Convert.ToInt32(Configuration[OptionsSetting.ConnDbType]);
+            int dbType_bus = Convert.ToInt32(Configuration[OptionsSetting.ConnBusDbType]);
+
+            IocConfig db1 = new IocConfig()
+            {
+                ConfigId = "0",  //多租户用到
+                ConnectionString = connStr,
+                DbType = (IocDbType)dbType,
+                IsAutoCloseConnection = true//自动释放
+            };
+            IocConfig db2 = new IocConfig()
+            {
+                ConfigId = "1", // 多租户用到
+                ConnectionString = connStrBus,
+                DbType = (IocDbType)dbType_bus,
+                IsAutoCloseConnection = true//自动释放
+            };
+            SugarIocServices.AddSqlSugar(new List<IocConfig>() { db1, db2 });
+
+            //调式代码 用来打印SQL 
+            DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
+            {
+                Console.BackgroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n"
+                    + DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
+            };
+            //出错打印日志
+            DbScoped.SugarScope.GetConnection(0).Aop.OnError = (e) =>
+            {
+                Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
+                Console.WriteLine();
+            };
+            //Bus Db错误日志
+            DbScoped.SugarScope.GetConnection(1).Aop.OnError = (e) =>
+            {
+                Console.WriteLine($"[执行Sql出错Bus]{e.Message}，SQL={e.Sql}");
+                Console.WriteLine();
+            };
         }
     }
 }
