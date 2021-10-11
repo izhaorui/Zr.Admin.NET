@@ -124,7 +124,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="sysRoleDto"></param>
         /// <returns></returns>
         [HttpPut("dataScope")]
-        [ActionPermissionFilter(Permission = "system:role:update")]
+        [ActionPermissionFilter(Permission = "system:role:authorize")]
         [Log(Title = "角色管理", BusinessType = BusinessType.UPDATE)]
         public IActionResult DataScope([FromBody] SysRole sysRoleDto)
         {
