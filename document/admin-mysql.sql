@@ -261,7 +261,7 @@ INSERT INTO sys_menu VALUES (114, '表单构建', 3, 13, 'build', 'tool/build/in
 INSERT INTO sys_menu VALUES (115, '代码生成', 3, 14, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', SYSDATE(), '', NULL, '代码生成菜单');
 INSERT INTO sys_menu VALUES (116, '系统接口', 3, 15, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', SYSDATE(), '', NULL, '系统接口菜单');
 INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 16, '/sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'message', '', SYSDATE(), '', NULL, '发送邮件菜单');
-INSERT INTO sys_menu VALUES (119, '文章列表', 4, 1, 'index', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'list', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (118, '文章列表', 4, 1, 'index', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'list', '', SYSDATE(), '', NULL, NULL);
 
 -- 三级菜单日志管理
 INSERT INTO sys_menu VALUES (500, '操作日志', 108, 1, 'operlog', 'monitor/operlog/index', 0, 0, 'C', '0', '0', 'monitor:operlog:list', 'form', '', SYSDATE(), '', NULL, '操作日志菜单');
@@ -455,37 +455,36 @@ CREATE TABLE `sys_role_menu`  (
 -- Records of sys_role_menu
 -- ----------------------------
 
-INSERT INTO `sys_role_menu` VALUES (2, 1, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 2, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 3, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 4, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 100, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 101, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 102, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 103, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 104, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 106, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 108, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 110, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 112, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 113, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 114, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 500, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 501, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 1008, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 1013, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 2013, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 2019, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 2037, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 2040, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 2044, NULL, '2021-07-07 16:32:32');
-INSERT INTO `sys_role_menu` VALUES (2, 2053, NULL, '2021-07-07 16:32:32');
+INSERT INTO `sys_role_menu` VALUES (2, 1, NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 2, NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 3, NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 5, NULL, SYSDATE());
 
-INSERT INTO `sys_role_menu` VALUES (3, 2056, 'admin', '2021-08-23 14:32:06');
-INSERT INTO `sys_role_menu` VALUES (3, 2057, 'admin', '2021-08-23 14:32:06');
-INSERT INTO `sys_role_menu` VALUES (3, 2062, 'admin', '2021-08-23 14:32:06');
-INSERT INTO `sys_role_menu` VALUES (3, 2063, 'admin', '2021-08-23 14:32:06');
-INSERT INTO `sys_role_menu` VALUES (3, 2064, 'admin', '2021-08-23 14:32:06');
+INSERT INTO `sys_role_menu` VALUES (2, 100, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 101, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 102, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 103, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 104, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 105, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 106, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 107, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 110, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 112, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 113, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 114, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 117, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 1001, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 1008, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 1013, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 1018, 'admin', SYSDATE());
+
+-- 编辑者
+INSERT INTO `sys_role_menu` VALUES (3, 4   , NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (3, 118 , NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (3, 1047, NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (3, 1048, NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (3, 1049, NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (3, 1050, NULL, SYSDATE());
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -694,5 +693,23 @@ CREATE TABLE `gen_table_column`  (
   `remark` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`columnId`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 63 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '代码生成业务表字段' ROW_FORMAT = Dynamic;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ----------------------------
+-- 代码生成测试
+-- Table structure for gen_demo
+-- ----------------------------
+DROP TABLE IF EXISTS `gen_demo`;
+CREATE TABLE `gen_demo`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '名称',
+  `icon` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '图片',
+  `showStatus` int(4) NOT NULL COMMENT '显示状态',
+  `addTime` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  `sex` int(4) NULL DEFAULT NULL COMMENT '用户性别',
+  `sort` int(4) NULL DEFAULT 0 COMMENT '排序',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;
