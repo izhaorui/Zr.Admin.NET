@@ -1,6 +1,8 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Model;
 using SqlSugar;
 using System.Collections.Generic;
+using ZR.Model;
 using ZR.Model.System;
 
 namespace ZR.Repository.System
@@ -14,8 +16,22 @@ namespace ZR.Repository.System
         /// <summary>
         /// 根据条件分页查询角色数据
         /// </summary>
+        /// <param name="sysRole"></param>
         /// <returns></returns>
-        public List<SysRole> SelectRoleList(SysRole sysRole)
+        public List<SysRole> SelectRoleList()
+        {
+            return Context.Queryable<SysRole>()
+                .Where(role => role.DelFlag == "0")
+                .OrderBy(role => role.RoleSort)
+                .ToList();
+        }
+        /// <summary>
+        /// 根据条件分页查询角色数据
+        /// </summary>
+        /// <param name="sysRole"></param>
+        /// <param name="pager"></param>
+        /// <returns></returns>
+        public PagedInfo<SysRole> SelectRoleList(SysRole sysRole, PagerInfo pager)
         {
             return Context.Queryable<SysRole>()
                 .Where(role => role.DelFlag == "0")
@@ -23,7 +39,7 @@ namespace ZR.Repository.System
                 .WhereIF(!string.IsNullOrEmpty(sysRole.Status), role => role.Status == sysRole.Status)
                 .WhereIF(!string.IsNullOrEmpty(sysRole.RoleKey), role => role.RoleKey == sysRole.RoleKey)
                 .OrderBy(role => role.RoleSort)
-                .ToList();
+                .ToPage(pager);
         }
 
         /// <summary>

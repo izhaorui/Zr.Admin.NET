@@ -1,10 +1,12 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Model;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
@@ -33,9 +35,9 @@ namespace ZR.Service
         /// </summary>
         /// <param name="role">角色信息</param>
         /// <returns>角色数据集合信息</returns>
-        public List<SysRole> SelectRoleList(SysRole role)
+        public PagedInfo<SysRole> SelectRoleList(SysRole role, PagerInfo pager)
         {
-            return SysRoleRepository.SelectRoleList(role);
+            return SysRoleRepository.SelectRoleList(role, pager);
         }
 
         /// <summary>
@@ -45,7 +47,7 @@ namespace ZR.Service
         /// <returns></returns>
         public List<SysRole> SelectRoleAll()
         {
-            return SysRoleRepository.SelectRoleList(new SysRole());
+            return SysRoleRepository.SelectRoleList();
         }
 
         /// <summary>
