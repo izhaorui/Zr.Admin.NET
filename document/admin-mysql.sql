@@ -84,17 +84,17 @@ CREATE TABLE `sys_dept`  (
 -- Records of sys_dept
 -- ----------------------------
 INSERT INTO `sys_dept` VALUES (100, 0, '0,100,100,100,100', '某上市公司', 0, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:52', 'admin', '2021-07-07 14:59:51', NULL);
-INSERT INTO `sys_dept` VALUES (101, 100, '0,100', '深圳总公司', 1, 'tom', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (102, 100, '0,100', '长沙分公司', 2, 'tom', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (103, 101, '0,100,101', '研发部门', 1, 'tom', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (104, 101, '0,100,101', '市场部门', 2, 'tom', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (105, 101, '0,100,101', '测试部门', 3, 'tom', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (106, 101, '0,100,101', '财务部门', 4, 'tom', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (108, 200, '0,100,102,108,108,108', '市场部门', 1, 'tom', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', 'admin', '2021-07-07 14:58:40', NULL);
-INSERT INTO `sys_dept` VALUES (109, 102, '0,100,102', '财务部门', 2, 'tom', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (200, 100, '0,100,101', '湖北总公司', 3, 'zrr', NULL, NULL, '0', '0', 'admin', '2021-04-21 13:39:13', 'admin', '2021-07-07 15:00:03', NULL);
-INSERT INTO `sys_dept` VALUES (201, 102, '0,100,102,108', '研发部门', 1, 'zzzz', NULL, NULL, '0', '0', 'admin', '2021-04-21 13:46:43', 'admin', '2021-04-21 15:55:17', NULL);
-INSERT INTO `sys_dept` VALUES (203, 200, '0,100,101,200', '研发部门', 1, NULL, NULL, NULL, '0', '0', 'admin', '2021-07-07 15:00:23', '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (101, 100, '0,100', '深圳总公司', 1, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (102, 100, '0,100', '长沙分公司', 2, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (103, 101, '0,100,101', '研发部门', 1, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (104, 101, '0,100,101', '市场部门', 2, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (105, 101, '0,100,101', '测试部门', 3, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (106, 101, '0,100,101', '财务部门', 4, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (108, 200, '0,100,102,108,108,108', '市场部门', 1, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', 'admin', '2021-07-07 14:58:40', NULL);
+INSERT INTO `sys_dept` VALUES (109, 102, '0,100,102', '财务部门', 2, 'zr', '', '', '0', '0', 'admin', '2021-04-20 20:45:53', '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (200, 100, '0,100,101', '湖北总公司', 3, 'zr', NULL, NULL, '0', '0', 'admin', '2021-04-21 13:39:13', 'admin', '2021-07-07 15:00:03', NULL);
+INSERT INTO `sys_dept` VALUES (201, 102, '0,100,102,108', '研发部门', 1, 'zr', NULL, NULL, '0', '0', 'admin', '2021-04-21 13:46:43', 'admin', '2021-04-21 15:55:17', NULL);
+INSERT INTO `sys_dept` VALUES (203, 200, '0,100,101,200', '研发部门', 1, 'zr', NULL, NULL, '0', '0', 'admin', '2021-07-07 15:00:23', '', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_dict_data
@@ -242,16 +242,16 @@ INSERT INTO sys_menu VALUES (2, '系统监控', 0, 2, 'monitor', NULL, 0, 0, 'M'
 INSERT INTO sys_menu VALUES (3, '系统工具', 0, 3, 'tool', NULL, 0, 0, 'M', '0', '0', '', 'tool', '', SYSDATE(), '', NULL, '系统工具目录');
 INSERT INTO sys_menu VALUES (4, '文章管理', 0, 4, 'article', NULL, 0, 0, 'M', '0', '0', NULL, 'documentation', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (5, '外部打开', 0, 5, 'http://www.izhaorui.cn', NULL, 1, 0, 'M', '0', '0', '', 'link', '', SYSDATE(), '', NULL, 'Zr官网地址');
-INSERT INTO sys_menu VALUES (6, '控制台', 0, 0, 'dashboard', 'index_v1', 0, 0, 'C', '0', '0', '', 'dashboard', '', SYSDATE(), '', NULL, '');
+INSERT INTO sys_menu VALUES (6, '控制台',   0, 0, 'dashboard', 'index_v1', 0, 0, 'C', '0', '0', '', 'dashboard', '', SYSDATE(), '', NULL, '');
 
--- 二级菜单 系统管理
+-- 二级菜单
 INSERT INTO sys_menu VALUES (100, '用户管理', 1, 1, 'user', 'system/user/index', 0, 0, 'C', '0', '0', 'system:user:list', 'user', '', SYSDATE(), '', NULL, '用户管理菜单');
-INSERT INTO sys_menu VALUES (101, '权限管理', 1, 2, 'role', 'system/role/index', 0, 0, 'C', '0', '0', 'system:role:list', 'peoples', '', SYSDATE(), '', NULL, '角色管理菜单');
+INSERT INTO sys_menu VALUES (101, '角色管理', 1, 2, 'role', 'system/role/index', 0, 0, 'C', '0', '0', 'system:role:list', 'peoples', '', SYSDATE(), '', NULL, '角色管理菜单');
 INSERT INTO sys_menu VALUES (102, '菜单管理', 1, 3, 'menu', 'system/menu/index', 0, 0, 'C', '0', '0', 'system:menu:list', 'tree-table', '', SYSDATE(), '', NULL, '菜单管理菜单');
 INSERT INTO sys_menu VALUES (103, '部门管理', 1, 4, 'dept', 'system/dept/index', 0, 0, 'C', '0', '0', 'system:dept:list', 'tree', '', SYSDATE(), '', NULL, '部门管理菜单');
 INSERT INTO sys_menu VALUES (104, '岗位管理', 1, 5, 'post', 'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', SYSDATE(), '', NULL, '岗位管理菜单');
 INSERT INTO sys_menu VALUES (105, '字典管理', 1, 6, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (106, '权限分配', 1, 7, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (106, '角色分配', 1, 2, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
 INSERT into sys_menu VALUES (107, '参数设置', 1, 8, 'config','system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (108, '日志管理', 1, 9, 'log', ''                     , 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
 INSERT INTO sys_menu VALUES (110, '定时任务', 2, 10, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', SYSDATE(), '', NULL, '定时任务菜单');
@@ -262,6 +262,7 @@ INSERT INTO sys_menu VALUES (115, '代码生成', 3, 14, 'gen', 'tool/gen/index'
 INSERT INTO sys_menu VALUES (116, '系统接口', 3, 15, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', SYSDATE(), '', NULL, '系统接口菜单');
 INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 16, '/sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'message', '', SYSDATE(), '', NULL, '发送邮件菜单');
 INSERT INTO sys_menu VALUES (119, '文章列表', 4, 1, 'index', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'list', '', SYSDATE(), '', NULL, NULL);
+
 -- 三级菜单日志管理
 INSERT INTO sys_menu VALUES (500, '操作日志', 108, 1, 'operlog', 'monitor/operlog/index', 0, 0, 'C', '0', '0', 'monitor:operlog:list', 'form', '', SYSDATE(), '', NULL, '操作日志菜单');
 INSERT INTO sys_menu VALUES (501, '登录日志', 108, 2, 'logininfor', 'monitor/logininfor/index', 0, 0, 'C', '0', '0', 'monitor:logininfor:list', 'logininfor', '', SYSDATE(), '', NULL, '登录日志菜单');
@@ -306,14 +307,14 @@ INSERT INTO sys_menu VALUES (1029, '新增用户', 106, 1, '', '', 0, 0, 'F', '0
 INSERT INTO sys_menu VALUES (1030, '删除用户', 106, 2, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:del', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1031, '查询用户', 106, 3, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:query', '', '', SYSDATE(), '', NULL, NULL);
 -- 定时任务 按钮
-INSERT INTO sys_menu values (1040, '任务查询', 110, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:list', '#', 'admin', sysdate(), '', null, '');
-INSERT INTO sys_menu VALUES (1032, '任务新增', 110, 2, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:add', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu values (1032, '任务查询', 110, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:list', '#', 'admin', sysdate(), '', null, '');
+INSERT INTO sys_menu VALUES (1033, '任务新增', 110, 2, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:add', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1034, '任务删除', 110, 3, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:delete', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1035, '任务修改', 110, 4, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:edit', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1036, '任务启动', 110, 5, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:start', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1038, '任务运行', 110, 7, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:run', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1039, '任务停止', 110, 8, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:stop', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1047, '任务日志', 2, 0, '/job/log', 'monitor/job/log', 0, 0, 'C', '1', '0', 'monitor:job:query', 'log', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1037, '任务运行', 110, 7, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:run', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1038, '任务停止', 110, 8, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:stop', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1039, '任务日志', 2, 0, '/job/log', 'monitor/job/log', 0, 0, 'C', '1', '0', 'monitor:job:query', 'log', '', SYSDATE(), '', NULL, NULL);
 -- 操作日志 按钮
 INSERT INTO sys_menu values (1041, '操作查询', 500, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:query',      '#', 'admin', sysdate(), '', null, '');
 INSERT INTO sys_menu VALUES (1042, '操作删除', 500, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:remove', NULL, '', SYSDATE(), '', NULL, NULL);
@@ -321,13 +322,13 @@ INSERT INTO sys_menu VALUES (1042, '操作删除', 500, 1, '#', NULL, 0, 0, 'F',
 INSERT INTO sys_menu values (1044, '登录查询', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:query',   '#', 'admin', sysdate(), '', null, '');
 INSERT INTO sys_menu VALUES (1045, '登录删除', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:remove', '', '', SYSDATE(), '', NULL, NULL);
 -- 文章管理 按钮
-INSERT INTO sys_menu VALUES (1048, '文章新增', 119, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:add', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1049, '文章修改', 119, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:update', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1050, '文章删除', 119, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:delete', '', '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1051, '发布文章', 4  , 4, 'publish', 'system/article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1047, '发布文章', 4,   1, 'publish', 'system/article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1048, '文章新增', 118, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:add', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1049, '文章修改', 118, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:update', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1050, '文章删除', 118, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:delete', '', '', SYSDATE(), '', NULL, NULL);
 -- 代码生成 按钮
-insert into sys_menu VALUES (1060, '生成查询', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:query',  '', '', sysdate(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1061, '生成修改', 3, 1, '/gen/editTable', 'tool/gen/editTable', 0, 0, 'C', '1', '0', 'tool:gen:edit', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1060, '生成修改', 3, 1, '/gen/editTable', 'tool/gen/editTable', 0, 0, 'C', '1', '0', 'tool:gen:edit', '', '', SYSDATE(), '', NULL, NULL);
+insert into sys_menu VALUES (1061, '生成查询', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:query',  '', '', sysdate(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1062, '生成删除', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:remove', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1063, '导入代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:import', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1064, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:code', '', '', SYSDATE(), '', NULL, NULL);
