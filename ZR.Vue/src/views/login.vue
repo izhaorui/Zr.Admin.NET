@@ -1,7 +1,7 @@
 <template>
   <div class="login">
     <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
-      <h3 class="title">ZrAdmin.NET管理系统</h3>
+      <h3 class="title">{{title}}管理系统</h3>
       <el-form-item prop="username">
         <el-input v-model="loginForm.username" type="text" auto-complete="off" placeholder="账号">
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
@@ -30,7 +30,7 @@
     </el-form>
     <!--  底部  -->
     <div class="el-login-footer">
-      <span>Copyright ©2021 <a href="https://gitee.com/izory/ZrAdminNetCore" target="_black">ZrAdmin.NET</a> All Rights Reserved.</span>
+      <span>Copyright ©2021 izhaorui.cn All Rights Reserved.</span>
     </div>
   </div>
 </template>
@@ -39,6 +39,7 @@
 import { getCodeImg } from "@/api/system/login";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from "@/utils/jsencrypt";
+import defaultSettings from '@/settings'
 
 export default {
   name: "Login",
@@ -53,6 +54,7 @@ export default {
         code: "",
         uuid: "",
       },
+      title: defaultSettings.title,
       loginRules: {
         username: [
           { required: true, trigger: "blur", message: "用户名不能为空" },
