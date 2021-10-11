@@ -26,43 +26,46 @@
     </el-row>
 
     <el-row :gutter="24" style="display:flex;">
-      <el-col :span="17">
-        <el-table v-loading="loading" :data="roleList" border highlight-current-row @row-click="handleDataScope" @selection-change="handleSelectionChange" >
+      <el-col :span="15">
+        <el-table v-loading="loading" :data="roleList" border @selection-change="handleSelectionChange">
           <el-table-column label="编号" prop="roleId" width="80" />
-          <el-table-column label="名称" prop="roleName" :show-overflow-tooltip="true"/>
-          <el-table-column label="权限字符" prop="roleKey" :show-overflow-tooltip="true" />
-          <el-table-column label="状态" align="center" width="100">
+          <el-table-column label="名称" prop="roleName" />
+          <el-table-column label="权限字符" prop="roleKey"/>
+          <el-table-column label="状态" align="center">
             <template slot-scope="scope">
               <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
             </template>
           </el-table-column>
-          <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-            <template slot-scope="scope">
-              <span>{{ parseTime(scope.row.createTime) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+          <el-table-column label="创建时间" align="center" prop="createTime" width="150"/>
+          <el-table-column label="操作" align="center" width="200">
             <template slot-scope="scope">
               <el-button size="mini" type="text" icon="el-icon-edit" @click.stop="handleUpdate(scope.row)" v-if="scope.row.roleKey != 'admin'" v-hasPermi="['system:role:edit']">修改</el-button>
               <el-button size="mini" type="text" icon="el-icon-delete" @click.stop="handleDelete(scope.row)" v-if="scope.row.roleKey != 'admin'" v-hasPermi="['system:role:remove']">删除</el-button>
+              <el-button size="mini" type="text" icon="el-icon-circle-check" @click.stop="handleDataScope(scope.row)" v-if="scope.row.roleKey != 'admin'" v-hasPermi="['system:role:authorize']">数据权限</el-button>
             </template>
           </el-table-column>
         </el-table>
+
+        <!-- <pagination :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" /> -->
       </el-col>
-      <el-col :span="7">
-        <el-form :model="form" v-show="showRoleScope">
-          <el-form-item label="菜单权限" style="max-height:400px;overflow:auto;">
+      <el-col :span="9">
+        <el-form :model="form" v-show="showRoleScope" label-width="80px" style="width:90%">
+          <el-form-item label="权限字符">
+            {{form.roleKey}}
+          </el-form-item>
+          <el-form-item label="数据权限" style="max-height:350px;overflow:auto;">
             <el-checkbox v-model="menuExpand" @change="handleCheckedTreeExpand($event, 'menu')">展开/折叠</el-checkbox>
-            <el-tree class="tree-border" :data="menuOptions" show-checkbox ref="menu" node-key="id" empty-text="加载中，请稍后" :props="defaultProps"></el-tree>
+            <el-checkbox v-model="menuNodeAll" @change="handleCheckedTreeNodeAll($event, 'menu')">全选/全不选</el-checkbox>
+            <el-checkbox v-model="form.menuCheckStrictly" @change="handleCheckedTreeConnect($event, 'menu')">父子联动</el-checkbox>
+            <el-tree class="tree-border" :data="menuOptions" show-checkbox ref="menu" node-key="id" :check-strictly="!form.menuCheckStrictly" empty-text="加载中，请稍后" :props="defaultProps"></el-tree>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="submitDataScope">保存</el-button>
+            <el-button type="primary" @click="submitDataScope" v-hasPermi="['system:role:authorize']">保存</el-button>
           </el-form-item>
         </el-form>
 
       </el-col>
     </el-row>
-    <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改角色配置对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
@@ -81,12 +84,6 @@
             <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictValue">{{ dict.dictLabel }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <!-- <el-form-item label="菜单权限" v-show="showMenuTree">
-          <el-checkbox v-model="menuExpand" @change="handleCheckedTreeExpand($event, 'menu')">展开/折叠</el-checkbox>
-          <el-checkbox v-model="menuNodeAll" @change="handleCheckedTreeNodeAll($event, 'menu')">全选/全不选</el-checkbox>
-          <el-checkbox v-model="form.menuCheckStrictly" @change="handleCheckedTreeConnect($event, 'menu')">父子联动</el-checkbox>
-          <el-tree class="tree-border" :data="menuOptions" show-checkbox ref="menu" node-key="id" empty-text="加载中，请稍后" :props="defaultProps"></el-tree>
-        </el-form-item> -->
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
         </el-form-item>
@@ -398,11 +395,10 @@ export default {
     /** 分配角色权限按钮操作 */
     //新增 和上面代码基本相同
     handleDataScope(row) {
-      if(row.roleId == 1){
+      if (row.roleId == 1) {
         this.showRoleScope = false;
         return;
       }
-      console.log('分配菜单')
       this.reset();
       this.showRoleScope = true;
       const roleId = row.roleId || this.ids;
@@ -420,6 +416,7 @@ export default {
         roleId: row.roleId,
         roleName: row.roleName,
         roleKey: row.roleKey,
+        menuCheckStrictly: true
       };
     },
     /** 提交按钮 */
