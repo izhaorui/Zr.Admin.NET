@@ -161,9 +161,8 @@ export default {
     handleEditTable(row) {
       this.$router.push({
         path: "/gen/editTable",
-        params: { tableId: row.tableId },
+        query: { tableId: row.tableId },
       });
-      // this.$router.push({ path: "/job/log", params: param });
     },
     // 代码预览
     handlePreview(row) {
