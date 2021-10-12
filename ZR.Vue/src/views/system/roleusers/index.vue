@@ -9,8 +9,8 @@
       <el-col :span="20">
         <el-form style="display:flex" :inline="true" @submit.native.prevent>
           <el-form-item>
-            <el-button type="primary" size="mini" @click="handleGetUserTable" v-hasPermi="['system:roleusers:add']">添加用户</el-button>
-            <el-button type="danger" size="mini" @click="handleDelete" v-hasPermi="['system:roleusers:del']">删除用户</el-button>
+            <el-button type="primary" plain size="mini" icon="el-icon-plus" @click="handleGetUserTable" v-hasPermi="['system:roleusers:add']">添加用户</el-button>
+            <el-button type="danger" plain size="mini" icon="el-icon-circle-close" @click="cancelAuthUserAll" v-hasPermi="['system:roleusers:del']">批量取消授权</el-button>
           </el-form-item>
           <el-form-item style="margin-left:auto">
             <el-input v-model="search" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" />
@@ -39,14 +39,14 @@
 
     <!-- 添加或修改菜单对话框 -->
     <el-dialog title="添加用户" :visible.sync="open" append-to-body :close-on-click-modal="false" @close="cancel">
-      <el-form style="display:flex" :inline="true" @submit.native.prevent>
+      <!-- <el-form style="display:flex" :inline="true" @submit.native.prevent>
         <el-form-item style="margin-left:auto">
           <el-input v-model="search" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" />
         </el-form-item>
-      </el-form>
+      </el-form> -->
       <el-row>
         <el-col>
-          <el-table ref="userTable" v-loading="loadingUser" :data="dataUserTable.filter(data => !search || data.userId.toLowerCase().includes(search.toLowerCase()) || data.userName.toLowerCase().includes(search.toLowerCase()))" row-key="userId" stripe border :height="tableHeight*0.5">
+          <el-table ref="userTable" v-loading="loadingUser" :data="dataUserTable" row-key="userId" stripe border :height="tableHeight*0.5">
             <el-table-column type="selection" width="55" align="center" />
             <el-table-column prop="userId" align="center" label="用户编号" width="150" />
             <el-table-column prop="userName" align="center" label="用户名称" width="150" />
@@ -106,7 +106,6 @@ export default {
     // 获取角色列表
     this.loadingRole = true;
     listRole({ pageSize: 50 }).then((response) => {
-      console.log(response);
       this.dataRoleTable = response.data.result;
       this.handleRoleTableSelection(this.dataRoleTable[0]);
       this.$refs.roleTable.setCurrentRow(this.dataRoleTable[0]);
@@ -122,13 +121,14 @@ export default {
         this.loadingRoleUser = false;
       });
     },
-    // 删除角色用户
-    handleDelete() {
+    // 批量删除角色用户
+    cancelAuthUserAll() {
       this.delSelections = [];
       this.$refs.roleUserTable.selection.forEach((element) => {
         this.delSelections.push(element.userId);
       });
       if (this.delSelections.length === 0) {
+        console.log('未选中')
         return;
       }
       this.$confirm(
@@ -156,6 +156,7 @@ export default {
         })
         .catch(() => {});
     },
+    // 取消授权
     handleCancelPerm(row) {
       this.delSelections = [];
       this.delSelections.push(row.userId);
@@ -183,7 +184,6 @@ export default {
       this.open = true;
       this.loadingUser = true;
       getExcludeUsers(this.roleId).then((response) => {
-        console.log(response);
         this.dataUserTable = response.data;
         this.loadingUser = false;
       });

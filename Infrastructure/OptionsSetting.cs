@@ -7,7 +7,10 @@ namespace Infrastructure
     public class OptionsSetting
     {
         public static string ConnAdmin = "conn_zrAdmin";
-        public static string ConnDbType = "conn_zrAdmin_Type";
+        public static string ConnDbType = "conn_zrAdmin_type";
+        public static string ConnBus = "conn_bus";
+        public static string ConnBusDbType = "conn_bus_type";
+
         public static string DbKey = "DbKey";
 
         public string Redis { get; set; }

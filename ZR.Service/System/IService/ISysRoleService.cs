@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Infrastructure.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,8 +13,9 @@ namespace ZR.Service.System.IService
         /// 根据条件分页查询角色数据
         /// </summary>
         /// <param name="role">角色信息</param>
+        /// <param name="pager"></param>
         /// <returns>角色数据集合信息</returns>
-        public List<SysRole> SelectRoleList(SysRole role);
+        public PagedInfo<SysRole> SelectRoleList(SysRole role, Model.PagerInfo pager);
 
         /// <summary>
         /// 查询所有角色

@@ -18,42 +18,42 @@ namespace ZR.Repository
         int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);
         int Add(T t);
 
-        int InsertIgnoreNullColumn(T t);
+        //int InsertIgnoreNullColumn(T t);
 
-        int InsertIgnoreNullColumn(T t, params string[] columns);
+        //int InsertIgnoreNullColumn(T t, params string[] columns);
 
         //int Insert(SqlSugarClient client, T t);
 
-        long InsertBigIdentity(T t);
+        //long InsertBigIdentity(T t);
 
         int Insert(List<T> t);
-        int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);
+        //int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);
 
-        int InsertIgnoreNullColumn(List<T> t);
+        //int InsertIgnoreNullColumn(List<T> t);
 
-        int InsertIgnoreNullColumn(List<T> t, params string[] columns);
+        //int InsertIgnoreNullColumn(List<T> t, params string[] columns);
 
-        DbResult<bool> InsertTran(T t);
+        //DbResult<bool> InsertTran(T t);
 
-        DbResult<bool> InsertTran(List<T> t);
+        //DbResult<bool> InsertTran(List<T> t);
 
-        T InsertReturnEntity(T t);
+        //T InsertReturnEntity(T t);
 
-        T InsertReturnEntity(T t, string sqlWith = SqlWith.UpdLock);
+        //T InsertReturnEntity(T t, string sqlWith = SqlWith.UpdLock);
 
-        bool ExecuteCommand(string sql, object parameters);
+        //bool ExecuteCommand(string sql, object parameters);
 
-        bool ExecuteCommand(string sql, params SugarParameter[] parameters);
+        //bool ExecuteCommand(string sql, params SugarParameter[] parameters);
 
-        bool ExecuteCommand(string sql, List<SugarParameter> parameters);
+        //bool ExecuteCommand(string sql, List<SugarParameter> parameters);
 
         #endregion add
 
         #region update
 
-        bool UpdateEntity(T entity, bool ignoreNullColumns = false);
+        //bool UpdateEntity(T entity, bool ignoreNullColumns = false);
 
-        bool Update(T entity, Expression<Func<T, bool>> expression);
+        //bool Update(T entity, Expression<Func<T, bool>> expression);
 
         /// <summary>
         /// 只更新表达式的值
@@ -61,11 +61,11 @@ namespace ZR.Repository
         /// <param name="entity"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false);
+        //bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false);
 
-        bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
+        //bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
 
-        bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
+        //bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
 
         /// <summary>
         ///
@@ -76,7 +76,7 @@ namespace ZR.Repository
         /// <returns></returns>
         bool Update(T entity, List<string> list = null, bool isNull = true);
 
-        bool Update(List<T> entity);
+        //bool Update(List<T> entity);
         bool Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
 
         #endregion update
@@ -89,10 +89,10 @@ namespace ZR.Repository
 
         #region delete
 
-        bool DeleteExp(Expression<Func<T, bool>> expression);
+        //bool DeleteExp(Expression<Func<T, bool>> expression);
 
         //bool Delete<PkType>(PkType[] primaryKeyValues);
-        int Delete(object[] obj);
+        //int Delete(object[] obj);
         int Delete(object id);
         bool DeleteTable();
 
@@ -120,19 +120,19 @@ namespace ZR.Repository
 
         List<T> QueryableToList(Expression<Func<T, bool>> expression);
 
-        Task<List<T>> QueryableToListAsync(Expression<Func<T, bool>> expression);
+        //Task<List<T>> QueryableToListAsync(Expression<Func<T, bool>> expression);
 
         //string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere);
 
-        List<T> QueryableToList(string tableName);
+        //List<T> QueryableToList(string tableName);
 
-        List<T> QueryableToList(string tableName, Expression<Func<T, bool>> expression);
+        //List<T> QueryableToList(string tableName, Expression<Func<T, bool>> expression);
 
-        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10);
+        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10);
 
-        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, string order, int pageIndex = 0, int pageSize = 10);
+        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, string order, int pageIndex = 0, int pageSize = 10);
 
-        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Expression<Func<T, object>> orderFiled, string orderBy, int pageIndex = 0, int pageSize = 10);
+        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Expression<Func<T, object>> orderFiled, string orderBy, int pageIndex = 0, int pageSize = 10);
 
         //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Bootstrap.BootstrapParams bootstrap);
 

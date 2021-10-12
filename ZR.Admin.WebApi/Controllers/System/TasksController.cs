@@ -40,7 +40,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "system:task:list")]
+        [ActionPermissionFilter(Permission = "monitor:job:list")]
         public IActionResult Query([FromQuery] TasksQueryDto parm, [FromQuery] PagerInfo pager)
         {
             //开始拼装查询条件
@@ -71,13 +71,12 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(_tasksQzService.GetAll());
         }
 
-
         /// <summary>
         /// 添加任务
         /// </summary>
         /// <returns></returns>
         [HttpPost("create")]
-        [ActionPermissionFilter(Permission = "system:task:add")]
+        [ActionPermissionFilter(Permission = "monitor:job:add")]
         [Log(Title = "添加任务", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] TasksCreateDto parm)
         {
@@ -104,7 +103,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost("update")]
-        [ActionPermissionFilter(Permission = "system:task:edit")]
+        [ActionPermissionFilter(Permission = "monitor:job:edit")]
         [Log(Title = "修改任务", BusinessType = BusinessType.UPDATE)]
         public async Task<IActionResult> Update([FromBody] TasksUpdateDto parm)
         {
@@ -156,7 +155,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpDelete("delete")]
-        [ActionPermissionFilter(Permission = "system:task:delete")]
+        [ActionPermissionFilter(Permission = "monitor:job:delete")]
         [Log(Title = "删除任务", BusinessType = BusinessType.DELETE)]
         public async Task<IActionResult> Delete(string id)
         {
@@ -185,7 +184,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("start")]
-        [ActionPermissionFilter(Permission = "system:task:start")]
+        [ActionPermissionFilter(Permission = "monitor:job:start")]
         [Log(Title = "启动任务", BusinessType = BusinessType.OTHER)]
         public async Task<IActionResult> Start(string id)
         {
@@ -216,7 +215,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("stop")]
-        [ActionPermissionFilter(Permission = "system:task:stop")]
+        [ActionPermissionFilter(Permission = "monitor:job:stop")]
         [Log(Title = "停止任务", BusinessType = BusinessType.OTHER)]
         public async Task<IActionResult> Stop(string id)
         {
@@ -248,7 +247,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("run")]
-        [ActionPermissionFilter(Permission = "system:task:run")]
+        [ActionPermissionFilter(Permission = "monitor:job:run")]
         [Log(Title = "执行任务", BusinessType = BusinessType.OTHER)]
         public async Task<IActionResult> Run(string id)
         {

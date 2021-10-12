@@ -28,6 +28,7 @@
 <script>
 import logoImg from "@/assets/logo/logo.png";
 import variables from "@/assets/styles/variables.scss";
+import defaultSettings from '@/settings'
 
 export default {
   name: "SidebarLogo",
@@ -47,7 +48,7 @@ export default {
   },
   data() {
     return {
-      title: "ZrAdmin.NET",
+      title: defaultSettings.title,
       logo: logoImg,
     };
   }

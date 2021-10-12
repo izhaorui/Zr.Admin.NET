@@ -38,11 +38,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysRole role, [FromQuery] PagerInfo pager)
         {
-            var list = sysRoleService.SelectRoleList(role);
+            var list = sysRoleService.SelectRoleList(role, pager);
 
-            VMPageResult<SysRole> vMPageResult = new(list, pager);
-
-            return SUCCESS(vMPageResult, TIME_FORMAT_FULL);
+            return SUCCESS(list, TIME_FORMAT_FULL);
         }
 
         /// <summary>
@@ -124,7 +122,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="sysRoleDto"></param>
         /// <returns></returns>
         [HttpPut("dataScope")]
-        [ActionPermissionFilter(Permission = "system:role:update")]
+        [ActionPermissionFilter(Permission = "system:role:authorize")]
         [Log(Title = "角色管理", BusinessType = BusinessType.UPDATE)]
         public IActionResult DataScope([FromBody] SysRole sysRoleDto)
         {
