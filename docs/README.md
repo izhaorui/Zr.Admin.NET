@@ -33,4 +33,44 @@
 !> Donate <br/>
  如果你觉得这个项目帮助到了你，你可以请作者喝杯咖啡表示鼓励 ☕️
 
-![donate](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/pay.jpg ':size=80%')
+![donate](http://ss.izhaorui.cn/pay.jpg ':size=80%')
+
+
+## 演示
+<table>
+    <tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/1.png"/></td>
+        <td><img src="http://ss.izhaorui.cn/zradmin/2.png"/></td>
+    </tr>
+    <tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/3.png"/></td>
+        <td><img src="http://ss.izhaorui.cn/zradmin/4.png"/></td>
+    </tr>
+    <tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/5.png"/></td>
+        <td><img src="http://ss.izhaorui.cn/zradmin/6.png"/></td>
+    </tr>
+	<tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/7.png"/></td>
+        <td><img src="http://ss.izhaorui.cn/zradmin/8.png"/></td>
+    </tr>	
+	<tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/9.png"/></td>
+        <td><img src="http://ss.izhaorui.cn/zradmin/10.png"/></td>
+    </tr>
+	<tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/11.png"/></td>
+        <td><img src="http://ss.izhaorui.cn/zradmin/12.png"/></td>
+    </tr>
+	<tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/13.png"/></td>
+        <td><img src="http://ss.izhaorui.cn/zradmin/14.png"/></td>
+    </tr>
+	<tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/15.png"/></td>
+        <td><img src="http://ss.izhaorui.cn/zradmin/16.png"/></td>
+    </tr>
+	<tr>
+        <td><img src="http://ss.izhaorui.cn/zradmin/17.png"/></td>
+    </tr>
+</table>
