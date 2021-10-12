@@ -69,17 +69,17 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Route("edit")]
         public IActionResult RoleAdd([FromBody] SysRole sysRoleDto)
         {
-            if (sysRoleDto == null) return OutputJson(ApiResult.Error(101, "请求参数错误"));
+            if (sysRoleDto == null) return ToResponse(ApiResult.Error(101, "请求参数错误"));
 
             if (UserConstants.NOT_UNIQUE.Equals(sysRoleService.CheckRoleKeyUnique(sysRoleDto)))
             {
-                return OutputJson(ApiResult.Error((int)ResultCode.CUSTOM_ERROR, $"新增角色'{sysRoleDto.RoleName}'失败，角色权限已存在"));
+                return ToResponse(ApiResult.Error((int)ResultCode.CUSTOM_ERROR, $"新增角色'{sysRoleDto.RoleName}'失败，角色权限已存在"));
             }
 
             sysRoleDto.Create_by = User.Identity.Name;
             long roleId = sysRoleService.InsertRole(sysRoleDto);
 
-            return OutputJson(ToJson(roleId));
+            return ToResponse(ToJson(roleId));
         }
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (sysRoleDto == null || sysRoleDto.RoleId <= 0 || string.IsNullOrEmpty(sysRoleDto.RoleKey))
             {
-                return OutputJson(ApiResult.Error(101, "请求参数错误"));
+                return ToResponse(ApiResult.Error(101, "请求参数错误"));
             }
             sysRoleService.CheckRoleAllowed(sysRoleDto);
             var info = sysRoleService.SelectRoleById(sysRoleDto.RoleId);
@@ -103,7 +103,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 if (UserConstants.NOT_UNIQUE.Equals(sysRoleService.CheckRoleKeyUnique(sysRoleDto)))
                 {
-                    return OutputJson(ApiResult.Error($"编辑角色'{sysRoleDto.RoleName}'失败，角色权限已存在"));
+                    return ToResponse(ApiResult.Error($"编辑角色'{sysRoleDto.RoleName}'失败，角色权限已存在"));
                 }
             }
 
@@ -115,7 +115,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
                 return SUCCESS(upResult);
             }
-            return OutputJson(ApiResult.Error($"修改角色'{sysRoleDto.RoleName}'失败，请联系管理员"));
+            return ToResponse(ApiResult.Error($"修改角色'{sysRoleDto.RoleName}'失败，请联系管理员"));
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "角色管理", BusinessType = BusinessType.UPDATE)]
         public IActionResult DataScope([FromBody] SysRole sysRoleDto)
         {
-            if (sysRoleDto == null || sysRoleDto.RoleId <= 0) return OutputJson(ApiResult.Error(101, "请求参数错误"));
+            if (sysRoleDto == null || sysRoleDto.RoleId <= 0) return ToResponse(ApiResult.Error(101, "请求参数错误"));
 
             sysRoleDto.Create_by = HttpContextExtension.GetName(HttpContext);
             //删除角色菜单
@@ -151,7 +151,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             long[] roleIds = Tools.SpitLongArrary(roleId);
             int result = sysRoleService.DeleteRoleByRoleId(roleIds);
 
-            return OutputJson(ToJson(result));
+            return ToResponse(ToJson(result));
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             int result = sysRoleService.UpdateRoleStatus(roleDto);
 
-            return OutputJson(ToJson(result));
+            return ToResponse(ToJson(result));
         }
     }
 }

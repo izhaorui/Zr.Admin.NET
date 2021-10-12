@@ -7,7 +7,8 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysTasksQzService: IBaseService<SysTasksQz>
+    public interface ISysTasksQzService : IBaseService<SysTasksQz>
     {
+        //SysTasksQz GetId(object id);
     }
 }

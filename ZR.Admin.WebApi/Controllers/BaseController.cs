@@ -22,7 +22,7 @@ namespace ZR.Admin.WebApi.Controllers
             return Content(jsonStr, "application/json");
         }
 
-        protected IActionResult ToRespose(ResultCode resultCode, object data = null)
+        protected IActionResult ToResponse(ResultCode resultCode, object data = null)
         {
             string jsonStr = GetJsonStr(GetApiResult(resultCode, data), "");
             return Content(jsonStr, "application/json");
@@ -34,13 +34,13 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="apiResult"></param>
         /// <param name="timeFormatStr"></param>
         /// <returns></returns>
-        protected IActionResult OutputJson(ApiResult apiResult, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
+        protected IActionResult ToResponse(ApiResult apiResult, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
         {
             string jsonStr = GetJsonStr(apiResult, timeFormatStr);
 
             return Content(jsonStr, "application/json");
         }
-        protected IActionResult OutputJson(long rows, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
+        protected IActionResult ToResponse(long rows, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
         {
             string jsonStr = GetJsonStr(ToJson(rows), timeFormatStr);
 
@@ -97,7 +97,7 @@ namespace ZR.Admin.WebApi.Controllers
 
         protected IActionResult CustomError(ResultCode resultCode, string msg = "")
         {
-            return OutputJson(GetApiResult(resultCode, msg));
+            return ToResponse(GetApiResult(resultCode, msg));
         }
     }
 }

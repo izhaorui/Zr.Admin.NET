@@ -57,6 +57,8 @@ service.interceptors.response.use(res => {
         location.href = '/index';
       })
     })
+
+    return Promise.reject()
   }
   else if (code == 0 || code == 110 || code == 101 || code == 403 || code == 500) {
     Message({
@@ -90,8 +92,6 @@ service.interceptors.response.use(res => {
     return Promise.reject(error)
   }
 )
-
-
 
 /**
  * get方法，对应get请求

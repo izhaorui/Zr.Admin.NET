@@ -3,7 +3,7 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysFileService : IBaseService<SysFile>
+    public interface ISysFileService
     {
     }
 }

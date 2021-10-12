@@ -15,7 +15,7 @@ namespace ZR.Service
     /// 角色
     /// </summary>
     [AppService(ServiceType = typeof(ISysRoleService), ServiceLifetime = LifeTime.Transient)]
-    public class SysRoleService: BaseService<SysRole>, ISysRoleService
+    public class SysRoleService: ISysRoleService
     {
         private SysRoleRepository SysRoleRepository;
         private ISysUserRoleService SysUserRoleService;

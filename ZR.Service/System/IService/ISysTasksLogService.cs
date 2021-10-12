@@ -1,4 +1,5 @@
 ﻿using ZR.Model.System;
+using ZR.Repository;
 
 namespace ZR.Service.System.IService
 {

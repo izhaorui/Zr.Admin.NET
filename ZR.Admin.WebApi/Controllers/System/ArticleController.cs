@@ -147,7 +147,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (id <= 0)
             {
-                return OutputJson(ApiResult.Error($"删除失败Id 不能为空"));
+                return ToResponse(ApiResult.Error($"删除失败Id 不能为空"));
             }
 
             // 删除文章

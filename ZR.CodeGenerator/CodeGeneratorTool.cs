@@ -53,7 +53,6 @@ namespace ZR.CodeGenerator
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = tableInfo.ClassName;//表名对应C# 实体类名
             replaceDto.TableName = tableInfo.TableName;//表名
-            replaceDto.TableDesc = tableInfo.TableComment;//表说明描述
             replaceDto.Permission = $"{tableInfo.ModuleName}:{tableInfo.ClassName.ToLower()}";//权限
             replaceDto.ViewsFileName = FirstLowerCase(replaceDto.ModelTypeName);
             replaceDto.Author = tableInfo.FunctionAuthor;
@@ -78,12 +77,12 @@ namespace ZR.CodeGenerator
                 //编辑字段
                 if (dbFieldInfo.IsEdit)
                 {
-                    replaceDto.UpdateColumn += $"{dbFieldInfo.CsharpField} = model.{dbFieldInfo.CsharpField}, ";
+                    replaceDto.UpdateColumn += $"                {dbFieldInfo.CsharpField} = model.{dbFieldInfo.CsharpField}, \n";
                 }
                 //新增字段
                 if (dbFieldInfo.IsInsert)
                 {
-                    replaceDto.InsertColumn += $"it.{dbFieldInfo.CsharpField}, ";
+                    replaceDto.InsertColumn += $"                it.{dbFieldInfo.CsharpField}, \n";
                 }
                 //TODO 查询
                 //if (dbFieldInfo.IsQuery)
@@ -310,8 +309,8 @@ namespace ZR.CodeGenerator
                 .Replace("{ModelName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{PrimaryKey}", replaceDto.PKName)
-                .Replace("{UpdateColumn}", replaceDto.UpdateColumn)
-                .Replace("{InsertColumn}", replaceDto.InsertColumn)
+                .Replace("{UpdateColumn}", replaceDto.UpdateColumn.TrimEnd('\n'))
+                .Replace("{InsertColumn}", replaceDto.InsertColumn.TrimEnd('\n'))
                 .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
                 .Replace("{PKCsharpType}", replaceDto.PKType)
                 .Replace("{Author}", replaceDto.Author)
@@ -393,9 +392,9 @@ namespace ZR.CodeGenerator
             var content = FileHelper.ReadTemplate($"{tempName}.txt")
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.Permission)
-                .Replace("{ModelTypeDesc}", replaceDto.TableDesc)
                 .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
                 .Replace("{ViewsFileName}", replaceDto.ViewsFileName)
+                .Replace("{ParentId}", generateDto.ParentMenuId.ToString())
                 .Replace("{FunctionName}", generateDto.GenTable.FunctionName);
 
             generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, content));

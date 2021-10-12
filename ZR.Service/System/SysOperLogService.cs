@@ -13,7 +13,7 @@ namespace ZR.Service.System
     /// 操作日志
     /// </summary>
     [AppService(ServiceType = typeof(ISysOperLogService), ServiceLifetime = LifeTime.Transient)]
-    public class SysOperLogService: BaseService<SysOperLog>, ISysOperLogService
+    public class SysOperLogService : ISysOperLogService
     {
         public SysOperLogRepository sysOperLogRepository;
 

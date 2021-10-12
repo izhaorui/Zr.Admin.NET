@@ -79,12 +79,10 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException(ResultCode.PARAM_ERROR, "请求参数错误");
             }
             //从 Dto 映射到 实体
-            var user = userDto.Adapt<SysUser>();
-            user.Update_by = User.Identity.Name;
-            user.Update_time = DateTime.Now;
+            var user = userDto.Adapt<SysUser>().ToUpdate(HttpContext);
 
             int result = UserService.ChangeUser(user);
-            return OutputJson(result);
+            return ToResponse(result);
         }
 
         /// <summary>
@@ -103,11 +101,11 @@ namespace ZR.Admin.WebApi.Controllers.System
             string newMd5 = NETCore.Encrypt.EncryptProvider.Md5(newPassword);
             if (user.Password != oldMd5)
             {
-                return OutputJson(ApiResult.Error("修改密码失败，旧密码错误"));
+                return ToResponse(ApiResult.Error("修改密码失败，旧密码错误"));
             }
             if (user.Password == newMd5)
             {
-                return OutputJson(ApiResult.Error("新密码不能和旧密码相同"));
+                return ToResponse(ApiResult.Error("新密码不能和旧密码相同"));
             }
             if (UserService.ResetPwd(loginUser.UserId, newMd5) > 0)
             {
@@ -116,7 +114,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return SUCCESS(1);
             }
 
-            return OutputJson(ApiResult.Error("修改密码异常，请联系管理员"));
+            return ToResponse(ApiResult.Error("修改密码异常，请联系管理员"));
         }
 
         /// <summary>

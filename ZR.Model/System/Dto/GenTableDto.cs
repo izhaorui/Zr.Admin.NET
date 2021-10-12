@@ -21,6 +21,10 @@ namespace ZR.Model.System.Dto
         public string FunctionAuthor { get; set; }
         public string GenType { get; set; }
         public string Options { get; set; }
+        /// <summary>
+        /// 上级菜单id
+        /// </summary>
+        public int ParentMenuId { get; set; }
         public List<GenTableColumnDto> Columns { get; set; }
     }
 

@@ -21,11 +21,11 @@ namespace Infrastructure
             int day = date.Day;
             int hour = date.Hour;
 
-            string timeDir = $"{year}/{month}/{day}/{hour}";// date.ToString("yyyyMM/dd/HH/");
+            string timeDir = $"{year}{month}{day}";// date.ToString("yyyyMM/dd/HH/");
 
             if (!string.IsNullOrEmpty(path))
             {
-                timeDir = $"{path}/{timeDir}";
+                timeDir = $"{path}/{timeDir}/";
             }
             return timeDir;
         }

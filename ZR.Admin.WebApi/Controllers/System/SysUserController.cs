@@ -75,7 +75,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 dic.Add("roleIds", RoleService.SelectUserRoles(userId));
             }
 
-            return OutputJson(ApiResult.Success(dic));
+            return ToResponse(ApiResult.Success(dic));
         }
 
         /// <summary>
@@ -88,16 +88,16 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:add")]
         public IActionResult AddUser([FromBody] SysUser user)
         {
-            if (user == null) { return OutputJson(ApiResult.Error(101, "请求参数错误")); }
+            if (user == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
             if (UserConstants.NOT_UNIQUE.Equals(UserService.CheckUserNameUnique(user.UserName)))
             {
-                return OutputJson(ApiResult.Error($"新增用户 '{user.UserName}'失败，登录账号已存在"));
+                return ToResponse(ApiResult.Error($"新增用户 '{user.UserName}'失败，登录账号已存在"));
             }
 
             user.Create_by = User.Identity.Name;
             user.Password = NETCore.Encrypt.EncryptProvider.Md5(user.Password);
 
-            return OutputJson(UserService.InsertUser(user));
+            return ToResponse(UserService.InsertUser(user));
         }
 
         /// <summary>
@@ -110,12 +110,12 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:edit")]
         public IActionResult UpdateUser([FromBody] SysUser user)
         {
-            if (user == null || user.UserId <= 0) { return OutputJson(ApiResult.Error(101, "请求参数错误")); }
+            if (user == null || user.UserId <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
             user.Update_by = User.Identity.Name;
             int upResult = UserService.UpdateUser(user);
 
-            return OutputJson(upResult);
+            return ToResponse(upResult);
         }
 
         /// <summary>
@@ -128,10 +128,10 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:update")]
         public IActionResult ChangeStatus([FromBody] SysUser user)
         {
-            if (user == null) { return OutputJson(ApiResult.Error(101, "请求参数错误")); }
+            if (user == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
             int result = UserService.ChangeUserStatus(user);
-            return OutputJson(ToJson(result));
+            return ToResponse(ToJson(result));
         }
 
         /// <summary>
@@ -144,11 +144,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:remove")]
         public IActionResult Remove(int userid = 0)
         {
-            if (userid <= 0) { return OutputJson(ApiResult.Error(101, "请求参数错误")); }
+            if (userid <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
             int result = UserService.DeleteUser(userid);
 
-            return OutputJson(ToJson(result));
+            return ToResponse(ToJson(result));
         }
 
         /// <summary>
@@ -164,7 +164,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             sysUser.Password = NETCore.Encrypt.EncryptProvider.Md5(sysUser.Password);
 
             int result = UserService.ResetPwd(sysUser.UserId, sysUser.Password);
-            return OutputJson(ToJson(result));
+            return ToResponse(ToJson(result));
         }
 
         /// <summary>

@@ -8,13 +8,13 @@ namespace ZR.Service.System.IService
 {
     public interface ISysDeptService : IBaseService<SysDept>
     {
-        public List<SysDept> GetSysDepts(SysDept dept);
-        public string CheckDeptNameUnique(SysDept dept);
-        public int InsertDept(SysDept dept);
-        public int UpdateDept(SysDept dept);
-        public void UpdateDeptChildren(long deptId, string newAncestors, string oldAncestors);
-        public List<SysDept> GetChildrenDepts(List<SysDept> depts, long deptId);
-        public List<SysDept> BuildDeptTree(List<SysDept> depts);
-        public List<TreeSelectVo> BuildDeptTreeSelect(List<SysDept> depts);
+        List<SysDept> GetSysDepts(SysDept dept);
+        string CheckDeptNameUnique(SysDept dept);
+        int InsertDept(SysDept dept);
+        int UpdateDept(SysDept dept);
+        void UpdateDeptChildren(long deptId, string newAncestors, string oldAncestors);
+        List<SysDept> GetChildrenDepts(List<SysDept> depts, long deptId);
+        List<SysDept> BuildDeptTree(List<SysDept> depts);
+        List<TreeSelectVo> BuildDeptTreeSelect(List<SysDept> depts);
     }
 }

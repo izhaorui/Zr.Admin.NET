@@ -9,7 +9,7 @@ namespace ZR.Repository.System
     /// 字典数据
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class SysDictDataRepository : BaseRepository
+    public class SysDictDataRepository : BaseRepository<SysDictData>
     {
         /// <summary>
         /// 字典类型数据搜索
@@ -18,7 +18,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysDictData> SelectDictDataList(SysDictData dictData)
         {
-            return Db.Queryable<SysDictData>()
+            return Context.Queryable<SysDictData>()
                 .WhereIF(!string.IsNullOrEmpty(dictData.DictLabel), it => it.DictLabel.Contains(dictData.DictLabel))
                 .WhereIF(!string.IsNullOrEmpty(dictData.Status), it => it.Status == dictData.Status)
                 .WhereIF(!string.IsNullOrEmpty(dictData.DictType), it => it.DictType == dictData.DictType)
@@ -32,7 +32,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysDictData> SelectDictDataByType(string dictType)
         {
-            return Db.Queryable<SysDictData>().Where(f => f.Status == "0" && f.DictType == dictType)
+            return Context.Queryable<SysDictData>().Where(f => f.Status == "0" && f.DictType == dictType)
                 .OrderBy(it => it.DictSort)
                 .ToList();
         }
@@ -44,8 +44,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public long InsertDictData(SysDictData dict)
         {
-            var result = Db.Insertable(dict).IgnoreColumns(it => new { dict.Update_by })
-                .ExecuteReturnIdentity();
+            var result = InsertReturnBigIdentity(dict);
             return result;
         }
 
@@ -56,7 +55,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public long UpdateDictData(SysDictData dict)
         {
-            return Db.Updateable<SysDictData>()
+            return Context.Updateable<SysDictData>()
                 .SetColumns(t => new SysDictData()
                 {
                     Remark = dict.Remark,
@@ -64,7 +63,9 @@ namespace ZR.Repository.System
                     DictSort = dict.DictSort,
                     DictLabel = dict.DictLabel,
                     DictValue = dict.DictValue,
-                    Status = dict.Status
+                    Status = dict.Status,
+                    CssClass = dict.CssClass,
+                    ListClass = dict.ListClass
                 })
                 .Where(f => f.DictCode == dict.DictCode).ExecuteCommand();
         }
@@ -76,7 +77,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteDictDataByIds(long[] dictCodes)
         {
-            return Db.Deleteable<SysDictData>().In(dictCodes).ExecuteCommand();
+            return Delete(dictCodes);
         }
 
         /// <summary>
@@ -88,7 +89,7 @@ namespace ZR.Repository.System
         public int UpdateDictDataType(string old_dictType, string new_dictType)
         {
             //只更新DictType字段根据where条件
-            return Db.Updateable<SysDictData>()
+            return Context.Updateable<SysDictData>()
                 .SetColumns(t => new SysDictData() { DictType = new_dictType })
                 .Where(f => f.DictType == old_dictType)
                 .ExecuteCommand();

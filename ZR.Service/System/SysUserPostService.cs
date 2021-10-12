@@ -13,10 +13,9 @@ namespace ZR.Service.System
     /// 用户岗位
     /// </summary>
     [AppService(ServiceType = typeof(ISysUserPostService), ServiceLifetime = LifeTime.Transient)]
-    public class SysUserPostService : BaseService<SysUserPost>, ISysUserPostService
+    public class SysUserPostService : ISysUserPostService
     {
-        public SysUserPostRepository UserPostRepository;
-
+        private SysUserPostRepository UserPostRepository;
         public SysUserPostService(SysUserPostRepository userPostRepository)
         {
             UserPostRepository = userPostRepository;
@@ -34,7 +33,7 @@ namespace ZR.Service.System
             {
                 list.Add(new SysUserPost() { PostId = item, UserId = user.UserId });
             }
-            Add(list);
+            UserPostRepository.Insert(list);
         }
 
 
@@ -45,7 +44,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public List<long> GetUserPostsByUserId(long userId)
         {
-            var list = GetWhere(f => f.UserId == userId);
+            var list = UserPostRepository.GetList(f => f.UserId == userId);
             return list.Select(x => x.PostId).ToList();
         }
 
@@ -58,6 +57,11 @@ namespace ZR.Service.System
         {
             var list = UserPostRepository.SelectPostsByUserId(userId);
             return string.Join(',', list.Select(x => x.PostName));
+        }
+
+        public int Delete(long userId)
+        {
+            return UserPostRepository.Delete(x => x.UserId == userId) ? 1: 0 ;
         }
     }
 }

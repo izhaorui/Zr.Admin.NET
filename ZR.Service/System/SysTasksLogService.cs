@@ -1,12 +1,13 @@
 ﻿using Infrastructure.Attribute;
 using System;
 using ZR.Model.System;
+using ZR.Repository;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
     [AppService(ServiceLifetime = LifeTime.Transient, ServiceType = typeof(ISysTasksLogService))]
-    public class SysTasksLogService : BaseService<SysTasksLog>, ISysTasksLogService
+    public class SysTasksLogService : BaseRepository<SysTasksLog>, ISysTasksLogService
     {
         private ISysTasksQzService _tasksQzService;
         public SysTasksLogService(ISysTasksQzService tasksQzService)

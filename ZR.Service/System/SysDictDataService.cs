@@ -10,7 +10,7 @@ using ZR.Service.System.IService;
 namespace ZR.Service.System
 {
     [AppService(ServiceType = typeof(ISysDictDataService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDictDataService: BaseService<SysDictData>, ISysDictDataService
+    public class SysDictDataService: ISysDictDataService
     {
 
         private readonly SysDictDataRepository SysDictDataRepository;
@@ -37,7 +37,7 @@ namespace ZR.Service.System
         public List<SysDictData> SelectDictDataByType(string dictType)
         {
             string CK = $"SelectDictDataByType_{dictType}";
-            if (!(CacheHelper.GetCache(CK) is List<SysDictData> list))
+            if (CacheHelper.GetCache(CK) is not List<SysDictData> list)
             {
                 list = SysDictDataRepository.SelectDictDataByType(dictType);
                 CacheHelper.SetCache(CK, list, 30);
@@ -55,7 +55,7 @@ namespace ZR.Service.System
             string CK = $"SelectDictDataByCode_{dictCode}";
             if (CacheHelper.GetCache(CK) is not SysDictData list)
             {
-                list = GetFirst(f => f.DictCode == dictCode);
+                list = SysDictDataRepository.GetFirst(f => f.DictCode == dictCode);
                 CacheHelper.SetCache(CK, list, 5);
             }
             return list;
@@ -78,7 +78,9 @@ namespace ZR.Service.System
         /// <returns></returns>
         public long UpdateDictData(SysDictData dict)
         {
-            return SysDictDataRepository.UpdateDictData(dict);
+            var result = SysDictDataRepository.UpdateDictData(dict);
+            CacheHelper.Remove($"SelectDictDataByCode_{dict.DictCode}");
+            return result;
         }
 
         /// <summary>

@@ -10,7 +10,7 @@ namespace ZR.Repository.System
     /// 字典
     /// </summary>    
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class SysDictRepository : BaseRepository
+    public class SysDictRepository : BaseRepository<SysDictType>
     {
         /// <summary>
         /// 查询字段类型列表
@@ -20,7 +20,7 @@ namespace ZR.Repository.System
         public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
         {
             var totalNum = 0;
-            var list = Db
+            var list = Context
                 .Queryable<SysDictType>()
                 .WhereIF(!string.IsNullOrEmpty(dictType.DictName), it => it.DictName.Contains(dictType.DictName))
                 .WhereIF(!string.IsNullOrEmpty(dictType.Status), it => it.Status == dictType.Status)
@@ -37,7 +37,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteDictTypeByIds(long[] id)
         {
-            return Db.Deleteable<SysDictType>().In(id).ExecuteCommand();
+            return Context.Deleteable<SysDictType>().In(id).ExecuteCommand();
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int UpdateDictType(SysDictType dictType)
         {
-            return Db.Updateable(dictType).IgnoreColumns(it => new { dictType.Create_by }).ExecuteCommand();
+            return Context.Updateable(dictType).IgnoreColumns(it => new { dictType.Create_by }).ExecuteCommand();
         }
     }
 }

@@ -8,7 +8,7 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysUserService : IBaseService<SysUser>
+    public interface ISysUserService
     {
         public List<SysUser> SelectUserList(SysUser user, PagerInfo pager);
 

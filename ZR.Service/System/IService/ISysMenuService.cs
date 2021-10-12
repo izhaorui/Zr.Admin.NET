@@ -6,7 +6,7 @@ using ZR.Model.Vo.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysMenuService: IBaseService<SysMenu>
+    public interface ISysMenuService
     {
         public List<SysMenu> SelectMenuList(long userId);
 

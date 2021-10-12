@@ -36,7 +36,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             //开始拼装查询条件
             var predicate = Expressionable.Create<SysPost>();
             predicate = predicate.AndIF(post.Status.IfNotEmpty(), it => it.Status == post.Status);
-            var list = PostService.GetPages(predicate.ToExpression(), pagerInfo);
+            var list = PostService.GetPages(predicate.ToExpression(), pagerInfo, s => new { s.PostSort });
 
             return SUCCESS(list);
         }
@@ -71,8 +71,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
-            post.Update_by = User.Identity.Name;
-            return OutputJson(ToJson(PostService.Add(post)));
+
+            post.Create_by = User.Identity.Name;
+            return ToResponse(ToJson(PostService.Add(post)));
         }
 
         /// <summary>
@@ -94,7 +95,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
             post.Update_by = User.Identity.Name;
-            return OutputJson(ToJson(PostService.Update(post)));
+            return ToResponse(ToJson(PostService.Update(post) ? 1 : 0));
         }
 
         /// <summary>
@@ -107,7 +108,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "岗位删除", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete(int id = 0)
         {
-            return OutputJson(ToJson(PostService.Delete(id)));
+            return ToResponse(ToJson(PostService.Delete(id)));
         }
 
         /// <summary>

@@ -43,7 +43,11 @@
         </template>
       </el-table-column>
       <el-table-column label="字典名称" align="center" prop="dictName" :show-overflow-tooltip="true" />
-      <el-table-column label="状态" align="center" prop="status" :formatter="statusFormat" />
+      <el-table-column label="状态" align="center" prop="status">
+        <template slot-scope="scope">
+          <dict-tag :options="statusOptions" :value="scope.row.status" />
+        </template>
+      </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
@@ -52,9 +56,6 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <router-link :to="'/dict/type/data/' + scope.row.dictId" class="link-type">
-            <span>字典 | </span>
-          </router-link>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:dict:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['system:dict:remove']">删除</el-button>
         </template>
@@ -87,8 +88,8 @@
       </div>
     </el-dialog>
 
-    <el-dialog :visible.sync="dictDataVisible" width="900">
-      <dict-data :dict="dictId"></dict-data>
+    <el-dialog :visible.sync="dictDataVisible" width="60%" :lock-scroll="false">
+      <dict-data :dictId="dictId"></dict-data>
     </el-dialog>
 
   </div>

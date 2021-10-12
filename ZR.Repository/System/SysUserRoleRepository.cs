@@ -6,7 +6,7 @@ using ZR.Model.System;
 namespace ZR.Repository.System
 {
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class SysUserRoleRepository : BaseRepository
+    public class SysUserRoleRepository : BaseRepository<SysUserRole>
     {
         /// <summary>
         /// 删除用户角色
@@ -15,7 +15,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteUserRoleByUserId(int userId)
         {
-            return Db.Deleteable<SysUserRole>().Where(it => it.UserId == userId).ExecuteCommand();
+            return Context.Deleteable<SysUserRole>().Where(it => it.UserId == userId).ExecuteCommand();
         }
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteRoleUserByUserIds(long roleId, List<long> userIds)
         {
-            return Db.Deleteable<SysUserRole>().Where(it => it.RoleId == roleId && userIds.Contains(it.UserId))
+            return Context.Deleteable<SysUserRole>().Where(it => it.RoleId == roleId && userIds.Contains(it.UserId))
                 .ExecuteCommand();
         }
 
@@ -37,7 +37,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int AddUserRole(List<SysUserRole> sysUsers)
         {
-            return Db.Insertable(sysUsers).ExecuteCommand();
+            return Context.Insertable(sysUsers).ExecuteCommand();
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteUserRoleByRoleId(int roleId)
         {
-            return Db.Deleteable<SysUserRole>().In(roleId).ExecuteCommand();
+            return Context.Deleteable<SysUserRole>().In(roleId).ExecuteCommand();
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int CountUserRoleByRoleId(long roleId)
         {
-            return Db.Queryable<SysUserRole>().Where(it => it.RoleId == roleId).Count();
+            return Context.Queryable<SysUserRole>().Where(it => it.RoleId == roleId).Count();
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysUser> GetSysUsersByRoleId(long roleId)
         {
-            return Db.Queryable<SysUserRole, SysUser>((t1, u) => new JoinQueryInfos(
+            return Context.Queryable<SysUserRole, SysUser>((t1, u) => new JoinQueryInfos(
                 JoinType.Left, t1.UserId == u.UserId))
                 .Where((t1, u) => t1.RoleId == roleId && u.DelFlag == "0")
                 .Select((t1, u) => u)

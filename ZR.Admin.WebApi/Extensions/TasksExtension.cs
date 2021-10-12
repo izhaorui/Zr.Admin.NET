@@ -38,7 +38,7 @@ namespace ZR.Admin.WebApi.Extensions
             //var _tasksQzService2 = (ISysTasksQzService)services.GetRequiredService(typeof(SysTasksQzService));
             ITaskSchedulerServer _schedulerServer = App.GetRequiredService<ITaskSchedulerServer>();
 
-            var tasks = _tasksQzService.GetWhere(m => m.IsStart);
+            var tasks = _tasksQzService.QueryableToList(m => m.IsStart);
 
             //程序启动后注册所有定时任务
             foreach (var task in tasks)

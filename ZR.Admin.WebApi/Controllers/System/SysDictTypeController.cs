@@ -51,7 +51,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dict:query")]
         public IActionResult GetInfo(long dictId = 0)
         {
-            return SUCCESS(SysDictService.GetFirst(f => f.DictId == dictId));
+            return SUCCESS(SysDictService.GetInfo(dictId));
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (UserConstants.NOT_UNIQUE.Equals(SysDictService.CheckDictTypeUnique(dict)))
             {
-                return OutputJson(ApiResult.Error($"新增字典'{dict.DictName}'失败，字典类型已存在"));
+                return ToResponse(ApiResult.Error($"新增字典'{dict.DictName}'失败，字典类型已存在"));
             }
             //设置添加人
             dict.Create_by = HttpContext.User.Identity.Name;
@@ -87,7 +87,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (UserConstants.NOT_UNIQUE.Equals(SysDictService.CheckDictTypeUnique(dict)))
             {
-                return OutputJson(ApiResult.Error($"修改字典'{dict.DictName}'失败，字典类型已存在"));
+                return ToResponse(ApiResult.Error($"修改字典'{dict.DictName}'失败，字典类型已存在"));
             }
             //设置添加人
             dict.Update_by = HttpContext.User.Identity.Name;

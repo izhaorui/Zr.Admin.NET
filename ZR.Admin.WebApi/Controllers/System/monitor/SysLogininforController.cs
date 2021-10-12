@@ -36,7 +36,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
             var list = sysLoginService.GetLoginLog(sysLogininfoDto, pagerInfo);
             var vMPage = new VMPageResult<SysLogininfor>(list, pagerInfo);
 
-            return OutputJson(ToJson(vMPage.TotalNum, vMPage), TIME_FORMAT_FULL_2);
+            return ToResponse(ToJson(vMPage.TotalNum, vMPage), TIME_FORMAT_FULL_2);
         }
 
         /// <summary>

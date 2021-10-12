@@ -14,6 +14,7 @@ using {ServicesNamespace}.Business;
 using {ApiControllerNamespace}.Extensions;
 using {ApiControllerNamespace}.Filters;
 using ZR.Common;
+using Infrastructure.Extensions;
 
 namespace {ApiControllerNamespace}.Controllers
 {
@@ -76,7 +77,7 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "{Permission}:add")]
-        [Log(Title = "{TableDesc}添加", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "{FunctionName}", BusinessType = BusinessType.INSERT)]
         public IActionResult Add{ModelName}([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
@@ -84,11 +85,11 @@ namespace {ApiControllerNamespace}.Controllers
                 throw new CustomException("请求参数错误");
             }
             //从 Dto 映射到 实体
-            var model = parm.Adapt<{ModelName}>().ToCreate();
+            var model = parm.Adapt<{ModelName}>().ToCreate(HttpContext);
 
             return SUCCESS(_{ModelName}Service.Add(model, it => new
             {
-                {InsertColumn}
+{InsertColumn}
             }));
         }
 
@@ -98,7 +99,7 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpPut]
         [ActionPermissionFilter(Permission = "{Permission}:update")]
-        [Log(Title = "{TableDesc}修改", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "{FunctionName}", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update{ModelName}([FromBody] {ModelName}Dto parm)
         {
             if (parm == null)
@@ -106,12 +107,12 @@ namespace {ApiControllerNamespace}.Controllers
                 throw new CustomException("请求实体不能为空");
             }
             //从 Dto 映射到 实体
-            var model = parm.Adapt<{ModelName}>().ToUpdate();
+            var model = parm.Adapt<{ModelName}>().ToUpdate(HttpContext);
 
             var response = _{ModelName}Service.Update(w => w.{PrimaryKey} == model.{PrimaryKey}, it => new {ModelName}()
             {
                 //Update 字段映射
-                {UpdateColumn}
+{UpdateColumn}
             });
 
             return SUCCESS(response);
@@ -123,11 +124,11 @@ namespace {ApiControllerNamespace}.Controllers
         /// <returns></returns>
         [HttpDelete("{ids}")]
         [ActionPermissionFilter(Permission = "{Permission}:delete")]
-        [Log(Title = "{TableDesc}删除", BusinessType = BusinessType.DELETE)]
+        [Log(Title = "{FunctionName}", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete{ModelName}(string ids)
         {
             int[] idsArr = Tools.SpitIntArrary(ids);
-            if (idsArr.Length <= 0) { return OutputJson(ApiResult.Error($"删除失败Id 不能为空")); }
+            if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
             var response = _{ModelName}Service.Delete(idsArr);
 

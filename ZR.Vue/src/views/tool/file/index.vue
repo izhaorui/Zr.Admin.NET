@@ -43,16 +43,6 @@
     <el-table :data="dataList" ref="table" border>
       <el-table-column prop="id" label="id" width="60" sortable> </el-table-column>
       <el-table-column prop="saveStore" label="存储位置" :show-overflow-tooltip="true"> </el-table-column>
-      <!-- 显示图片 -->
-      <el-table-column prop="photo" label="图片预览" width="110">
-        <template slot-scope="scope">
-          <el-popover placement="right" trigger="hover">
-            <!-- click显示的大图 -->
-            <img :src="scope.row.photo" />
-            <img slot="reference" :src="scope.row.photo" width="100" height="50">
-          </el-popover>
-        </template>
-      </el-table-column>
       <el-table-column prop="savePath" label="文件仓库" :show-overflow-tooltip="true" />
       <el-table-column prop="fileName" label="文件名" :show-overflow-tooltip="true" />
       <el-table-column prop="fileExt" label="文件扩展名" />
@@ -108,20 +98,10 @@ export default {
           dictLabel: "本地",
         },
       ],
-      uploadUrl: process.env.VUE_APP_BASE_API + "/upload/SaveFile?token=zr",
+      uploadUrl: process.env.VUE_APP_BASE_API + "/upload/SaveFile",
       // 数据列表
       dataList: [
-        {
-          id: 1,
-          photo:
-            "https://ss1.baidu.com/-4o3dSag_xI4khGko9WTAnF6hhy/zhidao/pic/item/d788d43f8794a4c2b124d0000df41bd5ad6e3991.jpg",
-          name: "你好",
-          userId: 1000001,
-          sortId: 1,
-          address: "浙江省杭州市西湖区",
-          content: "我是一个超长超长的文字啊",
-          addtime: "2021-8-7 23:00:00",
-        },
+
       ],
       // 总记录数
       total: 0,
@@ -129,8 +109,6 @@ export default {
       btnSubmitVisible: true,
       // 表单校验
       rules: {
-        name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
-        userId: [{ required: true, message: "id不能为空", trigger: "blur" }],
       },
     };
   },
@@ -223,14 +201,9 @@ export default {
       this.title = "详情";
       // TODO 给表单赋值
       this.form = {
-        content: row.content,
-        userId: row.userId,
-        name: row.name,
-        sortId: row.sortId,
+
       };
     },
-    handleImport() {},
-    handleExport() {},
   },
 };
 </script>
