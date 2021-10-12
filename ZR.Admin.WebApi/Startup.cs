@@ -70,6 +70,8 @@ namespace ZR.Admin.WebApi
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ZrAdmin", Version = "v1" });
+                //Ìí¼ÓÎÄµµ×¢ÊÍ
+                c.IncludeXmlComments("../ZRAdmin.xml", true);
             });
         }
 
