@@ -15,7 +15,10 @@
         <size-select id="size-select" class="right-menu-item hover-effect" />
         <!-- </el-tooltip> -->
         <el-tooltip content="源码地址" effect="dark" placement="bottom">
-          <zr-git id="ruoyi-git" class="right-menu-item hover-effect" />
+          <zr-git id="zr-git" class="right-menu-item hover-effect" />
+        </el-tooltip>
+        <el-tooltip content="文档地址" effect="dark" placement="bottom">
+          <zr-doc id="zr-doc" class="right-menu-item hover-effect" />
         </el-tooltip>
       </template>
 
@@ -48,6 +51,7 @@ import Screenfull from "@/components/Screenfull";
 import SizeSelect from "@/components/SizeSelect";
 import Search from "@/components/HeaderSearch";
 import ZrGit from "@/components/Zr/Git";
+import ZrDoc from '@/components/Zr/Doc'
 
 export default {
   components: {
@@ -57,6 +61,7 @@ export default {
     SizeSelect,
     Search,
     ZrGit,
+    ZrDoc
   },
   computed: {
     ...mapGetters(["sidebar", "avatar", "device"]),
