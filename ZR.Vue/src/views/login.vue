@@ -88,6 +88,7 @@ export default {
       getCodeImg().then((res) => {
         this.codeUrl = "data:image/gif;base64," + res.data.img;
         this.loginForm.uuid = res.data.uuid;
+        this.$forceUpdate();
       });
     },
     getCookie() {
