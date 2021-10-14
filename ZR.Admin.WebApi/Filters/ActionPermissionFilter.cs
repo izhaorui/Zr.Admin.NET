@@ -20,6 +20,7 @@ namespace ZR.Admin.WebApi.Filters
         /// </summary>
         public string Permission { get; set; }
         private bool HasPermi { get; set; }
+        private bool HasRole { get; set; }
 
         public ActionPermissionFilter() { }
 
