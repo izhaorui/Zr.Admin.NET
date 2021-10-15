@@ -69,13 +69,15 @@ namespace ZR.Admin.WebApi.Filters
                     //Elapsed = _stopwatch.ElapsedMilliseconds,
                     operTime = DateTime.Now
                 };
+                GetRequestValue(sysOperLog, context.HttpContext);
+
                 if (logAttribute != null)
                 {
                     sysOperLog.title = logAttribute?.Title;
                     sysOperLog.businessType = (int)logAttribute?.BusinessType;
+                    sysOperLog.operParam = logAttribute.IsSaveRequestData ? sysOperLog.operParam : "";
+                    sysOperLog.jsonResult = logAttribute.IsSaveResponseData ? sysOperLog.jsonResult : "";
                 }
-                GetRequestValue(sysOperLog, context.HttpContext);
-
                 var sysOperLogService = (ISysOperLogService)App.GetRequiredService(typeof(ISysOperLogService));
 
                 sysOperLogService.InsertOperlog(sysOperLog);

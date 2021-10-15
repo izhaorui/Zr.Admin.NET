@@ -9,6 +9,14 @@ namespace Infrastructure.Attribute
     {
         public string Title { get; set; }
         public BusinessType BusinessType { get; set; }
+        /// <summary>
+        /// 是否保存请求数据
+        /// </summary>
+        public bool IsSaveRequestData { get; set; } = true;
+        /// <summary>
+        /// 是否保存返回数据
+        /// </summary>
+        public bool IsSaveResponseData { get; set; } = true;
 
         public LogAttribute() { }
 
@@ -16,10 +24,12 @@ namespace Infrastructure.Attribute
         {
             Title = name;
         }
-        public LogAttribute(string name, BusinessType businessType)
+        public LogAttribute(string name, BusinessType businessType, bool saveRequestData = true, bool saveResponseData = true)
         {
             Title = name;
             BusinessType = businessType;
+            IsSaveRequestData = saveRequestData;
+            IsSaveResponseData = saveResponseData;
         }
     }
 }
