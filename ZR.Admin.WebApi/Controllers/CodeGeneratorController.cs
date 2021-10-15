@@ -204,9 +204,10 @@ namespace ZR.Admin.WebApi.Controllers
         /// <summary>
         /// 修改保存代码生成业务
         /// </summary>
+        /// <param name="genTableDto">请求参数实体</param>
         /// <returns></returns>
         [HttpPut]
-        //[Log(Title = "代码生成", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "代码生成", BusinessType = BusinessType.GENCODE, IsSaveRequestData = false)]
         [ActionPermissionFilter(Permission = "tool:gen:edit")]
         public IActionResult EditSave([FromBody] GenTableDto genTableDto)
         {
