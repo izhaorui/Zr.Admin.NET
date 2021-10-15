@@ -80,12 +80,9 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 - [X] 邮件发送
 - [ ] 集成微信开发
 
-## 📖 帮助文档
-👉快捷部署到Linux文档：
-- [本地md文件](./document/nginx部署文档.md "代码生成")
-
-👉代码生成器使用教程：
-- [本地md文件](./document/代码生成器使用.md "代码生成")
+## 📖 官方文档
+还在陆续整理中，不过基本操作都在,包括如何新手入门，配置数据，连接DB等等
+[官方文档](http://www.izhaorui.cn/doc)
 
 ## 🍎演示图
 
