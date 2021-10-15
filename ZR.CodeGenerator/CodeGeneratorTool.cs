@@ -309,13 +309,19 @@ namespace ZR.CodeGenerator
                 .Replace("{ModelName}", replaceDto.ModelTypeName)
                 .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{PrimaryKey}", replaceDto.PKName)
-                .Replace("{UpdateColumn}", replaceDto.UpdateColumn.TrimEnd('\n'))
-                .Replace("{InsertColumn}", replaceDto.InsertColumn.TrimEnd('\n'))
                 .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
                 .Replace("{PKCsharpType}", replaceDto.PKType)
                 .Replace("{Author}", replaceDto.Author)
                 .Replace("{DateTime}", replaceDto.AddTime);
 
+            if (replaceDto.UpdateColumn != null)
+            {
+                content = content.Replace("{UpdateColumn}", replaceDto.UpdateColumn.TrimEnd('\n'));
+            }
+            if (replaceDto.InsertColumn != null)
+            {
+                content = content.Replace("{InsertColumn}", replaceDto.InsertColumn.TrimEnd('\n'));
+            }
             generateDto.GenCodes.Add(new GenCode(5, "控制器", fullPath, content));
         }
         #endregion
