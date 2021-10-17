@@ -14,11 +14,12 @@ namespace ZR.Repository
     [AppService(ServiceLifetime = LifeTime.Transient)]
     public class GendemoRepository : BaseRepository<Gendemo>
     {
-        public GendemoRepository() : base(configId: 1)
+        public GendemoRepository() : base(configId: "1")
         {
         }
 
         #region 业务逻辑代码
+
         #endregion
     }
 }

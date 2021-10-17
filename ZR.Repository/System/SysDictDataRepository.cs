@@ -44,7 +44,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public long InsertDictData(SysDictData dict)
         {
-            var result = InsertReturnBigIdentity(dict);
+            var result = Context.Insertable(dict).ExecuteReturnBigIdentity();
             return result;
         }
 
