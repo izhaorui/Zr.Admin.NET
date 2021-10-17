@@ -137,7 +137,7 @@ namespace ZR.Admin.WebApi
 
             IocConfig db1 = new IocConfig()
             {
-                ConfigId = "0",  //多租户用到
+                ConfigId = "0",  //主数据库
                 ConnectionString = connStr,
                 DbType = (IocDbType)dbType,
                 IsAutoCloseConnection = true//自动释放
