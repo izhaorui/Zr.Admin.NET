@@ -61,7 +61,7 @@ namespace ZR.Service.System
 
         public int Delete(long userId)
         {
-            return UserPostRepository.Delete(x => x.UserId == userId) ? 1: 0 ;
+            return UserPostRepository.Delete(x => x.UserId == userId);
         }
     }
 }

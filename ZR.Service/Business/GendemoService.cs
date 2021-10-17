@@ -27,7 +27,6 @@ namespace ZR.Service.Business
             _repository = repository;
         }
         #region 业务逻辑代码
-
         #endregion
     }
 }

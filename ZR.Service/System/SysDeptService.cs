@@ -68,7 +68,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int InsertDept(SysDept dept)
         {
-            SysDept info = DeptRepository.GetSingle(it => it.DeptId == dept.ParentId);
+            SysDept info = DeptRepository.GetFirst(it => it.DeptId == dept.ParentId);
             //如果父节点不为正常状态,则不允许新增子节点
             if (!UserConstants.DEPT_NORMAL.Equals(info.Status))
             {

@@ -44,7 +44,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableByTbName(string tableName)
         {
-            return GenTableRepository.Delete(f => f.TableName == tableName) ? 1 : 0;
+            return GenTableRepository.Delete(f => f.TableName == tableName);
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public GenTable GetGenTableInfo(long tableId)
         {
-            return GenTableRepository.GetById(tableId);
+            return GenTableRepository.GetId(tableId);
         }
 
         /// <summary>
