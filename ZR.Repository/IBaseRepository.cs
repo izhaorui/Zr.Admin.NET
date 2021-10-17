@@ -36,7 +36,7 @@ namespace ZR.Repository
         //DbResult<bool> InsertTran(T t);
 
         //DbResult<bool> InsertTran(List<T> t);
-
+        long InsertReturnBigIdentity(T t);
         //T InsertReturnEntity(T t);
 
         //T InsertReturnEntity(T t, string sqlWith = SqlWith.UpdLock);
@@ -89,7 +89,7 @@ namespace ZR.Repository
 
         #region delete
 
-        //bool DeleteExp(Expression<Func<T, bool>> expression);
+        int Delete(Expression<Func<T, bool>> expression);
 
         //bool Delete<PkType>(PkType[] primaryKeyValues);
         //int Delete(object[] obj);
@@ -118,15 +118,13 @@ namespace ZR.Repository
 
         //ISugarQueryable<T, T1, T2> Queryable<T1, T2>() where T1 : class where T2 : new();
 
-        List<T> QueryableToList(Expression<Func<T, bool>> expression);
+        List<T> GetList(Expression<Func<T, bool>> expression);
 
         //Task<List<T>> QueryableToListAsync(Expression<Func<T, bool>> expression);
 
         //string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere);
 
         //List<T> QueryableToList(string tableName);
-
-        //List<T> QueryableToList(string tableName, Expression<Func<T, bool>> expression);
 
         //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10);
 
@@ -136,7 +134,7 @@ namespace ZR.Repository
 
         //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Bootstrap.BootstrapParams bootstrap);
 
-        List<T> SqlQueryToList(string sql, object obj = null);
+        //List<T> SqlQueryToList(string sql, object obj = null);
         /// <summary>
         /// 获得一条数据
         /// </summary>
@@ -151,6 +149,8 @@ namespace ZR.Repository
         /// <param name="parm">string</param>
         /// <returns></returns>
         //T GetFirst(string parm);
+
+        int Count(Expression<Func<T, bool>> where);
 
         #endregion query
 

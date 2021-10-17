@@ -16,17 +16,37 @@ namespace ZR.Repository
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class BaseRepository<T> : SimpleClient<T>, IBaseRepository<T> where T : class, new()
+    public class BaseRepository<T> : IBaseRepository<T> where T : class, new()
     {
-        public BaseRepository(ISqlSugarClient dbContext = null, int configId = 0) : base(dbContext)
+        public ISqlSugarClient Context;
+        //private ISqlSugarClient _db
+        //{
+        //    get
+        //    {
+        //        if (typeof(T).GetTypeInfo().GetCustomAttributes(typeof(SugarTable), true).FirstOrDefault((x => x.GetType() == typeof(SugarTable))) is SugarTable sugarTable && !string.IsNullOrEmpty(sugarTable.TableDescription))
+        //        {
+        //            Context.ChangeDatabase(sugarTable.TableDescription.ToLower());
+        //        }
+        //        else
+        //        {
+        //            Context.ChangeDatabase(0);
+        //        }
+
+        //        return Context;
+        //    }
+        //}
+        public BaseRepository(ISqlSugarClient dbContext = null, string configId = "0") //: base(dbContext)
         {
             if (dbContext == null)
             {
-                //Console.WriteLine("configId：" + configId);
-                base.Context = DbScoped.SugarScope.GetConnection(configId);//根据类传入的ConfigId自动选择
+                Context = DbScoped.SugarScope.GetConnection(configId);//根据类传入的ConfigId自动选择
+                //_dbbase = Context;
             }
         }
-
+        //public ISqlSugarClient Db
+        //{
+        //    get { return _db; }
+        //}
         #region add
         /// <summary>
         /// 插入指定列使用
@@ -72,7 +92,11 @@ namespace ZR.Repository
 
         public int Insert(List<T> t)
         {
-            return base.Context.Insertable(t).ExecuteCommand();
+            return Context.Insertable(t).ExecuteCommand();
+        }
+        public long InsertReturnBigIdentity(T t)
+        {
+            return Context.Insertable(t).ExecuteReturnBigIdentity();
         }
 
         //public int InsertIgnoreNullColumn(List<T> t)
@@ -178,7 +202,7 @@ namespace ZR.Repository
             };
             }
             //base.Context.Updateable(entity).IgnoreColumns(c => list.Contains(c)).Where(isNull).ExecuteCommand()
-            return base.Context.Updateable(entity).IgnoreColumns(isNull).IgnoreColumns(list.ToArray()).ExecuteCommand() > 0;
+            return Context.Updateable(entity).IgnoreColumns(isNull).IgnoreColumns(list.ToArray()).ExecuteCommand() > 0;
         }
 
         //public bool Update(List<T> entity)
@@ -191,7 +215,7 @@ namespace ZR.Repository
         //}
         public bool Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
         {
-            return base.Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand() > 0;
+            return Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand() > 0;
         }
         #endregion update
 
@@ -215,10 +239,10 @@ namespace ZR.Repository
 
         #region delete
 
-        //public bool DeleteExp(Expression<Func<T, bool>> expression)
-        //{
-        //    return Context.Deleteable<T>().Where(expression).ExecuteCommand() > 0;
-        //}
+        public int Delete(Expression<Func<T, bool>> expression)
+        {
+            return Context.Deleteable<T>().Where(expression).ExecuteCommand();
+        }
 
         //public bool Delete<PkType>(PkType[] primaryKeyValues)
         //{
@@ -257,7 +281,7 @@ namespace ZR.Repository
         //    return Context.Queryable(tableName, shortName);
         //}
 
-        public List<T> QueryableToList(Expression<Func<T, bool>> expression)
+        public List<T> GetList(Expression<Func<T, bool>> expression)
         {
             return Context.Queryable<T>().Where(expression).ToList();
         }
@@ -276,11 +300,6 @@ namespace ZR.Repository
         //public List<T> QueryableToList(string tableName)
         //{
         //    return Context.Queryable<T>(tableName).ToList();
-        //}
-
-        //public List<T> QueryableToList(string tableName, Expression<Func<T, bool>> expression)
-        //{
-        //    return Context.Queryable<T>(tableName).Where(expression).ToList();
         //}
 
         //public (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10)
@@ -313,10 +332,10 @@ namespace ZR.Repository
         //    }
         //}
 
-        public List<T> SqlQueryToList(string sql, object obj = null)
-        {
-            return Context.Ado.SqlQuery<T>(sql, obj);
-        }
+        //public List<T> SqlQueryToList(string sql, object obj = null)
+        //{
+        //    return Context.Ado.SqlQuery<T>(sql, obj);
+        //}
         /// <summary>
         /// 获得一条数据
         /// </summary>
@@ -362,6 +381,11 @@ namespace ZR.Repository
         public List<T> GetAll(bool useCache = false, int cacheSecond = 3600)
         {
             return Context.Queryable<T>().WithCacheIF(useCache, cacheSecond).ToList();
+        }
+
+        public int Count(Expression<Func<T, bool>> where)
+        {
+            return Context.Queryable<T>().Count(where);
         }
         #endregion query
 
