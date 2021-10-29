@@ -24,11 +24,13 @@ namespace ZR.Admin.WebApi
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment hostEnvironment)
         {
             Configuration = configuration;
+            CurrentEnvironment = hostEnvironment;
         }
 
+        private IWebHostEnvironment CurrentEnvironment { get; }
         public IConfiguration Configuration { get; }
         public void ConfigureServices(IServiceCollection services)
         {
@@ -70,8 +72,11 @@ namespace ZR.Admin.WebApi
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ZrAdmin", Version = "v1" });
-                //添加文档注释
-                c.IncludeXmlComments("../ZRAdmin.xml", true);
+                if (CurrentEnvironment.IsDevelopment())
+                {
+                    //添加文档注释
+                    c.IncludeXmlComments("ZRAdmin.xml", true);
+                }
             });
         }
 

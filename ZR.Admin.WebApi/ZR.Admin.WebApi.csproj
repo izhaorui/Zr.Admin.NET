@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>..\ZRAdmin.xml</DocumentationFile>
+    <DocumentationFile>ZRAdmin.xml</DocumentationFile>
     <NoWarn>1701;1702;1591;1570</NoWarn>
   </PropertyGroup>
 
