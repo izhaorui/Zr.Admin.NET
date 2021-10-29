@@ -135,21 +135,19 @@ namespace ZR.Admin.WebApi
             int dbType = Convert.ToInt32(Configuration[OptionsSetting.ConnDbType]);
             int dbType_bus = Convert.ToInt32(Configuration[OptionsSetting.ConnBusDbType]);
 
-            IocConfig db1 = new IocConfig()
-            {
+            SugarIocServices.AddSqlSugar(new List<IocConfig>() {
+               new IocConfig() {
                 ConfigId = "0",  //主数据库
                 ConnectionString = connStr,
                 DbType = (IocDbType)dbType,
                 IsAutoCloseConnection = true//自动释放
-            };
-            IocConfig db2 = new IocConfig()
-            {
+            }, new IocConfig() {
                 ConfigId = "1", // 多租户用到
                 ConnectionString = connStrBus,
                 DbType = (IocDbType)dbType_bus,
                 IsAutoCloseConnection = true//自动释放
-            };
-            SugarIocServices.AddSqlSugar(new List<IocConfig>() { db1, db2 });
+            }
+            });
 
             //调式代码 用来打印SQL 
             DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
