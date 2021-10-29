@@ -1,13 +1,9 @@
-﻿using Infrastructure;
-using Infrastructure.Model;
+﻿using Infrastructure.Model;
 using SqlSugar;
 using SqlSugar.IOC;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 using ZR.Model;
 
 namespace ZR.Repository
@@ -19,34 +15,11 @@ namespace ZR.Repository
     public class BaseRepository<T> : IBaseRepository<T> where T : class, new()
     {
         public ISqlSugarClient Context;
-        //private ISqlSugarClient _db
-        //{
-        //    get
-        //    {
-        //        if (typeof(T).GetTypeInfo().GetCustomAttributes(typeof(SugarTable), true).FirstOrDefault((x => x.GetType() == typeof(SugarTable))) is SugarTable sugarTable && !string.IsNullOrEmpty(sugarTable.TableDescription))
-        //        {
-        //            Context.ChangeDatabase(sugarTable.TableDescription.ToLower());
-        //        }
-        //        else
-        //        {
-        //            Context.ChangeDatabase(0);
-        //        }
-
-        //        return Context;
-        //    }
-        //}
-        public BaseRepository(ISqlSugarClient dbContext = null, string configId = "0") //: base(dbContext)
+        public BaseRepository(string configId = "0") //: base(dbContext)
         {
-            if (dbContext == null)
-            {
-                Context = DbScoped.SugarScope.GetConnection(configId);//根据类传入的ConfigId自动选择
-                //_dbbase = Context;
-            }
+            Context = DbScoped.SugarScope.GetConnection(configId);//根据类传入的ConfigId自动选择
         }
-        //public ISqlSugarClient Db
-        //{
-        //    get { return _db; }
-        //}
+
         #region add
         /// <summary>
         /// 插入指定列使用

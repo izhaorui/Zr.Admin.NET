@@ -164,6 +164,14 @@ namespace ZR.Admin.WebApi
                 Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
                 Console.WriteLine();
             };
+
+            //调式代码 用来打印SQL 
+            DbScoped.SugarScope.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
+            {
+                Console.BackgroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("【SQL语句Bus】" + sql.ToLower() + "\r\n"
+                    + DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
+            };
             //Bus Db错误日志
             DbScoped.SugarScope.GetConnection(1).Aop.OnError = (e) =>
             {

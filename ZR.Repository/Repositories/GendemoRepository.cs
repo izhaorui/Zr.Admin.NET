@@ -2,6 +2,8 @@ using System;
 using Infrastructure.Attribute;
 using ZR.Repository.System;
 using ZR.Model.Models;
+using SqlSugar;
+using SqlSugar.IOC;
 
 namespace ZR.Repository
 {
@@ -14,12 +16,17 @@ namespace ZR.Repository
     [AppService(ServiceLifetime = LifeTime.Transient)]
     public class GendemoRepository : BaseRepository<Gendemo>
     {
-        public GendemoRepository() : base(configId: "1")
+        private readonly ISqlSugarClient db;
+        public GendemoRepository()
         {
+            db = DbScoped.SugarScope.GetConnection(1);
         }
 
         #region 业务逻辑代码
-
+        public void Test()
+        {
+            var date = db.GetDate();
+        }
         #endregion
     }
 }

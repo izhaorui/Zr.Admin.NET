@@ -11,5 +11,6 @@ namespace ZR.Service.Business
     /// </summary>
     public interface IGendemoService: IBaseService<Gendemo>
     {
+        void Test();
     }
 }

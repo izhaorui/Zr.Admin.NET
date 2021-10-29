@@ -51,7 +51,7 @@ namespace ZR.Admin.WebApi.Controllers
 
             //TODO 搜索条件
             //predicate = predicate.And(m => m.Name.Contains(parm.Name));
-
+            _GendemoService.Test();
             var response = _GendemoService.GetPages(predicate.ToExpression(), parm);
 
             return SUCCESS(response);
