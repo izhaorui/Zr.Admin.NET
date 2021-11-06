@@ -39,7 +39,7 @@
 import { getCodeImg } from "@/api/system/login";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from "@/utils/jsencrypt";
-import defaultSettings from '@/settings'
+import defaultSettings from "@/settings";
 
 export default {
   name: "Login",
@@ -98,8 +98,7 @@ export default {
 
       this.loginForm = {
         username: username === undefined ? this.loginForm.username : username,
-        password:
-          password === undefined ? this.loginForm.password : password,
+        password: password === undefined ? this.loginForm.password : password,
         rememberMe: rememberMe === undefined ? false : Boolean(rememberMe),
       };
     },
@@ -152,7 +151,7 @@ export default {
   height: 100%;
   // background-image: url("../assets/image/login-background.jpg");
   background-size: cover;
-  background-color: rgba(56,157,170,.82);
+  background-color: rgba(56, 157, 170, 0.82);
 }
 .title {
   margin: 0px auto 30px auto;
@@ -164,7 +163,7 @@ export default {
 .login-form {
   border-radius: 6px;
   // background: #ffffff;
-  background-color: hsla(0,0%,100%,.3);
+  background-color: hsla(0, 0%, 100%, 0.3);
   width: 350px;
   padding: 25px 25px 5px 25px;
   .el-input {
