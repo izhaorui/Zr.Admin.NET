@@ -4,34 +4,34 @@ const { theme, sideTheme, showSettings, topNav, tagsView, fixedHeader, sidebarLo
 
 const storageSetting = JSON.parse(localStorage.getItem('layout-setting')) || ''
 const state = {
-    theme: storageSetting.theme || theme, //主题颜色
-    sideTheme: storageSetting.sideTheme || sideTheme, //侧边主题样式
-    topNav: storageSetting.topNav === undefined ? topNav : storageSetting.topNav,
-    showSettings: showSettings,
-    tagsView: storageSetting.tagsView === undefined ? tagsView : storageSetting.tagsView,
-    fixedHeader: storageSetting.fixedHeader === undefined ? fixedHeader : storageSetting.fixedHeader,
-    sidebarLogo: storageSetting.sidebarLogo === undefined ? sidebarLogo : storageSetting.sidebarLogo,
-    // dynamicTitle: storageSetting.dynamicTitle === undefined ? dynamicTitle : storageSetting.dynamicTitle
+  theme: storageSetting.theme || theme, //主题颜色
+  sideTheme: storageSetting.sideTheme || sideTheme, //侧边主题样式
+  topNav: storageSetting.topNav === undefined ? topNav : storageSetting.topNav,
+  showSettings: showSettings,
+  tagsView: storageSetting.tagsView === undefined ? tagsView : storageSetting.tagsView,
+  fixedHeader: storageSetting.fixedHeader === undefined ? fixedHeader : storageSetting.fixedHeader,
+  sidebarLogo: storageSetting.sidebarLogo === undefined ? sidebarLogo : storageSetting.sidebarLogo,
+  // dynamicTitle: storageSetting.dynamicTitle === undefined ? dynamicTitle : storageSetting.dynamicTitle
 }
 
 const mutations = {
-    CHANGE_SETTING: (state, { key, value }) => {
-        if (state.hasOwnProperty(key)) {
-            state[key] = value
-        }
+  CHANGE_SETTING: (state, { key, value }) => {
+    if (state.hasOwnProperty(key)) {
+      state[key] = value
     }
+  }
 }
 
 const actions = {
-    //修改布局设置
-    changeSetting({ commit }, data) {
-        commit('CHANGE_SETTING', data)
-    }
+  //修改布局设置
+  changeSetting({ commit }, data) {
+    commit('CHANGE_SETTING', data)
+  }
 }
 
 export default {
-    namespaced: true,
-    state,
-    mutations,
-    actions
+  namespaced: true,
+  state,
+  mutations,
+  actions
 }
