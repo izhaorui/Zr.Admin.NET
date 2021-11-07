@@ -64,7 +64,7 @@
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body @close="cancel">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
-          <el-col :span="24">
+          <el-col :span="24" v-if="this.form.id">
             <el-form-item label="任务ID">
               <div>{{form.id}}</div>
             </el-form-item>
