@@ -14,6 +14,7 @@
 ```
 
 ## 🍿在线体验
+- 官方文档：http://www.izhaorui.cn/doc
 - 体验地址：http://www.izhaorui.cn:8080/admin
 - 管理员：admin
 - 密  码：123456
@@ -34,14 +35,6 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 日志管理：NLog、登录日志、操作日志
 
 工具类：验证码、丰富公共功能、代码生成
-
-## 🍄快速启动
-需要安装：VS2019（最新版）、npm或yarn（最新版）
-准备工作：将document文件夹下面的admin.sql脚本导入到数据库中，修改appsettings.json配置文件里面中的conn_zrAdmin数据库连接字符串以及conn_zrAdmin_Type选择对应的数据库类型，目前仅支持MySQL、SQL server
-启动后台：打开项目根目录的startup.bat即可启动（数据库默认MySQL）
-启动前端：打开ZR.Vue文件夹，运行npm install命令，再运行npm run serve启动
-浏览器访问：http://localhost:8887 （默认前端端口为：8887，后台端口为：8888）
-
 
 ## 🍖内置功能
 
@@ -72,20 +65,6 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 - ZR.Tasks[定时任务类库]：提供项目定时任务实现功能；
 - ZR.CodeGenerator[代码生成功能]，包含代码生成的模板、方法、代码生成的下载。
 ```
-## ⚡ 近期计划
-
-- [ ] 参数管理
-- [ ] 在线用户
-- [ ] 文件管理 
-- [ ] 邮件发送
-- [ ] 集成微信开发
-
-## 📖 帮助文档
-👉快捷部署到Linux文档：
-- [本地md文件](./document/nginx部署文档.md "代码生成")
-
-👉代码生成器使用教程：
-- [本地md文件](./document/代码生成器使用.md "代码生成")
 
 ## 🍎演示图
 
@@ -138,9 +117,6 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 ## 💐 特别鸣谢
 - 👉Ruoyi.vue：[Ruoyi](http://www.ruoyi.vip/)
 - 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
-
-## 😎联系作者
-QQ：599854767
 
 ## 🎀捐赠
 如果这个项目对您有所帮助，请扫下方二维码打赏一杯咖啡。
