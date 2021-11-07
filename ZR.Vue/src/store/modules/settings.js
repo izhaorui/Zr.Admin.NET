@@ -1,16 +1,16 @@
 import defaultSettings from '@/settings'
 
-const { theme, sideTheme, showSettings, tagsView, fixedHeader, sidebarLogo } = defaultSettings
+const { theme, sideTheme, showSettings, topNav, tagsView, fixedHeader, sidebarLogo } = defaultSettings
 
 const storageSetting = JSON.parse(localStorage.getItem('layout-setting')) || ''
 const state = {
-  theme: storageSetting.theme || theme,//主题颜色
-  sideTheme: storageSetting.sideTheme || sideTheme,//侧边主题样式
+  theme: storageSetting.theme || theme, //主题颜色
+  sideTheme: storageSetting.sideTheme || sideTheme, //侧边主题样式
+  topNav: storageSetting.topNav === undefined ? topNav : storageSetting.topNav,
   showSettings: showSettings,
   tagsView: storageSetting.tagsView === undefined ? tagsView : storageSetting.tagsView,
   fixedHeader: storageSetting.fixedHeader === undefined ? fixedHeader : storageSetting.fixedHeader,
   sidebarLogo: storageSetting.sidebarLogo === undefined ? sidebarLogo : storageSetting.sidebarLogo,
-  // topNav:  storageSetting.topNav === undefined ? topNav : storageSetting.topNav,
   // dynamicTitle: storageSetting.dynamicTitle === undefined ? dynamicTitle : storageSetting.dynamicTitle
 }
 
@@ -35,4 +35,3 @@ export default {
   mutations,
   actions
 }
-

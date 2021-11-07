@@ -25,17 +25,14 @@ import Layout from '@/layout'
  */
 
 // 公共路由
-export const constantRoutes = [
-  {
+export const constantRoutes = [{
     path: '/redirect',
     component: Layout,
     hidden: true,
-    children: [
-      {
-        path: '/redirect/:path(.*)',
-        component: (resolve) => require(['@/views/redirect'], resolve)
-      }
-    ]
+    children: [{
+      path: '/redirect/:path(.*)',
+      component: (resolve) => require(['@/views/redirect'], resolve)
+    }]
   },
   {
     path: '/login',
@@ -56,56 +53,25 @@ export const constantRoutes = [
     path: '',
     component: Layout,
     redirect: 'index',
-    children: [
-      {
-        path: 'index',
-        component: (resolve) => require(['@/views/index'], resolve),
-        name: '首页',
-        meta: { title: '首页', icon: 'icon1', noCache: true, affix: true }
-      }
-    ],
-    hidden: true
+    children: [{
+      path: 'index',
+      component: (resolve) => require(['@/views/index'], resolve),
+      name: 'Index',
+      meta: { title: '首页', icon: 'dashboard', affix: true }
+    }],
   },
-  // {
-  //   path: '',
-  //   component: Layout,
-  //   redirect: 'index',
-  //   children: [
-  //     {
-  //       path: 'dashboard',
-  //       component: (resolve) => require(['@/views/index_v1'], resolve),
-  //       name: '控制台',
-  //       meta: { title: '控制台', icon: 'dashboard', noCache: true, affix: true }
-  //     }
-  //   ]
-  // },
   {
     path: '/user',
     component: Layout,
     hidden: true,
     redirect: 'noredirect',
-    children: [
-      {
-        path: 'profile',
-        component: (resolve) => require(['@/views/system/user/profile/index'], resolve),
-        name: 'Profile',
-        meta: { title: '个人中心', icon: 'user' }
-      }
-    ]
+    children: [{
+      path: 'profile',
+      component: (resolve) => require(['@/views/system/user/profile/index'], resolve),
+      name: 'Profile',
+      meta: { title: '个人中心', icon: 'user' }
+    }]
   },
-  // {
-  //   path: '/dict',
-  //   component: Layout,
-  //   hidden: true,
-  //   children: [
-  //     {
-  //       path: 'type/data/:dictId(\\d+)',
-  //       component: (resolve) => require(['@/views/system/dict/data'], resolve),
-  //       name: 'Data',
-  //       meta: { title: '字典数据', icon: '' }
-  //     }
-  //   ]
-  // }
 ]
 
 export default new Router({

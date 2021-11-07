@@ -82,7 +82,7 @@ export default {
     // 默认激活的菜单
     activeMenu() {
       const path = this.$route.path;
-      let activePath = this.routers[0].path;
+      let activePath = this.defaultRouter();
       if (path.lastIndexOf("/") > 0) {
         const tmpPath = path.substring(1, path.length);
         activePath = "/" + tmpPath.substring(0, tmpPath.indexOf("/"));
@@ -95,7 +95,9 @@ export default {
       }
       var routes = this.activeRoutes(activePath);
       if (routes.length === 0) {
-        activePath = this.currentIndex || this.routers[0].path;
+        activePath = this.currentIndex || this.defaultRouter();
+
+      console.log("activePath", activePath);
         this.activeRoutes(activePath);
       }
       return activePath;
@@ -115,6 +117,17 @@ export default {
     setVisibleNumber() {
       const width = document.body.getBoundingClientRect().width / 3;
       this.visibleNumber = parseInt(width / 85);
+    },
+    // 默认激活的路由
+    defaultRouter() {
+      let router;
+      Object.keys(this.routers).some((key) => {
+        if (!this.routers[key].hidden) {
+          router = this.routers[key].path;
+          return true;
+        }
+      });
+      return router;
     },
     // 菜单选择事件
     handleSelect(key, keyPath) {
@@ -153,25 +166,28 @@ export default {
 </script>
 
 <style lang="scss">
-.el-menu--horizontal > .el-menu-item {
+.topmenu-container.el-menu--horizontal > .el-menu-item {
   float: left;
-  height: 50px;
-  line-height: 50px;
-  margin: 0;
-  border-bottom: 3px solid transparent;
-  color: #999093;
-  padding: 0 5px;
-  margin: 0 10px;
+  height: 50px !important;
+  line-height: 50px !important;
+  color: #999093 !important;
+  padding: 0 5px !important;
+  margin: 0 10px !important;
 }
 
-.el-menu--horizontal > .el-menu-item.is-active {
-  border-bottom: 3px solid #{"var(--theme)"};
+.topmenu-container.el-menu--horizontal > .el-menu-item.is-active,
+.el-menu--horizontal > .el-submenu.is-active .el-submenu__title {
+  border-bottom: 2px solid #{"var(--theme)"} !important;
   color: #303133;
 }
 
 /* submenu item */
-.el-menu--horizontal > .el-submenu .el-submenu__title {
+.topmenu-container.el-menu--horizontal > .el-submenu .el-submenu__title {
+  float: left;
   height: 50px !important;
   line-height: 50px !important;
+  color: #999093 !important;
+  padding: 0 5px !important;
+  margin: 0 10px !important;
 }
 </style>

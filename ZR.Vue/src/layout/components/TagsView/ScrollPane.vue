@@ -5,75 +5,81 @@
 </template>
 
 <script>
-const tagAndTagSpacing = 4 // tagAndTagSpacing
+const tagAndTagSpacing = 4; // tagAndTagSpacing
 
 export default {
-  name: 'ScrollPane',
+  name: "ScrollPane",
   data() {
     return {
-      left: 0
-    }
+      left: 0,
+    };
   },
   computed: {
     scrollWrapper() {
-      return this.$refs.scrollContainer.$refs.wrap
-    }
+      return this.$refs.scrollContainer.$refs.wrap;
+    },
   },
   mounted() {
-    this.scrollWrapper.addEventListener('scroll', this.emitScroll, true)
+    this.scrollWrapper.addEventListener("scroll", this.emitScroll, true);
   },
   beforeDestroy() {
-    this.scrollWrapper.removeEventListener('scroll', this.emitScroll)
+    this.scrollWrapper.removeEventListener("scroll", this.emitScroll);
   },
   methods: {
     handleScroll(e) {
-      const eventDelta = e.wheelDelta || -e.deltaY * 40
-      const $scrollWrapper = this.scrollWrapper
-      $scrollWrapper.scrollLeft = $scrollWrapper.scrollLeft + eventDelta / 4
+      const eventDelta = e.wheelDelta || -e.deltaY * 40;
+      const $scrollWrapper = this.scrollWrapper;
+      $scrollWrapper.scrollLeft = $scrollWrapper.scrollLeft + eventDelta / 4;
     },
     emitScroll() {
-      this.$emit('scroll')
+      this.$emit("scroll");
     },
     moveToTarget(currentTag) {
-      const $container = this.$refs.scrollContainer.$el
-      const $containerWidth = $container.offsetWidth
-      const $scrollWrapper = this.scrollWrapper
-      const tagList = this.$parent.$refs.tag
+      const $container = this.$refs.scrollContainer.$el;
+      const $containerWidth = $container.offsetWidth;
+      const $scrollWrapper = this.scrollWrapper;
+      const tagList = this.$parent.$refs.tag;
 
-      let firstTag = null
-      let lastTag = null
+      let firstTag = null;
+      let lastTag = null;
 
       // find first tag and last tag
       if (tagList.length > 0) {
-        firstTag = tagList[0]
-        lastTag = tagList[tagList.length - 1]
+        firstTag = tagList[0];
+        lastTag = tagList[tagList.length - 1];
       }
 
       if (firstTag === currentTag) {
-        $scrollWrapper.scrollLeft = 0
+        $scrollWrapper.scrollLeft = 0;
       } else if (lastTag === currentTag) {
-        $scrollWrapper.scrollLeft = $scrollWrapper.scrollWidth - $containerWidth
+        $scrollWrapper.scrollLeft =
+          $scrollWrapper.scrollWidth - $containerWidth;
       } else {
         // find preTag and nextTag
-        const currentIndex = tagList.findIndex(item => item === currentTag)
-        const prevTag = tagList[currentIndex - 1]
-        const nextTag = tagList[currentIndex + 1]
+        const currentIndex = tagList.findIndex((item) => item === currentTag);
+        const prevTag = tagList[currentIndex - 1];
+        const nextTag = tagList[currentIndex + 1];
 
         // the tag's offsetLeft after of nextTag
-        const afterNextTagOffsetLeft = nextTag.$el.offsetLeft + nextTag.$el.offsetWidth + tagAndTagSpacing
+        const afterNextTagOffsetLeft =
+          nextTag.$el.offsetLeft + nextTag.$el.offsetWidth + tagAndTagSpacing;
 
         // the tag's offsetLeft before of prevTag
-        const beforePrevTagOffsetLeft = prevTag.$el.offsetLeft - tagAndTagSpacing
+        const beforePrevTagOffsetLeft =
+          prevTag.$el.offsetLeft - tagAndTagSpacing;
 
-        if (afterNextTagOffsetLeft > $scrollWrapper.scrollLeft + $containerWidth) {
-          $scrollWrapper.scrollLeft = afterNextTagOffsetLeft - $containerWidth
+        if (
+          afterNextTagOffsetLeft >
+          $scrollWrapper.scrollLeft + $containerWidth
+        ) {
+          $scrollWrapper.scrollLeft = afterNextTagOffsetLeft - $containerWidth;
         } else if (beforePrevTagOffsetLeft < $scrollWrapper.scrollLeft) {
-          $scrollWrapper.scrollLeft = beforePrevTagOffsetLeft
+          $scrollWrapper.scrollLeft = beforePrevTagOffsetLeft;
         }
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style lang="scss" scoped>
@@ -82,7 +88,7 @@ export default {
   position: relative;
   overflow: hidden;
   width: 100%;
-  /deep/ {
+  ::v-deep {
     .el-scrollbar__bar {
       bottom: 0px;
     }
