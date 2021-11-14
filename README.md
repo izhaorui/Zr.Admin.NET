@@ -15,7 +15,7 @@
 
 ## 🍿在线体验
 - 官方文档：http://www.izhaorui.cn/doc
-- 体验地址：http://www.izhaorui.cn:8080/admin
+- 体验地址：http://www.izhaorui.cn/admin
 - 管理员：admin
 - 密  码：123456
 
