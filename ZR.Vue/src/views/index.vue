@@ -1,6 +1,34 @@
 <template>
   <div class="app-container home">
     <el-row :gutter="20">
+      <el-col :sm="24" :lg="24">
+        <blockquote class="text-warning" style="font-size: 14px">
+          领取七牛云通用云产品优惠券
+          <br />
+          <el-link href="https://s.qiniu.com/FzEfay" type="primary" target="_blank">
+            https://s.qiniu.com/FzEfay</el-link>
+          <br />
+
+
+          领取腾讯云通用云产品新用户专属大礼包2860优惠券，每种代金券限量500张，先到先得。 
+          <br />
+          <el-link href="https://curl.qcloud.com/5J4nag8D" type="primary"
+            target="_blank">https://curl.qcloud.com/5J4nag8D</el-link>
+          <br />
+
+          <!-- 阿里云服务器折扣区
+          <el-link href="http://www.izhaorui.cn" type="primary" target="_blank">>☛☛点我进入☚☚</el-link>
+          <br/> -->
+					
+					腾讯云限时秒杀活动
+          <el-link href="https://curl.qcloud.com/4yEoRquq" type="primary" target="_blank">>☛☛点我进入☚☚</el-link><br />
+          <h4 class="text-danger">
+            云产品通用红包，可叠加官网常规优惠使用。(仅限新用户)
+          </h4>
+        </blockquote>
+      </el-col>
+    </el-row>
+    <el-row :gutter="20">
       <el-col :span="10">
         <el-card>
           <div slot="header" class="clearfix">
@@ -15,8 +43,10 @@
               </el-link> -->
             </p>
             <p>
-              <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://gitee.com/izory/ZrAdminNetCore')">访问码云</el-button>
-              <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://github.com/izhaorui/ZrAdmin.NET')">Github</el-button>
+              <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://gitee.com/izory/ZrAdminNetCore')">访问码云
+              </el-button>
+              <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://github.com/izhaorui/ZrAdmin.NET')">Github
+              </el-button>
             </p>
             <h3>如果觉得不错欢迎给个⭐Star⭐收藏一下 ，这样作者才有继续免费下去的动力，谢谢！</h3>
           </el-row>
@@ -67,7 +97,7 @@
     </el-row>
     <el-row>
       <el-col :span="5">
-        <img src="http://ss.izhaorui.cn/red.jpg" width="100%"/>
+        <img src="http://ss.izhaorui.cn/red.jpg" width="100%" />
       </el-col>
     </el-row>
     <el-divider />
