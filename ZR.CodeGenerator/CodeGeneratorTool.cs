@@ -482,6 +482,7 @@ namespace ZR.CodeGenerator
                     Create_by = genTable.Create_by,
                     Create_time = DateTime.Now,
                     IsInsert = !column.IsIdentity,//非自增字段都需要插入
+                    IsEdit = true,
                     IsQuery = false,
                     HtmlType = GenConstants.HTML_INPUT
                 };
@@ -509,9 +510,9 @@ namespace ZR.CodeGenerator
                     genTableColumn.HtmlType = GenConstants.HTML_TEXTAREA;
                 }
                 //编辑字段
-                if (GenConstants.COLUMNNAME_NOT_EDIT.Any(f => column.DbColumnName.Contains(f)) && !column.IsIdentity && !column.IsPrimarykey)
+                if (column.IsIdentity || column.IsPrimarykey || GenConstants.COLUMNNAME_NOT_EDIT.Any(f => column.DbColumnName.Contains(f)) )
                 {
-                    genTableColumn.IsEdit = true;
+                    genTableColumn.IsEdit = false;
                 }
                 //列表字段
                 if (!GenConstants.COLUMNNAME_NOT_LIST.Any(f => column.DbColumnName.Contains(f) && !column.IsPrimarykey))
