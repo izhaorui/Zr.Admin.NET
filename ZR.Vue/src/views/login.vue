@@ -84,7 +84,7 @@ export default {
   },
   methods: {
     getCode() {
-      this.loginForm.code = "";
+      // this.loginForm.code = "";
       getCodeImg().then((res) => {
         this.codeUrl = "data:image/gif;base64," + res.data.img;
         this.loginForm.uuid = res.data.uuid;
@@ -130,7 +130,6 @@ export default {
             .catch((error) => {
               this.$message(error.msg);
               this.loading = false;
-              this.loginForm.code = "";
               this.getCode();
               this.$refs.codeTxt.focus();
             });
