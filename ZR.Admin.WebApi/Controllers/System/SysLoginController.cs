@@ -137,7 +137,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             string uuid = Guid.NewGuid().ToString().Replace("-", "");
             var code = SecurityCodeHelper.GetRandomEnDigitalText(4);
-            var imgByte = SecurityCodeHelper.GetGifEnDigitalCodeByte(code);
+            var imgByte = SecurityCodeHelper.GetEnDigitalCodeByte(code);
             string base64Str = Convert.ToBase64String(imgByte);
             CacheHelper.SetCache(uuid, code);
             var obj = new { uuid, img = base64Str };// File(stream, "image/png")
