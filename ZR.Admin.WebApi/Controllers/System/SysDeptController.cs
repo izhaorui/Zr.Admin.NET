@@ -138,7 +138,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(GetApiResult(ResultCode.CUSTOM_ERROR, $"存在下级部门，不允许删除"));
             }
-            if (DeptService.Queryable().Count(it => it.DeptId == deptId && it.DelFlag == "0") > 0)
+            if (UserService.Queryable().Count(it => it.DeptId == deptId && it.DelFlag == "0") > 0)
             {
                 return ToResponse(GetApiResult(ResultCode.CUSTOM_ERROR, $"部门存在用户，不允许删除"));
             }
