@@ -13,6 +13,12 @@ namespace ZR.Service.System.IService
         public List<SysUser> SelectUserList(SysUser user, PagerInfo pager);
 
         /// <summary>
+        /// 获取归属指定部门的用户数量
+        /// </summary>
+        /// <returns></returns>
+        public int GetDeptUserCount(long deptId);
+
+        /// <summary>
         /// 通过用户ID查询用户
         /// </summary>
         /// <param name="userId"></param>

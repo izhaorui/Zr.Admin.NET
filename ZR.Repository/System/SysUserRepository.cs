@@ -38,6 +38,15 @@ namespace ZR.Repository.System
         }
 
         /// <summary>
+        /// 获取归属指定部门的用户数量
+        /// </summary>
+        /// <returns></returns>
+        public int GetDeptUserCount(long deptId)
+        {
+            return Context.Queryable<SysUser>().Where(it => it.DeptId == deptId && it.DelFlag == "0").Count();
+        }
+
+        /// <summary>
         /// 通过用户ID查询用户
         /// </summary>
         /// <param name="userId"></param>
