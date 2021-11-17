@@ -51,7 +51,7 @@
               <el-checkbox v-model="scope.row.isList"></el-checkbox>
             </template>
           </el-table-column>
-          <el-table-column label="查询" min-width="5%">
+          <!-- <el-table-column label="查询" min-width="5%">
             <template slot-scope="scope">
               <el-checkbox v-model="scope.row.isQuery"></el-checkbox>
             </template>
@@ -69,7 +69,7 @@
                 <el-option label="BETWEEN" value="BETWEEN" />
               </el-select>
             </template>
-          </el-table-column>
+          </el-table-column> -->
           <el-table-column label="显示类型" min-width="12%">
             <template slot-scope="scope">
               <el-select v-model="scope.row.htmlType">
