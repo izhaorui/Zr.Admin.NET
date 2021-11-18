@@ -90,8 +90,11 @@ namespace ZR.Admin.WebApi.Controllers
 
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
-            Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTableInfo.Options);
-            dto.ParentMenuId = (long)options.GetValueOrDefault("parentMenuId", 0);
+            if (!string.IsNullOrEmpty(genTableInfo.Options))
+            {
+                Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTableInfo.Options);
+                dto.ParentMenuId = (long)options.GetValueOrDefault("parentMenuId", 0);
+            }
             dto.GenTable = genTableInfo;
             //生成代码
             CodeGeneratorTool.Generate(genTableInfo, dto);
@@ -176,9 +179,9 @@ namespace ZR.Admin.WebApi.Controllers
                         ClassName = CodeGeneratorTool.GetClassName(tableName),
                         BusinessName = CodeGeneratorTool.GetClassName(tableName),
                         FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
-                        FunctionName = tabInfo.Description,
+                        FunctionName = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
                         TableName = tableName,
-                        TableComment = tabInfo.Description,
+                        TableComment = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
                         Create_by = userName,
                     };
                     genTable.TableId = GenTableService.ImportGenTable(genTable);
