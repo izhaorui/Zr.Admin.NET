@@ -49,7 +49,7 @@ namespace {ApiControllerNamespace}.Controllers
             //开始拼装查询条件
             var predicate = Expressionable.Create<{ModelName}>();
 
-            //TODO 搜索条件
+            //TODO 自己实现搜索条件查询语法参考Sqlsugar，默认查询所有
             //predicate = predicate.And(m => m.Name.Contains(parm.Name));
 
             var response = _{ModelName}Service.GetPages(predicate.ToExpression(), parm);
