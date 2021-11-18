@@ -11,7 +11,7 @@ using ZR.Service.System.IService;
 namespace ZR.Service
 {
     [AppService(ServiceType = typeof(ISysUserService), ServiceLifetime = LifeTime.Transient)]
-    public class SysUserService : ISysUserService
+    public class SysUserService : BaseService<SysUser>, ISysUserService
     {
         private readonly SysUserRepository UserRepository;
         private readonly ISysRoleService RoleService;
