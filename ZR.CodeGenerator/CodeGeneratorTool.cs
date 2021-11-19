@@ -59,6 +59,7 @@ namespace ZR.CodeGenerator
 
             StringBuilder sb1 = new StringBuilder();
             StringBuilder sb2 = new StringBuilder();
+            StringBuilder sb3 = new StringBuilder();
 
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in listField)
@@ -98,6 +99,12 @@ namespace ZR.CodeGenerator
                     sb2.AppendLine($"    this.getDicts(\"{dbFieldInfo.DictType}\").then((response) => {{");
                     sb2.AppendLine($"      this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;");
                     sb2.AppendLine("    })");
+                }
+                //引用组件
+                if (dbFieldInfo.HtmlType == GenConstants.HTML_EDITOR)
+                {
+                    replaceDto.VueComponent += "Editor,";
+                    replaceDto.VueComponentImport += "import Editor from '@/components/Editor';\n";
                 }
 
                 replaceDto.QueryProperty += CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo);
@@ -348,6 +355,8 @@ namespace ZR.CodeGenerator
                 .Replace("{VueDataContent}", replaceDto.VueDataContent)
                 .Replace("{PrimaryKey}", FirstLowerCase(replaceDto.PKName))
                 .Replace("{MountedMethod}", replaceDto.MountedMethod)
+                .Replace("{VueComponent}", replaceDto.VueComponent.TrimEnd(','))
+                .Replace("{VueComponentImport}", replaceDto.VueComponentImport)
                 .Replace("{VueViewEditFormRuleContent}", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
 
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, content));

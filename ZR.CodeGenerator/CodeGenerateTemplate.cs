@@ -35,7 +35,6 @@ namespace ZR.CodeGenerator
                 sb.AppendLine($"    {columnName}Format(row, column) {{");
                 sb.AppendLine(@$"      return this.selectDictLabel(this.{columnName}Options, row.{columnName});");
                 sb.AppendLine(@"    },");
-
             }
             return sb.ToString();
         }
@@ -155,10 +154,24 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("        </el-radio-group>");
                 sb.AppendLine("      </el-form-item>");
             }
+            //else if (dbFieldInfo.HtmlType == GenConstants.HTML_RADIO && !string.IsNullOrEmpty(dbFieldInfo.DictType))
+            //{
+            //    sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
+            //    sb.AppendLine($"        <el-radio-group v-model=\"form.{columnName}\">");
+            //    //TODO 根据字典类型循环
+            //    sb.AppendLine("        </el-radio-group>");
+            //    sb.AppendLine("      </el-form-item>");
+            //}
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_TEXTAREA)
             {
                 sb.AppendLine($"      <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-input type=\"textarea\" v-model=\"form.{columnName}\" placeholder=\"请输入内容\"/>");
+                sb.AppendLine("      </el-form-item>");
+            }
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_EDITOR)
+            {
+                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
+                sb.AppendLine($"      <editor v-model=\"form.{columnName}\" :min-height=\"200\" />");
                 sb.AppendLine("      </el-form-item>");
             }
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT && !string.IsNullOrEmpty(dbFieldInfo.DictType))

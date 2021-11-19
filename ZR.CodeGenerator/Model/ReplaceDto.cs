@@ -89,6 +89,14 @@ namespace ZR.CodeGenerator.Model
         /// views、js文件名
         /// </summary>
         public string ViewsFileName { get; set; }
+        /// <summary>
+        /// vue组件引用
+        /// </summary>
+        public string VueComponent { get; set; }
+        /// <summary>
+        /// vue组件导入
+        /// </summary>
+        public string VueComponentImport { get; set; }
         public string Author { get; set; }
         public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
     }

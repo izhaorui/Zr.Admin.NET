@@ -60,8 +60,11 @@ import {
   get{ModelTypeName} 
 } from '@/api/{fileClassName}.js';
 
+{VueComponentImport}
+
 export default {
   name: '{ModelTypeName}',
+  components: { {VueComponent} },
   data() {
     return {
       labelWidth: "100px",

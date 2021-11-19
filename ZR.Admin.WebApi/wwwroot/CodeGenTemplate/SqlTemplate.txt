@@ -1,6 +1,6 @@
 ﻿-- {FunctionName}菜单
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) 
-VALUES ('{FunctionName}', {ParentId}, 1, '/{ModuleName}/{ModelTypeName}', '{ModuleName}/{ViewsFileName}/index', 0, 0, 'C', '0', '0', '{Permission}:list', '#', '', GETDATE(), '', NULL, '{FunctionName}');
+VALUES ('{FunctionName}', {ParentId}, 1, '{ModuleName}/{ModelTypeName}', '{ModuleName}/{ViewsFileName}/index', 0, 0, 'C', '0', '0', '{Permission}:list', '#', '', GETDATE(), '', NULL, '{FunctionName}');
 
 -- 按钮父菜单id
 declare @menuId int = @@identity
@@ -18,6 +18,5 @@ VALUES ('{FunctionName}删除', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '{Pe
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) 
 VALUES ('{FunctionName}修改', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:update', '', '', GETDATE(), '', NULL, NULL);
 
-GO
 SELECT * FROM sys_menu WHERE parentId = {ParentId};
 SELECT * FROM sys_menu WHERE menuId = @menuId;
