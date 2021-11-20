@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+	<PackageReference Include="EPPlus" Version="5.8.3" />
 	<PackageReference Include="Hei.Captcha" Version="0.3.0" />
 	<PackageReference Include="IPTools.China" Version="1.6.0" />
     <PackageReference Include="CSRedisCore" Version="3.6.5" />
@@ -90,6 +91,7 @@
 
   <ItemGroup>
     <Folder Include="Controllers\business\" />
+    <Folder Include="wwwroot\export\" />
     <Folder Include="wwwroot\Generatecode\" />
   </ItemGroup>
 

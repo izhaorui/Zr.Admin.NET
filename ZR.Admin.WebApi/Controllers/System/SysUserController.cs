@@ -1,8 +1,11 @@
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using OfficeOpenXml;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using ZR.Admin.WebApi.Filters;
@@ -13,7 +16,7 @@ using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
-    [Verify]
+    //[Verify]
     [Route("system/user")]
     public class SysUserController : BaseController
     {
@@ -23,17 +26,20 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysRoleService RoleService;
         private readonly ISysPostService PostService;
         private readonly ISysUserPostService UserPostService;
+        private IWebHostEnvironment WebHostEnvironment;
 
         public SysUserController(
             ISysUserService userService,
             ISysRoleService roleService,
             ISysPostService postService,
-            ISysUserPostService userPostService)
+            ISysUserPostService userPostService,
+            IWebHostEnvironment HostEnvironment)
         {
             UserService = userService;
             RoleService = roleService;
             PostService = postService;
             UserPostService = userPostService;
+            WebHostEnvironment = HostEnvironment;
         }
 
         /// <summary>
@@ -203,5 +209,56 @@ namespace ZR.Admin.WebApi.Controllers.System
         //    //Response.Headers.Append("content-disposition", "attachment;filename=sysUser.xlsx");
         //    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "sysUser.xlsx");
         //}
+
+        /// <summary>
+        /// 用户导出
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        [HttpGet("export")]
+        [Log(Title = "用户导出", BusinessType = BusinessType.EXPORT)]
+        public IActionResult UserExport([FromQuery] SysUser user)
+        {
+            string sFileName = $"用户列表{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            string newFileName = Path.Combine(WebHostEnvironment.WebRootPath, "export", sFileName);
+            var list = UserService.SelectUserList(user, new PagerInfo(1, 10000));
+
+            //调试模式需要加上
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            Directory.CreateDirectory(Path.GetDirectoryName(newFileName));
+            using (ExcelPackage package = new ExcelPackage(new FileInfo(newFileName)))
+            {
+                // 添加worksheet
+                ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("sysuser");
+
+                //添加头
+                worksheet.Cells[1, 1].Value = "用户id";
+                worksheet.Cells[1, 2].Value = "用户名称";
+                worksheet.Cells[1, 3].Value = "用户昵称";
+                worksheet.Cells[1, 4].Value = "部门";
+                worksheet.Cells[1, 5].Value = "手机号码";
+                worksheet.Cells[1, 6].Value = "性别";
+                worksheet.Cells[1, 7].Value = "状态";
+                worksheet.Cells[1, 8].Value = "添加时间";
+                worksheet.Cells[1, 9].Value = "登录IP";
+                worksheet.Cells[1, 10].Value = "最后登录时间";
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var item = list[i];
+                    worksheet.Cells[$"A{i + 2}"].Value = item.UserId;
+                    worksheet.Cells[$"B{i + 2}"].Value = item.UserName;
+                    worksheet.Cells[$"C{i + 2}"].Value = item.NickName;
+                    worksheet.Cells[$"D{i + 2}"].Value = item.DeptName;
+                    worksheet.Cells[$"E{i + 2}"].Value = item.Phonenumber;                    
+                    worksheet.Cells[$"F{i + 2}"].Value = item.Sex;
+                    worksheet.Cells[$"G{i + 2}"].Value = item.Status;
+                    worksheet.Cells[$"H{i + 2}"].Value = item.Create_time.ToString();
+                    worksheet.Cells[$"I{i + 2}"].Value = item.LoginIP;
+                    worksheet.Cells[$"J{i + 2}"].Value = item.LoginDate.ToString();
+                }
+                package.Save();
+            }
+            return SUCCESS(new { zipPath = "/export/" + sFileName, fileName = sFileName });
+        }
     }
 }

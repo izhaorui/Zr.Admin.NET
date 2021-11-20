@@ -45,17 +45,17 @@
           </el-col>
           <!-- <el-col :span="1.5">
             <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['system:user:import']">导入</el-button>
-          </el-col>
+          </el-col> -->
           <el-col :span="1.5">
             <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:user:export']">导出</el-button>
-          </el-col> -->
+          </el-col>
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
         </el-row>
         <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="50" align="center" />
           <el-table-column label="用户编号" align="center" prop="userId" width="80" />
-          <el-table-column label="用户名称" align="center" prop="userName" :show-overflow-tooltip="true"/>
-          <el-table-column label="用户昵称" align="center" prop="nickName" :show-overflow-tooltip="true"/>
+          <el-table-column label="用户名称" align="center" prop="userName" :show-overflow-tooltip="true" />
+          <el-table-column label="用户昵称" align="center" prop="nickName" :show-overflow-tooltip="true" />
           <el-table-column label="头像" prop="avatar">
             <template slot-scope="scope">
               <el-image :src="scope.row.avatar" :preview-src-list="[scope.row.avatar]"></el-image>
@@ -68,8 +68,8 @@
               <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
             </template>
           </el-table-column>
-          <el-table-column label="创建时间" align="center" prop="createTime" width="160" ></el-table-column>
-          <el-table-column label="登录IP" align="center" prop="loginIP" v-if="columns[0].checked"/>
+          <el-table-column label="创建时间" align="center" prop="createTime" width="160"></el-table-column>
+          <el-table-column label="登录IP" align="center" prop="loginIP" v-if="columns[0].checked" />
           <el-table-column label="最后登录时间" align="center" prop="loginDate" v-if="columns[1].checked">
             <template slot-scope="scope">
               <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -176,7 +176,8 @@
 
     <!-- 用户导入对话框 -->
     <el-dialog :title="upload.title" :visible.sync="upload.open" width="400px" append-to-body>
-      <el-upload name="file" ref="upload" :limit="1" accept=".xlsx, .xls" :headers="upload.headers" :action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading" :on-progress="handleFileUploadProgress" :on-success="handleFileSuccess" :auto-upload="false" drag>
+      <el-upload name="file" ref="upload" :limit="1" accept=".xlsx, .xls" :headers="upload.headers" :action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading"
+        :on-progress="handleFileUploadProgress" :on-success="handleFileSuccess" :auto-upload="false" drag>
         <i class="el-icon-upload"></i>
         <div class="el-upload__text">
           将文件拖到此处，或
@@ -208,13 +209,13 @@ import {
   exportUser,
   resetUserPwd,
   changeUserStatus,
-  importTemplate,
+  // importTemplate,
 } from "@/api/system/user";
 import { getToken } from "@/utils/auth";
 import { treeselect } from "@/api/system/dept";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
-import { downLoadExcel } from "@/utils/zipdownload.js";
+import { downLoadExcel, downloadFile } from "@/utils/zipdownload.js";
 
 export default {
   name: "User",
@@ -346,7 +347,7 @@ export default {
     this.getDicts("sys_user_sex").then((response) => {
       this.sexOptions = response.data;
     });
-    this.getConfigKey("sys.user.initPassword").then(response => {
+    this.getConfigKey("sys.user.initPassword").then((response) => {
       this.initPassword = response.data;
     });
   },
@@ -545,13 +546,21 @@ export default {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-      })
-        .then(function () {
-          return exportUser(queryParams);
-        })
-        .then((response) => {
-          this.download(response.msg);
+      }).then(() => {
+        exportUser(queryParams).then((response) => {
+          console.log(JSON.stringify(response));
+          const { code, data } = response;
+          if (code == 200) {
+            this.msgSuccess("导出成功");
+            downloadFile(
+              process.env.VUE_APP_BASE_API + data.zipPath,
+              data.fileName
+            );
+          } else {
+            this.msgError("导出失败");
+          }
         });
+      });
     },
     /** 导入按钮操作 */
     handleImport() {

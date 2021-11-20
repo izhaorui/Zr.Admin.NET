@@ -84,6 +84,7 @@ export function resolveExcel(res, fileName) {
   link.style.display = 'none'
   link.href = url
   link.setAttribute('download', fileName)// 文件名
+  link.setAttribute('target', "_black")
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link) // 下载完成移除元素
