@@ -10,11 +10,6 @@
       <el-form-item label="表名">
         <el-input v-model="queryParams.tableName" clearable placeholder="输入要查询的表名" />
       </el-form-item>
-      <!-- <el-form-item label="去掉表名前缀：">
-        <el-tooltip class="item" effect="dark" content="表名直接变为类名，去掉表名前缀。" placement="bottom">
-          <el-input v-model="codeform.replaceTableNameStr" clearable width="300" placeholder="例如：sys_" />
-        </el-tooltip>
-      </el-form-item> -->
       <el-form-item>
         <el-button type="primary" @click="handleQuery()">查询</el-button>
         <!-- <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button> -->
@@ -62,10 +57,7 @@ export default {
       rules: {
         dbName: [
           { required: true, message: "请选择数据库名称", trigger: "blur" },
-        ],
-        // replaceTableNameStr: [
-        //   { min: 0, max: 50, message: "长度小于50个字符", trigger: "blur" },
-        // ],
+        ]
       },
     };
   },
@@ -85,16 +77,13 @@ export default {
     // 查询表数据
     getList() {
       codeGetDBList().then((res) => {
-        const { dbList, defaultDb } = res.data;
-        // this.queryParams.dbName =
-        //   this.queryParams.dbName !== "" ? defaultDb : "";
+        const { dbList } = res.data;
         this.dbList = dbList;
       });
       if (this.queryParams.dbName !== "") {
         listDbTable(this.queryParams).then((res) => {
           this.dbTableList = res.data.result;
           this.total = res.data.totalNum;
-          // this.tableloading = false;
         });
       }
     },
@@ -109,7 +98,6 @@ export default {
       this.handleQuery();
     },
     handleShowTable() {
-      // console.log(json)
       this.handleQuery();
     },
     /** 导入按钮操作 */

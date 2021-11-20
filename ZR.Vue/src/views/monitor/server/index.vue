@@ -9,10 +9,10 @@
               <thead>
                 <tr>
                   <th class="is-leaf">
-                    <div class="cell">属性</div>
+                    属性
                   </th>
                   <th class="is-leaf">
-                    <div class="cell">值</div>
+                    值
                   </th>
                 </tr>
               </thead>
@@ -51,10 +51,10 @@
               <thead>
                 <tr>
                   <th class="is-leaf">
-                    <div class="cell">属性</div>
+                    属性
                   </th>
                   <th class="is-leaf">
-                    <div class="cell">内存</div>
+                    内存
                   </th>
                 </tr>
               </thead>
@@ -158,7 +158,7 @@
                     <div class="cell" v-if="server.app">{{ server.app.name }}</div>
                   </td>
                   <td>
-                    <div class="cell">.NetCore版本</div>
+                    <div class="cell">.Net版本</div>
                   </td>
                   <td>
                     <div class="cell" v-if="server.app">{{ server.app.version }}</div>
@@ -338,3 +338,12 @@ export default {
   },
 };
 </script>
+<style scoped>
+table tr {
+  height: 30px;
+}
+.is-leaf {
+  text-align: left;
+  padding: 0 10px;
+}
+</style>
