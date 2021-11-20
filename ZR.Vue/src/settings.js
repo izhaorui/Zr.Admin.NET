@@ -1,4 +1,8 @@
 module.exports = {
+  /**
+   * 框架版本号
+   */
+  version: '3.5.0',
   title: 'ZrAdmin.NET',
   /**
    * 主题颜色

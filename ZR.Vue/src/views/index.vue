@@ -9,18 +9,16 @@
             https://s.qiniu.com/FzEfay</el-link>
           <br />
 
-
-          领取腾讯云通用云产品新用户专属大礼包2860优惠券，每种代金券限量500张，先到先得。 
+          领取腾讯云通用云产品新用户专属大礼包2860优惠券，每种代金券限量500张，先到先得。
           <br />
-          <el-link href="https://curl.qcloud.com/5J4nag8D" type="primary"
-            target="_blank">https://curl.qcloud.com/5J4nag8D</el-link>
+          <el-link href="https://curl.qcloud.com/5J4nag8D" type="primary" target="_blank">https://curl.qcloud.com/5J4nag8D</el-link>
           <br />
 
           <!-- 阿里云服务器折扣区
           <el-link href="http://www.izhaorui.cn" type="primary" target="_blank">>☛☛点我进入☚☚</el-link>
           <br/> -->
-					
-					腾讯云限时秒杀活动
+
+          腾讯云限时秒杀活动
           <el-link href="https://curl.qcloud.com/4yEoRquq" type="primary" target="_blank">>☛☛点我进入☚☚</el-link><br />
           <h4 class="text-danger">
             云产品通用红包，可叠加官网常规优惠使用。(仅限新用户)
@@ -29,18 +27,16 @@
       </el-col>
     </el-row>
     <el-row :gutter="20">
-      <el-col :span="10">
+      <el-col :span="14">
         <el-card>
           <div slot="header" class="clearfix">
-            <span>系统公告</span>
+            <span>框架介绍</span>
           </div>
           <el-row>
-            <p>👀欢迎各位大佬拉取分支开发新功能</p>
-            <p>🎃各位大佬轻点点，服务器低配</p>
-            <p>🎉免费开源地址
-              <!-- <el-link type="primary" href="https://gitee.com/izory/ZrAdminNetCore" target="_blank">
-                https://gitee.com/izory/ZrAdminNetCore
-              </el-link> -->
+            <p>ZrAdmin.NET借鉴了很多开源项目的优点，让你开发Web管理系统更简单，所以我也把它给开源了（前端 <code>vue页面</code>主要参考若依，在此表示感谢.)</p>
+            <p>代码完全免费开源，易读易懂、界面简洁美观，给你的项目多一种选择与参考。</p>
+            <p>
+              <b>当前版本:</b> <span>v{{ version }}</span>
             </p>
             <p>
               <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://gitee.com/izory/ZrAdminNetCore')">访问码云
@@ -83,21 +79,60 @@
           </el-col>
         </el-card>
       </el-col>
-      <el-col :span="8">
+      <el-col :span="4">
+        <el-card>
+          <div slot="header" class="clearfix">
+            <span>联系信息</span>
+          </div>
+          <div class="body">
+            <span><i class="el-icon-user-solid"></i>QQ群：191349103</span>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+    <el-row :gutter="20">
+      <el-col :span="14">
         <el-card>
           <div slot="header" class="clearfix">
             <span>捐赠支持</span>
           </div>
           <div class="body">
             <span class="tip">如果觉得有用你可以请作者喝杯咖啡☕表示鼓励</span>
-            <img src="http://ss.izhaorui.cn/pay.jpg" alt="donate" width="100%" />
+            <img src="http://ss.izhaorui.cn/pay.jpg" alt="donate" width="80%" />
           </div>
         </el-card>
       </el-col>
-    </el-row>
-    <el-row>
-      <el-col :span="5">
-        <img src="http://ss.izhaorui.cn/red.jpg" width="100%" />
+      <el-col :span="10">
+        <el-card>
+          <div slot="header" class="clearfix">
+            <span>更新日志</span>
+          </div>
+          <el-collapse accordion>
+            <el-collapse-item title="v3.5.0 - 2021-11-18">
+              <ol>
+                <li>fix 代码生成提示错误信息</li>
+                <li>fix sqlserver导入数据sys_dept表列不匹配问题 </li>
+                <li>登录验证码替换为数字加字母静态组合 </li>
+                <li>fix 登录验证码刷新后输入不了问题 </li>
+                <li>替换node-sass为sass，sass-loader升级为10.1.0</li>
+              </ol>
+            </el-collapse-item>
+            <el-collapse-item title="v3.4.0 - 2021-11-06">
+              <ol>
+                <li>页签TagsView新增关闭左侧、右侧功能&添加图标</li>
+                <li>新增菜单导航显示风格TopNav（false为左侧导航菜单，true为顶部导航菜单）</li>
+              </ol>
+            </el-collapse-item>
+
+            <el-collapse-item title="v3.3.0 - 2021-10-29">
+              <ol>
+                <li>接口日志新增加是否保存请求、返回参数</li>
+                <li>重命名一些方法名</li>
+                <li>fix 代码生成编辑、插入列未选中任何字段报错bug</li>
+              </ol>
+            </el-collapse-item>
+          </el-collapse>
+        </el-card>
       </el-col>
     </el-row>
     <el-divider />
@@ -105,12 +140,13 @@
 </template>
 
 <script>
+const defaultSettings = require('@/settings.js')
 export default {
   name: "index",
   data() {
     return {
       // 版本号
-      version: "1.0.0",
+      version: defaultSettings.version,
     };
   },
   methods: {
