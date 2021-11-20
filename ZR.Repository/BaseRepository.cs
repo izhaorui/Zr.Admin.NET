@@ -3,6 +3,7 @@ using SqlSugar;
 using SqlSugar.IOC;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq.Expressions;
 using ZR.Model;
 
@@ -15,7 +16,7 @@ namespace ZR.Repository
     public class BaseRepository<T> : IBaseRepository<T> where T : class, new()
     {
         public ISqlSugarClient Context;
-        public BaseRepository(string configId = "0") //: base(dbContext)
+        public BaseRepository(string configId = "0")
         {
             Context = DbScoped.SugarScope.GetConnection(configId);//根据类传入的ConfigId自动选择
         }
@@ -192,40 +193,45 @@ namespace ZR.Repository
         }
         #endregion update
 
-        //public DbResult<bool> UseTran(Action action)
-        //{
-        //    var result = base.Context.Ado.UseTran(() => action());
-        //    return result;
-        //}
+        public DbResult<bool> UseTran(Action action)
+        {
+            var result = Context.Ado.UseTran(() => action());
+            return result;
+        }
 
-        //public DbResult<bool> UseTran(SqlSugarClient client, Action action)
-        //{
-        //    var result = client.Ado.UseTran(() => action());
-        //    return result;
-        //}
+        public DbResult<bool> UseTran(SqlSugarClient client, Action action)
+        {
+            var result = client.Ado.UseTran(() => action());
+            return result;
+        }
 
-        //public bool UseTran2(Action action)
-        //{
-        //    var result = base.Context.Ado.UseTran(() => action());
-        //    return result.IsSuccess;
-        //}
+        public bool UseTran2(Action action)
+        {
+            var result = Context.Ado.UseTran(() => action());
+            return result.IsSuccess;
+        }
 
         #region delete
 
+        /// <summary>
+        /// 删除表达式
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <returns></returns>
         public int Delete(Expression<Func<T, bool>> expression)
         {
             return Context.Deleteable<T>().Where(expression).ExecuteCommand();
         }
 
-        //public bool Delete<PkType>(PkType[] primaryKeyValues)
-        //{
-        //    return base.Context.Deleteable<T>().In(primaryKeyValues).ExecuteCommand() > 0;
-        //}
-
-        //public int Delete(object[] obj)
-        //{
-        //    return Context.Deleteable<T>().In(obj).ExecuteCommand();
-        //}
+        /// <summary>
+        /// 批量删除
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public int Delete(object[] obj)
+        {
+            return Context.Deleteable<T>().In(obj).ExecuteCommand();
+        }
         public int Delete(object id)
         {
             return Context.Deleteable<T>(id).ExecuteCommand();
@@ -370,10 +376,10 @@ namespace ZR.Repository
         /// <param name="procedureName"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        //public DataTable UseStoredProcedureToDataTable(string procedureName, List<SugarParameter> parameters)
-        //{
-        //    return base.Context.Ado.UseStoredProcedure().GetDataTable(procedureName, parameters);
-        //}
+        public DataTable UseStoredProcedureToDataTable(string procedureName, List<SugarParameter> parameters)
+        {
+            return Context.Ado.UseStoredProcedure().GetDataTable(procedureName, parameters);
+        }
 
         /// <summary>
         /// 带output返回值
@@ -384,11 +390,11 @@ namespace ZR.Repository
         /// <param name="procedureName"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        //public (DataTable, List<SugarParameter>) UseStoredProcedureToTuple(string procedureName, List<SugarParameter> parameters)
-        //{
-        //    var result = (base.Context.Ado.UseStoredProcedure().GetDataTable(procedureName, parameters), parameters);
-        //    return result;
-        //}
+        public (DataTable, List<SugarParameter>) UseStoredProcedureToTuple(string procedureName, List<SugarParameter> parameters)
+        {
+            var result = (Context.Ado.UseStoredProcedure().GetDataTable(procedureName, parameters), parameters);
+            return result;
+        }
 
         //public string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere)
         //{

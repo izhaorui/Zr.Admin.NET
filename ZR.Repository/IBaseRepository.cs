@@ -81,18 +81,16 @@ namespace ZR.Repository
 
         #endregion update
 
-        //DbResult<bool> UseTran(Action action);
+        DbResult<bool> UseTran(Action action);
 
-        //DbResult<bool> UseTran(SqlSugarClient client, Action action);
+        DbResult<bool> UseTran(SqlSugarClient client, Action action);
 
-        //bool UseTran2(Action action);
+        bool UseTran2(Action action);
 
         #region delete
 
         int Delete(Expression<Func<T, bool>> expression);
-
-        //bool Delete<PkType>(PkType[] primaryKeyValues);
-        //int Delete(object[] obj);
+        int Delete(object[] obj);
         int Delete(object id);
         bool DeleteTable();
 
@@ -156,9 +154,9 @@ namespace ZR.Repository
 
         #region Procedure
 
-        //DataTable UseStoredProcedureToDataTable(string procedureName, List<SugarParameter> parameters);
+        DataTable UseStoredProcedureToDataTable(string procedureName, List<SugarParameter> parameters);
 
-        //(DataTable, List<SugarParameter>) UseStoredProcedureToTuple(string procedureName, List<SugarParameter> parameters);
+        (DataTable, List<SugarParameter>) UseStoredProcedureToTuple(string procedureName, List<SugarParameter> parameters);
 
         #endregion Procedure
     }
