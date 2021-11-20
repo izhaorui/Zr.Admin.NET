@@ -46,7 +46,7 @@
           <template slot-scope="scope">
 
             <el-button type="text" size="mini" icon="el-icon-view" v-hasPermi="['monitor:job:query']">
-              <router-link :to="{path: '/job/log', query: {jobId: scope.row.id}}">日志</router-link>
+              <router-link :to="{path: 'job/log', query: {jobId: scope.row.id}}">日志</router-link>
             </el-button>
 
             <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:run']" size="mini" icon="el-icon-remove" title="运行" @click="handleRun(scope.row)">运行</el-button>
@@ -315,7 +315,7 @@ export default {
     },
     /** 任务日志列表查询 */
     handleJobLog(param) {
-      this.$router.push({ path: "/job/log", params: param });
+      this.$router.push({ path: "job/log", params: param });
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
