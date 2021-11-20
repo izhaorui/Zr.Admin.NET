@@ -19,10 +19,14 @@
       <el-col :span="1.5">
         <el-button type="primary" icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:dept:add']">新增</el-button>
       </el-col>
+
+      <el-col :span="1.5">
+        <el-button type="info" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">展开/折叠</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="deptList" row-key="deptId" default-expand-all :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+    <el-table v-if="refreshTable" v-loading="loading" :data="deptList" row-key="deptId" :default-expand-all="isExpandAll" :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column prop="deptName" label="部门名称" width="260"></el-table-column>
       <el-table-column prop="leader" label="负责人" width="100"></el-table-column>
       <el-table-column prop="orderNum" label="排序" width="200"></el-table-column>
@@ -119,6 +123,10 @@ export default {
       showSearch: true,
       // 表格树数据
       deptList: [],
+      // 是否展开，默认全部折叠
+      isExpandAll: false,
+      // 重新渲染表格状态
+      refreshTable: true,
       // 部门树选项
       deptOptions: [],
       // 弹出层标题
@@ -282,6 +290,14 @@ export default {
           this.getList();
           this.msgSuccess("删除成功");
         });
+    },
+    //展开/折叠操作
+    toggleExpandAll() {
+      this.refreshTable = false;
+      this.isExpandAll = !this.isExpandAll;
+      this.$nextTick(() => {
+        this.refreshTable = true;
+      });
     },
   },
 };
