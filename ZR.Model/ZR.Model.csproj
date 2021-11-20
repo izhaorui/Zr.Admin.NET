@@ -11,8 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Npoi.Mapper" Version="3.5.1" />
-    <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.4" />
+    <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.4.3" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
 

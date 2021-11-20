@@ -3,7 +3,6 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Npoi.Mapper;
 using System.Collections.Generic;
 using System.IO;
 using ZR.Admin.WebApi.Filters;
@@ -167,42 +166,42 @@ namespace ZR.Admin.WebApi.Controllers.System
             return ToResponse(ToJson(result));
         }
 
-        /// <summary>
-        /// 导入 ok
-        /// </summary>
-        /// <param name="formFile">使用IFromFile必须使用name属性否则获取不到文件</param>
-        /// <returns></returns>
-        [HttpPost("importData")]
-        [Log(Title = "用户导入", BusinessType = BusinessType.IMPORT)]
-        [ActionPermissionFilter(Permission = "system:user:import")]
-        public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
-        {
-            var mapper = new Mapper(formFile.OpenReadStream());// 从流获取
-            //读取的sheet信息
-            var rows = mapper.Take<SysUser>(0);
-            foreach (var item in rows)
-            {
-                SysUser u = item.Value;
-            }
-            //TODO 业务逻辑
-            return SUCCESS(1);
-        }
+        ///// <summary>
+        ///// 导入 ok
+        ///// </summary>
+        ///// <param name="formFile">使用IFromFile必须使用name属性否则获取不到文件</param>
+        ///// <returns></returns>
+        //[HttpPost("importData")]
+        //[Log(Title = "用户导入", BusinessType = BusinessType.IMPORT)]
+        //[ActionPermissionFilter(Permission = "system:user:import")]
+        //public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
+        //{
+        //    var mapper = new Mapper(formFile.OpenReadStream());// 从流获取
+        //    //读取的sheet信息
+        //    var rows = mapper.Take<SysUser>(0);
+        //    foreach (var item in rows)
+        //    {
+        //        SysUser u = item.Value;
+        //    }
+        //    //TODO 业务逻辑
+        //    return SUCCESS(1);
+        //}
 
-        /// <summary>
-        /// 用户模板 ok
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("importTemplate")]
-        [Log(Title = "用户模板", BusinessType = BusinessType.EXPORT)]
-        [ActionPermissionFilter(Permission = "system:user:export")]
-        public IActionResult ImportTemplateExcel()
-        {
-            List<SysUser> user = new List<SysUser>();
-            var mapper = new Mapper();
-            MemoryStream stream = new MemoryStream();
-            mapper.Save(stream, user, "sheel1", overwrite: true, xlsx: true);
-            //Response.Headers.Append("content-disposition", "attachment;filename=sysUser.xlsx");
-            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "sysUser.xlsx");
-        }
+        ///// <summary>
+        ///// 用户模板 ok
+        ///// </summary>
+        ///// <returns></returns>
+        //[HttpGet("importTemplate")]
+        //[Log(Title = "用户模板", BusinessType = BusinessType.EXPORT)]
+        //[ActionPermissionFilter(Permission = "system:user:export")]
+        //public IActionResult ImportTemplateExcel()
+        //{
+        //    List<SysUser> user = new List<SysUser>();
+        //    var mapper = new Mapper();
+        //    MemoryStream stream = new MemoryStream();
+        //    mapper.Save(stream, user, "sheel1", overwrite: true, xlsx: true);
+        //    //Response.Headers.Append("content-disposition", "attachment;filename=sysUser.xlsx");
+        //    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "sysUser.xlsx");
+        //}
     }
 }

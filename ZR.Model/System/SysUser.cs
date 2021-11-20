@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Npoi.Mapper.Attributes;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -18,13 +17,9 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public long UserId { get; set; }
-        [Column("用户名")]//对应Excel列名
-        //[Required]//校验必填
         //[Duplication]//校验模板类该列数据是否重复
         public string UserName { get; set; }
 
-        [Column("用户昵称")]
-        //[Required]
         public string NickName { get; set; }
 
         /// <summary>
