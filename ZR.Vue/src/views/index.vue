@@ -108,6 +108,20 @@
             <span>更新日志</span>
           </div>
           <el-collapse accordion>
+            <el-collapse-item title="v3.6.0 - 2021-11-21">
+              <ol>
+                <li>新增加系统表导出功能</li>
+                <li>仓储新增加常用方法</li>
+                <li>删除Npoi.Mapper包，新增加EPPlus 导出Excel包</li>
+                <li>SqlSugarCoreNoDriver 升级至5.0.43</li>
+                <li>代码生成新增加富文本组件</li>
+                <li>发送邮件文本该用富文本工具</li>
+                <li>部门管理新增加展开折叠</li>
+                <li>fix 任务日志路由地址配置错误</li>
+                <li>fix 部门删除功能</li>
+                <li>其他功能优化</li>
+              </ol>
+            </el-collapse-item>
             <el-collapse-item title="v3.5.0 - 2021-11-18">
               <ol>
                 <li>fix 代码生成提示错误信息</li>
