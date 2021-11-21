@@ -12,6 +12,11 @@ namespace ZR.Repository.System
     [AppService(ServiceLifetime = LifeTime.Transient)]
     public class SysDictRepository : BaseRepository<SysDictType>
     {
+        public List<SysDictType> GetAll()
+        {
+            return Context.Queryable<SysDictType>().ToList();
+        }
+
         /// <summary>
         /// 查询字段类型列表
         /// </summary>

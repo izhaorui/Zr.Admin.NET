@@ -23,6 +23,10 @@ namespace ZR.Service.System
             this.DictRepository = sysDictRepository;
             this.DictDataRepository = dictDataRepository;
         }
+        public List<SysDictType> GetAll()
+        {
+            return DictRepository.GetAll();
+        }
 
         /// <summary>
         /// 查询字段类型列表

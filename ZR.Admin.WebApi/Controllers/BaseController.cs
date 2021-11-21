@@ -1,9 +1,14 @@
 ﻿using Infrastructure;
 using Infrastructure.Model;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using OfficeOpenXml;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using ZR.Admin.WebApi.Filters;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -98,6 +103,34 @@ namespace ZR.Admin.WebApi.Controllers
         protected IActionResult CustomError(ResultCode resultCode, string msg = "")
         {
             return ToResponse(GetApiResult(resultCode, msg));
+        }
+
+        /// <summary>
+        /// 导出Excel
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="sheetName"></param>
+        /// <param name="fileName"></param>
+        protected string ExportExcel<T>(List<T> list, string sheetName, string fileName)
+        {
+            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+            string sFileName = $"{fileName}{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
+            //调试模式需要加上
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            Directory.CreateDirectory(Path.GetDirectoryName(newFileName));
+            using (ExcelPackage package = new ExcelPackage(new FileInfo(newFileName)))
+            {
+                // 添加worksheet
+                ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+                //全部字段导出
+                worksheet.Cells.LoadFromCollection(list, true);
+                package.Save();
+            }
+
+            return sFileName;
         }
     }
 }

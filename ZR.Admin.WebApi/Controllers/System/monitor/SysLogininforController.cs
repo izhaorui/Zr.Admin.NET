@@ -1,5 +1,9 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
+using Infrastructure.Enums;
 using Microsoft.AspNetCore.Mvc;
+using SqlSugar;
+using System.Linq.Expressions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
@@ -44,7 +48,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         /// /monitor/logininfor/clean
         /// </summary>
         /// <returns></returns>
-        [Log(Title = "清空登录日志")]
+        [Log(Title = "清空登录日志", BusinessType= BusinessType.CLEAN)]
         [ActionPermissionFilter(Permission = "monitor:logininfor:remove")]
         [HttpDelete("clean")]
         public IActionResult CleanLoginInfo()
@@ -58,7 +62,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         /// </summary>
         /// <param name="infoIds"></param>
         /// <returns></returns>
-        [Log(Title = "删除登录日志")]
+        [Log(Title = "删除登录日志", BusinessType = BusinessType.DELETE)]
         [HttpDelete("{infoIds}")]
         [ActionPermissionFilter(Permission = "monitor:logininfor:remove")]
         public IActionResult Remove(string infoIds)
@@ -67,5 +71,26 @@ namespace ZR.Admin.WebApi.Controllers.monitor
             return SUCCESS(sysLoginService.DeleteLogininforByIds(infoIdss));
         }
 
+        /// <summary>
+        /// 登录日志导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "登录日志导出")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "monitor:logininfor:export")]
+        public IActionResult Export([FromQuery] SysLogininfor logininfoDto)
+        {
+            logininfoDto.BeginTime = DateTimeHelper.GetBeginTime(logininfoDto.BeginTime, -1);
+            logininfoDto.EndTime = DateTimeHelper.GetBeginTime(logininfoDto.EndTime, 1);
+            var exp = Expressionable.Create<SysLogininfor>()
+                .And(it => it.loginTime >= logininfoDto.BeginTime && it.loginTime <= logininfoDto.EndTime);
+
+            var list = sysLoginService.Queryable().Where(exp.ToExpression())
+                .IgnoreColumns(it => new { it.Create_by, it.Create_time, it.Update_by, it.Update_time, it.Remark })
+                .ToList();
+
+            string sFileName = ExportExcel(list, "loginlog", "登录日志");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
     }
 }

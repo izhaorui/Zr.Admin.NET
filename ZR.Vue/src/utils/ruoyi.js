@@ -103,7 +103,8 @@ export function showColumn(columns, value) {
 // 通用下载方法
 export function download(fileName) {
   // window.location.href = baseURL + "/common/download?fileName=" + encodeURI(fileName) + "&delete=" + true;
-  window.open(baseURL + "/common/download?fileName=" + encodeURI(fileName) + "&delete=" + true)
+  // window.open(baseURL + "/common/download?fileName=" + encodeURI(fileName) + "&delete=" + true)
+  window.open(baseURL + fileName)
 }
 
 // 字符串格式化(%s )

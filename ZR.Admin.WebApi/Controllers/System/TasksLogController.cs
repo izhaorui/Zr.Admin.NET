@@ -76,5 +76,20 @@ namespace ZR.Admin.WebApi.Controllers.System
             tasksLogService.DeleteTable();
             return SUCCESS(1);
         }
+
+        /// <summary>
+        /// 定时任务日志导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "定时任务日志导出")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "PRIV_JOBLOG_EXPORT")]
+        public IActionResult Export()
+        {
+            var list = tasksLogService.GetAll();
+
+            string sFileName = ExportExcel(list, "jobLog", "定时任务日志");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
     }
 }

@@ -16,7 +16,7 @@ using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
-    //[Verify]
+    [Verify]
     [Route("system/user")]
     public class SysUserController : BaseController
     {
@@ -217,6 +217,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpGet("export")]
         [Log(Title = "用户导出", BusinessType = BusinessType.EXPORT)]
+        [ActionPermissionFilter(Permission = "system:user:export")]
         public IActionResult UserExport([FromQuery] SysUser user)
         {
             string sFileName = $"用户列表{DateTime.Now:yyyyMMddHHmmss}.xlsx";
@@ -230,35 +231,38 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 // 添加worksheet
                 ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("sysuser");
-
+                #region 自定义导出
                 //添加头
-                worksheet.Cells[1, 1].Value = "用户id";
-                worksheet.Cells[1, 2].Value = "用户名称";
-                worksheet.Cells[1, 3].Value = "用户昵称";
-                worksheet.Cells[1, 4].Value = "部门";
-                worksheet.Cells[1, 5].Value = "手机号码";
-                worksheet.Cells[1, 6].Value = "性别";
-                worksheet.Cells[1, 7].Value = "状态";
-                worksheet.Cells[1, 8].Value = "添加时间";
-                worksheet.Cells[1, 9].Value = "登录IP";
-                worksheet.Cells[1, 10].Value = "最后登录时间";
-                for (int i = 0; i < list.Count; i++)
-                {
-                    var item = list[i];
-                    worksheet.Cells[$"A{i + 2}"].Value = item.UserId;
-                    worksheet.Cells[$"B{i + 2}"].Value = item.UserName;
-                    worksheet.Cells[$"C{i + 2}"].Value = item.NickName;
-                    worksheet.Cells[$"D{i + 2}"].Value = item.DeptName;
-                    worksheet.Cells[$"E{i + 2}"].Value = item.Phonenumber;                    
-                    worksheet.Cells[$"F{i + 2}"].Value = item.Sex;
-                    worksheet.Cells[$"G{i + 2}"].Value = item.Status;
-                    worksheet.Cells[$"H{i + 2}"].Value = item.Create_time.ToString();
-                    worksheet.Cells[$"I{i + 2}"].Value = item.LoginIP;
-                    worksheet.Cells[$"J{i + 2}"].Value = item.LoginDate.ToString();
-                }
+                //worksheet.Cells[1, 1].Value = "用户id";
+                //worksheet.Cells[1, 2].Value = "用户名称";
+                //worksheet.Cells[1, 3].Value = "用户昵称";
+                //worksheet.Cells[1, 4].Value = "部门";
+                //worksheet.Cells[1, 5].Value = "手机号码";
+                //worksheet.Cells[1, 6].Value = "性别";
+                //worksheet.Cells[1, 7].Value = "状态";
+                //worksheet.Cells[1, 8].Value = "添加时间";
+                //worksheet.Cells[1, 9].Value = "登录IP";
+                //worksheet.Cells[1, 10].Value = "最后登录时间";
+                //for (int i = 0; i < list.Count; i++)
+                //{
+                //    var item = list[i];
+                //    //worksheet.Cells[i + 2, 1].Value = item.UserId;
+                //    //worksheet.Cells[i + 2, 2].Value = item.UserName;
+                //    //worksheet.Cells[i + 2, 3].Value = item.NickName;
+                //    //worksheet.Cells[i + 2, 4].Value = item.DeptName;
+                //    //worksheet.Cells[i + 2, 5].Value = item.Phonenumber;
+                //    //worksheet.Cells[i + 2, 6].Value = item.Sex;
+                //    //worksheet.Cells[i + 2, 7].Value = item.Status;
+                //    //worksheet.Cells[i + 2, 8].Value = item.Create_time.ToString();
+                //    //worksheet.Cells[i + 2, 9].Value = item.LoginIP;
+                //    //worksheet.Cells[i + 2, 10].Value = item.LoginDate.ToString();
+                //}
+                #endregion
+                //全部字段导出
+                worksheet.Cells.LoadFromCollection(list, true);
                 package.Save();
             }
-            return SUCCESS(new { zipPath = "/export/" + sFileName, fileName = sFileName });
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
     }
 }

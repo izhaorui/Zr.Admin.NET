@@ -10,6 +10,7 @@ namespace ZR.Service.System.IService
     /// </summary>
     public interface ISysDictService
     {
+        public List<SysDictType> GetAll();
         public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager);
 
         /// <summary>

@@ -24,6 +24,9 @@
         <el-button v-hasPermi="['monitor:job:delete']" plain type="danger" icon="el-icon-remove" size="mini" @click="handleDelete(null)" :disabled="single">删除</el-button>
       </el-col>-->
       <el-col :span="1.5">
+        <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['monitor:job:export']">导出</el-button>
+      </el-col>
+      <el-col :span="1.5">
         <el-button v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog({id: 1})">日志</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="searchToggle" @queryTable="handleQuery"></right-toolbar>
@@ -152,6 +155,7 @@ import {
   startTasks,
   stopTasks,
   runTasks,
+  exportTasks
 } from "@/api/monitor/job";
 export default {
   name: "tasks",
@@ -457,6 +461,18 @@ export default {
       this.open = false;
       this.reset();
       this.getList();
+    },
+    /** 导出按钮操作 */
+    handleExport() {
+      this.$confirm("是否确认导出所有任务?", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }).then(() => {
+        return exportTasks();
+      }).then(response => {
+          this.download(response.data.path)
+      });
     },
   },
 };

@@ -298,16 +298,18 @@ INSERT INTO sys_menu VALUES (1022, '岗位查询', 104, 1, '', '', 0, 0, 'F', '0
 INSERT INTO sys_menu VALUES (1023, '岗位添加', 104, 2, '', '', 0, 0, 'F', '0', '0', 'system:post:add', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1024, '岗位删除', 104, 3, '', '', 0, 0, 'F', '0', '0', 'system:post:remove', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1025, '岗位编辑', 104, 4, '', '', 0, 0, 'F', '0', '0', 'system:post:edit', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1070, '岗位导出', 104, 4, '', '', 0, 0, 'F', '0', '0', 'system:post:export', '', '', SYSDATE(), '', NULL, NULL);
 -- 字典管理 按钮
 INSERT INTO sys_menu VALUES (1026, '字典新增', 105, 1, '', '', 0, 0, 'F', '0', '0', 'system:dict:add', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1027, '字典修改', 105, 2, '', '', 0, 0, 'F', '0', '0', 'system:dict:edit', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1028, '字典删除', 105, 3, '', '', 0, 0, 'F', '0', '0', 'system:dict:remove', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1071, '字典导出', 105, 3, '', '', 0, 0, 'F', '0', '0', 'system:dict:export', NULL, '', SYSDATE(), '', NULL, NULL);
 -- 分配用户 按钮
 INSERT INTO sys_menu VALUES (1029, '新增用户', 106, 1, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:add', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1030, '删除用户', 106, 2, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:del', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1031, '查询用户', 106, 3, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:query', '', '', SYSDATE(), '', NULL, NULL);
 -- 定时任务 按钮
-INSERT INTO sys_menu values (1032, '任务查询', 110, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:list', '#', 'admin', sysdate(), '', null, '');
+INSERT INTO sys_menu values (1032, '任务查询', 110, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:list', '#', '', sysdate(), '', null, '');
 INSERT INTO sys_menu VALUES (1033, '任务新增', 110, 2, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:add', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1034, '任务删除', 110, 3, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:delete', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1035, '任务修改', 110, 4, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:edit', '', '', SYSDATE(), '', NULL, NULL);
@@ -315,12 +317,15 @@ INSERT INTO sys_menu VALUES (1036, '任务启动', 110, 5, '#', NULL, 0, 0, 'F',
 INSERT INTO sys_menu VALUES (1037, '任务运行', 110, 7, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:run', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1038, '任务停止', 110, 8, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:stop', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1039, '任务日志', 2, 0, 'job/log', 'monitor/job/log', 0, 0, 'C', '1', '0', 'monitor:job:query', 'log', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1040, '任务导出', 110, 10, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:export', NULL, '', SYSDATE(), '', NULL, NULL);
 -- 操作日志 按钮
-INSERT INTO sys_menu values (1041, '操作查询', 500, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:query',      '#', 'admin', sysdate(), '', null, '');
-INSERT INTO sys_menu VALUES (1042, '操作删除', 500, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:remove', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu values (1041, '操作查询', 500, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:query', '', '', sysdate(), '', null, NULL);
+INSERT INTO sys_menu VALUES (1042, '操作删除', 500, 2, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:remove', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1043, '操作日志导出', 500,3, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:operlog:export', '', '', SYSDATE(), '', NULL, NULL);
 -- 登录日志 按钮
-INSERT INTO sys_menu values (1044, '登录查询', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:query',   '#', 'admin', sysdate(), '', null, '');
+INSERT INTO sys_menu values (1044, '登录查询', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:query',  '', '', sysdate(), '', null, NULL);
 INSERT INTO sys_menu VALUES (1045, '登录删除', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:remove', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1046, '登录日志导出', 501, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:logininfor:export', '', '', SYSDATE(), '', NULL, NULL);
 -- 文章管理 按钮
 INSERT INTO sys_menu VALUES (1047, '发布文章', 4,   1, 'publish', 'system/article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1048, '文章新增', 118, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:add', '', '', SYSDATE(), '', NULL, NULL);

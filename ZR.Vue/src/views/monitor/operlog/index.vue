@@ -34,13 +34,16 @@
       <el-col :span="1.5">
         <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="handleClean" v-hasPermi="['monitor:operlog:remove']">清空</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:operlog:export']">导出</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="日志编号" align="center" prop="operId" />
-      <el-table-column label="系统模块" align="center" prop="title" :show-overflow-tooltip="true"/>
+      <el-table-column label="系统模块" align="center" prop="title" :show-overflow-tooltip="true" />
       <!-- <el-table-column label="操作类型" align="center" prop="businessType" :formatter="typeFormat" /> -->
       <el-table-column label="请求方式" align="center" prop="requestMethod" />
       <el-table-column label="操作人员" align="center" prop="operName" />
@@ -52,7 +55,7 @@
           <span :style="scope.row.elapsed < 1000 ? 'color:green':scope.row.elapsed <3000 ?'color:orange':'color:red'">{{ scope.row.elapsed }} ms</span>
         </template>
       </el-table-column>
-      <el-table-column label="日志内容" align="center" prop="errorMsg" :show-overflow-tooltip="true"/>
+      <el-table-column label="日志内容" align="center" prop="errorMsg" :show-overflow-tooltip="true" />
       <el-table-column label="操作日期" align="center" prop="operTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.operTime) }}</span>
@@ -119,12 +122,13 @@ import {
   list,
   delOperlog,
   cleanOperlog,
-  // exportOperlog,
+  exportOperlog,
 } from "@/api/monitor/operlog";
-import DateRangePicker from '@/components/DateRangePicker'
+import DateRangePicker from "@/components/DateRangePicker";
+import { downloadFile } from "@/utils/zipdownload.js";
 
 export default {
-  components: { DateRangePicker},
+  components: { DateRangePicker },
   name: "Operlog",
   data() {
     return {
@@ -253,18 +257,25 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      // const queryParams = this.queryParams;
-      // this.$confirm("是否确认导出所有操作日志数据项?", "警告", {
-      //   confirmButtonText: "确定",
-      //   cancelButtonText: "取消",
-      //   type: "warning",
-      // })
-      //   .then(function () {
-      //     return exportOperlog(queryParams);
-      //   })
-      //   .then((response) => {
-      //     this.download(response.msg);
-      //   });
+      const queryParams = this.queryParams;
+      this.$confirm("是否确认导出所有操作日志?", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }).then(() => {
+        exportOperlog(queryParams).then((response) => {
+          const { code, data } = response;
+          if (code == 200) {
+            this.msgSuccess("导出成功");
+            downloadFile(
+              process.env.VUE_APP_BASE_API + data.path,
+              data.fileName
+            );
+          } else {
+            this.msgError("导出失败");
+          }
+        });
+      });
     },
   },
 };

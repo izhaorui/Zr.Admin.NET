@@ -15,7 +15,7 @@ namespace ZR.Service.System
     /// 登录
     /// </summary>
     [AppService(ServiceType = typeof(ISysLoginService), ServiceLifetime = LifeTime.Transient)]
-    public class SysLoginService: ISysLoginService
+    public class SysLoginService: BaseService<SysLogininfor>, ISysLoginService
     {
         private SysLogininfoRepository SysLogininfoRepository;
 

@@ -28,9 +28,9 @@
       <el-col :span="1.5">
         <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['system:post:remove']">删除</el-button>
       </el-col>
-      <!-- <el-col :span="1.5">
+      <el-col :span="1.5">
         <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:post:export']">导出</el-button>
-      </el-col> -->
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -98,6 +98,7 @@ import {
   updatePost,
   exportPost,
 } from "@/api/system/post";
+import { downloadFile } from "@/utils/zipdownload.js";
 
 export default {
   name: "Post",
@@ -268,7 +269,12 @@ export default {
           return exportPost(queryParams);
         })
         .then((response) => {
-          this.download(response.msg);
+          console.log(response)
+          // this.download(response.msg);
+          downloadFile(
+              process.env.VUE_APP_BASE_API + response.data.path,
+              response.data.fileName
+            );
         });
     },
   },

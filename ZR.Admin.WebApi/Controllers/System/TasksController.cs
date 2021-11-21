@@ -265,5 +265,20 @@ namespace ZR.Admin.WebApi.Controllers
 
             return ToResponse(taskResult);
         }
+
+        /// <summary>
+        /// 定时任务导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "定时任务导出")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "monitor:job:export")]
+        public IActionResult Export()
+        {
+            var list = _tasksQzService.GetAll();
+
+            string sFileName = ExportExcel(list, "monitorjob", "定时任务");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
     }
 }

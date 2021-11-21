@@ -120,5 +120,20 @@ namespace ZR.Admin.WebApi.Controllers.System
             List<SysPost> posts = PostService.GetAll();
             return SUCCESS(posts);
         }
+
+        /// <summary>
+        /// 岗位导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title= "岗位导出")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "system:post:export")]
+        public IActionResult Export()
+        {
+            var list = PostService.GetAll();
+
+            string sFileName = ExportExcel(list, "syspost", "岗位");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
     }
 }

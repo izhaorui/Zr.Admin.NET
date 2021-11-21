@@ -31,12 +31,15 @@
       <el-col :span="1.5">
         <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['system:dict:remove']">删除</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:dict:export']">导出</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table :data="typeList" border @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="字典编号" align="center" prop="dictId" width="80"/>
+      <el-table-column label="字典编号" align="center" prop="dictId" width="80" />
       <el-table-column label="字典类型" align="center" :show-overflow-tooltip="true">
         <template slot-scope="scope">
           <el-button type="text" @click="showDictData(scope.row)">{{ scope.row.dictType }}</el-button>
@@ -281,7 +284,7 @@ export default {
           return exportType(queryParams);
         })
         .then((response) => {
-          this.download(response.msg);
+          this.download(response.data.path);
         });
     },
     showDictData(row) {

@@ -30,7 +30,7 @@ namespace ZR.Model.System
         public string Remark { get; set; }
 
         /// <summary>
-        /// 搜素时间起始时间
+        /// 搜索时间起始时间
         /// </summary>
         /// <summary>
         /// Write：需穿一个bool值，false时insert，update等操作会忽略此列（和Computed的作用差不多，看了源码也没发现与Computed有什么不一样的地方，有了解的朋友可以赐教下哈）

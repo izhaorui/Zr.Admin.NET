@@ -7,7 +7,7 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysLoginService
+    public interface ISysLoginService: IBaseService<SysLogininfor>
     {
         public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor);
 

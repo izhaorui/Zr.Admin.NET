@@ -166,5 +166,20 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             return ToResponse(ToJson(result));
         }
+
+        /// <summary>
+        /// 角色导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "角色导出")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "system:role:export")]
+        public IActionResult Export()
+        {
+            var list = sysRoleService.SelectRoleAll();
+
+            string sFileName = ExportExcel(list, "sysrole", "角色");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
     }
 }

@@ -107,5 +107,20 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             return SUCCESS(SysDictService.DeleteDictTypeByIds(idss));
         }
+
+        /// <summary>
+        /// 字典导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "字典导出")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "system:dict:export")]
+        public IActionResult Export()
+        {
+            var list = SysDictService.GetAll();
+
+            string sFileName = ExportExcel(list, "sysdictType", "字典");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
     }
 }

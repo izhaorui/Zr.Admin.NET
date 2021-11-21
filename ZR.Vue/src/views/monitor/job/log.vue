@@ -30,6 +30,9 @@
       <el-col :span="1.5">
         <el-button type="danger" icon="el-icon-delete" size="mini" @click="handleClean" :disabled="total <= 0" v-hasPermi="['PRIV_JOBLOG_REMOVE']">清空</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['PRIV_JOBLOG_EXPORT']">导出</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -41,7 +44,7 @@
       <el-table-column label="调用目标字符串" align="center" prop="invokeTarget" :show-overflow-tooltip="true" />
       <el-table-column label="日志信息" align="center" prop="jobMessage" :show-overflow-tooltip="true" />
       <el-table-column label="执行状态" align="center" prop="status" :formatter="statusFormat" />
-      <el-table-column label="作业用时" align="center" prop="elapsed" >
+      <el-table-column label="作业用时" align="center" prop="elapsed">
         <template slot-scope="scope">
           <span :style="scope.row.elapsed < 1000 ? 'color:green':scope.row.elapsed <3000 ?'color:orange':'color:red'">{{ scope.row.elapsed }} ms</span>
         </template>
@@ -137,7 +140,7 @@ export default {
         jobName: undefined,
         jobGroup: undefined,
         status: undefined,
-        jobId: undefined
+        jobId: undefined,
       },
     };
   },
@@ -239,7 +242,7 @@ export default {
           return exportJobLog(queryParams);
         })
         .then((response) => {
-          this.download(response.msg);
+          this.download(response.data.path);
         });
     },
   },

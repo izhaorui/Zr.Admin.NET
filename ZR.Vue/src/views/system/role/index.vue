@@ -22,6 +22,9 @@
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:role:add']">新增</el-button>
       </el-col>
+       <el-col :span="1.5">
+        <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:role:export']">导出</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -116,6 +119,7 @@ import {
 //   treeselect as deptTreeselect,
 //   roleDeptTreeselect,
 // } from "@/api/system/dept";
+import { downloadFile } from "@/utils/zipdownload.js";
 
 export default {
   name: "Role",
@@ -483,20 +487,20 @@ export default {
         });
     },
     /** 导出按钮操作 */
-    // handleExport() {
-    //   const queryParams = this.queryParams;
-    //   this.$confirm("是否确认导出所有角色数据项?", "警告", {
-    //     confirmButtonText: "确定",
-    //     cancelButtonText: "取消",
-    //     type: "warning",
-    //   })
-    //     .then(function () {
-    //       return exportRole(queryParams);
-    //     })
-    //     .then((response) => {
-    //       this.download(response.msg);
-    //     });
-    // },
+    handleExport() {
+      const queryParams = this.queryParams;
+      this.$confirm("是否确认导出所有角色数据项?", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(function () {
+          return exportRole(queryParams);
+        })
+        .then((response) => {
+          this.download(response.data.path);
+        });
+    },
   },
 };
 </script>

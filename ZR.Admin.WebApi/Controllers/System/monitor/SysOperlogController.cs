@@ -9,6 +9,11 @@ using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Model.Vo;
 using ZR.Service.System.IService;
+using System;
+using System.IO;
+using OfficeOpenXml;
+using Microsoft.AspNetCore.Hosting;
+using System.Collections.Generic;
 
 namespace ZR.Admin.WebApi.Controllers.monitor
 {
@@ -17,10 +22,12 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     public class SysOperlogController : BaseController
     {
         private ISysOperLogService sysOperLogService;
+        private IWebHostEnvironment WebHostEnvironment;
 
-        public SysOperlogController(ISysOperLogService sysOperLogService)
+        public SysOperlogController(ISysOperLogService sysOperLogService, IWebHostEnvironment hostEnvironment)
         {
             this.sysOperLogService = sysOperLogService;
+            WebHostEnvironment = hostEnvironment;
         }
 
         /// <summary>
@@ -65,6 +72,20 @@ namespace ZR.Admin.WebApi.Controllers.monitor
             sysOperLogService.CleanOperLog();
 
             return ToJson(1);
+        }
+
+        /// <summary>
+        /// 导出操作日志
+        /// </summary>
+        /// <returns></returns>
+        [Log(Title = "操作日志", BusinessType = BusinessType.EXPORT)]
+        [ActionPermissionFilter(Permission = "monitor:operlog:export")]
+        [HttpGet("export")]
+        public IActionResult Export([FromQuery] SysOperLogDto sysOperLog)
+        {
+            var list = sysOperLogService.SelectOperLogList(sysOperLog, new PagerInfo(1, 10000));
+            string sFileName = ExportExcel(list, "operlog", "操作日志");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
 
     }

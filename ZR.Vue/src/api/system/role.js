@@ -68,7 +68,7 @@ export function delRole(roleId) {
 // 导出角色
 export function exportRole(query) {
   return request({
-    url: '/system/sysRole/export',
+    url: '/system/role/export',
     method: 'get',
     params: query
   })

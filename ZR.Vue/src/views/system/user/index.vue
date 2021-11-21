@@ -215,7 +215,7 @@ import { getToken } from "@/utils/auth";
 import { treeselect } from "@/api/system/dept";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
-import { downLoadExcel, downloadFile } from "@/utils/zipdownload.js";
+import { downloadFile } from "@/utils/zipdownload.js";
 
 export default {
   name: "User",
@@ -553,7 +553,7 @@ export default {
           if (code == 200) {
             this.msgSuccess("导出成功");
             downloadFile(
-              process.env.VUE_APP_BASE_API + data.zipPath,
+              process.env.VUE_APP_BASE_API + data.path,
               data.fileName
             );
           } else {
