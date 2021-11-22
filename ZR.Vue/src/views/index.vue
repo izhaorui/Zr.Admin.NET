@@ -62,6 +62,7 @@
               <li>Quartz.Net</li>
               <li>MySql</li>
               <li>Mapster</li>
+							<li>Epplus</li>
               <li>...</li>
             </ul>
           </el-col>
@@ -98,7 +99,7 @@
           </div>
           <div class="body">
             <span class="tip">如果觉得有用你可以请作者喝杯咖啡☕表示鼓励</span>
-            <img src="http://ss.izhaorui.cn/pay.jpg" alt="donate" width="80%" />
+            <img src="@/assets/image/reward.jpg" alt="donate" width="80%" />
           </div>
         </el-card>
       </el-col>

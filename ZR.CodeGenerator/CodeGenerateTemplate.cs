@@ -88,6 +88,10 @@ namespace ZR.CodeGenerator
             {
                 return InputDtoContent;
             }
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
+            {
+                return InputDtoContent;
+            }
             else if (dbFieldInfo.IsInsert || dbFieldInfo.IsEdit || dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
             {
                 InputDtoContent += $"        public {dbFieldInfo.CsharpType}{GetModelRequired(dbFieldInfo)} {dbFieldInfo.CsharpField} {{ get; set; }}\r\n";
