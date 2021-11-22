@@ -92,11 +92,11 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// vue组件引用
         /// </summary>
-        public string VueComponent { get; set; }
+        public string VueComponent { get; set; } = "";
         /// <summary>
         /// vue组件导入
         /// </summary>
-        public string VueComponentImport { get; set; }
+        public string VueComponentImport { get; set; } = "";
         public string Author { get; set; }
         public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
     }
