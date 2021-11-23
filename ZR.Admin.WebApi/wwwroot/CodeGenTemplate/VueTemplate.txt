@@ -186,12 +186,20 @@ export default {
           
           if (this.form.{PrimaryKey} != undefined || this.title === '修改数据') {
             update{ModelTypeName}(this.form).then((res) => {
+                if (!res.data) {
+                    this.msgError("修改失败");
+                    return;
+                }
                 this.msgSuccess("修改成功");
                 this.open = false;
                 this.getList();
             });
           } else {
             add{ModelTypeName}(this.form).then((res) => {
+                if (!res.data) {
+                    this.msgError("新增失败");
+                    return;
+                }
                 this.msgSuccess("新增成功");
                 this.open = false;
                 this.getList();
