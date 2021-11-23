@@ -30,7 +30,7 @@ npm run build:prod
 ```
 
 # 插件说明
-### Autoprefixer
+### Autoprefixer （已删除）
 浏览器自动补全前缀
 例如：
 ```

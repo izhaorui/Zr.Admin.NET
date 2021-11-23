@@ -9,11 +9,12 @@
         <el-input v-model="form.subject"></el-input>
       </el-form-item>
       <el-form-item label="邮件内容" prop="content">
-        <el-input v-model="form.content" rows="3" type="textarea"></el-input>
+				<editor v-model="form.content" :min-height="192" />
       </el-form-item>
 
       <el-form-item label="附件">
-        <el-upload name="file" ref="upload" :data="{savetype: form.saveType, filePath: form.filePath}" :headers="headers" :auto-upload="false" :on-success="uploadSuccess" :action="uploadActionUrl">
+        <el-upload name="file" ref="upload" :data="{savetype: form.saveType, filePath: form.filePath}" :headers="headers" :auto-upload="false"
+          :on-success="uploadSuccess" :action="uploadActionUrl">
           <el-button slot="trigger" size="mini" icon="el-icon-upload">选择文件</el-button>
           <el-button style="margin-left: 10px;" size="mini" type="primary" @click="submitUpload">上传到服务器</el-button>
         </el-upload>
@@ -27,9 +28,11 @@
 <script>
 import { sendEmail } from "@/api/common";
 import { getToken } from "@/utils/auth";
+import Editor from "@/components/Editor";
 
 export default {
   name: "sendEmail",
+  components: { Editor },
   data() {
     return {
       form: {
