@@ -87,6 +87,8 @@ namespace ZR.CodeGenerator
 
         /** 文本框 */
         public static string HTML_INPUT = "input";
+        /** 数字框 */
+        public static string HTML_INPUT_NUMBER = "inputNumber";
 
         /** 文本域 */
         public static string HTML_TEXTAREA = "textarea";

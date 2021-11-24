@@ -88,10 +88,10 @@ namespace ZR.CodeGenerator
             {
                 return InputDtoContent;
             }
-            else if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
-            {
-                return InputDtoContent;
-            }
+            //else if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
+            //{
+            //    return InputDtoContent;
+            //}
             else if (dbFieldInfo.IsInsert || dbFieldInfo.IsEdit || dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
             {
                 InputDtoContent += $"        public {dbFieldInfo.CsharpType}{GetModelRequired(dbFieldInfo)} {dbFieldInfo.CsharpField} {{ get; set; }}\r\n";
@@ -131,7 +131,13 @@ namespace ZR.CodeGenerator
             {
                 return sb.ToString();
             }
-            if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
+            if (dbFieldInfo.HtmlType == GenConstants.HTML_INPUT_NUMBER)
+            {
+                sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\">");
+                sb.AppendLine($"        <el-input-number v-model.number=\"form.{CodeGeneratorTool.FirstLowerCase(columnName)}\" placeholder=\"{placeHolder}\" {labelDisabled}/>");
+                sb.AppendLine("      </el-form-item>");
+            }
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 //时间
                 sb.AppendLine($"        <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
