@@ -135,7 +135,7 @@ namespace ZR.CodeGenerator
             {
                 //时间
                 sb.AppendLine($"        <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
-                sb.AppendLine($"           <el-date-picker v-model=\"form.{columnName}\"  type=\"datetime\"  placeholder=\"选择日期时间\"  default-time=\"12:00:00\"> </el-date-picker>");
+                sb.AppendLine($"           <el-date-picker v-model=\"form.{columnName}\" format=\"yyyy-MM-dd HH:mm:ss\" value-format=\"yyyy-MM-dd HH:mm:ss\"  type=\"datetime\"  placeholder=\"选择日期时间\"> </el-date-picker>");
                 sb.AppendLine("         </el-form-item>");
             }
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_IMAGE_UPLOAD)
