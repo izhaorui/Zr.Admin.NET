@@ -22,7 +22,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// 代码生成演示Controller
     ///
     /// @author zr
-    /// @date 2021-10-10
+    /// @date 2021-11-24
     /// </summary>
     [Verify]
     [Route("business/Gendemo")]
@@ -49,9 +49,9 @@ namespace ZR.Admin.WebApi.Controllers
             //开始拼装查询条件
             var predicate = Expressionable.Create<Gendemo>();
 
-            //TODO 搜索条件
+            //TODO 自己实现搜索条件查询语法参考Sqlsugar，默认查询所有
             //predicate = predicate.And(m => m.Name.Contains(parm.Name));
-            _GendemoService.Test();
+
             var response = _GendemoService.GetPages(predicate.ToExpression(), parm);
 
             return SUCCESS(response);
@@ -77,7 +77,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "business:gendemo:add")]
-        [Log(Title = "代码生成演示添加", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "代码生成演示", BusinessType = BusinessType.INSERT)]
         public IActionResult AddGendemo([FromBody] GendemoDto parm)
         {
             if (parm == null)
@@ -92,8 +92,12 @@ namespace ZR.Admin.WebApi.Controllers
                 it.Name,
                 it.Icon,
                 it.ShowStatus,
+                it.AddTime,
                 it.Sex,
                 it.Sort,
+                it.BeginTime,
+                it.EndTime,
+                it.Remark,
             }));
         }
 
@@ -103,7 +107,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPut]
         [ActionPermissionFilter(Permission = "business:gendemo:update")]
-        [Log(Title = "代码生成演示修改", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "代码生成演示", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdateGendemo([FromBody] GendemoDto parm)
         {
             if (parm == null)
@@ -119,8 +123,12 @@ namespace ZR.Admin.WebApi.Controllers
                 Name = model.Name,
                 Icon = model.Icon,
                 ShowStatus = model.ShowStatus,
+                AddTime = model.AddTime,
                 Sex = model.Sex,
                 Sort = model.Sort,
+                BeginTime = model.BeginTime,
+                EndTime = model.EndTime,
+                Remark = model.Remark,
             });
 
             return SUCCESS(response);
@@ -132,7 +140,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpDelete("{ids}")]
         [ActionPermissionFilter(Permission = "business:gendemo:delete")]
-        [Log(Title = "代码生成演示删除", BusinessType = BusinessType.DELETE)]
+        [Log(Title = "代码生成演示", BusinessType = BusinessType.DELETE)]
         public IActionResult DeleteGendemo(string ids)
         {
             int[] idsArr = Tools.SpitIntArrary(ids);

@@ -7,7 +7,7 @@ namespace ZR.Model.Models
     /// 代码生成演示，数据实体对象
     ///
     /// @author zr
-    /// @date 2021-09-27
+    /// @date 2021-11-24
     /// </summary>
     [SqlSugar.SugarTable("gen_demo")]
     public class Gendemo
@@ -16,11 +16,11 @@ namespace ZR.Model.Models
         /// 描述 :自增id
         /// 空值 :False
         /// </summary>
-        [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
+        [SqlSugar.SugarColumn(IsPrimaryKey = false, IsIdentity = true)]
         public int Id { get; set; }
         /// <summary>
         /// 描述 :名称
-        /// 空值 :False
+        /// 空值 :True
         /// </summary>
         public string Name { get; set; }
         /// <summary>
@@ -48,6 +48,21 @@ namespace ZR.Model.Models
         /// 空值 :True
         /// </summary>
         public int? Sort { get; set; }
+        /// <summary>
+        /// 描述 :开始时间
+        /// 空值 :True
+        /// </summary>
+        public DateTime? BeginTime { get; set; }
+        /// <summary>
+        /// 描述 :结束时间
+        /// 空值 :True
+        /// </summary>
+        public DateTime? EndTime { get; set; }
+        /// <summary>
+        /// 描述 :备注
+        /// 空值 :True
+        /// </summary>
+        public string Remark { get; set; }
 
     }
 }

@@ -16,6 +16,9 @@ namespace ZR.Model.Dto
         public int ShowStatus { get; set; }
         public int? Sex { get; set; }
         public int? Sort { get; set; }
+        public DateTime? BeginTime { get; set; }
+        public DateTime? EndTime { get; set; }
+        public string Remark { get; set; }
 
     }
 
@@ -24,7 +27,6 @@ namespace ZR.Model.Dto
     /// </summary>
     public class GendemoQueryDto: PagerInfo 
     {
-        public string Name { get; set; }
 
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
