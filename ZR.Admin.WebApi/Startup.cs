@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
+using ZR.Admin.WebApi.Framework;
 using ZR.Admin.WebApi.Middleware;
 
 namespace ZR.Admin.WebApi
@@ -67,7 +68,12 @@ namespace ZR.Admin.WebApi
                 options.Filters.Add(typeof(GlobalActionMonitor));//È«¾Ö×¢²áÒì³£
             })
             .AddMvcLocalization()
-            .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
+            .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeConverter());
+                options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeNullConverter());
+            });
 
             services.AddSwaggerGen(c =>
             {
