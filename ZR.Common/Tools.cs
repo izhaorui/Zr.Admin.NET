@@ -13,6 +13,7 @@ namespace ZR.Common
         /// <returns></returns>
         public static long[] SpitLongArrary(string str)
         {
+            if (string.IsNullOrEmpty(str)) { return Array.Empty<long>(); }
             string[] strIds = str.Split(',', (char)StringSplitOptions.RemoveEmptyEntries);
             long[] infoIdss = Array.ConvertAll(strIds, s => long.Parse(s));
             return infoIdss;
@@ -20,6 +21,7 @@ namespace ZR.Common
 
         public static int[] SpitIntArrary(string str)
         {
+            if (string.IsNullOrEmpty(str)) { return Array.Empty<int>(); }
             string[] strIds = str.Split(',', (char)StringSplitOptions.RemoveEmptyEntries);
             int[] infoIdss = Array.ConvertAll(strIds, s => int.Parse(s));
             return infoIdss;
