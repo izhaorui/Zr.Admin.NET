@@ -123,7 +123,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPost("Avatar")]
         [ActionPermissionFilter(Permission = "system")]
-        //[Log(Title = "修改头像", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "修改头像", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false)]
         public IActionResult Avatar([FromForm(Name = "picture")] IFormFile formFile)
         {
             LoginUser loginUser = Framework.JwtUtil.GetLoginUser(HttpContext);
