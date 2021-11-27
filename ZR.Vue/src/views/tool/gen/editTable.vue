@@ -184,7 +184,7 @@ export default {
           //   treeParentCode: genTable.treeParentCode,
           //   parentMenuId: genTable.parentMenuId,
           // };
-          console.log(JSON.stringify(genTable));
+          // console.log(JSON.stringify(genTable));
           updateGenTable(genTable).then((res) => {
             this.msgSuccess(res.msg);
             if (res.code === 200) {

@@ -63,5 +63,10 @@ namespace ZR.Model.System.Generate
         /// 字典类型
         /// </summary>
         public string DictType { get; set; }
+        /// <summary>
+        /// 字典集合
+        /// </summary>
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public List<SysDictData> DictDatas { get; set; }
     }
 }

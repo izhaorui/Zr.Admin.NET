@@ -59,7 +59,6 @@ namespace ZR.CodeGenerator
 
             StringBuilder sb1 = new StringBuilder();
             StringBuilder sb2 = new StringBuilder();
-            StringBuilder sb3 = new StringBuilder();
 
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in listField)
@@ -85,12 +84,6 @@ namespace ZR.CodeGenerator
                 {
                     replaceDto.InsertColumn += $"                it.{dbFieldInfo.CsharpField}, \n";
                 }
-                //TODO 查询
-                //if (dbFieldInfo.IsQuery)
-                //{
-                //    replaceDto.Querycondition += $"predicate = predicate.And(m => m.{dbFieldInfo.CsharpField}.Contains(parm.Name));";
-                //}
-
                 if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
                 {
                     sb1.AppendLine($"      // {dbFieldInfo.ColumnComment}选项列表");

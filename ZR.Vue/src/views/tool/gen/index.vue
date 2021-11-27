@@ -166,7 +166,6 @@ export default {
     },
     // 代码预览
     handlePreview(row) {
-      // this.msgError("敬请期待");
       previewTable(row.tableId).then((res) => {
         if (res.code === 200) {
           this.preview.open = true;

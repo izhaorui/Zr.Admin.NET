@@ -33,11 +33,17 @@ namespace ZR.Admin.WebApi.Controllers
         private CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
         private IGenTableService GenTableService;
         private IGenTableColumnService GenTableColumnService;
+        private readonly ISysDictDataService SysDictDataService;
         private IWebHostEnvironment WebHostEnvironment;
-        public CodeGeneratorController(IGenTableService genTableService, IGenTableColumnService genTableColumnService, IWebHostEnvironment webHostEnvironment)
+        public CodeGeneratorController(
+            IGenTableService genTableService, 
+            IGenTableColumnService genTableColumnService, 
+            ISysDictDataService dictDataService,
+            IWebHostEnvironment webHostEnvironment)
         {
             GenTableService = genTableService;
             GenTableColumnService = genTableColumnService;
+            SysDictDataService = dictDataService;
             WebHostEnvironment = webHostEnvironment;
         }
 
@@ -69,40 +75,6 @@ namespace ZR.Admin.WebApi.Controllers
             var vm = new VMPageResult<DbTableInfo>(list, pager);
 
             return SUCCESS(vm);
-        }
-
-        /// <summary>
-        /// 代码生成器
-        /// </summary>
-        /// <param name="dto">数据传输对象</param>
-        /// <returns></returns>
-        [HttpPost("genCode")]
-        [Log(Title = "代码生成", BusinessType = BusinessType.GENCODE)]
-        [ActionPermissionFilter(Permission = "tool:gen:code")]
-        public IActionResult Generate([FromBody] GenerateDto dto)
-        {
-            if (dto.TableId <= 0)
-            {
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
-            }
-            dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
-            dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
-
-            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
-            if (!string.IsNullOrEmpty(genTableInfo.Options))
-            {
-                Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTableInfo.Options);
-                dto.ParentMenuId = (long)options.GetValueOrDefault("parentMenuId", 0);
-            }
-            dto.GenTable = genTableInfo;
-            //生成代码
-            CodeGeneratorTool.Generate(genTableInfo, dto);
-            //下载文件
-            FileHelper.ZipGenCode(dto);
-
-            //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
-            return SUCCESS(new { zipPath = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
         }
 
         /// <summary>
@@ -241,6 +213,12 @@ namespace ZR.Admin.WebApi.Controllers
             }
             var genTableInfo = GenTableService.GetGenTableInfo(tableId);
             genTableInfo.Columns = GenTableColumnService.GenTableColumns(tableId);
+
+            //var dictList = genTableInfo.Columns.FindAll(x => !string.IsNullOrEmpty(x.DictType));
+            //foreach (var item in dictList)
+            //{
+            //    item.DictDatas = SysDictDataService.SelectDictDataByType(item.DictType);
+            //}
             GenerateDto dto = new();
             dto.GenTable = genTableInfo;
             dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
@@ -252,5 +230,41 @@ namespace ZR.Admin.WebApi.Controllers
 
             return SUCCESS(dto.GenCodes);
         }
+
+        /// <summary>
+        /// 生成代码
+        /// </summary>
+        /// <param name="dto">数据传输对象</param>
+        /// <returns></returns>
+        [HttpPost("genCode")]
+        [Log(Title = "代码生成", BusinessType = BusinessType.GENCODE)]
+        [ActionPermissionFilter(Permission = "tool:gen:code")]
+        public IActionResult Generate([FromBody] GenerateDto dto)
+        {
+            if (dto.TableId <= 0)
+            {
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
+            }
+            dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
+            dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
+
+            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
+            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
+            //附加参数，key，value格式
+            if (!string.IsNullOrEmpty(genTableInfo.Options))
+            {
+                Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTableInfo.Options);
+                dto.ParentMenuId = (long)options.GetValueOrDefault("parentMenuId", 0);
+            }
+            dto.GenTable = genTableInfo;
+            //生成代码
+            CodeGeneratorTool.Generate(genTableInfo, dto);
+            //下载文件
+            FileHelper.ZipGenCode(dto);
+
+            //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
+            return SUCCESS(new { zipPath = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
+        }
+
     }
 }

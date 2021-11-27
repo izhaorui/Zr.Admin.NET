@@ -29,10 +29,7 @@ namespace ZR.CodeGenerator
             if (!string.IsNullOrEmpty(dbName))
             {
                 string replaceStr = GetValue(connStr, "database=", ";");
-
                 connStr = connStr.Replace(replaceStr, dbName);
-                //connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
-                //dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.ConnDbType);
             }
             var db = new SqlSugarScope(new List<ConnectionConfig>()
             {
