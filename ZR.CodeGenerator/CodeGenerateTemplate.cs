@@ -152,7 +152,6 @@ namespace ZR.CodeGenerator
             {
                 return sb.ToString();
             }
-            sb.AppendLine("    <el-row>");
             if (dbFieldInfo.HtmlType == GenConstants.HTML_INPUT_NUMBER)
             {
                 sb.AppendLine("    <el-col :span=\"12\">");
@@ -164,15 +163,16 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 //时间
-                sb.AppendLine("    <el-col :span=\"12\">");
+                sb.AppendLine("      <el-col :span=\"12\">");
                 sb.AppendLine($"        <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
                 sb.AppendLine($"           <el-date-picker v-model=\"form.{columnName}\" format=\"yyyy-MM-dd HH:mm:ss\" value-format=\"yyyy-MM-dd HH:mm:ss\"  type=\"datetime\"  placeholder=\"选择日期时间\"> </el-date-picker>");
                 sb.AppendLine("         </el-form-item>");
-                sb.AppendLine("    </el-col>");
+                sb.AppendLine("     </el-col>");
             }
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_IMAGE_UPLOAD)
             {
                 //图片
+                sb.AppendLine("    <el-col :span=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-upload class=\"avatar-uploader\" name=\"file\" action=\"/api/upload/saveFile/\" :show-file-list=\"false\" :on-success=\"handleUpload{dbFieldInfo.CsharpField}Success\" :before-upload=\"beforeFileUpload\">");
                 sb.AppendLine($"          <img v-if=\"form.{columnName}\" :src=\"form.{columnName}\" class=\"icon\">");
@@ -188,7 +188,7 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col :span=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-radio-group v-model=\"form.{columnName}\">");
-                sb.AppendLine($"          <el-radio v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"{value}\">{{item.dictLabel}}</el-radio>");
+                sb.AppendLine($"          <el-radio v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"{value}\">{{{{item.dictLabel}}}}</el-radio>");
                 sb.AppendLine("        </el-radio-group>");
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
@@ -241,7 +241,6 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    </el-col>");
             }
 
-            sb.AppendLine("    </el-row>");
             return sb.ToString();
         }
 

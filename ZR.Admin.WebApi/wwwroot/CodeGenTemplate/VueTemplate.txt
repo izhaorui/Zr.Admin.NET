@@ -41,7 +41,9 @@
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
       <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
+        <el-row>
 {VueViewFormContent}
+        </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
         <el-button @click="cancel">取 消</el-button>
@@ -63,7 +65,7 @@ import {
 {VueComponentImport}
 
 export default {
-  name: '{ModelTypeName}',
+  name: "{ModelTypeName}",
   components: { {VueComponent} },
   data() {
     return {
@@ -146,7 +148,7 @@ export default {
     // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map((item) => item.{PrimaryKey});
-      this.single = selection.length!=1
+      this.single = selection.length !=1
       this.multiple = !selection.length;
     },
     /** 搜索按钮操作 */
@@ -187,7 +189,7 @@ export default {
         if (valid) {
           console.log(JSON.stringify(this.form));
           
-          if (this.form.{PrimaryKey} != undefined || this.title === '修改数据') {
+          if (this.form.{PrimaryKey} != undefined || this.title === "修改数据") {
             update{ModelTypeName}(this.form).then((res) => {
                 if (!res.data) {
                     this.msgError("修改失败");
