@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SqlSugar;
 
 namespace ZR.Model.Models
 {
@@ -7,7 +8,7 @@ namespace ZR.Model.Models
     /// 代码生成演示，数据实体对象
     ///
     /// @author zr
-    /// @date 2021-11-24
+    /// @date 2021-11-27
     /// </summary>
     [SqlSugar.SugarTable("gen_demo")]
     [SqlSugar.Tenant("0")]
@@ -17,7 +18,7 @@ namespace ZR.Model.Models
         /// 描述 :自增id
         /// 空值 :False
         /// </summary>
-        [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
+        [SqlSugar.SugarColumn(IsPrimaryKey = false, IsIdentity = true)]
         public int Id { get; set; }
         /// <summary>
         /// 描述 :名称

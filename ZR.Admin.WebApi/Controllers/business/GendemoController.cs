@@ -15,6 +15,7 @@ using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using Infrastructure.Extensions;
+using System.Linq;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -22,11 +23,11 @@ namespace ZR.Admin.WebApi.Controllers
     /// 代码生成演示Controller
     ///
     /// @author zr
-    /// @date 2021-11-24
+    /// @date 2021-11-27
     /// </summary>
     [Verify]
     [Route("business/Gendemo")]
-    public class GendemoController : BaseController
+    public class GendemoController: BaseController
     {
         /// <summary>
         /// 代码生成演示接口
@@ -51,6 +52,11 @@ namespace ZR.Admin.WebApi.Controllers
 
             //TODO 自己实现搜索条件查询语法参考Sqlsugar，默认查询所有
             //predicate = predicate.And(m => m.Name.Contains(parm.Name));
+            predicate = predicate.AndIF(parm.Id > 0, m => m.Id == parm.Id);
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Name), m => m.Name.Contains(parm.Name));
+            predicate = predicate.AndIF(parm.ShowStatus > 0, m => m.ShowStatus != parm.ShowStatus);
+            predicate = predicate.AndIF(parm.BeginTime != null, it => it.AddTime >= parm.BeginTime);
+            predicate = predicate.AndIF(parm.EndTime != null, it => it.AddTime <= parm.EndTime);
 
             var response = _GendemoService.GetPages(predicate.ToExpression(), parm);
 
@@ -66,8 +72,8 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "business:gendemo:query")]
         public IActionResult GetGendemo(int Id)
         {
-            var response = _GendemoService.GetId(Id);
-
+            var response = _GendemoService.GetFirst(x => x.Id == Id);
+            
             return SUCCESS(response);
         }
 
@@ -89,15 +95,15 @@ namespace ZR.Admin.WebApi.Controllers
 
             return SUCCESS(_GendemoService.Insert(model, it => new
             {
-                it.Name,
-                it.Icon,
-                it.ShowStatus,
-                it.AddTime,
-                it.Sex,
-                it.Sort,
-                it.BeginTime,
-                it.EndTime,
-                it.Remark,
+                it.Name, 
+                it.Icon, 
+                it.ShowStatus, 
+                it.AddTime, 
+                it.Sex, 
+                it.Sort, 
+                it.BeginTime, 
+                it.EndTime, 
+                it.Remark, 
             }));
         }
 
@@ -120,15 +126,15 @@ namespace ZR.Admin.WebApi.Controllers
             var response = _GendemoService.Update(w => w.Id == model.Id, it => new Gendemo()
             {
                 //Update 字段映射
-                Name = model.Name,
-                Icon = model.Icon,
-                ShowStatus = model.ShowStatus,
-                AddTime = model.AddTime,
-                Sex = model.Sex,
-                Sort = model.Sort,
-                BeginTime = model.BeginTime,
-                EndTime = model.EndTime,
-                Remark = model.Remark,
+                Name = model.Name, 
+                Icon = model.Icon, 
+                ShowStatus = model.ShowStatus, 
+                AddTime = model.AddTime, 
+                Sex = model.Sex, 
+                Sort = model.Sort, 
+                BeginTime = model.BeginTime, 
+                EndTime = model.EndTime, 
+                Remark = model.Remark, 
             });
 
             return SUCCESS(response);

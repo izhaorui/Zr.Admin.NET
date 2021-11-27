@@ -1,9 +1,9 @@
 import request from '@/utils/request'
 
 /**
-   * 代码生成演示分页查询
-   * @param {查询条件} data
-   */
+* 代码生成演示分页查询
+* @param {查询条件} data
+*/
 export function listGendemo(query) {
   return request({
     url: 'business/Gendemo/list',
@@ -13,9 +13,9 @@ export function listGendemo(query) {
 }
 
 /**
-   * 新增代码生成演示
-   * @param data
-   */
+* 新增代码生成演示
+* @param data
+*/
 export function addGendemo(data) {
   return request({
     url: 'business/Gendemo',
@@ -25,9 +25,9 @@ export function addGendemo(data) {
 }
 
 /**
-   * 修改代码生成演示
-   * @param data
-   */
+* 修改代码生成演示
+* @param data
+*/
 export function updateGendemo(data) {
   return request({
     url: 'business/Gendemo',
@@ -37,9 +37,9 @@ export function updateGendemo(data) {
 }
 
 /**
-   * 获取代码生成演示详情
-   * @param {Id} 代码生成演示Id
-   */
+* 获取代码生成演示详情
+* @param {Id} 代码生成演示Id
+*/
 export function getGendemo(id) {
   return request({
     url: 'business/Gendemo/' + id,
@@ -48,12 +48,20 @@ export function getGendemo(id) {
 }
 
 /**
-   * 删除
-   * @param {主键} pid
-   */
+* 删除
+* @param {主键} pid
+*/
 export function delGendemo(pid) {
   return request({
     url: 'business/Gendemo/' + pid,
     method: 'delete'
+  })
+}
+// 导出
+export function exportGendemo(query) {
+  return request({
+    url: 'business/Gendemo/export',
+    method: 'get',
+    params: query
   })
 }

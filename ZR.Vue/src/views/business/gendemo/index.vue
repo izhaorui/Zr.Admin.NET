@@ -2,6 +2,18 @@
   <div class="app-container">
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
+      <el-form-item label="自增id" :label-width="labelWidth">
+        <el-input v-model.number="queryParams.id"/>
+      </el-form-item>
+      <el-form-item label="名称" :label-width="labelWidth">
+        <el-input v-model="queryParams.name"/>
+      </el-form-item>
+      <el-form-item label="显示状态" :label-width="labelWidth">
+        <el-input v-model.number="queryParams.showStatus"/>
+      </el-form-item>
+      <el-form-item label="时间">
+        <el-date-picker v-model="timeRange" size="small" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+      </el-form-item>
 
       <el-row class="mb8" style="text-align:center">
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -55,9 +67,13 @@
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
       <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
+        <el-row>
+    <el-col :span="12">
       <el-form-item label="名称" :label-width="labelWidth" prop="name">
         <el-input v-model="form.name" placeholder="请输入名称" />
       </el-form-item>
+    </el-col>
+    <el-col :span="24">
       <el-form-item label="图片" :label-width="labelWidth" prop="icon">
         <el-upload class="avatar-uploader" name="file" action="/api/upload/saveFile/" :show-file-list="false" :on-success="handleUploadIconSuccess" :before-upload="beforeFileUpload">
           <img v-if="form.icon" :src="form.icon" class="icon">
@@ -65,29 +81,43 @@
         </el-upload>
         <el-input v-model="form.icon" placeholder="请上传文件或手动输入文件地址"></el-input>
       </el-form-item>
+    </el-col>
+    <el-col :span="12">
       <el-form-item label="显示状态" :label-width="labelWidth" prop="showStatus">
         <el-select v-model="form.showStatus">
           <el-option v-for="item in showStatusOptions" :key="item.dictValue" :label="item.dictLabel" :value="parseInt(item.dictValue)"></el-option>
         </el-select>
       </el-form-item>
+    </el-col>
+    <el-col :span="12">
       <el-form-item label="用户性别" :label-width="labelWidth" prop="sex">
-        <el-select v-model="form.sex">
-          <el-option v-for="item in sexOptions" :key="item.dictValue" :label="item.dictLabel" :value="parseInt(item.dictValue)"></el-option>
-        </el-select>
+        <el-radio-group v-model="form.sex">
+          <el-radio v-for="item in sexOptions" :key="item.dictValue" :label="parseInt(item.dictValue)">{{item.dictLabel}}</el-radio>
+        </el-radio-group>
       </el-form-item>
+    </el-col>
+    <el-col :span="12">
       <el-form-item label="排序" :label-width="labelWidth" prop="sort">
         <el-input-number v-model.number="form.sort" placeholder="请输入排序" />
       </el-form-item>
+    </el-col>
+      <el-col :span="12">
         <el-form-item label="开始时间" :label-width="labelWidth" prop="beginTime">
            <el-date-picker v-model="form.beginTime" format="yyyy-MM-dd HH:mm:ss" value-format="yyyy-MM-dd HH:mm:ss"  type="datetime"  placeholder="选择日期时间"> </el-date-picker>
          </el-form-item>
+     </el-col>
+      <el-col :span="12">
         <el-form-item label="结束时间" :label-width="labelWidth" prop="endTime">
            <el-date-picker v-model="form.endTime" format="yyyy-MM-dd HH:mm:ss" value-format="yyyy-MM-dd HH:mm:ss"  type="datetime"  placeholder="选择日期时间"> </el-date-picker>
          </el-form-item>
+     </el-col>
+    <el-col :span="24">
       <el-form-item label="备注" :label-width="labelWidth" prop="remark">
-      <editor v-model="form.remark" :min-height="200" />
+        <editor v-model="form.remark" :min-height="200" />
       </el-form-item>
+    </el-col>
 
+        </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
         <el-button @click="cancel">取 消</el-button>
@@ -110,7 +140,7 @@ import Editor from '@/components/Editor';
 
 
 export default {
-  name: 'Gendemo',
+  name: "Gendemo",
   components: { Editor },
   data() {
     return {
@@ -214,7 +244,7 @@ export default {
     // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map((item) => item.id);
-      this.single = selection.length!=1
+      this.single = selection.length !=1
       this.multiple = !selection.length;
     },
     /** 搜索按钮操作 */
@@ -268,14 +298,22 @@ export default {
         if (valid) {
           console.log(JSON.stringify(this.form));
           
-          if (this.form.id != undefined || this.title === '修改数据') {
+          if (this.form.id != undefined || this.title === "修改数据") {
             updateGendemo(this.form).then((res) => {
+                if (!res.data) {
+                    this.msgError("修改失败");
+                    return;
+                }
                 this.msgSuccess("修改成功");
                 this.open = false;
                 this.getList();
             });
           } else {
             addGendemo(this.form).then((res) => {
+                if (!res.data) {
+                    this.msgError("新增失败");
+                    return;
+                }
                 this.msgSuccess("新增成功");
                 this.open = false;
                 this.getList();

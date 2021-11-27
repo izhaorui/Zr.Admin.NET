@@ -27,6 +27,10 @@ namespace ZR.Model.Dto
     /// </summary>
     public class GendemoQueryDto: PagerInfo 
     {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int ShowStatus { get; set; }
+        public DateTime AddTime { get; set; }
 
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
