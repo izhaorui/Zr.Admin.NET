@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ZR.CodeGenerator
@@ -24,11 +25,14 @@ namespace ZR.CodeGenerator
         {
             string connStr = ConfigUtils.Instance.GetConfig(GenConstants.Gen_conn);
             int dbType = ConfigUtils.Instance.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
-            connStr = connStr.Replace("{database}", dbName);
-            if (string.IsNullOrEmpty(dbName))
+
+            if (!string.IsNullOrEmpty(dbName))
             {
-                connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
-                dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.ConnDbType);
+                string replaceStr = GetValue(connStr, "database=", ";");
+
+                connStr = connStr.Replace(replaceStr, dbName);
+                //connStr = ConfigUtils.Instance.GetConnectionStrings(OptionsSetting.ConnAdmin);
+                //dbType = ConfigUtils.Instance.GetAppConfig<int>(OptionsSetting.ConnDbType);
             }
             var db = new SqlSugarScope(new List<ConnectionConfig>()
             {
@@ -42,6 +46,19 @@ namespace ZR.CodeGenerator
 
             CodeDb = db;
             return db;
+        }
+
+        /// <summary>
+        /// 获得字符串中开始和结束字符串中间得值
+        /// </summary>
+        /// <param name="str">字符串</param>
+        /// <param name="s">开始</param>
+        /// <param name="e">结束</param>
+        /// <returns></returns> 
+        public static string GetValue(string str, string s, string e)
+        {
+            Regex rg = new Regex("(?<=(" + s + "))[.\\s\\S]*?(?=(" + e + "))", RegexOptions.Multiline | RegexOptions.Singleline);
+            return rg.Match(str).Value;
         }
     }
 }
