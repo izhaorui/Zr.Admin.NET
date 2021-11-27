@@ -51,14 +51,16 @@
               <el-checkbox v-model="scope.row.isList"></el-checkbox>
             </template>
           </el-table-column>
-          <!-- <el-table-column label="查询" min-width="5%">
+          <el-table-column label="查询" min-width="5%">
             <template slot-scope="scope">
-              <el-checkbox v-model="scope.row.isQuery"></el-checkbox>
+              <el-checkbox v-model="scope.row.isQuery"
+                :disabled="scope.row.htmlType == 'imageUpload' || scope.row.htmlType == 'fileUpload'">
+              </el-checkbox>
             </template>
           </el-table-column>
           <el-table-column label="查询方式" min-width="10%">
             <template slot-scope="scope">
-              <el-select v-model="scope.row.queryType">
+              <el-select v-model="scope.row.queryType" :disabled="scope.row.htmlType == 'datetime'">
                 <el-option label="=" value="EQ" />
                 <el-option label="!=" value="NE" />
                 <el-option label=">" value="GT" />
@@ -69,12 +71,12 @@
                 <el-option label="BETWEEN" value="BETWEEN" />
               </el-select>
             </template>
-          </el-table-column> -->
-          <el-table-column label="显示类型" min-width="12%">
+          </el-table-column>
+          <el-table-column label="表单显示类型" min-width="12%">
             <template slot-scope="scope">
               <el-select v-model="scope.row.htmlType">
                 <el-option label="文本框" value="input" />
-								<el-option label="数字框" value="inputNumber" />
+                <el-option label="数字框" value="inputNumber" />
                 <el-option label="文本域" value="textarea" />
                 <el-option label="下拉框" value="select" />
                 <el-option label="单选框" value="radio" />
@@ -182,7 +184,7 @@ export default {
           //   treeParentCode: genTable.treeParentCode,
           //   parentMenuId: genTable.parentMenuId,
           // };
-          console.log(JSON.stringify(genTable))
+          console.log(JSON.stringify(genTable));
           updateGenTable(genTable).then((res) => {
             this.msgSuccess(res.msg);
             if (res.code === 200) {

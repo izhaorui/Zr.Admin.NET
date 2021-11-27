@@ -1,9 +1,9 @@
 ﻿import request from '@/utils/request'
 
 /**
-   * {FunctionName}分页查询
-   * @param {查询条件} data
-   */
+* {FunctionName}分页查询
+* @param {查询条件} data
+*/
 export function list{ModelTypeName}(query) {
   return request({
     url: '{ModuleName}/{ModelTypeName}/list',
@@ -13,9 +13,9 @@ export function list{ModelTypeName}(query) {
 }
 
 /**
-   * 新增{FunctionName}
-   * @param data
-   */
+* 新增{FunctionName}
+* @param data
+*/
 export function add{ModelTypeName}(data) {
   return request({
     url: '{ModuleName}/{ModelTypeName}',
@@ -25,9 +25,9 @@ export function add{ModelTypeName}(data) {
 }
 
 /**
-   * 修改{FunctionName}
-   * @param data
-   */
+* 修改{FunctionName}
+* @param data
+*/
 export function update{ModelTypeName}(data) {
   return request({
     url: '{ModuleName}/{ModelTypeName}',
@@ -37,9 +37,9 @@ export function update{ModelTypeName}(data) {
 }
 
 /**
-   * 获取{FunctionName}详情
-   * @param {Id} {FunctionName}Id
-   */
+* 获取{FunctionName}详情
+* @param {Id} {FunctionName}Id
+*/
 export function get{ModelTypeName}(id) {
   return request({
     url: '{ModuleName}/{ModelTypeName}/' + id,
@@ -48,12 +48,20 @@ export function get{ModelTypeName}(id) {
 }
 
 /**
-   * 删除
-   * @param {主键} pid
-   */
+* 删除
+* @param {主键} pid
+*/
 export function del{ModelTypeName}(pid) {
   return request({
     url: '{ModuleName}/{ModelTypeName}/' + pid,
     method: 'delete'
+  })
+}
+// 导出
+export function export{ModelTypeName}(query) {
+  return request({
+    url: '{ModuleName}/{ModelTypeName}/export',
+    method: 'get',
+    params: query
   })
 }

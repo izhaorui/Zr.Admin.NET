@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using ZR.CodeGenerator.Model;
 using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator
@@ -10,6 +11,78 @@ namespace ZR.CodeGenerator
     /// </summary>
     public class CodeGenerateTemplate
     {
+        /// <summary>
+        /// 表Model属性
+        /// </summary>
+        /// <param name="tbColumn"></param>
+        /// <returns></returns>
+        public static string GetModelTemplate(GenTableColumn tbColumn)
+        {
+            StringBuilder sbModel = new StringBuilder();
+            sbModel.AppendLine("        /// <summary>");
+            sbModel.AppendLine($"        /// 描述 :{tbColumn.ColumnComment}");
+            sbModel.AppendLine($"        /// 空值 :{!tbColumn.IsRequired}");
+            sbModel.AppendLine("        /// </summary>");
+            if (tbColumn.IsPk || tbColumn.IsIncrement)
+            {
+                sbModel.AppendLine($"        [SqlSugar.SugarColumn(IsPrimaryKey = {tbColumn.IsPk.ToString().ToLower()}, IsIdentity = {tbColumn.IsIncrement.ToString().ToLower()})]");
+            }
+            sbModel.AppendLine($"        public {tbColumn.CsharpType}{(CodeGeneratorTool.GetModelRequired(tbColumn))} {tbColumn.CsharpField} {{ get; set; }}");
+            return sbModel.ToString();
+        }
+        /// <summary>
+        /// 增改Dto
+        /// </summary>
+        /// <param name="tbColumn"></param>
+        /// <returns></returns>
+        public static string GetDtoProperty(GenTableColumn tbColumn)
+        {
+            string InputDtoContent = "";
+            if (GenConstants.inputDtoNoField.Any(f => f.ToLower().Contains(tbColumn.CsharpField.ToLower())))
+            {
+                return InputDtoContent;
+            }
+            else if (tbColumn.IsInsert || tbColumn.IsEdit || tbColumn.IsPk || tbColumn.IsIncrement)
+            {
+                InputDtoContent += $"        public {tbColumn.CsharpType}{CodeGeneratorTool.GetModelRequired(tbColumn)} {tbColumn.CsharpField} {{ get; set; }}\r\n";
+            }
+
+            return InputDtoContent;
+        }
+        /// <summary>
+        /// 查询Dto属性
+        /// </summary>
+        /// <param name="tbColumn"></param>
+        /// <param name="replaceDto">替换字符对象</param>
+        /// <returns></returns>
+        public static void GetQueryDtoProperty(GenTableColumn tbColumn, ReplaceDto replaceDto)
+        {
+            string QueryDtoContent = "";
+            if (tbColumn.IsQuery)
+            {
+                QueryDtoContent += $"        public {tbColumn.CsharpType} {tbColumn.CsharpField} {{ get; set; }}\r\n";
+                //字符串类型表达式
+                if (tbColumn.CsharpType == GenConstants.TYPE_STRING)
+                {
+                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.{tbColumn.CsharpField}), {QueryExp(tbColumn.CsharpField, tbColumn.QueryType)};\n";
+                }
+                //int类型表达式
+                if (CodeGeneratorTool.IsNumber(tbColumn.CsharpType))
+                {
+                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.{tbColumn.CsharpField} > 0, {QueryExp(tbColumn.CsharpField, tbColumn.QueryType)};\n";
+                }
+                //时间类型
+                if (tbColumn.CsharpType == GenConstants.TYPE_DATE)
+                {
+                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.BeginTime != null, it => it.{tbColumn.CsharpField} >= parm.BeginTime);\n"; 
+                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.EndTime != null, it => it.{tbColumn.CsharpField} <= parm.EndTime);\n"; 
+                }
+            }
+            replaceDto.QueryProperty += QueryDtoContent;
+        }
+
+        #region vue 模板
+
         /// <summary>
         /// 生成vuejs模板，目前只有上传文件方法
         /// </summary>
@@ -39,7 +112,11 @@ namespace ZR.CodeGenerator
             return sb.ToString();
         }
 
-        //rules
+        /// <summary>
+        /// Vue rules
+        /// </summary>
+        /// <param name="dbFieldInfo"></param>
+        /// <returns></returns>
         public static string GetFormRules(GenTableColumn dbFieldInfo)
         {
             StringBuilder sbRule = new StringBuilder();
@@ -55,67 +132,11 @@ namespace ZR.CodeGenerator
             return sbRule.ToString();
         }
 
-        //model 属性
-        public static string GetModelTemplate(GenTableColumn dbFieldInfo)
-        {
-            StringBuilder sbModel = new StringBuilder();
-            sbModel.AppendLine("        /// <summary>");
-            sbModel.AppendLine($"        /// 描述 :{dbFieldInfo.ColumnComment}");
-            sbModel.AppendLine($"        /// 空值 :{!dbFieldInfo.IsRequired}");
-            sbModel.AppendLine("        /// </summary>");
-            if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
-            {
-                sbModel.AppendLine($"        [SqlSugar.SugarColumn(IsPrimaryKey = {dbFieldInfo.IsPk.ToString().ToLower()}, IsIdentity = {dbFieldInfo.IsIncrement.ToString().ToLower()})]");
-            }
-            sbModel.AppendLine($"        public {dbFieldInfo.CsharpType}{(GetModelRequired(dbFieldInfo))} {dbFieldInfo.CsharpField} {{ get; set; }}");
-            return sbModel.ToString();
-        }
-        public static string GetModelRequired(GenTableColumn dbFieldInfo)
-        {
-            string str = "";
-            if (!dbFieldInfo.IsRequired && (CodeGeneratorTool.IsNumber(dbFieldInfo.ColumnType) || dbFieldInfo.CsharpType == "DateTime"))
-            {
-                str = "?";
-            }
-
-            return str;
-        }
-        //DTO model
-        public static string GetDtoProperty(GenTableColumn dbFieldInfo)
-        {
-            string InputDtoContent = "";
-            if (GenConstants.inputDtoNoField.Any(f => f.Replace("_", "").ToLower().Contains(dbFieldInfo.CsharpField.ToLower().Replace("_", ""))))
-            {
-                return InputDtoContent;
-            }
-            //else if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
-            //{
-            //    return InputDtoContent;
-            //}
-            else if (dbFieldInfo.IsInsert || dbFieldInfo.IsEdit || dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
-            {
-                InputDtoContent += $"        public {dbFieldInfo.CsharpType}{GetModelRequired(dbFieldInfo)} {dbFieldInfo.CsharpField} {{ get; set; }}\r\n";
-            }
-
-            return InputDtoContent;
-        }
         /// <summary>
-        /// 查询Dto属性
+        /// Vue 添加修改表单
         /// </summary>
         /// <param name="dbFieldInfo"></param>
         /// <returns></returns>
-        public static string GetQueryDtoProperty(GenTableColumn dbFieldInfo)
-        {
-            string QueryDtoContent = "";
-            if (dbFieldInfo.IsQuery && !GenConstants.inputDtoNoField.Any(f => f.ToLower().Contains(dbFieldInfo.CsharpField.ToLower())))
-            {
-                QueryDtoContent += $"        public {dbFieldInfo.CsharpType} {dbFieldInfo.CsharpField} {{ get; set; }}\r\n";
-            }
-
-            return QueryDtoContent;
-        }
-
-        //form-item
         public static string GetVueViewFormContent(GenTableColumn dbFieldInfo)
         {
             string columnName = dbFieldInfo.ColumnName;
@@ -131,6 +152,8 @@ namespace ZR.CodeGenerator
             {
                 return sb.ToString();
             }
+            sb.AppendLine("<el-row>");
+            sb.AppendLine("<el-col :span=\"24\">");
             if (dbFieldInfo.HtmlType == GenConstants.HTML_INPUT_NUMBER)
             {
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{CodeGeneratorTool.FirstLowerCase(columnName)}\">");
@@ -200,12 +223,13 @@ namespace ZR.CodeGenerator
                 sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"form.{CodeGeneratorTool.FirstLowerCase(columnName)}\" placeholder=\"{placeHolder}\" {labelDisabled}/>");
                 sb.AppendLine("      </el-form-item>");
             }
-
+            sb.AppendLine("</el-col>");
+            sb.AppendLine("</el-row>");
             return sb.ToString();
         }
 
         /// <summary>
-        /// 查询表单
+        /// Vue 查询表单
         /// </summary>
         /// <param name="dbFieldInfo"></param>
         /// <returns></returns>
@@ -231,7 +255,11 @@ namespace ZR.CodeGenerator
             return sb.ToString();
         }
 
-        //table-column
+        /// <summary>
+        /// Vue 查询列表
+        /// </summary>
+        /// <param name="dbFieldInfo"></param>
+        /// <returns></returns>
         public static string GetTableColumn(GenTableColumn dbFieldInfo)
         {
             string columnName = dbFieldInfo.ColumnName;
@@ -261,6 +289,41 @@ namespace ZR.CodeGenerator
                 sb.AppendLine($"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\" {showToolTip}{formatter}/>");
             }
             return sb.ToString();
+        }
+
+        #endregion
+
+        public static string QueryExp(string propertyName, string queryType)
+        {
+            if (queryType.Equals("EQ"))
+            {
+                return $"m => m.{ propertyName} == parm.{propertyName})";
+            }
+            if (queryType.Equals("GTE"))
+            {
+                return $"m => m.{ propertyName} >= parm.{propertyName})";
+            }
+            if (queryType.Equals("GT"))
+            {
+                return $"m => m.{ propertyName} > parm.{propertyName})";
+            }
+            if (queryType.Equals("LT"))
+            {
+                return $"m => m.{ propertyName} < parm.{propertyName})";
+            }
+            if (queryType.Equals("LTE"))
+            {
+                return $"m => m.{ propertyName} <= parm.{propertyName})";
+            }
+            if (queryType.Equals("NE"))
+            {
+                return $"m => m.{ propertyName} != parm.{propertyName})";
+            }
+            if (queryType.Equals("LIKE"))
+            {
+                return $"m => m.{ propertyName}.Contains(parm.{propertyName}))";
+            }
+            return "";
         }
     }
 }

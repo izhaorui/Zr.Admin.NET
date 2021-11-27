@@ -18,5 +18,5 @@ VALUES ('{FunctionName}删除', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '{Pe
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) 
 VALUES ('{FunctionName}修改', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:update', '', '', GETDATE(), '', NULL, NULL);
 
-SELECT * FROM sys_menu WHERE parentId = {ParentId};
+SELECT * FROM sys_menu WHERE parentId = @menuId;
 SELECT * FROM sys_menu WHERE menuId = @menuId;

@@ -127,7 +127,7 @@ namespace ZR.CodeGenerator
         public static string TYPE_DOUBLE = "Double";
 
         /** 时间类型 */
-        public static string TYPE_DATE = "Date";
+        public static string TYPE_DATE = "DateTime";
 
         /** 模糊查询 */
         public static string QUERY_LIKE = "LIKE";

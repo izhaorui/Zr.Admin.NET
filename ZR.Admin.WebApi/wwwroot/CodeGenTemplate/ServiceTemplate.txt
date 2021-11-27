@@ -12,10 +12,10 @@ namespace {ServicesNamespace}.Business
     /// @date {DateTime}
     /// </summary>
     [AppService(ServiceType = typeof(I{ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
-    public class {ModelTypeName}Service: BaseService<{ModelTypeName}>, I{ModelTypeName}Service
+    public class {ModelTypeName}Service : BaseService<{ModelTypeName}>, I{ModelTypeName}Service
     {
         private readonly {ModelTypeName}Repository _{ModelTypeName}repository;
-        public {ModelTypeName}Service({ModelTypeName}Repository repository)
+        public {ModelTypeName}Service({ModelTypeName}Repository repository) : base(repository)
         {
             _{ModelTypeName}repository = repository;
         }

@@ -15,6 +15,7 @@ using {ApiControllerNamespace}.Extensions;
 using {ApiControllerNamespace}.Filters;
 using ZR.Common;
 using Infrastructure.Extensions;
+using System.Linq;
 
 namespace {ApiControllerNamespace}.Controllers
 {
@@ -51,7 +52,7 @@ namespace {ApiControllerNamespace}.Controllers
 
             //TODO 自己实现搜索条件查询语法参考Sqlsugar，默认查询所有
             //predicate = predicate.And(m => m.Name.Contains(parm.Name));
-
+{QueryCondition}
             var response = _{ModelName}Service.GetPages(predicate.ToExpression(), parm);
 
             return SUCCESS(response);
@@ -66,8 +67,8 @@ namespace {ApiControllerNamespace}.Controllers
         [ActionPermissionFilter(Permission = "{Permission}:query")]
         public IActionResult Get{ModelName}({PKCsharpType} {PrimaryKey})
         {
-            var response = _{ModelName}Service.GetId({PrimaryKey});
-
+            var response = _{ModelName}Service.GetFirst(x => x.{PrimaryKey} == {PrimaryKey});
+            
             return SUCCESS(response);
         }
 
@@ -133,6 +134,21 @@ namespace {ApiControllerNamespace}.Controllers
             var response = _{ModelName}Service.Delete(idsArr);
 
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// {FunctionName}导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "{FunctionName}")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "{Permission}:export")]
+        public IActionResult Export()
+        {
+            var list = _{ModelName}Service.GetAll();
+
+            string sFileName = ExportExcel(list, "{ModelName}", "{FunctionName}");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
     }
 }

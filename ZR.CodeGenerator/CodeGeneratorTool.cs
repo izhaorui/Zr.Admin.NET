@@ -107,7 +107,7 @@ namespace ZR.CodeGenerator
                     replaceDto.VueComponentImport += "import Editor from '@/components/Editor';\n";
                 }
 
-                replaceDto.QueryProperty += CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo);
+                CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
                 replaceDto.ModelProperty += CodeGenerateTemplate.GetModelTemplate(dbFieldInfo);
                 replaceDto.VueViewFormHtml += CodeGenerateTemplate.GetVueViewFormContent(dbFieldInfo);
                 replaceDto.VueJsMethod += CodeGenerateTemplate.GetVueJsMethod(dbFieldInfo);
@@ -329,6 +329,10 @@ namespace ZR.CodeGenerator
             {
                 content = content.Replace("{InsertColumn}", replaceDto.InsertColumn.TrimEnd('\n'));
             }
+            if (replaceDto.QueryCondition != null)
+            {
+                content = content.Replace("{QueryCondition}", replaceDto.QueryCondition);
+            }
             generateDto.GenCodes.Add(new GenCode(5, "控制器", fullPath, content));
         }
         #endregion
@@ -464,6 +468,16 @@ namespace ZR.CodeGenerator
         {
             return string.IsNullOrEmpty(columnDescription) ? columnName : columnDescription;
         }
+        /// <summary>
+        /// 判断是否给属性添加?
+        /// </summary>
+        /// <param name="dbFieldInfo"></param>
+        /// <returns></returns>
+        public static string GetModelRequired(GenTableColumn dbFieldInfo)
+        {
+            return (!dbFieldInfo.IsRequired && (IsNumber(dbFieldInfo.ColumnType) || dbFieldInfo.CsharpType == "DateTime")) ? "?" : "";
+        }
+
         #endregion
 
         /// <summary>
