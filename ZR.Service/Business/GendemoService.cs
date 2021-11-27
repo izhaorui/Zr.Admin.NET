@@ -1,5 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using SqlSugar;
 using ZR.Model.Models;
 using ZR.Repository;
 
@@ -12,10 +13,10 @@ namespace ZR.Service.Business
     /// @date 2021-11-24
     /// </summary>
     [AppService(ServiceType = typeof(IGendemoService), ServiceLifetime = LifeTime.Transient)]
-    public class GendemoService: BaseService<Gendemo>, IGendemoService
+    public class GendemoService : BaseService<Gendemo>, IGendemoService
     {
         private readonly GendemoRepository _Gendemorepository;
-        public GendemoService(GendemoRepository repository)
+        public GendemoService(GendemoRepository repository) : base(repository)
         {
             _Gendemorepository = repository;
         }

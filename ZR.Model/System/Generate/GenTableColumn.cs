@@ -9,6 +9,7 @@ namespace ZR.Model.System.Generate
     /// 代码生成表字段
     /// </summary>
     [SqlSugar.SugarTable("gen_table_column")]
+    [SqlSugar.Tenant("0")]
     public class GenTableColumn: SysBase
     {
         [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey =  true)]

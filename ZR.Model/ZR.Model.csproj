@@ -17,7 +17,6 @@
 
   <ItemGroup>
     <Folder Include="Dto\" />
-    <Folder Include="Enum\" />
   </ItemGroup>
 
 </Project>

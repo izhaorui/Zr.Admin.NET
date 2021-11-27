@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,6 +9,7 @@ namespace ZR.Model.System
     /// 文章表
     /// </summary>
     [SqlSugar.SugarTable("article")]
+    [Tenant("0")]
     public class Article
     {
         [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey = true)]

@@ -9,12 +9,15 @@ using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
+    /// <summary>
+    /// 字典数据类
+    /// </summary>
     [AppService(ServiceType = typeof(ISysDictDataService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDictDataService: ISysDictDataService
+    public class SysDictDataService : BaseService<SysDictData>, ISysDictDataService
     {
 
         private readonly SysDictDataRepository SysDictDataRepository;
-        public SysDictDataService(SysDictDataRepository sysDictDataRepository)
+        public SysDictDataService(SysDictDataRepository sysDictDataRepository) : base(sysDictDataRepository)
         {
             SysDictDataRepository = sysDictDataRepository;
         }
@@ -32,7 +35,7 @@ namespace ZR.Service.System
         /// <summary>
         /// 根据字典类型查询
         /// </summary>
-        /// <param name="dictData"></param>
+        /// <param name="dictType"></param>
         /// <returns></returns>
         public List<SysDictData> SelectDictDataByType(string dictType)
         {

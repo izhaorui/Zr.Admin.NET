@@ -8,6 +8,7 @@ namespace ZR.Model.System
     /// sys_logininfor 表
     /// </summary>
     [SugarTable("sys_logininfor")]
+    [Tenant("0")]
     public class SysLogininfor: SysBase
     {
         //[Key]

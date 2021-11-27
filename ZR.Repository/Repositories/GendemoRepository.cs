@@ -2,6 +2,7 @@ using System;
 using Infrastructure.Attribute;
 using ZR.Repository.System;
 using ZR.Model.Models;
+using SqlSugar;
 
 namespace ZR.Repository
 {
@@ -14,6 +15,10 @@ namespace ZR.Repository
     [AppService(ServiceLifetime = LifeTime.Transient)]
     public class GendemoRepository : BaseRepository<Gendemo>
     {
+        public GendemoRepository()
+        { 
+        }
+
         #region 业务逻辑代码
         #endregion
     }

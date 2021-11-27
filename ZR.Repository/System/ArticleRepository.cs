@@ -13,8 +13,17 @@ namespace ZR.Repository.System
     /// 文章管理
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
-    public class ArticleRepository
+    public class ArticleRepository : BaseRepository<Article>
     {
         
+    }
+
+    /// <summary>
+    /// 文章目录
+    /// </summary>
+    [AppService(ServiceLifetime = LifeTime.Transient)]
+    public class ArticleCategoryRepository : BaseRepository<ArticleCategory>
+    {
+
     }
 }

@@ -10,7 +10,7 @@ namespace ZR.Model.System
     /// 字典类型表
     /// </summary>
     [SugarTable("sys_dict_type")]//当和数据库名称不一样可以设置别名
-    //[Table("sys_dict_type")]
+    [Tenant("0")]
     public class SysDictType : SysBase
     {
         /// <summary>

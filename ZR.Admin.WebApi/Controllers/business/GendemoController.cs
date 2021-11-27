@@ -87,7 +87,7 @@ namespace ZR.Admin.WebApi.Controllers
             //从 Dto 映射到 实体
             var model = parm.Adapt<Gendemo>().ToCreate(HttpContext);
 
-            return SUCCESS(_GendemoService.Add(model, it => new
+            return SUCCESS(_GendemoService.Insert(model, it => new
             {
                 it.Name,
                 it.Icon,

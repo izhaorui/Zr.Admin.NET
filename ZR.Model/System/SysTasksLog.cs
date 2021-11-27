@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,7 +8,8 @@ namespace ZR.Model.System
     /// <summary>
     /// 任务日志
     /// </summary>
-    [SqlSugar.SugarTable("sys_Tasks_log")]
+    [SugarTable("sys_Tasks_log")]
+    [Tenant("0")]
     public class SysTasksLog
     {
         /// <summary>

@@ -16,7 +16,7 @@ namespace ZR.Service.System
     public class SysPostService : BaseService<SysPost>, ISysPostService
     {
         public SysPostRepository PostRepository;
-        public SysPostService(SysPostRepository postRepository)
+        public SysPostService(SysPostRepository postRepository): base(postRepository)
         {
             PostRepository = postRepository;
         }

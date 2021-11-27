@@ -8,6 +8,9 @@ using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
+    /// <summary>
+    /// 角色权限
+    /// </summary>
     [AppService(ServiceType = typeof(ISysPermissionService), ServiceLifetime = LifeTime.Transient)]
     public class SysPermissionService : ISysPermissionService
     {

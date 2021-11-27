@@ -148,12 +148,12 @@ namespace ZR.Admin.WebApi
 
             SugarIocServices.AddSqlSugar(new List<IocConfig>() {
                new IocConfig() {
-                ConfigId = "0",  //主数据库
+                ConfigId = "0", 
                 ConnectionString = connStr,
                 DbType = (IocDbType)dbType,
                 IsAutoCloseConnection = true//自动释放
             }, new IocConfig() {
-                ConfigId = "1", // 多租户用到
+                ConfigId = "1", 
                 ConnectionString = connStrBus,
                 DbType = (IocDbType)dbType_bus,
                 IsAutoCloseConnection = true//自动释放
@@ -161,14 +161,13 @@ namespace ZR.Admin.WebApi
             });
 
             //调式代码 用来打印SQL 
-            DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
+            DbScoped.SugarScope.GetConnection("0").Aop.OnLogExecuting = (sql, pars) =>
             {
-                Console.BackgroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n"
                     + DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
             };
             //出错打印日志
-            DbScoped.SugarScope.GetConnection(0).Aop.OnError = (e) =>
+            DbScoped.SugarScope.GetConnection("0").Aop.OnError = (e) =>
             {
                 Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
                 Console.WriteLine();
@@ -177,7 +176,6 @@ namespace ZR.Admin.WebApi
             //调式代码 用来打印SQL 
             DbScoped.SugarScope.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
             {
-                Console.BackgroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("【SQL语句Bus】" + sql.ToLower() + "\r\n"
                     + DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
             };

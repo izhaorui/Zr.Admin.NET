@@ -107,7 +107,7 @@ namespace ZR.Admin.WebApi.Controllers
             //从 Dto 映射到 实体
             var model = parm.Adapt<SysConfig>().ToCreate();
 
-            return SUCCESS(_SysConfigService.Add(model, it => new
+            return SUCCESS(_SysConfigService.Insert(model, it => new
             {
                 it.ConfigName,
                 it.ConfigKey,

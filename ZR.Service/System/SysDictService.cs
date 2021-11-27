@@ -13,12 +13,12 @@ namespace ZR.Service.System
     /// 字典类型
     /// </summary>
     [AppService(ServiceType = typeof(ISysDictService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDictService : ISysDictService
+    public class SysDictService : BaseService<SysDictType>, ISysDictService
     {
         private SysDictRepository DictRepository;
         private SysDictDataRepository DictDataRepository;
 
-        public SysDictService(SysDictRepository sysDictRepository, SysDictDataRepository dictDataRepository)
+        public SysDictService(SysDictRepository sysDictRepository, SysDictDataRepository dictDataRepository) : base(sysDictRepository)
         {
             this.DictRepository = sysDictRepository;
             this.DictDataRepository = dictDataRepository;

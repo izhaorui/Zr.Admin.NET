@@ -6,6 +6,9 @@ using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
+    /// <summary>
+    /// 任务日志
+    /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient, ServiceType = typeof(ISysTasksLogService))]
     public class SysTasksLogService : BaseRepository<SysTasksLog>, ISysTasksLogService
     {

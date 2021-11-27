@@ -2,8 +2,9 @@
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq.Expressions;
-using ZR.Repository;
+using ZR.Model;
 
 namespace ZR.Service
 {
@@ -11,200 +12,145 @@ namespace ZR.Service
     /// 基础服务定义
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IBaseService<T> : IBaseRepository<T> where T : class, new()
+    public interface IBaseService<T> where T : class, new()
     {
-        #region 添加操作
+        #region add
+        int Add(T t);
+
+        //int Insert(SqlSugarClient client, T t);
+
+        //long InsertBigIdentity(T t);
+        IInsertable<T> Insertable(T t);
+        int Insert(List<T> t);
+        int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);
+
+        //int InsertIgnoreNullColumn(List<T> t);
+
+        //int InsertIgnoreNullColumn(List<T> t, params string[] columns);
+
+        //DbResult<bool> InsertTran(T t);
+
+        //DbResult<bool> InsertTran(List<T> t);
+        long InsertReturnBigIdentity(T t);
+        //T InsertReturnEntity(T t);
+
+        //T InsertReturnEntity(T t, string sqlWith = SqlWith.UpdLock);
+
+        //bool ExecuteCommand(string sql, object parameters);
+
+        //bool ExecuteCommand(string sql, params SugarParameter[] parameters);
+
+        //bool ExecuteCommand(string sql, List<SugarParameter> parameters);
+
+        #endregion add
+
+        #region update
+
+        bool Update(T entity, bool ignoreNullColumns = false);
+
         /// <summary>
-        /// 添加一条数据
+        /// 只更新表达式的值
         /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false);
+
+        bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
+
+        bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="entity">T</param>
+        /// <param name="list">忽略更新</param>
+        /// <param name="isNull">Null不更新</param>
+        /// <returns></returns>
+        //bool Update(T entity, List<string> list = null, bool isNull = true);
+
+        //bool Update(List<T> entity);
+        bool Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
+
+        #endregion update
+
+        DbResult<bool> UseTran(Action action);
+
+        DbResult<bool> UseTran(SqlSugarClient client, Action action);
+
+        bool UseTran2(Action action);
+
+        #region delete
+
+        int Delete(Expression<Func<T, bool>> expression);
+        int Delete(object[] obj);
+        int Delete(object id);
+        bool DeleteTable();
+
+        #endregion delete
+
+        #region query
+        /// <summary>
+        /// 根据条件查询分页数据
+        /// </summary>
+        /// <param name="where"></param>
         /// <param name="parm"></param>
         /// <returns></returns>
-        //int Add(T parm);
+        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm);
 
-        //int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = false);
+        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, OrderByType orderEnum = OrderByType.Asc);
 
-        ///// <summary>
-        ///// 批量添加数据
-        ///// </summary>
-        ///// <param name="parm">List<T></param>
-        ///// <returns></returns>
-        //int Add(List<T> parm);
+        bool Any(Expression<Func<T, bool>> expression);
 
-        ///// <summary>
-        ///// 添加或更新数据
-        ///// </summary>
-        ///// <param name="parm"><T></param>
-        ///// <returns></returns>
-        //T Saveable(T parm, Expression<Func<T, object>> uClumns = null, Expression<Func<T, object>> iColumns = null);
+        ISugarQueryable<T> Queryable();
+        List<T> GetAll(bool useCache = false, int cacheSecond = 3600);
 
-        ///// <summary>
-        ///// 批量添加或更新数据
-        ///// </summary>
-        ///// <param name="parm">List<T></param>
-        ///// <returns></returns>
-        //List<T> Saveable(List<T> parm, Expression<Func<T, object>> uClumns = null, Expression<Func<T, object>> iColumns = null);
+        //ISugarQueryable<ExpandoObject> Queryable(string tableName, string shortName);
 
+        //ISugarQueryable<T, T1, T2> Queryable<T1, T2>() where T1 : class where T2 : new();
 
+        List<T> GetList(Expression<Func<T, bool>> expression);
 
-        //#endregion
+        //Task<List<T>> QueryableToListAsync(Expression<Func<T, bool>> expression);
 
-        //#region 查询操作
+        //string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere);
 
-        ///// <summary>
-        ///// 根据条件查询数据是否存在
-        ///// </summary>
-        ///// <param name="where">条件表达式树</param>
-        ///// <returns></returns>
-        //bool Any(Expression<Func<T, bool>> where);
+        //List<T> QueryableToList(string tableName);
 
-        ///// <summary>
-        ///// 根据条件合计字段
-        ///// </summary>
-        ///// <param name="where">条件表达式树</param>
-        ///// <returns></returns>
-        //TResult Sum<TResult>(Expression<Func<T, bool>> where, Expression<Func<T, TResult>> field);
+        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10);
 
+        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, string order, int pageIndex = 0, int pageSize = 10);
 
-        ///// <summary>
-        ///// 根据主值查询单条数据
-        ///// </summary>
-        ///// <param name="pkValue">主键值</param>
-        ///// <returns>泛型实体</returns>
-        //T GetId(object pkValue);
+        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Expression<Func<T, object>> orderFiled, string orderBy, int pageIndex = 0, int pageSize = 10);
 
+        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Bootstrap.BootstrapParams bootstrap);
 
-        ///// <summary>
-        ///// 根据主键查询多条数据
-        ///// </summary>
-        ///// <param name="ids"></param>
-        ///// <returns></returns>
-        //List<T> GetIn(object[] ids);
+        //List<T> SqlQueryToList(string sql, object obj = null);
+        /// <summary>
+        /// 获得一条数据
+        /// </summary>
+        /// <param name="where">Expression<Func<T, bool>></param>
+        /// <returns></returns>
+        T GetFirst(Expression<Func<T, bool>> where);
+        T GetId(object pkValue);
 
-
-        ///// <summary>
-        ///// 根据条件取条数
-        ///// </summary>
-        ///// <param name="where">条件表达式树</param>
-        ///// <returns></returns>
-        //int GetCount(Expression<Func<T, bool>> where);
-
-
-        ///// <summary>
-        ///// 查询所有数据(无分页,请慎用)
-        ///// </summary>
-        ///// <returns></returns>
-        //List<T> GetAll(bool useCache = false, int cacheSecond = 3600);
-
-
-        ///// <summary>
-        ///// 获得一条数据
-        ///// </summary>
-        ///// <param name="where">Expression<Func<T, bool>></param>
-        ///// <returns></returns>
-        //T GetFirst(Expression<Func<T, bool>> where);
-
-
-        ///// <summary>
-        ///// 获得一条数据
-        ///// </summary>
-        ///// <param name="parm">string</param>
-        ///// <returns></returns>
+        /// <summary>
+        /// 获得一条数据
+        /// </summary>
+        /// <param name="parm">string</param>
+        /// <returns></returns>
         //T GetFirst(string parm);
 
-        ///// <summary>
-        ///// 根据条件查询分页数据
-        ///// </summary>
-        ///// <param name="where"></param>
-        ///// <param name="parm"></param>
-        ///// <returns></returns>
-        //PagedInfo<T> GetPages(Expression<Func<T, bool>> where, Model.PagerInfo parm);
+        int Count(Expression<Func<T, bool>> where);
 
-        ///// <summary>
-        ///// 根据条件查询分页
-        ///// </summary>
-        ///// <param name="where"></param>
-        ///// <param name="parm"></param>
-        ///// <param name="order"></param>
-        ///// <param name="orderEnum"></param>
-        ///// <returns></returns>
-        //PagedInfo<T> GetPages(Expression<Func<T, bool>> where, Model.PagerInfo parm, Expression<Func<T, object>> order, string orderEnum = "Asc");
+        #endregion query
 
-        ///// <summary>
-        ///// 根据条件查询数据
-        ///// </summary>
-        ///// <param name="where">条件表达式树</param>
-        ///// <returns></returns>
-        ////List<T> GetWhere(Expression<Func<T, bool>> where, bool useCache = false, int cacheSecond = 3600);
+        #region Procedure
 
-        /////// <summary>
-        /////// 根据条件查询数据
-        /////// </summary>
-        /////// <param name="where">条件表达式树</param>
-        /////// <returns></returns>
-        ////List<T> GetWhere(Expression<Func<T, bool>> where, Expression<Func<T, object>> order, string orderEnum = "Asc", bool useCache = false, int cacheSecond = 3600);
+        DataTable UseStoredProcedureToDataTable(string procedureName, List<SugarParameter> parameters);
 
+        (DataTable, List<SugarParameter>) UseStoredProcedureToTuple(string procedureName, List<SugarParameter> parameters);
 
-        //#endregion
-
-        //#region 修改操作
-
-        ///// <summary>
-        ///// 修改一条数据
-        ///// </summary>
-        ///// <param name="parm">T</param>
-        ///// <returns></returns>
-        //int Update(T parm);
-
-
-        ///// <summary>
-        ///// 批量修改
-        ///// </summary>
-        ///// <param name="parm">T</param>
-        ///// <returns></returns>
-        //int Update(List<T> parm);
-
-
-        ///// <summary>
-        ///// 按查询条件更新
-        ///// </summary>
-        ///// <param name="where"></param>
-        ///// <param name="columns"></param>
-        ///// <returns></returns>
-        //int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
-
-
-        //#endregion
-
-        //#region 删除操作
-
-        ///// <summary>
-        ///// 删除一条或多条数据
-        ///// </summary>
-        ///// <param name="parm">string</param>
-        ///// <returns></returns>
-        //int Delete(object id);
-
-
-        ///// <summary>
-        ///// 删除一条或多条数据
-        ///// </summary>
-        ///// <param name="parm">string</param>
-        ///// <returns></returns>
-        //int Delete(object[] ids);
-
-        ///// <summary>
-        ///// 根据条件删除一条或多条数据
-        ///// </summary>
-        ///// <param name="where">过滤条件</param>
-        ///// <returns></returns>
-        //int Delete(Expression<Func<T, bool>> where);
-
-        ///// <summary>
-        ///// 清空表
-        ///// </summary>
-        ///// <returns></returns>
-        //int DeleteTable();
-        #endregion
-
+        #endregion Procedure
     }
 }

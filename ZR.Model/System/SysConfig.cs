@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,7 +11,8 @@ namespace ZR.Model.System
     /// @author zhaorui
     /// @date 2021-09-29
     /// </summary>
-    [SqlSugar.SugarTable("sys_config")]
+    [SugarTable("sys_config")]
+    [Tenant("0")]
     public class SysConfig: SysBase
     {
         /// <summary>

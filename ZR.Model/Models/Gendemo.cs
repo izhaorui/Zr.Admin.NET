@@ -10,13 +10,14 @@ namespace ZR.Model.Models
     /// @date 2021-11-24
     /// </summary>
     [SqlSugar.SugarTable("gen_demo")]
+    [SqlSugar.Tenant("0")]
     public class Gendemo
     {
         /// <summary>
         /// 描述 :自增id
         /// 空值 :False
         /// </summary>
-        [SqlSugar.SugarColumn(IsPrimaryKey = false, IsIdentity = true)]
+        [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public int Id { get; set; }
         /// <summary>
         /// 描述 :名称

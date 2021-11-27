@@ -87,7 +87,7 @@ namespace {ApiControllerNamespace}.Controllers
             //从 Dto 映射到 实体
             var model = parm.Adapt<{ModelName}>().ToCreate(HttpContext);
 
-            return SUCCESS(_{ModelName}Service.Add(model, it => new
+            return SUCCESS(_{ModelName}Service.Insert(model, it => new
             {
 {InsertColumn}
             }));

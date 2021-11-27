@@ -1,7 +1,10 @@
 ﻿using Infrastructure.Attribute;
+using SqlSugar;
+using SqlSugar.IOC;
 using System.Collections.Generic;
 using System.Linq;
 using ZR.Model.System;
+using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -12,6 +15,9 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(IArticleCategoryService), ServiceLifetime = LifeTime.Transient)]
     public class ArticleCategoryService : BaseService<ArticleCategory>, IArticleCategoryService
     {
+        public ArticleCategoryService(ArticleCategoryRepository repository) : base(repository)
+        {
+        }
         /// <summary>
         /// 构建前端所需要树结构
         /// </summary>

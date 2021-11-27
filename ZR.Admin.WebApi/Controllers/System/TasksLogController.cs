@@ -42,7 +42,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             predicate = predicate.AndIF(queryDto.Status.IfNotEmpty(), m => m.Status == queryDto.Status);
             predicate = predicate.AndIF(queryDto.JobId.IfNotEmpty(), m => m.JobId == queryDto.JobId);
 
-            var response = tasksLogService.GetPages(predicate.ToExpression(), pager, m => m.CreateTime, "Desc");
+            var response = tasksLogService.GetPages(predicate.ToExpression(), pager, m => m.CreateTime, OrderByType.Desc);
 
             return SUCCESS(response, TIME_FORMAT_FULL);
         }

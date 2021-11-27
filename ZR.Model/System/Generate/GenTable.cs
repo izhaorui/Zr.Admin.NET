@@ -8,6 +8,7 @@ namespace ZR.Model.System.Generate
     /// 代码生成表
     /// </summary>
     [SqlSugar.SugarTable("gen_table")]
+    [SqlSugar.Tenant("0")]
     public class GenTable: SysBase
     {
         /// <summary>

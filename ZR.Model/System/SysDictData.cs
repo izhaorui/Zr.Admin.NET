@@ -9,7 +9,7 @@ namespace ZR.Model.System
     /// <summary>
     /// 字典数据表
     /// </summary>
-    //[Table("sys_dict_data")]
+    [Tenant("0")]
     [SugarTable("sys_dict_data")]
     public class SysDictData: SysBase
     {

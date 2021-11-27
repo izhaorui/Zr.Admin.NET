@@ -1,10 +1,12 @@
-﻿using System;
+﻿using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace ZR.Model.System
 {
-    [SqlSugar.SugarTable("sys_file")]
+    [Tenant("0")]
+    [SugarTable("sys_file")]
     public class SysFile
     {
         public int Id { get; set; }

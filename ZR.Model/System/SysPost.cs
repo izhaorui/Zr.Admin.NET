@@ -1,6 +1,9 @@
-﻿namespace ZR.Model.System
+﻿using SqlSugar;
+
+namespace ZR.Model.System
 {
-    [SqlSugar.SugarTable("sys_post")]
+    [SugarTable("sys_post")]
+    [Tenant("0")]
     public class SysPost: SysBase
     {
         /// <summary>

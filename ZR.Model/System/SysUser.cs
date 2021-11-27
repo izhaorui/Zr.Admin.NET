@@ -10,6 +10,7 @@ namespace ZR.Model.System
     /// 用户表
     /// </summary>
     [SugarTable("sys_user")]
+    [Tenant("0")]
     public class SysUser : SysBase
     {
         /// <summary>

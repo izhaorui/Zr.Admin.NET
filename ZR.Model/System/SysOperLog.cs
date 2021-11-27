@@ -1,25 +1,27 @@
 ﻿using Newtonsoft.Json;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace ZR.Model.System
 {
-    [SqlSugar.SugarTable("sys_oper_log")]
+    [SugarTable("sys_oper_log")]
+    [Tenant("0")]
     public class SysOperLog
     {
-        [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
+        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long OperId { get; set; }
         /** 操作模块 */
         //@Excel(name = "操作模块")
-        public String title { get; set; }
+        public string title { get; set; }
 
         /** 业务类型（0其它 1新增 2修改 3删除） */
         //@Excel(name = "业务类型", readConverterExp = "0=其它,1=新增,2=修改,3=删除,4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据")
         public int businessType { get; set; }
 
         /** 业务类型数组 */
-        [SqlSugar.SugarColumn(IsIgnore = true)]
+        [SugarColumn(IsIgnore = true)]
         public int[] businessTypes { get; set; }
 
         /** 请求方法 */
