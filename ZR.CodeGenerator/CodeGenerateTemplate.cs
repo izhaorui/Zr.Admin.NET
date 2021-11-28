@@ -260,14 +260,24 @@ namespace ZR.CodeGenerator
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 sb.AppendLine("      <el-form-item label=\"时间\">");
-                sb.AppendLine("        <el-date-picker v-model=\"timeRange\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\" end-placeholder=\"结束日期\"></el-date-picker>");
+                sb.AppendLine("        <el-date-picker v-model=\"timeRange\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
+                sb.AppendLine("          end-placeholder=\"结束日期\"></el-date-picker>");
+                sb.AppendLine("      </el-form-item>");
+            }
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT && !string.IsNullOrEmpty(dbFieldInfo.DictType))
+            {
+                //string value = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? "parseInt(item.dictValue)" : "item.dictValue";
+                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{dbFieldInfo.ColumnName}\">");
+                sb.AppendLine($"        <el-select v-model=\"queryParams.{dbFieldInfo.ColumnName}\">");
+                sb.AppendLine($"          <el-option v-for=\"item in {dbFieldInfo.ColumnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"item.dictValue\"></el-option>");
+                sb.AppendLine("        </el-select>");
                 sb.AppendLine("      </el-form-item>");
             }
             else
             {
                 string inputNumTxt = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";
                 sb.AppendLine($"      <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\">");
-                sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"queryParams.{CodeGeneratorTool.FirstLowerCase(dbFieldInfo.CsharpField)}\"/>");
+                sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"queryParams.{CodeGeneratorTool.FirstLowerCase(dbFieldInfo.CsharpField)}\" />");
                 sb.AppendLine("      </el-form-item>");
             }
 
