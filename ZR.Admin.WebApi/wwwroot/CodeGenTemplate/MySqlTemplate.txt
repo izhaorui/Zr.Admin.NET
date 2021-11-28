@@ -1,23 +1,25 @@
 ﻿-- 菜单
-INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) 
-VALUES ('{FunctionName}', 0, 1, '{ModuleName}/{ModelTypeName}', '{ModuleName}/{ViewsFileName}/index', 0, 0, 'C', '0', '0', '{Permission}:list', '#', '', sysdate(), '', NULL, '{FunctionName}菜单');
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time, remark) 
+VALUES ('{FunctionName}', 0, 1, '{ModuleName}/{ModelTypeName}', '{ModuleName}/{ViewsFileName}/index', 0, 0, 'C', '0', '0', '{Permission}:list', 'icon1', '', sysdate(), '{FunctionName}菜单');
 
 -- 按钮父菜单id
 SELECT @menuId := LAST_INSERT_ID();
 
 
-INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) 
-VALUES ('{FunctionName}查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:query', '', '', sysdate(), '', NULL, '');
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('{FunctionName}查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:query', '', sysdate());
 
-INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) 
-VALUES ('{FunctionName}新增', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:add', '', '', sysdate(), '', NULL, NULL);
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('{FunctionName}新增', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:add', '',  sysdate());
 
-INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) 
-VALUES ('{FunctionName}删除', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:delete', '', '', sysdate(), '', NULL, NULL);
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('{FunctionName}删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:delete', '', sysdate());
 
-INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) 
-VALUES ('{FunctionName}修改', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:update', '', '', sysdate(), '', NULL, NULL);
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('{FunctionName}修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:update', '', sysdate());
 
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('{FunctionName}导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:export', '', sysdate());
 
 SELECT * FROM sys_menu WHERE parentId = @menuId;
 SELECT * FROM sys_menu WHERE menuId = @menuId;
