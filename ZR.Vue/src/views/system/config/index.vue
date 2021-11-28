@@ -170,7 +170,7 @@ export default {
       listConfig(this.addDateRange(this.queryParams, this.dateRange)).then(
         (response) => {
           this.configList = response.data.result;
-          this.total = response.data.totalCount;
+          this.total = response.data.totalNum;
           this.loading = false;
         }
       );

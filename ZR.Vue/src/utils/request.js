@@ -28,7 +28,7 @@ service.interceptors.request.use(config => {
     //将token放到请求头发送给服务器,将tokenkey放在请求头中
     config.headers.Token = getToken();
   } else {
-    console.log(config)
+    // console.log(config)
   }
   return config;
 }, error => {

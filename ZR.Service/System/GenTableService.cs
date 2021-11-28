@@ -1,11 +1,10 @@
 ﻿using Infrastructure.Attribute;
 using Infrastructure.Extensions;
-using Infrastructure.Model;
-using Newtonsoft.Json;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ZR.Model;
 using ZR.Model.System.Generate;
 using ZR.Repository.System;
 using ZR.Service.System.IService;

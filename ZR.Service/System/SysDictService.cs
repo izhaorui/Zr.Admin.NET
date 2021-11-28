@@ -1,8 +1,8 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
-using System;
 using System.Collections.Generic;
 using System.Text;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
@@ -33,7 +33,7 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="dictType">实体模型</param>
         /// <returns></returns>
-        public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
+        public PagedInfo<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
         {
             return DictRepository.SelectDictTypeList(dictType, pager);
         }

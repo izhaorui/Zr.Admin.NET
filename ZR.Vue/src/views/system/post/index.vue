@@ -160,7 +160,7 @@ export default {
       this.loading = true;
       listPost(this.queryParams).then((response) => {
         this.postList = response.data.result;
-        this.total = response.data.totalCount;
+        this.total = response.data.totalNum;
         this.loading = false;
       });
     },

@@ -1,9 +1,5 @@
-﻿using Infrastructure.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using ZR.Model;
 using ZR.Model.System.Generate;
 
 namespace ZR.Service.System.IService

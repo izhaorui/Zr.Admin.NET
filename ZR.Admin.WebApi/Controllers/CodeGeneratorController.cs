@@ -19,7 +19,7 @@ using ZR.Common;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
-using ZR.Model.Vo;
+using ZR.Service;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -72,9 +72,8 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult FindListTable(string dbName, string tableName, PagerInfo pager)
         {
             List<DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
-            var vm = new VMPageResult<DbTableInfo>(list, pager);
 
-            return SUCCESS(vm);
+            return SUCCESS(list.ToPage(pager));
         }
 
         /// <summary>

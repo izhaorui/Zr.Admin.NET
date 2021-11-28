@@ -38,8 +38,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var list = SysDictService.SelectDictTypeList(dict, pagerInfo);
 
-            var vm = new VMPageResult<SysDictType>(list, pagerInfo);
-            return SUCCESS(vm, TIME_FORMAT_FULL);
+            return SUCCESS(list, TIME_FORMAT_FULL);
         }
 
         /// <summary>

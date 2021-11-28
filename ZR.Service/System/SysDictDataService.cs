@@ -1,8 +1,10 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using ZR.Common;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
@@ -27,9 +29,9 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="dictData"></param>
         /// <returns></returns>
-        public List<SysDictData> SelectDictDataList(SysDictData dictData)
+        public PagedInfo<SysDictData> SelectDictDataList(SysDictData dictData, PagerInfo pagerInfo)
         {
-            return SysDictDataRepository.SelectDictDataList(dictData);
+            return SysDictDataRepository.SelectDictDataList(dictData, pagerInfo);
         }
 
         /// <summary>

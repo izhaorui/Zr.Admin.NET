@@ -391,13 +391,13 @@ namespace ZR.Repository
         public static PagedInfo<T> ToPage<T>(this ISugarQueryable<T> source, PagerInfo parm)
         {
             var page = new PagedInfo<T>();
-            var total = source.Count();
-            page.TotalCount = total;
+            var total = 0;
             page.PageSize = parm.PageSize;
             page.PageIndex = parm.PageNum;
 
-            //page.DataSource = source.OrderByIF(!string.IsNullOrEmpty(parm.Sort), $"{parm.OrderBy} {(parm.Sort == "descending" ? "desc" : "asc")}").ToPageList(parm.PageNum, parm.PageSize);
-            page.Result = source.ToPageList(parm.PageNum, parm.PageSize);
+            page.Result = source.OrderByIF(!string.IsNullOrEmpty(parm.Sort), $"{parm.OrderBy} {(parm.Sort == "desc" ? "desc" : "asc")}")
+                .ToPageList(parm.PageNum, parm.PageSize, ref total);
+            page.TotalNum = total;
             return page;
         }
 

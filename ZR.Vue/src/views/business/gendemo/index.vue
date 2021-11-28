@@ -204,7 +204,7 @@ export default {
        listGendemo(this.addDateRange(this.queryParams, this.timeRange)).then(res => {
          if (res.code == 200) {
            this.dataList = res.data.result;
-           this.total = res.data.totalCount;
+           this.total = res.data.totalNum;
          }
        })
     },

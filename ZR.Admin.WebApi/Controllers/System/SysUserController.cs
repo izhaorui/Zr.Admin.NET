@@ -11,7 +11,7 @@ using System.IO;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
-using ZR.Model.Vo;
+using ZR.Service;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
@@ -53,9 +53,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var list = UserService.SelectUserList(user, pager);
 
-            var vm = new VMPageResult<SysUser>(list, pager);
-
-            return SUCCESS(vm, TIME_FORMAT_FULL);
+            return SUCCESS(list.ToPage(pager), TIME_FORMAT_FULL);
         }
 
         /// <summary>

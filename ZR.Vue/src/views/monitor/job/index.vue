@@ -291,7 +291,7 @@ export default {
       this.loading = true;
       queryTasks(this.queryParams).then((response) => {
         this.dataTasks = response.data.result;
-        this.total = response.data.totalCount;
+        this.total = response.data.totalNum;
         this.loading = false;
       });
     },

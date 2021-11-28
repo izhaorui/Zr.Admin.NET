@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
+using ZR.Model;
 using ZR.Model.System;
 
 namespace ZR.Service.System.IService
@@ -11,7 +11,7 @@ namespace ZR.Service.System.IService
     public interface ISysDictService
     {
         public List<SysDictType> GetAll();
-        public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager);
+        public PagedInfo<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager);
 
         /// <summary>
         /// 校验字典类型称是否唯一

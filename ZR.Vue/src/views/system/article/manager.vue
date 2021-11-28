@@ -100,7 +100,7 @@ export default {
       listArticle(this.queryParams).then((res) => {
         if (res.code == 200) {
           this.dataList = res.data.result;
-          this.total = res.data.totalCount;
+          this.total = res.data.totalNum;
         }
       });
     },

@@ -151,7 +151,7 @@ export default {
 
       getGenTable(this.queryParams).then((res) => {
         this.tableData = res.data.result;
-        this.total = res.data.totalCount;
+        this.total = res.data.totalNum;
         this.tableloading = false;
       });
     },

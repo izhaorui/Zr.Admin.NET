@@ -18,9 +18,20 @@ namespace ZR.Model
         /// <summary>
         /// 总页码
         /// </summary>
-        public int TotalPageNum { get; set; }
+        /// <summary>
+        /// 总页数
+        /// </summary>
+        public int TotalPage
+        {
+            get
+            {
+                return TotalNum > 0 ? TotalNum % PageSize == 0 ? TotalNum / PageSize : TotalNum / PageSize + 1 : 0;
+            }
+            set { }
+        }
         public int PageSize { get => pageSize; set => pageSize = value; }
-
+        public string Sort { get; set; }
+        public string OrderBy { get; set; }
         public PagerInfo()
         {
             PageNum = 1;
