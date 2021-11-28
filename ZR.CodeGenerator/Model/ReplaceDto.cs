@@ -72,7 +72,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 查询条件
         /// </summary>
-        public string QueryCondition { get; set; }
+        public string QueryCondition { get; set; } = "";
         /// <summary>
         /// 查询属性
         /// </summary>

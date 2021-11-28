@@ -170,7 +170,6 @@ export default {
         if (res.code === 200) {
           this.preview.open = true;
           this.preview.data = res.data;
-          console.log(res);
         }
       });
     },

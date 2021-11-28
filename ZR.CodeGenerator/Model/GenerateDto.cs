@@ -45,10 +45,6 @@ namespace ZR.CodeGenerator.Model
         /// 代码生成压缩包名称
         /// </summary>
         public string ZipFileName { get; set; }
-        /// <summary>
-        /// 父级菜单id
-        /// </summary>
-        public long ParentMenuId { get; set; }
         #endregion
     }
 

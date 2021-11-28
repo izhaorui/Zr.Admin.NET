@@ -231,7 +231,7 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 生成代码
+        /// 生成代码（下载方式）
         /// </summary>
         /// <param name="dto">数据传输对象</param>
         /// <returns></returns>
@@ -249,12 +249,7 @@ namespace ZR.Admin.WebApi.Controllers
 
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
-            //附加参数，key，value格式
-            if (!string.IsNullOrEmpty(genTableInfo.Options))
-            {
-                Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTableInfo.Options);
-                dto.ParentMenuId = (long)options.GetValueOrDefault("parentMenuId", 0);
-            }
+
             dto.GenTable = genTableInfo;
             //生成代码
             CodeGeneratorTool.Generate(genTableInfo, dto);

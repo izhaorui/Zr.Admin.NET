@@ -1,5 +1,6 @@
 ﻿using Infrastructure.Attribute;
 using Infrastructure.Extensions;
+using Newtonsoft.Json;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -53,7 +54,24 @@ namespace ZR.Service.System
         /// <returns></returns>
         public GenTable GetGenTableInfo(long tableId)
         {
-            return GenTableRepository.GetId(tableId);
+            var info = GenTableRepository.GetId(tableId);
+            SetTableFromOptions(info);
+
+            return info;
+        }
+
+        /// <summary>
+        /// 设置代码生成其他参数
+        /// </summary>
+        /// <param name="genTable"></param>
+        private void SetTableFromOptions(GenTable genTable)
+        {
+            //附加参数，key，value格式
+            if (!string.IsNullOrEmpty(genTable?.Options))
+            {
+                Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTable.Options);
+                genTable.ParentMenuId = Convert.ToString(options.GetValueOrDefault("parentMenuId"));
+            }
         }
 
         /// <summary>

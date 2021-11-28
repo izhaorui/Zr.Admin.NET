@@ -1,6 +1,6 @@
 ﻿-- 菜单
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time, remark) 
-VALUES ('{FunctionName}', 0, 1, '{ModuleName}/{ModelTypeName}', '{ModuleName}/{ViewsFileName}/index', 0, 0, 'C', '0', '0', '{Permission}:list', 'icon1', '', sysdate(), '{FunctionName}菜单');
+VALUES ('{FunctionName}', {ParentId}, 1, '{ModuleName}/{ModelTypeName}', '{ModuleName}/{ViewsFileName}/index', 0, 0, 'C', '0', '0', '{Permission}:list', 'icon1', '', sysdate(), '{FunctionName}菜单');
 
 -- 按钮父菜单id
 SELECT @menuId := LAST_INSERT_ID();

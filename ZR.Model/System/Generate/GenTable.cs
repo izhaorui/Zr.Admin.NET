@@ -69,8 +69,12 @@ namespace ZR.Model.System.Generate
         /// </summary>
         public string Options { get; set; }
 
+        #region 表额外字段
         /** 表列信息 */
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public List<GenTableColumn> Columns { get; set; }
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public string ParentMenuId { get; set; }
+        #endregion
     }
 }
