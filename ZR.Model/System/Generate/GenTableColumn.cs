@@ -10,9 +10,9 @@ namespace ZR.Model.System.Generate
     /// </summary>
     [SqlSugar.SugarTable("gen_table_column")]
     [SqlSugar.Tenant("0")]
-    public class GenTableColumn: SysBase
+    public class GenTableColumn : SysBase
     {
-        [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey =  true)]
+        [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public int ColumnId { get; set; }
         public string ColumnName { get; set; }
         [SqlSugar.SugarColumn(IsOnlyIgnoreUpdate = true)]
@@ -66,7 +66,7 @@ namespace ZR.Model.System.Generate
         /// <summary>
         /// 字典集合
         /// </summary>
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public List<SysDictData> DictDatas { get; set; }
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public List<SysDictData> DictDatas { get; set; }
     }
 }

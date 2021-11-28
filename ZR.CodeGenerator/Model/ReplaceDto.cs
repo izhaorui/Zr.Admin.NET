@@ -97,6 +97,14 @@ namespace ZR.CodeGenerator.Model
         /// vue组件导入
         /// </summary>
         public string VueComponentImport { get; set; } = "";
+        /// <summary>
+        /// 上传前js
+        /// </summary>
+        public string VueBeforeUpload { get; set; }
+        /// <summary>
+        /// 上传URL data
+        /// </summary>
+        public string VueUploadUrl { get; set; }
         public string Author { get; set; }
         public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
     }

@@ -102,15 +102,17 @@ namespace ZR.CodeGenerator
 
                 CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
                 replaceDto.ModelProperty += CodeGenerateTemplate.GetModelTemplate(dbFieldInfo);
-                replaceDto.VueViewFormHtml += CodeGenerateTemplate.GetVueViewFormContent(dbFieldInfo);
-                replaceDto.VueJsMethod += CodeGenerateTemplate.GetVueJsMethod(dbFieldInfo);
-                replaceDto.VueViewListHtml += CodeGenerateTemplate.GetTableColumn(dbFieldInfo);
-                replaceDto.VueViewEditFormRuleContent += CodeGenerateTemplate.GetFormRules(dbFieldInfo);
+                replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo);
+                CodeGenerateTemplate.TplVueJsMethod(dbFieldInfo, replaceDto);
+                replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo);
+                replaceDto.VueViewEditFormRuleContent += CodeGenerateTemplate.TplFormRules(dbFieldInfo);
                 replaceDto.InputDtoProperty += CodeGenerateTemplate.GetDtoProperty(dbFieldInfo);
-                replaceDto.VueQueryFormHtml += CodeGenerateTemplate.GetQueryFormHtml(dbFieldInfo);
+                replaceDto.VueQueryFormHtml += CodeGenerateTemplate.TplQueryFormHtml(dbFieldInfo);
             }
             replaceDto.VueDataContent = sb1.ToString();
             replaceDto.MountedMethod = sb2.ToString();
+            replaceDto.VueJsMethod += replaceDto.VueBeforeUpload;
+            replaceDto.VueDataContent += replaceDto.VueUploadUrl;
 
             replaceDto.PKName = PKName;
             replaceDto.PKType = PKType;
@@ -526,7 +528,7 @@ namespace ZR.CodeGenerator
                     genTableColumn.HtmlType = GenConstants.HTML_TEXTAREA;
                 }
                 //编辑字段
-                if (column.IsIdentity || column.IsPrimarykey || GenConstants.COLUMNNAME_NOT_EDIT.Any(f => column.DbColumnName.Contains(f)) )
+                if (column.IsIdentity || column.IsPrimarykey || GenConstants.COLUMNNAME_NOT_EDIT.Any(f => column.DbColumnName.Contains(f)))
                 {
                     genTableColumn.IsEdit = false;
                 }

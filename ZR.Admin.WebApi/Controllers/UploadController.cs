@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 using System;
 using System.IO;
 using ZR.Admin.WebApi.Filters;
-using ZR.Common;
 
 namespace ZR.Admin.WebApi.Controllers
 {

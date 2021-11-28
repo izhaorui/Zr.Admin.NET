@@ -87,8 +87,9 @@ namespace ZR.CodeGenerator
         /// 生成vuejs模板，目前只有上传文件方法
         /// </summary>
         /// <param name="dbFieldInfo"></param>
+        /// <param name="replaceDto"></param>
         /// <returns></returns>
-        public static string GetVueJsMethod(GenTableColumn dbFieldInfo)
+        public static void TplVueJsMethod(GenTableColumn dbFieldInfo, ReplaceDto replaceDto)
         {
             string columnName = dbFieldInfo.ColumnName;
             var sb = new StringBuilder();
@@ -100,6 +101,8 @@ namespace ZR.CodeGenerator
                 sb.AppendLine($"      this.form.{columnName} = URL.createObjectURL(file.raw);");
                 sb.AppendLine($"      // this.$refs.upload.clearFiles();");
                 sb.AppendLine($"    }},");
+                replaceDto.VueBeforeUpload = TplJsBeforeUpload();
+                replaceDto.VueUploadUrl = TplJsUploadUrl();
             }
             //有下拉框选项初列表查询数据
             if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
@@ -109,7 +112,7 @@ namespace ZR.CodeGenerator
                 sb.AppendLine(@$"      return this.selectDictLabel(this.{columnName}Options, row.{columnName});");
                 sb.AppendLine(@"    },");
             }
-            return sb.ToString();
+            replaceDto.VueJsMethod += sb.ToString();
         }
 
         /// <summary>
@@ -117,7 +120,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbFieldInfo"></param>
         /// <returns></returns>
-        public static string GetFormRules(GenTableColumn dbFieldInfo)
+        public static string TplFormRules(GenTableColumn dbFieldInfo)
         {
             StringBuilder sbRule = new StringBuilder();
             //Rule 规则验证
@@ -137,7 +140,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbFieldInfo"></param>
         /// <returns></returns>
-        public static string GetVueViewFormContent(GenTableColumn dbFieldInfo)
+        public static string TplVueFormContent(GenTableColumn dbFieldInfo)
         {
             string columnName = dbFieldInfo.ColumnName;
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
@@ -174,8 +177,8 @@ namespace ZR.CodeGenerator
                 //图片
                 sb.AppendLine("    <el-col :span=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
-                sb.AppendLine($"        <el-upload class=\"avatar-uploader\" name=\"file\" action=\"/api/upload/saveFile/\" :show-file-list=\"false\" :on-success=\"handleUpload{dbFieldInfo.CsharpField}Success\" :before-upload=\"beforeFileUpload\">");
-                sb.AppendLine($"          <img v-if=\"form.{columnName}\" :src=\"form.{columnName}\" class=\"icon\">");
+                sb.AppendLine($"        <el-upload class=\"avatar-uploader\" name=\"file\" :action=\"uploadUrl\" :show-file-list=\"false\" :on-success=\"handleUpload{dbFieldInfo.CsharpField}Success\" :before-upload=\"beforeFileUpload\">");
+                sb.AppendLine($"          <el-image v-if=\"form.{columnName}\" :src=\"form.{columnName}\" class=\"icon\"/>");
                 sb.AppendLine("          <i v-else class=\"el-icon-plus uploader-icon\"></i>");
                 sb.AppendLine("        </el-upload>");
                 sb.AppendLine($"        <el-input v-model=\"form.{columnName}\" placeholder=\"请上传文件或手动输入文件地址\"></el-input>");
@@ -249,7 +252,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbFieldInfo"></param>
         /// <returns></returns>
-        public static string GetQueryFormHtml(GenTableColumn dbFieldInfo)
+        public static string TplQueryFormHtml(GenTableColumn dbFieldInfo)
         {
             StringBuilder sb = new();
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, dbFieldInfo.ColumnName);
@@ -276,7 +279,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbFieldInfo"></param>
         /// <returns></returns>
-        public static string GetTableColumn(GenTableColumn dbFieldInfo)
+        public static string TplTableColumn(GenTableColumn dbFieldInfo)
         {
             string columnName = dbFieldInfo.ColumnName;
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
@@ -307,6 +310,36 @@ namespace ZR.CodeGenerator
             return sb.ToString();
         }
 
+        /// <summary>
+        /// 文件上传前方法判断
+        /// </summary>
+        /// <returns></returns>
+        public static string TplJsBeforeUpload()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(@"    //文件上传前判断方法");
+            sb.AppendLine(@"    beforeFileUpload(file) {");
+            sb.AppendLine(@"      const isJPG = file.type === ""image/jpeg"";");
+            sb.AppendLine(@"      const isLt2M = file.size / 1024 / 1024 < 2;");
+            sb.AppendLine(@"      if (!isJPG) {");
+            sb.AppendLine(@"        this.msgError(""上传图片只能是 JPG 格式!"");");
+            sb.AppendLine(@"      }");
+            sb.AppendLine(@"      if (!isLt2M) {");
+            sb.AppendLine(@"        this.msgError(""上传图片大小不能超过 2MB!"");");
+            sb.AppendLine(@"      }");
+            sb.AppendLine(@"      return isJPG && isLt2M;");
+            sb.AppendLine(@"    },");
+            
+            return sb.ToString();
+        }
+        public static string TplJsUploadUrl()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(@"    //文件上传前判断方法");
+            sb.AppendLine(@"    uploadUrl: process.env.VUE_APP_BASE_API + ""/upload/SaveFile/"",");
+
+            return sb.ToString();
+        }
         #endregion
 
         public static string QueryExp(string propertyName, string queryType)

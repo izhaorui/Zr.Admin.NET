@@ -148,7 +148,7 @@ export default {
     // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map((item) => item.{PrimaryKey});
-      this.single = selection.length !=1
+      this.single = selection.length != 1
       this.multiple = !selection.length;
     },
     /** 搜索按钮操作 */
@@ -174,14 +174,13 @@ export default {
       this.reset();
       const {PrimaryKey} = row.{PrimaryKey} || this.ids;
       get{ModelTypeName}({PrimaryKey}).then((res) => {
-        if(res.code == 200){
+        if (res.code == 200) {
            this.form = res.data;
            this.open = true;
            this.title = "修改数据";
         }
       });
     },
-    beforeFileUpload(file) { },
     {vueJsMethod}
     /** 提交按钮 */
     submitForm: function () {
