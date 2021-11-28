@@ -68,3 +68,4 @@ new Vue({
   store,
   render: h => h(App)
 })
+console.log('后端地址:' + process.env.VUE_APP_BASE_API)
