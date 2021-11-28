@@ -408,7 +408,7 @@ namespace ZR.CodeGenerator
                 .Replace("{Permission}", replaceDto.Permission)
                 .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
                 .Replace("{ViewsFileName}", replaceDto.ViewsFileName)
-                .Replace("{ParentId}", generateDto.GenTable.ParentMenuId.ToString())
+                .Replace("{ParentId}", generateDto.GenTable.ParentMenuId ?? "0")
                 .Replace("{FunctionName}", generateDto.GenTable.FunctionName);
 
             generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, content));

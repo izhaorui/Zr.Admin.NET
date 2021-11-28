@@ -109,6 +109,19 @@
             <span>更新日志</span>
           </div>
           <el-collapse accordion>
+						<el-collapse-item title="v3.7.0-preview - 2021-11-28">
+              <ol>
+                <li>fix 代码生成编辑表信息选择上级菜单bug</li>
+                <li>新增下拉框组件代码生成查询模块</li>
+								<li>优化代码生成模板</li>
+								<li>优化后端分页统一返回json</li>
+								<li>修改代码生成form表单显示</li>
+								<li>新增代码生成单选按钮动态绑定数据</li>
+								<li>代码生成查询新增一键生成、可支持input、select、时间</li>
+								<li>修改代码生成数据库连接字符串</li>
+								<li>优化数据仓储</li>
+              </ol>
+            </el-collapse-item>
             <el-collapse-item title="v3.6.0 - 2021-11-21">
               <ol>
                 <li>新增加系统表导出功能</li>
