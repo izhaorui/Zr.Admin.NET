@@ -28,11 +28,9 @@
 <script>
 import { sendEmail } from "@/api/common";
 import { getToken } from "@/utils/auth";
-import Editor from "@/components/Editor";
 
 export default {
   name: "sendEmail",
-  components: { Editor },
   data() {
     return {
       form: {
@@ -57,7 +55,6 @@ export default {
     };
   },
   mounted() {
-    console.log(getToken());
     this.headers.Token = getToken();
   },
   methods: {
@@ -79,7 +76,7 @@ export default {
       console.log(response);
       if (response.code == 200) {
         this.$message.success("上传成功");
-        this.form.fileUrl = response.data.fullPath;
+        this.form.fileUrl = response.data;
       } else {
         this.$message.error(response.msg);
       }
@@ -109,6 +106,7 @@ export default {
             loading.close();
           }, 5000);
         } else {
+					console.log('未通过')
           //校验不通过
           return false;
         }

@@ -107,7 +107,6 @@ export default {
         if (valid) {
           this.loading = true;
           if (this.loginForm.rememberMe) {
-            console.log(decrypt(this.loginForm.password));
             Cookies.set("username", this.loginForm.username, { expires: 30 });
             Cookies.set("password", this.loginForm.password, {
               expires: 30,

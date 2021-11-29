@@ -98,7 +98,8 @@ namespace ZR.CodeGenerator
             {
                 sb.AppendLine($"    //文件上传成功方法");
                 sb.AppendLine($"    handleUpload{dbFieldInfo.CsharpField}Success(res, file) {{");
-                sb.AppendLine($"      this.form.{columnName} = URL.createObjectURL(file.raw);");
+                sb.AppendLine($"      this.form.{columnName} = res.data;");
+                sb.AppendLine($"      // this.form.{columnName} = URL.createObjectURL(file.raw);");
                 sb.AppendLine($"      // this.$refs.upload.clearFiles();");
                 sb.AppendLine($"    }},");
                 replaceDto.VueBeforeUpload = TplJsBeforeUpload();
@@ -346,7 +347,7 @@ namespace ZR.CodeGenerator
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(@"    //文件上传前判断方法");
-            sb.AppendLine(@"    uploadUrl: process.env.VUE_APP_BASE_API + ""/upload/SaveFile/"",");
+            sb.AppendLine(@"    uploadUrl: process.env.VUE_APP_BASE_API + ""upload/SaveFile"",");
 
             return sb.ToString();
         }
