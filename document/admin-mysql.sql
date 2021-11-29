@@ -673,7 +673,7 @@ create table gen_table (
 drop table if exists gen_table_column;
 CREATE TABLE `gen_table_column`  (
   `columnId` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '编号',
-  `tableName` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '表名',
+  `tableName` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '表名',
   `tableId` bigint(20) NULL DEFAULT NULL COMMENT '归属表编号',
   `columnName` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '列名称',
   `columnComment` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '列描述',
