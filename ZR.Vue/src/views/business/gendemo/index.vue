@@ -179,7 +179,7 @@ export default {
       // 用户性别选项列表
       sexOptions: [],
       //文件上传前判断方法
-      uploadUrl: process.env.VUE_APP_BASE_API + "/upload/SaveFile/",
+      uploadUrl: process.env.VUE_APP_BASE_API + "upload/SaveFile",
 
       // 数据列表
       dataList: [],
@@ -291,7 +291,8 @@ export default {
     },
     //文件上传成功方法
     handleUploadIconSuccess(res, file) {
-      this.form.icon = URL.createObjectURL(file.raw);
+			this.form.icon = res.data;
+      // this.form.icon = URL.createObjectURL(file.raw);
       // this.$refs.upload.clearFiles();
     },
     // 显示状态字典翻译

@@ -1,9 +1,24 @@
 ﻿using Infrastructure.Attribute;
-using ZR.Model.System;
+using Microsoft.AspNetCore.Http;
 
 namespace ZR.Service.System.IService
 {
     public interface ISysFileService
     {
+        (bool, string) SaveFile(string picdir, IFormFile formFile);
+
+        /// <summary>
+        /// 按时间来创建文件夹
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns>eg: 2020/11/3</returns>
+        string GetdirPath(string path = "");
+
+        /// <summary>
+        /// 取文件名的MD5值(16位)
+        /// </summary>
+        /// <param name="name">文件名，不包括扩展名</param>
+        /// <returns></returns>
+        string HashFileName(string str = null);
     }
 }
