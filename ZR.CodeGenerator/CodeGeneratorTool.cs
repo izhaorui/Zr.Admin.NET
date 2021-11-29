@@ -93,12 +93,12 @@ namespace ZR.CodeGenerator
                     sb2.AppendLine($"      this.{FirstLowerCase(dbFieldInfo.CsharpField)}Options = response.data;");
                     sb2.AppendLine("    })");
                 }
-                //引用组件
-                if (dbFieldInfo.HtmlType == GenConstants.HTML_EDITOR)
-                {
-                    replaceDto.VueComponent += "Editor,";
-                    replaceDto.VueComponentImport += "import Editor from '@/components/Editor';\n";
-                }
+                //引用组件 已弃用、改用前端全局注册
+                //if (dbFieldInfo.HtmlType == GenConstants.HTML_EDITOR)
+                //{
+                //    replaceDto.VueComponent += "Editor,";
+                //    replaceDto.VueComponentImport += "import Editor from '@/components/Editor';\n";
+                //}
 
                 CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
                 replaceDto.ModelProperty += CodeGenerateTemplate.GetModelTemplate(dbFieldInfo);
