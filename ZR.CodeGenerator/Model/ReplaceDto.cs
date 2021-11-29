@@ -105,6 +105,7 @@ namespace ZR.CodeGenerator.Model
         /// 上传URL data
         /// </summary>
         public string VueUploadUrl { get; set; }
+        public bool UploadImage{ get; set; }
         public string Author { get; set; }
         public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
     }

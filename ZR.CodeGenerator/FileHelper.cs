@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JinianNet.JNTemplate;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -108,6 +109,16 @@ namespace ZR.CodeGenerator
             return str;
         }
 
+        public static ITemplate ReadJtTemplate(string tplName)
+        {
+            string path = Environment.CurrentDirectory;
+            string fullName = Path.Combine(path, "wwwroot", "CodeGenTemplate", tplName);
+            if (File.Exists(fullName))
+            {
+                return Engine.LoadTemplate(fullName);
+            }
+            return null;
+        }
 
         /// <summary>
         /// 压缩代码

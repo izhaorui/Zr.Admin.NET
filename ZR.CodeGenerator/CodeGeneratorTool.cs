@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using JinianNet.JNTemplate;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -200,17 +201,18 @@ namespace ZR.CodeGenerator
             if (File.Exists(fullPath) && !generateDto.Coverd)
                 return;
 
-            var content = FileHelper.ReadTemplate("InputDtoTemplate.txt")
-                .Replace("{DtosNamespace}", _option.DtosNamespace)
-                .Replace("{ModelsNamespace}", _option.ModelsNamespace)
-                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
-                .Replace("{PropertyName}", replaceDto.InputDtoProperty)
-                .Replace("{QueryProperty}", replaceDto.QueryProperty)
-                .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{Author}", replaceDto.Author)
-                .Replace("{DateTime}", replaceDto.AddTime);
+            var tpl = FileHelper.ReadJtTemplate("InputDtoTemplate.txt");
+            tpl.Set("DtosNamespace", _option.DtosNamespace);
+            tpl.Set("ModelsNamespace", _option.ModelsNamespace);
+            tpl.Set("FunctionName", generateDto.GenTable.FunctionName);
+            tpl.Set("PropertyName", replaceDto.InputDtoProperty);
+            tpl.Set("QueryProperty", replaceDto.QueryProperty);
+            tpl.Set("ModelTypeName", replaceDto.ModelTypeName);
+            tpl.Set("Author", replaceDto.Author);
+            tpl.Set("DateTime", replaceDto.AddTime);
 
-            generateDto.GenCodes.Add(new GenCode(2, "数据传输实体类", fullPath, content));
+            var result = tpl.Render();
+            generateDto.GenCodes.Add(new GenCode(2, "数据传输实体类", fullPath, result));
         }
         #endregion
 
@@ -359,6 +361,27 @@ namespace ZR.CodeGenerator
                 .Replace("{VueViewEditFormRuleContent}", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
 
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, content));
+
+            //var tpl = FileHelper.ReadJtTemplate("VueTemplate.txt");
+
+            //tpl.Set("fileClassName", replaceDto.ViewsFileName);
+            //tpl.Set("VueViewListContent", replaceDto.VueViewListHtml);//查询 table列
+            //tpl.Set("VueViewFormContent", replaceDto.VueViewFormHtml);//添加、修改表单
+            //tpl.Set("ModelTypeName", replaceDto.ModelTypeName);
+            //tpl.Set("Permission", replaceDto.Permission);
+            //tpl.Set("VueViewFormResetHtml", replaceDto.VueViewFormResetHtml);
+            ////tpl.Set("vueJsMethod}", replaceDto.VueJsMethod);
+            ////tpl.Set("vueQueryFormHtml", replaceDto.VueQueryFormHtml);
+            ////tpl.Set("VueDataContent", replaceDto.VueDataContent);
+            ////tpl.Set("PrimaryKey", FirstLowerCase(replaceDto.PKName));
+            ////tpl.Set("MountedMethod", replaceDto.MountedMethod);
+            ////tpl.Set("VueComponent", replaceDto.VueComponent.TrimEnd(','));
+            ////tpl.Set("VueComponentImport", replaceDto.VueComponentImport);
+            ////tpl.Set("VueViewEditFormRuleContent", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
+            //tpl.Set("uploadImage", generateDto.GenTable.Columns.Any(x => x.HtmlType == GenConstants.HTML_IMAGE_UPLOAD));
+
+            //var result = tpl.Render();
+            //generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, result));
         }
         /// <summary>
         /// 7、生成vue页面api

@@ -1,6 +1,7 @@
 using Hei.Captcha;
 using Infrastructure;
 using Infrastructure.Extensions;
+using JinianNet.JNTemplate;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -83,6 +84,14 @@ namespace ZR.Admin.WebApi
                     //添加文档注释
                     c.IncludeXmlComments("ZRAdmin.xml", true);
                 }
+            });
+
+            //jnt模板引擎全局变量
+            Engine.Configure((options) =>
+            {
+                options.Data.Set("author", Configuration["gen:author"]);
+                options.Data.Set("time", DateTime.Now.ToString("yyyy-MM-dd"));
+                //...其它数据
             });
         }
 
