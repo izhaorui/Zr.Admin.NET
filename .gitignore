@@ -263,3 +263,4 @@ __pycache__/
 /ZRAdmin/Properties/PublishProfiles
 /ZR.Admin.WebApi/appsettings.Stage.json
 /CodeGenerate
+/ZR.Admin.WebApi/appsettings.Production.json
