@@ -36,8 +36,8 @@ namespace ZR.Admin.WebApi.Controllers
         private readonly ISysDictDataService SysDictDataService;
         private IWebHostEnvironment WebHostEnvironment;
         public CodeGeneratorController(
-            IGenTableService genTableService, 
-            IGenTableColumnService genTableColumnService, 
+            IGenTableService genTableService,
+            IGenTableColumnService genTableColumnService,
             ISysDictDataService dictDataService,
             IWebHostEnvironment webHostEnvironment)
         {
@@ -148,11 +148,11 @@ namespace ZR.Admin.WebApi.Controllers
                         BaseNameSpace = "ZR.",//导入默认命名空间前缀
                         ModuleName = "business",//导入默认模块名
                         ClassName = CodeGeneratorTool.GetClassName(tableName),
-                        BusinessName = CodeGeneratorTool.GetClassName(tableName),
+                        BusinessName = CodeGeneratorTool.GetBusinessName(tableName),
                         FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
-                        FunctionName = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
                         TableName = tableName,
                         TableComment = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
+                        FunctionName = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
                         Create_by = userName,
                     };
                     genTable.TableId = GenTableService.ImportGenTable(genTable);
@@ -223,9 +223,8 @@ namespace ZR.Admin.WebApi.Controllers
             dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
             dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
             dto.IsPreview = 1;
-            dto.GenCodeFiles = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             //生成代码
-            CodeGeneratorTool.Generate(genTableInfo, dto);
+            CodeGeneratorTool.Generate(dto);
 
             return SUCCESS(dto.GenCodes);
         }
@@ -252,7 +251,7 @@ namespace ZR.Admin.WebApi.Controllers
 
             dto.GenTable = genTableInfo;
             //生成代码
-            CodeGeneratorTool.Generate(genTableInfo, dto);
+            CodeGeneratorTool.Generate(dto);
             //下载文件
             FileHelper.ZipGenCode(dto);
 

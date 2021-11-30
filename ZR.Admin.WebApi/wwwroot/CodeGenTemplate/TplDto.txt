@@ -1,0 +1,34 @@
+﻿using System;
+using System.Collections.Generic;
+using ${options.ModelsNamespace}.Dto;
+using ${options.ModelsNamespace}.Models;
+
+namespace ${options.DtosNamespace}.Dto
+{
+    /// <summary>
+    /// ${genTable.FunctionName}输入对象
+    /// </summary>
+    public class ${replaceDto.ModelTypeName}Dto
+    {
+$foreach(item in genTable.Columns)
+$if((item.IsInsert || item.IsEdit || item.IsPk || item.IsIncrement))
+        public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
+$end
+${end}
+    }
+
+    /// <summary>
+    /// ${genTable.FunctionName}查询对象
+    /// </summary>
+    public class ${replaceDto.ModelTypeName}QueryDto : PagerInfo 
+    {
+$foreach(item in genTable.Columns)
+$if(item.IsQuery)
+        public $item.CsharpType $item.CsharpField { get; set; }
+$end
+${end}
+
+        public DateTime? BeginTime { get; set; }
+        public DateTime? EndTime { get; set; }
+    }
+}

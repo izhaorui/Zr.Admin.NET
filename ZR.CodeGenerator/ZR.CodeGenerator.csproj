@@ -14,11 +14,4 @@
     <PackageReference Include="JinianNet.JNTemplate" Version="2.2.4" />
     <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.4.3" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Template\ModelTemplate.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

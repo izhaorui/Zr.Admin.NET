@@ -86,13 +86,6 @@ namespace ZR.Admin.WebApi
                 }
             });
 
-            //jnt模板引擎全局变量
-            Engine.Configure((options) =>
-            {
-                options.Data.Set("author", Configuration["gen:author"]);
-                options.Data.Set("time", DateTime.Now.ToString("yyyy-MM-dd"));
-                //...其它数据
-            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

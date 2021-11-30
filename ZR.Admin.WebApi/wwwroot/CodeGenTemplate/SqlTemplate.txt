@@ -1,25 +1,25 @@
-﻿-- {FunctionName}菜单
+﻿-- ${genTable.functionName}菜单
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time, remark) 
-VALUES ('{FunctionName}', {ParentId}, 1, '{ModuleName}/{ModelTypeName}', '{ModuleName}/{ViewsFileName}/index', 0, 0, 'C', '0', '0', '{Permission}:list', 'icon1',  GETDATE(), '{FunctionName}');
+VALUES ('${genTable.functionName}', ${parentId}, 1, '${genTable.ModuleName}/${replaceDto.ModelTypeName}', '${genTable.ModuleName}/${replaceDto.ViewsFileName}/index', 0, 0, 'C', '0', '0', '${replaceDto.permission}:list', 'icon1',  GETDATE(), '${genTable.functionName}');
 
 -- 按钮父菜单id
 declare @menuId int = @@identity
 
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('{FunctionName}查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:query', '', '', GETDATE());
+VALUES ('${genTable.functionName}查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.permission}:query', '', '', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('{FunctionName}新增', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:add', '', '', GETDATE());
+VALUES ('${genTable.functionName}新增', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.permission}:add', '', '', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('{FunctionName}删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:delete', '', '', GETDATE());
+VALUES ('${genTable.functionName}删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.permission}:delete', '', '', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('{FunctionName}修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:update', '', '', GETDATE());
+VALUES ('${genTable.functionName}修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.permission}:update', '', '', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('{FunctionName}导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', '{Permission}:export', '', '', GETDATE());
+VALUES ('${genTable.functionName}导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.permission}:export', '', '', GETDATE());
 
 SELECT * FROM sys_menu WHERE parentId = @menuId;
 SELECT * FROM sys_menu WHERE menuId = @menuId;

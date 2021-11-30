@@ -1,23 +1,23 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
-using {ModelsNamespace}.Models;
-using {IRepositoriesNamespace};
+using ${options.ModelsNamespace}.Models;
+using ${options.IRepositoriesNamespace};
 
-namespace {ServicesNamespace}.Business
+namespace ${options.ServicesNamespace}.Business
 {
     /// <summary>
-    /// {FunctionName}Service业务层处理
+    /// ${genTable.FunctionName}Service业务层处理
     ///
-    /// @author {Author}
-    /// @date {DateTime}
+    /// @author ${replaceDto.Author}
+    /// @date ${replaceDto.AddTime}
     /// </summary>
-    [AppService(ServiceType = typeof(I{ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
-    public class {ModelTypeName}Service : BaseService<{ModelTypeName}>, I{ModelTypeName}Service
+    [AppService(ServiceType = typeof(I${replaceDto.ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
+    public class ${replaceDto.ModelTypeName}Service : BaseService<${replaceDto.ModelTypeName}>, I${replaceDto.ModelTypeName}Service
     {
-        private readonly {ModelTypeName}Repository _{ModelTypeName}repository;
-        public {ModelTypeName}Service({ModelTypeName}Repository repository) : base(repository)
+        private readonly ${replaceDto.ModelTypeName}Repository _${replaceDto.ModelTypeName}repository;
+        public ${replaceDto.ModelTypeName}Service(${replaceDto.ModelTypeName}Repository repository) : base(repository)
         {
-            _{ModelTypeName}repository = repository;
+            _${replaceDto.ModelTypeName}repository = repository;
         }
 
         #region 业务逻辑代码

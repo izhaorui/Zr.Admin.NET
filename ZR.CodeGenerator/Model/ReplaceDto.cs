@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator.Model
 {
@@ -38,14 +39,14 @@ namespace ZR.CodeGenerator.Model
         public string InsertColumn { get; set; }
 
 
-        /// <summary>
-        /// 实体属性模板
-        /// </summary>
-        public string ModelProperty { get; set; }
-        /// <summary>
-        /// 输入Dto模板
-        /// </summary>
-        public string InputDtoProperty { get; set; }
+        ///// <summary>
+        ///// 实体属性模板
+        ///// </summary>
+        //public string ModelProperty { get; set; }
+        ///// <summary>
+        ///// 输入Dto模板
+        ///// </summary>
+        //public string InputDtoProperty { get; set; }
 
         //vue、api
         public string VueViewFormResetHtml { get; set; }
@@ -73,10 +74,10 @@ namespace ZR.CodeGenerator.Model
         /// 查询条件
         /// </summary>
         public string QueryCondition { get; set; } = "";
-        /// <summary>
-        /// 查询属性
-        /// </summary>
-        public string QueryProperty { get; set; }
+        ///// <summary>
+        ///// 查询属性
+        ///// </summary>
+        //public string QueryProperty { get; set; }
         /// <summary>
         /// vue data内容
         /// </summary>
@@ -105,7 +106,7 @@ namespace ZR.CodeGenerator.Model
         /// 上传URL data
         /// </summary>
         public string VueUploadUrl { get; set; }
-        public bool UploadImage{ get; set; }
+        //public bool UploadImage{ get; set; }
         public string Author { get; set; }
         public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
     }

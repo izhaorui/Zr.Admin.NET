@@ -1,41 +1,40 @@
-﻿using Newtonsoft.Json;
+﻿using SqlSugar;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace ZR.Model.System.Generate
 {
     /// <summary>
     /// 代码生成表字段
     /// </summary>
-    [SqlSugar.SugarTable("gen_table_column")]
-    [SqlSugar.Tenant("0")]
+    [SugarTable("gen_table_column")]
+    [Tenant("0")]
     public class GenTableColumn : SysBase
     {
-        [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
+        [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public int ColumnId { get; set; }
         public string ColumnName { get; set; }
-        [SqlSugar.SugarColumn(IsOnlyIgnoreUpdate = true)]
+        [SugarColumn(IsOnlyIgnoreUpdate = true)]
         public int TableId { get; set; }
 
-        [SqlSugar.SugarColumn(IsOnlyIgnoreUpdate = true)]
+        [SugarColumn(IsOnlyIgnoreUpdate = true)]
         public string TableName { get; set; }
         public string ColumnComment { get; set; }
 
-        [SqlSugar.SugarColumn(IsOnlyIgnoreUpdate = true)]
+        [SugarColumn(IsOnlyIgnoreUpdate = true)]
         public string ColumnType { get; set; }
         public string CsharpType { get; set; }
         public string CsharpField { get; set; }
         /// <summary>
         /// 是否主键（1是）
         /// </summary>
-        [SqlSugar.SugarColumn(IsOnlyIgnoreUpdate = true)]
+        [SugarColumn(IsOnlyIgnoreUpdate = true)]
         public bool IsPk { get; set; }
         /// <summary>
         /// 是否必填（1是）
         /// </summary>
         public bool IsRequired { get; set; }
-        [SqlSugar.SugarColumn(IsOnlyIgnoreUpdate = true)]
+        [SugarColumn(IsOnlyIgnoreUpdate = true)]
         public bool IsIncrement { get; set; }
         /// <summary>
         /// 是否插入
@@ -63,10 +62,22 @@ namespace ZR.Model.System.Generate
         /// 字典类型
         /// </summary>
         public string DictType { get; set; }
+
+        #region 额外字段
+        [SugarColumn(IsIgnore = true)]
+        public string RequiredStr
+        {
+            get
+            {
+                string[] arr = new string[] { "int", "long" };
+                return (!IsRequired &&(arr.Any(f => f.Contains(CsharpType))) || typeof(DateTime).Name == CsharpType) ? "?" : "";
+            }
+        }
         /// <summary>
         /// 字典集合
         /// </summary>
         //[SqlSugar.SugarColumn(IsIgnore = true)]
         //public List<SysDictData> DictDatas { get; set; }
+        #endregion
     }
 }

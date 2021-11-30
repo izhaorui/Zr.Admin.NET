@@ -12,44 +12,6 @@ namespace ZR.CodeGenerator
     public class CodeGenerateTemplate
     {
         /// <summary>
-        /// 表Model属性
-        /// </summary>
-        /// <param name="tbColumn"></param>
-        /// <returns></returns>
-        public static string GetModelTemplate(GenTableColumn tbColumn)
-        {
-            StringBuilder sbModel = new StringBuilder();
-            sbModel.AppendLine("        /// <summary>");
-            sbModel.AppendLine($"        /// 描述 :{tbColumn.ColumnComment}");
-            sbModel.AppendLine($"        /// 空值 :{!tbColumn.IsRequired}");
-            sbModel.AppendLine("        /// </summary>");
-            if (tbColumn.IsPk || tbColumn.IsIncrement)
-            {
-                sbModel.AppendLine($"        [SqlSugar.SugarColumn(IsPrimaryKey = {tbColumn.IsPk.ToString().ToLower()}, IsIdentity = {tbColumn.IsIncrement.ToString().ToLower()})]");
-            }
-            sbModel.AppendLine($"        public {tbColumn.CsharpType}{(CodeGeneratorTool.GetModelRequired(tbColumn))} {tbColumn.CsharpField} {{ get; set; }}");
-            return sbModel.ToString();
-        }
-        /// <summary>
-        /// 增改Dto
-        /// </summary>
-        /// <param name="tbColumn"></param>
-        /// <returns></returns>
-        public static string GetDtoProperty(GenTableColumn tbColumn)
-        {
-            string InputDtoContent = "";
-            if (GenConstants.inputDtoNoField.Any(f => f.ToLower().Contains(tbColumn.CsharpField.ToLower())))
-            {
-                return InputDtoContent;
-            }
-            else if (tbColumn.IsInsert || tbColumn.IsEdit || tbColumn.IsPk || tbColumn.IsIncrement)
-            {
-                InputDtoContent += $"        public {tbColumn.CsharpType}{CodeGeneratorTool.GetModelRequired(tbColumn)} {tbColumn.CsharpField} {{ get; set; }}\r\n";
-            }
-
-            return InputDtoContent;
-        }
-        /// <summary>
         /// 查询Dto属性
         /// </summary>
         /// <param name="tbColumn"></param>
@@ -57,10 +19,8 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static void GetQueryDtoProperty(GenTableColumn tbColumn, ReplaceDto replaceDto)
         {
-            string QueryDtoContent = "";
             if (tbColumn.IsQuery)
             {
-                QueryDtoContent += $"        public {tbColumn.CsharpType} {tbColumn.CsharpField} {{ get; set; }}\r\n";
                 //字符串类型表达式
                 if (tbColumn.CsharpType == GenConstants.TYPE_STRING)
                 {
@@ -78,7 +38,6 @@ namespace ZR.CodeGenerator
                     replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.EndTime != null, it => it.{tbColumn.CsharpField} <= parm.EndTime);\n";
                 }
             }
-            replaceDto.QueryProperty += QueryDtoContent;
         }
 
         #region vue 模板

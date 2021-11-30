@@ -64,10 +64,6 @@ namespace ZR.CodeGenerator
         /** 数据库时间类型 */
         public static string[] COLUMNTYPE_TIME = { "datetime", "time", "date", "timestamp" };
 
-        /** 数据库数字类型 */
-        public static string[] COLUMNTYPE_NUMBER = { "tinyint", "smallint", "mediumint", "int", "number", "integer",
-            "bit", "bigint", "float", "double", "decimal" };
-
         /** 页面不需要编辑字段 */
         public static string[] COLUMNNAME_NOT_EDIT = { "id", "create_by", "create_time", "delFlag" };
 

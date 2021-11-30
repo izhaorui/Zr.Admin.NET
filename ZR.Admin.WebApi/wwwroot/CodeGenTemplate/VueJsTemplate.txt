@@ -1,66 +1,66 @@
 ﻿import request from '@/utils/request'
 
 /**
-* {FunctionName}分页查询
+* ${genTable.functionName}分页查询
 * @param {查询条件} data
 */
-export function list{ModelTypeName}(query) {
+export function list${replaceDto.ModelTypeName}(query) {
   return request({
-    url: '{ModuleName}/{ModelTypeName}/list',
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/list',
     method: 'get',
     params: query,
   })
 }
 
 /**
-* 新增{FunctionName}
+* 新增${genTable.functionName}
 * @param data
 */
-export function add{ModelTypeName}(data) {
+export function add${replaceDto.ModelTypeName}(data) {
   return request({
-    url: '{ModuleName}/{ModelTypeName}',
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}',
     method: 'post',
     data: data,
   })
 }
 
 /**
-* 修改{FunctionName}
+* 修改${genTable.functionName}
 * @param data
 */
-export function update{ModelTypeName}(data) {
+export function update${replaceDto.ModelTypeName}(data) {
   return request({
-    url: '{ModuleName}/{ModelTypeName}',
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}',
     method: 'PUT',
     data: data,
   })
 }
 
 /**
-* 获取{FunctionName}详情
-* @param {Id} {FunctionName}Id
+* 获取${genTable.functionName}详情
+* @param {Id}
 */
-export function get{ModelTypeName}(id) {
+export function get${replaceDto.ModelTypeName}(id) {
   return request({
-    url: '{ModuleName}/{ModelTypeName}/' + id,
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/' + id,
     method: 'get'
   })
 }
 
 /**
-* 删除
+* 删除${genTable.functionName}
 * @param {主键} pid
 */
-export function del{ModelTypeName}(pid) {
+export function del${replaceDto.ModelTypeName}(pid) {
   return request({
-    url: '{ModuleName}/{ModelTypeName}/' + pid,
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/' + pid,
     method: 'delete'
   })
 }
-// 导出
-export function export{ModelTypeName}(query) {
+// 导出${genTable.functionName}
+export function export${replaceDto.ModelTypeName}(query) {
   return request({
-    url: '{ModuleName}/{ModelTypeName}/export',
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/export',
     method: 'get',
     params: query
   })
