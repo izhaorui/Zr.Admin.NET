@@ -78,7 +78,7 @@
             排序字段
           </span>
 
-          <el-select v-model="info.sortField" placeholder="请选择字段" class="mr10">
+          <el-select v-model="info.sortField" placeholder="请选择字段" class="mr10" clearable="">
             <el-option v-for="item in columns" :key="item.columnId" :label="item.csharpField" :value="item.csharpField">
             </el-option>
           </el-select>
