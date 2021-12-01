@@ -17,6 +17,7 @@ using ZR.Common;
 using ZR.Service.System;
 using ZR.Model.System;
 using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -83,6 +84,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="configKey"></param>
         /// <returns></returns>
         [HttpGet("configKey/{configKey}")]
+        [AllowAnonymous]
         public IActionResult GetConfigKey(string configKey)
         {
             //TODO 增加缓存

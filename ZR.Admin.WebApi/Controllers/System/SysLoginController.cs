@@ -15,6 +15,7 @@ using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
 using Hei.Captcha;
 using ZR.Common;
+using ZR.Service.System;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -30,6 +31,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysLoginService sysLoginService;
         private readonly ISysPermissionService permissionService;
         private readonly SecurityCodeHelper SecurityCodeHelper;
+        private readonly ISysConfigService sysConfigService;
 
         public SysLoginController(
             IHttpContextAccessor contextAccessor,
@@ -37,6 +39,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysUserService sysUserService,
             ISysLoginService sysLoginService,
             ISysPermissionService permissionService,
+            ISysConfigService configService,
             SecurityCodeHelper captcha)
         {
             httpContextAccessor = contextAccessor;
@@ -45,6 +48,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.sysUserService = sysUserService;
             this.sysLoginService = sysLoginService;
             this.permissionService = permissionService;
+            this.sysConfigService = configService;
         }
 
 
@@ -60,7 +64,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (loginBody == null) { throw new CustomException("请求参数错误"); }
             loginBody.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
-            if (CacheHelper.Get(loginBody.Uuid) is string str && !str.ToLower().Equals(loginBody.Code.ToLower()))
+            SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
+            if (sysConfig?.ConfigValue != "off" && CacheHelper.Get(loginBody.Uuid) is string str && !str.ToLower().Equals(loginBody.Code.ToLower()))
             {
                 throw new CustomException(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
@@ -136,8 +141,26 @@ namespace ZR.Admin.WebApi.Controllers.System
         public ApiResult CaptchaImage()
         {
             string uuid = Guid.NewGuid().ToString().Replace("-", "");
+
+            SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
             var code = SecurityCodeHelper.GetRandomEnDigitalText(4);
-            var imgByte = SecurityCodeHelper.GetEnDigitalCodeByte(code);
+            byte[] imgByte;
+            if (sysConfig.ConfigValue == "1")
+            {
+                imgByte = SecurityCodeHelper.GetGifEnDigitalCodeByte(code);//动态gif数字字母
+            }
+            else if (sysConfig.ConfigValue == "2")
+            {
+                imgByte = SecurityCodeHelper.GetGifBubbleCodeByte(code);//动态gif泡泡
+            }
+            else if (sysConfig.ConfigValue == "3")
+            {
+                imgByte = SecurityCodeHelper.GetBubbleCodeByte(code);//泡泡
+            }
+            else
+            {
+                imgByte = SecurityCodeHelper.GetEnDigitalCodeByte(code);//英文字母加数字
+            }
             string base64Str = Convert.ToBase64String(imgByte);
             CacheHelper.SetCache(uuid, code);
             var obj = new { uuid, img = base64Str };// File(stream, "image/png")
