@@ -278,8 +278,7 @@ namespace ZR.CodeGenerator
                 .Replace("{VueDataContent}", replaceDto.VueDataContent)
                 .Replace("{PrimaryKey}", FirstLowerCase(replaceDto.PKName))
                 .Replace("{MountedMethod}", replaceDto.MountedMethod)
-                .Replace("{VueComponent}", replaceDto.VueComponent.TrimEnd(','))
-                .Replace("{VueComponentImport}", replaceDto.VueComponentImport)
+                .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
                 .Replace("{VueViewEditFormRuleContent}", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
 
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, content));
@@ -292,7 +291,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static void GenerateVueJs(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            string fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", replaceDto.ViewsFileName + ".js");
+            string fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", generateDto.GenTable.ModuleName, replaceDto.ViewsFileName + ".js");
 
             var tpl = FileHelper.ReadJtTemplate("VueJsTemplate.txt");
 

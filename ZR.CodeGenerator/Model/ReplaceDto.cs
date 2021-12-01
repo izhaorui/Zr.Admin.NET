@@ -38,16 +38,6 @@ namespace ZR.CodeGenerator.Model
         /// </summary>
         public string InsertColumn { get; set; }
 
-
-        ///// <summary>
-        ///// 实体属性模板
-        ///// </summary>
-        //public string ModelProperty { get; set; }
-        ///// <summary>
-        ///// 输入Dto模板
-        ///// </summary>
-        //public string InputDtoProperty { get; set; }
-
         //vue、api
         public string VueViewFormResetHtml { get; set; }
         /// <summary>
@@ -90,14 +80,7 @@ namespace ZR.CodeGenerator.Model
         /// views、js文件名
         /// </summary>
         public string ViewsFileName { get; set; }
-        /// <summary>
-        /// vue组件引用
-        /// </summary>
-        public string VueComponent { get; set; } = "";
-        /// <summary>
-        /// vue组件导入
-        /// </summary>
-        public string VueComponentImport { get; set; } = "";
+
         /// <summary>
         /// 上传前js
         /// </summary>
