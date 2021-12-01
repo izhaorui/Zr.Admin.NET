@@ -25,6 +25,8 @@ namespace ZR.Model.System.Dto
         /// 上级菜单id
         /// </summary>
         public int? ParentMenuId { get; set; }
+        public string SortField { get; set; }
+        public string SortType { get; set; }
         public List<GenTableColumnDto> Columns { get; set; }
     }
 

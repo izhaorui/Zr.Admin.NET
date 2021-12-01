@@ -7,19 +7,19 @@ SELECT @menuId := LAST_INSERT_ID();
 
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
-VALUES ('${genTable.functionName}查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:query', '', sysdate());
+VALUES ('查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:query', '', sysdate());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
-VALUES ('${genTable.functionName}新增', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:add', '',  sysdate());
+VALUES ('新增', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:add', '',  sysdate());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
-VALUES ('${genTable.functionName}删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:delete', '', sysdate());
+VALUES ('删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:delete', '', sysdate());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
-VALUES ('${genTable.functionName}修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:update', '', sysdate());
+VALUES ('修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:update', '', sysdate());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
-VALUES ('${genTable.functionName}导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:export', '', sysdate());
+VALUES ('导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:export', '', sysdate());
 
 SELECT * FROM sys_menu WHERE parentId = @menuId;
 SELECT * FROM sys_menu WHERE menuId = @menuId;

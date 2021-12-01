@@ -43,7 +43,7 @@ namespace ZR.Service
         {
             return baseRepository.Add(t);
         }
-        public IInsertable<T> Insertable(T t) 
+        public IInsertable<T> Insertable(T t)
         {
             return baseRepository.Insertable(t);
         }
@@ -179,7 +179,7 @@ namespace ZR.Service
 
         public DbResult<bool> UseTran(Action action)
         {
-            var result = baseRepository.UseTran(action) ;
+            var result = baseRepository.UseTran(action);
             return result;
         }
 
@@ -329,6 +329,10 @@ namespace ZR.Service
         public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, OrderByType orderEnum = OrderByType.Asc)
         {
             return baseRepository.GetPages(where, parm, order, orderEnum);
+        }
+        public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderByType)
+        {
+            return baseRepository.GetPages(where, parm, order, orderByType == "desc" ? OrderByType.Desc : OrderByType.Asc);
         }
         /// <summary>
         /// 查询所有数据(无分页,请慎用)

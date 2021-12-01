@@ -7,19 +7,19 @@ declare @menuId int = @@identity
 
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('${genTable.functionName}查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:query', '', '', GETDATE());
+VALUES ('查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:query', '', '', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('${genTable.functionName}新增', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:add', '', '', GETDATE());
+VALUES ('新增', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:add', '', '', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('${genTable.functionName}删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:delete', '', '', GETDATE());
+VALUES ('删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:delete', '', '', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('${genTable.functionName}修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:update', '', '', GETDATE());
+VALUES ('修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:update', '', '', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('${genTable.functionName}导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:export', '', '', GETDATE());
+VALUES ('导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:export', '', '', GETDATE());
 
 SELECT * FROM sys_menu WHERE parentId = @menuId;
 SELECT * FROM sys_menu WHERE menuId = @menuId;

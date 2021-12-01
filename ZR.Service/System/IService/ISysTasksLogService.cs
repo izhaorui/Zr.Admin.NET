@@ -10,6 +10,6 @@ namespace ZR.Service.System.IService
         /// </summary>
         /// <returns></returns>
         //public int AddTaskLog(string jobId);
-        public SysTasksLog AddTaskLog(string jobId, SysTasksLog tasksLog);
+        SysTasksLog AddTaskLog(string jobId, SysTasksLog tasksLog);
     }
 }

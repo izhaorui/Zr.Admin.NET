@@ -70,7 +70,9 @@ namespace ZR.Service.System
             if (!string.IsNullOrEmpty(genTable?.Options))
             {
                 Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTable.Options);
-                genTable.ParentMenuId = Convert.ToString(options.GetValueOrDefault("parentMenuId"));
+                genTable.ParentMenuId = options.GetValueOrDefault("parentMenuId") ?? null;
+                genTable.SortType = options.GetValueOrDefault("sortType") ?? "asc";
+                genTable.SortField = options.GetValueOrDefault("sortField") ?? null;
             }
         }
 

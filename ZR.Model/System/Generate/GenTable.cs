@@ -9,7 +9,7 @@ namespace ZR.Model.System.Generate
     /// </summary>
     [SqlSugar.SugarTable("gen_table")]
     [SqlSugar.Tenant("0")]
-    public class GenTable: SysBase
+    public class GenTable : SysBase
     {
         /// <summary>
         /// 表id
@@ -73,8 +73,14 @@ namespace ZR.Model.System.Generate
         /** 表列信息 */
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public List<GenTableColumn> Columns { get; set; }
+
+        //以下 Options扩展字段
         [SqlSugar.SugarColumn(IsIgnore = true)]
-        public string ParentMenuId { get; set; }
+        public object ParentMenuId { get; set; }
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public object SortType { get; set; } = "asc";
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public object SortField { get; set; } = "";
         #endregion
     }
 }

@@ -1,5 +1,7 @@
 ﻿using Infrastructure.Attribute;
 using System;
+using System.Linq.Expressions;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Repository;
 using ZR.Service.System.IService;
@@ -33,6 +35,11 @@ namespace ZR.Service.System
 
             Add(logModel);
             return logModel;
+        }
+
+        public PagedInfo<SysTasksLog> GetPages(Expression<Func<SysTasksLog, bool>> where, PagerInfo parm, Expression<Func<SysTasksLog, object>> order, string orderType)
+        {
+            throw new NotImplementedException();
         }
     }
 }

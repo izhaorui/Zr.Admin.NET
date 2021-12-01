@@ -62,7 +62,7 @@
               <li>Quartz.Net</li>
               <li>MySql</li>
               <li>Mapster</li>
-							<li>Epplus</li>
+              <li>Epplus</li>
               <li>...</li>
             </ul>
           </el-col>
@@ -109,27 +109,25 @@
             <span>更新日志</span>
           </div>
           <el-collapse accordion>
-						<el-collapse-item title="v3.7.1 - 2021-12-01">
+            <el-collapse-item title="v3.7.0 - 2021-12-01">
               <ol>
+								<li>代码生成新增加排序字段</li>
                 <li>新增加登录验证码开关</li>
-								<li>替换代码生成器模板引擎</li>
-								<li>富文本组件Editor改用全局注册</li>
-								<li>新增加上传文件到阿里云</li>
-								<li>fix gen_table_column表表名字段长度不够</li>
-								<li>其他功能优化</li>
-              </ol>
-            </el-collapse-item>
-						<el-collapse-item title="v3.7.0 - 2021-11-28">
-              <ol>
+                <li>替换代码生成器模板引擎</li>
+                <li>富文本组件Editor改用全局注册</li>
+                <li>新增加上传文件到阿里云</li>
+                <li>fix gen_table_column表表名字段长度不够</li>
+                <li>代码生成新增排序字段</li>
                 <li>fix 代码生成编辑表信息选择上级菜单bug</li>
                 <li>新增下拉框组件代码生成查询模块</li>
-								<li>优化代码生成模板</li>
-								<li>优化后端分页统一返回json</li>
-								<li>修改代码生成form表单显示</li>
-								<li>新增代码生成单选按钮动态绑定数据</li>
-								<li>代码生成查询新增一键生成、可支持input、select、时间</li>
-								<li>修改代码生成数据库连接字符串</li>
-								<li>优化数据仓储</li>
+                <li>优化代码生成模板</li>
+                <li>优化后端分页统一返回json</li>
+                <li>修改代码生成form表单显示</li>
+                <li>新增代码生成单选按钮动态绑定数据</li>
+                <li>代码生成查询新增一键生成、可支持input、select、时间</li>
+                <li>修改代码生成数据库连接字符串</li>
+                <li>优化数据仓储</li>
+                <li>其他功能优化</li>
               </ol>
             </el-collapse-item>
             <el-collapse-item title="v3.6.0 - 2021-11-21">
@@ -178,7 +176,7 @@
 </template>
 
 <script>
-const defaultSettings = require('@/settings.js')
+const defaultSettings = require("@/settings.js");
 export default {
   name: "index",
   data() {

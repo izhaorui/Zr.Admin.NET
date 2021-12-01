@@ -101,7 +101,7 @@
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="生成信息" name="genInfo">
-        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" />
+        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" :columns="cloumns"/>
       </el-tab-pane>
     </el-tabs>
     <el-form label-width="100px">
@@ -155,9 +155,9 @@ export default {
       if (tableId) {
         // 获取表详细信息
         queryColumnInfo(tableId).then((res) => {
-          this.cloumns = res.data.result;
+          this.cloumns = res.data.cloumns;
           this.info = res.data.info;
-          this.tables = res.data.tables;
+          // this.tables = res.data.tables;/子表
         });
         /** 查询字典下拉列表 */
         listType().then((response) => {

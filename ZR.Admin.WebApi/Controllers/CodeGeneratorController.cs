@@ -101,7 +101,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var tableColumns = GenTableColumnService.GenTableColumns(tableId);
             var tableInfo = GenTableService.GetGenTableInfo(tableId);
-            return SUCCESS(new { result = tableColumns, info = tableInfo });
+            return SUCCESS(new { cloumns = tableColumns, info = tableInfo });
         }
 
         /// <summary>
@@ -188,7 +188,12 @@ namespace ZR.Admin.WebApi.Controllers
             if (genTableDto == null) throw new CustomException("请求参数错误");
             var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
 
-            genTable.Options = JsonConvert.SerializeObject(new { parentMenuId = genTableDto.ParentMenuId });
+            genTable.Options = JsonConvert.SerializeObject(new
+            {
+                parentMenuId = genTableDto.ParentMenuId,
+                sortField = genTableDto.SortField,
+                sortType = genTable.SortType
+            });
             int rows = GenTableService.UpdateGenTable(genTable);
             if (rows > 0)
             {
