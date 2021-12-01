@@ -10,12 +10,16 @@ using ZR.Common;
 
 namespace ZR.Admin.WebApi.Controllers
 {
-    public class HomeController : BaseController
+    /// <summary>
+    /// 公共模块
+    /// </summary>
+    [Route("[controller]/[action]")]
+    public class CommonController : BaseController
     {
         private OptionsSetting OptionsSetting;
         private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public HomeController(IOptions<OptionsSetting> options)
+        public CommonController(IOptions<OptionsSetting> options)
         {
             OptionsSetting = options.Value;
         }
@@ -25,42 +29,9 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet, Route("health/index")]
-        [Log()]
         public IActionResult Health()
         {
             return SUCCESS(true);
-        }
-
-        /// <summary>
-        /// 加密
-        /// </summary>
-        /// <param name="content"></param>
-        /// <returns></returns>
-        public IActionResult Encrypt(string content)
-        {
-            if (string.IsNullOrEmpty(content))
-            {
-                throw new Exception("content不能为空");
-            }
-            string key = ConfigUtils.Instance.GetConfig("DbKey");
-            string encryptTxt = NETCore.Encrypt.EncryptProvider.DESEncrypt(content, key);
-            return Ok(new { content, encryptTxt });
-        }
-
-        /// <summary>
-        /// 解密
-        /// </summary>
-        /// <param name="content"></param>
-        /// <returns></returns>
-        public IActionResult Decrypt(string content)
-        {
-            if (string.IsNullOrEmpty(content))
-            {
-                throw new Exception("content不能为空");
-            }
-            string key = ConfigUtils.Instance.GetConfig("DbKey");
-            string encryptTxt = NETCore.Encrypt.EncryptProvider.DESDecrypt(content, key);
-            return Ok(new { content, encryptTxt });
         }
 
         /// <summary>
@@ -69,6 +40,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="sendEmailVo">请求参数接收实体</param>
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "tool:email:send")]
+        [Log(Title = "发送邮件", IsSaveRequestData = false)]
         public IActionResult SendEmail([FromBody] SendEmailDto sendEmailVo)
         {
             if (sendEmailVo == null || string.IsNullOrEmpty(sendEmailVo.Subject) || string.IsNullOrEmpty(sendEmailVo.ToUser))
