@@ -12,7 +12,7 @@
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
         </el-input>
       </el-form-item>
-      <el-form-item prop="code">
+      <el-form-item prop="code" v-if="showCaptcha != 'off'">
         <el-input v-model="loginForm.code" auto-complete="off" placeholder="验证码" style="width: 63%" @keyup.enter.native="handleLogin" ref="codeTxt">
           <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
         </el-input>
@@ -38,7 +38,7 @@
 <script>
 import { getCodeImg } from "@/api/system/login";
 import Cookies from "js-cookie";
-import { encrypt, decrypt } from "@/utils/jsencrypt";
+// import { encrypt, decrypt } from "@/utils/jsencrypt";
 import defaultSettings from "@/settings";
 
 export default {
@@ -66,6 +66,7 @@ export default {
           { required: true, trigger: "change", message: "验证码不能为空" },
         ],
       },
+			showCaptcha: '',
       loading: false,
       redirect: undefined,
     };
@@ -81,6 +82,9 @@ export default {
   created() {
     this.getCode();
     this.getCookie();
+    this.getConfigKey("sys.account.captchaOnOff").then((response) => {
+      this.showCaptcha = response.data;
+    });
   },
   methods: {
     getCode() {

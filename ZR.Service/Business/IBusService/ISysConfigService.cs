@@ -12,5 +12,6 @@ namespace ZR.Service.System
     /// </summary>
     public interface ISysConfigService: IBaseService<SysConfig>
     {
+        SysConfig GetSysConfigByKey(string key);
     }
 }

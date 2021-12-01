@@ -54,7 +54,7 @@ service.interceptors.response.use(res => {
     }
     ).then(() => {
       store.dispatch('LogOut').then(() => {
-        location.href = process.env.VUE_APP_ROUTER_PREFIX + '/index';
+        location.href = '/index';
       })
     })
 

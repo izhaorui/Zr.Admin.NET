@@ -18,6 +18,11 @@ namespace ZR.Service.System
 
         #region 业务逻辑代码
 
+        public SysConfig GetSysConfigByKey(string key)
+        {
+            return _SysConfigrepository.Queryable().First(f => f.ConfigKey == key);
+        }
+
         #endregion
     }
 }
