@@ -23,11 +23,11 @@ namespace ZR.Admin.WebApi.Controllers
     /// 代码生成演示Controller
     ///
     /// @author zr
-    /// @date 2021-11-27
+    /// @date 2021-12-01
     /// </summary>
     [Verify]
     [Route("business/Gendemo")]
-    public class GendemoController: BaseController
+    public class GendemoController : BaseController
     {
         /// <summary>
         /// 代码生成演示接口
@@ -50,16 +50,15 @@ namespace ZR.Admin.WebApi.Controllers
             //开始拼装查询条件
             var predicate = Expressionable.Create<Gendemo>();
 
-            //TODO 自己实现搜索条件查询语法参考Sqlsugar，默认查询所有
+            //搜索条件查询语法参考Sqlsugar
             //predicate = predicate.And(m => m.Name.Contains(parm.Name));
             predicate = predicate.AndIF(parm.Id > 0, m => m.Id == parm.Id);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Name), m => m.Name.Contains(parm.Name));
-            predicate = predicate.AndIF(parm.ShowStatus > 0, m => m.ShowStatus != parm.ShowStatus);
+            predicate = predicate.AndIF(parm.ShowStatus > 0, m => m.ShowStatus == parm.ShowStatus);
             predicate = predicate.AndIF(parm.BeginTime != null, it => it.AddTime >= parm.BeginTime);
             predicate = predicate.AndIF(parm.EndTime != null, it => it.AddTime <= parm.EndTime);
 
-            var response = _GendemoService.GetPages(predicate.ToExpression(), parm);
-
+            var response = _GendemoService.GetPages(predicate.ToExpression(), parm, x => x.Sort, "desc");
             return SUCCESS(response);
         }
 
@@ -129,7 +128,6 @@ namespace ZR.Admin.WebApi.Controllers
                 Name = model.Name, 
                 Icon = model.Icon, 
                 ShowStatus = model.ShowStatus, 
-                AddTime = model.AddTime, 
                 Sex = model.Sex, 
                 Sort = model.Sort, 
                 BeginTime = model.BeginTime, 
@@ -155,6 +153,21 @@ namespace ZR.Admin.WebApi.Controllers
             var response = _GendemoService.Delete(idsArr);
 
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 代码生成演示导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "代码生成演示")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "business:gendemo:export")]
+        public IActionResult Export()
+        {
+            var list = _GendemoService.GetAll();
+
+            string sFileName = ExportExcel(list, "Gendemo", "代码生成演示");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
     }
 }

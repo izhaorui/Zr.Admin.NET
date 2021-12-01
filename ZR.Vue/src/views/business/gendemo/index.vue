@@ -143,13 +143,11 @@ import {
   delGendemo,
   updateGendemo,
   getGendemo,
-} from "@/api/gendemo.js";
-
-import Editor from "@/components/Editor";
+} from "@/api/business/gendemo.js";
 
 export default {
   name: "Gendemo",
-  components: { Editor },
+  components: {},
   data() {
     return {
       labelWidth: "100px",
@@ -190,6 +188,7 @@ export default {
       // 表单校验
       rules: {
         id: [{ type: "number", message: "id必须为数字值", trigger: "blur" }],
+        name: [{ required: true, message: "请输入名称", trigger: "blur" }],
         showStatus: [
           { required: true, message: "请输入显示状态", trigger: "blur" },
         ],
@@ -291,7 +290,7 @@ export default {
     },
     //文件上传成功方法
     handleUploadIconSuccess(res, file) {
-			this.form.icon = res.data;
+      this.form.icon = res.data;
       // this.form.icon = URL.createObjectURL(file.raw);
       // this.$refs.upload.clearFiles();
     },

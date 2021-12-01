@@ -6,10 +6,10 @@ using ZR.Model.Models;
 namespace ZR.Repository
 {
     /// <summary>
-    /// 代码生成演示仓储接口的实现
+    /// 代码生成演示仓储
     ///
     /// @author zr
-    /// @date 2021-11-27
+    /// @date 2021-12-01
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
     public class GendemoRepository : BaseRepository<Gendemo>
