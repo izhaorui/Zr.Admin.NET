@@ -264,3 +264,6 @@ __pycache__/
 /ZR.Admin.WebApi/appsettings.Stage.json
 /CodeGenerate
 /ZR.Admin.WebApi/appsettings.Production.json
+/ZR.Admin.WebApi/wwwroot/uploads
+/ZR.Admin.WebApi/wwwroot/Generatecode
+/ZR.Admin.WebApi/wwwroot/export
