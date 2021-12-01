@@ -171,7 +171,7 @@ namespace ZR.CodeGenerator
         private static void GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var fullPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, "Repositories", $"{replaceDto.ModelTypeName}Repository.cs");
-            
+
             var tpl = FileHelper.ReadJtTemplate("TplRepository.txt");
 
             var result = tpl.Render();
@@ -321,7 +321,7 @@ namespace ZR.CodeGenerator
                     break;
             }
             var tpl = FileHelper.ReadJtTemplate($"{tempName}.txt");
-            tpl.Set("parentId", generateDto.GenTable.ParentMenuId);
+            tpl.Set("parentId", generateDto.GenTable.ParentMenuId ?? 0);
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, result));
         }
