@@ -109,7 +109,17 @@
             <span>更新日志</span>
           </div>
           <el-collapse accordion>
-						<el-collapse-item title="v3.7.0-preview - 2021-11-28">
+						<el-collapse-item title="v3.7.1 - 2021-12-01">
+              <ol>
+                <li>新增加登录验证码开关</li>
+								<li>替换代码生成器模板引擎</li>
+								<li>富文本组件Editor改用全局注册</li>
+								<li>新增加上传文件到阿里云</li>
+								<li>fix gen_table_column表表名字段长度不够</li>
+								<li>其他功能优化</li>
+              </ol>
+            </el-collapse-item>
+						<el-collapse-item title="v3.7.0 - 2021-11-28">
               <ol>
                 <li>fix 代码生成编辑表信息选择上级菜单bug</li>
                 <li>新增下拉框组件代码生成查询模块</li>
