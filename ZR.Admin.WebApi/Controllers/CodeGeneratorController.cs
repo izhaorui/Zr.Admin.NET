@@ -151,8 +151,8 @@ namespace ZR.Admin.WebApi.Controllers
                         BusinessName = CodeGeneratorTool.GetBusinessName(tableName),
                         FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
                         TableName = tableName,
-                        TableComment = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
-                        FunctionName = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
+                        TableComment = tabInfo?.Description,
+                        FunctionName = tabInfo?.Description,
                         Create_by = userName,
                     };
                     genTable.TableId = GenTableService.ImportGenTable(genTable);

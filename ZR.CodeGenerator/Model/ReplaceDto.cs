@@ -20,7 +20,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 控制器权限
         /// </summary>
-        public string Permission { get; set; }
+        public string PermissionPrefix { get; set; }
         /// <summary>
         /// C#类名
         /// </summary>

@@ -1,7 +1,6 @@
 using Hei.Captcha;
 using Infrastructure;
 using Infrastructure.Extensions;
-using JinianNet.JNTemplate;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -43,7 +42,7 @@ namespace ZR.Admin.WebApi
             {
                 c.AddPolicy("Policy", policy =>
                 {
-                    policy.WithOrigins(corsUrls.Split(',', System.StringSplitOptions.RemoveEmptyEntries))
+                    policy.WithOrigins(corsUrls.Split(',', StringSplitOptions.RemoveEmptyEntries))
                     .AllowAnyHeader()//允许任意头
                     .AllowCredentials()//允许cookie
                     .AllowAnyMethod();//允许任意方法

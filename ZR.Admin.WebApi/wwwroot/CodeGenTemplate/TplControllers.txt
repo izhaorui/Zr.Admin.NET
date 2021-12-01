@@ -1,0 +1,154 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using SqlSugar;
+using Infrastructure;
+using Infrastructure.Attribute;
+using Infrastructure.Enums;
+using Infrastructure.Model;
+using Mapster;
+using ${options.ModelsNamespace}.Dto;
+using ${options.ModelsNamespace}.Models;
+using ${options.ServicesNamespace}.Business;
+using ${options.ApiControllerNamespace}.Extensions;
+using ${options.ApiControllerNamespace}.Filters;
+using ZR.Common;
+using Infrastructure.Extensions;
+using System.Linq;
+
+namespace ${options.ApiControllerNamespace}.Controllers
+{
+    /// <summary>
+    /// ${genTable.functionName}Controller
+    ///
+    /// @author ${replaceDto.Author}
+    /// @date ${replaceDto.AddTime}
+    /// </summary>
+    [Verify]
+    [Route("${genTable.ModuleName}/${replaceDto.ModelTypeName}")]
+    public class ${replaceDto.ModelTypeName}Controller : BaseController
+    {
+        /// <summary>
+        /// ${genTable.FunctionName}接口
+        /// </summary>
+        private readonly I${replaceDto.ModelTypeName}Service _${replaceDto.ModelTypeName}Service;
+
+        public ${replaceDto.ModelTypeName}Controller(I${replaceDto.ModelTypeName}Service ${replaceDto.ModelTypeName}Service)
+        {
+            _${replaceDto.ModelTypeName}Service = ${replaceDto.ModelTypeName}Service;
+        }
+
+        /// <summary>
+        /// 查询${genTable.FunctionName}列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("list")]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:list")]
+        public IActionResult Query${replaceDto.ModelTypeName}([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
+        {
+            //开始拼装查询条件
+            var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
+
+            //TODO 自己实现搜索条件查询语法参考Sqlsugar，默认查询所有
+            //predicate = predicate.And(m => m.Name.Contains(parm.Name));
+${QueryCondition}
+            var response = _${replaceDto.ModelTypeName}Service.GetPages(predicate.ToExpression(), parm);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 查询${genTable.FunctionName}详情
+        /// </summary>
+        /// <param name="${replaceDto.PKName}"></param>
+        /// <returns></returns>
+        [HttpGet("{${replaceDto.PKName}}")]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:query")]
+        public IActionResult Get${replaceDto.ModelTypeName}(${replaceDto.PKType} ${replaceDto.PKName})
+        {
+            var response = _${replaceDto.ModelTypeName}Service.GetFirst(x => x.${replaceDto.PKName} == ${replaceDto.PKName});
+            
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 添加${genTable.FunctionName}
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:add")]
+        [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.INSERT)]
+        public IActionResult Add${replaceDto.ModelTypeName}([FromBody] ${replaceDto.ModelTypeName}Dto parm)
+        {
+            if (parm == null)
+            {
+                throw new CustomException("请求参数错误");
+            }
+            //从 Dto 映射到 实体
+            var model = parm.Adapt<${replaceDto.ModelTypeName}>().ToCreate(HttpContext);
+
+            return SUCCESS(_${replaceDto.ModelTypeName}Service.Insert(model, it => new
+            {
+${InsertColumn}
+            }));
+        }
+
+        /// <summary>
+        /// 更新${genTable.FunctionName}
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:update")]
+        [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Update${replaceDto.ModelTypeName}([FromBody] ${replaceDto.ModelTypeName}Dto parm)
+        {
+            if (parm == null)
+            {
+                throw new CustomException("请求实体不能为空");
+            }
+            //从 Dto 映射到 实体
+            var model = parm.Adapt<${replaceDto.ModelTypeName}>().ToUpdate(HttpContext);
+
+            var response = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == model.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
+            {
+                //Update 字段映射
+${UpdateColumn}
+            });
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 删除${genTable.FunctionName}
+        /// </summary>
+        /// <returns></returns>
+        [HttpDelete("{ids}")]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:delete")]
+        [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.DELETE)]
+        public IActionResult Delete${replaceDto.ModelTypeName}(string ids)
+        {
+            int[] idsArr = Tools.SpitIntArrary(ids);
+            if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
+
+            var response = _${replaceDto.ModelTypeName}Service.Delete(idsArr);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// ${genTable.FunctionName}导出
+        /// </summary>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "${genTable.FunctionName}")]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:export")]
+        public IActionResult Export()
+        {
+            var list = _${replaceDto.ModelTypeName}Service.GetAll();
+
+            string sFileName = ExportExcel(list, "${replaceDto.ModelTypeName}", "${genTable.FunctionName}");
+            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
+    }
+}

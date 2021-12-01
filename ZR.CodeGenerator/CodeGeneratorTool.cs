@@ -52,7 +52,7 @@ namespace ZR.CodeGenerator
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
             replaceDto.TableName = dto.GenTable.TableName;//表名
-            replaceDto.Permission = $"{dto.GenTable.ModuleName}:{dto.GenTable.ClassName.ToLower()}";//权限
+            replaceDto.PermissionPrefix = $"{dto.GenTable.ModuleName}:{dto.GenTable.ClassName.ToLower()}";//权限
             replaceDto.Author = dto.GenTable.FunctionAuthor;
             replaceDto.ViewsFileName = FirstLowerCase(replaceDto.ModelTypeName);
 
@@ -94,12 +94,10 @@ namespace ZR.CodeGenerator
                 }
 
                 CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
-                //replaceDto.ModelProperty += CodeGenerateTemplate.GetModelTemplate(dbFieldInfo);
-                replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo);
                 CodeGenerateTemplate.TplVueJsMethod(dbFieldInfo, replaceDto);
+                replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo);
                 replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo);
                 replaceDto.VueViewEditFormRuleContent += CodeGenerateTemplate.TplFormRules(dbFieldInfo);
-                //replaceDto.InputDtoProperty += CodeGenerateTemplate.GetDtoProperty(dbFieldInfo);
                 replaceDto.VueQueryFormHtml += CodeGenerateTemplate.TplQueryFormHtml(dbFieldInfo);
             }
             replaceDto.VueDataContent = sb1.ToString();
@@ -144,7 +142,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("TplModel.txt");
             var result = tpl.Render();
 
-            generateDto.GenCodes.Add(new GenCode(1, "实体类", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(1, "Model", fullPath, result));
         }
 
         /// <summary>
@@ -159,7 +157,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("TplDto.txt");
 
             var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(2, "数据传输实体类", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(2, "Dto", fullPath, result));
         }
         #endregion
 
@@ -177,7 +175,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("TplRepository.txt");
 
             var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(3, "仓储层", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(3, "Repository", fullPath, result));
         }
 
         #endregion
@@ -195,7 +193,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("IServiceTemplate.txt");
 
             var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(4, "接口层", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(4, "IService", fullPath, result));
         }
 
         /// <summary>
@@ -208,7 +206,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("ServiceTemplate.txt");
 
             var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(4, "服务层", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(4, "Service", fullPath, result));
         }
 
         #endregion
@@ -217,36 +215,47 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 生成控制器ApiControllers文件
         /// </summary>
+        //private static void GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
+        //{
+        //    var fullPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Controller.cs");
+
+        //    var content = FileHelper.ReadTemplate("ControllersTemplate.txt")
+        //        .Replace("{ApiControllerNamespace}", _option.ApiControllerNamespace)
+        //        .Replace("{ServicesNamespace}", _option.ServicesNamespace)
+        //        .Replace("{ModelsNamespace}", _option.ModelsNamespace)
+        //        .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
+        //        .Replace("{ModelName}", replaceDto.ModelTypeName)
+        //        .Replace("{Permission}", replaceDto.Permission)
+        //        .Replace("{PrimaryKey}", replaceDto.PKName)
+        //        .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
+        //        .Replace("{PKCsharpType}", replaceDto.PKType)
+        //        .Replace("{Author}", replaceDto.Author)
+        //        .Replace("{DateTime}", replaceDto.AddTime);
+
+        //    if (replaceDto.UpdateColumn != null)
+        //    {
+        //        content = content.Replace("{UpdateColumn}", replaceDto.UpdateColumn.TrimEnd('\n'));
+        //    }
+        //    if (replaceDto.InsertColumn != null)
+        //    {
+        //        content = content.Replace("{InsertColumn}", replaceDto.InsertColumn.TrimEnd('\n'));
+        //    }
+        //    if (replaceDto.QueryCondition != null)
+        //    {
+        //        content = content.Replace("{QueryCondition}", replaceDto.QueryCondition);
+        //    }
+        //    generateDto.GenCodes.Add(new GenCode(5, "控制器", fullPath, content));
+        //}
         private static void GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var fullPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Controller.cs");
 
-            var content = FileHelper.ReadTemplate("ControllersTemplate.txt")
-                .Replace("{ApiControllerNamespace}", _option.ApiControllerNamespace)
-                .Replace("{ServicesNamespace}", _option.ServicesNamespace)
-                .Replace("{ModelsNamespace}", _option.ModelsNamespace)
-                .Replace("{FunctionName}", generateDto.GenTable.FunctionName)
-                .Replace("{ModelName}", replaceDto.ModelTypeName)
-                .Replace("{Permission}", replaceDto.Permission)
-                .Replace("{PrimaryKey}", replaceDto.PKName)
-                .Replace("{ModuleName}", generateDto.GenTable.ModuleName)
-                .Replace("{PKCsharpType}", replaceDto.PKType)
-                .Replace("{Author}", replaceDto.Author)
-                .Replace("{DateTime}", replaceDto.AddTime);
-
-            if (replaceDto.UpdateColumn != null)
-            {
-                content = content.Replace("{UpdateColumn}", replaceDto.UpdateColumn.TrimEnd('\n'));
-            }
-            if (replaceDto.InsertColumn != null)
-            {
-                content = content.Replace("{InsertColumn}", replaceDto.InsertColumn.TrimEnd('\n'));
-            }
-            if (replaceDto.QueryCondition != null)
-            {
-                content = content.Replace("{QueryCondition}", replaceDto.QueryCondition);
-            }
-            generateDto.GenCodes.Add(new GenCode(5, "控制器", fullPath, content));
+            var tpl = FileHelper.ReadJtTemplate("TplControllers.txt");
+            tpl.Set("QueryCondition", replaceDto.QueryCondition);
+            tpl.Set("InsertColumn", replaceDto.InsertColumn.TrimEnd('\n'));
+            tpl.Set("UpdateColumn", replaceDto.UpdateColumn.TrimEnd('\n'));
+            var result = tpl.Render();
+            generateDto.GenCodes.Add(new GenCode(5, "Controller", fullPath, result));
         }
         #endregion
 
@@ -262,7 +271,7 @@ namespace ZR.CodeGenerator
                 .Replace("{VueViewListContent}", replaceDto.VueViewListHtml)//查询 table列
                 .Replace("{VueViewFormContent}", replaceDto.VueViewFormHtml)//添加、修改表单
                 .Replace("{ModelTypeName}", replaceDto.ModelTypeName)
-                .Replace("{Permission}", replaceDto.Permission)
+                .Replace("{Permission}", replaceDto.PermissionPrefix)
                 .Replace("{VueViewFormResetHtml}", replaceDto.VueViewFormResetHtml)
                 .Replace("{vueJsMethod}", replaceDto.VueJsMethod)
                 .Replace("{vueQueryFormHtml}", replaceDto.VueQueryFormHtml)
@@ -312,7 +321,7 @@ namespace ZR.CodeGenerator
                     break;
             }
             var tpl = FileHelper.ReadJtTemplate($"{tempName}.txt");
-
+            tpl.Set("parentId", generateDto.GenTable.ParentMenuId);
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, result));
         }
@@ -355,8 +364,8 @@ namespace ZR.CodeGenerator
         {
             int lastIndex = tableName.LastIndexOf("_");
             int nameLength = tableName.Length;
-            string businessName = tableName.Substring(lastIndex + 1, nameLength);
-            return businessName;
+            string businessName = tableName.Substring(nameLength - lastIndex + 1);
+            return businessName.ToLower();
         }
 
         /// <summary>
@@ -494,7 +503,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
-            //Engine.Current.Clean();
+            Engine.Current.Clean();
 
             //jnt模板引擎全局变量
             Engine.Configure((options) =>
@@ -503,6 +512,8 @@ namespace ZR.CodeGenerator
                 options.TagSuffix = "}";
                 options.TagFlag = '$';
                 options.OutMode = OutMode.Auto;
+                //options.DisableeLogogram = true;//禁用简写
+                options.Data.Set("${flag}", "$");//特殊标签替换
                 options.Data.Set("replaceDto", replaceDto);
                 options.Data.Set("options", dto.GenOptions);
                 options.Data.Set("genTable", dto.GenTable);
