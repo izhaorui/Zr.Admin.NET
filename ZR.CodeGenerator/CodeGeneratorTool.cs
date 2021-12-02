@@ -53,14 +53,9 @@ namespace ZR.CodeGenerator
             replaceDto.PermissionPrefix = $"{dto.GenTable.ModuleName}:{dto.GenTable.ClassName.ToLower()}";//权限
             replaceDto.Author = dto.GenTable.FunctionAuthor;
 
-            //StringBuilder sb1 = new StringBuilder();
-            //StringBuilder sb2 = new StringBuilder();
-
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in dto.GenTable.Columns)
             {
-                string columnName = dbFieldInfo.ColumnName;
-
                 if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
                 {
                     PKName = dbFieldInfo.CsharpField;
@@ -73,13 +68,14 @@ namespace ZR.CodeGenerator
                 CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
                 
                 replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo);
-                replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo);
+                replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo, dto.GenTable);
                 replaceDto.VueViewEditFormRuleContent += CodeGenerateTemplate.TplFormRules(dbFieldInfo);
                 replaceDto.VueQueryFormHtml += CodeGenerateTemplate.TplQueryFormHtml(dbFieldInfo);
             }
 
             replaceDto.PKName = PKName;
             replaceDto.PKType = PKType;
+            replaceDto.FistLowerPk = FirstLowerCase(PKName);
             InitJntTemplate(dto, replaceDto);
 
             GenerateModels(replaceDto, dto);
@@ -308,16 +304,6 @@ namespace ZR.CodeGenerator
         {
             return string.IsNullOrEmpty(columnDescription) ? columnName : columnDescription;
         }
-        ///// <summary>
-        ///// 判断是否给属性添加?
-        ///// </summary>
-        ///// <param name="dbFieldInfo"></param>
-        ///// <returns></returns>
-        //public static string GetModelRequired(GenTableColumn dbFieldInfo)
-        //{
-        //    return (!dbFieldInfo.IsRequired && (IsNumber(dbFieldInfo.ColumnType) || dbFieldInfo.CsharpType == "DateTime")) ? "?" : "";
-        //}
-
         /// <summary>
         /// 获取C# 类型
         /// </summary>

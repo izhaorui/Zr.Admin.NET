@@ -65,3 +65,15 @@ export function export${replaceDto.ModelTypeName}(query) {
     params: query
   })
 }
+
+$if(genTable.SortField != "")
+//排序
+export function changeSort(data) {
+  return request({
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/ChangeSort',
+    method: 'get',
+    params: data
+  })
+}
+
+$end

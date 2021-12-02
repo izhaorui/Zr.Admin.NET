@@ -215,15 +215,27 @@ namespace ZR.CodeGenerator
         /// Vue 查询列表
         /// </summary>
         /// <param name="dbFieldInfo"></param>
+        /// <param name="genTable"></param>
         /// <returns></returns>
-        public static string TplTableColumn(GenTableColumn dbFieldInfo)
+        public static string TplTableColumn(GenTableColumn dbFieldInfo, GenTable genTable)
         {
             string columnName = dbFieldInfo.ColumnName;
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string showToolTip = dbFieldInfo.CsharpType == "string" ? ":show-overflow-tooltip=\"true\"" : "";
             string formatter = !string.IsNullOrEmpty(dbFieldInfo.DictType) ? $" :formatter=\"{columnName}Format\"" : "";
             StringBuilder sb = new StringBuilder();
-            if (dbFieldInfo.IsList && dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
+
+            //有排序字段
+            if (!string.IsNullOrEmpty(genTable?.SortField.ToString()) && genTable?.SortField.ToString() == dbFieldInfo.CsharpField)
+            {
+                sb.AppendLine($@"      <el-table-column prop=""{columnName}"" label=""排序"" width=""90"" sortable align=""center"">");
+                sb.AppendLine(@"        <template slot-scope=""scope"">");
+                sb.AppendLine($@"          <el-input size=""mini"" style=""width:50px"" controls-position=""no"" v-model.number=""scope.row.{columnName}"" @blur=""handleChangeSort(scope.row, scope.row.{columnName})"" v-if=""showEditSort"" />");
+                sb.AppendLine($"          <span v-else>{{{{scope.row.{columnName}}}}}</span>");
+                sb.AppendLine(@"        </template>");
+                sb.AppendLine(@"      </el-table-column>");
+            }
+            else if (dbFieldInfo.IsList && dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
             {
                 sb.AppendLine($"      <el-table-column prop=\"{columnName}\" label=\"图片\">");
                 sb.AppendLine("         <template slot-scope=\"scope\">");

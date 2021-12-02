@@ -20,6 +20,11 @@ ${vueQueryFormHtml}
       <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
+$if(genTable.SortField != "")
+      <el-col :span="1.5">
+        <el-button type="info" plain icon="el-icon-edit" size="mini" @click="handleShowSort" v-hasPermi="['${replaceDto.PermissionPrefix}:update']">修改排序</el-button>
+      </el-col>
+$end
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -59,7 +64,10 @@ import {
   add${genTable.BusinessName},
   del${genTable.BusinessName},
   update${genTable.BusinessName},
-  get${genTable.BusinessName} 
+  get${genTable.BusinessName},
+$if(genTable.SortField != "")
+  changeSort
+$end
 } from '@/api/${genTable.ModuleName}/${lowerBusinessName}.js';
 
 export default {
@@ -68,7 +76,7 @@ export default {
     return {
       labelWidth: "100px",
       formLabelWidth:"100px",
-      // 选中${replaceDto.PKName}数组
+      // 选中${replaceDto.FistLowerPk}数组
       ids: [],
       // 非单个禁用
       single: true,
@@ -91,12 +99,16 @@ export default {
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select"))
       // ${item.ColumnComment}选项列表
-      ${item.CsharpField2}Options: [],
+      ${item.ColumnName}Options: [],
 $end
 $end
 $if(replaceDto.UploadFile == 1)
       //文件上传地址
       uploadUrl: process.env.VUE_APP_BASE_API + "upload/SaveFile",
+$end
+$if(genTable.SortField != "")
+      // 是否显示编辑排序
+      showEditSort: false,
 $end
       // 数据列表
       dataList: [],
@@ -117,7 +129,7 @@ ${VueViewEditFormRuleContent}
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != "")
     this.getDicts("${item.DictType}").then((response) => {
-      this.${item.CsharpField2}Options = response.data;
+      this.${item.ColumnName}Options = response.data;
     })
 $end
 $end
@@ -162,7 +174,7 @@ $end
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.ids = selection.map((item) => item.${replaceDto.PKName});
+      this.ids = selection.map((item) => item.${replaceDto.FistLowerPk});
       this.single = selection.length != 1
       this.multiple = !selection.length;
     },
@@ -178,7 +190,7 @@ $end
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const Ids = row.${replaceDto.PKName} || this.ids;
+      const Ids = row.${replaceDto.FistLowerPk} || this.ids;
       del${genTable.BusinessName}(Ids).then((res) => {
         this.msgSuccess("删除成功");
         this.handleQuery();
@@ -187,8 +199,8 @@ $end
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const ${replaceDto.PKName} = row.${replaceDto.PKName} || this.ids;
-      get${genTable.BusinessName}(${replaceDto.PKName}).then((res) => {
+      const id = row.${replaceDto.FistLowerPk} || this.ids;
+      get${genTable.BusinessName}(id).then((res) => {
         if (res.code == 200) {
            this.form = res.data;
            this.open = true;
@@ -196,6 +208,22 @@ $end
         }
       });
     },
+$if(genTable.SortField != "")
+    // 显示编辑排序
+    handleShowSort() {
+      this.showEditSort = !this.showEditSort;
+    },
+    // 保存排序
+    handleChangeSort(item, orderNum) {
+      changeSort({ orderNum: orderNum, id: item.${replaceDto.FistLowerPk} }).then(
+        (response) => {
+          this.msgSuccess("修改成功");
+          this.getList();
+          this.showEditSort = false;
+        }
+      );
+    },
+$end
 $if(replaceDto.UploadFile == 1)
     //文件上传前判断方法
     beforeFileUpload(file) {
@@ -231,7 +259,7 @@ $end
         if (valid) {
           console.log(JSON.stringify(this.form));
           
-          if (this.form.${replaceDto.PKName} != undefined || this.title === "修改数据") {
+          if (this.form.${replaceDto.FistLowerPk} != undefined || this.title === "修改数据") {
             update${genTable.BusinessName}(this.form).then((res) => {
                 if (!res.data) {
                     this.msgError("修改失败");

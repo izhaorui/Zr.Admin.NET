@@ -9,6 +9,10 @@ namespace ZR.CodeGenerator.Model
         /// </summary>
         public string PKName { get; set; }
         /// <summary>
+        /// 首字母小写主键
+        /// </summary>
+        public string FistLowerPk{ get; set; }
+        /// <summary>
         /// 主键类型
         /// </summary>
         public string PKType { get; set; }
