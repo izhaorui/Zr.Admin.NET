@@ -43,39 +43,6 @@ namespace ZR.CodeGenerator
         #region vue 模板
 
         /// <summary>
-        /// 生成vuejs模板，目前只有上传文件方法
-        /// </summary>
-        /// <param name="dbFieldInfo"></param>
-        /// <param name="replaceDto"></param>
-        /// <returns></returns>
-        public static void TplVueJsMethod(GenTableColumn dbFieldInfo, ReplaceDto replaceDto)
-        {
-            string columnName = dbFieldInfo.ColumnName;
-            var sb = new StringBuilder();
-
-            if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
-            {
-                sb.AppendLine($"    //文件上传成功方法");
-                sb.AppendLine($"    handleUpload{dbFieldInfo.CsharpField}Success(res, file) {{");
-                sb.AppendLine($"      this.form.{columnName} = res.data;");
-                sb.AppendLine($"      // this.form.{columnName} = URL.createObjectURL(file.raw);");
-                sb.AppendLine($"      // this.$refs.upload.clearFiles();");
-                sb.AppendLine($"    }},");
-                replaceDto.VueBeforeUpload = TplJsBeforeUpload();
-                replaceDto.VueUploadUrl = TplJsUploadUrl();
-            }
-            //有下拉框选项初列表查询数据
-            if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
-            {
-                sb.AppendLine(@$"    // {dbFieldInfo.ColumnComment}字典翻译");
-                sb.AppendLine($"    {columnName}Format(row, column) {{");
-                sb.AppendLine(@$"      return this.selectDictLabel(this.{columnName}Options, row.{columnName});");
-                sb.AppendLine(@"    },");
-            }
-            replaceDto.VueJsMethod += sb.ToString();
-        }
-
-        /// <summary>
         /// Vue rules
         /// </summary>
         /// <param name="dbFieldInfo"></param>
@@ -264,15 +231,6 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("         </template>");
                 sb.AppendLine("       </el-table-column>");
             }
-            //else if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_RADIO))
-            //{
-            //    vueViewListContent += $"        <el-table-column prop=\"{columnName}\" label=\"{label}\" width=\"120\" >\r\n";
-            //    vueViewListContent += "          <template slot-scope=\"scope\">\r\n";
-            //    vueViewListContent += $"            <el-tag :type=\"scope.row.{columnName} === true ? 'success' : 'info'\"  disable-transitions >";
-            //    vueViewListContent += $"                {{scope.row.{columnName}===true?'启用':'禁用'}} </el-tag>\r\n";
-            //    vueViewListContent += "          </template>\r\n";
-            //    vueViewListContent += "        </el-table-column>\r\n";
-            //}
             else if (dbFieldInfo.IsList)
             {
                 sb.AppendLine($"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\" {showToolTip}{formatter}/>");
@@ -280,36 +238,6 @@ namespace ZR.CodeGenerator
             return sb.ToString();
         }
 
-        /// <summary>
-        /// 文件上传前方法判断
-        /// </summary>
-        /// <returns></returns>
-        public static string TplJsBeforeUpload()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine(@"    //文件上传前判断方法");
-            sb.AppendLine(@"    beforeFileUpload(file) {");
-            sb.AppendLine(@"      const isJPG = file.type === ""image/jpeg"";");
-            sb.AppendLine(@"      const isLt2M = file.size / 1024 / 1024 < 2;");
-            sb.AppendLine(@"      if (!isJPG) {");
-            sb.AppendLine(@"        this.msgError(""上传图片只能是 JPG 格式!"");");
-            sb.AppendLine(@"      }");
-            sb.AppendLine(@"      if (!isLt2M) {");
-            sb.AppendLine(@"        this.msgError(""上传图片大小不能超过 2MB!"");");
-            sb.AppendLine(@"      }");
-            sb.AppendLine(@"      return isJPG && isLt2M;");
-            sb.AppendLine(@"    },");
-            
-            return sb.ToString();
-        }
-        public static string TplJsUploadUrl()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine(@"    //文件上传前判断方法");
-            sb.AppendLine(@"    uploadUrl: process.env.VUE_APP_BASE_API + ""upload/SaveFile"",");
-
-            return sb.ToString();
-        }
         #endregion
 
         public static string QueryExp(string propertyName, string queryType)

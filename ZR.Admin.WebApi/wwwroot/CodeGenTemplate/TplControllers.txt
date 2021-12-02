@@ -93,7 +93,11 @@ $end
 
             return SUCCESS(_${replaceDto.ModelTypeName}Service.Insert(model, it => new
             {
-${InsertColumn}
+$foreach(item in genTable.Columns)
+$if((item.IsInsert))
+                it.$item.CsharpField,
+$end
+${end}
             }));
         }
 
@@ -116,7 +120,11 @@ ${InsertColumn}
             var response = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == model.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
             {
                 //Update 字段映射
-${UpdateColumn}
+$foreach(item in genTable.Columns)
+$if((item.IsEdit))
+                $item.CsharpField = model.$item.CsharpField,
+$end
+${end}
             });
 
             return SUCCESS(response);

@@ -10,7 +10,7 @@ namespace ${options.ModelsNamespace}.Models
     /// @author ${replaceDto.Author}
     /// @date ${replaceDto.AddTime}
     /// </summary>
-    [SugarTable("${replaceDto.TableName}")]
+    [SugarTable("${genTable.TableName}")]
     public class ${replaceDto.ModelTypeName}
     {
 $foreach(item in genTable.Columns)

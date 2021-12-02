@@ -25,6 +25,14 @@ namespace ZR.Model.System.Generate
         public string ColumnType { get; set; }
         public string CsharpType { get; set; }
         public string CsharpField { get; set; }
+        [SugarColumn(IsIgnore = true)]
+        public string CsharpField2
+        {
+            get
+            {
+                return CsharpField.Substring(0, 1).ToLower() + CsharpField[1..];
+            }
+        }
         /// <summary>
         /// 是否主键（1是）
         /// </summary>
@@ -61,7 +69,7 @@ namespace ZR.Model.System.Generate
         /// <summary>
         /// 字典类型
         /// </summary>
-        public string DictType { get; set; }
+        public string DictType { get; set; } = "";
 
         #region 额外字段
         [SugarColumn(IsIgnore = true)]
@@ -70,7 +78,7 @@ namespace ZR.Model.System.Generate
             get
             {
                 string[] arr = new string[] { "int", "long" };
-                return (!IsRequired &&(arr.Any(f => f.Contains(CsharpType))) || typeof(DateTime).Name == CsharpType) ? "?" : "";
+                return (!IsRequired && (arr.Any(f => f.Contains(CsharpType))) || typeof(DateTime).Name == CsharpType) ? "?" : "";
             }
         }
         /// <summary>

@@ -4,7 +4,7 @@
 * ${genTable.functionName}分页查询
 * @param {查询条件} data
 */
-export function list${replaceDto.ModelTypeName}(query) {
+export function list${genTable.BusinessName}(query) {
   return request({
     url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/list',
     method: 'get',
@@ -16,7 +16,7 @@ export function list${replaceDto.ModelTypeName}(query) {
 * 新增${genTable.functionName}
 * @param data
 */
-export function add${replaceDto.ModelTypeName}(data) {
+export function add${genTable.BusinessName}(data) {
   return request({
     url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}',
     method: 'post',
@@ -28,7 +28,7 @@ export function add${replaceDto.ModelTypeName}(data) {
 * 修改${genTable.functionName}
 * @param data
 */
-export function update${replaceDto.ModelTypeName}(data) {
+export function update${genTable.BusinessName}(data) {
   return request({
     url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}',
     method: 'PUT',
@@ -40,7 +40,7 @@ export function update${replaceDto.ModelTypeName}(data) {
 * 获取${genTable.functionName}详情
 * @param {Id}
 */
-export function get${replaceDto.ModelTypeName}(id) {
+export function get${genTable.BusinessName}(id) {
   return request({
     url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/' + id,
     method: 'get'
@@ -51,7 +51,7 @@ export function get${replaceDto.ModelTypeName}(id) {
 * 删除${genTable.functionName}
 * @param {主键} pid
 */
-export function del${replaceDto.ModelTypeName}(pid) {
+export function del${genTable.BusinessName}(pid) {
   return request({
     url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/' + pid,
     method: 'delete'

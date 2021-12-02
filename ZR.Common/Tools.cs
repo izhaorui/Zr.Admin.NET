@@ -14,6 +14,7 @@ namespace ZR.Common
         public static long[] SpitLongArrary(string str)
         {
             if (string.IsNullOrEmpty(str)) { return Array.Empty<long>(); }
+            str = str.TrimStart(',').TrimEnd(',');
             string[] strIds = str.Split(',', (char)StringSplitOptions.RemoveEmptyEntries);
             long[] infoIdss = Array.ConvertAll(strIds, s => long.Parse(s));
             return infoIdss;

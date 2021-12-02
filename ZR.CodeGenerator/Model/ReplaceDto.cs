@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator.Model
 {
@@ -25,19 +20,6 @@ namespace ZR.CodeGenerator.Model
         /// C#类名
         /// </summary>
         public string ModelTypeName { get; set; }
-        /// <summary>
-        /// 数据库表名
-        /// </summary>
-        public string TableName { get; set; }
-        /// <summary>
-        /// 修改列
-        /// </summary>
-        public string UpdateColumn { get; set; }
-        /// <summary>
-        /// 插入列
-        /// </summary>
-        public string InsertColumn { get; set; }
-
         //vue、api
         public string VueViewFormResetHtml { get; set; }
         /// <summary>
@@ -52,10 +34,7 @@ namespace ZR.CodeGenerator.Model
         /// 前端搜索表单html
         /// </summary>
         public string VueQueryFormHtml { get; set; }
-        /// <summary>
-        /// vue js方法
-        /// </summary>
-        public string VueJsMethod { get; set; }
+
         /// <summary>
         /// vue 添加、编辑表单规则
         /// </summary>
@@ -64,32 +43,12 @@ namespace ZR.CodeGenerator.Model
         /// 查询条件
         /// </summary>
         public string QueryCondition { get; set; } = "";
-        ///// <summary>
-        ///// 查询属性
-        ///// </summary>
-        //public string QueryProperty { get; set; }
-        /// <summary>
-        /// vue data内容
-        /// </summary>
-        public string VueDataContent { get; set; }
-        /// <summary>
-        /// vue mounted 方法
-        /// </summary>
-        public string MountedMethod { get; set; }
-        /// <summary>
-        /// views、js文件名
-        /// </summary>
-        public string ViewsFileName { get; set; }
 
-        /// <summary>
-        /// 上传前js
-        /// </summary>
-        public string VueBeforeUpload { get; set; }
         /// <summary>
         /// 上传URL data
         /// </summary>
-        public string VueUploadUrl { get; set; }
-        //public bool UploadImage{ get; set; }
+        //public string VueUploadUrl { get; set; }
+        public int UploadFile { get; set; } = 0;
         public string Author { get; set; }
         public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
     }

@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="wwwroot\CodeGenTemplate\VueTemplate.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
 	<PackageReference Include="EPPlus" Version="5.8.3" />
 	<PackageReference Include="Hei.Captcha" Version="0.3.0" />
 	<PackageReference Include="IPTools.China" Version="1.6.0" />
