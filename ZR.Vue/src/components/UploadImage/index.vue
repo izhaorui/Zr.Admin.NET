@@ -11,7 +11,7 @@
       :headers="headers"
       style="display: inline-block; vertical-align: top"
     >
-      <img v-if="value" :src="value" class="avatar" />
+      <el-image v-if="value" :src="value" class="avatar" />
       <i v-else class="el-icon-plus avatar-uploader-icon"></i>
     </el-upload>
   </div>

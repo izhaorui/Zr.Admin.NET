@@ -41,6 +41,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "tool:email:send")]
         [Log(Title = "发送邮件", IsSaveRequestData = false)]
+        [HttpPost]
         public IActionResult SendEmail([FromBody] SendEmailDto sendEmailVo)
         {
             if (sendEmailVo == null || string.IsNullOrEmpty(sendEmailVo.Subject) || string.IsNullOrEmpty(sendEmailVo.ToUser))

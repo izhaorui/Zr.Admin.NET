@@ -318,10 +318,10 @@ namespace ZR.CodeGenerator
                 "bigint" => "long",
                 "tinyint" => "byte",
                 "numeric" or "real" or "float" => "float",
-                "decimal" or "numer(8,2)" => "decimal",
+                "decimal" or "numer(8,2)" or "numeric" => "decimal",
                 "bit" => "bool",
-                "date" or "datetime" or "datetime2" or "smalldatetime" => "DateTime",
-                "money" or "smallmoney" => "double",
+                "date" or "datetime" or "datetime2" or "smalldatetime" or "timestamp" => "DateTime",
+                "money" or "smallmoney" => "decimal",
                 _ => "string",
             };
             return sTempDatatype;
@@ -409,7 +409,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
-            Engine.Current.Clean();
+            //Engine.Current.Clean();
 
             //jnt模板引擎全局变量
             Engine.Configure((options) =>

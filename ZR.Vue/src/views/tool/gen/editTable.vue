@@ -17,8 +17,8 @@
           <el-table-column label="C#类型" min-width="11%">
             <template slot-scope="scope">
               <el-select v-model="scope.row.csharpType">
-                <el-option label="long" value="long" />
                 <el-option label="int" value="int" />
+                <el-option label="long" value="long" />
                 <el-option label="string" value="string" />
                 <el-option label="double" value="double" />
                 <el-option label="decimal" value="decimal" />

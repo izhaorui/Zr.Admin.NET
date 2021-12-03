@@ -43,6 +43,8 @@
               </el-button>
               <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://github.com/izhaorui/ZrAdmin.NET')">Github
               </el-button>
+              <el-button type="primary" size="mini" icon="el-icon-edit" plain @click="goTarget('http://www.izhaorui.cn/doc/#/gxrz?id=更新日志')">更新日志
+              </el-button>
             </p>
             <h3>如果觉得不错欢迎给个⭐Star⭐收藏一下 ，这样作者才有继续免费下去的动力，谢谢！</h3>
           </el-row>
@@ -98,77 +100,16 @@
             <span>捐赠支持</span>
           </div>
           <div class="body">
-            <span class="tip">如果觉得有用你可以请作者喝杯咖啡☕表示鼓励</span>
             <img src="@/assets/image/reward.jpg" alt="donate" width="80%" />
           </div>
         </el-card>
       </el-col>
       <el-col :span="10">
-        <el-card>
+        <!-- <el-card>
           <div slot="header" class="clearfix">
-            <span>更新日志</span>
+            <span></span>
           </div>
-          <el-collapse accordion>
-            <el-collapse-item title="v3.7.0 - 2021-12-01">
-              <ol>
-								<li>代码生成新增加排序字段</li>
-                <li>新增加登录验证码开关</li>
-                <li>替换代码生成器模板引擎</li>
-                <li>富文本组件Editor改用全局注册</li>
-                <li>新增加上传文件到阿里云</li>
-                <li>fix gen_table_column表表名字段长度不够</li>
-                <li>代码生成新增排序字段</li>
-                <li>fix 代码生成编辑表信息选择上级菜单bug</li>
-                <li>新增下拉框组件代码生成查询模块</li>
-                <li>优化代码生成模板</li>
-                <li>优化后端分页统一返回json</li>
-                <li>修改代码生成form表单显示</li>
-                <li>新增代码生成单选按钮动态绑定数据</li>
-                <li>代码生成查询新增一键生成、可支持input、select、时间</li>
-                <li>修改代码生成数据库连接字符串</li>
-                <li>优化数据仓储</li>
-                <li>其他功能优化</li>
-              </ol>
-            </el-collapse-item>
-            <el-collapse-item title="v3.6.0 - 2021-11-21">
-              <ol>
-                <li>新增加系统表导出功能</li>
-                <li>仓储新增加常用方法</li>
-                <li>删除Npoi.Mapper包，新增加EPPlus 导出Excel包</li>
-                <li>SqlSugarCoreNoDriver 升级至5.0.43</li>
-                <li>代码生成新增加富文本组件</li>
-                <li>发送邮件文本该用富文本工具</li>
-                <li>部门管理新增加展开折叠</li>
-                <li>fix 任务日志路由地址配置错误</li>
-                <li>fix 部门删除功能</li>
-                <li>其他功能优化</li>
-              </ol>
-            </el-collapse-item>
-            <el-collapse-item title="v3.5.0 - 2021-11-18">
-              <ol>
-                <li>fix 代码生成提示错误信息</li>
-                <li>fix sqlserver导入数据sys_dept表列不匹配问题 </li>
-                <li>登录验证码替换为数字加字母静态组合 </li>
-                <li>fix 登录验证码刷新后输入不了问题 </li>
-                <li>替换node-sass为sass，sass-loader升级为10.1.0</li>
-              </ol>
-            </el-collapse-item>
-            <el-collapse-item title="v3.4.0 - 2021-11-06">
-              <ol>
-                <li>页签TagsView新增关闭左侧、右侧功能&添加图标</li>
-                <li>新增菜单导航显示风格TopNav（false为左侧导航菜单，true为顶部导航菜单）</li>
-              </ol>
-            </el-collapse-item>
-
-            <el-collapse-item title="v3.3.0 - 2021-10-29">
-              <ol>
-                <li>接口日志新增加是否保存请求、返回参数</li>
-                <li>重命名一些方法名</li>
-                <li>fix 代码生成编辑、插入列未选中任何字段报错bug</li>
-              </ol>
-            </el-collapse-item>
-          </el-collapse>
-        </el-card>
+        </el-card> -->
       </el-col>
     </el-row>
     <el-divider />
