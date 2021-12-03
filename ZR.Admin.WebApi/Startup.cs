@@ -96,8 +96,17 @@ namespace ZR.Admin.WebApi
                 //添加文档注释
                 c.IncludeXmlComments(Path.Combine(CurrentEnvironment.ContentRootPath, "ZRAdmin.xml"), true);
                 //}
+                c.AddSecurityDefinition("Bearer",
+                    new OpenApiSecurityScheme
+                    {
+                        In = ParameterLocation.Header,
+                        Description = "请输入OAuth接口返回的Token，前置Bearer。示例：Bearer {Token}",
+                        Name = "Authorization",//jwt默认的参数名称,
+                        Type = SecuritySchemeType.ApiKey, //指定ApiKey
+                        BearerFormat = "JWT",//标识承载令牌的格式 该信息主要是出于文档目的
+                        Scheme = JwtBearerDefaults.AuthenticationScheme//授权中要使用的HTTP授权方案的名称
+                    });
             });
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
