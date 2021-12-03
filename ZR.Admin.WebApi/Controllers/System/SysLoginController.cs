@@ -79,7 +79,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             #endregion
             LoginUser loginUser = new LoginUser(user.UserId, user.UserName, roles, permissions);
 
-            return SUCCESS(JwtUtil.GenerateJwtToken(HttpContext.WriteCookies(loginUser)));
+            return SUCCESS(JwtUtil.GenerateJwtToken(HttpContext.AddClaims(loginUser)));
         }
 
         /// <summary>
@@ -90,11 +90,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPost("logout")]
         public IActionResult LogOut()
         {
-            Task.Run(async () =>
-            {
-                //注销登录的用户，相当于ASP.NET中的FormsAuthentication.SignOut  
-                await HttpContext.SignOutAsync();
-            }).Wait();
+            //Task.Run(async () =>
+            //{
+            //    //注销登录的用户，相当于ASP.NET中的FormsAuthentication.SignOut  
+            //    await HttpContext.SignOutAsync();
+            //}).Wait();
 
             return SUCCESS(1);
         }

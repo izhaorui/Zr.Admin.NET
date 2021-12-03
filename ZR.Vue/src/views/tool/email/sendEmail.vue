@@ -9,7 +9,7 @@
         <el-input v-model="form.subject"></el-input>
       </el-form-item>
       <el-form-item label="邮件内容" prop="content">
-				<editor v-model="form.content" :min-height="192" />
+        <editor v-model="form.content" :min-height="192" />
       </el-form-item>
 
       <el-form-item label="附件">
@@ -37,7 +37,7 @@ export default {
         fileUrl: "",
       },
       headers: {
-        Token: "",
+        Authorization: "Bearer " + getToken(),
       },
       uploadActionUrl: process.env.VUE_APP_BASE_API + "upload/SaveFile",
       rules: {
@@ -55,7 +55,6 @@ export default {
     };
   },
   mounted() {
-    this.headers.Token = getToken();
   },
   methods: {
     // 表单重置
@@ -106,7 +105,7 @@ export default {
             loading.close();
           }, 5000);
         } else {
-					console.log('未通过')
+          console.log("未通过");
           //校验不通过
           return false;
         }

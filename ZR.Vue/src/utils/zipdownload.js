@@ -14,7 +14,7 @@ export function downLoadZip(str, filename) {
     method: 'get',
     url: str,
     responseType: 'blob',
-    headers: { 'Token': getToken() }
+    headers: { 'Authorization': 'Bearer ' + getToken() }
   }).then(res => {
     resolveBlob(res, mimeMap.zip)
   })
@@ -25,7 +25,7 @@ export function downLoadExcel(str, filename) {
     method: 'get',
     url: url,
     responseType: 'blob',
-    headers: { 'Token': getToken() }
+    headers: { 'Authorization': 'Bearer ' + getToken() }
   }).then(res => {
     resolveExcel(res, filename)
   })

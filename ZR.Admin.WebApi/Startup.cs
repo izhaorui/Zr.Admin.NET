@@ -2,6 +2,7 @@ using Hei.Captcha;
 using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
@@ -55,11 +56,23 @@ namespace ZR.Admin.WebApi
             services.AddSession();
             services.AddHttpContextAccessor();
 
-            //Cookie 认证
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
 
             //绑定整个对象到Model上
             services.Configure<OptionsSetting>(Configuration);
+            services.Configure<JwtSettings>(Configuration);
+            var jwtSettings = new JwtSettings();
+            Configuration.Bind("JwtSettings", jwtSettings);
+
+            //Cookie 认证
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddCookie()
+            .AddJwtBearer(o =>
+            {
+                o.TokenValidationParameters = JwtUtil.ValidParameters();
+            });
 
             InjectRepositories(services);
 
@@ -78,11 +91,11 @@ namespace ZR.Admin.WebApi
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ZrAdmin", Version = "v1" });
-                if (CurrentEnvironment.IsDevelopment())
-                {
-                    //添加文档注释
-                    c.IncludeXmlComments("ZRAdmin.xml", true);
-                }
+                //if (CurrentEnvironment.IsDevelopment())
+                //{
+                //添加文档注释
+                c.IncludeXmlComments(Path.Combine(CurrentEnvironment.ContentRootPath, "ZRAdmin.xml"), true);
+                //}
             });
 
         }
@@ -112,7 +125,9 @@ namespace ZR.Admin.WebApi
             //app.UseAuthentication会启用Authentication中间件，该中间件会根据当前Http请求中的Cookie信息来设置HttpContext.User属性（后面会用到），
             //所以只有在app.UseAuthentication方法之后注册的中间件才能够从HttpContext.User中读取到值，
             //这也是为什么上面强调app.UseAuthentication方法一定要放在下面的app.UseMvc方法前面，因为只有这样ASP.NET Core的MVC中间件中才能读取到HttpContext.User的值。
+            //1.先开启认证
             app.UseAuthentication();
+            //2.再开启授权
             app.UseAuthorization();
             app.UseSession();
             app.UseResponseCaching();
@@ -149,12 +164,12 @@ namespace ZR.Admin.WebApi
 
             SugarIocServices.AddSqlSugar(new List<IocConfig>() {
                new IocConfig() {
-                ConfigId = "0", 
+                ConfigId = "0",
                 ConnectionString = connStr,
                 DbType = (IocDbType)dbType,
                 IsAutoCloseConnection = true//自动释放
             }, new IocConfig() {
-                ConfigId = "1", 
+                ConfigId = "1",
                 ConnectionString = connStrBus,
                 DbType = (IocDbType)dbType_bus,
                 IsAutoCloseConnection = true//自动释放
