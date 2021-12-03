@@ -102,10 +102,6 @@ $if((item.HtmlType == "radio" || item.HtmlType == "select"))
       ${item.ColumnName}Options: [],
 $end
 $end
-$if(replaceDto.UploadFile == 1)
-      //文件上传地址
-      uploadUrl: process.env.VUE_APP_BASE_API + "upload/SaveFile",
-$end
 $if(genTable.SortField != "")
       // 是否显示编辑排序
       showEditSort: false,
@@ -225,28 +221,15 @@ $if(genTable.SortField != "")
     },
 $end
 $if(replaceDto.UploadFile == 1)
-    //文件上传前判断方法
-    beforeFileUpload(file) {
-      const isJPG = file.type === "image/jpeg";
-      const isLt2M = file.size / 1024 / 1024 < 2;
-      if (!isJPG) {
-        this.msgError("上传图片只能是 JPG 格式!");
-      }
-      if (!isLt2M) {
-        this.msgError("上传图片大小不能超过 2MB!");
-      }
-      return isJPG && isLt2M;
+    //图片上传成功方法
+    handleUploadSuccess(res, columnName) {
+      console.log(columnName, res)
+      this.form[columnName] = res.data;
+      console.log(JSON.stringify(this.form))
     },
 $end
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "imageUpload" || item.HtmlType == "fileUpload"))
-    //${item.ColumnComment}上传成功方法
-    handleUpload${item.CsharpField}Success(res, file) {
-      this.form.$item.ColumnName = res.data;
-      // this.form.$item.ColumnName = URL.createObjectURL(file.raw);
-      // this.${refs}refs.upload.clearFiles();
-    },
-$elseif((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != "")
+$if((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != "")
     // ${item.ColumnComment}字典翻译
     ${item.ColumnName}Format(row, column) {
       return this.selectDictLabel(this.${item.ColumnName}Options, row.${item.ColumnName});

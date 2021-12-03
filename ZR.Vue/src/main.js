@@ -27,6 +27,8 @@ import Editor from "@/components/Editor";
 import DictTag from '@/components/DictTag'
 // 字典数据组件
 // import DictData from '@/components/DictData'
+// 上传图片
+import UploadImage from '@/components/UploadImage/index';
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts
@@ -56,6 +58,7 @@ Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
 Vue.component('DictTag', DictTag)
 Vue.component('Editor', Editor)
+Vue.component('UploadImage', UploadImage)
 Vue.use(permission)
 
 Vue.use(Element, {

@@ -104,11 +104,12 @@ namespace ZR.CodeGenerator
                 //图片
                 sb.AppendLine("    <el-col :span=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
-                sb.AppendLine($"        <el-upload class=\"avatar-uploader\" name=\"file\" :action=\"uploadUrl\" :show-file-list=\"false\" :on-success=\"handleUpload{dbFieldInfo.CsharpField}Success\" :before-upload=\"beforeFileUpload\">");
-                sb.AppendLine($"          <el-image v-if=\"form.{columnName}\" :src=\"form.{columnName}\" class=\"icon\"/>");
-                sb.AppendLine("          <i v-else class=\"el-icon-plus uploader-icon\"></i>");
-                sb.AppendLine("        </el-upload>");
-                sb.AppendLine($"        <el-input v-model=\"form.{columnName}\" placeholder=\"请上传文件或手动输入文件地址\"></el-input>");
+                //sb.AppendLine($"        <el-upload class=\"avatar-uploader\" name=\"file\" :action=\"uploadUrl\" :show-file-list=\"false\" :on-success=\"handleUpload{dbFieldInfo.CsharpField}Success\" :before-upload=\"beforeFileUpload\">");
+                //sb.AppendLine($"          <el-image v-if=\"form.{columnName}\" :src=\"form.{columnName}\" class=\"icon\"/>");
+                //sb.AppendLine("          <i v-else class=\"el-icon-plus uploader-icon\"></i>");
+                //sb.AppendLine("        </el-upload>");
+                //sb.AppendLine($"        <el-input v-model=\"form.{columnName}\" placeholder=\"请上传文件或手动输入文件地址\"></el-input>");
+                sb.AppendLine($@"        <UploadImage :icon=""form.{columnName}"" column='{columnName}' :key=""form.{columnName}"" @handleUploadSuccess=""handleUploadSuccess"" />");
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
             }
