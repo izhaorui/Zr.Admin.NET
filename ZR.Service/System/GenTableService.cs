@@ -16,11 +16,11 @@ namespace ZR.Service.System
     /// 代码生成表
     /// </summary>
     [AppService(ServiceType = typeof(IGenTableService), ServiceLifetime = LifeTime.Transient)]
-    public class GenTableService : IGenTableService
+    public class GenTableService : BaseService<GenTable>, IGenTableService
     {
         private GenTableRepository GenTableRepository;
         private IGenTableColumnService GenTableColumnService;
-        public GenTableService(IGenTableColumnService genTableColumnService, GenTableRepository genTableRepository)
+        public GenTableService(IGenTableColumnService genTableColumnService, GenTableRepository genTableRepository) : base(genTableRepository)
         {
             GenTableColumnService = genTableColumnService;
             GenTableRepository = genTableRepository;
@@ -127,11 +127,11 @@ namespace ZR.Service.System
     /// 代码生成表列
     /// </summary>
     [AppService(ServiceType = typeof(IGenTableColumnService), ServiceLifetime = LifeTime.Transient)]
-    public class GenTableColumnService : IGenTableColumnService
+    public class GenTableColumnService : BaseService<GenTableColumn>, IGenTableColumnService
     {
 
         private GenTableColumnRepository GetTableColumnRepository;
-        public GenTableColumnService(GenTableColumnRepository genTableColumnRepository)
+        public GenTableColumnService(GenTableColumnRepository genTableColumnRepository) : base(genTableColumnRepository)
         {
             GetTableColumnRepository = genTableColumnRepository;
         }

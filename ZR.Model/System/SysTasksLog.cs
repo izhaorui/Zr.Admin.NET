@@ -1,4 +1,5 @@
-﻿using SqlSugar;
+﻿using OfficeOpenXml.Attributes;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,7 +16,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 日志Id
         /// </summary>
-        [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
+        [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public long JobLogId { get; set; }
         /// <summary>
         /// 任务Id
@@ -39,6 +40,8 @@ namespace ZR.Model.System
         /// 调用目标字符串
         /// </summary>
         public string InvokeTarget { get; set; }
+
+        [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
         public DateTime CreateTime { get; set; }
         /// <summary>
         /// 执行用时，毫秒

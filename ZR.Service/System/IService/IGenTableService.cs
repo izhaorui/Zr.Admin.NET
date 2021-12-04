@@ -4,7 +4,7 @@ using ZR.Model.System.Generate;
 
 namespace ZR.Service.System.IService
 {
-    public interface IGenTableService
+    public interface IGenTableService: IBaseService<GenTable>
     {
         List<GenTable> SelectDbTableListByNamess(string[] tableNames);
 
@@ -17,7 +17,7 @@ namespace ZR.Service.System.IService
         int UpdateGenTable(GenTable genTable);
     }
 
-    public interface IGenTableColumnService
+    public interface IGenTableColumnService: IBaseService<GenTableColumn>
     {        
         int InsertGenTableColumn(List<GenTableColumn> tableColumn);
 

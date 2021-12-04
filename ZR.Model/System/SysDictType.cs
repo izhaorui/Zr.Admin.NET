@@ -1,8 +1,5 @@
-﻿//using Dapper.Contrib.Extensions;
+﻿using OfficeOpenXml.Attributes;
 using SqlSugar;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ZR.Model.System
 {
@@ -30,6 +27,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 状态 0、正常 1、停用
         /// </summary>
+        [EpplusIgnore]
         public string Status { get; set; }
     }
 }
