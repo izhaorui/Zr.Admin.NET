@@ -146,6 +146,7 @@ namespace ZR.Admin.WebApi.Controllers
                 ConfigType = model.ConfigType,
                 Update_by = model.Update_by,
                 Update_time = model.Update_time,
+                Remark = model.Remark
             });
 
             return SUCCESS(response);
