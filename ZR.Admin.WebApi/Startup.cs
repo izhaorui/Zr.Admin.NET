@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using SqlSugar.IOC;
+using Swashbuckle.AspNetCore.Filters;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -74,44 +75,19 @@ namespace ZR.Admin.WebApi
                 o.TokenValidationParameters = JwtUtil.ValidParameters();
             });
 
-            InjectRepositories(services);
+            InjectServices(services);
 
             services.AddMvc(options =>
             {
                 options.Filters.Add(typeof(GlobalActionMonitor));//全局注册异常
             })
-            .AddMvcLocalization()
-            .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeConverter());
                 options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeNullConverter());
             });
 
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo
-                {
-                    Title = "ZrAdmin.NET Api - .NET5",
-                    Version = "v1",
-                    Description = "",
-                });
-                //if (CurrentEnvironment.IsDevelopment())
-                //{
-                //添加文档注释
-                c.IncludeXmlComments(Path.Combine(CurrentEnvironment.ContentRootPath, "ZRAdmin.xml"), true);
-                //}
-                c.AddSecurityDefinition("Bearer",
-                    new OpenApiSecurityScheme
-                    {
-                        In = ParameterLocation.Header,
-                        Description = "请输入OAuth接口返回的Token，前置Bearer。示例：Bearer {Token}",
-                        Name = "Authorization",//jwt默认的参数名称,
-                        Type = SecuritySchemeType.ApiKey, //指定ApiKey
-                        BearerFormat = "JWT",//标识承载令牌的格式 该信息主要是出于文档目的
-                        Scheme = JwtBearerDefaults.AuthenticationScheme//授权中要使用的HTTP授权方案的名称
-                    });
-            });
+            services.AddSwaggerConfig();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -163,7 +139,7 @@ namespace ZR.Admin.WebApi
         /// 注册Services服务
         /// </summary>
         /// <param name="services"></param>
-        private void InjectRepositories(IServiceCollection services)
+        private void InjectServices(IServiceCollection services)
         {
             services.AddAppService();
 
