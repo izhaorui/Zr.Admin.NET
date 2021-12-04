@@ -42,8 +42,7 @@ service.interceptors.response.use(res => {
       return;
     }
     // 未设置状态码则默认成功状态
-    const code = res.data.code;
-    const msg = res.data.msg;
+    const { code , msg } = res.data;
 
     if (code == 401) {
       MessageBox.confirm('登录状态已过期，请重新登录', '系统提示', {
@@ -52,17 +51,17 @@ service.interceptors.response.use(res => {
         type: 'warning'
       }).then(() => {
         store.dispatch('LogOut').then(() => {
-          location.href = '/index';
+          location.href = process.env.VUE_APP_ROUTER_PREFIX + 'index';
         })
       })
 
-      return Promise.reject()
+      return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
     } else if (code == 0 || code == 110 || code == 101 || code == 403 || code == 500) {
       Message({
         message: msg,
         type: 'error'
       })
-      return Promise.reject()
+      return Promise.reject(msg)
     } else {
       //返回标准 code/msg/data字段
       return res.data;

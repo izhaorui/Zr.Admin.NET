@@ -1,4 +1,4 @@
-import { login, logOut, getInfo } from '@/api/system/login'
+import { login, logout, getInfo } from '@/api/system/login'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 
 const user = {
@@ -42,8 +42,8 @@ const user = {
       return new Promise((resolve, reject) => {
         login(username, password, code, uuid).then(res => {
           if (res.code == 200) {
-            //提交上面的mutaions方法
             setToken(res.data)
+            //提交上面的mutaions方法
             commit('SET_TOKEN', res.data)
             resolve()//then处理
           } else {
@@ -56,11 +56,7 @@ const user = {
     // 获取用户信息
     GetInfo({ commit, state }) {
       return new Promise((resolve, reject) => {
-        getInfo(state.token).then(res => {
-          if (!res || res.code != 200) {
-            return reject(res.msg)
-          }
-
+        getInfo().then(res => {
           const data = res.data
           const avatar = data.user.avatar == "" ? require("@/assets/image/profile.jpg") : data.user.avatar;
 
@@ -83,13 +79,14 @@ const user = {
 
     // 退出系统
     LogOut({ commit, state }) {
+			console.log('退出登录')
       return new Promise((resolve, reject) => {
-        logOut(state.token).then(() => {
+        logout().then((res) => {
           removeToken()// 必须先移除token
           commit('SET_TOKEN', '')
           commit('SET_ROLES', [])
           commit('SET_PERMISSIONS', [])
-          resolve()
+          resolve(res)
         }).catch(error => {
           reject(error)
         })

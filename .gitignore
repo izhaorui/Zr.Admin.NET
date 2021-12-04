@@ -259,8 +259,6 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
-/ZRAdmin/Properties/launchSettings.json
-/ZRAdmin/Properties/PublishProfiles
 /ZR.Admin.WebApi/appsettings.Stage.json
 /CodeGenerate
 /ZR.Admin.WebApi/appsettings.Production.json
@@ -268,3 +266,4 @@ __pycache__/
 /ZR.Admin.WebApi/wwwroot/Generatecode
 /ZR.Admin.WebApi/wwwroot/export
 /ZR.Vue/src/views/business/Gendemo.vue
+/ZR.Admin.WebApi/Properties/launchSettings.json
