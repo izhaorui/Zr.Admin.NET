@@ -13,6 +13,7 @@ using Infrastructure;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
+    [Verify]
     [Route("/monitor/jobLog")]
     public class TasksLogController : BaseController
     {

@@ -27,6 +27,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 代码生成
     /// </summary>
+    [Verify]
     [Route("tool/gen")]
     public class CodeGeneratorController : BaseController
     {

@@ -20,7 +20,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 计划任务
     /// </summary>
-    //[Verify]
+    [Verify]
     [Route("system/Tasks")]
     public class TasksController : BaseController
     {

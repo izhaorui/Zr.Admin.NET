@@ -409,7 +409,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
-            //Engine.Current.Clean();
+            Engine.Current.Clean();
 
             //jnt模板引擎全局变量
             Engine.Configure((options) =>
