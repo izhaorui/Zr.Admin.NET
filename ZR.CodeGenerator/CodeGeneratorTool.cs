@@ -46,7 +46,7 @@ namespace ZR.CodeGenerator
         /// <param name="dto"></param>
         public static void GenerateSingle(GenerateDto dto)
         {
-            string PKName = "id";
+            string PKName = "Id";
             string PKType = "int";
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
