@@ -1,13 +1,9 @@
 import router from './router'
 import store from './store'
-import {
-  Message
-} from 'element-ui'
+import { Message } from 'element-ui'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
-import {
-  getToken
-} from '@/utils/auth'
+import { getToken } from '@/utils/auth'
 
 NProgress.configure({
   showSpinner: false
@@ -22,9 +18,7 @@ router.beforeEach((to, from, next) => {
   if (getToken()) {
     /* has token*/
     if (to.path === '/login') {
-      next({
-        path: '/'
-      })
+      next({ path: '/' })
       NProgress.done()
     } else {
       if (store.getters.roles.length === 0) {
@@ -38,7 +32,7 @@ router.beforeEach((to, from, next) => {
         }).catch(err => {
           console.error(err)
           store.dispatch('LogOut').then(() => {
-						console.log('弹框登录失败')
+            console.log('弹框登录失败')
             Message.error(err != undefined ? err : '登录失败')
             next({ path: '/' })
           })
