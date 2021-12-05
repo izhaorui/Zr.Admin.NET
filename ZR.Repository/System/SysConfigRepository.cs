@@ -1,7 +1,5 @@
 using System;
 using Infrastructure.Attribute;
-using ZR.Repository.System;
-using ZR.Model.Models;
 using ZR.Model.System;
 
 namespace ZR.Repository
