@@ -34,11 +34,11 @@ module.exports = {
     open: true,
     proxy: {
       // detail: https://cli.vuejs.org/config/#devserver-proxy
-      '/api': {
-        target: process.env.VUE_APP_BASE_API,
+      [process.env.VUE_APP_BASE_API]: {
+        target: 'http://localhost:8888/',// 后端接口地址
         changeOrigin: true,
         pathRewrite: {
-          '^/api': ''//需要rewrite的
+          ['^' + process.env.VUE_APP_BASE_API]: ''//需要rewrite的
         }
       }
     },
