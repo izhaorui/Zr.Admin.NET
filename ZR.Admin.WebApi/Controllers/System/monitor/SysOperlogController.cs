@@ -41,9 +41,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
             PagerInfo pagerInfo = new PagerInfo(sysOperLog.pageNum);
 
             var list = sysOperLogService.SelectOperLogList(sysOperLog, pagerInfo);
-            var vMPage = new VMPageResult<SysOperLog>(list, pagerInfo);
 
-            return ToResponse(ToJson(vMPage.TotalNum, vMPage), TIME_FORMAT_FULL_2);
+            return ToResponse(ToJson(list.TotalNum, list), TIME_FORMAT_FULL_2);
         }
 
         /// <summary>
@@ -84,7 +83,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         public IActionResult Export([FromQuery] SysOperLogDto sysOperLog)
         {
             var list = sysOperLogService.SelectOperLogList(sysOperLog, new PagerInfo(1, 10000));
-            string sFileName = ExportExcel(list, "operlog", "操作日志");
+            string sFileName = ExportExcel(list.Result, "operlog", "操作日志");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
 

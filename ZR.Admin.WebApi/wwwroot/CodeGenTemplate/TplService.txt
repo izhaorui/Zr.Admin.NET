@@ -1,0 +1,27 @@
+﻿using Infrastructure;
+using Infrastructure.Attribute;
+using ${options.ModelsNamespace}.Models;
+using ${options.IRepositoriesNamespace};
+
+namespace ${options.ServicesNamespace}.Business
+{
+    /// <summary>
+    /// ${genTable.FunctionName}Service业务层处理
+    ///
+    /// @author ${replaceDto.Author}
+    /// @date ${replaceDto.AddTime}
+    /// </summary>
+    [AppService(ServiceType = typeof(I${replaceDto.ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
+    public class ${replaceDto.ModelTypeName}Service : BaseService<${replaceDto.ModelTypeName}>, I${replaceDto.ModelTypeName}Service
+    {
+        private readonly ${replaceDto.ModelTypeName}Repository _${replaceDto.ModelTypeName}repository;
+        public ${replaceDto.ModelTypeName}Service(${replaceDto.ModelTypeName}Repository repository) : base(repository)
+        {
+            _${replaceDto.ModelTypeName}repository = repository;
+        }
+
+        #region 业务逻辑代码
+
+        #endregion
+    }
+}

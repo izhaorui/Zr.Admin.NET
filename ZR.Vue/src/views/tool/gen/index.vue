@@ -16,10 +16,12 @@
         <el-button type="info" plain icon="el-icon-upload" size="mini" @click="openImportTable" v-hasPermi="['tool:gen:import']">导入</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" :disabled="multiple" plain icon="el-icon-delete" @click="handleDelete" size="mini" v-hasPermi="['tool:gen:remove']">删除</el-button>
+        <el-button type="danger" :disabled="multiple" plain icon="el-icon-delete" @click="handleDelete" size="mini" v-hasPermi="['tool:gen:remove']">
+          删除</el-button>
       </el-col>
     </el-row>
-    <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border @selection-change="handleSelectionChange" highlight-current-row height="480px">
+    <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border @selection-change="handleSelectionChange" highlight-current-row
+      height="480px">
       <el-table-column type="selection" align="center" width="55"></el-table-column>
       <el-table-column label="序号" type="index" width="50" align="center">
         <template slot-scope="scope">
@@ -27,15 +29,16 @@
         </template>
       </el-table-column>
       <el-table-column prop="tableName" label="表名" sortable="custom" width="180" />
-      <el-table-column prop="tableComment" label="表描述" />
+      <el-table-column prop="tableComment" label="表描述" :show-overflow-tooltip="true"/>
       <el-table-column prop="className" label="实体" />
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column prop="updateTime" label="更新时间" />
-      <el-table-column label="操作" align="center" width="300">
+      <el-table-column label="操作" align="center" width="350">
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-view" @click="handlePreview(scope.row)" v-hasPermi="['tool:gen:preview']">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)" v-hasPermi="['tool:gen:edit']">编辑</el-button>
           <el-button type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:gen:remove']">删除</el-button>
+          <el-button type="text" icon="el-icon-refresh" @click="handleRefresh(scope.row)" v-hasPermi="['tool:gen:refresh']">同步</el-button>
           <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row)" v-hasPermi="['tool:gen:code']">生成代码</el-button>
         </template>
       </el-table-column>
@@ -55,29 +58,11 @@
 
     <el-dialog :visible.sync="showGenerate" title="代码生成" width="800px">
       <el-form ref="codeGenerateForm" label-width="140px">
-        <el-form-item label="要生成的文件">
-          <el-checkbox-group v-model="checkedCodeGenerateForm">
-            <el-checkbox :label="1">生成实体类Model</el-checkbox>
-            <el-checkbox :label="2">生成表单数据传输类Dto</el-checkbox>
-            <el-checkbox :label="3">生成仓储层Repository</el-checkbox>
-            <el-checkbox :label="4">生成服务类Service和接口</el-checkbox>
-            <el-checkbox :label="5">生成控制器Controller</el-checkbox>
-            <el-checkbox :label="6">生成Vue页面</el-checkbox>
-            <el-checkbox :label="7">生成Vue页面数据访问api</el-checkbox>
-            <el-checkbox :label="8">生成Sql文件</el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-
-        <el-form-item label="是否覆盖生成">
-          <el-radio v-model="coverd" :label="true">是</el-radio>
-          <el-radio v-model="coverd" :label="false">否</el-radio>
-        </el-form-item>
 
         <el-form-item label="数据库类型">
           <el-radio v-model="dbType" :label="0">mySql</el-radio>
           <el-radio v-model="dbType" :label="1">sqlServer</el-radio>
         </el-form-item>
-
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="handleGenerate">确 定</el-button>
@@ -151,7 +136,7 @@ export default {
 
       getGenTable(this.queryParams).then((res) => {
         this.tableData = res.data.result;
-        this.total = res.data.totalCount;
+        this.total = res.data.totalNum;
         this.tableloading = false;
       });
     },
@@ -166,12 +151,10 @@ export default {
     },
     // 代码预览
     handlePreview(row) {
-      // this.msgError("敬请期待");
       previewTable(row.tableId).then((res) => {
         if (res.code === 200) {
           this.preview.open = true;
           this.preview.data = res.data;
-          console.log(res);
         }
       });
     },
@@ -201,8 +184,8 @@ export default {
           var seachdata = {
             tableId: this.currentSelected.tableId,
             tableName: this.currentSelected.name,
-            genCodeFiles: this.checkedCodeGenerateForm,
-            coverd: this.coverd,
+            // genCodeFiles: this.checkedCodeGenerateForm,
+            // coverd: this.coverd,
             dbType: this.dbType,
             // queryColumn: this.checkedQueryColumn,
           };
@@ -272,6 +255,12 @@ export default {
       // var language = vmName.substring(vmName.indexOf(".") + 1, vmName.length);
       const result = hljs.highlightAuto(code || "");
       return result.value || "&nbsp;";
+    },
+    handleRefresh(row) {
+      this.$message({
+        type: "info",
+        message: "敬请期待",
+      });
     },
   },
 };

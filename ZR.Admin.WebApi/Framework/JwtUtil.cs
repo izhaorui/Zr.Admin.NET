@@ -18,8 +18,6 @@ namespace ZR.Admin.WebApi.Framework
     /// </summary>
     public class JwtUtil
     {
-        public static readonly string KEY = "asdfghjklzxcvbnm";
-
         /// <summary>
         /// 获取用户身份信息
         /// </summary>
@@ -28,6 +26,7 @@ namespace ZR.Admin.WebApi.Framework
         public static LoginUser GetLoginUser(HttpContext httpContext)
         {
             string token = HttpContextExtension.GetToken(httpContext);
+
             if (!string.IsNullOrEmpty(token))
             {
                 return ValidateJwtToken(ParseToken(token));
@@ -42,21 +41,52 @@ namespace ZR.Admin.WebApi.Framework
         /// <returns></returns>
         public static string GenerateJwtToken(List<Claim> claims)
         {
+            JwtSettings jwtSettings = new();
+            ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
+
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(KEY);
-            var expires = ConfigUtils.Instance.GetAppConfig("sysConfig:tokenExpire", 10);
+            var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+            claims.Add(new Claim("Audience", jwtSettings.Audience));
+            claims.Add(new Claim("Issuer", jwtSettings.Issuer));
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                //Issuer = "",
-                //Audience = "",
-                Expires = DateTime.Now.AddMinutes(expires),
+                Issuer = jwtSettings.Issuer,
+                Audience = jwtSettings.Audience,
+                IssuedAt = DateTime.Now,//token生成时间
+                Expires = DateTime.Now.AddMinutes(jwtSettings.Expire),
+                TokenType = "Bearer",
+                //对称秘钥，签名证书
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+        /// <summary>
+        /// 验证Token
+        /// </summary>
+        /// <returns></returns>
+        public static TokenValidationParameters ValidParameters()
+        {
+            JwtSettings jwtSettings = new();
+            ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
 
+            var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+           
+            var tokenDescriptor = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidIssuer = jwtSettings.Issuer,
+                ValidAudience = jwtSettings.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateLifetime = true,//是否验证Token有效期，使用当前时间与Token的Claims中的NotBefore和Expires对比
+                RequireExpirationTime = true,//过期时间
+            };
+            return tokenDescriptor;
+        }
         /// <summary>
         /// 从令牌中获取数据声明
         /// </summary>
@@ -65,21 +95,13 @@ namespace ZR.Admin.WebApi.Framework
         public static IEnumerable<Claim> ParseToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(KEY);
+            var validateParameter = ValidParameters();
+            token = token.Replace("Bearer ", "");
             try
             {
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    // set clockskew to zero so tokens expire exactly at token expiration time (instead of 5 minutes later)
-                    ClockSkew = TimeSpan.Zero
-                }, out SecurityToken validatedToken);
+                tokenHandler.ValidateToken(token, validateParameter, out SecurityToken validatedToken);
 
-                //{{"alg":"HS256","typ":"JWT"}.{"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid":"2","unique_name":"ry","nameid":"2","given_name":"若依","nbf":1606654010,"exp":1606740410,"iat":1606654010}}
-                var jwtToken = (JwtSecurityToken)validatedToken;
+                var jwtToken = tokenHandler.ReadJwtToken(token);
                 return jwtToken.Claims;
             }
             catch (Exception ex)

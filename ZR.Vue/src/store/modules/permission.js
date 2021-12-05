@@ -21,11 +21,11 @@ const permission = {
     },
     SET_TOPBAR_ROUTES: (state, routes) => {
       // 顶部导航菜单默认添加统计报表栏指向首页
-      // const index = [{
-      //   path: 'index',
-      //   meta: { title: '系统首页', icon: 'dashboard' }
-      // }]
-      state.topbarRouters = routes; //.concat(index);
+      const index = [{
+        // path: 'index',
+        // meta: { title: '系统首页', icon: 'dashboard' }
+      }]
+      state.topbarRouters = routes;//.concat(index);
     },
     SET_SIDEBAR_ROUTERS: (state, routes) => {
       state.sidebarRouters = routes

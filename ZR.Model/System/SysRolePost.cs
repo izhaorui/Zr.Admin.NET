@@ -9,6 +9,7 @@ namespace ZR.Model.System
     /// 角色部门
     /// </summary>
     [SugarTable("sys_role_post")]
+    [Tenant("0")]
     public class SysRolePost
     {
         public long RoleId { get; set; }

@@ -1,8 +1,5 @@
-﻿//using Dapper.Contrib.Extensions;
+﻿using OfficeOpenXml.Attributes;
 using SqlSugar;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ZR.Model.System
 {
@@ -10,7 +7,7 @@ namespace ZR.Model.System
     /// 字典类型表
     /// </summary>
     [SugarTable("sys_dict_type")]//当和数据库名称不一样可以设置别名
-    //[Table("sys_dict_type")]
+    [Tenant("0")]
     public class SysDictType : SysBase
     {
         /// <summary>
@@ -30,6 +27,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 状态 0、正常 1、停用
         /// </summary>
+        [EpplusIgnore]
         public string Status { get; set; }
     }
 }

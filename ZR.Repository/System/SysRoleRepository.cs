@@ -33,13 +33,13 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public PagedInfo<SysRole> SelectRoleList(SysRole sysRole, PagerInfo pager)
         {
-            return Context.Queryable<SysRole>()
-                .Where(role => role.DelFlag == "0")
-                .WhereIF(!string.IsNullOrEmpty(sysRole.RoleName), role => role.RoleName.Contains(sysRole.RoleName))
-                .WhereIF(!string.IsNullOrEmpty(sysRole.Status), role => role.Status == sysRole.Status)
-                .WhereIF(!string.IsNullOrEmpty(sysRole.RoleKey), role => role.RoleKey == sysRole.RoleKey)
-                .OrderBy(role => role.RoleSort)
-                .ToPage(pager);
+            var exp = Expressionable.Create<SysRole>();
+            exp.And(role => role.DelFlag == "0");
+            exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleName), role => role.RoleName.Contains(sysRole.RoleName));
+            exp.AndIF(!string.IsNullOrEmpty(sysRole.Status), role => role.Status == sysRole.Status);
+            exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleKey), role => role.RoleKey == sysRole.RoleKey);
+
+            return GetPages(exp.ToExpression(), pager, x => x.RoleSort);
         }
 
         /// <summary>

@@ -22,7 +22,7 @@ namespace ZR.Service.System
     {
         public SysDeptRepository DeptRepository;
 
-        public SysDeptService(SysDeptRepository deptRepository)
+        public SysDeptService(SysDeptRepository deptRepository) : base(deptRepository)
         {
             DeptRepository = deptRepository;
         }

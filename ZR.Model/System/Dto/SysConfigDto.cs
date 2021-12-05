@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using ZR.Model.Dto;
-using ZR.Model.Models;
 
 namespace ZR.Model.Dto
 {
@@ -15,6 +12,7 @@ namespace ZR.Model.Dto
         public string ConfigKey { get; set; }
         public string ConfigValue { get; set; }
         public string ConfigType { get; set; }
+        public string Remark { get; set; }
     }
 
     /// <summary>

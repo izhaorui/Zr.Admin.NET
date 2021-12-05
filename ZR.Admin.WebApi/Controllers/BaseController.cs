@@ -9,6 +9,8 @@ using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using ZR.Admin.WebApi.Filters;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -120,13 +122,13 @@ namespace ZR.Admin.WebApi.Controllers
             //调试模式需要加上
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             Directory.CreateDirectory(Path.GetDirectoryName(newFileName));
-            using (ExcelPackage package = new ExcelPackage(new FileInfo(newFileName)))
+            using (ExcelPackage package = new(new FileInfo(newFileName)))
             {
                 // 添加worksheet
                 ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(sheetName);
 
                 //全部字段导出
-                worksheet.Cells.LoadFromCollection(list, true);
+                worksheet.Cells.LoadFromCollection(list, true, OfficeOpenXml.Table.TableStyles.Light13);
                 package.Save();
             }
 

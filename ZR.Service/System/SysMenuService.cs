@@ -15,14 +15,14 @@ namespace ZR.Service
     /// 菜单
     /// </summary>
     [AppService(ServiceType = typeof(ISysMenuService), ServiceLifetime = LifeTime.Transient)]
-    public class SysMenuService: ISysMenuService
+    public class SysMenuService : BaseService<SysMenu>, ISysMenuService
     {
         public SysMenuRepository MenuRepository;
         public ISysRoleService SysRoleService;
 
         public SysMenuService(
-            SysMenuRepository menuRepository, 
-            ISysRoleService sysRoleService)
+            SysMenuRepository menuRepository,
+            ISysRoleService sysRoleService) : base(menuRepository)
         {
             MenuRepository = menuRepository;
             SysRoleService = sysRoleService;

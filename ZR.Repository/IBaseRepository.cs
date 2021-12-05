@@ -15,19 +15,12 @@ namespace ZR.Repository
     public interface IBaseRepository<T> where T : class, new()
     {
         #region add
-        int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);
         int Add(T t);
-
-        //int InsertIgnoreNullColumn(T t);
-
-        //int InsertIgnoreNullColumn(T t, params string[] columns);
 
         //int Insert(SqlSugarClient client, T t);
 
-        //long InsertBigIdentity(T t);
-
         int Insert(List<T> t);
-        //int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);
+        int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);
 
         //int InsertIgnoreNullColumn(List<T> t);
 
@@ -46,14 +39,12 @@ namespace ZR.Repository
         //bool ExecuteCommand(string sql, params SugarParameter[] parameters);
 
         //bool ExecuteCommand(string sql, List<SugarParameter> parameters);
-
+        IInsertable<T> Insertable(T t);
         #endregion add
 
         #region update
 
-        //bool UpdateEntity(T entity, bool ignoreNullColumns = false);
-
-        //bool Update(T entity, Expression<Func<T, bool>> expression);
+        bool Update(T entity, bool ignoreNullColumns = false);
 
         /// <summary>
         /// 只更新表达式的值
@@ -61,22 +52,12 @@ namespace ZR.Repository
         /// <param name="entity"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        //bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false);
+        bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false);
 
-        //bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
+        bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
 
-        //bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
+        bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="entity">T</param>
-        /// <param name="list">忽略更新</param>
-        /// <param name="isNull">Null不更新</param>
-        /// <returns></returns>
-        bool Update(T entity, List<string> list = null, bool isNull = true);
-
-        //bool Update(List<T> entity);
         bool Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
 
         #endregion update
@@ -105,7 +86,7 @@ namespace ZR.Repository
         /// <returns></returns>
         PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm);
 
-        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderEnum = "Asc");
+        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, OrderByType orderEnum = OrderByType.Asc);
         
         bool Any(Expression<Func<T, bool>> expression);
 
@@ -124,15 +105,13 @@ namespace ZR.Repository
 
         //List<T> QueryableToList(string tableName);
 
-        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10);
+        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10);
 
-        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, string order, int pageIndex = 0, int pageSize = 10);
+        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, string order, int pageIndex = 0, int pageSize = 10);
 
-        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Expression<Func<T, object>> orderFiled, string orderBy, int pageIndex = 0, int pageSize = 10);
+        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Expression<Func<T, object>> orderFiled, string orderBy, int pageIndex = 0, int pageSize = 10);
 
-        //(List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Bootstrap.BootstrapParams bootstrap);
-
-        //List<T> SqlQueryToList(string sql, object obj = null);
+        List<T> SqlQueryToList(string sql, object obj = null);
         /// <summary>
         /// 获得一条数据
         /// </summary>

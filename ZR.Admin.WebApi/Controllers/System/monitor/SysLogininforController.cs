@@ -38,9 +38,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         public IActionResult LoignLogList([FromQuery] SysLogininfor sysLogininfoDto, [FromQuery] PagerInfo pagerInfo)
         {
             var list = sysLoginService.GetLoginLog(sysLogininfoDto, pagerInfo);
-            var vMPage = new VMPageResult<SysLogininfor>(list, pagerInfo);
 
-            return ToResponse(ToJson(vMPage.TotalNum, vMPage), TIME_FORMAT_FULL_2);
+            return ToResponse(ToJson(list.Count, list.ToPage(pagerInfo)), TIME_FORMAT_FULL_2);
         }
 
         /// <summary>

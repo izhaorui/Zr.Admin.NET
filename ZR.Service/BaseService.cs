@@ -1,4 +1,12 @@
-﻿using ZR.Repository;
+﻿using Infrastructure.Model;
+using SqlSugar;
+using SqlSugar.IOC;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq.Expressions;
+using ZR.Model;
+using ZR.Repository;
 
 namespace ZR.Service
 {
@@ -6,284 +14,371 @@ namespace ZR.Service
     /// 基础服务定义
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class BaseService<T> : BaseRepository<T>, IBaseService<T> where T : class, new()
+    public class BaseService<T> : IBaseService<T> where T : class, new()
     {
-        //#region 添加操作
-        ///// <summary>
-        ///// 添加一条数据
-        ///// </summary>
-        ///// <param name="parm">T</param>
-        ///// <returns></returns>
-        //public int Add(T parm)
+        public IBaseRepository<T> baseRepository;
+
+        public BaseService(IBaseRepository<T> repository)
+        {
+            this.baseRepository = repository ?? throw new ArgumentNullException(nameof(repository));
+        }
+        #region add
+        /// <summary>
+        /// 插入指定列使用
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <param name="iClumns"></param>
+        /// <param name="ignoreNull"></param>
+        /// <returns></returns>
+        public int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true)
+        {
+            return baseRepository.Insert(parm, iClumns, ignoreNull);
+        }
+        /// <summary>
+        /// 插入实体
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        public int Add(T t)
+        {
+            return baseRepository.Add(t);
+        }
+        public IInsertable<T> Insertable(T t)
+        {
+            return baseRepository.Insertable(t);
+        }
+        //public int Insert(SqlSugarClient client, T t)
         //{
-        //    return Add(parm);// Context.Insertable(parm).RemoveDataCache().ExecuteCommand();
+        //    return client.Insertable(t).ExecuteCommand();
         //}
 
-        ///// <summary>
-        ///// 添加
-        ///// </summary>
-        ///// <param name="parm"></param>
-        ///// <param name="iClumns">插入列</param>
-        ///// <param name="ignoreNull">忽略null列</param>
-        ///// <returns></returns>
-        //public int Add(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true)
+        //public long InsertBigIdentity(T t)
         //{
-        //    return Add(parm);
+        //    return base.Context.Insertable(t).ExecuteReturnBigIdentity();
         //}
 
-        ///// <summary>
-        ///// 批量添加数据
-        ///// </summary>
-        ///// <param name="parm">List<T></param>
-        ///// <returns></returns>
-        //public int Add(List<T> parm)
+        public int Insert(List<T> t)
+        {
+            return baseRepository.Insert(t);
+        }
+        public long InsertReturnBigIdentity(T t)
+        {
+            return baseRepository.InsertReturnBigIdentity(t);
+        }
+
+        //public int InsertIgnoreNullColumn(List<T> t)
         //{
-        //    return 1;// Context.Insertable(parm).RemoveDataCache().ExecuteCommand();
+        //    return base.Context.Insertable(t).IgnoreColumns(true).ExecuteCommand();
         //}
 
-        ///// <summary>
-        ///// 添加或更新数据，不推荐使用了
-        ///// </summary>
-        ///// <param name="parm">List<T></param>
-        ///// <returns></returns>
-        //public T Saveable(T parm, Expression<Func<T, object>> uClumns = null, Expression<Func<T, object>> iColumns = null)
+        //public int InsertIgnoreNullColumn(List<T> t, params string[] columns)
         //{
-        //    var command = Context.Saveable(parm);
-
-        //    if (uClumns != null)
+        //    return base.Context.Insertable(t).IgnoreColumns(columns).ExecuteCommand();
+        //}
+        //public DbResult<bool> InsertTran(T t)
+        //{
+        //    var result = base.Context.Ado.UseTran(() =>
         //    {
-        //        command = command.UpdateIgnoreColumns(uClumns);
-        //    }
+        //        base.Context.Insertable(t).ExecuteCommand();
+        //    });
+        //    return result;
+        //}
 
-        //    if (iColumns != null)
+        //public DbResult<bool> InsertTran(List<T> t)
+        //{
+        //    var result = base.Context.Ado.UseTran(() =>
         //    {
-        //        command = command.InsertIgnoreColumns(iColumns);
-        //    }
-
-        //    return command.ExecuteReturnEntity();
+        //        base.Context.Insertable(t).ExecuteCommand();
+        //    });
+        //    return result;
         //}
 
-        ///// <summary>
-        ///// 批量添加或更新数据
-        ///// </summary>
-        ///// <param name="parm">List<T></param>
-        ///// <returns></returns>
-        //public List<T> Saveable(List<T> parm, Expression<Func<T, object>> uClumns = null, Expression<Func<T, object>> iColumns = null)
+        //public T InsertReturnEntity(T t)
         //{
-        //    var command = Context.Saveable(parm);
+        //    return base.Context.Insertable(t).ExecuteReturnEntity();
+        //}
 
-        //    if (uClumns != null)
+        //public T InsertReturnEntity(T t, string sqlWith = SqlWith.UpdLock)
+        //{
+        //    return base.Context.Insertable(t).With(sqlWith).ExecuteReturnEntity();
+        //}
+
+        //public bool ExecuteCommand(string sql, object parameters)
+        //{
+        //    return base.Context.Ado.ExecuteCommand(sql, parameters) > 0;
+        //}
+
+        //public bool ExecuteCommand(string sql, params SugarParameter[] parameters)
+        //{
+        //    return base.Context.Ado.ExecuteCommand(sql, parameters) > 0;
+        //}
+
+        //public bool ExecuteCommand(string sql, List<SugarParameter> parameters)
+        //{
+        //    return base.Context.Ado.ExecuteCommand(sql, parameters) > 0;
+        //}
+
+        #endregion add
+
+        #region update
+
+        public bool Update(T entity, bool ignoreNullColumns = false)
+        {
+            return baseRepository.Update(entity, ignoreNullColumns);
+        }
+
+        public bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false)
+        {
+            return baseRepository.Update(entity, expression, ignoreAllNull);
+        }
+
+        public bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
+        {
+            return baseRepository.Update(entity, expression, where);
+        }
+
+        public bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
+        {
+            return client.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand() > 0;
+        }
+
+        ///// <summary>
+        /////
+        ///// </summary>
+        ///// <param name="entity"></param>
+        ///// <param name="list"></param>
+        ///// <param name="isNull">默认为true</param>
+        ///// <returns></returns>
+        //public bool Update(T entity, List<string> list = null, bool isNull = true)
+        //{
+        //    if (list == null)
         //    {
-        //        command = command.UpdateIgnoreColumns(uClumns);
-        //    }
-
-        //    if (iColumns != null)
+        //        list = new List<string>()
         //    {
-        //        command = command.InsertIgnoreColumns(iColumns);
+        //        "Create_By",
+        //        "Create_time"
+        //    };
         //    }
-
-        //    return command.ExecuteReturnList();
+        //    //base.Context.Updateable(entity).IgnoreColumns(c => list.Contains(c)).Where(isNull).ExecuteCommand()
+        //    return baseRepository.Update(entity, list, isNull);
         //}
-        //#endregion
 
-        //#region 查询操作
-
-        ///// <summary>
-        ///// 根据条件查询数据是否存在
-        ///// </summary>
-        ///// <param name="where">条件表达式树</param>
-        ///// <returns></returns>
-        //public bool Any(Expression<Func<T, bool>> where)
+        //public bool Update(List<T> entity)
         //{
-        //    return true;// base.Context.Any(where);
+        //    var result = base.Context.Ado.UseTran(() =>
+        //    {
+        //        base.Context.Updateable(entity).ExecuteCommand();
+        //    });
+        //    return result.IsSuccess;
         //}
+        public bool Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
+        {
+            return baseRepository.Update(where, columns);
+        }
+        #endregion update
 
-        ///// <summary>
-        ///// 根据条件合计字段
-        ///// </summary>
-        ///// <param name="where">条件表达式树</param>
-        ///// <returns></returns>
-        //public TResult Sum<TResult>(Expression<Func<T, bool>> where, Expression<Func<T, TResult>> field)
-        //{
-        //    return base.Context.Queryable<T>().Where(where).Sum(field);
-        //}
+        public DbResult<bool> UseTran(Action action)
+        {
+            var result = baseRepository.UseTran(action);
+            return result;
+        }
 
-        ///// <summary>
-        ///// 根据主值查询单条数据
-        ///// </summary>
-        ///// <param name="pkValue">主键值</param>
-        ///// <returns>泛型实体</returns>
-        ////public T GetId(object pkValue)
-        ////{
-        ////    return base.Context.Queryable<T>().InSingle(pkValue);
-        ////}
+        public DbResult<bool> UseTran(SqlSugarClient client, Action action)
+        {
+            var result = client.Ado.UseTran(() => action());
+            return result;
+        }
 
-        ///// <summary>
-        ///// 根据主键查询多条数据
-        ///// </summary>
-        ///// <param name="ids"></param>
-        ///// <returns></returns>
-        //public List<T> GetIn(object[] ids)
-        //{
-        //    return Context.Queryable<T>().In(ids).ToList();
-        //}
+        public bool UseTran2(Action action)
+        {
+            var result = baseRepository.UseTran2(action);
+            return result;
+        }
 
-        ///// <summary>
-        ///// 根据条件取条数
-        ///// </summary>
-        ///// <param name="where">条件表达式树</param>
-        ///// <returns></returns>
-        //public int GetCount(Expression<Func<T, bool>> where)
-        //{
-        //    return Context.Queryable<T>().Count(where);
-
-        //}
-
-        ///// <summary>
-        ///// 查询所有数据(无分页,请慎用)
-        ///// </summary>
-        ///// <returns></returns>
-        //public List<T> GetAll(bool useCache = false, int cacheSecond = 3600)
-        //{
-        //    return Context.Queryable<T>().WithCacheIF(useCache, cacheSecond).ToList();
-        //}
-
-        ///// <summary>
-        ///// 获得一条数据
-        ///// </summary>
-        ///// <param name="where">Expression<Func<T, bool>></param>
-        ///// <returns></returns>
-        //public T GetFirst2(Expression<Func<T, bool>> where)
-        //{
-        //    return base.GetFirst(where);// Context.Queryable<T>().Where(where).First();
-        //}
-
-        ///// <summary>
-        ///// 获得一条数据
-        ///// </summary>
-        ///// <param name="parm">string</param>
-        ///// <returns></returns>
-        ////public T GetFirst(string parm)
-        ////{
-        ////    return Context.Queryable<T>().Where(parm).First();
-        ////}
-
-        ///// <summary>
-        ///// 根据条件查询分页数据
-        ///// </summary>
-        ///// <param name="where"></param>
-        ///// <param name="parm"></param>
-        ///// <returns></returns>
-        //public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm)
-        //{
-        //    var source = Context.Queryable<T>().Where(where);
-
-        //    return source.ToPage(parm);
-        //}
-
-        //public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderEnum = "Asc")
-        //{
-        //    var source = Context.Queryable<T>().Where(where).OrderByIF(orderEnum == "Asc", order, OrderByType.Asc).OrderByIF(orderEnum == "Desc", order, OrderByType.Desc);
-
-        //    return source.ToPage(parm);
-        //}
+        #region delete
 
         /// <summary>
-        /// 根据条件查询数据
+        /// 删除表达式
         /// </summary>
-        /// <param name="where">条件表达式树</param>
+        /// <param name="expression"></param>
         /// <returns></returns>
-        //      public List<T> GetWhere(Expression<Func<T, bool>> where, bool useCache = false, int cacheSecond = 3600)
-        //      {
-        //          var query = Context.Queryable<T>().Where(where).WithCacheIF(useCache, cacheSecond);
-        //          return query.ToList();
-        //      }
+        public int Delete(Expression<Func<T, bool>> expression)
+        {
+            return baseRepository.Delete(expression);
+        }
 
-        //      /// <summary>
-        ///// 根据条件查询数据
-        ///// </summary>
-        ///// <param name="where">条件表达式树</param>
-        ///// <returns></returns>
-        //      public List<T> GetWhere(Expression<Func<T, bool>> where, Expression<Func<T, object>> order, string orderEnum = "Asc", bool useCache = false, int cacheSecond = 3600)
-        //      {
-        //          var query = Context.Queryable<T>().Where(where).OrderByIF(orderEnum == "Asc", order, OrderByType.Asc).OrderByIF(orderEnum == "Desc", order, OrderByType.Desc).WithCacheIF(useCache, cacheSecond);
-        //          return query.ToList();
-        //      }
+        /// <summary>
+        /// 批量删除
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public int Delete(object[] obj)
+        {
+            return baseRepository.Delete(obj);
+        }
+        public int Delete(object id)
+        {
+            return baseRepository.Delete(id);
+        }
+        public bool DeleteTable()
+        {
+            return baseRepository.DeleteTable();
+        }
 
-        //      #endregion
+        #endregion delete
 
-        //#region 修改操作
+        #region query
 
-        /////// <summary>
-        /////// 修改一条数据
-        /////// </summary>
-        /////// <param name="parm">T</param>
-        /////// <returns></returns>
-        ////public int Update(T parm)
-        ////{
-        ////    return Context.Updateable(parm).RemoveDataCache().ExecuteCommand();
-        ////}
+        public bool Any(Expression<Func<T, bool>> expression)
+        {
+            return baseRepository.Any(expression);
+        }
 
-        /////// <summary>
-        /////// 批量修改
-        /////// </summary>
-        /////// <param name="parm">T</param>
-        /////// <returns></returns>
-        ////public int Update(List<T> parm)
-        ////{
-        ////    return Context.Updateable(parm).RemoveDataCache().ExecuteCommand();
-        ////}
+        public ISugarQueryable<T> Queryable()
+        {
+            return baseRepository.Queryable();
+        }
 
-        /////// <summary>
-        /////// 按查询条件更新
-        /////// </summary>
-        /////// <param name="where"></param>
-        /////// <param name="columns"></param>
-        /////// <returns></returns>
-        ////public int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
-        ////{
-        ////    return Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand();
-        ////}
+        public List<T> GetList(Expression<Func<T, bool>> expression)
+        {
+            return baseRepository.GetList(expression);
+        }
 
-        //#endregion
-
-        //#region 删除操作
-
-        /////// <summary>
-        /////// 删除一条或多条数据
-        /////// </summary>
-        /////// <param name="parm">string</param>
-        /////// <returns></returns>
-        ////public int Delete(object id)
-        ////{
-        ////    return Context.Deleteable<T>(id).RemoveDataCache().ExecuteCommand();
-        ////}
-
-        /////// <summary>
-        /////// 删除一条或多条数据
-        /////// </summary>
-        /////// <param name="parm">string</param>
-        /////// <returns></returns>
-        ////public int Delete(object[] ids)
-        ////{
-        ////    return Context.Deleteable<T>().In(ids).RemoveDataCache().ExecuteCommand();
-        ////}
-
-        /////// <summary>
-        /////// 根据条件删除一条或多条数据
-        /////// </summary>
-        /////// <param name="where">过滤条件</param>
-        /////// <returns></returns>
-        ////public int Delete(Expression<Func<T, bool>> where)
-        ////{
-        ////    return Context.Deleteable<T>().Where(where).RemoveDataCache().ExecuteCommand();
-        ////}
-
-        //public int DeleteTable()
+        //public Task<List<T>> QueryableToListAsync(Expression<Func<T, bool>> expression)
         //{
-        //    return Context.Deleteable<T>().RemoveDataCache().ExecuteCommand();
+        //    return Context.Queryable<T>().Where(expression).ToListAsync();
         //}
-        //#endregion
 
+        //public string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere)
+        //{
+        //    var query = base.Context.Queryable<T>().Select(select).Where(expressionWhere).ToList();
+        //    return query.JilToJson();
+        //}
+
+        //public List<T> QueryableToList(string tableName)
+        //{
+        //    return Context.Queryable<T>(tableName).ToList();
+        //}
+
+        //public (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10)
+        //{
+        //    int totalNumber = 0;
+        //    var list = Context.Queryable<T>().Where(expression).ToPageList(pageIndex, pageSize, ref totalNumber);
+        //    return (list, totalNumber);
+        //}
+
+        //public (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, string order, int pageIndex = 0, int pageSize = 10)
+        //{
+        //    int totalNumber = 0;
+        //    var list = Context.Queryable<T>().Where(expression).OrderBy(order).ToPageList(pageIndex, pageSize, ref totalNumber);
+        //    return (list, totalNumber);
+        //}
+
+        //public (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Expression<Func<T, object>> orderFiled, string orderBy, int pageIndex = 0, int pageSize = 10)
+        //{
+        //    int totalNumber = 0;
+
+        //    if (orderBy.Equals("DESC", StringComparison.OrdinalIgnoreCase))
+        //    {
+        //        var list = Context.Queryable<T>().Where(expression).OrderBy(orderFiled, OrderByType.Desc).ToPageList(pageIndex, pageSize, ref totalNumber);
+        //        return (list, totalNumber);
+        //    }
+        //    else
+        //    {
+        //        var list = Context.Queryable<T>().Where(expression).OrderBy(orderFiled, OrderByType.Asc).ToPageList(pageIndex, pageSize, ref totalNumber);
+        //        return (list, totalNumber);
+        //    }
+        //}
+
+        //public List<T> SqlQueryToList(string sql, object obj = null)
+        //{
+        //    return Context.Ado.SqlQuery<T>(sql, obj);
+        //}
+        /// <summary>
+        /// 获得一条数据
+        /// </summary>
+        /// <param name="where">Expression<Func<T, bool>></param>
+        /// <returns></returns>
+        public T GetFirst(Expression<Func<T, bool>> where)
+        {
+            return baseRepository.GetFirst(where);
+        }
+
+        /// <summary>
+        /// 根据主值查询单条数据
+        /// </summary>
+        /// <param name="pkValue">主键值</param>
+        /// <returns>泛型实体</returns>
+        public T GetId(object pkValue)
+        {
+            return baseRepository.GetId(pkValue);
+        }
+        /// <summary>
+        /// 根据条件查询分页数据
+        /// </summary>
+        /// <param name="where"></param>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm)
+        {
+            var source = baseRepository.GetPages(where, parm);
+
+            return source;
+        }
+
+        public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, OrderByType orderEnum = OrderByType.Asc)
+        {
+            return baseRepository.GetPages(where, parm, order, orderEnum);
+        }
+        public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderByType)
+        {
+            return baseRepository.GetPages(where, parm, order, orderByType == "desc" ? OrderByType.Desc : OrderByType.Asc);
+        }
+        /// <summary>
+        /// 查询所有数据(无分页,请慎用)
+        /// </summary>
+        /// <returns></returns>
+        public List<T> GetAll(bool useCache = false, int cacheSecond = 3600)
+        {
+            return baseRepository.GetAll(useCache, cacheSecond);
+        }
+
+        public int Count(Expression<Func<T, bool>> where)
+        {
+            return baseRepository.Count(where);
+        }
+        #endregion query
+
+        /// <summary>
+        /// 此方法不带output返回值
+        /// var list = new List<SugarParameter>();
+        /// list.Add(new SugarParameter(ParaName, ParaValue)); input
+        /// </summary>
+        /// <param name="procedureName"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public DataTable UseStoredProcedureToDataTable(string procedureName, List<SugarParameter> parameters)
+        {
+            return baseRepository.UseStoredProcedureToDataTable(procedureName, parameters);
+        }
+
+        /// <summary>
+        /// 带output返回值
+        /// var list = new List<SugarParameter>();
+        /// list.Add(new SugarParameter(ParaName, ParaValue, true));  output
+        /// list.Add(new SugarParameter(ParaName, ParaValue)); input
+        /// </summary>
+        /// <param name="procedureName"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public (DataTable, List<SugarParameter>) UseStoredProcedureToTuple(string procedureName, List<SugarParameter> parameters)
+        {
+            return baseRepository.UseStoredProcedureToTuple(procedureName, parameters);
+        }
+
+        //public string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }

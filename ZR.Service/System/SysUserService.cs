@@ -10,6 +10,9 @@ using ZR.Service.System.IService;
 
 namespace ZR.Service
 {
+    /// <summary>
+    /// 系统用户
+    /// </summary>
     [AppService(ServiceType = typeof(ISysUserService), ServiceLifetime = LifeTime.Transient)]
     public class SysUserService : BaseService<SysUser>, ISysUserService
     {
@@ -22,7 +25,7 @@ namespace ZR.Service
             SysUserRepository userRepository,
             ISysRoleService sysRoleService,
             ISysUserRoleService userRoleService,
-            ISysUserPostService userPostService)
+            ISysUserPostService userPostService) : base(userRepository)
         {
             UserRepository = userRepository;
             RoleService = sysRoleService;

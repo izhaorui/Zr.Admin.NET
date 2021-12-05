@@ -6,6 +6,7 @@ using ZR.Model.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
 using Infrastructure;
+using Infrastructure.Model;
 
 namespace ZR.Service.System
 {
@@ -13,11 +14,11 @@ namespace ZR.Service.System
     /// 操作日志
     /// </summary>
     [AppService(ServiceType = typeof(ISysOperLogService), ServiceLifetime = LifeTime.Transient)]
-    public class SysOperLogService : ISysOperLogService
+    public class SysOperLogService : BaseService<SysOperLog>, ISysOperLogService
     {
         public SysOperLogRepository sysOperLogRepository;
 
-        public SysOperLogService(SysOperLogRepository sysOperLog)
+        public SysOperLogService(SysOperLogRepository sysOperLog) : base(sysOperLog)
         {
             sysOperLogRepository = sysOperLog;
         }
@@ -37,7 +38,7 @@ namespace ZR.Service.System
         /// <param name="operLog">操作日志对象</param>
         /// <param name="pager"></param>
         /// <returns>操作日志集合</returns>
-        public List<SysOperLog> SelectOperLogList(SysOperLogDto operLog, PagerInfo pager)
+        public PagedInfo<SysOperLog> SelectOperLogList(SysOperLogDto operLog, PagerInfo pager)
         {
             operLog.BeginTime = DateTimeHelper.GetBeginTime(operLog.BeginTime, -1);
             operLog.EndTime = DateTimeHelper.GetBeginTime(operLog.EndTime, 1);

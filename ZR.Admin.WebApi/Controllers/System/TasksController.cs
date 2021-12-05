@@ -20,7 +20,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 计划任务
     /// </summary>
-    //[Verify]
+    [Verify]
     [Route("system/Tasks")]
     public class TasksController : BaseController
     {
@@ -51,7 +51,7 @@ namespace ZR.Admin.WebApi.Controllers
                 m.JobGroup.Contains(parm.QueryText) ||
                 m.AssemblyName.Contains(parm.QueryText));
 
-            var response = _tasksQzService.GetPages(predicate.ToExpression(), pager, f => f.IsStart, "Desc");
+            var response = _tasksQzService.GetPages(predicate.ToExpression(), pager, f => f.IsStart, OrderByType.Desc);
 
             return SUCCESS(response, TIME_FORMAT_FULL);
         }

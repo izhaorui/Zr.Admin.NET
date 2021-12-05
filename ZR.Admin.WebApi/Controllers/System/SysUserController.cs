@@ -11,7 +11,7 @@ using System.IO;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
-using ZR.Model.Vo;
+using ZR.Service;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
@@ -53,9 +53,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var list = UserService.SelectUserList(user, pager);
 
-            var vm = new VMPageResult<SysUser>(list, pager);
-
-            return SUCCESS(vm, TIME_FORMAT_FULL);
+            return SUCCESS(list.ToPage(pager), TIME_FORMAT_FULL);
         }
 
         /// <summary>
@@ -220,48 +218,10 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:export")]
         public IActionResult UserExport([FromQuery] SysUser user)
         {
-            string sFileName = $"用户列表{DateTime.Now:yyyyMMddHHmmss}.xlsx";
-            string newFileName = Path.Combine(WebHostEnvironment.WebRootPath, "export", sFileName);
             var list = UserService.SelectUserList(user, new PagerInfo(1, 10000));
 
             //调试模式需要加上
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            Directory.CreateDirectory(Path.GetDirectoryName(newFileName));
-            using (ExcelPackage package = new ExcelPackage(new FileInfo(newFileName)))
-            {
-                // 添加worksheet
-                ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("sysuser");
-                #region 自定义导出
-                //添加头
-                //worksheet.Cells[1, 1].Value = "用户id";
-                //worksheet.Cells[1, 2].Value = "用户名称";
-                //worksheet.Cells[1, 3].Value = "用户昵称";
-                //worksheet.Cells[1, 4].Value = "部门";
-                //worksheet.Cells[1, 5].Value = "手机号码";
-                //worksheet.Cells[1, 6].Value = "性别";
-                //worksheet.Cells[1, 7].Value = "状态";
-                //worksheet.Cells[1, 8].Value = "添加时间";
-                //worksheet.Cells[1, 9].Value = "登录IP";
-                //worksheet.Cells[1, 10].Value = "最后登录时间";
-                //for (int i = 0; i < list.Count; i++)
-                //{
-                //    var item = list[i];
-                //    //worksheet.Cells[i + 2, 1].Value = item.UserId;
-                //    //worksheet.Cells[i + 2, 2].Value = item.UserName;
-                //    //worksheet.Cells[i + 2, 3].Value = item.NickName;
-                //    //worksheet.Cells[i + 2, 4].Value = item.DeptName;
-                //    //worksheet.Cells[i + 2, 5].Value = item.Phonenumber;
-                //    //worksheet.Cells[i + 2, 6].Value = item.Sex;
-                //    //worksheet.Cells[i + 2, 7].Value = item.Status;
-                //    //worksheet.Cells[i + 2, 8].Value = item.Create_time.ToString();
-                //    //worksheet.Cells[i + 2, 9].Value = item.LoginIP;
-                //    //worksheet.Cells[i + 2, 10].Value = item.LoginDate.ToString();
-                //}
-                #endregion
-                //全部字段导出
-                worksheet.Cells.LoadFromCollection(list, true);
-                package.Save();
-            }
+            string sFileName = ExportExcel(list, "user", "用户列表");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
     }

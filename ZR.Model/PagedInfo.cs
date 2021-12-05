@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Infrastructure.Model
+namespace ZR.Model
 {
     /// <summary>
     /// 分页参数
@@ -20,34 +20,33 @@ namespace Infrastructure.Model
         /// <summary>
         /// 排序列
         /// </summary>
-        //public string Sort { get; set; }
+        public string Sort { get; set; }
         /// <summary>
         /// 排序类型
         /// </summary>
-        //public string SortType { get; set; }
+        public string SortType { get; set; }
         /// <summary>
         /// 总记录数
         /// </summary>
-        public int TotalCount { get; set; }
+        public int TotalNum { get; set; }
         /// <summary>
         /// 总页数
         /// </summary>
-        //public int TotalPage
-        //{
-        //    get
-        //    {
-        //        if (TotalCount > 0)
-        //        {
-        //            return TotalCount % this.PageSize == 0 ? TotalCount / this.PageSize : TotalCount / this.PageSize + 1;
-        //        }
-        //        else
-        //        {
-        //            return 0;
-        //        }
-        //    }
-        //    set {  }
-        //}
-        public int TotalPage { get; set; }
+        public int TotalPage
+        {
+            get
+            {
+                if (TotalNum > 0)
+                {
+                    return TotalNum % this.PageSize == 0 ? TotalNum / this.PageSize : TotalNum / this.PageSize + 1;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            set { }
+        }
         public List<T> Result { get; set; }
 
         public PagedInfo()
@@ -59,8 +58,8 @@ namespace Infrastructure.Model
         {
             PageIndex = pageIndex;
             PageSize = pageSize;
-            TotalCount = source.Count;
-            TotalPage = (int)Math.Ceiling(TotalCount / (double)PageSize);//计算总页数
+            TotalNum = source.Count;
+            TotalPage = (int)Math.Ceiling(TotalNum / (double)PageSize);//计算总页数
         }
 
     }

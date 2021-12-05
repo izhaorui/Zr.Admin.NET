@@ -1,20 +1,25 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using ZR.Common;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
+    /// <summary>
+    /// 字典数据类
+    /// </summary>
     [AppService(ServiceType = typeof(ISysDictDataService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDictDataService: ISysDictDataService
+    public class SysDictDataService : BaseService<SysDictData>, ISysDictDataService
     {
 
         private readonly SysDictDataRepository SysDictDataRepository;
-        public SysDictDataService(SysDictDataRepository sysDictDataRepository)
+        public SysDictDataService(SysDictDataRepository sysDictDataRepository) : base(sysDictDataRepository)
         {
             SysDictDataRepository = sysDictDataRepository;
         }
@@ -24,15 +29,15 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="dictData"></param>
         /// <returns></returns>
-        public List<SysDictData> SelectDictDataList(SysDictData dictData)
+        public PagedInfo<SysDictData> SelectDictDataList(SysDictData dictData, PagerInfo pagerInfo)
         {
-            return SysDictDataRepository.SelectDictDataList(dictData);
+            return SysDictDataRepository.SelectDictDataList(dictData, pagerInfo);
         }
 
         /// <summary>
         /// 根据字典类型查询
         /// </summary>
-        /// <param name="dictData"></param>
+        /// <param name="dictType"></param>
         /// <returns></returns>
         public List<SysDictData> SelectDictDataByType(string dictType)
         {

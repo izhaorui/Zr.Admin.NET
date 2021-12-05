@@ -10,6 +10,7 @@ namespace ZR.Model.System
     /// 用户岗位
     /// </summary>
     [SugarTable("sys_user_post")]
+    [Tenant("0")]
     public class SysUserPost
     {
         public long UserId { get; set; }

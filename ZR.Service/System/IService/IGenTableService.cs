@@ -1,14 +1,10 @@
-﻿using Infrastructure.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using ZR.Model;
 using ZR.Model.System.Generate;
 
 namespace ZR.Service.System.IService
 {
-    public interface IGenTableService
+    public interface IGenTableService: IBaseService<GenTable>
     {
         List<GenTable> SelectDbTableListByNamess(string[] tableNames);
 
@@ -21,7 +17,7 @@ namespace ZR.Service.System.IService
         int UpdateGenTable(GenTable genTable);
     }
 
-    public interface IGenTableColumnService
+    public interface IGenTableColumnService: IBaseService<GenTableColumn>
     {        
         int InsertGenTableColumn(List<GenTableColumn> tableColumn);
 

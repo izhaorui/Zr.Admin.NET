@@ -5,11 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="ApiResult.cs" />
-    <Compile Remove="OptionsSetting.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="EPPlus" Version="5.8.3" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.4.3" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
@@ -18,6 +14,7 @@
   <ItemGroup>
     <Folder Include="Dto\" />
     <Folder Include="Enum\" />
+    <Folder Include="Vo\" />
   </ItemGroup>
 
 </Project>

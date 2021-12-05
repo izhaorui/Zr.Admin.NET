@@ -103,13 +103,9 @@ import {
   updateNotice,
   // exportNotice,
 } from "@/api/system/notice";
-import Editor from "@/components/Editor";
 
 export default {
   name: "Notice",
-  components: {
-    Editor,
-  },
   data() {
     return {
       // 遮罩层

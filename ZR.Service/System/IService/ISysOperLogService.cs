@@ -3,6 +3,7 @@ using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Service.System;
+using Infrastructure.Model;
 
 namespace ZR.Service.System.IService
 {
@@ -16,7 +17,7 @@ namespace ZR.Service.System.IService
         /// <param name="operLog">操作日志对象</param>
         /// <param name="pager"></param>
         /// <returns>操作日志集合</returns>
-        public List<SysOperLog> SelectOperLogList(SysOperLogDto operLog, PagerInfo pager);
+        public PagedInfo<SysOperLog> SelectOperLogList(SysOperLogDto operLog, PagerInfo pager);
 
         /// <summary>
         /// 清空操作日志

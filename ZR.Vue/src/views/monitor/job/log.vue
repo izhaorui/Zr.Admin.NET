@@ -161,7 +161,7 @@ export default {
       listJobLog(this.addDateRange(this.queryParams, this.dateRange)).then(
         (response) => {
           this.jobLogList = response.data.result;
-          this.total = response.data.totalCount;
+          this.total = response.data.totalNum;
           this.loading = false;
         }
       );

@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System;
@@ -67,13 +68,23 @@ namespace ZR.Admin.WebApi.Extensions
         {
             var uid = context.User.FindFirstValue(ClaimTypes.PrimarySid);
 
-            return !string.IsNullOrEmpty(uid) ? long.Parse(uid) : 0 ;
+            return !string.IsNullOrEmpty(uid) ? long.Parse(uid) : 0;
         }
         public static string GetName(this HttpContext context)
         {
             var uid = context.User?.Identity?.Name;
 
             return uid;
+        }
+
+        /// <summary>
+        /// ClaimsIdentity
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static IEnumerable<ClaimsIdentity> GetClaims(this HttpContext context)
+        {
+            return context.User?.Identities;
         }
         //public static int GetRole(this HttpContext context)
         //{
@@ -84,9 +95,7 @@ namespace ZR.Admin.WebApi.Extensions
 
         public static string GetUserAgent(this HttpContext context)
         {
-            var str = context.Request.Headers["User-Agent"];
-
-            return str;
+            return context.Request.Headers["User-Agent"];
         }
 
         /// <summary>
@@ -96,9 +105,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// <returns></returns>
         public static string GetToken(this HttpContext context)
         {
-            var str = context.Request.Headers["Token"];
-
-            return str;
+            return context.Request.Headers["Authorization"];
         }
 
         public static ClientInfo GetClientInfo(this HttpContext context)
@@ -116,12 +123,12 @@ namespace ZR.Admin.WebApi.Extensions
         }
 
         /// <summary>
-        /// 登录cookie写入
+        ///组装Claims
         /// </summary>
         /// <param name="context"></param>
         /// <param name="user"></param>
         /// <returns></returns>
-        public static List<Claim> WriteCookies(this HttpContext context, LoginUser user)
+        public static List<Claim> AddClaims(this HttpContext context, LoginUser user)
         {
             //1、创建Cookie保存用户信息，使用claim
             var claims = new List<Claim>()
@@ -138,13 +145,21 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 claims.Add(new Claim("perm", string.Join(",", user.Permissions)));
             }
+
+            //写入Cookie
+            //WhiteCookie(context, claims);
+            return claims;
+        }
+
+        private static void WhiteCookie(HttpContext context, List<Claim> claims)
+        {
             //2.创建声明主题 指定认证方式 这里使用cookie
             var claimsIdentity = new ClaimsIdentity(claims, "Login");
 
             Task.Run(async () =>
             {
                 await context.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,//这里要注意的是HttpContext.SignInAsync(AuthenticationType,…) 所设置的Scheme一定要与前面的配置一样，这样对应的登录授权才会生效。
+                JwtBearerDefaults.AuthenticationScheme,//这里要注意的是HttpContext.SignInAsync(AuthenticationType,…) 所设置的Scheme一定要与前面的配置一样，这样对应的登录授权才会生效。
             new ClaimsPrincipal(claimsIdentity),
             new AuthenticationProperties()
             {
@@ -153,7 +168,6 @@ namespace ZR.Admin.WebApi.Extensions
                 ExpiresUtc = DateTimeOffset.Now.AddDays(1),//有效时间
             });
             }).Wait();
-            return claims;
         }
     }
 

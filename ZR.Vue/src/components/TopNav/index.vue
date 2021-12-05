@@ -137,7 +137,7 @@ export default {
         window.open(key, "_blank");
       } else if (key.indexOf("/redirect") !== -1) {
         // /redirect 路径内部打开
-        this.$router.push({ path: key.replace("/redirect", "") });
+        this.$router.push({ path: key.replace("/redirect", "") }).catch(err => {});
       } else {
         // 显示左侧联动菜单
         this.activeRoutes(key);

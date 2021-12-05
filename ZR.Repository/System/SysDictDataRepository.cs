@@ -1,6 +1,9 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Model;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
+using ZR.Model;
 using ZR.Model.System;
 
 namespace ZR.Repository.System
@@ -15,14 +18,15 @@ namespace ZR.Repository.System
         /// 字典类型数据搜索
         /// </summary>
         /// <param name="dictData"></param>
+        /// <param name="pagerInfo"></param>
         /// <returns></returns>
-        public List<SysDictData> SelectDictDataList(SysDictData dictData)
+        public PagedInfo<SysDictData> SelectDictDataList(SysDictData dictData, PagerInfo pagerInfo)
         {
-            return Context.Queryable<SysDictData>()
-                .WhereIF(!string.IsNullOrEmpty(dictData.DictLabel), it => it.DictLabel.Contains(dictData.DictLabel))
-                .WhereIF(!string.IsNullOrEmpty(dictData.Status), it => it.Status == dictData.Status)
-                .WhereIF(!string.IsNullOrEmpty(dictData.DictType), it => it.DictType == dictData.DictType)
-                .ToList();
+            var exp = Expressionable.Create<SysDictData>();
+            exp.AndIF(!string.IsNullOrEmpty(dictData.DictLabel), it => it.DictLabel.Contains(dictData.DictLabel));
+            exp.AndIF(!string.IsNullOrEmpty(dictData.Status), it => it.Status == dictData.Status);
+            exp.AndIF(!string.IsNullOrEmpty(dictData.DictType), it => it.DictType == dictData.DictType);
+            return GetPages(exp.ToExpression(), pagerInfo);
         }
 
         /// <summary>

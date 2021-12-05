@@ -9,7 +9,7 @@
         <el-input v-model="form.subject"></el-input>
       </el-form-item>
       <el-form-item label="邮件内容" prop="content">
-				<editor v-model="form.content" :min-height="192" />
+        <editor v-model="form.content" :min-height="192" />
       </el-form-item>
 
       <el-form-item label="附件">
@@ -28,18 +28,16 @@
 <script>
 import { sendEmail } from "@/api/common";
 import { getToken } from "@/utils/auth";
-import Editor from "@/components/Editor";
 
 export default {
   name: "sendEmail",
-  components: { Editor },
   data() {
     return {
       form: {
         fileUrl: "",
       },
       headers: {
-        Token: "",
+        Authorization: "Bearer " + getToken(),
       },
       uploadActionUrl: process.env.VUE_APP_BASE_API + "upload/SaveFile",
       rules: {
@@ -57,8 +55,6 @@ export default {
     };
   },
   mounted() {
-    console.log(getToken());
-    this.headers.Token = getToken();
   },
   methods: {
     // 表单重置
@@ -79,7 +75,7 @@ export default {
       console.log(response);
       if (response.code == 200) {
         this.$message.success("上传成功");
-        this.form.fileUrl = response.data.fullPath;
+        this.form.fileUrl = response.data;
       } else {
         this.$message.error(response.msg);
       }
@@ -109,6 +105,7 @@ export default {
             loading.close();
           }, 5000);
         } else {
+          console.log("未通过");
           //校验不通过
           return false;
         }

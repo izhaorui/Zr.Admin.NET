@@ -16,7 +16,7 @@ export function upload(data) {
  */
 export function sendEmail(data) {
   return request({
-    url: '/home/SendEmail',
+    url: '/common/SendEmail',
     method: 'POST',
     data: data,
   })

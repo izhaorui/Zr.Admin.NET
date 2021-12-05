@@ -8,7 +8,8 @@ namespace ZR.Model.System.Generate
     /// 代码生成表
     /// </summary>
     [SqlSugar.SugarTable("gen_table")]
-    public class GenTable: SysBase
+    [SqlSugar.Tenant("0")]
+    public class GenTable : SysBase
     {
         /// <summary>
         /// 表id
@@ -68,8 +69,18 @@ namespace ZR.Model.System.Generate
         /// </summary>
         public string Options { get; set; }
 
+        #region 表额外字段
         /** 表列信息 */
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public List<GenTableColumn> Columns { get; set; }
+
+        //以下 Options扩展字段
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public object ParentMenuId { get; set; }
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public object SortType { get; set; } = "asc";
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public object SortField { get; set; } = "";
+        #endregion
     }
 }

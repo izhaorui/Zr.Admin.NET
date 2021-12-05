@@ -68,7 +68,23 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <treeselect :append-to-body="true" v-model="info.parentMenuId" :options="menus" :normalizer="normalizer" :show-count="true" placeholder="请选择系统菜单" />
+          <treeselect :append-to-body="true" v-model="info.parentMenuId" :options="menus" :normalizer="normalizer" :show-count="true"
+            placeholder="请选择系统菜单" />
+        </el-form-item>
+      </el-col>
+      <el-col :span="12">
+        <el-form-item>
+          <span slot="label">
+            排序字段
+          </span>
+
+          <el-select v-model="info.sortField" placeholder="请选择字段" class="mr10" clearable="">
+            <el-option v-for="item in columns" :key="item.columnId" :label="item.csharpField" :value="item.csharpField">
+            </el-option>
+          </el-select>
+
+          <el-radio v-model="info.sortType" label="asc">正序</el-radio>
+          <el-radio v-model="info.sortType" label="desc">倒序</el-radio>
         </el-form-item>
       </el-col>
 
@@ -119,7 +135,8 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.treeCode" placeholder="请选择">
-            <el-option v-for="(column, index) in info.columns" :key="index" :label="column.columnName + '：' + column.columnComment" :value="column.columnName"></el-option>
+            <el-option v-for="(column, index) in info.columns" :key="index" :label="column.columnName + '：' + column.columnComment"
+              :value="column.columnName"></el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -132,7 +149,8 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.treeParentCode" placeholder="请选择">
-            <el-option v-for="(column, index) in info.columns" :key="index" :label="column.columnName + '：' + column.columnComment" :value="column.columnName"></el-option>
+            <el-option v-for="(column, index) in info.columns" :key="index" :label="column.columnName + '：' + column.columnComment"
+              :value="column.columnName"></el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -145,7 +163,8 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.treeName" placeholder="请选择">
-            <el-option v-for="(column, index) in info.columns" :key="index" :label="column.columnName + '：' + column.columnComment" :value="column.columnName"></el-option>
+            <el-option v-for="(column, index) in info.columns" :key="index" :label="column.columnName + '：' + column.columnComment"
+              :value="column.columnName"></el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -161,7 +180,8 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.subTableName" placeholder="请选择" @change="subSelectChange">
-            <el-option v-for="(table, index) in tables" :key="index" :label="table.tableName + '：' + table.tableComment" :value="table.tableName"></el-option>
+            <el-option v-for="(table, index) in tables" :key="index" :label="table.tableName + '：' + table.tableComment" :value="table.tableName">
+            </el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -174,7 +194,8 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.subTableFkName" placeholder="请选择">
-            <el-option v-for="(column, index) in subColumns" :key="index" :label="column.columnName + '：' + column.columnComment" :value="column.columnName"></el-option>
+            <el-option v-for="(column, index) in subColumns" :key="index" :label="column.columnName + '：' + column.columnComment"
+              :value="column.columnName"></el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -193,11 +214,17 @@ export default {
       type: Object,
       default: null,
     },
+    // 字表
     tables: {
       type: Array,
       default: null,
     },
     menus: {
+      type: Array,
+      default: [],
+    },
+    // 列
+    columns: {
       type: Array,
       default: [],
     },
@@ -221,7 +248,9 @@ export default {
       },
     };
   },
-  created() {},
+  created() {
+    console.log(this.columns);
+  },
   watch: {
     "info.subTableName": function (val) {
       this.setSubTableColumns(val);

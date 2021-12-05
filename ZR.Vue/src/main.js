@@ -21,10 +21,14 @@ import { parseTime, resetForm, addDateRange, selectDictLabel, selectDictLabels, 
 import Pagination from "@/components/Pagination";
 //自定义表格工具扩展
 import RightToolbar from "@/components/RightToolbar"
+// 富文本组件
+import Editor from "@/components/Editor";
 // 字典标签组件
 import DictTag from '@/components/DictTag'
 // 字典数据组件
 // import DictData from '@/components/DictData'
+// 上传图片
+import UploadImage from '@/components/UploadImage/index';
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts
@@ -53,17 +57,9 @@ Vue.prototype.msgInfo = function(msg) {
 Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
 Vue.component('DictTag', DictTag)
-
+Vue.component('Editor', Editor)
+Vue.component('UploadImage', UploadImage)
 Vue.use(permission)
-
-/**
- * If you don't want to use mock-server
- * you want to use MockJs for mock api
- * you can execute: mockXHR()
- *
- * Currently MockJs will be used in the production environment,
- * please remove it before going online! ! !
- */
 
 Vue.use(Element, {
   size: Cookies.get('size') || 'medium' // set element-ui default size
@@ -77,3 +73,4 @@ new Vue({
   store,
   render: h => h(App)
 })
+console.log('后端地址:' + process.env.VUE_APP_BASE_API)

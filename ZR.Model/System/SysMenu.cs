@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using SqlSugar;
+using System.Collections.Generic;
 
 namespace ZR.Model.System
 {
     /// <summary>
     /// Sys_menu表
     /// </summary>
-    //[Table("sys_menu")]
-    [SqlSugar.SugarTable("sys_menu")]
+    [SugarTable("sys_menu")]
+    [Tenant("0")]
     public class SysMenu: SysBase
     {
         /// <summary>

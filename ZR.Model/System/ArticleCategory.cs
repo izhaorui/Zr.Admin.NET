@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,7 +9,8 @@ namespace ZR.Model.System
     /// <summary>
     /// 文章目录
     /// </summary>
-    [SqlSugar.SugarTable("articleCategory")]
+    [SugarTable("articleCategory")]
+    [Tenant("0")]
     public class ArticleCategory
     {
         public int Category_Id { get; set; }
@@ -16,7 +18,7 @@ namespace ZR.Model.System
         public int ParentId { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        [SqlSugar.SugarColumn(IsIgnore = true)]
+        [SugarColumn(IsIgnore = true)]
         public List<ArticleCategory> Children { get; set; }
     }
 }

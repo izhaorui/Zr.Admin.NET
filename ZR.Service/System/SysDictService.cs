@@ -1,8 +1,8 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
-using System;
 using System.Collections.Generic;
 using System.Text;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
@@ -13,12 +13,12 @@ namespace ZR.Service.System
     /// 字典类型
     /// </summary>
     [AppService(ServiceType = typeof(ISysDictService), ServiceLifetime = LifeTime.Transient)]
-    public class SysDictService : ISysDictService
+    public class SysDictService : BaseService<SysDictType>, ISysDictService
     {
         private SysDictRepository DictRepository;
         private SysDictDataRepository DictDataRepository;
 
-        public SysDictService(SysDictRepository sysDictRepository, SysDictDataRepository dictDataRepository)
+        public SysDictService(SysDictRepository sysDictRepository, SysDictDataRepository dictDataRepository) : base(sysDictRepository)
         {
             this.DictRepository = sysDictRepository;
             this.DictDataRepository = dictDataRepository;
@@ -33,7 +33,7 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="dictType">实体模型</param>
         /// <returns></returns>
-        public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
+        public PagedInfo<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
         {
             return DictRepository.SelectDictTypeList(dictType, pager);
         }

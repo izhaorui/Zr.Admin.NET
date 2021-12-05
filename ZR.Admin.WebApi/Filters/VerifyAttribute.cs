@@ -10,6 +10,7 @@ using NLog;
 using System;
 using System.Linq;
 using ZR.Admin.WebApi.Extensions;
+using ZR.Admin.WebApi.Framework;
 using ZR.Model.System;
 
 namespace ZR.Admin.WebApi.Filters
@@ -44,12 +45,10 @@ namespace ZR.Admin.WebApi.Filters
             string ip = HttpContextExtension.GetClientUserIp(context.HttpContext);
             string url = context.HttpContext.Request.Path;
             var isAuthed = context.HttpContext.User.Identity.IsAuthenticated;
-            // 检查登陆 - 在SignIn中判断用户合法性，将登陆信息保存在Cookie中，在SignOut中移除登陆信息
             var userName = context.HttpContext.User.Identity.Name;
 
             //使用jwt token校验2020-11-21
-            //string token = context.HttpContext.Request.Headers["Token"];
-            LoginUser info = Framework.JwtUtil.GetLoginUser(context.HttpContext);
+            LoginUser info = JwtUtil.GetLoginUser(context.HttpContext);
 
             if (info != null && info.UserId > 0)
             {
@@ -58,7 +57,7 @@ namespace ZR.Admin.WebApi.Filters
             else
             {
                 string msg = $"请求访问:{url}授权认证失败，无法访问系统资源";
-                logger.Info(msg);
+                logger.Info($"用户{userName}{msg}");
                 
                 context.Result = new JsonResult(new ApiResult((int)ResultCode.DENY, msg));
             }

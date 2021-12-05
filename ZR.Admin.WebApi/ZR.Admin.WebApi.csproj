@@ -15,27 +15,27 @@
   <ItemGroup>
     <Compile Remove="Filters\GlobalExceptionFilter.cs" />
     <Compile Remove="Middleware\RequestIPMiddleware.cs" />
-    <Compile Remove="Template\Controller.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Template\Controller.tt" />
+    <Content Remove="wwwroot\CodeGenTemplate\VueTemplate.txt" />
   </ItemGroup>
 
   <ItemGroup>
 	<PackageReference Include="EPPlus" Version="5.8.3" />
 	<PackageReference Include="Hei.Captcha" Version="0.3.0" />
 	<PackageReference Include="IPTools.China" Version="1.6.0" />
-    <PackageReference Include="CSRedisCore" Version="3.6.5" />
-    <PackageReference Include="Mapster" Version="7.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.0" NoWarn="NU1605" />
-    <PackageReference Include="NETCore.Encrypt" Version="2.0.9" />
-    <PackageReference Include="NLog" Version="4.7.5" />
-    <PackageReference Include="NLog.Web.AspNetCore" Version="4.9.3" />
-    <PackageReference Include="Snowflake.Core" Version="2.0.0" />
-    <PackageReference Include="SqlSugar.IOC" Version="1.7.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.4" />
-    <PackageReference Include="UAParser" Version="3.1.46" />
+  <PackageReference Include="CSRedisCore" Version="3.6.5" />
+  <PackageReference Include="Mapster" Version="7.0.1" />
+  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.0" NoWarn="NU1605" />
+  <PackageReference Include="NETCore.Encrypt" Version="2.0.9" />
+  <PackageReference Include="NLog" Version="4.7.5" />
+  <PackageReference Include="NLog.Web.AspNetCore" Version="4.9.3" />
+  <PackageReference Include="Snowflake.Core" Version="2.0.0" />
+  <PackageReference Include="SqlSugar.IOC" Version="1.7.0" />
+  <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.4" />
+  <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.2" />
+  <PackageReference Include="UAParser" Version="3.1.46" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,49 +60,14 @@
     <None Update="ip2region.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Template\ControllersTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Template\InputDtoTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Template\IServiceTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Template\ModelTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Template\RepositoryTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Template\ServiceTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Template\VueJsTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Template\VueTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="ZRAdmin.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Controllers\business\" />
+    <Folder Include="Controllers\demo\" />
     <Folder Include="wwwroot\export\" />
     <Folder Include="wwwroot\Generatecode\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="Template\RepositoryTemplate.txt" />
-    <Resource Include="Template\ServiceTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Template\VueJsTemplate.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
+    <Folder Include="wwwroot\uploads\" />
   </ItemGroup>
 
   <ItemGroup>

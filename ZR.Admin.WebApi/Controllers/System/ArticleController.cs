@@ -49,7 +49,7 @@ namespace ZR.Admin.WebApi.Controllers
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
 
-            var response = _ArticleService.GetPages(predicate.ToExpression(), parm, f => f.Cid, "Desc");
+            var response = _ArticleService.GetPages(predicate.ToExpression(), parm, f => f.Cid, OrderByType.Desc);
 
             return SUCCESS(response);
         }

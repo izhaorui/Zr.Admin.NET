@@ -1,0 +1,79 @@
+﻿import request from '@/utils/request'
+
+/**
+* ${genTable.functionName}分页查询
+* @param {查询条件} data
+*/
+export function list${genTable.BusinessName}(query) {
+  return request({
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/list',
+    method: 'get',
+    params: query,
+  })
+}
+
+/**
+* 新增${genTable.functionName}
+* @param data
+*/
+export function add${genTable.BusinessName}(data) {
+  return request({
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}',
+    method: 'post',
+    data: data,
+  })
+}
+
+/**
+* 修改${genTable.functionName}
+* @param data
+*/
+export function update${genTable.BusinessName}(data) {
+  return request({
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}',
+    method: 'PUT',
+    data: data,
+  })
+}
+
+/**
+* 获取${genTable.functionName}详情
+* @param {Id}
+*/
+export function get${genTable.BusinessName}(id) {
+  return request({
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/' + id,
+    method: 'get'
+  })
+}
+
+/**
+* 删除${genTable.functionName}
+* @param {主键} pid
+*/
+export function del${genTable.BusinessName}(pid) {
+  return request({
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/' + pid,
+    method: 'delete'
+  })
+}
+// 导出${genTable.functionName}
+export function export${replaceDto.ModelTypeName}(query) {
+  return request({
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/export',
+    method: 'get',
+    params: query
+  })
+}
+
+$if(genTable.SortField != "")
+//排序
+export function changeSort(data) {
+  return request({
+    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/ChangeSort',
+    method: 'get',
+    params: data
+  })
+}
+
+$end

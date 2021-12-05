@@ -1,0 +1,27 @@
+﻿using System;
+using System.Collections.Generic;
+using SqlSugar;
+
+namespace ${options.ModelsNamespace}.Models
+{
+    /// <summary>
+    /// ${genTable.FunctionName}，数据实体对象
+    ///
+    /// @author ${replaceDto.Author}
+    /// @date ${replaceDto.AddTime}
+    /// </summary>
+    [SugarTable("${genTable.TableName}")]
+    public class ${replaceDto.ModelTypeName}
+    {
+$foreach(item in genTable.Columns)
+        /// <summary>
+        /// 描述 : ${item.ColumnComment}
+        /// 空值 :$if(item.IsRequired == "True") false $else true $end 
+        /// </summary>
+$if(item.IsPk || item.IsIncrement)
+        [SqlSugar.SugarColumn(IsPrimaryKey = ${item.IsPk.ToString().ToLower()}, IsIdentity = ${item.IsIncrement.ToString().ToLower()})]
+$end
+        public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
+${end}
+    }
+}

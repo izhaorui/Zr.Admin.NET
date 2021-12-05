@@ -38,10 +38,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysDictData dictData, [FromQuery] PagerInfo pagerInfo)
         {
-            var list = SysDictDataService.SelectDictDataList(dictData);
-            pagerInfo.TotalNum = list.Count;
-            var vm = new VMPageResult<SysDictData>(list, pagerInfo);
-            return SUCCESS(vm);
+            var list = SysDictDataService.SelectDictDataList(dictData, pagerInfo);
+            return SUCCESS(list);
         }
 
         /// <summary>
@@ -107,7 +105,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpDelete("{dictCode}")]
         public IActionResult Remove(string dictCode)
         {
-            long[] dictCodes = ZR.Common.Tools.SpitLongArrary(dictCode);
+            long[] dictCodes = Common.Tools.SpitLongArrary(dictCode);
 
             return SUCCESS(SysDictDataService.DeleteDictDataByIds(dictCodes));
         }

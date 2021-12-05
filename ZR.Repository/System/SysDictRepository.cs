@@ -1,7 +1,7 @@
 ﻿using Infrastructure.Attribute;
-using System;
+using SqlSugar;
 using System.Collections.Generic;
-using System.Text;
+using ZR.Model;
 using ZR.Model.System;
 
 namespace ZR.Repository.System
@@ -22,17 +22,14 @@ namespace ZR.Repository.System
         /// </summary>
         /// <param name="dictType">实体模型</param>
         /// <returns></returns>
-        public List<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
+        public PagedInfo<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager)
         {
-            var totalNum = 0;
-            var list = Context
-                .Queryable<SysDictType>()
-                .WhereIF(!string.IsNullOrEmpty(dictType.DictName), it => it.DictName.Contains(dictType.DictName))
-                .WhereIF(!string.IsNullOrEmpty(dictType.Status), it => it.Status == dictType.Status)
-                .WhereIF(!string.IsNullOrEmpty(dictType.DictType), it => it.DictType == dictType.DictType)
-                .ToPageList(pager.PageNum, pager.PageSize, ref totalNum);
-            pager.TotalNum = totalNum;
-            return list;
+            var exp = Expressionable.Create<SysDictType>();
+            exp.AndIF(!string.IsNullOrEmpty(dictType.DictName), it => it.DictName.Contains(dictType.DictName));
+            exp.AndIF(!string.IsNullOrEmpty(dictType.Status), it => it.Status == dictType.Status);
+            exp.AndIF(!string.IsNullOrEmpty(dictType.DictType), it => it.DictType == dictType.DictType);
+
+            return GetPages(exp.ToExpression(), pager);
         }
 
         /// <summary>

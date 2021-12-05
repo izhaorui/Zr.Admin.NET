@@ -8,7 +8,8 @@ namespace ZR.Model.System
     /// <summary>
     /// 部门表
     /// </summary>
-    [SqlSugar.SugarTable("sys_dept")]
+    [SugarTable("sys_dept")]
+    [Tenant("0")]
     public class SysDept: SysBase
     {
         /** 部门ID */

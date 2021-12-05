@@ -120,6 +120,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 修改头像
         /// </summary>
+        /// <param name="formFile"></param>
         /// <returns></returns>
         [HttpPost("Avatar")]
         [ActionPermissionFilter(Permission = "system")]
@@ -131,7 +132,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (formFile == null) throw new CustomException("请选择文件");
 
             string fileExt = Path.GetExtension(formFile.FileName);
-            string savePath = Path.Combine("wwwroot", FileUtil.GetdirPath("uploads"));
+            string savePath = Path.Combine(hostEnvironment.WebRootPath, FileUtil.GetdirPath("uploads"));
 
             Console.WriteLine(savePath);
             if (!Directory.Exists(savePath)) { Directory.CreateDirectory(savePath); }
@@ -141,7 +142,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             using (var stream = new FileStream(finalFilePath, FileMode.Create))
             {
-                formFile.CopyToAsync(stream);
+                formFile.CopyTo(stream);
             }
             string accessUrl = $"{OptionsSetting.Upload.UploadUrl}/{FileUtil.GetdirPath("uploads")}{fileName}";
 

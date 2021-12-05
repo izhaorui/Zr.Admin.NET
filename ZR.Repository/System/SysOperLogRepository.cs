@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
+using SqlSugar;
+using Infrastructure.Model;
 
 namespace ZR.Repository.System
 {
@@ -16,19 +18,16 @@ namespace ZR.Repository.System
         /// <param name="sysOper"></param>
         /// <param name="pagerInfo">分页数据</param>
         /// <returns></returns>
-        public List<SysOperLog> GetSysOperLog(SysOperLogDto sysOper, PagerInfo pagerInfo)
+        public PagedInfo<SysOperLog> GetSysOperLog(SysOperLogDto sysOper, PagerInfo pagerInfo)
         {
-            int totalCount = 0;
-            var list = Context.Queryable<SysOperLog>()
-                .Where(it => it.operTime >= sysOper.BeginTime && it.operTime <= sysOper.EndTime)
-                .WhereIF(sysOper.Title.IfNotEmpty(), it => it.title.Contains(sysOper.Title))
-                .WhereIF(sysOper.operName.IfNotEmpty(), it => it.operName.Contains(sysOper.operName))
-                .WhereIF(sysOper.BusinessType != -1, it =>it.businessType == sysOper.BusinessType)
-                .WhereIF(sysOper.Status != -1, it => it.status == sysOper.Status)
-                .OrderBy(it => it.OperId, SqlSugar.OrderByType.Desc)
-                .ToPageList(pagerInfo.PageNum, pagerInfo.PageSize, ref  totalCount);
-            pagerInfo.TotalNum = totalCount;
-            return list;
+            var exp = Expressionable.Create<SysOperLog>();
+            exp.And(it => it.operTime >= sysOper.BeginTime && it.operTime <= sysOper.EndTime);
+            exp.AndIF(sysOper.Title.IfNotEmpty(), it => it.title.Contains(sysOper.Title));
+            exp.AndIF(sysOper.operName.IfNotEmpty(), it => it.operName.Contains(sysOper.operName));
+            exp.AndIF(sysOper.BusinessType != -1, it => it.businessType == sysOper.BusinessType);
+            exp.AndIF(sysOper.Status != -1, it => it.status == sysOper.Status);
+
+            return GetPages(exp.ToExpression(), pagerInfo, x => x.OperId, OrderByType.Desc);
         }
 
         /// <summary>

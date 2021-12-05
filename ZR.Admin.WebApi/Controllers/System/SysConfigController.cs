@@ -9,14 +9,13 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
 using ZR.Model.Dto;
-using ZR.Model.Models;
-using ZR.Service.Business;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Service.System;
 using ZR.Model.System;
 using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -83,6 +82,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="configKey"></param>
         /// <returns></returns>
         [HttpGet("configKey/{configKey}")]
+        [AllowAnonymous]
         public IActionResult GetConfigKey(string configKey)
         {
             //TODO 增加缓存
@@ -107,7 +107,7 @@ namespace ZR.Admin.WebApi.Controllers
             //从 Dto 映射到 实体
             var model = parm.Adapt<SysConfig>().ToCreate();
 
-            return SUCCESS(_SysConfigService.Add(model, it => new
+            return SUCCESS(_SysConfigService.Insert(model, it => new
             {
                 it.ConfigName,
                 it.ConfigKey,
@@ -144,6 +144,7 @@ namespace ZR.Admin.WebApi.Controllers
                 ConfigType = model.ConfigType,
                 Update_by = model.Update_by,
                 Update_time = model.Update_time,
+                Remark = model.Remark
             });
 
             return SUCCESS(response);

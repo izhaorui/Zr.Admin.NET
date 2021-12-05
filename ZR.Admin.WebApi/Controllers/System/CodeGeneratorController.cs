@@ -19,7 +19,7 @@ using ZR.Common;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
-using ZR.Model.Vo;
+using ZR.Service;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -27,17 +27,24 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 代码生成
     /// </summary>
+    [Verify]
     [Route("tool/gen")]
     public class CodeGeneratorController : BaseController
     {
         private CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
         private IGenTableService GenTableService;
         private IGenTableColumnService GenTableColumnService;
+        private readonly ISysDictDataService SysDictDataService;
         private IWebHostEnvironment WebHostEnvironment;
-        public CodeGeneratorController(IGenTableService genTableService, IGenTableColumnService genTableColumnService, IWebHostEnvironment webHostEnvironment)
+        public CodeGeneratorController(
+            IGenTableService genTableService,
+            IGenTableColumnService genTableColumnService,
+            ISysDictDataService dictDataService,
+            IWebHostEnvironment webHostEnvironment)
         {
             GenTableService = genTableService;
             GenTableColumnService = genTableColumnService;
+            SysDictDataService = dictDataService;
             WebHostEnvironment = webHostEnvironment;
         }
 
@@ -66,43 +73,8 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult FindListTable(string dbName, string tableName, PagerInfo pager)
         {
             List<DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
-            var vm = new VMPageResult<DbTableInfo>(list, pager);
 
-            return SUCCESS(vm);
-        }
-
-        /// <summary>
-        /// 代码生成器
-        /// </summary>
-        /// <param name="dto">数据传输对象</param>
-        /// <returns></returns>
-        [HttpPost("genCode")]
-        [Log(Title = "代码生成", BusinessType = BusinessType.GENCODE)]
-        [ActionPermissionFilter(Permission = "tool:gen:code")]
-        public IActionResult Generate([FromBody] GenerateDto dto)
-        {
-            if (dto.TableId <= 0)
-            {
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
-            }
-            dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
-            dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
-
-            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
-            if (!string.IsNullOrEmpty(genTableInfo.Options))
-            {
-                Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTableInfo.Options);
-                dto.ParentMenuId = (long)options.GetValueOrDefault("parentMenuId", 0);
-            }
-            dto.GenTable = genTableInfo;
-            //生成代码
-            CodeGeneratorTool.Generate(genTableInfo, dto);
-            //下载文件
-            FileHelper.ZipGenCode(dto);
-
-            //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
-            return SUCCESS(new { zipPath = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
+            return SUCCESS(list.ToPage(pager));
         }
 
         /// <summary>
@@ -130,7 +102,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var tableColumns = GenTableColumnService.GenTableColumns(tableId);
             var tableInfo = GenTableService.GetGenTableInfo(tableId);
-            return SUCCESS(new { result = tableColumns, info = tableInfo });
+            return SUCCESS(new { cloumns = tableColumns, info = tableInfo });
         }
 
         /// <summary>
@@ -177,11 +149,11 @@ namespace ZR.Admin.WebApi.Controllers
                         BaseNameSpace = "ZR.",//导入默认命名空间前缀
                         ModuleName = "business",//导入默认模块名
                         ClassName = CodeGeneratorTool.GetClassName(tableName),
-                        BusinessName = CodeGeneratorTool.GetClassName(tableName),
+                        BusinessName = CodeGeneratorTool.GetBusinessName(tableName),
                         FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
-                        FunctionName = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
                         TableName = tableName,
-                        TableComment = string.IsNullOrEmpty(tabInfo.Description) ? tableName : tabInfo.Description,
+                        TableComment = tabInfo?.Description,
+                        FunctionName = tabInfo?.Description,
                         Create_by = userName,
                     };
                     genTable.TableId = GenTableService.ImportGenTable(genTable);
@@ -217,7 +189,12 @@ namespace ZR.Admin.WebApi.Controllers
             if (genTableDto == null) throw new CustomException("请求参数错误");
             var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
 
-            genTable.Options = JsonConvert.SerializeObject(new { parentMenuId = genTableDto.ParentMenuId });
+            genTable.Options = JsonConvert.SerializeObject(new
+            {
+                parentMenuId = genTableDto.ParentMenuId,
+                sortField = genTableDto.SortField,
+                sortType = genTable.SortType
+            });
             int rows = GenTableService.UpdateGenTable(genTable);
             if (rows > 0)
             {
@@ -241,16 +218,52 @@ namespace ZR.Admin.WebApi.Controllers
             }
             var genTableInfo = GenTableService.GetGenTableInfo(tableId);
             genTableInfo.Columns = GenTableColumnService.GenTableColumns(tableId);
+
+            //var dictList = genTableInfo.Columns.FindAll(x => !string.IsNullOrEmpty(x.DictType));
+            //foreach (var item in dictList)
+            //{
+            //    item.DictDatas = SysDictDataService.SelectDictDataByType(item.DictType);
+            //}
             GenerateDto dto = new();
             dto.GenTable = genTableInfo;
             dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
             dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
             dto.IsPreview = 1;
-            dto.GenCodeFiles = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             //生成代码
-            CodeGeneratorTool.Generate(genTableInfo, dto);
+            CodeGeneratorTool.Generate(dto);
 
             return SUCCESS(dto.GenCodes);
         }
+
+        /// <summary>
+        /// 生成代码（下载方式）
+        /// </summary>
+        /// <param name="dto">数据传输对象</param>
+        /// <returns></returns>
+        [HttpPost("genCode")]
+        [Log(Title = "代码生成", BusinessType = BusinessType.GENCODE)]
+        [ActionPermissionFilter(Permission = "tool:gen:code")]
+        public IActionResult Generate([FromBody] GenerateDto dto)
+        {
+            if (dto.TableId <= 0)
+            {
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
+            }
+            dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
+            dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
+
+            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
+            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
+
+            dto.GenTable = genTableInfo;
+            //生成代码
+            CodeGeneratorTool.Generate(dto);
+            //下载文件
+            FileHelper.ZipGenCode(dto);
+
+            //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
+            return SUCCESS(new { zipPath = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
+        }
+
     }
 }

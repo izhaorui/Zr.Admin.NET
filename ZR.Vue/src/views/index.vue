@@ -43,6 +43,8 @@
               </el-button>
               <el-button type="primary" size="mini" icon="el-icon-cloudy" plain @click="goTarget('https://github.com/izhaorui/ZrAdmin.NET')">Github
               </el-button>
+              <el-button type="primary" size="mini" icon="el-icon-edit" plain @click="goTarget('http://www.izhaorui.cn/doc/#/gxrz?id=更新日志')">更新日志
+              </el-button>
             </p>
             <h3>如果觉得不错欢迎给个⭐Star⭐收藏一下 ，这样作者才有继续免费下去的动力，谢谢！</h3>
           </el-row>
@@ -62,7 +64,7 @@
               <li>Quartz.Net</li>
               <li>MySql</li>
               <li>Mapster</li>
-							<li>Epplus</li>
+              <li>Epplus</li>
               <li>...</li>
             </ul>
           </el-col>
@@ -98,56 +100,16 @@
             <span>捐赠支持</span>
           </div>
           <div class="body">
-            <span class="tip">如果觉得有用你可以请作者喝杯咖啡☕表示鼓励</span>
             <img src="@/assets/image/reward.jpg" alt="donate" width="80%" />
           </div>
         </el-card>
       </el-col>
       <el-col :span="10">
-        <el-card>
+        <!-- <el-card>
           <div slot="header" class="clearfix">
-            <span>更新日志</span>
+            <span></span>
           </div>
-          <el-collapse accordion>
-            <el-collapse-item title="v3.6.0 - 2021-11-21">
-              <ol>
-                <li>新增加系统表导出功能</li>
-                <li>仓储新增加常用方法</li>
-                <li>删除Npoi.Mapper包，新增加EPPlus 导出Excel包</li>
-                <li>SqlSugarCoreNoDriver 升级至5.0.43</li>
-                <li>代码生成新增加富文本组件</li>
-                <li>发送邮件文本该用富文本工具</li>
-                <li>部门管理新增加展开折叠</li>
-                <li>fix 任务日志路由地址配置错误</li>
-                <li>fix 部门删除功能</li>
-                <li>其他功能优化</li>
-              </ol>
-            </el-collapse-item>
-            <el-collapse-item title="v3.5.0 - 2021-11-18">
-              <ol>
-                <li>fix 代码生成提示错误信息</li>
-                <li>fix sqlserver导入数据sys_dept表列不匹配问题 </li>
-                <li>登录验证码替换为数字加字母静态组合 </li>
-                <li>fix 登录验证码刷新后输入不了问题 </li>
-                <li>替换node-sass为sass，sass-loader升级为10.1.0</li>
-              </ol>
-            </el-collapse-item>
-            <el-collapse-item title="v3.4.0 - 2021-11-06">
-              <ol>
-                <li>页签TagsView新增关闭左侧、右侧功能&添加图标</li>
-                <li>新增菜单导航显示风格TopNav（false为左侧导航菜单，true为顶部导航菜单）</li>
-              </ol>
-            </el-collapse-item>
-
-            <el-collapse-item title="v3.3.0 - 2021-10-29">
-              <ol>
-                <li>接口日志新增加是否保存请求、返回参数</li>
-                <li>重命名一些方法名</li>
-                <li>fix 代码生成编辑、插入列未选中任何字段报错bug</li>
-              </ol>
-            </el-collapse-item>
-          </el-collapse>
-        </el-card>
+        </el-card> -->
       </el-col>
     </el-row>
     <el-divider />
@@ -155,7 +117,7 @@
 </template>
 
 <script>
-const defaultSettings = require('@/settings.js')
+const defaultSettings = require("@/settings.js");
 export default {
   name: "index",
   data() {

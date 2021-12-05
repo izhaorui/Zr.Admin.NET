@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using OfficeOpenXml.Attributes;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ namespace ZR.Model.System
     /// 用户表
     /// </summary>
     [SugarTable("sys_user")]
+    [Tenant("0")]
     public class SysUser : SysBase
     {
         /// <summary>
@@ -28,12 +30,13 @@ namespace ZR.Model.System
         //[JsonProperty(propertyName: "userType")]
         //public string User_type { get; set; } = "";
         [SugarColumn(IsOnlyIgnoreInsert = true)]
+        [EpplusIgnore]
         public string Avatar { get; set; }
 
         public string Email { get; set; }
 
         [JsonIgnore]
-        //[ColName("用户密码")]
+        [EpplusIgnore]
         public string Password { get; set; }
 
         //[ColName("手机号")]
@@ -47,6 +50,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 帐号状态（0正常 1停用）
         /// </summary>
+        [EpplusIgnore]
         public string Status { get; set; }
 
         /// <summary>
@@ -65,6 +69,7 @@ namespace ZR.Model.System
         /// 最后登录时间
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true)]
+        [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
         public DateTime LoginDate { get; set; }
 
         /// <summary>
@@ -93,14 +98,17 @@ namespace ZR.Model.System
         /// 角色id集合
         /// </summary>
         [SugarColumn(IsIgnore = true)]
+        [EpplusIgnore]
         public int[] RoleIds { get; set; }
         /// <summary>
         /// 岗位集合
         /// </summary>
         [SugarColumn(IsIgnore = true)]
+        [EpplusIgnore]
         public int[] PostIds { get; set; }
 
         [SugarColumn(IsIgnore = true)]
+        [EpplusIgnore]
         public List<SysRole> Roles { get; set; }
 
         #endregion

@@ -1,0 +1,276 @@
+﻿<template>
+  <div class="app-container">
+    <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
+    <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
+${vueQueryFormHtml}
+      <el-row class="mb8" style="text-align:center">
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+      </el-row>
+    </el-form>
+    
+    <!-- 工具区域 -->
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5">
+        <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="success" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
+      </el-col>
+$if(genTable.SortField != "")
+      <el-col :span="1.5">
+        <el-button type="info" plain icon="el-icon-edit" size="mini" @click="handleShowSort" v-hasPermi="['${replaceDto.PermissionPrefix}:update']">修改排序</el-button>
+      </el-col>
+$end
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+    </el-row>
+
+    <!-- 数据区域 -->
+    <el-table :data="dataList" ref="table" border  @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="50" />
+${VueViewListContent}
+      <el-table-column label="操作" align="center" width="200">
+        <template slot-scope="scope">
+          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
+          <el-popconfirm title="确定删除吗？" @confirm="handleDelete(scope.row)" style="margin-left:10px">
+            <el-button slot="reference"  v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="text" icon="el-icon-delete">删除</el-button>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
+    </el-table>
+    <pagination class="mt10" background :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
+
+    <!-- 添加或修改菜单对话框 -->
+    <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
+      <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
+        <el-row>
+${VueViewFormContent}
+        </el-row>
+      </el-form>
+      <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
+        <el-button @click="cancel">取 消</el-button>
+        <el-button type="primary" @click="submitForm">确 定</el-button>
+      </div>
+    </el-dialog>
+
+  </div>
+</template>
+<script>
+import { 
+  list${genTable.BusinessName},
+  add${genTable.BusinessName},
+  del${genTable.BusinessName},
+  update${genTable.BusinessName},
+  get${genTable.BusinessName},
+$if(genTable.SortField != "")
+  changeSort
+$end
+} from '@/api/${genTable.ModuleName}/${lowerBusinessName}.js';
+
+export default {
+  name: "${genTable.BusinessName}",
+  data() {
+    return {
+      labelWidth: "100px",
+      formLabelWidth:"100px",
+      // 选中${replaceDto.FistLowerPk}数组
+      ids: [],
+      // 非单个禁用
+      single: true,
+      // 非多个禁用
+      multiple: true,
+      // 遮罩层
+      loading: true,
+      // 显示搜索条件
+      showSearch: true,
+      // 查询参数
+      queryParams: {},
+      // 弹出层标题
+      title: "",
+      // 是否显示弹出层
+      open: false,
+      // 表单参数
+      form: {},
+      // 时间范围数组
+      timeRange: [],
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "radio" || item.HtmlType == "select"))
+      // ${item.ColumnComment}选项列表
+      ${item.ColumnName}Options: [],
+$end
+$end
+$if(genTable.SortField != "")
+      // 是否显示编辑排序
+      showEditSort: false,
+$end
+      // 数据列表
+      dataList: [],
+      // 总记录数
+      total: 0,
+      // 提交按钮是否显示
+      btnSubmitVisible: true,
+      // 表单校验
+      rules: {
+${VueViewEditFormRuleContent}
+      },
+    };
+  },
+  mounted() {
+    // 列表数据查询
+    this.getList();
+
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != "")
+    this.getDicts("${item.DictType}").then((response) => {
+      this.${item.ColumnName}Options = response.data;
+    })
+$end
+$end
+  },
+  methods: {
+    // 查询数据
+    getList() {
+      console.log(JSON.stringify(this.queryParams));
+       list${genTable.BusinessName}(this.addDateRange(this.queryParams, this.timeRange)).then(res => {
+         if (res.code == 200) {
+           this.dataList = res.data.result;
+           this.total = res.data.totalNum;
+         }
+       })
+    },
+    // 取消按钮
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+    // 重置数据表单
+    reset() {
+      this.form = {
+$foreach(item in genTable.Columns)
+$if((item.IsEdit || item.IsInsert))
+        $item.ColumnName: undefined,
+$end
+$end
+      };
+      this.resetForm("form");
+    },
+    /** 重置查询操作 */
+    resetQuery() {
+      this.timeRange = [];
+      this.resetForm("queryForm");
+      this.queryParams = {
+        pageNum: 1,
+        pageSize: 20,
+        //TODO 重置字段
+      };
+      this.handleQuery();
+    },
+    // 多选框选中数据
+    handleSelectionChange(selection) {
+      this.ids = selection.map((item) => item.${replaceDto.FistLowerPk});
+      this.single = selection.length != 1
+      this.multiple = !selection.length;
+    },
+    /** 搜索按钮操作 */
+    handleQuery() {
+      this.getList();
+    },
+    /** 新增按钮操作 */
+    handleAdd() {
+      this.reset();
+      this.open = true;
+      this.title = "添加";
+    },
+    /** 删除按钮操作 */
+    handleDelete(row) {
+      const Ids = row.${replaceDto.FistLowerPk} || this.ids;
+      del${genTable.BusinessName}(Ids).then((res) => {
+        this.msgSuccess("删除成功");
+        this.handleQuery();
+      });
+    },
+    /** 修改按钮操作 */
+    handleUpdate(row) {
+      this.reset();
+      const id = row.${replaceDto.FistLowerPk} || this.ids;
+      get${genTable.BusinessName}(id).then((res) => {
+        if (res.code == 200) {
+           this.form = res.data;
+           this.open = true;
+           this.title = "修改数据";
+        }
+      });
+    },
+$if(genTable.SortField != "")
+    // 显示编辑排序
+    handleShowSort() {
+      this.showEditSort = !this.showEditSort;
+    },
+    // 保存排序
+    handleChangeSort(item, orderNum) {
+      changeSort({ orderNum: orderNum, id: item.${replaceDto.FistLowerPk} }).then(
+        (response) => {
+          this.msgSuccess("修改成功");
+          this.getList();
+          this.showEditSort = false;
+        }
+      );
+    },
+$end
+$if(replaceDto.UploadFile == 1)
+    //图片上传成功方法
+    handleUploadSuccess(res, columnName) {
+      console.log(columnName, res)
+      this.form[columnName] = res.data;
+      console.log(JSON.stringify(this.form))
+    },
+$end
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != "")
+    // ${item.ColumnComment}字典翻译
+    ${item.ColumnName}Format(row, column) {
+      return this.selectDictLabel(this.${item.ColumnName}Options, row.${item.ColumnName});
+    },
+$end
+$end
+    /** 提交按钮 */
+    submitForm: function () {
+      this.${refs}refs["form"].validate((valid) => {
+        if (valid) {
+          console.log(JSON.stringify(this.form));
+          
+          if (this.form.${replaceDto.FistLowerPk} != undefined || this.title === "修改数据") {
+            update${genTable.BusinessName}(this.form).then((res) => {
+                if (!res.data) {
+                    this.msgError("修改失败");
+                    return;
+                }
+                this.msgSuccess("修改成功");
+                this.open = false;
+                this.getList();
+            });
+          } else {
+            add${genTable.BusinessName}(this.form).then((res) => {
+                if (!res.data) {
+                    this.msgError("新增失败");
+                    return;
+                }
+                this.msgSuccess("新增成功");
+                this.open = false;
+                this.getList();
+            });
+          }
+        }
+      });
+    },
+  },
+};
+</script>
+<style scoped>
+.table-td-thumb {
+  width: 80px;
+}
+</style>

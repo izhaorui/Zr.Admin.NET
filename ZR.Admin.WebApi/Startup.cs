@@ -2,6 +2,7 @@ using Hei.Captcha;
 using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using SqlSugar.IOC;
+using Swashbuckle.AspNetCore.Filters;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,7 +44,7 @@ namespace ZR.Admin.WebApi
             {
                 c.AddPolicy("Policy", policy =>
                 {
-                    policy.WithOrigins(corsUrls.Split(',', System.StringSplitOptions.RemoveEmptyEntries))
+                    policy.WithOrigins(corsUrls.Split(',', StringSplitOptions.RemoveEmptyEntries))
                     .AllowAnyHeader()//允许任意头
                     .AllowCredentials()//允许cookie
                     .AllowAnyMethod();//允许任意方法
@@ -55,35 +57,37 @@ namespace ZR.Admin.WebApi
             services.AddSession();
             services.AddHttpContextAccessor();
 
-            //Cookie 认证
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
 
             //绑定整个对象到Model上
             services.Configure<OptionsSetting>(Configuration);
+            services.Configure<JwtSettings>(Configuration);
+            var jwtSettings = new JwtSettings();
+            Configuration.Bind("JwtSettings", jwtSettings);
 
-            InjectRepositories(services);
+            //Cookie 认证
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddCookie()
+            .AddJwtBearer(o =>
+            {
+                o.TokenValidationParameters = JwtUtil.ValidParameters();
+            });
+
+            InjectServices(services);
 
             services.AddMvc(options =>
             {
                 options.Filters.Add(typeof(GlobalActionMonitor));//全局注册异常
             })
-            .AddMvcLocalization()
-            .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeConverter());
                 options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeNullConverter());
             });
 
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "ZrAdmin", Version = "v1" });
-                if (CurrentEnvironment.IsDevelopment())
-                {
-                    //添加文档注释
-                    c.IncludeXmlComments("ZRAdmin.xml", true);
-                }
-            });
+            services.AddSwaggerConfig();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -111,7 +115,9 @@ namespace ZR.Admin.WebApi
             //app.UseAuthentication会启用Authentication中间件，该中间件会根据当前Http请求中的Cookie信息来设置HttpContext.User属性（后面会用到），
             //所以只有在app.UseAuthentication方法之后注册的中间件才能够从HttpContext.User中读取到值，
             //这也是为什么上面强调app.UseAuthentication方法一定要放在下面的app.UseMvc方法前面，因为只有这样ASP.NET Core的MVC中间件中才能读取到HttpContext.User的值。
+            //1.先开启认证
             app.UseAuthentication();
+            //2.再开启授权
             app.UseAuthorization();
             app.UseSession();
             app.UseResponseCaching();
@@ -133,7 +139,7 @@ namespace ZR.Admin.WebApi
         /// 注册Services服务
         /// </summary>
         /// <param name="services"></param>
-        private void InjectRepositories(IServiceCollection services)
+        private void InjectServices(IServiceCollection services)
         {
             services.AddAppService();
 
@@ -148,12 +154,12 @@ namespace ZR.Admin.WebApi
 
             SugarIocServices.AddSqlSugar(new List<IocConfig>() {
                new IocConfig() {
-                ConfigId = "0",  //主数据库
+                ConfigId = "0",
                 ConnectionString = connStr,
                 DbType = (IocDbType)dbType,
                 IsAutoCloseConnection = true//自动释放
             }, new IocConfig() {
-                ConfigId = "1", // 多租户用到
+                ConfigId = "1",
                 ConnectionString = connStrBus,
                 DbType = (IocDbType)dbType_bus,
                 IsAutoCloseConnection = true//自动释放
@@ -161,14 +167,13 @@ namespace ZR.Admin.WebApi
             });
 
             //调式代码 用来打印SQL 
-            DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
+            DbScoped.SugarScope.GetConnection("0").Aop.OnLogExecuting = (sql, pars) =>
             {
-                Console.BackgroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n"
                     + DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
             };
             //出错打印日志
-            DbScoped.SugarScope.GetConnection(0).Aop.OnError = (e) =>
+            DbScoped.SugarScope.GetConnection("0").Aop.OnError = (e) =>
             {
                 Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
                 Console.WriteLine();
@@ -177,7 +182,6 @@ namespace ZR.Admin.WebApi
             //调式代码 用来打印SQL 
             DbScoped.SugarScope.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
             {
-                Console.BackgroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("【SQL语句Bus】" + sql.ToLower() + "\r\n"
                     + DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
             };

@@ -9,6 +9,9 @@ using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
+    /// <summary>
+    /// 用户角色
+    /// </summary>
     [AppService(ServiceType = typeof(ISysUserRoleService),ServiceLifetime = LifeTime.Transient)]
     public class SysUserRoleService: ISysUserRoleService
     {
