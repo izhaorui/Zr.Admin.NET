@@ -57,6 +57,7 @@ export function del${genTable.BusinessName}(pid) {
     method: 'delete'
   })
 }
+
 // 导出${genTable.functionName}
 export function export${replaceDto.ModelTypeName}(query) {
   return request({
@@ -75,5 +76,4 @@ export function changeSort(data) {
     params: data
   })
 }
-
 $end

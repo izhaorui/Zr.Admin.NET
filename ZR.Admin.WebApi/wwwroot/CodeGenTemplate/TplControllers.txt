@@ -167,9 +167,9 @@ $if(genTable.SortField != "")
         ////// <param name="id"></param>
         ////// <param name="orderNum"></param>
         ////// <returns></returns>
-        ///[ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:update")]
-        ///[HttpGet("ChangeSort")]
-        //[Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
+        /////[ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:update")]
+        //////[HttpGet("ChangeSort")]
+        /////[Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
         //public IActionResult ChangeSort(int id = 0, int orderNum = 0)
         //{
         //    if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }

@@ -20,6 +20,9 @@ ${vueQueryFormHtml}
       <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
+      <el-col :span="1.5" style="display:none">
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
+      </el-col>
 $if(genTable.SortField != "" && 1 == 2)
       <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-edit" size="mini" @click="handleShowSort" v-hasPermi="['${replaceDto.PermissionPrefix}:update']">修改排序</el-button>
@@ -266,6 +269,7 @@ $end
         }
       });
     },
+    handleExport() {},
   },
 };
 </script>
