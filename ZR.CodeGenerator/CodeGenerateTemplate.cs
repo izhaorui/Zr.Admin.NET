@@ -78,7 +78,7 @@ namespace ZR.CodeGenerator
             {
                 return sb.ToString();
             }
-            if (!dbFieldInfo.IsInsert || !dbFieldInfo.IsEdit)
+            if (!dbFieldInfo.IsInsert && !dbFieldInfo.IsEdit)
             {
                 return sb.ToString();
             }
@@ -187,7 +187,7 @@ namespace ZR.CodeGenerator
             if (!dbFieldInfo.IsQuery || dbFieldInfo.HtmlType == GenConstants.HTML_FILE_UPLOAD) return sb.ToString();
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
-                sb.AppendLine("      <el-form-item label=\"时间\">");
+                sb.AppendLine($"      <el-form-item label=\"{labelName}\">");
                 sb.AppendLine("        <el-date-picker v-model=\"timeRange\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
                 sb.AppendLine("          end-placeholder=\"结束日期\"></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
