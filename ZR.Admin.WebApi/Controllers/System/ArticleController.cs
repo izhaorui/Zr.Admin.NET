@@ -16,7 +16,7 @@ using System;
 namespace ZR.Admin.WebApi.Controllers
 {
     /// <summary>
-    /// T4代码自动生成
+    /// 文章管理
     /// </summary>
     [Verify]
     [Route("article")]

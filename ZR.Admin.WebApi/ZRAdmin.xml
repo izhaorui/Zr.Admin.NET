@@ -36,146 +36,36 @@
             <param name="sheetName"></param>
             <param name="fileName"></param>
         </member>
-        <member name="T:ZR.Admin.WebApi.Controllers.GendemoController">
-             <summary>
-             代码生成演示Controller
-            
-             @author zr
-             @date 2021-11-24
-             </summary>
-        </member>
-        <member name="F:ZR.Admin.WebApi.Controllers.GendemoController._GendemoService">
+        <member name="T:ZR.Admin.WebApi.Controllers.CommonController">
             <summary>
-            代码生成演示接口
+            公共模块
             </summary>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.QueryGendemo(ZR.Model.Dto.GendemoQueryDto)">
-            <summary>
-            查询代码生成演示列表
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.GetGendemo(System.Int32)">
-            <summary>
-            查询代码生成演示详情
-            </summary>
-            <param name="Id"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.AddGendemo(ZR.Model.Dto.GendemoDto)">
-            <summary>
-            添加代码生成演示
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.UpdateGendemo(ZR.Model.Dto.GendemoDto)">
-            <summary>
-            更新代码生成演示
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.GendemoController.DeleteGendemo(System.String)">
-            <summary>
-            删除代码生成演示
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="T:ZR.Admin.WebApi.Controllers.CodeGeneratorController">
-            <summary>
-            代码生成
-            </summary>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetListDataBase">
-            <summary>
-            获取所有数据库的信息
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.FindListTable(System.String,System.String,ZR.Model.PagerInfo)">
-             <summary>
-            获取所有表根据数据名
-             </summary>
-             <param name="dbName">数据库名</param>
-             <param name="tableName">表名</param>
-             <param name="pager">分页信息</param>
-             <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate(ZR.CodeGenerator.Model.GenerateDto)">
-            <summary>
-            代码生成器
-            </summary>
-            <param name="dto">数据传输对象</param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetGenTable(System.String,ZR.Model.PagerInfo)">
-            <summary>
-            获取代码生成表列表
-            </summary>
-            <param name="tableName">表名</param>
-            <param name="pagerInfo">分页信息</param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetColumnList(System.Int64)">
-            <summary>
-            查询表字段列表
-            </summary>
-            <param name="tableId">genTable表id</param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Remove(System.String)">
-            <summary>
-            删除代码生成
-            </summary>
-            <param name="tableIds"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.ImportTableSave(System.String,System.String)">
-            <summary>
-            导入表结构（保存）
-            </summary>
-            <param name="tables"></param>
-            <param name="dbName"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.EditSave(ZR.Model.System.Dto.GenTableDto)">
-            <summary>
-            修改保存代码生成业务
-            </summary>
-            <param name="genTableDto">请求参数实体</param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Preview(System.Int64)">
-            <summary>
-            预览代码
-            </summary>
-            <param name="tableId"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Health">
+        <member name="M:ZR.Admin.WebApi.Controllers.CommonController.Health">
             <summary>
             心跳
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Encrypt(System.String)">
-            <summary>
-            加密
-            </summary>
-            <param name="content"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.HomeController.Decrypt(System.String)">
-            <summary>
-            解密
-            </summary>
-            <param name="content"></param>
-            <returns></returns>
-        </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.HomeController.SendEmail(Infrastructure.Model.SendEmailDto)">
+        <member name="M:ZR.Admin.WebApi.Controllers.CommonController.SendEmail(Infrastructure.Model.SendEmailDto)">
             <summary>
             发送邮件
             </summary>
             <param name="sendEmailVo">请求参数接收实体</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CommonController.UploadFile(Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>
+            存储文件
+            </summary>
+            <param name="formFile"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CommonController.UploadFileAliyun(Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>
+            存储文件到阿里云
+            </summary>
+            <param name="formFile"></param>
             <returns></returns>
         </member>
         <member name="T:ZR.Admin.WebApi.Controllers.ArticleController">
@@ -229,6 +119,77 @@
             <summary>
             删除文章
             </summary>
+            <returns></returns>
+        </member>
+        <member name="T:ZR.Admin.WebApi.Controllers.CodeGeneratorController">
+            <summary>
+            代码生成
+            </summary>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetListDataBase">
+            <summary>
+            获取所有数据库的信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.FindListTable(System.String,System.String,ZR.Model.PagerInfo)">
+             <summary>
+            获取所有表根据数据名
+             </summary>
+             <param name="dbName">数据库名</param>
+             <param name="tableName">表名</param>
+             <param name="pager">分页信息</param>
+             <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetGenTable(System.String,ZR.Model.PagerInfo)">
+            <summary>
+            获取代码生成表列表
+            </summary>
+            <param name="tableName">表名</param>
+            <param name="pagerInfo">分页信息</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.GetColumnList(System.Int64)">
+            <summary>
+            查询表字段列表
+            </summary>
+            <param name="tableId">genTable表id</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Remove(System.String)">
+            <summary>
+            删除代码生成
+            </summary>
+            <param name="tableIds"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.ImportTableSave(System.String,System.String)">
+            <summary>
+            导入表结构（保存）
+            </summary>
+            <param name="tables"></param>
+            <param name="dbName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.EditSave(ZR.Model.System.Dto.GenTableDto)">
+            <summary>
+            修改保存代码生成业务
+            </summary>
+            <param name="genTableDto">请求参数实体</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Preview(System.Int64)">
+            <summary>
+            预览代码
+            </summary>
+            <param name="tableId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZR.Admin.WebApi.Controllers.CodeGeneratorController.Generate(ZR.CodeGenerator.Model.GenerateDto)">
+            <summary>
+            生成代码（下载方式）
+            </summary>
+            <param name="dto">数据传输对象</param>
             <returns></returns>
         </member>
         <member name="M:ZR.Admin.WebApi.Controllers.monitor.MonitorController.GetCache">
@@ -663,6 +624,7 @@
             <summary>
             修改头像
             </summary>
+            <param name="formFile"></param>
             <returns></returns>
         </member>
         <member name="T:ZR.Admin.WebApi.Controllers.System.SysRoleController">
@@ -894,13 +856,6 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Controllers.UploadController.SaveFile(Microsoft.AspNetCore.Http.IFormFile)">
-            <summary>
-            存储文件
-            </summary>
-            <param name="formFile"></param>
-            <returns></returns>
-        </member>
         <member name="T:ZR.Admin.WebApi.Extensions.HttpContextExtension">
             <summary>
             HttpContext扩展类
@@ -920,6 +875,13 @@
             <param name="context"></param>
             <returns></returns>
         </member>
+        <member name="M:ZR.Admin.WebApi.Extensions.HttpContextExtension.GetClaims(Microsoft.AspNetCore.Http.HttpContext)">
+            <summary>
+            ClaimsIdentity
+            </summary>
+            <param name="context"></param>
+            <returns></returns>
+        </member>
         <member name="M:ZR.Admin.WebApi.Extensions.HttpContextExtension.GetToken(Microsoft.AspNetCore.Http.HttpContext)">
             <summary>
             获取请求令牌
@@ -927,13 +889,13 @@
             <param name="context"></param>
             <returns></returns>
         </member>
-        <member name="M:ZR.Admin.WebApi.Extensions.HttpContextExtension.WriteCookies(Microsoft.AspNetCore.Http.HttpContext,ZR.Model.System.LoginUser)">
-            <summary>
-            登录cookie写入
-            </summary>
-            <param name="context"></param>
-            <param name="user"></param>
-            <returns></returns>
+        <member name="M:ZR.Admin.WebApi.Extensions.HttpContextExtension.AddClaims(Microsoft.AspNetCore.Http.HttpContext,ZR.Model.System.LoginUser)">
+             <summary>
+            组装Claims
+             </summary>
+             <param name="context"></param>
+             <param name="user"></param>
+             <returns></returns>
         </member>
         <member name="T:ZR.Admin.WebApi.Extensions.TasksExtension">
             <summary>
@@ -1036,6 +998,12 @@
             <param name="claims"></param>
             <returns></returns>
         </member>
+        <member name="M:ZR.Admin.WebApi.Framework.JwtUtil.ValidParameters">
+            <summary>
+            验证Token
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:ZR.Admin.WebApi.Framework.JwtUtil.ParseToken(System.String)">
             <summary>
             从令牌中获取数据声明
@@ -1051,7 +1019,7 @@
             <returns></returns>
         </member>
         <!-- Badly formed XML comment ignored for member "T:ZR.Admin.WebApi.Middleware.GlobalExceptionMiddleware" -->
-        <member name="M:ZR.Admin.WebApi.Startup.InjectRepositories(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+        <member name="M:ZR.Admin.WebApi.Startup.InjectServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
             <summary>
             注册Services服务
             </summary>

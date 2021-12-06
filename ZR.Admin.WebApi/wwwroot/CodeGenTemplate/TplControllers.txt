@@ -160,25 +160,23 @@ ${end}
             string sFileName = ExportExcel(list, "${replaceDto.ModelTypeName}", "${genTable.FunctionName}");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
-
 $if(genTable.SortField != "")
-        /// <summary>
-        /// 保存排序
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="orderNum"></param>
-        /// <returns></returns>
-        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:update")]
-        [HttpGet("ChangeSort")]
-        [Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
-        public IActionResult ChangeSort(int id = 0, int orderNum = 0)
-        {
-            if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-
-            bool result = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == id, it => new ${replaceDto.ModelTypeName}() { ${genTable.SortField} = orderNum });;
+        ////// <summary>
+        ////// 代码自动生成（不用可删除） 保存排序
+        ////// </summary>
+        ////// <param name="id"></param>
+        ////// <param name="orderNum"></param>
+        ////// <returns></returns>
+        ///[ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:update")]
+        ///[HttpGet("ChangeSort")]
+        //[Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
+        //public IActionResult ChangeSort(int id = 0, int orderNum = 0)
+        //{
+        //    if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
+        //    bool result = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == id, it => new ${replaceDto.ModelTypeName}() { ${genTable.SortField} = orderNum });;
             
-            return SUCCESS(result);
-        }
+        //    return SUCCESS(result);
+        //}
 $end
     }
 }

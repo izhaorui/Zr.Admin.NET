@@ -32,7 +32,7 @@ namespace ZR.Admin.WebApi
             Configuration = configuration;
             CurrentEnvironment = hostEnvironment;
         }
-
+        private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private IWebHostEnvironment CurrentEnvironment { get; }
         public IConfiguration Configuration { get; }
         public void ConfigureServices(IServiceCollection services)
@@ -167,13 +167,14 @@ namespace ZR.Admin.WebApi
             });
 
             //调式代码 用来打印SQL 
-            DbScoped.SugarScope.GetConnection("0").Aop.OnLogExecuting = (sql, pars) =>
+            DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
             {
-                Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n"
-                    + DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
+                var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                //Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n" + param);
+                logger.Info($"Sql语句：{sql}，{param}");
             };
             //出错打印日志
-            DbScoped.SugarScope.GetConnection("0").Aop.OnError = (e) =>
+            DbScoped.SugarScope.GetConnection(0).Aop.OnError = (e) =>
             {
                 Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
                 Console.WriteLine();
@@ -182,14 +183,14 @@ namespace ZR.Admin.WebApi
             //调式代码 用来打印SQL 
             DbScoped.SugarScope.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
             {
-                Console.WriteLine("【SQL语句Bus】" + sql.ToLower() + "\r\n"
-                    + DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
+                var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                //Console.WriteLine("【SQL语句Bus】" + sql.ToLower() + "\r\n" + param);
+                logger.Info($"Sql语句：{sql}, {param}");
             };
             //Bus Db错误日志
             DbScoped.SugarScope.GetConnection(1).Aop.OnError = (e) =>
             {
-                Console.WriteLine($"[执行Sql出错Bus]{e.Message}，SQL={e.Sql}");
-                Console.WriteLine();
+                logger.Error($"执行Sql语句失败：{e.Sql}，原因：{e.Message}");
             };
         }
     }
