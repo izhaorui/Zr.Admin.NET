@@ -23,12 +23,12 @@ ${end}
     public class ${replaceDto.ModelTypeName}QueryDto : PagerInfo 
     {
 $foreach(item in genTable.Columns)
-$if(item.IsQuery)
+$if(item.IsQuery && item.htmlType == "datetime")
+        public DateTime? Begin$item.CsharpField { get; set; }
+        public DateTime? End$item.CsharpField { get; set; }
+$elseif(item.IsQuery)
         public $item.CsharpType $item.CsharpField { get; set; }
 $end
 ${end}
-
-        public DateTime? BeginTime { get; set; }
-        public DateTime? EndTime { get; set; }
     }
 }

@@ -103,8 +103,12 @@ $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select"))
       // ${item.ColumnComment}选项列表
       ${item.ColumnName}Options: [],
+$elseif(item.HtmlType == "datetime")
+      //${item.ColumnComment}时间范围
+      dateRange${item.CsharpField}: [],
 $end
 $end
+
 $if(genTable.SortField != "")
       // 是否显示编辑排序
       showEditSort: false,
@@ -130,6 +134,9 @@ $if((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != 
     this.getDicts("${item.DictType}").then((response) => {
       this.${item.ColumnName}Options = response.data;
     })
+$elseif(item.HtmlType == "datetime")
+    this.queryParams["begin${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 0);
+    this.queryParams["end${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 1);
 $end
 $end
   },
@@ -137,7 +144,7 @@ $end
     // 查询数据
     getList() {
       console.log(JSON.stringify(this.queryParams));
-       list${genTable.BusinessName}(this.addDateRange(this.queryParams, this.timeRange)).then(res => {
+       list${genTable.BusinessName}(this.queryParams).then(res => {
          if (res.code == 200) {
            this.dataList = res.data.result;
            this.total = res.data.totalNum;
@@ -163,6 +170,12 @@ $end
     /** 重置查询操作 */
     resetQuery() {
       this.timeRange = [];
+$foreach(item in genTable.Columns)
+if(item.HtmlType == "datetime")
+      //${item.ColumnComment}时间范围
+      dateRange${item.CsharpField}= [];
+$end
+$end
       this.resetForm("queryForm");
       this.queryParams = {
         pageNum: 1,

@@ -65,6 +65,17 @@ export function addDateRange(params, dateRange) {
   return search;
 }
 
+export function addDateRange2(dateRange, index) {
+	console.log(dateRange);
+  var time = "";
+  if (null != dateRange && '' != dateRange) {
+    if (dateRange.length <= 2) {
+			time = dateRange[index];
+		}
+  }
+  return time;
+}
+
 // 回显数据字典
 export function selectDictLabel(datas, value) {
   var actions = [];

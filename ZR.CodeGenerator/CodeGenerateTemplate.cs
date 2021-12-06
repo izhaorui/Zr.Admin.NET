@@ -34,8 +34,8 @@ namespace ZR.CodeGenerator
                 //时间类型
                 if (tbColumn.CsharpType == GenConstants.TYPE_DATE)
                 {
-                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.BeginTime != null, it => it.{tbColumn.CsharpField} >= parm.BeginTime);\n";
-                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.EndTime != null, it => it.{tbColumn.CsharpField} <= parm.EndTime);\n";
+                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.Begin{tbColumn.CsharpField} != null, it => it.{tbColumn.CsharpField} >= parm.Begin{tbColumn.CsharpField});\n";
+                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.End{tbColumn.CsharpField} != null, it => it.{tbColumn.CsharpField} <= parm.End{tbColumn.CsharpField});\n";
                 }
             }
         }
@@ -199,7 +199,7 @@ namespace ZR.CodeGenerator
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">");
-                sb.AppendLine("        <el-date-picker v-model=\"timeRange\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
+                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
                 sb.AppendLine("          end-placeholder=\"结束日期\"></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
             }
@@ -245,9 +245,9 @@ namespace ZR.CodeGenerator
             string showToolTip = dbFieldInfo.CsharpType == "string" ? ":show-overflow-tooltip=\"true\"" : "";
             string formatter = !string.IsNullOrEmpty(dbFieldInfo.DictType) ? $" :formatter=\"{columnName}Format\"" : "";
             StringBuilder sb = new StringBuilder();
-
+            var sortField = genTable?.SortField ?? "";
             //有排序字段
-            if (!string.IsNullOrEmpty(genTable?.SortField.ToString()) && genTable?.SortField.ToString() == dbFieldInfo.CsharpField)
+            if (!string.IsNullOrEmpty(sortField.ToString()) && sortField.ToString() == dbFieldInfo.CsharpField)
             {
                 sb.AppendLine($@"      <el-table-column prop=""{columnName}"" label=""{label}"" width=""90"" sortable align=""center"">");
                 sb.AppendLine(@"        <template slot-scope=""scope"">");
