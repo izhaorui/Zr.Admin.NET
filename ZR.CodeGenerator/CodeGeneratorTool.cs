@@ -278,9 +278,10 @@ namespace ZR.CodeGenerator
         /// <returns>业务名</returns>
         public static string GetBusinessName(string tableName)
         {
-            int lastIndex = tableName.LastIndexOf("_");
+            int lastIndex = tableName.LastIndexOf("_");//_前缀长度
             int nameLength = tableName.Length;
-            string businessName = tableName[(nameLength - lastIndex + 1)..];
+            int subLength = (nameLength - lastIndex) - 1;
+            string businessName = tableName[(lastIndex + 1)..];// tableName.Substring(lastIndex + 1, subLength);
             return businessName.ToLower();
         }
 
