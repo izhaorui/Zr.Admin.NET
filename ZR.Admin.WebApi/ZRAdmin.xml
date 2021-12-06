@@ -70,7 +70,7 @@
         </member>
         <member name="T:ZR.Admin.WebApi.Controllers.ArticleController">
             <summary>
-            T4代码自动生成
+            文章管理
             </summary>
         </member>
         <member name="F:ZR.Admin.WebApi.Controllers.ArticleController._ArticleService">
