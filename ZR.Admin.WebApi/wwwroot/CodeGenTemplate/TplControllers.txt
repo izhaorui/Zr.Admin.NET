@@ -52,7 +52,7 @@ namespace ${options.ApiControllerNamespace}.Controllers
 
             //搜索条件查询语法参考Sqlsugar
 ${QueryCondition}
-$if(genTable.SortField != "")
+$if(genTable.SortField != "" && genTable.SortField != null)
             var response = _${replaceDto.ModelTypeName}Service.GetPages(predicate.ToExpression(), parm, x => x.${genTable.SortField}, "${genTable.SortType}");
 $else
             var response = _${replaceDto.ModelTypeName}Service.GetPages(predicate.ToExpression(), parm);
@@ -160,7 +160,7 @@ ${end}
             string sFileName = ExportExcel(list, "${replaceDto.ModelTypeName}", "${genTable.FunctionName}");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
-$if(genTable.SortField != "")
+$if(genTable.SortField != "" && genTable.SortField != null)
         ////// <summary>
         ////// 代码自动生成（不用可删除） 保存排序
         ////// </summary>

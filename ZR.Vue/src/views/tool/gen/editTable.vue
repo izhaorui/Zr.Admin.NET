@@ -53,8 +53,7 @@
           </el-table-column>
           <el-table-column label="查询" min-width="5%">
             <template slot-scope="scope">
-              <el-checkbox v-model="scope.row.isQuery"
-                :disabled="scope.row.htmlType == 'imageUpload' || scope.row.htmlType == 'fileUpload'">
+              <el-checkbox v-model="scope.row.isQuery" :disabled="scope.row.htmlType == 'imageUpload' || scope.row.htmlType == 'fileUpload'">
               </el-checkbox>
             </template>
           </el-table-column>
@@ -90,7 +89,7 @@
           </el-table-column>
           <el-table-column label="字典类型" min-width="12%">
             <template slot-scope="scope">
-              <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择">
+              <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择" :disabled="scope.row.htmlType == 'datetime'">
                 <el-option v-for="dict in dictOptions" :key="dict.dictType" :label="dict.dictName" :value="dict.dictType">
                   <span style="float: left">{{ dict.dictName }}</span>
                   <span style="float: right; color: #8492a6; font-size: 13px">{{ dict.dictType }}</span>
@@ -101,7 +100,7 @@
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="生成信息" name="genInfo">
-        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" :columns="cloumns"/>
+        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" :columns="cloumns" />
       </el-tab-pane>
     </el-tabs>
     <el-form label-width="100px">

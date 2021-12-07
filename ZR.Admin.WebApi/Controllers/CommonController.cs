@@ -37,7 +37,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// 心跳
         /// </summary>
         /// <returns></returns>
-        [HttpGet, Route("health/index")]
+        [HttpGet]
         public IActionResult Health()
         {
             return SUCCESS(true);

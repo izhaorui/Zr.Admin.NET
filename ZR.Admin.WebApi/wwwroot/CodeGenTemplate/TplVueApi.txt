@@ -67,7 +67,7 @@ export function export${replaceDto.ModelTypeName}(query) {
   })
 }
 
-$if(genTable.SortField != "")
+$if(genTable.SortField != "" && genTable.SortField != null)
 //排序
 export function changeSort(data) {
   return request({

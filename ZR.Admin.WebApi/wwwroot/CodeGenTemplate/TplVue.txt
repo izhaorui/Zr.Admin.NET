@@ -20,7 +20,7 @@ ${vueQueryFormHtml}
       <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
-      <el-col :span="1.5" style="display:none">
+      <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
       </el-col>
 $if(genTable.SortField != "" && 1 == 2)
@@ -33,7 +33,7 @@ $end
 
     <!-- 数据区域 -->
     <el-table :data="dataList" ref="table" border  @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="50" />
+      <el-table-column type="selection" width="50" align="center"/>
 ${VueViewListContent}
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
@@ -46,16 +46,16 @@ ${VueViewListContent}
     </el-table>
     <pagination class="mt10" background :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <!-- 添加或修改菜单对话框 -->
+    <!-- 添加或修改${genTable.functionName}对话框 -->
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
       <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
         <el-row>
-${VueViewFormContent}
+    ${VueViewFormContent}
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
-        <el-button @click="cancel">取 消</el-button>
         <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -68,7 +68,8 @@ import {
   del${genTable.BusinessName},
   update${genTable.BusinessName},
   get${genTable.BusinessName},
-$if(genTable.SortField != "")
+  export${genTable.BusinessName},
+$if(genTable.SortField != "" && genTable.SortField != null)
   changeSort
 $end
 } from '@/api/${genTable.ModuleName}/${lowerBusinessName}.js';
@@ -103,13 +104,13 @@ $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select"))
       // ${item.ColumnComment}选项列表
       ${item.ColumnName}Options: [],
-$elseif(item.HtmlType == "datetime")
+$elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围
       dateRange${item.CsharpField}: [],
 $end
 $end
 
-$if(genTable.SortField != "")
+$if(genTable.SortField != "" && genTable.SortField != null)
       // 是否显示编辑排序
       showEditSort: false,
 $end
@@ -125,7 +126,7 @@ ${VueViewEditFormRuleContent}
       },
     };
   },
-  mounted() {
+  created() {
     // 列表数据查询
     this.getList();
 
@@ -134,17 +135,20 @@ $if((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != 
     this.getDicts("${item.DictType}").then((response) => {
       this.${item.ColumnName}Options = response.data;
     })
-$elseif(item.HtmlType == "datetime")
-    this.queryParams["begin${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 0);
-    this.queryParams["end${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 1);
 $end
 $end
   },
   methods: {
     // 查询数据
     getList() {
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "datetime" && item.IsQuery == true)
+      this.queryParams["begin${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 0);
+      this.queryParams["end${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 1);
+$end
+$end
       console.log(JSON.stringify(this.queryParams));
-       list${genTable.BusinessName}(this.queryParams).then(res => {
+      list${genTable.BusinessName}(this.queryParams).then(res => {
          if (res.code == 200) {
            this.dataList = res.data.result;
            this.total = res.data.totalNum;
@@ -171,9 +175,9 @@ $end
     resetQuery() {
       this.timeRange = [];
 $foreach(item in genTable.Columns)
-if(item.HtmlType == "datetime")
+$if(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围
-      dateRange${item.CsharpField}= [];
+      this.dateRange${item.CsharpField}= [];
 $end
 $end
       this.resetForm("queryForm");
@@ -220,7 +224,7 @@ $end
         }
       });
     },
-$if(genTable.SortField != "")
+$if(genTable.SortField != "" && genTable.SortField != null)
     // 显示编辑排序
     handleShowSort() {
       this.showEditSort = !this.showEditSort;
@@ -239,9 +243,8 @@ $end
 $if(replaceDto.UploadFile == 1)
     //图片上传成功方法
     handleUploadSuccess(res, columnName) {
-      console.log(columnName, res)
       this.form[columnName] = res.data;
-      console.log(JSON.stringify(this.form))
+      console.log(JSON.stringify(this.form), JSON.stringify(res))
     },
 $end
 $foreach(item in genTable.Columns)
@@ -282,7 +285,21 @@ $end
         }
       });
     },
-    handleExport() {},
+    /** 导出按钮操作 */
+    handleExport() {
+      const queryParams = this.queryParams;
+      this.${confirm}confirm("是否确认导出所有${genTable.functionName}数据项?", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(function () {
+          return export${genTable.BusinessName}(queryParams);
+        })
+        .then((response) => {
+          this.download(response.data.path);
+        });
+    },
   },
 };
 </script>
