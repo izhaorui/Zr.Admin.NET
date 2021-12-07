@@ -105,7 +105,7 @@ namespace ZR.CodeGenerator
                 //图片
                 sb.AppendLine("    <el-col :span=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
-                sb.AppendLine($@"        <UploadImage :icon=""form.{columnName}"" column='{columnName}' :key=""form.{columnName}"" @handleUploadSuccess=""handleUploadSuccess"" />");
+                sb.AppendLine($@"        <UploadImage v-model=""form.{columnName}"" column=""{columnName}"" @input=""handleUploadSuccess"" />");
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
             }
@@ -160,7 +160,7 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col :span=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-select v-model=\"form.{columnName}\">");
-                sb.AppendLine($"          <el-option label=\"请选择字典生成\"></el-option>");
+                sb.AppendLine($"          <el-option label=\"请选择字典生成\" value=\"\"></el-option>");
                 sb.AppendLine("        </el-select>");
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");

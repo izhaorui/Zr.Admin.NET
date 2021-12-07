@@ -12,7 +12,27 @@
 import { getToken } from "@/utils/auth";
 
 export default {
-  name: "UploadImage",
+  props: {
+    value: [String],
+    column: [String],
+    // 上传地址
+    uploadUrl: {
+      type: String,
+      default: "/Common/UploadFile",
+    },
+    // 文件类型, 例如['png', 'jpg', 'jpeg']
+    fileType: {
+      type: Array,
+      default: () => ["png", "jpg", "jpeg", "webp"],
+    },
+    // 大小限制(MB)
+    fileSize: {
+      type: Number,
+      default: 5,
+    },
+    //显示手动输入地址
+    showInput: false,
+  },
   data() {
     return {
       uploadImgUrl: process.env.VUE_APP_BASE_API + this.uploadUrl, // 上传的图片服务器地址
@@ -22,40 +42,29 @@ export default {
       imageUrl: "",
     };
   },
-  props: {
-    icon: {
-      type: String,
+  watch: {
+    //监听 v-model 的值
+    value: {
+      immediate: true,
+      deep: true,
+      handler: function (val) {
+        if (val) {
+          this.imageUrl = val;
+        } else {
+          this.imageUrl = "";
+        }
+      },
     },
-    // 当前form 列名
-    column: { type: String },
-    // 上传地址
-    uploadUrl: {
-      type: String,
-      default: "Common/UploadFile",
-    },
-    // 文件类型, 例如['png', 'jpg', 'jpeg']
-    fileType: {
-      type: Array,
-      default: () => ["png", "jpg", "jpeg"],
-    },
-    // 大小限制(MB)
-    fileSize: {
-      type: Number,
-      default: 5,
-    },
-  },
-  mounted() {
-    this.imageUrl = this.icon;
   },
   methods: {
     handleUploadSuccess(res) {
-      this.$emit(`handleUploadSuccess`, res, this.column);
+      this.$emit(`input`, res, this.column);
       this.imageUrl = res.data;
       this.loading.close();
     },
     // 上传前loading加载
     handleBeforeUpload(file) {
-			console.log(file)
+      console.log(file);
       let isImg = false;
       if (this.fileType.length) {
         let fileExtension = "";
@@ -98,7 +107,6 @@ export default {
       this.loading.close();
     },
   },
-  watch: {},
 };
 </script>
 
