@@ -75,7 +75,7 @@
       <el-col :span="12">
         <el-form-item>
           <span slot="label">
-            排序字段
+            查询排序字段
           </span>
 
           <el-select v-model="info.sortField" placeholder="请选择字段" class="mr10" clearable="">

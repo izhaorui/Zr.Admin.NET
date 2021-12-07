@@ -27,11 +27,16 @@ namespace ZR.Admin.WebApi.Extensions
                     Version = "v1",
                     Description = "",
                 });
-                //if (CurrentEnvironment.IsDevelopment())
-                //{
-                //添加文档注释
-                c.IncludeXmlComments(Path.Combine(hostEnvironment.ContentRootPath, "ZRAdmin.xml"), true);
-                //}
+                try
+                {
+                    //添加文档注释
+                    c.IncludeXmlComments(Path.Combine(hostEnvironment.ContentRootPath, "ZRAdmin.xml"), true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("swagger 文档加载失败" + ex.Message);
+                }
+
                 //参考文章：http://www.zyiz.net/tech/detail-134965.html
                 //需要安装包Swashbuckle.AspNetCore.Filters
                 // 开启权限小锁 需要在对应的Action上添加[Authorize]才能看到

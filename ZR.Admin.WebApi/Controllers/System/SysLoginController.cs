@@ -143,17 +143,19 @@ namespace ZR.Admin.WebApi.Controllers.System
             string uuid = Guid.NewGuid().ToString().Replace("-", "");
 
             SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
+            var captchaOff = sysConfig?.ConfigValue ?? "0";
+
             var code = SecurityCodeHelper.GetRandomEnDigitalText(4);
             byte[] imgByte;
-            if (sysConfig.ConfigValue == "1")
+            if (captchaOff == "1")
             {
                 imgByte = SecurityCodeHelper.GetGifEnDigitalCodeByte(code);//动态gif数字字母
             }
-            else if (sysConfig.ConfigValue == "2")
+            else if (captchaOff == "2")
             {
                 imgByte = SecurityCodeHelper.GetGifBubbleCodeByte(code);//动态gif泡泡
             }
-            else if (sysConfig.ConfigValue == "3")
+            else if (captchaOff == "3")
             {
                 imgByte = SecurityCodeHelper.GetBubbleCodeByte(code);//泡泡
             }

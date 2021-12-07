@@ -46,7 +46,7 @@ namespace ZR.CodeGenerator
         /// <param name="dto"></param>
         public static void GenerateSingle(GenerateDto dto)
         {
-            string PKName = "id";
+            string PKName = "Id";
             string PKType = "int";
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
@@ -66,7 +66,7 @@ namespace ZR.CodeGenerator
                     replaceDto.UploadFile = 1;
                 }
                 CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
-                
+
                 replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo);
                 replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo, dto.GenTable);
                 replaceDto.VueViewEditFormRuleContent += CodeGenerateTemplate.TplFormRules(dbFieldInfo);
@@ -177,7 +177,7 @@ namespace ZR.CodeGenerator
         {
             var fullPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Controller.cs");
             var tpl = FileHelper.ReadJtTemplate("TplControllers.txt");
-            
+
             tpl.Set("QueryCondition", replaceDto.QueryCondition);
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(5, "Controller", fullPath, result));
@@ -278,10 +278,11 @@ namespace ZR.CodeGenerator
         /// <returns>业务名</returns>
         public static string GetBusinessName(string tableName)
         {
-            int lastIndex = tableName.LastIndexOf("_");
+            int lastIndex = tableName.IndexOf("_");//_前缀长度
             int nameLength = tableName.Length;
-            string businessName = tableName[(nameLength - lastIndex + 1)..];
-            return businessName.ToLower();
+            int subLength = (nameLength - lastIndex) - 1;
+            string businessName = tableName[(lastIndex + 1)..];
+            return businessName.Replace("_", "").ToLower();
         }
 
         /// <summary>
@@ -396,7 +397,11 @@ namespace ZR.CodeGenerator
                 {
                     genTableColumn.IsList = true;
                 }
-
+                //时间类型初始化between范围查询
+                if (genTableColumn.CsharpType == GenConstants.TYPE_DATE)
+                {
+                    genTableColumn.QueryType = "BETWEEN";
+                }
                 genTableColumns.Add(genTableColumn);
             }
             return genTableColumns;
@@ -420,6 +425,7 @@ namespace ZR.CodeGenerator
                 options.OutMode = OutMode.Auto;
                 //options.DisableeLogogram = true;//禁用简写
                 options.Data.Set("refs", "$");//特殊标签替换
+                options.Data.Set("confirm", "$");//特殊标签替换
                 options.Data.Set("replaceDto", replaceDto);
                 options.Data.Set("options", dto.GenOptions);
                 options.Data.Set("genTable", dto.GenTable);

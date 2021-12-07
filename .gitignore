@@ -267,3 +267,5 @@ __pycache__/
 /ZR.Admin.WebApi/wwwroot/export
 /ZR.Vue/src/views/business/Gendemo.vue
 /ZR.Admin.WebApi/Properties/launchSettings.json
+/ZR.Admin.WebApi/ZRAdmin.xml
+/ZR.Admin.WebApi/DataProtection
