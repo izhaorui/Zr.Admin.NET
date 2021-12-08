@@ -42,25 +42,25 @@ namespace ZR.CodeGenerator
 
         #region vue 模板
 
-        /// <summary>
-        /// Vue rules
-        /// </summary>
-        /// <param name="dbFieldInfo"></param>
-        /// <returns></returns>
-        public static string TplFormRules(GenTableColumn dbFieldInfo)
-        {
-            StringBuilder sbRule = new StringBuilder();
-            //Rule 规则验证
-            if (!dbFieldInfo.IsPk && !dbFieldInfo.IsIncrement && dbFieldInfo.IsRequired)
-            {
-                sbRule.AppendLine($"        {dbFieldInfo.ColumnName}: [{{ required: true, message: '请输入{dbFieldInfo.ColumnComment}', trigger: \"blur\"}}],");
-            }
-            else if (CodeGeneratorTool.IsNumber(dbFieldInfo.ColumnType) && dbFieldInfo.IsRequired)
-            {
-                sbRule.AppendLine($"        {dbFieldInfo.ColumnName}: [{{ type: 'number', message: '{dbFieldInfo.ColumnName}必须为数字值', trigger: \"blur\"}}],");
-            }
-            return sbRule.ToString();
-        }
+        ///// <summary>
+        ///// Vue rules
+        ///// </summary>
+        ///// <param name="dbFieldInfo"></param>
+        ///// <returns></returns>
+        //public static string TplFormRules(GenTableColumn dbFieldInfo)
+        //{
+        //    StringBuilder sbRule = new StringBuilder();
+        //    //Rule 规则验证
+        //    if (!dbFieldInfo.IsPk && !dbFieldInfo.IsIncrement && dbFieldInfo.IsRequired)
+        //    {
+        //        sbRule.AppendLine($"        {dbFieldInfo.ColumnName}: [{{ required: true, message: '请输入{dbFieldInfo.ColumnComment}', trigger: \"blur\"}}],");
+        //    }
+        //    else if (CodeGeneratorTool.IsNumber(dbFieldInfo.ColumnType) && dbFieldInfo.IsRequired)
+        //    {
+        //        sbRule.AppendLine($"        {dbFieldInfo.ColumnName}: [{{ type: 'number', message: '{dbFieldInfo.ColumnName}必须为数字值', trigger: \"blur\"}}],");
+        //    }
+        //    return sbRule.ToString();
+        //}
 
         /// <summary>
         /// Vue 添加修改表单
@@ -133,7 +133,7 @@ namespace ZR.CodeGenerator
             {
                 sb.AppendLine("    <el-col :span=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
-                sb.AppendLine($"        <el-input type=\"textarea\" v-model=\"form.{columnName}\" placeholder=\"请输入内容\"/>");
+                sb.AppendLine($"        <el-input type=\"textarea\" v-model=\"form.{columnName}\" placeholder=\"请输入{labelName}\"/>");
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
             }

@@ -38,9 +38,7 @@ ${VueViewListContent}
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
           <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
-          <el-popconfirm title="确定删除吗？" @confirm="handleDelete(scope.row)" style="margin-left:10px">
-            <el-button slot="reference"  v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="text" icon="el-icon-delete">删除</el-button>
-          </el-popconfirm>
+          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -50,7 +48,7 @@ ${VueViewListContent}
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
       <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
         <el-row>
-    ${VueViewFormContent}
+${VueViewFormContent}
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
@@ -91,7 +89,10 @@ export default {
       // 显示搜索条件
       showSearch: true,
       // 查询参数
-      queryParams: {},
+      queryParams: {
+        pageNum: 1,
+        pageSize: 20
+      },
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -109,7 +110,6 @@ $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       dateRange${item.CsharpField}: [],
 $end
 $end
-
 $if(genTable.SortField != "" && genTable.SortField != null)
       // 是否显示编辑排序
       showEditSort: false,
@@ -122,7 +122,14 @@ $end
       btnSubmitVisible: true,
       // 表单校验
       rules: {
-${VueViewEditFormRuleContent}
+$foreach(column in genTable.Columns)
+$if(column.IsRequired)
+        ${column.ColumnName}: [
+          { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
+$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }
+        ],
+$end
+$end
       },
     };
   },
@@ -181,11 +188,6 @@ $if(item.HtmlType == "datetime" && item.IsQuery == true)
 $end
 $end
       this.resetForm("queryForm");
-      this.queryParams = {
-        pageNum: 1,
-        pageSize: 20,
-        //TODO 重置字段
-      };
       this.handleQuery();
     },
     // 多选框选中数据
@@ -196,6 +198,7 @@ $end
     },
     /** 搜索按钮操作 */
     handleQuery() {
+      this.queryParams.pageNum = 1;
       this.getList();
     },
     /** 新增按钮操作 */
@@ -207,10 +210,16 @@ $end
     /** 删除按钮操作 */
     handleDelete(row) {
       const Ids = row.${replaceDto.FistLowerPk} || this.ids;
-      del${genTable.BusinessName}(Ids).then((res) => {
-        this.msgSuccess("删除成功");
-        this.handleQuery();
-      });
+
+      this.${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
+        .then(function () {
+          return del${genTable.BusinessName}(Ids);
+        })
+        .then(() => {
+          this.handleQuery();
+          this.msgSuccess("删除成功");
+        })
+        .catch(() => {});
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
