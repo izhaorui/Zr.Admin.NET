@@ -102,7 +102,7 @@ export default {
       // 时间范围数组
       timeRange: [],
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select"))
+$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
       // ${item.ColumnComment}选项列表
       ${item.ColumnName}Options: [],
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
@@ -138,7 +138,7 @@ $end
     this.getList();
 
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != "")
+$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
     this.getDicts("${item.DictType}").then((response) => {
       this.${item.ColumnName}Options = response.data;
     })
@@ -257,7 +257,7 @@ $if(replaceDto.UploadFile == 1)
     },
 $end
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select") && item.DictType != "")
+$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
     // ${item.ColumnComment}字典翻译
     ${item.ColumnName}Format(row, column) {
       return this.selectDictLabel(this.${item.ColumnName}Options, row.${item.ColumnName});
@@ -312,8 +312,3 @@ $end
   },
 };
 </script>
-<style scoped>
-.table-td-thumb {
-  width: 80px;
-}
-</style>

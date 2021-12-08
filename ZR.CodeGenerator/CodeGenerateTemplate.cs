@@ -42,26 +42,6 @@ namespace ZR.CodeGenerator
 
         #region vue 模板
 
-        ///// <summary>
-        ///// Vue rules
-        ///// </summary>
-        ///// <param name="dbFieldInfo"></param>
-        ///// <returns></returns>
-        //public static string TplFormRules(GenTableColumn dbFieldInfo)
-        //{
-        //    StringBuilder sbRule = new StringBuilder();
-        //    //Rule 规则验证
-        //    if (!dbFieldInfo.IsPk && !dbFieldInfo.IsIncrement && dbFieldInfo.IsRequired)
-        //    {
-        //        sbRule.AppendLine($"        {dbFieldInfo.ColumnName}: [{{ required: true, message: '请输入{dbFieldInfo.ColumnComment}', trigger: \"blur\"}}],");
-        //    }
-        //    else if (CodeGeneratorTool.IsNumber(dbFieldInfo.ColumnType) && dbFieldInfo.IsRequired)
-        //    {
-        //        sbRule.AppendLine($"        {dbFieldInfo.ColumnName}: [{{ type: 'number', message: '{dbFieldInfo.ColumnName}必须为数字值', trigger: \"blur\"}}],");
-        //    }
-        //    return sbRule.ToString();
-        //}
-
         /// <summary>
         /// Vue 添加修改表单
         /// </summary>
@@ -255,6 +235,21 @@ namespace ZR.CodeGenerator
                 sb.AppendLine($"            <el-image class=\"table-td-thumb\" :src=\"scope.row.{columnName}\" :preview-src-list=\"[scope.row.{columnName}]\"></el-image>");
                 sb.AppendLine("         </template>");
                 sb.AppendLine("       </el-table-column>");
+            }
+            else if (dbFieldInfo.IsList && !string.IsNullOrEmpty(dbFieldInfo.DictType))
+            {
+                sb.AppendLine($@"      <el-table-column label=""{label}"" align=""center"" prop=""{columnName}"">");
+                sb.AppendLine(@"        <template slot-scope=""scope"">");
+                if (dbFieldInfo.HtmlType == "checkbox")
+                {
+                    sb.AppendLine($@"          <dict-tag :options=""{dbFieldInfo.ColumnName}Options"" :value=""scope.row.{dbFieldInfo.ColumnName} ? scope.row.{dbFieldInfo.ColumnName}.split(',') : []""/>");
+                }
+                else
+                {
+                    sb.AppendLine($@"          <dict-tag :options=""{dbFieldInfo.ColumnName}Options"" :value=""scope.row.{dbFieldInfo.ColumnName}""/>");
+                }
+                sb.AppendLine(@"        </template>");
+                sb.AppendLine(@"      </el-table-column>");
             }
             else if (dbFieldInfo.IsList)
             {
