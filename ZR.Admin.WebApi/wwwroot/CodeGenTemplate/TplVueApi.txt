@@ -59,7 +59,7 @@ export function del${genTable.BusinessName}(pid) {
 }
 
 // 导出${genTable.functionName}
-export function export${replaceDto.ModelTypeName}(query) {
+export function export${genTable.BusinessName}(query) {
   return request({
     url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/export',
     method: 'get',

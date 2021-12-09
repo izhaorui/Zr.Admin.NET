@@ -99,23 +99,28 @@ namespace ZR.Admin.WebApi.Controllers
             }
 
             string accessPath = $"{OptionsSetting.Upload.UploadUrl}/{FileUtil.GetdirPath("uploads").Replace("\\", " /")}{fileName}";
-            return ToResponse(ResultCode.SUCCESS, accessPath);
+            return ToResponse(ResultCode.SUCCESS, new
+            {
+                url = accessPath,
+                fileName
+            });
         }
 
         /// <summary>
         /// 存储文件到阿里云
         /// </summary>
         /// <param name="formFile"></param>
+        /// <param name="fileDir">上传文件夹路径</param>
         /// <returns></returns>
         [HttpPost]
         [Verify]
         [ActionPermissionFilter(Permission = "system")]
-        public IActionResult UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile)
+        public IActionResult UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileDir = "")
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);
             string[] AllowedFileExtensions = new string[] { ".jpg", ".gif", ".png", ".jpeg", ".webp", ".svga", ".xls" };
-            int MaxContentLength = 1024 * 1024 * 4;
+            int MaxContentLength = 1024 * 1024 * 5;
 
             if (!AllowedFileExtensions.Contains(fileExt))
             {
@@ -126,9 +131,13 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + (MaxContentLength / 1024).ToString() + " MB");
             }
-            (bool, string) result = SysFileService.SaveFile("", formFile);
+            (bool, string, string) result = SysFileService.SaveFile(fileDir, formFile);
 
-            return ToResponse(ResultCode.SUCCESS, result.Item2);
+            return ToResponse(ResultCode.SUCCESS, new
+            {
+                url = result.Item2,
+                fileName = result.Item3
+            });
         }
         #endregion
     }

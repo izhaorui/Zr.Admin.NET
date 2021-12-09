@@ -1,6 +1,6 @@
 <template>
   <el-card>
-    <el-tabs v-model="activeName">
+    <el-tabs v-model="activeName" tab-position="top">
       <el-tab-pane label="基本信息" name="basic">
         <basic-info-form ref="basicInfo" :info="info" />
       </el-tab-pane>

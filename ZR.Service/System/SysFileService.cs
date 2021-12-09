@@ -25,7 +25,7 @@ namespace ZR.Service.System
         /// <param name="picdir"></param>
         /// <param name="formFile"></param>
         /// <returns></returns>
-        public (bool, string) SaveFile(string picdir, IFormFile formFile)
+        public (bool, string, string) SaveFile(string picdir, IFormFile formFile)
         {
             // eg: idcard/2020/08/18
             string dir = GetdirPath(picdir.ToString());
@@ -36,11 +36,7 @@ namespace ZR.Service.System
 
             HttpStatusCode statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), Path.Combine(dir, fileName));
 
-            if (statusCode == HttpStatusCode.OK)
-            {
-                return (true, webUrl);
-            }
-            return (false, "");
+            return (statusCode == HttpStatusCode.OK, webUrl, fileName);
         }
 
         public string GetdirPath(string path = "")
