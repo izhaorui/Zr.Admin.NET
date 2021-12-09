@@ -29,6 +29,8 @@ import DictTag from '@/components/DictTag'
 // import DictData from '@/components/DictData'
 // 上传图片
 import UploadImage from '@/components/UploadImage/index';
+// 上传文件
+import UploadFile from '@/components/FileUpload/index';
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts
@@ -60,6 +62,7 @@ Vue.component('RightToolbar', RightToolbar)
 Vue.component('DictTag', DictTag)
 Vue.component('Editor', Editor)
 Vue.component('UploadImage', UploadImage)
+Vue.component('UploadFile', UploadFile)
 Vue.use(permission)
 
 Vue.use(Element, {

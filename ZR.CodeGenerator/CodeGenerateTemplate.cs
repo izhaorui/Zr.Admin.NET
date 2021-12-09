@@ -89,6 +89,15 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
             }
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_FILE_UPLOAD)
+            {
+                //文件
+                sb.AppendLine("    <el-col :span=\"24\">");
+                sb.AppendLine($"      <el-form-item label=\"{labelName}\" :label-width=\"labelWidth\" prop=\"{columnName}\">");
+                sb.AppendLine($@"        <UploadFile v-model=""form.{columnName}"" column=""{columnName}"" @input=""handleUploadSuccess"" />");
+                sb.AppendLine("      </el-form-item>");
+                sb.AppendLine("    </el-col>");
+            }
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_RADIO && !string.IsNullOrEmpty(dbFieldInfo.DictType))
             {
                 sb.AppendLine("    <el-col :span=\"12\">");

@@ -251,9 +251,8 @@ $if(genTable.SortField != "" && genTable.SortField != null)
 $end
 $if(replaceDto.UploadFile == 1)
     //图片上传成功方法
-    handleUploadSuccess(res, columnName) {
-      this.form[columnName] = res.data;
-      console.log(JSON.stringify(this.form), JSON.stringify(res))
+    handleUploadSuccess(columnName, filelist) {
+      this.form[columnName] = filelist;
     },
 $end
 $foreach(item in genTable.Columns)

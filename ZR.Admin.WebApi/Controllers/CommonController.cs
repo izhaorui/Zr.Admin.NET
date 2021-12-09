@@ -82,7 +82,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "system")]
         public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile)
         {
-            if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传图片不能为空");
+            if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);
             string fileName = FileUtil.HashFileName(Guid.NewGuid().ToString()).ToLower() + fileExt;
             string finalFilePath = Path.Combine(WebHostEnvironment.WebRootPath, FileUtil.GetdirPath("uploads"), fileName);
