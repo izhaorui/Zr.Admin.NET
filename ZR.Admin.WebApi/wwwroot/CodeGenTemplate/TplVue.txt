@@ -20,9 +20,11 @@ ${vueQueryFormHtml}
       <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
+$if(replaceDto.ShowBtnExport)
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
       </el-col>
+$end
 $if(genTable.SortField != "" && 1 == 2)
       <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-edit" size="mini" @click="handleShowSort" v-hasPermi="['${replaceDto.PermissionPrefix}:update']">修改排序</el-button>
@@ -101,6 +103,13 @@ export default {
       form: {},
       // 时间范围数组
       timeRange: [],
+      columns: [
+$set(index = 0)
+$foreach(column in genTable.Columns)
+        { index: $index, key: '${column.ColumnName}', label: `${column.ColumnComment}`, checked: $if(index < 9) true $else false $end },
+$set(index = index + 1)
+$end
+      ],
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
       // ${item.ColumnComment}选项列表

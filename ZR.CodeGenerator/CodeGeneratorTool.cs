@@ -52,6 +52,10 @@ namespace ZR.CodeGenerator
             replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
             replaceDto.PermissionPrefix = $"{dto.GenTable.ModuleName}:{dto.GenTable.ClassName.ToLower()}";//权限
             replaceDto.Author = dto.GenTable.FunctionAuthor;
+            replaceDto.ShowBtnAdd = dto.CheckedBtn.Any(f => f == 1);
+            replaceDto.ShowBtnEdit = dto.CheckedBtn.Any(f => f == 2);
+            replaceDto.ShowBtnDelete = dto.CheckedBtn.Any(f => f == 3);
+            replaceDto.ShowBtnExport = dto.CheckedBtn.Any(f => f == 4);
 
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in dto.GenTable.Columns)
@@ -262,7 +266,7 @@ namespace ZR.CodeGenerator
                 {
                     if (!string.IsNullOrEmpty(searcList[i].ToString()))
                     {
-                        tableName = tableName.Replace(searcList[i], "");
+                        tableName = tableName.Replace(searcList[i], "", StringComparison.OrdinalIgnoreCase);
                     }
                 }
             }
@@ -276,11 +280,11 @@ namespace ZR.CodeGenerator
         /// <returns>业务名</returns>
         public static string GetBusinessName(string tableName)
         {
-            int lastIndex = tableName.IndexOf("_");//_前缀长度
-            int nameLength = tableName.Length;
-            int subLength = (nameLength - lastIndex) - 1;
-            string businessName = tableName[(lastIndex + 1)..];
-            return businessName.Substring(0, 1).ToUpper() + tableName[1..].Replace("_", "");
+            //int firstIndex = tableName.IndexOf("_");//_前缀长度
+            //int nameLength = tableName.Length;
+            //int subLength = (nameLength - lastIndex) - 1;
+            //string businessName = tableName[(lastIndex + 1)..];
+            return tableName.Substring(0, 1).ToUpper() + tableName[1..].Replace("_", "");
         }
 
         /// <summary>
@@ -427,9 +431,11 @@ namespace ZR.CodeGenerator
                 options.Data.Set("replaceDto", replaceDto);
                 options.Data.Set("options", dto.GenOptions);
                 options.Data.Set("genTable", dto.GenTable);
+                options.Data.Set("btns", dto.CheckedBtn);
+                //options.Data.Set("codeTool", new CodeGeneratorTool());
+                options.EnableCache = true;
                 //...其它数据
             });
         }
-
     }
 }

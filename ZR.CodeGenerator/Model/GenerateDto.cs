@@ -14,6 +14,10 @@ namespace ZR.CodeGenerator.Model
         /// 生成代码的数据库类型 0、mysql 1、sqlserver
         /// </summary>
         public int DbType { get; set; }
+        /// <summary>
+        /// 生成的按钮功能
+        /// </summary>
+        public int[] CheckedBtn { get; set; }
         public GenTable GenTable { get; set; }
         public CodeGenerateOption GenOptions { get; set; }
         #region 存储路径

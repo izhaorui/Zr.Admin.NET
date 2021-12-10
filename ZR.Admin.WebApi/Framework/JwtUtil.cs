@@ -25,7 +25,7 @@ namespace ZR.Admin.WebApi.Framework
         /// <returns></returns>
         public static LoginUser GetLoginUser(HttpContext httpContext)
         {
-            string token = HttpContextExtension.GetToken(httpContext);
+            string token = httpContext.GetToken();
 
             if (!string.IsNullOrEmpty(token))
             {
@@ -58,7 +58,7 @@ namespace ZR.Admin.WebApi.Framework
                 Audience = jwtSettings.Audience,
                 IssuedAt = authTime,//token生成时间
                 Expires = expiresAt,
-                NotBefore = authTime,
+                //NotBefore = authTime,
                 TokenType = "Bearer",
                 //对称秘钥，签名证书
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -86,7 +86,8 @@ namespace ZR.Admin.WebApi.Framework
                 ValidAudience = jwtSettings.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateLifetime = true,//是否验证Token有效期，使用当前时间与Token的Claims中的NotBefore和Expires对比
-                RequireExpirationTime = true,//过期时间
+                ClockSkew = TimeSpan.FromSeconds(30)
+                //RequireExpirationTime = true,//过期时间
             };
             return tokenDescriptor;
         }
