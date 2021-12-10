@@ -44,6 +44,8 @@ namespace ZR.Admin.WebApi.Framework
             JwtSettings jwtSettings = new();
             ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
 
+            var authTime = DateTime.Now;
+            var expiresAt = authTime.AddMinutes(jwtSettings.Expire);
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
             claims.Add(new Claim("Audience", jwtSettings.Audience));
@@ -54,8 +56,9 @@ namespace ZR.Admin.WebApi.Framework
                 Subject = new ClaimsIdentity(claims),
                 Issuer = jwtSettings.Issuer,
                 Audience = jwtSettings.Audience,
-                IssuedAt = DateTime.Now,//token生成时间
-                Expires = DateTime.Now.AddMinutes(jwtSettings.Expire),
+                IssuedAt = authTime,//token生成时间
+                Expires = expiresAt,
+                NotBefore = authTime,
                 TokenType = "Bearer",
                 //对称秘钥，签名证书
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
