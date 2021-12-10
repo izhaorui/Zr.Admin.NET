@@ -26,6 +26,7 @@ service.interceptors.request.use(config => {
   if (getToken()) {
     //将token放到请求头发送给服务器,将tokenkey放在请求头中
     config.headers['Authorization'] = 'Bearer ' + getToken();
+    config.headers['userid'] = store.getters.userId;
   } else {
     // console.log(config)
   }
@@ -42,7 +43,7 @@ service.interceptors.response.use(res => {
       return;
     }
     // 未设置状态码则默认成功状态
-    const { code , msg } = res.data;
+    const { code, msg } = res.data;
 
     if (code == 401) {
       MessageBox.confirm('登录状态已过期，请重新登录', '系统提示', {
