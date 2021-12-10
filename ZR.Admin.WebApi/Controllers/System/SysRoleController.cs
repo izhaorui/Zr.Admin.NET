@@ -128,7 +128,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (sysRoleDto == null || sysRoleDto.RoleId <= 0) return ToResponse(ApiResult.Error(101, "请求参数错误"));
 
-            sysRoleDto.Create_by = HttpContextExtension.GetName(HttpContext);
+            sysRoleDto.Create_by = HttpContext.GetName();
             //删除角色菜单
             sysRoleService.DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
             sysRoleService.InsertRoleMenu(sysRoleDto);
