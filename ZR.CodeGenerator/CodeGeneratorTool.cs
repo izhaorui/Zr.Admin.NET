@@ -69,7 +69,7 @@ namespace ZR.CodeGenerator
                 {
                     replaceDto.UploadFile = 1;
                 }
-                CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
+                //CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
 
                 replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo);
                 replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo, dto.GenTable);
@@ -432,7 +432,8 @@ namespace ZR.CodeGenerator
                 options.Data.Set("options", dto.GenOptions);
                 options.Data.Set("genTable", dto.GenTable);
                 options.Data.Set("btns", dto.CheckedBtn);
-                //options.Data.Set("codeTool", new CodeGeneratorTool());
+                options.Data.Set("tool", new CodeGeneratorTool());
+                options.Data.Set("codeTool", new CodeGenerateTemplate());
                 options.EnableCache = true;
                 //...其它数据
             });

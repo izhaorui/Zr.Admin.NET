@@ -14,7 +14,7 @@ $foreach(item in genTable.Columns)
 $if((item.IsInsert || item.IsEdit || item.IsPk || item.IsIncrement))
         public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
 $end
-${end}
+$end
     }
 
     /// <summary>
@@ -27,8 +27,8 @@ $if(item.IsQuery && item.htmlType == "datetime")
         public DateTime? Begin$item.CsharpField { get; set; }
         public DateTime? End$item.CsharpField { get; set; }
 $elseif(item.IsQuery)
-        public $item.CsharpType $item.CsharpField { get; set; }
+        public $item.CsharpType$if(item.CsharpType != "string")?$end $item.CsharpField { get; set; }
 $end
-${end}
+$end
     }
 }

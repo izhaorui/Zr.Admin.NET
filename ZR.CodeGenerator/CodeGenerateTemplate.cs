@@ -11,34 +11,34 @@ namespace ZR.CodeGenerator
     /// </summary>
     public class CodeGenerateTemplate
     {
-        /// <summary>
-        /// 查询Dto属性
-        /// </summary>
-        /// <param name="tbColumn"></param>
-        /// <param name="replaceDto">替换字符对象</param>
-        /// <returns></returns>
-        public static void GetQueryDtoProperty(GenTableColumn tbColumn, ReplaceDto replaceDto)
-        {
-            if (tbColumn.IsQuery)
-            {
-                //字符串类型表达式
-                if (tbColumn.CsharpType == GenConstants.TYPE_STRING)
-                {
-                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.{tbColumn.CsharpField}), {QueryExp(tbColumn.CsharpField, tbColumn.QueryType)};\n";
-                }
-                //int类型表达式
-                if (CodeGeneratorTool.IsNumber(tbColumn.CsharpType))
-                {
-                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.{tbColumn.CsharpField} > 0, {QueryExp(tbColumn.CsharpField, tbColumn.QueryType)};\n";
-                }
-                //时间类型
-                if (tbColumn.CsharpType == GenConstants.TYPE_DATE)
-                {
-                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.Begin{tbColumn.CsharpField} != null, it => it.{tbColumn.CsharpField} >= parm.Begin{tbColumn.CsharpField});\n";
-                    replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.End{tbColumn.CsharpField} != null, it => it.{tbColumn.CsharpField} <= parm.End{tbColumn.CsharpField});\n";
-                }
-            }
-        }
+        ///// <summary>
+        ///// 查询Dto属性
+        ///// </summary>
+        ///// <param name="tbColumn"></param>
+        ///// <param name="replaceDto">替换字符对象</param>
+        ///// <returns></returns>
+        //public static void GetQueryDtoProperty(GenTableColumn tbColumn, ReplaceDto replaceDto)
+        //{
+        //    if (tbColumn.IsQuery)
+        //    {
+        //        //字符串类型表达式
+        //        if (tbColumn.CsharpType == GenConstants.TYPE_STRING)
+        //        {
+        //            replaceDto.QueryCondition += $"            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.{tbColumn.CsharpField}), {QueryExp(tbColumn.CsharpField, tbColumn.QueryType)};\n";
+        //        }
+        //        //int类型表达式
+        //        if (CodeGeneratorTool.IsNumber(tbColumn.CsharpType))
+        //        {
+        //            replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.{tbColumn.CsharpField} > 0, {QueryExp(tbColumn.CsharpField, tbColumn.QueryType)};\n";
+        //        }
+        //        //时间类型
+        //        if (tbColumn.CsharpType == GenConstants.TYPE_DATE)
+        //        {
+        //            replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.Begin{tbColumn.CsharpField} != null, it => it.{tbColumn.CsharpField} >= parm.Begin{tbColumn.CsharpField});\n";
+        //            replaceDto.QueryCondition += $"            predicate = predicate.AndIF(parm.End{tbColumn.CsharpField} != null, it => it.{tbColumn.CsharpField} <= parm.End{tbColumn.CsharpField});\n";
+        //        }
+        //    }
+        //}
 
         #region vue 模板
 
@@ -187,7 +187,7 @@ namespace ZR.CodeGenerator
             else if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO) && !string.IsNullOrEmpty(dbFieldInfo.DictType))
             {
                 //string value = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? "parseInt(item.dictValue)" : "item.dictValue";
-                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{dbFieldInfo.ColumnName}\">");
+                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{dbFieldInfo.ColumnName}\">");
                 sb.AppendLine($"        <el-select v-model=\"queryParams.{dbFieldInfo.ColumnName}\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" size=\"small\" >");
                 sb.AppendLine($"          <el-option v-for=\"item in {dbFieldInfo.ColumnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"item.dictValue\"></el-option>");
                 sb.AppendLine("        </el-select>");
@@ -196,7 +196,7 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT)
             {
                 //string value = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? "parseInt(item.dictValue)" : "item.dictValue";
-                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\" prop=\"{dbFieldInfo.ColumnName}\">");
+                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{dbFieldInfo.ColumnName}\">");
                 sb.AppendLine($"        <el-select v-model=\"queryParams.{dbFieldInfo.ColumnName}\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" size=\"small\">");
                 sb.AppendLine($"          <el-option v-for=\"item in {dbFieldInfo.ColumnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"item.dictValue\"></el-option>");
                 sb.AppendLine("        </el-select>");
@@ -205,7 +205,7 @@ namespace ZR.CodeGenerator
             else
             {
                 string inputNumTxt = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";
-                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" :label-width=\"labelWidth\">");
+                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{dbFieldInfo.ColumnName}\">");
                 sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"queryParams.{dbFieldInfo.ColumnName}\" placeholder=\"请输入{dbFieldInfo.ColumnComment}\" size=\"small\"/>");
                 sb.AppendLine("      </el-form-item>");
             }

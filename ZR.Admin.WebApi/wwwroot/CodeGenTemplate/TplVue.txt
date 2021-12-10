@@ -8,7 +8,6 @@ ${vueQueryFormHtml}
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-row>
     </el-form>
-    
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -93,7 +92,12 @@ export default {
       // 查询参数
       queryParams: {
         pageNum: 1,
-        pageSize: 20
+        pageSize: 20,
+$foreach(item in genTable.Columns)
+$if(item.IsQuery == true)
+        ${item.columnName}: undefined,
+$end
+$end
       },
       // 弹出层标题
       title: "",
@@ -101,8 +105,6 @@ export default {
       open: false,
       // 表单参数
       form: {},
-      // 时间范围数组
-      timeRange: [],
       columns: [
 $set(index = 0)
 $foreach(column in genTable.Columns)

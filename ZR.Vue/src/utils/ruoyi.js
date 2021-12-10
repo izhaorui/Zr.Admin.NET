@@ -66,8 +66,7 @@ export function addDateRange(params, dateRange) {
 }
 
 export function addDateRange2(dateRange, index) {
-	console.log(dateRange);
-  var time = "";
+  var time = undefined;
   if (null != dateRange && '' != dateRange) {
     if (dateRange.length <= 2) {
 			time = dateRange[index];

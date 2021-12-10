@@ -51,7 +51,18 @@ namespace ${options.ApiControllerNamespace}.Controllers
             var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
 
             //搜索条件查询语法参考Sqlsugar
-${QueryCondition}
+$foreach(column in genTable.Columns)
+$if(column.IsQuery)
+$if(column.CsharpType == "string")
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+$elseif(column.CsharpType == "DateTime")
+            predicate = predicate.AndIF(parm.Begin${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.Begin${column.CsharpField});
+            predicate = predicate.AndIF(parm.End${column.CsharpField} != null, it => it.${column.CsharpField} <= parm.End${column.CsharpField});
+$elseif(column.CsharpType == "int" || column.CsharpType == "long")
+            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+$end
+$end
+$end
 $if(genTable.SortField != "" && genTable.SortField != null)
             var response = _${replaceDto.ModelTypeName}Service.GetPages(predicate.ToExpression(), parm, x => x.${genTable.SortField}, "${genTable.SortType}");
 $else
