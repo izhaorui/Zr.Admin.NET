@@ -103,8 +103,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            // ../ZR.Model/Models/User.cs
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models", replaceDto.ModelTypeName + ".cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models", generateDto.GenTable.ModuleName, replaceDto.ModelTypeName + ".cs");
 
             var tpl = FileHelper.ReadJtTemplate("TplModel.txt");
             var result = tpl.Render();
@@ -119,7 +118,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto", $"{replaceDto.ModelTypeName}Dto.cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto", generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Dto.cs");
 
             var tpl = FileHelper.ReadJtTemplate("TplDto.txt");
 
@@ -413,7 +412,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
-            Engine.Current.Clean();
+            //Engine.Current.Clean();
 
             //jnt模板引擎全局变量
             Engine.Configure((options) =>
