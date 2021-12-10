@@ -187,7 +187,7 @@ namespace ZR.CodeGenerator
             }
             catch (Exception ex) // 异常处理
             {
-                //Log4NetHelper.Error("代码生成异常", ex);
+                Console.WriteLine("代码生成异常" + ex.Message);
             }
         }
 

@@ -11,7 +11,7 @@ using ZR.Model.System.Generate;
 namespace ZR.CodeGenerator
 {
     /// <summary>
-    /// 代码生成器。
+    /// 代码生成器
     /// </remarks>
     /// </summary>
     public class CodeGeneratorTool
@@ -281,7 +281,7 @@ namespace ZR.CodeGenerator
             int nameLength = tableName.Length;
             int subLength = (nameLength - lastIndex) - 1;
             string businessName = tableName[(lastIndex + 1)..];
-            return businessName.Replace("_", "").ToLower();
+            return businessName.Substring(0, 1).ToUpper() + tableName[1..].Replace("_", "");
         }
 
         /// <summary>

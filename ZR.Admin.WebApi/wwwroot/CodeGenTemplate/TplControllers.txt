@@ -26,7 +26,7 @@ namespace ${options.ApiControllerNamespace}.Controllers
     /// @date ${replaceDto.AddTime}
     /// </summary>
     [Verify]
-    [Route("${genTable.ModuleName}/${replaceDto.ModelTypeName}")]
+    [Route("${genTable.ModuleName}/${genTable.BusinessName}")]
     public class ${replaceDto.ModelTypeName}Controller : BaseController
     {
         /// <summary>
