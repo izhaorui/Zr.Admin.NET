@@ -13,9 +13,10 @@ const whiteList = ['/login', '/auth-redirect', '/bind', '/register', '/demo']
 
 router.beforeEach((to, from, next) => {
   NProgress.start()
-  console.log('router to ' + to.path);
+  console.log('path=' + to.path);
 
   if (getToken()) {
+    to.meta.title && store.dispatch('settings/setTitle', to.meta.title)
     /* has token*/
     if (to.path === '/login') {
       next({ path: '/' })

@@ -37,7 +37,10 @@ module.exports = {
    * 是否显示logo
    */
   sidebarLogo: true,
-
+  /**
+   * 是否显示动态标题
+   */
+  dynamicTitle: false,
   /**
    * @type {string | array} 'production' | ['production', 'development']
    * @description Need show err logs component.
