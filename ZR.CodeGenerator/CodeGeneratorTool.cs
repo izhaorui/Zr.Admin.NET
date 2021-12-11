@@ -112,7 +112,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("TplModel.txt");
             var result = tpl.Render();
 
-            generateDto.GenCodes.Add(new GenCode(1, "Model", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(1, "Model.cs", fullPath, result));
         }
 
         /// <summary>
@@ -123,11 +123,10 @@ namespace ZR.CodeGenerator
         private static void GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto", generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Dto.cs");
-
             var tpl = FileHelper.ReadJtTemplate("TplDto.txt");
 
             var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(2, "Dto", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(2, "Dto.cs", fullPath, result));
         }
         #endregion
 
@@ -144,7 +143,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("TplRepository.txt");
 
             var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(3, "Repository", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(3, "Repository.cs", fullPath, result));
         }
 
         #endregion
@@ -158,15 +157,13 @@ namespace ZR.CodeGenerator
         {
             var fullPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, "Business", $"{replaceDto.ModelTypeName}Service.cs");
             var tpl = FileHelper.ReadJtTemplate("TplService.txt");
-
             var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(4, "Service", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(4, "Service.cs", fullPath, result));
 
             var fullPath2 = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, "Business", "IBusService", $"I{replaceDto.ModelTypeName}Service.cs");
             var tpl2 = FileHelper.ReadJtTemplate("TplIService.txt");
-
             var result2 = tpl2.Render();
-            generateDto.GenCodes.Add(new GenCode(4, "IService", fullPath2, result2));
+            generateDto.GenCodes.Add(new GenCode(4, "IService.cs", fullPath2, result2));
         }
 
         #endregion
@@ -182,7 +179,7 @@ namespace ZR.CodeGenerator
 
             tpl.Set("QueryCondition", replaceDto.QueryCondition);
             var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(5, "Controller", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(5, "Controller.cs", fullPath, result));
         }
         #endregion
 

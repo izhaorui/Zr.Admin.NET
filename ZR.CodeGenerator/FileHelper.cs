@@ -130,7 +130,7 @@ namespace ZR.CodeGenerator
             try
             {
                 //生成压缩包
-                string zipReturnFileName = dto.GenTable.BaseNameSpace + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
+                string zipReturnFileName = "ZrAdmin.NET" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
 
                 CreateDirectory(dto.GenCodePath);
                 string zipFileName = Path.Combine(dto.ZipPath, zipReturnFileName);

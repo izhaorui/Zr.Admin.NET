@@ -267,7 +267,7 @@ $if(replaceDto.UploadFile == 1)
     },
 $end
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
+$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
     // ${item.ColumnComment}字典翻译
     ${item.ColumnName}Format(row, column) {
       return this.selectDictLabel(this.${item.ColumnName}Options, row.${item.ColumnName});

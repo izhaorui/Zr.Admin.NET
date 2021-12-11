@@ -31,11 +31,6 @@
               <el-input v-model="scope.row.csharpField"></el-input>
             </template>
           </el-table-column>
-          <el-table-column label="必填" min-width="5%">
-            <template slot-scope="scope">
-              <el-checkbox v-model="scope.row.isRequired"></el-checkbox>
-            </template>
-          </el-table-column>
           <el-table-column label="插入" min-width="5%">
             <template slot-scope="scope">
               <el-checkbox v-model="scope.row.isInsert" :disabled="scope.row.isPk || scope.row.isIncrement"></el-checkbox>
@@ -69,6 +64,11 @@
                 <el-option label="LIKE" value="LIKE" />
                 <el-option label="BETWEEN" value="BETWEEN" />
               </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="必填" min-width="5%">
+            <template slot-scope="scope">
+              <el-checkbox v-model="scope.row.isRequired"></el-checkbox>
             </template>
           </el-table-column>
           <el-table-column label="表单显示类型" min-width="12%">

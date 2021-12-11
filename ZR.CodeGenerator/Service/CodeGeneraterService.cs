@@ -14,7 +14,7 @@ namespace ZR.CodeGenerator.Service
         public List<string> GetAllDataBases()
         {
             var db = GetSugarDbContext();
-            var templist = db.DbMaintenance.GetDataBaseList(db.ScopedContext);
+            var templist = db.DbMaintenance.GetDataBaseList(db);
 
             return templist;
         }
