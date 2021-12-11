@@ -28,7 +28,7 @@
         <el-form-item prop="moduleName">
           <span slot="label">
             生成模块名
-            <el-tooltip content="可理解为子系统名，例如 system、user、tool" placement="top">
+            <el-tooltip content="可理解为子系统名，例如 system、user、tool（一般文件夹归类）" placement="top">
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
@@ -237,10 +237,10 @@ export default {
           { required: true, message: "请选择生成模板", trigger: "blur" },
         ],
         moduleName: [
-          { required: true, message: "请输入生成模块名", trigger: "blur" },
+          { required: true, message: "请输入生成模块名", trigger: "blur", pattern:/^[A-Za-z]+$/ },
         ],
         businessName: [
-          { required: true, message: "请输入生成业务名", trigger: "blur" },
+          { required: true, message: "请输入生成业务名", trigger: "blur", pattern:/^[A-Za-z]+$/},
         ],
         functionName: [
           { required: true, message: "请输入生成功能名", trigger: "blur" },

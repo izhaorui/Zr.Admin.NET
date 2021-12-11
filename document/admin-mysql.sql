@@ -251,7 +251,7 @@ INSERT INTO sys_menu VALUES (102, '菜单管理', 1, 3, 'menu', 'system/menu/ind
 INSERT INTO sys_menu VALUES (103, '部门管理', 1, 4, 'dept', 'system/dept/index', 0, 0, 'C', '0', '0', 'system:dept:list', 'tree', '', SYSDATE(), '', NULL, '部门管理菜单');
 INSERT INTO sys_menu VALUES (104, '岗位管理', 1, 5, 'post', 'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', SYSDATE(), '', NULL, '岗位管理菜单');
 INSERT INTO sys_menu VALUES (105, '字典管理', 1, 6, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (106, '角色分配', 1, 2, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (106, '用户角色', 1, 2, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
 INSERT into sys_menu VALUES (107, '参数设置', 1, 8, 'config','system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (108, '日志管理', 1, 9, 'log', ''                     , 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
 INSERT INTO sys_menu VALUES (110, '定时任务', 2, 10, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', SYSDATE(), '', NULL, '定时任务菜单');

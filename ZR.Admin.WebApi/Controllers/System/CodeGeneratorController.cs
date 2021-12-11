@@ -195,36 +195,35 @@ namespace ZR.Admin.WebApi.Controllers
                 sortField = genTableDto.SortField,
                 sortType = genTable.SortType
             });
-            int rows = GenTableService.UpdateGenTable(genTable);
-            if (rows > 0)
+            int updateCount = 0;
+            bool result = GenTableService.UseTran2(() =>
             {
-                GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
-            }
-            return SUCCESS(rows);
+                int rows = GenTableService.UpdateGenTable(genTable);
+                if (rows > 0)
+                {
+                    updateCount = GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
+                }
+            });
+
+            return SUCCESS(updateCount);
         }
 
         /// <summary>
         /// 预览代码
         /// </summary>
-        /// <param name="tableId"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
-        [HttpGet("preview/{tableId}")]
+        [HttpPost("preview/{tableId}")]
         [ActionPermissionFilter(Permission = "tool:gen:preview")]
-        public IActionResult Preview(long tableId)
+        public IActionResult Preview([FromBody] GenerateDto dto)
         {
-            if (tableId <= 0)
+            if (dto == null || dto.TableId <= 0)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
-            var genTableInfo = GenTableService.GetGenTableInfo(tableId);
-            genTableInfo.Columns = GenTableColumnService.GenTableColumns(tableId);
+            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
+            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
 
-            //var dictList = genTableInfo.Columns.FindAll(x => !string.IsNullOrEmpty(x.DictType));
-            //foreach (var item in dictList)
-            //{
-            //    item.DictDatas = SysDictDataService.SelectDictDataByType(item.DictType);
-            //}
-            GenerateDto dto = new();
             dto.GenTable = genTableInfo;
             dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
             dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));

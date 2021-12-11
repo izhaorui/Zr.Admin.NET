@@ -5,7 +5,13 @@ namespace ZR.Service.System.IService
 {
     public interface ISysFileService
     {
-        (bool, string) SaveFile(string picdir, IFormFile formFile);
+        /// <summary>
+        /// 上传文件
+        /// </summary>
+        /// <param name="picdir"></param>
+        /// <param name="formFile"></param>
+        /// <returns>结果、地址、文件名</returns>
+        (bool, string, string) SaveFile(string picdir, IFormFile formFile);
 
         /// <summary>
         /// 按时间来创建文件夹

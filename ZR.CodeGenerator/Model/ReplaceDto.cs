@@ -25,7 +25,7 @@ namespace ZR.CodeGenerator.Model
         /// </summary>
         public string ModelTypeName { get; set; }
         //vue、api
-        public string VueViewFormResetHtml { get; set; }
+        //public string VueViewFormResetHtml { get; set; }
         /// <summary>
         /// 前端列表查询html
         /// </summary>
@@ -47,7 +47,10 @@ namespace ZR.CodeGenerator.Model
         /// 查询条件
         /// </summary>
         public string QueryCondition { get; set; } = "";
-
+        public bool ShowBtnExport { get; set; }
+        public bool ShowBtnAdd { get; set; }
+        public bool ShowBtnEdit { get; set; }
+        public bool ShowBtnDelete { get; set; }
         /// <summary>
         /// 上传URL data
         /// </summary>

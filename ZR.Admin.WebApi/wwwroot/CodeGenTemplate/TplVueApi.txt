@@ -6,7 +6,7 @@
 */
 export function list${genTable.BusinessName}(query) {
   return request({
-    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/list',
+    url: '${genTable.ModuleName}/${genTable.BusinessName}/list',
     method: 'get',
     params: query,
   })
@@ -18,7 +18,7 @@ export function list${genTable.BusinessName}(query) {
 */
 export function add${genTable.BusinessName}(data) {
   return request({
-    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}',
+    url: '${genTable.ModuleName}/${genTable.BusinessName}',
     method: 'post',
     data: data,
   })
@@ -30,7 +30,7 @@ export function add${genTable.BusinessName}(data) {
 */
 export function update${genTable.BusinessName}(data) {
   return request({
-    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}',
+    url: '${genTable.ModuleName}/${genTable.BusinessName}',
     method: 'PUT',
     data: data,
   })
@@ -42,7 +42,7 @@ export function update${genTable.BusinessName}(data) {
 */
 export function get${genTable.BusinessName}(id) {
   return request({
-    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/' + id,
+    url: '${genTable.ModuleName}/${genTable.BusinessName}/' + id,
     method: 'get'
   })
 }
@@ -53,15 +53,15 @@ export function get${genTable.BusinessName}(id) {
 */
 export function del${genTable.BusinessName}(pid) {
   return request({
-    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/' + pid,
+    url: '${genTable.ModuleName}/${genTable.BusinessName}/' + pid,
     method: 'delete'
   })
 }
 
 // 导出${genTable.functionName}
-export function export${replaceDto.ModelTypeName}(query) {
+export function export${genTable.BusinessName}(query) {
   return request({
-    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/export',
+    url: '${genTable.ModuleName}/${genTable.BusinessName}/export',
     method: 'get',
     params: query
   })
@@ -71,7 +71,7 @@ $if(genTable.SortField != "" && genTable.SortField != null)
 //排序
 export function changeSort(data) {
   return request({
-    url: '${genTable.ModuleName}/${replaceDto.ModelTypeName}/ChangeSort',
+    url: '${genTable.ModuleName}/${genTable.BusinessName}/ChangeSort',
     method: 'get',
     params: data
   })

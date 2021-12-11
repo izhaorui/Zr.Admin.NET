@@ -109,6 +109,12 @@ namespace ZR.CodeGenerator
 
         /** 富文本控件 */
         public static string HTML_EDITOR = "editor";
+        // 自定义排序
+        public static string HTML_SORT = "sort";
+        //颜色选择器
+        public static string HTML_COLORPICKER = "colorPicker";
+        //switch开关
+        public static string HTML_SWITCH { get; set; }
 
         /** 字符串类型 */
         public static string TYPE_STRING = "string";

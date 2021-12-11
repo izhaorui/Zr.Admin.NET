@@ -3,11 +3,11 @@ module.exports = {
    * 框架版本号
    */
   version: '3.7.0',
-  title: 'ZrAdmin.NET',
+  title: 'ZrAdmin.NET-管理系统',
   /**
    * 主题颜色
    */
-  theme: '#13C2C2',
+  theme: '#409EFF',
   /**
    * 侧边栏主题 深色主题theme-dark，浅色主题theme-light
    */
@@ -37,7 +37,10 @@ module.exports = {
    * 是否显示logo
    */
   sidebarLogo: true,
-
+  /**
+   * 是否显示动态标题
+   */
+  dynamicTitle: false,
   /**
    * @type {string | array} 'production' | ['production', 'development']
    * @description Need show err logs component.

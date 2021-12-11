@@ -14,14 +14,14 @@ namespace ZR.CodeGenerator
     /// </summary>
     public class DbProvider
     {
-        protected static SqlSugarScope CodeDb;
+        protected static SqlSugarClient CodeDb;
 
         /// <summary>
         /// 获取动态连接字符串
         /// </summary>
         /// <param name="dbName">数据库名</param>
         /// <returns></returns>
-        public SqlSugarScope GetSugarDbContext(string dbName = "")
+        public SqlSugarClient GetSugarDbContext(string dbName = "")
         {
             string connStr = ConfigUtils.Instance.GetConfig(GenConstants.Gen_conn);
             int dbType = ConfigUtils.Instance.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
@@ -31,7 +31,7 @@ namespace ZR.CodeGenerator
                 string replaceStr = GetValue(connStr, "database=", ";");
                 connStr = connStr.Replace(replaceStr, dbName);
             }
-            var db = new SqlSugarScope(new List<ConnectionConfig>()
+            var db = new SqlSugarClient(new List<ConnectionConfig>()
             {
                 new ConnectionConfig(){
                     ConnectionString = connStr,

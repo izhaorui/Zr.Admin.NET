@@ -67,7 +67,7 @@
 
   <ItemGroup>
     <Folder Include="Controllers\business\" />
-    <Folder Include="Controllers\demo\" />
+    <Folder Include="DataProtection\" />
     <Folder Include="wwwroot\export\" />
     <Folder Include="wwwroot\Generatecode\" />
     <Folder Include="wwwroot\uploads\" />
