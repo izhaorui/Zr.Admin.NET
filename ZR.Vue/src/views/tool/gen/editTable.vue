@@ -89,7 +89,8 @@
           </el-table-column>
           <el-table-column label="字典类型" min-width="12%">
             <template slot-scope="scope">
-              <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择" v-if="scope.row.htmlType == 'select' || scope.row.htmlType == 'radio' || scope.row.htmlType =='checkbox'">
+              <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择"
+                v-if="scope.row.htmlType == 'select' || scope.row.htmlType == 'radio' || scope.row.htmlType =='checkbox'">
                 <el-option v-for="dict in dictOptions" :key="dict.dictType" :label="dict.dictName" :value="dict.dictType">
                   <span style="float: left">{{ dict.dictName }}</span>
                   <span style="float: right; color: #8492a6; font-size: 13px">{{ dict.dictType }}</span>
@@ -177,13 +178,14 @@ export default {
         if (validateResult) {
           const genTable = Object.assign({}, basicForm.model, genForm.model);
           genTable.columns = this.cloumns;
-          // genTable.params = {
-          //   treeCode: genTable.treeCode,
-          //   treeName: genTable.treeName,
-          //   treeParentCode: genTable.treeParentCode,
-          //   parentMenuId: genTable.parentMenuId,
-          // };
-          // console.log(JSON.stringify(genTable));
+          genTable.params = {
+            // treeCode: genTable.treeCode,
+            // treeName: genTable.treeName,
+            // treeParentCode: genTable.treeParentCode,
+            //parentMenuId: genTable.parentMenuId,
+          };
+          console.log("genForm", genTable);
+          // return;
           updateGenTable(genTable).then((res) => {
             this.msgSuccess(res.msg);
             if (res.code === 200) {
@@ -207,21 +209,32 @@ export default {
       this.$store.dispatch("tagsView/delView", this.$route);
       this.$router.push({ path: "/tool/gen", query: { t: Date.now() } });
     },
+    sortTable(columns) {
+      const el = this.$refs.dragTable.$el.querySelectorAll(
+        ".el-table__body-wrapper > table > tbody"
+      )[0];
+      var that = this;
+      const sortable = Sortable.create(el, {
+        handle: ".allowDrag",
+        onEnd: (evt) => {
+          const targetRow = that.cloumns.splice(evt.oldIndex, 1)[0];
+          columns.splice(evt.newIndex, 0, targetRow);
+          for (let index in columns) {
+            columns[index].sort = parseInt(index) + 1;
+          }
+          this.$nextTick(() => {
+            this.columns = columns;
+          });
+        },
+      });
+    },
   },
-  mounted() {
-    const el = this.$refs.dragTable.$el.querySelectorAll(
-      ".el-table__body-wrapper > table > tbody"
-    )[0];
-    const sortable = Sortable.create(el, {
-      handle: ".allowDrag",
-      onEnd: (evt) => {
-        const targetRow = this.cloumns.splice(evt.oldIndex, 1)[0];
-        this.cloumns.splice(evt.newIndex, 0, targetRow);
-        for (let index in this.cloumns) {
-          this.cloumns[index].sort = parseInt(index) + 1;
-        }
+  watch: {
+    cloumns: {
+      handler(val) {
+        this.sortTable(val);
       },
-    });
+    },
   },
 };
 </script>

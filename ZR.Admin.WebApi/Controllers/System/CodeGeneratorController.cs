@@ -195,12 +195,17 @@ namespace ZR.Admin.WebApi.Controllers
                 sortField = genTableDto.SortField,
                 sortType = genTable.SortType
             });
-            int rows = GenTableService.UpdateGenTable(genTable);
-            if (rows > 0)
+            int updateCount = 0;
+            bool result = GenTableService.UseTran2(() =>
             {
-                GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
-            }
-            return SUCCESS(rows);
+                int rows = GenTableService.UpdateGenTable(genTable);
+                if (rows > 0)
+                {
+                    updateCount = GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
+                }
+            });
+
+            return SUCCESS(updateCount);
         }
 
         /// <summary>
@@ -219,11 +224,6 @@ namespace ZR.Admin.WebApi.Controllers
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
 
-            //var dictList = genTableInfo.Columns.FindAll(x => !string.IsNullOrEmpty(x.DictType));
-            //foreach (var item in dictList)
-            //{
-            //    item.DictDatas = SysDictDataService.SelectDictDataByType(item.DictType);
-            //}
             dto.GenTable = genTableInfo;
             dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
             dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));

@@ -58,7 +58,7 @@ namespace ZR.CodeGenerator
             replaceDto.ShowBtnExport = dto.CheckedBtn.Any(f => f == 4);
 
             //循环表字段信息
-            foreach (GenTableColumn dbFieldInfo in dto.GenTable.Columns)
+            foreach (GenTableColumn dbFieldInfo in dto.GenTable.Columns.OrderBy(x => x.Sort))
             {
                 if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
                 {
@@ -417,7 +417,7 @@ namespace ZR.CodeGenerator
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
             //Engine.Current.Clean();
-
+            dto.GenTable.Columns = dto.GenTable.Columns.OrderBy(x => x.Sort).ToList();
             //jnt模板引擎全局变量
             Engine.Configure((options) =>
             {
