@@ -1,22 +1,27 @@
 <template>
   <div class="app-container">
-    <el-row :gutter="24" style="display:flex;">
-      <el-col :span="4">
-        <el-table ref="roleTable" v-loading="loadingRole" highlight-current-row :data="dataRoleTable" border :height="tableHeight-135" @row-click="handleRoleTableSelection">
-          <el-table-column prop="roleName" label="角色名称" />
+    <el-row :gutter="20">
+      <el-col :span="4" :xs="24">
+        <el-table ref="roleTable" v-loading="loadingRole" highlight-current-row :data="dataRoleTable" border :height="tableHeight-135"
+          @row-click="handleRoleTableSelection">
+          <el-table-column prop="roleName" label="请选择角色名称" />
         </el-table>
       </el-col>
-      <el-col :span="20">
-        <el-form style="display:flex" :inline="true" @submit.native.prevent>
+      <el-col :span="20" :xs="24">
+        <el-form :inline="true" @submit.native.prevent>
           <el-form-item>
-            <el-button type="primary" plain size="mini" icon="el-icon-plus" @click="handleGetUserTable" v-hasPermi="['system:roleusers:add']">添加用户</el-button>
-            <el-button type="danger" plain size="mini" icon="el-icon-circle-close" @click="cancelAuthUserAll" v-hasPermi="['system:roleusers:del']">批量取消授权</el-button>
+            <el-button type="primary" plain size="mini" icon="el-icon-plus" @click="handleGetUserTable" v-hasPermi="['system:roleusers:add']">添加用户
+            </el-button>
+            <el-button type="danger" plain size="mini" icon="el-icon-circle-close" @click="cancelAuthUserAll" v-hasPermi="['system:roleusers:del']">
+              批量取消授权</el-button>
           </el-form-item>
           <el-form-item style="margin-left:auto">
             <el-input v-model="search" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" />
           </el-form-item>
         </el-form>
-        <el-table ref="roleUserTable" v-loading="loadingRoleUser" :data="dataRoleUserTable.filter(data => !search || data.userName.toLowerCase().includes(search.toLowerCase()))" row-key="userId" stripe border :height="tableHeight-180">
+        <el-table ref="roleUserTable" v-loading="loadingRoleUser"
+          :data="dataRoleUserTable.filter(data => !search || data.userName.toLowerCase().includes(search.toLowerCase()))" row-key="userId" stripe
+          border :height="tableHeight-180">
           <el-table-column type="selection" width="55" align="center" />
           <el-table-column prop="userId" align="center" label="用户Id" width="150" />
           <el-table-column prop="userName" align="center" label="用户账号" width="150" />
@@ -24,13 +29,15 @@
           <el-table-column prop="email" align="center" label="邮箱" />
           <el-table-column prop="status" align="center" label="账号状态" width="80">
             <template slot-scope="scope">
-              <i :style="scope.row.status === '0' ?'color:green':'color:red'" :class="scope.row.status === '0' ? 'el-icon-success ':'el-icon-error'" />
+              <i :style="scope.row.status === '0' ?'color:green':'color:red'"
+                :class="scope.row.status === '0' ? 'el-icon-success ':'el-icon-error'" />
             </template>
           </el-table-column>
           <el-table-column prop="remark" :show-overflow-tooltip="true" align="center" label="备注" />
           <el-table-column align="center" label="操作">
             <template slot-scope="scope">
-              <el-button size="mini" type="text" icon="el-icon-circle-close" @click="handleCancelPerm(scope.row)" v-if="scope.row.userId != 1" v-hasPermi="['system:roleusers:del']">取消授权</el-button>
+              <el-button size="mini" type="text" icon="el-icon-circle-close" @click="handleCancelPerm(scope.row)" v-if="scope.row.userId != 1"
+                v-hasPermi="['system:roleusers:del']">取消授权</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -53,7 +60,8 @@
             <el-table-column prop="nickName" align="center" label="用户昵称" width="150" />
             <el-table-column prop="status" align="center" label="用户状态">
               <template slot-scope="scope" label="操作">
-                <i :style="scope.row.status === '0' ?'color:green':'color:red'" :class="scope.row.status === '0' ? 'el-icon-success ':'el-icon-error'" />
+                <i :style="scope.row.status === '0' ?'color:green':'color:red'"
+                  :class="scope.row.status === '0' ? 'el-icon-success ':'el-icon-error'" />
               </template>
             </el-table-column>
           </el-table>
@@ -128,7 +136,7 @@ export default {
         this.delSelections.push(element.userId);
       });
       if (this.delSelections.length === 0) {
-        console.log('未选中')
+        console.log("未选中");
         return;
       }
       this.$confirm(
