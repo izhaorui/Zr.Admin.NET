@@ -562,7 +562,7 @@ export default {
           const { code, data } = response;
           if (code == 200) {
             this.msgSuccess("导出成功");
-            this.download(data.fileName);
+            this.download(data.path);
           } else {
             this.msgError("导出失败");
           }
