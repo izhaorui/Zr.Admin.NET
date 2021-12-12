@@ -79,7 +79,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost()]
         [Verify]
-        [ActionPermissionFilter(Permission = "system")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile)
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
@@ -114,7 +114,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost]
         [Verify]
-        [ActionPermissionFilter(Permission = "system")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileDir = "")
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
