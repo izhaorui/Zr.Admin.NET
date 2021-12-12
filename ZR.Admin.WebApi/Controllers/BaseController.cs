@@ -1,7 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -9,8 +8,6 @@ using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using ZR.Admin.WebApi.Filters;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -130,6 +127,38 @@ namespace ZR.Admin.WebApi.Controllers
                 //全部字段导出
                 worksheet.Cells.LoadFromCollection(list, true, OfficeOpenXml.Table.TableStyles.Light13);
                 package.Save();
+            }
+
+            return sFileName;
+        }
+
+        /// <summary>
+        /// 下载导入模板
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="stream"></param>
+        /// <param name="fileName">下载文件名</param>
+        /// <returns></returns>
+        protected string DownloadImportTemplate<T>(List<T> list, Stream stream, string fileName)
+        {
+            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+            string sFileName = $"{fileName}模板.xlsx";
+            string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "importTemplate", sFileName);
+            //调试模式需要加上
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            if (!Directory.Exists(newFileName))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(newFileName));
+            }
+            using (ExcelPackage package = new(new FileInfo(newFileName)))
+            {
+                // 添加worksheet
+                ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(fileName);
+
+                //全部字段导出
+                worksheet.Cells.LoadFromCollection(list, true, OfficeOpenXml.Table.TableStyles.Light13);
+                package.SaveAs(stream);
             }
 
             return sFileName;
