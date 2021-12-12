@@ -33,7 +33,7 @@ $end
     </el-row>
 
     <!-- 数据区域 -->
-    <el-table :data="dataList" ref="table" border highlight-current-row @selection-change="handleSelectionChange">
+    <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center"/>
 ${VueViewListContent}
       <el-table-column label="操作" align="center" width="200">
@@ -166,10 +166,12 @@ $if(item.HtmlType == "datetime" && item.IsQuery == true)
 $end
 $end
       console.log(JSON.stringify(this.queryParams));
+      this.loading = true;
       list${genTable.BusinessName}(this.queryParams).then(res => {
          if (res.code == 200) {
            this.dataList = res.data.result;
            this.total = res.data.totalNum;
+           this.loading = false;
          }
        })
     },
