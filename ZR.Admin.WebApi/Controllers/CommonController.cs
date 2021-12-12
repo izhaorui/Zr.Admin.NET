@@ -43,6 +43,12 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(true);
         }
 
+        [Route("/")]
+        public IActionResult Index()
+        {
+            return Content("Hello看到这里页面说明你已经成功启动了本项目，加油吧 少年。");
+        }
+
         /// <summary>
         /// 发送邮件
         /// </summary>
