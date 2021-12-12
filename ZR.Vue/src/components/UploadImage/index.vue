@@ -111,9 +111,14 @@ export default {
     },
     //上传成功回调
     handleUploadSuccess(res) {
+      console.log(res);
+      this.loading.close();
+      if (res.code != 200) {
+        this.msgError(`上传失败，原因:${res.msg}!`);
+        return;
+      }
       this.fileList.push({ name: res.data.fileName, url: res.data.url });
       this.$emit(`input`, this.column, this.listToString(this.fileList));
-      this.loading.close();
     },
     // 上传前loading加载
     handleBeforeUpload(file) {
@@ -167,7 +172,7 @@ export default {
       for (let i in list) {
         strs += list[i].url.replace(this.baseUrl, "") + separator;
       }
-      return strs != '' ? strs.substr(0, strs.length - 1) : '';
+      return strs != "" ? strs.substr(0, strs.length - 1) : "";
     },
     handleUploadError() {
       this.$message({
