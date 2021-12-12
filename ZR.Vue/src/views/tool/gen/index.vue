@@ -95,7 +95,6 @@ import {
   delTable,
   previewTable,
 } from "@/api/tool/gen";
-import { downloadFile } from "@/utils/zipdownload.js";
 import importTable from "./importTable";
 import { Loading } from "element-ui";
 import hljs from "highlight.js";
@@ -230,10 +229,7 @@ export default {
               if (code == 200) {
                 this.showGenerate = false;
                 this.msgSuccess("恭喜你，代码生成完成！");
-                downloadFile(
-                  process.env.VUE_APP_BASE_API + data.zipPath,
-                  data.fileName
-                );
+                this.download(data.fileName);
               } else {
                 this.msgError(res.msg);
               }

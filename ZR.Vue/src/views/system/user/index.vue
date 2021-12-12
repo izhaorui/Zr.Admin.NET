@@ -7,17 +7,20 @@
           <el-input v-model="deptName" placeholder="请输入部门名称" clearable size="small" prefix-icon="el-icon-search" style="margin-bottom: 20px" />
         </div>
         <div class="head-container">
-          <el-tree :data="deptOptions" :props="defaultProps" :expand-on-click-node="false" :filter-node-method="filterNode" ref="tree" default-expand-all @node-click="handleNodeClick" />
+          <el-tree :data="deptOptions" :props="defaultProps" :expand-on-click-node="false" :filter-node-method="filterNode" ref="tree"
+            default-expand-all @node-click="handleNodeClick" />
         </div>
       </el-col>
       <!--用户数据-->
       <el-col :span="20">
         <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
           <el-form-item label="用户名称" prop="userName">
-            <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable size="small" style="width: 240px" @keyup.enter.native="handleQuery" />
+            <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable size="small" style="width: 240px"
+              @keyup.enter.native="handleQuery" />
           </el-form-item>
           <el-form-item label="手机号码" prop="phonenumber">
-            <el-input v-model="queryParams.phonenumber" placeholder="请输入手机号码" clearable size="small" style="width: 240px" @keyup.enter.native="handleQuery" />
+            <el-input v-model="queryParams.phonenumber" placeholder="请输入手机号码" clearable size="small" style="width: 240px"
+              @keyup.enter.native="handleQuery" />
           </el-form-item>
           <el-form-item label="状态" prop="status">
             <el-select v-model="queryParams.status" placeholder="用户状态" clearable size="small" style="width: 240px">
@@ -25,7 +28,8 @@
             </el-select>
           </el-form-item>
           <el-form-item label="创建时间">
-            <el-date-picker v-model="dateRange" size="small" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+            <el-date-picker v-model="dateRange" size="small" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-"
+              start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -38,16 +42,19 @@
             <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:user:add']">新增</el-button>
           </el-col>
           <el-col :span="1.5">
-            <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['system:user:edit']">修改</el-button>
+            <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate"
+              v-hasPermi="['system:user:edit']">修改</el-button>
           </el-col>
           <el-col :span="1.5">
-            <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['system:user:remove']">删除</el-button>
+            <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete"
+              v-hasPermi="['system:user:remove']">删除</el-button>
           </el-col>
-          <!-- <el-col :span="1.5">
+          <el-col :span="1.5">
             <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['system:user:import']">导入</el-button>
-          </el-col> -->
+          </el-col>
           <el-col :span="1.5">
-            <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:user:export']">导出</el-button>
+            <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:user:export']">导出
+            </el-button>
           </el-col>
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
         </el-row>
@@ -78,8 +85,10 @@
           <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="160">
             <template slot-scope="scope">
               <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:user:edit']">修改</el-button>
-              <el-button v-if="scope.row.userId !== 1 | scope.row.userName != 'admin'" size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['system:user:remove']">删除</el-button>
-              <el-button size="mini" type="text" icon="el-icon-key" @click="handleResetPwd(scope.row)" v-hasPermi="['system:user:resetPwd']">重置</el-button>
+              <el-button v-if="scope.row.userId !== 1 | scope.row.userName != 'admin'" size="mini" type="text" icon="el-icon-delete"
+                @click="handleDelete(scope.row)" v-hasPermi="['system:user:remove']">删除</el-button>
+              <el-button size="mini" type="text" icon="el-icon-key" @click="handleResetPwd(scope.row)" v-hasPermi="['system:user:resetPwd']">重置
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -148,14 +157,16 @@
           <el-col :span="12">
             <el-form-item label="岗位">
               <el-select v-model="form.postIds" multiple placeholder="请选择">
-                <el-option v-for="item in postOptions" :key="item.postId" :label="item.postName" :value="item.postId" :disabled="item.status == 1"></el-option>
+                <el-option v-for="item in postOptions" :key="item.postId" :label="item.postName" :value="item.postId" :disabled="item.status == 1">
+                </el-option>
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="角色">
               <el-select v-model="form.roleIds" multiple placeholder="请选择" @change="selectRole($event)">
-                <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName" :value="item.roleId" :disabled="item.status == 1"></el-option>
+                <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName" :value="item.roleId" :disabled="item.status == 1">
+                </el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -176,8 +187,9 @@
 
     <!-- 用户导入对话框 -->
     <el-dialog :title="upload.title" :visible.sync="upload.open" width="400px" append-to-body>
-      <el-upload name="file" ref="upload" :limit="1" accept=".xlsx, .xls" :headers="upload.headers" :action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading"
-        :on-progress="handleFileUploadProgress" :on-success="handleFileSuccess" :auto-upload="false" drag>
+      <el-upload name="file" ref="upload" :limit="1" accept=".xlsx, .xls" :headers="upload.headers"
+        :action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading" :on-progress="handleFileUploadProgress"
+        :on-success="handleFileSuccess" :auto-upload="false" drag>
         <i class="el-icon-upload"></i>
         <div class="el-upload__text">
           将文件拖到此处，或
@@ -209,13 +221,12 @@ import {
   exportUser,
   resetUserPwd,
   changeUserStatus,
-  // importTemplate,
+  importTemplate,
 } from "@/api/system/user";
 import { getToken } from "@/utils/auth";
 import { treeselect } from "@/api/system/dept";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
-import { downloadFile } from "@/utils/zipdownload.js";
 
 export default {
   name: "User",
@@ -273,7 +284,7 @@ export default {
         // 是否更新已经存在的用户数据
         updateSupport: 0,
         // 设置上传的请求头部
-        headers: { Authorization: 'Bearer ' + getToken() },
+        headers: { Authorization: "Bearer " + getToken() },
         // 上传的地址
         url: process.env.VUE_APP_BASE_API + "system/user/importData",
       },
@@ -548,14 +559,10 @@ export default {
         type: "warning",
       }).then(() => {
         exportUser(queryParams).then((response) => {
-          console.log(JSON.stringify(response));
           const { code, data } = response;
           if (code == 200) {
             this.msgSuccess("导出成功");
-            downloadFile(
-              process.env.VUE_APP_BASE_API + data.path,
-              data.fileName
-            );
+            this.download(data.fileName);
           } else {
             this.msgError("导出失败");
           }
@@ -569,9 +576,7 @@ export default {
     },
     /** 下载模板操作 */
     importTemplate() {
-      // importTemplate().then((response) => {
-      downLoadExcel("system/user/importTemplate", "用户数据导入模板");
-      // });
+      this.download("/system/user/importTemplate", "用户数据导入模板");
     },
     // 文件上传中处理
     handleFileUploadProgress(event, file, fileList) {
