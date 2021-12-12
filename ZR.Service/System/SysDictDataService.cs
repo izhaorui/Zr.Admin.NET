@@ -49,7 +49,16 @@ namespace ZR.Service.System
             }
             return list;
         }
-
+        public List<SysDictData> SelectDictDataByTypes(string[] dictTypes)
+        {
+            string CK = $"SelectDictDataByTypes_{dictTypes}";
+            if (CacheHelper.GetCache(CK) is not List<SysDictData> list)
+            {
+                list = SysDictDataRepository.SelectDictDataByTypes(dictTypes);
+                CacheHelper.SetCache(CK, list, 30);
+            }
+            return list;
+        }
         /// <summary>
         /// 根据字典数据ID查询信息
         /// </summary>

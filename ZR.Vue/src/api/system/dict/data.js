@@ -25,6 +25,15 @@ export function getDicts(dictType) {
   })
 }
 
+// 根据多个字典类型查询字典数据信息
+export function getMoreDicts(dictType) {
+  return request({
+    url: '/system/dict/data/types',
+    data: dictType ,
+    method: 'post'
+  })
+}
+
 // 新增字典数据
 export function addData(data) {
   return request({

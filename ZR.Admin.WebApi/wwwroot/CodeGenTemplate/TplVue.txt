@@ -148,12 +148,21 @@ $end
     // 列表数据查询
     this.getList();
 
+    $set(index = 0)
+    var dictParams = [
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
-    this.getDicts("${item.DictType}").then((response) => {
-      this.${item.ColumnName}Options = response.data;
-    })
+      { dictType: "${item.DictType}", columnName: "${item.ColumnName}Options" },
+$set(index = index + 1)
 $end
+$end
+    ];
+$if(index > 0)
+    this.getMoreDicts(dictParams).then((response) => {
+      response.data.forEach((element) => {
+        this[element.columnName] = element.list;
+      });
+    });
 $end
   },
   methods: {
@@ -165,7 +174,6 @@ $if(item.HtmlType == "datetime" && item.IsQuery == true)
       this.queryParams["end${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 1);
 $end
 $end
-      console.log(JSON.stringify(this.queryParams));
       this.loading = true;
       list${genTable.BusinessName}(this.queryParams).then(res => {
          if (res.code == 200) {

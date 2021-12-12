@@ -229,7 +229,7 @@ export default {
               if (code == 200) {
                 this.showGenerate = false;
                 this.msgSuccess("恭喜你，代码生成完成！");
-                this.download(data.fileName);
+                this.download(data.path);
               } else {
                 this.msgError(res.msg);
               }

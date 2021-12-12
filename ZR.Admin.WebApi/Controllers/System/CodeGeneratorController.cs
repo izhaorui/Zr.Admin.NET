@@ -261,7 +261,7 @@ namespace ZR.Admin.WebApi.Controllers
             FileHelper.ZipGenCode(dto);
 
             //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
-            return SUCCESS(new { zipPath = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
+            return SUCCESS(new { path = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
         }
 
     }
