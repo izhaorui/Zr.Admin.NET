@@ -7,7 +7,8 @@
           <el-select v-model="info.tplCategory" @change="tplSelectChange">
             <el-option label="单表（增删改查）" value="crud" />
             <!-- <el-option label="树表（增删改查）" value="tree" />
-            <el-option label="主子表（增删改查）" value="sub" /> -->
+						<el-option label="导航查询" value="subNav"></el-option> -->
+            <!-- <el-option label="主子表（增删改查）" value="sub" /> -->
           </el-select>
         </el-form-item>
       </el-col>
@@ -179,7 +180,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-select v-model="info.subTableName" placeholder="请选择" @change="subSelectChange">
+          <el-select v-model="info.subTableName" placeholder="请选择" @change="subSelectChange(this)">
             <el-option v-for="(table, index) in tables" :key="index" :label="table.tableName + '：' + table.tableComment" :value="table.tableName">
             </el-option>
           </el-select>
@@ -203,6 +204,7 @@
   </el-form>
 </template>
 <script>
+import { queryColumnInfo } from "@/api/tool/gen";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
@@ -214,7 +216,7 @@ export default {
       type: Object,
       default: null,
     },
-    // 字表
+    // 子表
     tables: {
       type: Array,
       default: null,
@@ -237,10 +239,20 @@ export default {
           { required: true, message: "请选择生成模板", trigger: "blur" },
         ],
         moduleName: [
-          { required: true, message: "请输入生成模块名", trigger: "blur", pattern:/^[A-Za-z]+$/ },
+          {
+            required: true,
+            message: "请输入生成模块名",
+            trigger: "blur",
+            pattern: /^[A-Za-z]+$/,
+          },
         ],
         businessName: [
-          { required: true, message: "请输入生成业务名", trigger: "blur", pattern:/^[A-Za-z]+$/},
+          {
+            required: true,
+            message: "请输入生成业务名",
+            trigger: "blur",
+            pattern: /^[A-Za-z]+$/,
+          },
         ],
         functionName: [
           { required: true, message: "请输入生成功能名", trigger: "blur" },
@@ -281,10 +293,18 @@ export default {
     },
     /** 设置关联外键 */
     setSubTableColumns(value) {
+      console.log(value);
+      if (value == null || value == undefined || value == "") {
+        return;
+      }
       for (var item in this.tables) {
-        const name = this.tables[item].tableName;
-        if (value === name) {
-          this.subColumns = this.tables[item].columns;
+        const obj = this.tables[item];
+        if (value === obj.tableName) {
+          queryColumnInfo(obj.tableId).then((res) => {
+            if (res.code == 200) {
+              this.subColumns = res.data.columns;
+            }
+          });
           break;
         }
       }

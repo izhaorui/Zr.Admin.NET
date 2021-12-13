@@ -61,6 +61,15 @@ namespace ZR.Service.System
         }
 
         /// <summary>
+        /// 获取所有代码生成表
+        /// </summary>
+        /// <returns></returns>
+        public List<GenTable> GetGenTableAll()
+        {
+            return GenTableRepository.GetAll();
+        }
+
+        /// <summary>
         /// 设置代码生成其他参数
         /// </summary>
         /// <param name="genTable"></param>

@@ -60,15 +60,23 @@ export function queryColumnInfo(tableId) {
   })
 }
 
-
-// 查询表详细信息
-export function getGenTable(params) {
+// 查询生成表数据
+export function listTable(params) {
   return request({
-    url: 'tool/gen/listGenTable',
+    url: 'tool/gen/list',
     method: 'get',
     params: params
   })
 }
+
+// 查询表详细信息
+export function getGenTable(tableId) {
+  return request({
+    url: '/tool/gen/' + tableId,
+    method: 'get'
+  })
+}
+
 // 导入表
 export function importTable(data) {
   return request({
@@ -102,25 +110,3 @@ export function previewTable(tableId, data) {
 		data: data
   })
 }
-
-// /**
-//  *
-// * 数据库解密
-// */
-// export function dbtoolsConnStrDecrypt(data) {
-//   return request({
-//     url: 'DbTools/ConnStrDecrypt',
-//     method: 'post',
-//     params: data,
-//   })
-// }
-// /**
-//    * 数据库加密
-//    */
-// export function dbtoolsConnStrEncrypt(data) {
-//   return request({
-//     url: 'DbTools/ConnStrEncrypt',
-//     method: 'post',
-//     params: data,
-//   })
-// }

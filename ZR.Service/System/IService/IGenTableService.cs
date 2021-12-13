@@ -14,6 +14,7 @@ namespace ZR.Service.System.IService
         int DeleteGenTableByTbName(string tableName);
         PagedInfo<GenTable> GetGenTables(GenTable genTable, Model.PagerInfo pagerInfo);
         GenTable GetGenTableInfo(long tableId);
+        List<GenTable> GetGenTableAll();
         int UpdateGenTable(GenTable genTable);
     }
 

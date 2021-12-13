@@ -4,7 +4,6 @@ using Infrastructure.Enums;
 using Mapster;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using SqlSugar;
 using System;
@@ -19,7 +18,6 @@ using ZR.Common;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
-using ZR.Service;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -31,20 +29,18 @@ namespace ZR.Admin.WebApi.Controllers
     [Route("tool/gen")]
     public class CodeGeneratorController : BaseController
     {
-        private CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
-        private IGenTableService GenTableService;
-        private IGenTableColumnService GenTableColumnService;
-        private readonly ISysDictDataService SysDictDataService;
-        private IWebHostEnvironment WebHostEnvironment;
+        private readonly CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
+        private readonly IGenTableService GenTableService;
+        private readonly IGenTableColumnService GenTableColumnService;
+        
+        private readonly IWebHostEnvironment WebHostEnvironment;
         public CodeGeneratorController(
             IGenTableService genTableService,
             IGenTableColumnService genTableColumnService,
-            ISysDictDataService dictDataService,
             IWebHostEnvironment webHostEnvironment)
         {
             GenTableService = genTableService;
             GenTableColumnService = genTableColumnService;
-            SysDictDataService = dictDataService;
             WebHostEnvironment = webHostEnvironment;
         }
 
@@ -62,7 +58,7 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        ///获取所有表根据数据名
+        ///获取所有表根据数据库名
         /// </summary>
         /// <param name="dbName">数据库名</param>
         /// <param name="tableName">表名</param>
@@ -78,12 +74,13 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 获取代码生成表列表
+        /// 查询生成表数据
         /// </summary>
         /// <param name="tableName">表名</param>
         /// <param name="pagerInfo">分页信息</param>
         /// <returns></returns>
-        [HttpGet("listGenTable")]
+        [HttpGet("list")]
+        [ActionPermissionFilter(Permission = "tool:gen:list")]
         public IActionResult GetGenTable(string tableName, PagerInfo pagerInfo)
         {
             //查询原表数据，部分字段映射到代码生成表字段
@@ -93,18 +90,34 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 查询表字段列表
+        /// 修改代码生成业务查询
         /// </summary>
         /// <param name="tableId">genTable表id</param>
         /// <returns></returns>
-        [HttpGet("column/{tableId}")]
+        [HttpGet("{tableId}")]
+        [ActionPermissionFilter(Permission = "tool:gen:query")]
         public IActionResult GetColumnList(long tableId)
         {
             var tableColumns = GenTableColumnService.GenTableColumns(tableId);
             var tableInfo = GenTableService.GetGenTableInfo(tableId);
-            return SUCCESS(new { cloumns = tableColumns, info = tableInfo });
+            var tables = GenTableService.GetGenTableAll();
+
+            return SUCCESS(new { columns = tableColumns, info = tableInfo, tables });
         }
 
+        /// <summary>
+        /// 根据表id查询表列
+        /// </summary>
+        /// <param name="tableId">genTable表id</param>
+        /// <returns></returns>
+        [HttpGet("column/{tableId}")]
+        [ActionPermissionFilter(Permission = "tool:gen:query")]
+        public IActionResult GetTableColumnList(long tableId)
+        {
+            var tableColumns = GenTableColumnService.GenTableColumns(tableId);
+
+            return SUCCESS(new { columns = tableColumns });
+        }
         /// <summary>
         /// 删除代码生成
         /// </summary>
