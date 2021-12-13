@@ -7,7 +7,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch()">查询</el-button>
-        <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button>
+        <!-- <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button> -->
       </el-form-item>
     </el-form>
 
@@ -28,6 +28,7 @@
           <span>{{(queryParams.pageNum - 1) * queryParams.pageSize + scope.$index + 1}}</span>
         </template>
       </el-table-column>
+			<el-table-column prop="tableId" label="表id" width="80"/>
       <el-table-column prop="tableName" label="表名" sortable="custom" width="180" />
       <el-table-column prop="tableComment" label="表描述" :show-overflow-tooltip="true" />
       <el-table-column prop="className" label="实体" />
@@ -50,8 +51,8 @@
     <el-dialog :title="preview.title" :visible.sync="preview.open" width="80%" top="5vh" append-to-body>
       <el-tabs v-model="preview.activeName">
         <el-tab-pane v-for="(item, key) in preview.data" :label="item.title" :name="key.toString()" :key="key">
-          <pre v-html="highlightedCode(item.content)">
-          </pre>
+					<el-link :underline="false" icon="el-icon-document-copy" v-clipboard:copy="item.content" v-clipboard:success="clipboardSuccess" style="float:right">复制</el-link>
+          <pre><code class="hljs" v-html="highlightedCode(item.content, item.title)"></code></pre>
         </el-tab-pane>
       </el-tabs>
     </el-dialog>
@@ -91,7 +92,7 @@
 <script>
 import {
   codeGenerator,
-  getGenTable,
+  listTable,
   delTable,
   previewTable,
 } from "@/api/tool/gen";
@@ -150,7 +151,7 @@ export default {
     handleSearch() {
       this.tableloading = true;
 
-      getGenTable(this.queryParams).then((res) => {
+      listTable(this.queryParams).then((res) => {
         this.tableData = res.data.result;
         this.total = res.data.totalNum;
         this.tableloading = false;
@@ -274,6 +275,11 @@ export default {
           });
         });
     },
+		 /** 复制代码成功 */
+    clipboardSuccess(){
+      this.msgSuccess("复制成功");
+    },
+		// 多选框选中数据
     handleSelectionChange(section) {
       this.tableIds = section.map((item) => item.tableId);
       this.multiple = !section.length;
@@ -281,7 +287,7 @@ export default {
     },
     /** 高亮显示 */
     highlightedCode(code, key) {
-      // var language = vmName.substring(vmName.indexOf(".") + 1, vmName.length);
+			// var language = key.substring(key.lastIndexOf(".") , key.length)
       const result = hljs.highlightAuto(code || "");
       return result.value || "&nbsp;";
     },
