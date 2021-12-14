@@ -195,6 +195,9 @@ $foreach(item in genTable.Columns)
 $if((item.IsEdit || item.IsInsert))
         $item.ColumnName: undefined,
 $end
+$if((item.HtmlType == "checkbox"))
+        ${item.ColumnName}Checked: [],
+$end
 $end
       };
       this.resetForm("form");
@@ -247,10 +250,19 @@ $end
       this.reset();
       const id = row.${replaceDto.FistLowerPk} || this.ids;
       get${genTable.BusinessName}(id).then((res) => {
-        if (res.code == 200) {
-           this.form = res.data;
-           this.open = true;
-           this.title = "修改数据";
+        const { code, data } = res;
+        if (code == 200) {
+          this.open = true;
+          this.title = "修改数据";
+
+          this.form = {
+            ...data,
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+            ${item.ColumnName}Checked: data.${item.columnName} ? data.${item.columnName}.split(',') : [],
+$end
+$end
+          };
         }
       });
     },
@@ -288,6 +300,11 @@ $end
     submitForm: function () {
       this.${refs}refs["form"].validate((valid) => {
         if (valid) {
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+           this.form.${item.ColumnName} = this.form.${item.columnName}Checked.toString();
+$end
+$end
           console.log(JSON.stringify(this.form));
           
           if (this.form.${replaceDto.FistLowerPk} != undefined || this.title === "修改数据") {
