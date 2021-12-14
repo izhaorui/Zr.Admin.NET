@@ -9,8 +9,8 @@ import request from '@/utils/request'
 // }
 
 /**
-   * 创建数据库连接
-   */
+ * 创建数据库连接
+ */
 // export function createGetDBConn(data) {
 //   return request({
 //     url: 'tool/gen/CreateDBConn',
@@ -19,8 +19,8 @@ import request from '@/utils/request'
 //   })
 // }
 /**
-   * 获取数据库
-   */
+ * 获取数据库
+ */
 export function codeGetDBList() {
   return request({
     url: 'tool/gen/getDbList',
@@ -28,8 +28,8 @@ export function codeGetDBList() {
   })
 }
 /**
-   * 获取数据库表
-   */
+ * 获取数据库表
+ */
 export function listDbTable(data) {
   return request({
     url: 'tool/gen/getTableList',
@@ -38,8 +38,8 @@ export function listDbTable(data) {
   })
 }
 /**
-   * 生成代码
-   */
+ * 生成代码
+ */
 export async function codeGenerator(data) {
   return await request({
     url: 'tool/gen/genCode',
@@ -107,6 +107,15 @@ export function previewTable(tableId, data) {
   return request({
     url: '/tool/gen/preview/' + tableId,
     method: 'post',
-		data: data
+    data: data
+  })
+}
+
+// 同步数据库
+export function synchDb(tableId, data) {
+  return request({
+    url: '/tool/gen/synchDb/' + tableId,
+    method: 'get',
+		params: data
   })
 }

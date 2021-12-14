@@ -17,6 +17,10 @@ namespace ZR.Model.System.Generate
         [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public int TableId { get; set; }
         /// <summary>
+        /// 数据库名
+        /// </summary>
+        public string DbName { get; set; }
+        /// <summary>
         /// 表名
         /// </summary>
         public string TableName { get; set; }

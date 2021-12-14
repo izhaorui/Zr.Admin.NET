@@ -64,6 +64,5 @@ namespace ZR.CodeGenerator.Service
         {
             return GetSugarDbContext(dbName).DbMaintenance.GetColumnInfosByTableName(tableName, true);
         }
-
     }
 }

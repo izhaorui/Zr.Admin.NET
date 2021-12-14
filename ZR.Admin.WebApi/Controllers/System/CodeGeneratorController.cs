@@ -32,7 +32,7 @@ namespace ZR.Admin.WebApi.Controllers
         private readonly CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
         private readonly IGenTableService GenTableService;
         private readonly IGenTableColumnService GenTableColumnService;
-        
+
         private readonly IWebHostEnvironment WebHostEnvironment;
         public CodeGeneratorController(
             IGenTableService genTableService,
@@ -159,6 +159,7 @@ namespace ZR.Admin.WebApi.Controllers
                 {
                     GenTable genTable = new()
                     {
+                        DbName = dbName,
                         BaseNameSpace = "ZR.",//导入默认命名空间前缀
                         ModuleName = "business",//导入默认模块名
                         ClassName = CodeGeneratorTool.GetClassName(tableName),
@@ -277,5 +278,26 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(new { path = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
         }
 
+        /// <summary>
+        /// 同步数据库
+        /// </summary>
+        /// <param name="tableId"></param>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        [ActionPermissionFilter(Permission = "tool:gen:edit")]
+        [Log(Title = "代码生成", BusinessType = BusinessType.UPDATE)]
+        [HttpGet("synchDb/{tableId}")]
+        public IActionResult SynchDb(string tableName, long tableId = 0)
+        {
+            if (string.IsNullOrEmpty(tableName) || tableId <= 0) throw new CustomException("参数错误");
+            GenTable table = GenTableService.GetGenTableInfo(tableId);
+            if (table == null) { throw new CustomException("原表不存在"); }
+
+            List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(table.DbName, tableName);
+            List<GenTableColumn> dbTableColumns = CodeGeneratorTool.InitGenTableColumn(table, dbColumnInfos);
+
+            GenTableService.SynchDb(tableId, table, dbTableColumns);
+            return SUCCESS(true);
+        }
     }
 }

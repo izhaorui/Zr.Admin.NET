@@ -130,6 +130,35 @@ namespace ZR.Service.System
             genTable.Update_time = db.GetDate();
             return db.Updateable(genTable).IgnoreColumns(ignoreAllNullColumns: true).ExecuteCommand();
         }
+
+        /// <summary>
+        /// 同步数据库
+        /// </summary>
+        /// <param name="tableId">表id</param>
+        /// <param name="dbTableColumns"></param>
+        /// <param name="genTable"></param>
+        public void SynchDb(long tableId, GenTable genTable, List<GenTableColumn> dbTableColumns)
+        {
+            List<GenTableColumn> tableColumns = GenTableColumnService.GenTableColumns(tableId);
+            List<string> tableColumnNames = tableColumns.Select(f => f.ColumnName).ToList();
+            List<string> dbTableColumneNames = dbTableColumns.Select(f => f.ColumnName).ToList();
+
+            List<GenTableColumn> insertColumns = new();
+            foreach (var column in dbTableColumns)
+            {
+                if (!tableColumnNames.Contains(column.ColumnName))
+                {
+                    insertColumns.Add(column);
+                }
+            }
+            GenTableColumnService.Insert(insertColumns);
+
+            List<GenTableColumn> delColumns = tableColumns.FindAll(column => !dbTableColumneNames.Contains(column.ColumnName));
+            if (delColumns!= null && delColumns.Count > 0)
+            {
+                GenTableColumnService.Delete(delColumns.Select(f => f.ColumnId).ToList());
+            }
+        }
     }
 
     /// <summary>
