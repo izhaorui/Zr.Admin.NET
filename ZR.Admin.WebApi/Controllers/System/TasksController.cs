@@ -141,7 +141,7 @@ namespace ZR.Admin.WebApi.Controllers
                 Update_by = User.Identity.Name,
                 Update_time = DateTime.Now
             });
-            if (response)
+            if (response > 0)
             {
                 //先暂停原先的任务
                 var respon = await _schedulerServer.UpdateTaskScheduleAsync(tasksQz, tasksQz.JobGroup);

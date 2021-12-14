@@ -122,24 +122,24 @@ namespace ZR.Service
 
         #region update
 
-        public bool Update(T entity, bool ignoreNullColumns = false)
+        public int Update(T entity, bool ignoreNullColumns = false)
         {
             return baseRepository.Update(entity, ignoreNullColumns);
         }
 
-        public bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false)
+        public int Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false)
         {
             return baseRepository.Update(entity, expression, ignoreAllNull);
         }
 
-        public bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
+        public int Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
         {
             return baseRepository.Update(entity, expression, where);
         }
 
-        public bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
+        public int Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
         {
-            return client.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand() > 0;
+            return client.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand();
         }
 
         ///// <summary>
@@ -171,7 +171,7 @@ namespace ZR.Service
         //    });
         //    return result.IsSuccess;
         //}
-        public bool Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
+        public int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
         {
             return baseRepository.Update(where, columns);
         }
@@ -220,7 +220,7 @@ namespace ZR.Service
         {
             return baseRepository.Delete(id);
         }
-        public bool DeleteTable()
+        public int DeleteTable()
         {
             return baseRepository.DeleteTable();
         }

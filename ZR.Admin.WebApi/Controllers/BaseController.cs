@@ -15,8 +15,6 @@ namespace ZR.Admin.WebApi.Controllers
     [LogActionFilter]
     public class BaseController : ControllerBase
     {
-        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
         public static string TIME_FORMAT_FULL = "yyyy-MM-dd HH:mm:ss";
         public static string TIME_FORMAT_FULL_2 = "MM-dd HH:mm:ss";
 
