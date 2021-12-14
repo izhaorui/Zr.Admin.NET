@@ -158,7 +158,7 @@ $end
 $end
     ];
 $if(index > 0)
-    this.getMoreDicts(dictParams).then((response) => {
+    this.getDicts(dictParams).then((response) => {
       response.data.forEach((element) => {
         this[element.columnName] = element.list;
       });
