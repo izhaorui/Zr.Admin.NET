@@ -37,15 +37,7 @@ namespace ZR.CodeGenerator
             _option.ApiControllerNamespace = _option.BaseNamespace + "Admin.WebApi";
 
             dto.GenOptions = _option;
-            GenerateSingle(dto);
-        }
 
-        /// <summary>
-        /// 单表生成代码
-        /// </summary>
-        /// <param name="dto"></param>
-        public static void GenerateSingle(GenerateDto dto)
-        {
             string PKName = "Id";
             string PKType = "int";
             ReplaceDto replaceDto = new();
@@ -98,7 +90,7 @@ namespace ZR.CodeGenerator
             }
         }
 
-        #region 生成Model
+        #region 读取模板
 
         /// <summary>
         /// 生成实体类Model
@@ -128,9 +120,6 @@ namespace ZR.CodeGenerator
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(2, "Dto.cs", fullPath, result));
         }
-        #endregion
-
-        #region 生成Repository
 
         /// <summary>
         /// 生成Repository层代码文件
@@ -145,10 +134,6 @@ namespace ZR.CodeGenerator
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(3, "Repository.cs", fullPath, result));
         }
-
-        #endregion
-
-        #region 生成Service
 
         /// <summary>
         /// 生成Service文件
@@ -166,9 +151,6 @@ namespace ZR.CodeGenerator
             generateDto.GenCodes.Add(new GenCode(4, "IService.cs", fullPath2, result2));
         }
 
-        #endregion
-
-        #region 生成Controller
         /// <summary>
         /// 生成控制器ApiControllers文件
         /// </summary>
@@ -181,11 +163,9 @@ namespace ZR.CodeGenerator
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(5, "Controller.cs", fullPath, result));
         }
-        #endregion
 
-        #region 生成Vue页面 & api
         /// <summary>
-        /// 6、生成Vue页面
+        /// 生成Vue页面
         private static void GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", generateDto.GenTable.ModuleName, $"{generateDto.GenTable.BusinessName}.vue");
@@ -200,8 +180,9 @@ namespace ZR.CodeGenerator
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, result));
         }
+
         /// <summary>
-        /// 7、生成vue页面api
+        /// 生成vue页面api
         /// </summary>
         /// <param name="replaceDto"></param>
         /// <param name="generateDto"></param>
@@ -215,10 +196,11 @@ namespace ZR.CodeGenerator
             generateDto.GenCodes.Add(new GenCode(7, "api.js", fullPath, result));
         }
 
-        #endregion
-
-        #region 生成SQL
-
+        /// <summary>
+        /// 生成SQL
+        /// </summary>
+        /// <param name="replaceDto"></param>
+        /// <param name="generateDto"></param>
         public static void GenerateSql(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             string fullPath = Path.Combine(generateDto.GenCodePath, generateDto.GenTable.BusinessName + ".sql");
@@ -277,10 +259,6 @@ namespace ZR.CodeGenerator
         /// <returns>业务名</returns>
         public static string GetBusinessName(string tableName)
         {
-            //int firstIndex = tableName.IndexOf("_");//_前缀长度
-            //int nameLength = tableName.Length;
-            //int subLength = (nameLength - lastIndex) - 1;
-            //string businessName = tableName[(lastIndex + 1)..];
             return tableName.Substring(0, 1).ToUpper() + tableName[1..].Replace("_", "");
         }
 
@@ -334,6 +312,34 @@ namespace ZR.CodeGenerator
         }
         #endregion
 
+        #region 初始化信息
+
+        /// <summary>
+        /// 初始化表信息
+        /// </summary>
+        /// <param name="dbName"></param>
+        /// <param name="userName"></param>
+        /// <param name="tableName"></param>
+        /// <param name="desc"></param>
+        /// <returns></returns>
+        public static GenTable InitTable(string dbName, string userName, string tableName, string desc)
+        {
+            GenTable genTable = new()
+            {
+                DbName = dbName,
+                BaseNameSpace = "ZR.",//导入默认命名空间前缀
+                ModuleName = "business",//导入默认模块名
+                ClassName = GetClassName(tableName),
+                BusinessName = GetBusinessName(tableName),
+                FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
+                TableName = tableName,
+                TableComment = desc,
+                FunctionName = desc,
+                Create_by = userName,
+            };
+            return genTable;
+        }
+
         /// <summary>
         /// 初始化列属性字段数据
         /// </summary>
@@ -344,67 +350,75 @@ namespace ZR.CodeGenerator
             List<GenTableColumn> genTableColumns = new();
             foreach (var column in dbColumnInfos)
             {
-                GenTableColumn genTableColumn = new()
-                {
-                    ColumnName = FirstLowerCase(column.DbColumnName),
-                    ColumnComment = column.ColumnDescription,
-                    IsPk = column.IsPrimarykey,
-                    ColumnType = column.DataType,
-                    TableId = genTable.TableId,
-                    TableName = genTable.TableName,
-                    CsharpType = GetCSharpDatatype(column.DataType),
-                    CsharpField = column.DbColumnName.Substring(0, 1).ToUpper() + column.DbColumnName[1..],
-                    IsRequired = !column.IsNullable,
-                    IsIncrement = column.IsIdentity,
-                    Create_by = genTable.Create_by,
-                    Create_time = DateTime.Now,
-                    IsInsert = !column.IsIdentity,//非自增字段都需要插入
-                    IsEdit = true,
-                    IsQuery = false,
-                    HtmlType = GenConstants.HTML_INPUT
-                };
-
-                if (GenConstants.imageFiled.Any(f => column.DbColumnName.ToLower().Contains(f.ToLower())))
-                {
-                    genTableColumn.HtmlType = GenConstants.HTML_IMAGE_UPLOAD;
-                }
-                else if (GenConstants.COLUMNTYPE_TIME.Any(f => genTableColumn.CsharpType.ToLower().Contains(f.ToLower())))
-                {
-                    genTableColumn.HtmlType = GenConstants.HTML_DATETIME;
-                }
-                else if (GenConstants.radioFiled.Any(f => column.DbColumnName.EndsWith(f, StringComparison.OrdinalIgnoreCase)) ||
-                    GenConstants.radioFiled.Any(f => column.DbColumnName.StartsWith(f, StringComparison.OrdinalIgnoreCase)))
-                {
-                    genTableColumn.HtmlType = GenConstants.HTML_RADIO;
-                }
-                else if (GenConstants.selectFiled.Any(f => column.DbColumnName == f) ||
-                    GenConstants.selectFiled.Any(f => column.DbColumnName.EndsWith(f, StringComparison.OrdinalIgnoreCase)))
-                {
-                    genTableColumn.HtmlType = GenConstants.HTML_SELECT;
-                }
-                else if (column.Length > 500)
-                {
-                    genTableColumn.HtmlType = GenConstants.HTML_TEXTAREA;
-                }
-                //编辑字段
-                if (column.IsIdentity || column.IsPrimarykey || GenConstants.COLUMNNAME_NOT_EDIT.Any(f => column.DbColumnName.Contains(f)))
-                {
-                    genTableColumn.IsEdit = false;
-                }
-                //列表字段
-                if (!GenConstants.COLUMNNAME_NOT_LIST.Any(f => column.DbColumnName.Contains(f) && !column.IsPrimarykey))
-                {
-                    genTableColumn.IsList = true;
-                }
-                //时间类型初始化between范围查询
-                if (genTableColumn.CsharpType == GenConstants.TYPE_DATE)
-                {
-                    genTableColumn.QueryType = "BETWEEN";
-                }
-                genTableColumns.Add(genTableColumn);
+                genTableColumns.Add(InitColumnField(genTable, column));
             }
             return genTableColumns;
         }
+
+        private static GenTableColumn InitColumnField(GenTable genTable, DbColumnInfo column)
+        {
+            GenTableColumn genTableColumn = new()
+            {
+                ColumnName = FirstLowerCase(column.DbColumnName),
+                ColumnComment = column.ColumnDescription,
+                IsPk = column.IsPrimarykey,
+                ColumnType = column.DataType,
+                TableId = genTable.TableId,
+                TableName = genTable.TableName,
+                CsharpType = GetCSharpDatatype(column.DataType),
+                CsharpField = column.DbColumnName.Substring(0, 1).ToUpper() + column.DbColumnName[1..],
+                IsRequired = !column.IsNullable,
+                IsIncrement = column.IsIdentity,
+                Create_by = genTable.Create_by,
+                Create_time = DateTime.Now,
+                IsInsert = !column.IsIdentity,//非自增字段都需要插入
+                IsEdit = true,
+                IsQuery = false,
+                HtmlType = GenConstants.HTML_INPUT
+            };
+
+            if (GenConstants.imageFiled.Any(f => column.DbColumnName.ToLower().Contains(f.ToLower())))
+            {
+                genTableColumn.HtmlType = GenConstants.HTML_IMAGE_UPLOAD;
+            }
+            else if (GenConstants.COLUMNTYPE_TIME.Any(f => genTableColumn.CsharpType.ToLower().Contains(f.ToLower())))
+            {
+                genTableColumn.HtmlType = GenConstants.HTML_DATETIME;
+            }
+            else if (GenConstants.radioFiled.Any(f => column.DbColumnName.EndsWith(f, StringComparison.OrdinalIgnoreCase)) ||
+                GenConstants.radioFiled.Any(f => column.DbColumnName.StartsWith(f, StringComparison.OrdinalIgnoreCase)))
+            {
+                genTableColumn.HtmlType = GenConstants.HTML_RADIO;
+            }
+            else if (GenConstants.selectFiled.Any(f => column.DbColumnName == f) ||
+                GenConstants.selectFiled.Any(f => column.DbColumnName.EndsWith(f, StringComparison.OrdinalIgnoreCase)))
+            {
+                genTableColumn.HtmlType = GenConstants.HTML_SELECT;
+            }
+            else if (column.Length > 500)
+            {
+                genTableColumn.HtmlType = GenConstants.HTML_TEXTAREA;
+            }
+            //编辑字段
+            if (column.IsIdentity || column.IsPrimarykey || GenConstants.COLUMNNAME_NOT_EDIT.Any(f => column.DbColumnName.Contains(f)))
+            {
+                genTableColumn.IsEdit = false;
+            }
+            //列表字段
+            if (!GenConstants.COLUMNNAME_NOT_LIST.Any(f => column.DbColumnName.Contains(f) && !column.IsPrimarykey))
+            {
+                genTableColumn.IsList = true;
+            }
+            //时间类型初始化between范围查询
+            if (genTableColumn.CsharpType == GenConstants.TYPE_DATE)
+            {
+                genTableColumn.QueryType = "BETWEEN";
+            }
+
+            return genTableColumn;
+        }
+
+        #endregion
 
         /// <summary>
         /// 初始化Jnt模板

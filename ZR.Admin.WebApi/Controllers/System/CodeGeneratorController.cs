@@ -157,19 +157,7 @@ namespace ZR.Admin.WebApi.Controllers
                 var tabInfo = _CodeGeneraterService.GetTableInfo(dbName, tableName);
                 if (tabInfo != null)
                 {
-                    GenTable genTable = new()
-                    {
-                        DbName = dbName,
-                        BaseNameSpace = "ZR.",//导入默认命名空间前缀
-                        ModuleName = "business",//导入默认模块名
-                        ClassName = CodeGeneratorTool.GetClassName(tableName),
-                        BusinessName = CodeGeneratorTool.GetBusinessName(tableName),
-                        FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
-                        TableName = tableName,
-                        TableComment = tabInfo?.Description,
-                        FunctionName = tabInfo?.Description,
-                        Create_by = userName,
-                    };
+                    GenTable genTable = CodeGeneratorTool.InitTable(dbName, userName, tableName, tabInfo?.Description);
                     genTable.TableId = GenTableService.ImportGenTable(genTable);
 
                     if (genTable.TableId > 0)
@@ -256,7 +244,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost("genCode")]
         [Log(Title = "代码生成", BusinessType = BusinessType.GENCODE)]
         [ActionPermissionFilter(Permission = "tool:gen:code")]
-        public IActionResult Generate([FromBody] GenerateDto dto)
+        public IActionResult CodeGenerate([FromBody] GenerateDto dto)
         {
             if (dto.TableId <= 0)
             {
@@ -274,7 +262,6 @@ namespace ZR.Admin.WebApi.Controllers
             //下载文件
             FileHelper.ZipGenCode(dto);
 
-            //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
             return SUCCESS(new { path = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
         }
 

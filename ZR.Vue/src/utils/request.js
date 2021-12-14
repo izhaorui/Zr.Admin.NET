@@ -57,7 +57,7 @@ service.interceptors.response.use(res => {
       })
 
       return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
-    } else if (code == 0 || code == 110 || code == 101 || code == 403 || code == 500) {
+    } else if (code == 0 || code == 1 || code == 110 || code == 101 || code == 403 || code == 500) {
       Message({
         message: msg,
         type: 'error'

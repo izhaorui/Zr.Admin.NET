@@ -49,7 +49,7 @@ namespace ZR.CodeGenerator.Service
             var tableList = GetSugarDbContext(dbName).DbMaintenance.GetTableInfoList(true);
             if (!string.IsNullOrEmpty(tableName))
             {
-                return tableList.Where(f => f.Name.ToLower() == (tableName.ToLower())).FirstOrDefault();
+                return tableList.Where(f => f.Name.Equals(tableName, System.StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             }
 
             return null;
