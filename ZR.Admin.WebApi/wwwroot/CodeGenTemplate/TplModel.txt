@@ -19,7 +19,9 @@ $foreach(item in genTable.Columns)
         /// 空值 :$if(item.IsRequired == "True") false $else true $end 
         /// </summary>
 $if(item.IsPk || item.IsIncrement)
-        [SqlSugar.SugarColumn(IsPrimaryKey = ${item.IsPk.ToString().ToLower()}, IsIdentity = ${item.IsIncrement.ToString().ToLower()})]
+        [SqlSugar.SugarColumn(IsPrimaryKey = ${item.IsPk.ToString().ToLower()}, IsIdentity = ${item.IsIncrement.ToString().ToLower()}$if(item.CsharpField.ToLower() != item.ColumnName.ToLower()), ColumnName = "$item.ColumnName"$end)]
+$elseif(item.CsharpField.ToLower() != item.ColumnName.ToLower())
+        [SugarColumn(ColumnName = "$item.ColumnName")]
 $end
         public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
 ${end}
