@@ -37,8 +37,16 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" align="center" prop="noticeId" width="100" />
       <el-table-column label="公告标题" align="center" prop="noticeTitle" :show-overflow-tooltip="true" />
-      <el-table-column label="公告类型" align="center" prop="noticeType" :formatter="typeFormat" width="100" />
-      <el-table-column label="状态" align="center" prop="status" :formatter="statusFormat" width="100" />
+      <el-table-column label="公告类型" align="center" prop="noticeType" width="100">
+        <template slot-scope="scope">
+          <dict-tag :options="typeOptions" :value="scope.row.noticeType" />
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" align="center" prop="status" width="100">
+        <template slot-scope="scope">
+          <dict-tag :options="statusOptions" :value="scope.row.status" />
+        </template>
+      </el-table-column>
       <el-table-column label="创建者" align="center" prop="createBy" width="100" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="100">
         <template slot-scope="scope">
@@ -164,19 +172,11 @@ export default {
     /** 查询公告列表 */
     getList() {
       this.loading = true;
-      listNotice(this.queryParams).then((response) => {
-        this.noticeList = response.rows;
-        this.total = response.total;
+      listNotice(this.queryParams).then((res) => {
+        this.noticeList = res.data.result;
+        this.total = res.data.totalNum;
         this.loading = false;
       });
-    },
-    // 公告状态字典翻译
-    statusFormat(row, column) {
-      return this.selectDictLabel(this.statusOptions, row.status);
-    },
-    // 公告状态字典翻译
-    typeFormat(row, column) {
-      return this.selectDictLabel(this.typeOptions, row.noticeType);
     },
     // 取消按钮
     cancel() {
@@ -232,6 +232,10 @@ export default {
         if (valid) {
           if (this.form.noticeId != undefined) {
             updateNotice(this.form).then((response) => {
+              if (!response.data) {
+                this.msgError("修改失败");
+                return;
+              }
               this.msgSuccess("修改成功");
               this.open = false;
               this.getList();
