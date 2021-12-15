@@ -28,7 +28,7 @@ namespace ZR.CodeGenerator
         public static void Generate(GenerateDto dto)
         {
             _option.BaseNamespace = dto.GenTable.BaseNameSpace;
-            _option.SubNamespace = dto.GenTable.ModuleName;
+            _option.SubNamespace = FirstUpperCase(dto.GenTable.ModuleName);
             _option.DtosNamespace = _option.BaseNamespace + "Model";
             _option.ModelsNamespace = _option.BaseNamespace + "Model";
             _option.RepositoriesNamespace = _option.BaseNamespace + "Repository";
@@ -100,7 +100,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models", generateDto.GenTable.ModuleName, replaceDto.ModelTypeName + ".cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models", _option.SubNamespace, replaceDto.ModelTypeName + ".cs");
 
             var tpl = FileHelper.ReadJtTemplate("TplModel.txt");
             var result = tpl.Render();
@@ -115,7 +115,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto", generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Dto.cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto", _option.SubNamespace, $"{replaceDto.ModelTypeName}Dto.cs");
             var tpl = FileHelper.ReadJtTemplate("TplDto.txt");
 
             var result = tpl.Render();
@@ -129,7 +129,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Repository.cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Repository.cs");
             var tpl = FileHelper.ReadJtTemplate("TplRepository.txt");
 
             var result = tpl.Render();
@@ -141,12 +141,12 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Service.cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Service.cs");
             var tpl = FileHelper.ReadJtTemplate("TplService.txt");
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(4, "Service.cs", fullPath, result));
 
-            var fullPath2 = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, generateDto.GenTable.ModuleName, $"I{generateDto.GenTable.ModuleName}Service", $"I{replaceDto.ModelTypeName}Service.cs");
+            var fullPath2 = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, _option.SubNamespace, $"I{_option.SubNamespace}Service", $"I{replaceDto.ModelTypeName}Service.cs");
             var tpl2 = FileHelper.ReadJtTemplate("TplIService.txt");
             var result2 = tpl2.Render();
             generateDto.GenCodes.Add(new GenCode(4, "IService.cs", fullPath2, result2));
@@ -157,7 +157,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Controller.cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", _option.SubNamespace, $"{replaceDto.ModelTypeName}Controller.cs");
             var tpl = FileHelper.ReadJtTemplate("TplControllers.txt");
 
             tpl.Set("QueryCondition", replaceDto.QueryCondition);
@@ -271,6 +271,16 @@ namespace ZR.CodeGenerator
         public static string FirstLowerCase(string str)
         {
             return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToLower() + str[1..];
+        }
+
+        /// <summary>
+        /// 首字母转大写，输出前端
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string FirstUpperCase(string str)
+        {
+            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToUpper() + str[1..];
         }
 
         /// <summary>

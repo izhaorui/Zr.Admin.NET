@@ -10,7 +10,7 @@ using Infrastructure.Model;
 using Mapster;
 using ${options.ModelsNamespace}.Dto;
 using ${options.ModelsNamespace}.Models;
-using ${options.ServicesNamespace}.Business;
+using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
 using ${options.ApiControllerNamespace}.Extensions;
 using ${options.ApiControllerNamespace}.Filters;
 using ZR.Common;
