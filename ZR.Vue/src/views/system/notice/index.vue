@@ -13,21 +13,21 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="cyan" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:notice:add']">新增</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:notice:add']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['system:notice:edit']">修改
+        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['system:notice:edit']">修改
         </el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['system:notice:remove']">删除
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['system:notice:remove']">删除
         </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
@@ -37,8 +37,16 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" align="center" prop="noticeId" width="100" />
       <el-table-column label="公告标题" align="center" prop="noticeTitle" :show-overflow-tooltip="true" />
-      <el-table-column label="公告类型" align="center" prop="noticeType" :formatter="typeFormat" width="100" />
-      <el-table-column label="状态" align="center" prop="status" :formatter="statusFormat" width="100" />
+      <el-table-column label="公告类型" align="center" prop="noticeType" width="100">
+        <template slot-scope="scope">
+          <dict-tag :options="typeOptions" :value="scope.row.noticeType" />
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" align="center" prop="status" width="100">
+        <template slot-scope="scope">
+          <dict-tag :options="statusOptions" :value="scope.row.status" />
+        </template>
+      </el-table-column>
       <el-table-column label="创建者" align="center" prop="createBy" width="100" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="100">
         <template slot-scope="scope">
@@ -164,19 +172,11 @@ export default {
     /** 查询公告列表 */
     getList() {
       this.loading = true;
-      listNotice(this.queryParams).then((response) => {
-        this.noticeList = response.rows;
-        this.total = response.total;
+      listNotice(this.queryParams).then((res) => {
+        this.noticeList = res.data.result;
+        this.total = res.data.totalNum;
         this.loading = false;
       });
-    },
-    // 公告状态字典翻译
-    statusFormat(row, column) {
-      return this.selectDictLabel(this.statusOptions, row.status);
-    },
-    // 公告状态字典翻译
-    typeFormat(row, column) {
-      return this.selectDictLabel(this.typeOptions, row.noticeType);
     },
     // 取消按钮
     cancel() {
@@ -232,6 +232,10 @@ export default {
         if (valid) {
           if (this.form.noticeId != undefined) {
             updateNotice(this.form).then((response) => {
+              if (!response.data) {
+                this.msgError("修改失败");
+                return;
+              }
               this.msgSuccess("修改成功");
               this.open = false;
               this.getList();
