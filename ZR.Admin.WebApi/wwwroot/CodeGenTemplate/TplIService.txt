@@ -1,7 +1,7 @@
 ﻿using System;
 using ${options.ModelsNamespace}.Models;
 
-namespace ${options.IServicsNamespace}.Business
+namespace ${options.IServicsNamespace}.${options.SubNamespace}
 {
     /// <summary>
     /// ${genTable.FunctionName}service接口

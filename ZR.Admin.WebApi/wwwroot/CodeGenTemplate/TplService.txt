@@ -3,7 +3,7 @@ using Infrastructure.Attribute;
 using ${options.ModelsNamespace}.Models;
 using ${options.IRepositoriesNamespace};
 
-namespace ${options.ServicesNamespace}.Business
+namespace ${options.ServicesNamespace}.${options.SubNamespace}
 {
     /// <summary>
     /// ${genTable.FunctionName}Service业务层处理

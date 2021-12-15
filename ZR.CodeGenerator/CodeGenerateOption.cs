@@ -13,6 +13,10 @@ namespace ZR.CodeGenerator
         /// </summary>
         public string BaseNamespace { get; set; }
         /// <summary>
+        /// 下级命名空间
+        /// </summary>
+        public string SubNamespace { get; set; }
+        /// <summary>
         /// 数据实体命名空间
         /// </summary>
         public string ModelsNamespace { get; set; }
