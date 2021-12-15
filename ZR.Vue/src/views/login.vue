@@ -151,9 +151,9 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100%;
-  // background-image: url("../assets/image/login-background.jpg");
+  background-image: url("../assets/image/login-background.jpg");
   background-size: cover;
-  background-color: rgba(56, 157, 170, 0.82);
+  // background-color: rgba(56, 157, 170, 0.82);
 }
 .title {
   margin: 0px auto 30px auto;
