@@ -2,6 +2,7 @@
 using Infrastructure.Attribute;
 using ${options.ModelsNamespace}.Models;
 using ${options.IRepositoriesNamespace};
+using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
 
 namespace ${options.ServicesNamespace}.${options.SubNamespace}
 {
