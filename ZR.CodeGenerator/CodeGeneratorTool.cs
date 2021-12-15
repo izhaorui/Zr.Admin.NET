@@ -128,7 +128,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, "Repositories", $"{replaceDto.ModelTypeName}Repository.cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Repository.cs");
             var tpl = FileHelper.ReadJtTemplate("TplRepository.txt");
 
             var result = tpl.Render();
@@ -140,12 +140,12 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, "Business", $"{replaceDto.ModelTypeName}Service.cs");
+            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, generateDto.GenTable.ModuleName, $"{replaceDto.ModelTypeName}Service.cs");
             var tpl = FileHelper.ReadJtTemplate("TplService.txt");
             var result = tpl.Render();
             generateDto.GenCodes.Add(new GenCode(4, "Service.cs", fullPath, result));
 
-            var fullPath2 = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, "Business", "IBusService", $"I{replaceDto.ModelTypeName}Service.cs");
+            var fullPath2 = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, generateDto.GenTable.ModuleName, $"I{generateDto.GenTable.ModuleName}Service", $"I{replaceDto.ModelTypeName}Service.cs");
             var tpl2 = FileHelper.ReadJtTemplate("TplIService.txt");
             var result2 = tpl2.Render();
             generateDto.GenCodes.Add(new GenCode(4, "IService.cs", fullPath2, result2));
