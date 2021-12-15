@@ -28,6 +28,7 @@ namespace ZR.CodeGenerator
         public static void Generate(GenerateDto dto)
         {
             _option.BaseNamespace = dto.GenTable.BaseNameSpace;
+            _option.SubNamespace = dto.GenTable.ModuleName;
             _option.DtosNamespace = _option.BaseNamespace + "Model";
             _option.ModelsNamespace = _option.BaseNamespace + "Model";
             _option.RepositoriesNamespace = _option.BaseNamespace + "Repository";
