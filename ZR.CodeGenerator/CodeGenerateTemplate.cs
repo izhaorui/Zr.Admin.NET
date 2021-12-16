@@ -20,7 +20,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string TplVueFormContent(GenTableColumn dbFieldInfo)
         {
-            string columnName = dbFieldInfo.ColumnName;
+            string columnName = FirstLowerCase(dbFieldInfo.CsharpField);
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string labelDisabled = dbFieldInfo.IsPk ? ":disabled=\"true\"" : "";
             StringBuilder sb = new StringBuilder();
@@ -139,29 +139,30 @@ namespace ZR.CodeGenerator
         public static string TplQueryFormHtml(GenTableColumn dbFieldInfo)
         {
             StringBuilder sb = new();
-            string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, dbFieldInfo.ColumnName);
+            string columnName = FirstLowerCase(dbFieldInfo.CsharpField);
+            string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, dbFieldInfo.CsharpField);
             if (!dbFieldInfo.IsQuery) return sb.ToString();
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">");
-                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
+                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{columnName}\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
                 sb.AppendLine($"          end-placeholder=\"结束日期\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" ></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
             }
             else if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO))
             {
                 //string value = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? "parseInt(item.dictValue)" : "item.dictValue";
-                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{dbFieldInfo.ColumnName}\">");
-                sb.AppendLine($"        <el-select v-model=\"queryParams.{dbFieldInfo.ColumnName}\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" size=\"small\" >");
-                sb.AppendLine($"          <el-option v-for=\"item in {dbFieldInfo.ColumnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"item.dictValue\"></el-option>");
+                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{columnName}\">");
+                sb.AppendLine($"        <el-select v-model=\"queryParams.{columnName}\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" size=\"small\" >");
+                sb.AppendLine($"          <el-option v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"item.dictValue\"></el-option>");
                 sb.AppendLine("        </el-select>");
                 sb.AppendLine("      </el-form-item>");
             }
             else if(dbFieldInfo.IsQuery)
             {
                 string inputNumTxt = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";
-                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{dbFieldInfo.ColumnName}\">");
-                sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"queryParams.{dbFieldInfo.ColumnName}\" placeholder=\"请输入{dbFieldInfo.ColumnComment}\" size=\"small\"/>");
+                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{columnName}\">");
+                sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"queryParams.{columnName}\" placeholder=\"请输入{dbFieldInfo.ColumnComment}\" size=\"small\"/>");
                 sb.AppendLine("      </el-form-item>");
             }
 
@@ -176,7 +177,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string TplTableColumn(GenTableColumn dbFieldInfo, GenTable genTable)
         {
-            string columnName = dbFieldInfo.ColumnName;
+            string columnName = FirstLowerCase(dbFieldInfo.CsharpField);
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string showToolTip = dbFieldInfo.CsharpType == "string" ? ":show-overflow-tooltip=\"true\"" : "";
             string formatter = GetFormatter(dbFieldInfo.HtmlType, columnName);
@@ -270,6 +271,16 @@ namespace ZR.CodeGenerator
                 return $" :formatter=\"{columnName}Format\"";
             }
             return "";
+        }
+
+        /// <summary>
+        /// 首字母转小写，输出前端
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string FirstLowerCase(string str)
+        {
+            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToLower() + str[1..];
         }
     }
 }
