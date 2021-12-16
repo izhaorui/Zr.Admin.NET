@@ -25,7 +25,7 @@ namespace ZR.Model.System.Generate
         /// <summary>
         /// 列说明
         /// </summary>
-        public string ColumnComment { get; set; }
+        public string ColumnComment { get; set; } = string.Empty;
         /// <summary>
         /// 数据库列类型
         /// </summary>

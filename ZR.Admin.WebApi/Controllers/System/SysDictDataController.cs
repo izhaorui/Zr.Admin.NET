@@ -3,9 +3,13 @@ using Infrastructure.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using ZR.Admin.WebApi.Filters;
+using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Model.Vo;
 using ZR.Service.System.IService;
 
@@ -52,6 +56,30 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult DictType(string dictType)
         {
             return SUCCESS(SysDictDataService.SelectDictDataByType(dictType));
+        }
+        /// <summary>
+        /// 根据字典类型查询字典数据信息
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpPost("types")]
+        public IActionResult DictTypes([FromBody] List<SysdictDataDto> dto)
+        {
+            var list = SysDictDataService.SelectDictDataByTypes(dto.Select(f => f.DictType).ToArray());
+            List<SysdictDataDto> dataVos = new();
+
+            foreach (var dic in dto)
+            {
+                SysdictDataDto vo = new()
+                {
+                    DictType = dic.DictType,
+                    ColumnName = dic.ColumnName,
+                    List = list.FindAll(f => f.DictType == dic.DictType)
+                };
+                dataVos.Add(vo);
+            }
+            return SUCCESS(dataVos);
         }
 
         /// <summary>

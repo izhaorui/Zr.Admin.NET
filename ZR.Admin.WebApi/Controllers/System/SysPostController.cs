@@ -95,7 +95,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
             post.Update_by = User.Identity.Name;
-            return ToResponse(ToJson(PostService.Update(post) ? 1 : 0));
+            return ToResponse(PostService.Update(post));
         }
 
         /// <summary>

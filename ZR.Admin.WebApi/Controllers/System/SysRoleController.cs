@@ -129,15 +129,18 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (sysRoleDto == null || sysRoleDto.RoleId <= 0) return ToResponse(ApiResult.Error(101, "请求参数错误"));
 
             sysRoleDto.Create_by = HttpContext.GetName();
-            //删除角色菜单
-            sysRoleService.DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
-            sysRoleService.InsertRoleMenu(sysRoleDto);
+            bool result = sysRoleService.UseTran2(() =>
+            {
+                //删除角色菜单
+                sysRoleService.DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
+                sysRoleService.InsertRoleMenu(sysRoleDto);
+            });
 
-            return SUCCESS(true);
+            return SUCCESS(result);
         }
 
         /// <summary>
-        /// 角色删除 √
+        /// 角色删除
         /// </summary>
         /// <param name="roleId"></param>
         /// <returns></returns>
@@ -153,7 +156,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 修改角色状态 √
+        /// 修改角色状态
         /// </summary>
         /// <param name="roleDto">角色对象</param>
         /// <returns></returns>
