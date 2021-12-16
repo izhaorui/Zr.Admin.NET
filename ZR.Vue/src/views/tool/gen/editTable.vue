@@ -160,7 +160,7 @@ export default {
           this.tables = res.data.tables;//子表
         });
         /** 查询字典下拉列表 */
-        listType().then((response) => {
+        listType({ pageSize: 100 }).then((response) => {
           this.dictOptions = response.data.result;
         });
         /** 查询菜单下拉列表 */
