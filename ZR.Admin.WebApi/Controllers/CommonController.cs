@@ -43,6 +43,12 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(true);
         }
 
+        [Route("/")]
+        public IActionResult Index()
+        {
+            return Content("Hello看到这里页面说明你已经成功启动了本项目，加油吧 少年。");
+        }
+
         /// <summary>
         /// 发送邮件
         /// </summary>
@@ -79,7 +85,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost()]
         [Verify]
-        [ActionPermissionFilter(Permission = "system")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile)
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
@@ -114,7 +120,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost]
         [Verify]
-        [ActionPermissionFilter(Permission = "system")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileDir = "")
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");

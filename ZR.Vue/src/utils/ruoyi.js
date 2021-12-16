@@ -69,8 +69,8 @@ export function addDateRange2(dateRange, index) {
   var time = undefined;
   if (null != dateRange && '' != dateRange) {
     if (dateRange.length <= 2) {
-			time = dateRange[index];
-		}
+      time = dateRange[index];
+    }
   }
   return time;
 }
@@ -119,7 +119,9 @@ export function download(fileName) {
 
 // 字符串格式化(%s )
 export function sprintf(str) {
-  var args = arguments, flag = true, i = 1;
+  var args = arguments,
+    flag = true,
+    i = 1;
   str = str.replace(/%s/g, function () {
     var arg = args[i++];
     if (typeof arg === 'undefined') {
@@ -171,4 +173,15 @@ export function handleTree(data, id, parentId, children, rootId) {
     return father[parentId] === rootId;
   });
   return treeData != '' ? treeData : data;
+}
+
+// 验证是否为blob格式
+export async function blobValidate(data) {
+  try {
+    const text = await data.text();
+    JSON.parse(text);
+    return false;
+  } catch (error) {
+    return true;
+  }
 }

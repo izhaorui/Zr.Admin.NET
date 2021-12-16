@@ -3,6 +3,7 @@ using Infrastructure.Model;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ZR.Model;
 using ZR.Model.System;
 
@@ -41,6 +42,17 @@ namespace ZR.Repository.System
                 .ToList();
         }
 
+        /// <summary>
+        /// 根据字典类型查询
+        /// </summary>
+        /// <param name="dictData"></param>
+        /// <returns></returns>
+        public List<SysDictData> SelectDictDataByTypes(string[] dictTypes)
+        {
+            return Context.Queryable<SysDictData>().Where(f => f.Status == "0" && dictTypes.Contains(f.DictType))
+                .OrderBy(it => it.DictSort)
+                .ToList();
+        }
         /// <summary>
         /// 新增保存字典数据信息
         /// </summary>

@@ -11,6 +11,7 @@ namespace ZR.Service.System.IService
     {
         public PagedInfo<SysDictData> SelectDictDataList(SysDictData dictData, PagerInfo pagerInfo);
         public List<SysDictData> SelectDictDataByType(string dictType);
+        public List<SysDictData> SelectDictDataByTypes(string[] dictTypes);
         public SysDictData SelectDictDataById(long dictCode);
         public long InsertDictData(SysDictData dict);
         public long UpdateDictData(SysDictData dict);

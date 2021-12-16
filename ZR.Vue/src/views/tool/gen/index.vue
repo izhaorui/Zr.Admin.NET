@@ -7,7 +7,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch()">查询</el-button>
-        <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button>
+        <!-- <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button> -->
       </el-form-item>
     </el-form>
 
@@ -28,9 +28,11 @@
           <span>{{(queryParams.pageNum - 1) * queryParams.pageSize + scope.$index + 1}}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="tableName" label="表名" sortable="custom" width="180" />
+      <el-table-column prop="dbName" label="数据库名" width="100" />
+      <el-table-column prop="tableId" label="表id" width="80" />
+      <el-table-column prop="tableName" label="表名" sortable="custom" width="110" :show-overflow-tooltip="true" />
       <el-table-column prop="tableComment" label="表描述" :show-overflow-tooltip="true" />
-      <el-table-column prop="className" label="实体" />
+      <el-table-column prop="className" label="实体" :show-overflow-tooltip="true" />
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column prop="updateTime" label="更新时间" />
       <el-table-column label="操作" align="center" width="350">
@@ -38,7 +40,7 @@
           <el-button type="text" icon="el-icon-view" @click="handleShowDialog(scope.row, 'preview')" v-hasPermi="['tool:gen:preview']">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)" v-hasPermi="['tool:gen:edit']">编辑</el-button>
           <el-button type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:gen:remove']">删除</el-button>
-          <!-- <el-button type="text" icon="el-icon-refresh" @click="handleRefresh(scope.row)" v-hasPermi="['tool:gen:refresh']">同步</el-button> -->
+          <el-button type="text" icon="el-icon-refresh" @click="handleSynchDb(scope.row)" v-hasPermi="['tool:gen:edit']">同步</el-button>
           <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row, 'generate')" v-hasPermi="['tool:gen:code']">生成代码
           </el-button>
         </template>
@@ -50,8 +52,9 @@
     <el-dialog :title="preview.title" :visible.sync="preview.open" width="80%" top="5vh" append-to-body>
       <el-tabs v-model="preview.activeName">
         <el-tab-pane v-for="(item, key) in preview.data" :label="item.title" :name="key.toString()" :key="key">
-          <pre v-html="highlightedCode(item.content)">
-          </pre>
+          <el-link :underline="false" icon="el-icon-document-copy" v-clipboard:copy="item.content" v-clipboard:success="clipboardSuccess"
+            style="float:right">复制</el-link>
+          <pre><code class="hljs" v-html="highlightedCode(item.content, item.title)"></code></pre>
         </el-tab-pane>
       </el-tabs>
     </el-dialog>
@@ -91,11 +94,11 @@
 <script>
 import {
   codeGenerator,
-  getGenTable,
+  listTable,
   delTable,
   previewTable,
+	synchDb
 } from "@/api/tool/gen";
-import { downloadFile } from "@/utils/zipdownload.js";
 import importTable from "./importTable";
 import { Loading } from "element-ui";
 import hljs from "highlight.js";
@@ -151,7 +154,7 @@ export default {
     handleSearch() {
       this.tableloading = true;
 
-      getGenTable(this.queryParams).then((res) => {
+      listTable(this.queryParams).then((res) => {
         this.tableData = res.data.result;
         this.total = res.data.totalNum;
         this.tableloading = false;
@@ -230,10 +233,7 @@ export default {
               if (code == 200) {
                 this.showGenerate = false;
                 this.msgSuccess("恭喜你，代码生成完成！");
-                downloadFile(
-                  process.env.VUE_APP_BASE_API + data.zipPath,
-                  data.fileName
-                );
+                this.download(data.path);
               } else {
                 this.msgError(res.msg);
               }
@@ -278,6 +278,11 @@ export default {
           });
         });
     },
+    /** 复制代码成功 */
+    clipboardSuccess() {
+      this.msgSuccess("复制成功");
+    },
+    // 多选框选中数据
     handleSelectionChange(section) {
       this.tableIds = section.map((item) => item.tableId);
       this.multiple = !section.length;
@@ -285,15 +290,21 @@ export default {
     },
     /** 高亮显示 */
     highlightedCode(code, key) {
-      // var language = vmName.substring(vmName.indexOf(".") + 1, vmName.length);
+      // var language = key.substring(key.lastIndexOf(".") , key.length)
       const result = hljs.highlightAuto(code || "");
       return result.value || "&nbsp;";
     },
-    handleRefresh(row) {
-      this.$message({
-        type: "info",
-        message: "敬请期待",
-      });
+    // 同步代码
+    handleSynchDb(row) {
+      const tableName = row.tableName;
+      this.$confirm('确认要强制同步"' + tableName + '"表结构吗？')
+        .then(function () {
+          return synchDb(row.tableId, { tableName, dbName: row.dbName });
+        })
+        .then(() => {
+          this.msgSuccess("同步成功");
+        })
+        .catch(() => {});
     },
   },
 };

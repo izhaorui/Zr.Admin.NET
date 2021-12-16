@@ -101,14 +101,15 @@ $end
             //从 Dto 映射到 实体
             var model = parm.Adapt<${replaceDto.ModelTypeName}>().ToCreate(HttpContext);
 
-            return SUCCESS(_${replaceDto.ModelTypeName}Service.Insert(model, it => new
+            var response = _${replaceDto.ModelTypeName}Service.Insert(model, it => new
             {
 $foreach(item in genTable.Columns)
 $if((item.IsInsert))
                 it.$item.CsharpField,
 $end
 ${end}
-            }));
+            });
+            return ToResponse(response);
         }
 
         /// <summary>
@@ -137,7 +138,7 @@ $end
 ${end}
             });
 
-            return SUCCESS(response);
+            return ToResponse(response);
         }
 
         /// <summary>
@@ -154,7 +155,7 @@ ${end}
 
             var response = _${replaceDto.ModelTypeName}Service.Delete(idsArr);
 
-            return SUCCESS(response);
+            return ToResponse(response);
         }
 
         /// <summary>

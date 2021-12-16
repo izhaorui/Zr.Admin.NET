@@ -55,12 +55,12 @@ namespace ZR.Admin.WebApi.Filters
                 bool isDemoMode = ConfigUtils.Instance.GetAppConfig("DemoMode", false);
 
                 //演示公开环境屏蔽权限
-                string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send" ,"export"};
-                if (isDemoMode && (denyPerms.Any(f => Permission.ToLower().Contains(f.ToLower())) || Permission.Equals("system")))
+                string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send" ,"export", "upload", "common"};
+                if (isDemoMode && denyPerms.Any(f => Permission.ToLower().Contains(f)))
                 {
                     context.Result = new JsonResult(new { code = ResultCode.FORBIDDEN, msg = "演示模式 , 不允许操作" });
                 }
-                if (!HasPermi && !Permission.Equals("system"))
+                if (!HasPermi && !Permission.Equals("common"))
                 {
                     logger.Info($"用户{info.NickName}没有权限访问{context.HttpContext.Request.Path}，当前权限[{Permission}]");
                     context.Result = new JsonResult(new { code = ResultCode.FORBIDDEN, msg = "你没有权限访问" });

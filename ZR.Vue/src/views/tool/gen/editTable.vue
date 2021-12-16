@@ -157,7 +157,7 @@ export default {
         getGenTable(tableId).then((res) => {
           this.columns = res.data.columns;
           this.info = res.data.info;
-          this.tables = res.data.tables; //子表
+          this.tables = res.data.tables;//子表
         });
         /** 查询字典下拉列表 */
         listType({ pageSize: 100 }).then((response) => {

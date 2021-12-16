@@ -4,7 +4,7 @@ using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysRoleService
+    public interface ISysRoleService : IBaseService<SysRole>
     {
         /// <summary>
         /// 根据条件分页查询角色数据
@@ -12,7 +12,7 @@ namespace ZR.Service.System.IService
         /// <param name="role">角色信息</param>
         /// <param name="pager"></param>
         /// <returns>角色数据集合信息</returns>
-        public PagedInfo<SysRole> SelectRoleList(SysRole role, Model.PagerInfo pager);
+        public PagedInfo<SysRole> SelectRoleList(SysRole role, PagerInfo pager);
 
         /// <summary>
         /// 查询所有角色
@@ -113,7 +113,7 @@ namespace ZR.Service.System.IService
         /// <param name="userId"></param>
         /// <returns></returns>
         public List<long> SelectUserRoles(long userId);
-        
+
         /// <summary>
         /// 获取用户权限字符串集合
         /// </summary>
