@@ -5,7 +5,7 @@
         <basic-info-form ref="basicInfo" :info="info" />
       </el-tab-pane>
       <el-tab-pane label="字段信息" name="cloum">
-        <el-table ref="dragTable" :data="cloumns" row-key="columnId" :max-height="tableHeight">
+        <el-table ref="dragTable" :data="columns" row-key="columnId" :max-height="tableHeight">
           <el-table-column label="序号" type="index" min-width="5%" class-name="allowDrag" />
           <el-table-column label="字段列名" prop="columnName" min-width="10%" :show-overflow-tooltip="true" />
           <el-table-column label="字段描述" min-width="10%">
@@ -101,7 +101,7 @@
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="生成信息" name="genInfo">
-        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" :columns="cloumns" />
+        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" :columns="columns" />
       </el-tab-pane>
     </el-tabs>
     <el-form label-width="100px">
@@ -114,7 +114,7 @@
   </el-card>
 </template>
 <script>
-import { updateGenTable, queryColumnInfo } from "@/api/tool/gen";
+import { updateGenTable, getGenTable } from "@/api/tool/gen";
 import { listType } from "@/api/system/dict/type";
 import { listMenu as getMenuTreeselect } from "@/api/system/menu";
 import basicInfoForm from "./basicInfoForm";
@@ -136,7 +136,7 @@ export default {
       // 表信息
       tables: [],
       // 表列信息
-      cloumns: [],
+      columns: [],
       // 字典信息
       dictOptions: [],
       // 菜单信息
@@ -154,13 +154,13 @@ export default {
 
       if (tableId) {
         // 获取表详细信息
-        queryColumnInfo(tableId).then((res) => {
-          this.cloumns = res.data.cloumns;
+        getGenTable(tableId).then((res) => {
+          this.columns = res.data.columns;
           this.info = res.data.info;
-          // this.tables = res.data.tables;/子表
+          this.tables = res.data.tables; //子表
         });
         /** 查询字典下拉列表 */
-        listType().then((response) => {
+        listType({ pageSize: 100 }).then((response) => {
           this.dictOptions = response.data.result;
         });
         /** 查询菜单下拉列表 */
@@ -177,7 +177,7 @@ export default {
         const validateResult = res.every((item) => !!item);
         if (validateResult) {
           const genTable = Object.assign({}, basicForm.model, genForm.model);
-          genTable.columns = this.cloumns;
+          genTable.columns = this.columns;
           genTable.params = {
             // treeCode: genTable.treeCode,
             // treeName: genTable.treeName,
@@ -217,7 +217,7 @@ export default {
       const sortable = Sortable.create(el, {
         handle: ".allowDrag",
         onEnd: (evt) => {
-          const targetRow = that.cloumns.splice(evt.oldIndex, 1)[0];
+          const targetRow = that.columns.splice(evt.oldIndex, 1)[0];
           columns.splice(evt.newIndex, 0, targetRow);
           for (let index in columns) {
             columns[index].sort = parseInt(index) + 1;
@@ -230,7 +230,7 @@ export default {
     },
   },
   watch: {
-    cloumns: {
+    columns: {
       handler(val) {
         this.sortTable(val);
       },
