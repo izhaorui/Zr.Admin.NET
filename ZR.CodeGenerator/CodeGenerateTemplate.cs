@@ -139,7 +139,7 @@ namespace ZR.CodeGenerator
         public static string TplQueryFormHtml(GenTableColumn dbFieldInfo)
         {
             StringBuilder sb = new();
-            string columnName = FirstLowerCase(dbFieldInfo.CsharpField);
+            string columnName = dbFieldInfo.CsharpField;
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, dbFieldInfo.CsharpField);
             if (!dbFieldInfo.IsQuery) return sb.ToString();
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
