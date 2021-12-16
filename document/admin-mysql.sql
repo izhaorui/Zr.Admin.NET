@@ -57,6 +57,27 @@ CREATE TABLE `sys_Tasks_log`  (
 INSERT INTO `sys_Tasks_log` VALUES (196, '1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, '2021-08-02 15:10:00', 'ZRTasks.Job_SyncTest', 18);
 INSERT INTO `sys_Tasks_log` VALUES (197, '1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, '2021-08-02 15:20:00', 'ZRTasks.Job_SyncTest', 14);
 
+
+-- ----------------------------
+-- 通知公告表
+-- ----------------------------
+drop table if exists sys_notice;
+create table sys_notice (
+  notice_id         int(4)          not null auto_increment    comment '公告ID',
+  notice_title      varchar(50)     not null                   comment '公告标题',
+  notice_type       char(1)         not null                   comment '公告类型（1通知 2公告）',
+  notice_content    longblob        default null               comment '公告内容',
+  status            char(1)         default '0'                comment '公告状态（0正常 1关闭）',
+  create_by         varchar(64)     default ''                 comment '创建者',
+  create_time       datetime                                   comment '创建时间',
+  update_by         varchar(64)     default ''                 comment '更新者',
+  update_time       datetime                                   comment '更新时间',
+  remark            varchar(255)    default null               comment '备注',
+  primary key (notice_id)
+) engine=innodb auto_increment=10 comment = '通知公告表';
+
+
+
 -- ----------------------------
 -- Table structure for sys_dept
 -- ----------------------------
@@ -254,6 +275,7 @@ INSERT INTO sys_menu VALUES (105, '字典管理', 1, 6, 'dict', 'system/dict/ind
 INSERT INTO sys_menu VALUES (106, '用户角色', 1, 2, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
 INSERT into sys_menu VALUES (107, '参数设置', 1, 8, 'config','system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (108, '日志管理', 1, 9, 'log', ''                     , 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
+INSERT INTO sys_menu VALUES (109, '通知公告', 1, 9, 'notice', 'system/notice/index', 0, 0, 'C', '0', '0', 'system:notice:list', 'message', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (110, '定时任务', 2, 10, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', SYSDATE(), '', NULL, '定时任务菜单');
 INSERT INTO sys_menu VALUES (112, '服务监控', 2, 11, 'server', 'monitor/server/index', 0, 0, 'C', '0', '0', 'monitor:server:list', 'server', '', SYSDATE(), '', NULL, '服务监控菜单');
 INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 12, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', SYSDATE(), '', NULL, '缓存监控菜单');
@@ -331,6 +353,12 @@ INSERT INTO sys_menu VALUES (1047, '发布文章', 4,   1, 'publish', 'system/ar
 INSERT INTO sys_menu VALUES (1048, '文章新增', 118, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:add', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1049, '文章修改', 118, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:update', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1050, '文章删除', 118, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:article:delete', '', '', SYSDATE(), '', NULL, NULL);
+-- 通知公告 按钮
+INSERT INTO sys_menu VALUES (1051, '查询公告', 109, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:notice:query', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1052, '新增公告', 109, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:notice:add', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1053, '删除公告', 109, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:notice:delete', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1054, '修改公告', 109, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:notice:update', '', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1055, '导出公告', 109, 5, '#', NULL, 0, 0, 'F', '0', '0', 'system:notice:export', '', '', SYSDATE(), '', NULL, NULL);
 -- 代码生成 按钮
 INSERT INTO sys_menu VALUES (1060, '生成修改', 3, 1, '/gen/editTable', 'tool/gen/editTable', 0, 0, 'C', '1', '0', 'tool:gen:edit', '', '', SYSDATE(), '', NULL, NULL);
 insert into sys_menu VALUES (1061, '生成查询', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:query',  '', '', sysdate(), '', NULL, NULL);
