@@ -9,14 +9,56 @@ namespace ZR.Model.System
     [SugarTable("sys_file")]
     public class SysFile
     {
-        public int Id { get; set; }
-        public string FilePath { get; set; }
+        /// <summary>
+        /// 描述 : 自增id
+        /// 空值 : false  
+        /// </summary>
+        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
+        public long Id { get; set; }
+        /// <summary>
+        /// 描述 : 文件名
+        /// 空值 : true  
+        /// </summary>
         public string FileName { get; set; }
+        /// <summary>
+        /// 描述 : 文件存储地址
+        /// 空值 : true  
+        /// </summary>
+        public string FileUrl { get; set; }
+        /// <summary>
+        /// 描述 : 仓库位置
+        /// 空值 : true  
+        /// </summary>
         public string StorePath { get; set; }
-        public string AccessPat { get; set; }
-        public int FileSize { get; set; }
+        /// <summary>
+        /// 描述 : 文件大小
+        /// 空值 : true  
+        /// </summary>
+        public string FileSize { get; set; }
+        /// <summary>
+        /// 描述 : 文件扩展名
+        /// 空值 : true  
+        /// </summary>
         public string FileExt { get; set; }
-        public DateTime? AddTime { get; set; }
-
+        /// <summary>
+        /// 描述 : 创建人
+        /// 空值 : true  
+        /// </summary>
+        public string Create_by { get; set; }
+        /// <summary>
+        /// 描述 : 上传时间
+        /// 空值 : true  
+        /// </summary>
+        public DateTime? Create_time { get; set; }
+        /// <summary>
+        /// 描述 : 存储类型
+        /// 空值 : true  
+        /// </summary>
+        public int? StoreType { get; set; }
+        /// <summary>
+        /// 描述 : 访问路径
+        /// 空值 : true  
+        /// </summary>
+        public string AccessUrl { get; set; }
     }
 }

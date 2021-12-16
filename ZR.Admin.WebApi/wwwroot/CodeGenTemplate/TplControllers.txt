@@ -42,6 +42,7 @@ namespace ${options.ApiControllerNamespace}.Controllers
         /// <summary>
         /// 查询${genTable.FunctionName}列表
         /// </summary>
+        /// <param name="parm"></param>
         /// <returns></returns>
         [HttpGet("list")]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:list")]

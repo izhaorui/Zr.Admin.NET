@@ -1,7 +1,7 @@
 <template>
   <div class="upload-file">
     <el-upload :action="uploadFileUrl" :before-upload="handleBeforeUpload" :file-list="fileList" :limit="limit" :on-error="handleUploadError"
-      :on-exceed="handleExceed" :on-success="handleUploadSuccess" :show-file-list="false" :headers="headers" class="upload-file-uploader"
+      :on-exceed="handleExceed" :on-success="handleUploadSuccess" :show-file-list="false" :data="data" :headers="headers" class="upload-file-uploader"
       ref="upload">
       <!-- 上传按钮 -->
       <el-button size="mini" type="primary" icon="el-icon-upload">选取文件</el-button>
@@ -61,7 +61,12 @@ export default {
       type: String,
       default: "/Common/UploadFile",
     },
+		// form 列名
     column: [String],
+		// 上传携带的参数
+		data: {
+			type: Object
+		}
   },
   data() {
     return {
@@ -145,6 +150,7 @@ export default {
     // 上传成功回调
     handleUploadSuccess(res, file) {
       if (res.code != 200) {
+				this.fileList = [];
         this.msgError(`上传失败，原因:${res.msg}!`);
         return;
       }
