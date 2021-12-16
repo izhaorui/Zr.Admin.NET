@@ -19,6 +19,7 @@ namespace Infrastructure
         [Description("NO_DATA")]
         NODATA = 106,
 
+        [Description("操作失败")]
         FAIL = 1,
 
         [Description("服务端出错啦")]

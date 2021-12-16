@@ -4,7 +4,6 @@ using Infrastructure.Enums;
 using Mapster;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using SqlSugar;
 using System;
@@ -19,7 +18,6 @@ using ZR.Common;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
-using ZR.Service;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -31,20 +29,18 @@ namespace ZR.Admin.WebApi.Controllers
     [Route("tool/gen")]
     public class CodeGeneratorController : BaseController
     {
-        private CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
-        private IGenTableService GenTableService;
-        private IGenTableColumnService GenTableColumnService;
-        private readonly ISysDictDataService SysDictDataService;
-        private IWebHostEnvironment WebHostEnvironment;
+        private readonly CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
+        private readonly IGenTableService GenTableService;
+        private readonly IGenTableColumnService GenTableColumnService;
+
+        private readonly IWebHostEnvironment WebHostEnvironment;
         public CodeGeneratorController(
             IGenTableService genTableService,
             IGenTableColumnService genTableColumnService,
-            ISysDictDataService dictDataService,
             IWebHostEnvironment webHostEnvironment)
         {
             GenTableService = genTableService;
             GenTableColumnService = genTableColumnService;
-            SysDictDataService = dictDataService;
             WebHostEnvironment = webHostEnvironment;
         }
 
@@ -62,7 +58,7 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        ///获取所有表根据数据名
+        ///获取所有表根据数据库名
         /// </summary>
         /// <param name="dbName">数据库名</param>
         /// <param name="tableName">表名</param>
@@ -78,12 +74,13 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 获取代码生成表列表
+        /// 查询生成表数据
         /// </summary>
         /// <param name="tableName">表名</param>
         /// <param name="pagerInfo">分页信息</param>
         /// <returns></returns>
-        [HttpGet("listGenTable")]
+        [HttpGet("list")]
+        [ActionPermissionFilter(Permission = "tool:gen:list")]
         public IActionResult GetGenTable(string tableName, PagerInfo pagerInfo)
         {
             //查询原表数据，部分字段映射到代码生成表字段
@@ -93,18 +90,34 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 查询表字段列表
+        /// 修改代码生成业务查询
         /// </summary>
         /// <param name="tableId">genTable表id</param>
         /// <returns></returns>
-        [HttpGet("column/{tableId}")]
+        [HttpGet("{tableId}")]
+        [ActionPermissionFilter(Permission = "tool:gen:query")]
         public IActionResult GetColumnList(long tableId)
         {
             var tableColumns = GenTableColumnService.GenTableColumns(tableId);
             var tableInfo = GenTableService.GetGenTableInfo(tableId);
-            return SUCCESS(new { cloumns = tableColumns, info = tableInfo });
+            var tables = GenTableService.GetGenTableAll();
+
+            return SUCCESS(new { columns = tableColumns, info = tableInfo, tables });
         }
 
+        /// <summary>
+        /// 根据表id查询表列
+        /// </summary>
+        /// <param name="tableId">genTable表id</param>
+        /// <returns></returns>
+        [HttpGet("column/{tableId}")]
+        [ActionPermissionFilter(Permission = "tool:gen:query")]
+        public IActionResult GetTableColumnList(long tableId)
+        {
+            var tableColumns = GenTableColumnService.GenTableColumns(tableId);
+
+            return SUCCESS(new { columns = tableColumns });
+        }
         /// <summary>
         /// 删除代码生成
         /// </summary>
@@ -144,18 +157,7 @@ namespace ZR.Admin.WebApi.Controllers
                 var tabInfo = _CodeGeneraterService.GetTableInfo(dbName, tableName);
                 if (tabInfo != null)
                 {
-                    GenTable genTable = new()
-                    {
-                        BaseNameSpace = "ZR.",//导入默认命名空间前缀
-                        ModuleName = "business",//导入默认模块名
-                        ClassName = CodeGeneratorTool.GetClassName(tableName),
-                        BusinessName = CodeGeneratorTool.GetBusinessName(tableName),
-                        FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
-                        TableName = tableName,
-                        TableComment = tabInfo?.Description,
-                        FunctionName = tabInfo?.Description,
-                        Create_by = userName,
-                    };
+                    GenTable genTable = CodeGeneratorTool.InitTable(dbName, userName, tableName, tabInfo?.Description);
                     genTable.TableId = GenTableService.ImportGenTable(genTable);
 
                     if (genTable.TableId > 0)
@@ -242,7 +244,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost("genCode")]
         [Log(Title = "代码生成", BusinessType = BusinessType.GENCODE)]
         [ActionPermissionFilter(Permission = "tool:gen:code")]
-        public IActionResult Generate([FromBody] GenerateDto dto)
+        public IActionResult CodeGenerate([FromBody] GenerateDto dto)
         {
             if (dto.TableId <= 0)
             {
@@ -260,9 +262,29 @@ namespace ZR.Admin.WebApi.Controllers
             //下载文件
             FileHelper.ZipGenCode(dto);
 
-            //HttpContext.Response.Headers.Add("Content-disposition", $"attachment; filename={zipFileName}");
-            return SUCCESS(new { zipPath = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
+            return SUCCESS(new { path = "/Generatecode/" + dto.ZipFileName, fileName = dto.ZipFileName });
         }
 
+        /// <summary>
+        /// 同步数据库
+        /// </summary>
+        /// <param name="tableId"></param>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        [ActionPermissionFilter(Permission = "tool:gen:edit")]
+        [Log(Title = "代码生成", BusinessType = BusinessType.UPDATE)]
+        [HttpGet("synchDb/{tableId}")]
+        public IActionResult SynchDb(string tableName, long tableId = 0)
+        {
+            if (string.IsNullOrEmpty(tableName) || tableId <= 0) throw new CustomException("参数错误");
+            GenTable table = GenTableService.GetGenTableInfo(tableId);
+            if (table == null) { throw new CustomException("原表不存在"); }
+
+            List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(table.DbName, tableName);
+            List<GenTableColumn> dbTableColumns = CodeGeneratorTool.InitGenTableColumn(table, dbColumnInfos);
+
+            GenTableService.SynchDb(tableId, table, dbTableColumns);
+            return SUCCESS(true);
+        }
     }
 }

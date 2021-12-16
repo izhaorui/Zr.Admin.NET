@@ -118,6 +118,21 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
             }
+            else if( dbFieldInfo.HtmlType == GenConstants.HTML_CHECKBOX)
+            {
+                //多选框
+                sb.AppendLine("    <el-col :span=\"12\">");
+                sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
+                sb.AppendLine($"        <el-checkbox-group v-model=\"form.{columnName}Checked\"> ");
+                if (string.IsNullOrEmpty(dbFieldInfo.DictType))
+                {
+                    sb.AppendLine($"          <el-checkbox>请选择字典生成</el-checkbox>");
+                }
+                sb.AppendLine($"          <el-checkbox v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictValue\">{{{{item.dictLabel}}}}</el-checkbox>");
+                sb.AppendLine("        </el-checkbox-group>");
+                sb.AppendLine("      </el-form-item>");
+                sb.AppendLine("    </el-col>");
+            }
             else
             {
                 string inputNumTxt = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";

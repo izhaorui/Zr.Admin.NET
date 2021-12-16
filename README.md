@@ -103,6 +103,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
     </tr>
 	<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/17.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/18.png"/></td>
     </tr>
 </table>
 
@@ -123,4 +124,5 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 <img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/pay.jpg"/>
 
 源码地址
-https://gitee.com/izory/ZrAdminNetCore
+[Gitee](https://gitee.com/izory/ZrAdminNetCore/)https://gitee.com/izory/ZrAdminNetCore
+[Github](https://github.com/izhaorui/ZrAdmin.NET/)https://github.com/izhaorui/ZrAdmin.NET

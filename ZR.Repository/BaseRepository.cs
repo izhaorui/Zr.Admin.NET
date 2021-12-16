@@ -121,24 +121,24 @@ namespace ZR.Repository
 
         #region update
 
-        public bool Update(T entity, bool ignoreNullColumns = false)
+        public int Update(T entity, bool ignoreNullColumns = false)
         {
-            return Context.Updateable(entity).IgnoreColumns(ignoreNullColumns).ExecuteCommand() > 0;
+            return Context.Updateable(entity).IgnoreColumns(ignoreNullColumns).ExecuteCommand();
         }
 
-        public bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false)
+        public int Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false)
         {
-            return Context.Updateable(entity).UpdateColumns(expression).IgnoreColumns(ignoreAllNull).ExecuteCommand() > 0;
+            return Context.Updateable(entity).UpdateColumns(expression).IgnoreColumns(ignoreAllNull).ExecuteCommand();
         }
 
-        public bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
+        public int Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
         {
-            return Context.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand() > 0;
+            return Context.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand();
         }
 
-        public bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
+        public int Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
         {
-            return client.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand() > 0;
+            return client.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand();
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace ZR.Repository
         /// <param name="list"></param>
         /// <param name="isNull">默认为true</param>
         /// <returns></returns>
-        public bool Update(T entity, List<string> list = null, bool isNull = true)
+        public int Update(T entity, List<string> list = null, bool isNull = true)
         {
             if (list == null)
             {
@@ -158,7 +158,7 @@ namespace ZR.Repository
                 "Create_time"
             };
             }
-            return Context.Updateable(entity).IgnoreColumns(isNull).IgnoreColumns(list.ToArray()).ExecuteCommand() > 0;
+            return Context.Updateable(entity).IgnoreColumns(isNull).IgnoreColumns(list.ToArray()).ExecuteCommand();
         }
 
         //public bool Update(List<T> entity)
@@ -169,9 +169,9 @@ namespace ZR.Repository
         //    });
         //    return result.IsSuccess;
         //}
-        public bool Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
+        public int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
         {
-            return Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand() > 0;
+            return Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand();
         }
         #endregion update
 
@@ -218,9 +218,9 @@ namespace ZR.Repository
         {
             return Context.Deleteable<T>(id).ExecuteCommand();
         }
-        public bool DeleteTable()
+        public int DeleteTable()
         {
-            return Context.Deleteable<T>().ExecuteCommand() > 0;
+            return Context.Deleteable<T>().ExecuteCommand();
         }
 
         #endregion delete

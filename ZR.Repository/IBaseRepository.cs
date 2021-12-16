@@ -44,7 +44,7 @@ namespace ZR.Repository
 
         #region update
 
-        bool Update(T entity, bool ignoreNullColumns = false);
+        int Update(T entity, bool ignoreNullColumns = false);
 
         /// <summary>
         /// 只更新表达式的值
@@ -52,13 +52,13 @@ namespace ZR.Repository
         /// <param name="entity"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        bool Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false);
+        int Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false);
 
-        bool Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
+        int Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
 
-        bool Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
+        int Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
 
-        bool Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
+        int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
 
         #endregion update
 
@@ -73,7 +73,7 @@ namespace ZR.Repository
         int Delete(Expression<Func<T, bool>> expression);
         int Delete(object[] obj);
         int Delete(object id);
-        bool DeleteTable();
+        int DeleteTable();
 
         #endregion delete
 

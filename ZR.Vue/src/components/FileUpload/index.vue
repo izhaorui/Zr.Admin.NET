@@ -144,10 +144,12 @@ export default {
     },
     // 上传成功回调
     handleUploadSuccess(res, file) {
+      if (res.code != 200) {
+        this.msgError(`上传失败，原因:${res.msg}!`);
+        return;
+      }
       this.msgSuccess("上传成功");
-      console.log(res.data.fileName, res.data.url);
       this.fileList.push({ name: res.data.fileName, url: res.data.url });
-
       this.$emit("input", this.column, this.listToString(this.fileList));
     },
     // 删除文件

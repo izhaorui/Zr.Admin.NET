@@ -663,7 +663,8 @@ create table gen_table (
   update_by         varchar(64)     default ''                 comment '更新者',
   update_time       datetime                                   comment '更新时间',
   remark            varchar(500)    default null               comment '备注',
-  primary key (tableId)
+  dbName			VARCHAR(100)							   comment '数据库名',
+  PRIMARY key (tableId)
 ) engine=innodb auto_increment=1 comment = '代码生成业务表';
 
 
@@ -717,6 +718,7 @@ CREATE TABLE `gen_demo`  (
   `remark` VARCHAR(200) COMMENT '备注',
   `beginTime` datetime(0) NULL DEFAULT NULL COMMENT '开始时间',
   `endTime` datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
+  `feature` varchar(100) NULL COMMENT '特征'
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
