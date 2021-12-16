@@ -12,7 +12,7 @@ namespace Infrastructure
         /// 按时间来创建文件夹
         /// </summary>
         /// <param name="path"></param>
-        /// <returns>eg: /{yourPath}/2020/11/3</returns>
+        /// <returns>eg: /{yourPath}/2020/11/3/</returns>
         public static string GetdirPath(string path = "")
         {
             DateTime date = DateTime.Now;
@@ -21,7 +21,7 @@ namespace Infrastructure
             int day = date.Day;
             int hour = date.Hour;
 
-            string timeDir = $"{year}{month}{day}";// date.ToString("yyyyMM/dd/HH/");
+            string timeDir = $"{year}{month}{day}/";// date.ToString("yyyyMM/dd/HH/");
 
             if (!string.IsNullOrEmpty(path))
             {

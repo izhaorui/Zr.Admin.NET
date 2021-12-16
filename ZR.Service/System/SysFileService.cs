@@ -8,6 +8,8 @@ using System;
 using System.Text;
 using System.Security.Cryptography;
 using System.Net;
+using ZR.Model.System;
+using ZR.Repository.System;
 
 namespace ZR.Service.System
 {
@@ -15,9 +17,15 @@ namespace ZR.Service.System
     /// 文件管理
     /// </summary>
     [AppService(ServiceType = typeof(ISysFileService), ServiceLifetime = LifeTime.Transient)]
-    public class SysFileService : ISysFileService
+    public class SysFileService : BaseService<SysFile>, ISysFileService
     {
         private string domainUrl = ConfigUtils.Instance.GetConfig("ALIYUN_OSS:domainUrl");
+        private readonly SysFileRepository SysFileRepository;
+
+        public SysFileService(SysFileRepository repository) : base(repository)
+        {
+            SysFileRepository = repository;
+        }
 
         /// <summary>
         /// 上传文件到阿里云
@@ -65,5 +73,17 @@ namespace ZR.Service.System
             return BitConverter.ToString(md5.ComputeHash(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
         }
 
+        public long InsertFile(SysFile file)
+        {
+            try
+            {
+                return InsertReturnBigIdentity(file);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("存储图片失败" + ex.Message);
+            }
+            return 1;
+        }
     }
 }

@@ -9,8 +9,10 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Linq;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
+using ZR.Model.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -82,17 +84,20 @@ namespace ZR.Admin.WebApi.Controllers
         /// 存储文件
         /// </summary>
         /// <param name="formFile"></param>
+        /// <param name="fileDir">存储目录</param>
         /// <returns></returns>
         [HttpPost()]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile)
+        public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileDir = "uploads")
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);
             string fileName = FileUtil.HashFileName(Guid.NewGuid().ToString()).ToLower() + fileExt;
-            string finalFilePath = Path.Combine(WebHostEnvironment.WebRootPath, FileUtil.GetdirPath("uploads"), fileName);
+            string filePath = FileUtil.GetdirPath(fileDir);
+            string finalFilePath = Path.Combine(WebHostEnvironment.WebRootPath, filePath, fileName);
             finalFilePath = finalFilePath.Replace("\\", "/").Replace("//", "/");
+            double fileSize = formFile.Length / 1024;
 
             if (!Directory.Exists(Path.GetDirectoryName(finalFilePath)))
             {
@@ -104,11 +109,24 @@ namespace ZR.Admin.WebApi.Controllers
                 formFile.CopyTo(stream);
             }
 
-            string accessPath = $"{OptionsSetting.Upload.UploadUrl}/{FileUtil.GetdirPath("uploads").Replace("\\", " /")}{fileName}";
+            string accessPath = $"{OptionsSetting.Upload.UploadUrl}/{filePath.Replace("\\", " /")}{fileName}";
+            SysFile file = new()
+            {
+                AccessUrl = accessPath,
+                Create_by = HttpContext.GetName(),
+                FileExt = fileExt,
+                FileName = fileName,
+                FileSize = fileSize + "kb",
+                StoreType = 1,
+                FileUrl = finalFilePath,
+                Create_time = DateTime.Now
+            };
+            long fileId = SysFileService.InsertFile(file);
             return ToResponse(ResultCode.SUCCESS, new
             {
                 url = accessPath,
-                fileName
+                fileName,
+                fileId
             });
         }
 
@@ -127,7 +145,7 @@ namespace ZR.Admin.WebApi.Controllers
             string fileExt = Path.GetExtension(formFile.FileName);
             string[] AllowedFileExtensions = new string[] { ".jpg", ".gif", ".png", ".jpeg", ".webp", ".svga", ".xls" };
             int MaxContentLength = 1024 * 1024 * 5;
-
+            double fileSize = formFile.Length / 1024;
             if (!AllowedFileExtensions.Contains(fileExt))
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传失败，未经允许上传类型");
@@ -138,11 +156,21 @@ namespace ZR.Admin.WebApi.Controllers
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + (MaxContentLength / 1024).ToString() + " MB");
             }
             (bool, string, string) result = SysFileService.SaveFile(fileDir, formFile);
-
+            long fileId = SysFileService.InsertFile(new SysFile()
+            {
+                AccessUrl = result.Item2,
+                Create_by = HttpContext.GetName(),
+                FileExt = fileExt,
+                FileName = result.Item3,
+                FileSize = fileSize + "kb",
+                StoreType = 2,
+                StorePath = fileDir
+            });
             return ToResponse(ResultCode.SUCCESS, new
             {
                 url = result.Item2,
-                fileName = result.Item3
+                fileName = result.Item3,
+                fileId
             });
         }
         #endregion

@@ -1,6 +1,6 @@
 {
   "name": "zradmin",
-  "description": "ZrAdmnin.NET管理系统",
+  "description": "ZrAdmnin.NET后台管理",
   "author": "ZR",
   "scripts": {
     "dev": "vue-cli-service serve",

@@ -339,6 +339,30 @@ INSERT INTO sys_menu VALUES (1063, '导入代码', 115, 1, '#', NULL, 0, 0, 'F',
 INSERT INTO sys_menu VALUES (1064, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:code', '', '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1065, '预览代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:preview', '', '', SYSDATE(), '', NULL, NULL);
 
+
+-- 文件存储菜单
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time, remark) 
+VALUES ('文件存储', 3, 1, 'file', 'tool/file/index', 0, 0, 'C', '0', '0', 'tool:file:list', 'upload', '', sysdate(), '文件存储菜单');
+
+-- 按钮父菜单id
+SELECT @fileMenuId := LAST_INSERT_ID();
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('查询', @fileMenuId, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:query', '', sysdate());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('新增', @fileMenuId, 2, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:add', '',  sysdate());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('删除', @fileMenuId, 3, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:delete', '', sysdate());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('修改', @fileMenuId, 4, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:update', '', sysdate());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('导出', @fileMenuId, 5, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:export', '', sysdate());
+
+
 -- ----------------------------
 -- Table structure for sys_oper_log
 -- ----------------------------
@@ -362,7 +386,7 @@ CREATE TABLE `sys_oper_log`  (
   `operTime` datetime(0) NULL DEFAULT NULL COMMENT '操作时间',
   `elapsed` bigint(20) NULL DEFAULT NULL COMMENT '请求用时',
   PRIMARY KEY (`operId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 117 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_post
@@ -700,8 +724,6 @@ CREATE TABLE `gen_table_column`  (
   PRIMARY KEY (`columnId`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 63 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '代码生成业务表字段' ROW_FORMAT = Dynamic;
 
-SET FOREIGN_KEY_CHECKS = 1;
-
 -- ----------------------------
 -- 代码生成测试
 -- Table structure for gen_demo
@@ -722,4 +744,22 @@ CREATE TABLE `gen_demo`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
-SET FOREIGN_KEY_CHECKS = 1;
+GO
+-- ----------------------------
+-- Table structure for sys_file 文件存储
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_file`;
+CREATE TABLE `sys_file`  (
+  `id` BIGINT(11) NOT NULL AUTO_INCREMENT,
+  `fileName` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件名',
+  `fileUrl` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件存储地址',
+  `storePath` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '仓库位置',
+  `accessUrl` varchar(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '访问路径',
+  `fileSize` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件大小',
+  `fileExt` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件扩展名',
+  `create_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '创建人',
+  `create_time` datetime(0) NULL DEFAULT NULL COMMENT '上传时间',
+  `storeType` int(4) NULL DEFAULT NULL COMMENT '存储类型',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
