@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Repository.System;
@@ -12,8 +13,8 @@ namespace ZR.Service.System
     /// <summary>
     /// 用户角色
     /// </summary>
-    [AppService(ServiceType = typeof(ISysUserRoleService),ServiceLifetime = LifeTime.Transient)]
-    public class SysUserRoleService: ISysUserRoleService
+    [AppService(ServiceType = typeof(ISysUserRoleService), ServiceLifetime = LifeTime.Transient)]
+    public class SysUserRoleService : ISysUserRoleService
     {
         public SysUserRoleRepository SysUserRoleRepository;
 
@@ -72,6 +73,26 @@ namespace ZR.Service.System
         public List<SysUser> GetSysUsersByRoleId(long roleId)
         {
             return SysUserRoleRepository.GetSysUsersByRoleId(roleId);
+        }
+
+        /// <summary>
+        /// 获取用户数据根据角色id
+        /// </summary>
+        /// <param name="roleUserQueryDto"></param>
+        /// <returns></returns>
+        public PagedInfo<SysUser> GetSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
+        {
+            return SysUserRoleRepository.GetSysUsersByRoleId(roleUserQueryDto);
+        }
+
+        /// <summary>
+        /// 获取尚未指派的用户数据根据角色id
+        /// </summary>
+        /// <param name="roleUserQueryDto"></param>
+        /// <returns></returns>
+        public PagedInfo<SysUser> GetExcludedSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
+        {
+            return SysUserRoleRepository.GetExcludedSysUsersByRoleId(roleUserQueryDto);
         }
 
         /// <summary>

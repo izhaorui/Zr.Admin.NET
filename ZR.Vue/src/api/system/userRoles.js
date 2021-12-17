@@ -1,10 +1,11 @@
 import request from '@/utils/request'
 
 // 查询角色用户
-export function getRoleUsers(roleId) {
+export function getRoleUsers(query) {
   return request({
-    url: '/system/userRole/get/' + roleId,
-    method: 'get'
+    url: '/system/userRole/list',
+    method: 'get',
+    params: query,
   })
 }
 
@@ -25,10 +26,11 @@ export function deleteRoleUsers(data) {
   })
 }
 // 查询角色未添加用户列表
-export function getExcludeUsers(roleId) {
+export function getExcludeUsers(query) {
   return request({
-    url: '/system/userRole/getExcludeUsers?roleId=' + roleId,
-    method: 'get'
+    url: '/system/userRole/getExcludeUsers',
+    method: 'get',
+    params: query,
   })
 }
 

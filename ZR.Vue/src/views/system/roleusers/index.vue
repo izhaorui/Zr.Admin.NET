@@ -16,12 +16,10 @@
               批量取消授权</el-button>
           </el-form-item>
           <el-form-item style="margin-left:auto">
-            <el-input v-model="search" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" />
+            <el-input v-model="roleUserQueryParams.userName" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="getRoleUser" />
           </el-form-item>
         </el-form>
-        <el-table ref="roleUserTable" v-loading="loadingRoleUser"
-          :data="dataRoleUserTable.filter(data => !search || data.userName.toLowerCase().includes(search.toLowerCase()))" row-key="userId" stripe
-          border :height="tableHeight-180">
+        <el-table ref="roleUserTable" v-loading="loadingRoleUser" :data="dataRoleUserTable" row-key="userId" stripe border :height="tableHeight-230">
           <el-table-column type="selection" width="55" align="center" />
           <el-table-column prop="userId" align="center" label="用户Id" width="150" />
           <el-table-column prop="userName" align="center" label="用户账号" width="150" />
@@ -41,16 +39,17 @@
             </template>
           </el-table-column>
         </el-table>
+        <pagination v-show="dataRoleUserCount > 0" :total="dataRoleUserCount" :page.sync="roleUserQueryParams.pageNum" :limit.sync="roleUserQueryParams.pageSize" @pagination="getRoleUser" />
       </el-col>
     </el-row>
 
     <!-- 添加或修改菜单对话框 -->
     <el-dialog title="添加用户" :visible.sync="open" append-to-body :close-on-click-modal="false" @close="cancel">
-      <!-- <el-form style="display:flex" :inline="true" @submit.native.prevent>
+      <el-form style="display:flex" :inline="true" @submit.native.prevent>
         <el-form-item style="margin-left:auto">
-          <el-input v-model="search" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" />
+          <el-input v-model="userQueryParams.userName" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="handleGetUserTable" />
         </el-form-item>
-      </el-form> -->
+      </el-form>
       <el-row>
         <el-col>
           <el-table ref="userTable" v-loading="loadingUser" :data="dataUserTable" row-key="userId" stripe border :height="tableHeight*0.5">
@@ -65,6 +64,7 @@
               </template>
             </el-table-column>
           </el-table>
+          <pagination v-show="dataUserCount > 0" :total="dataUserCount" :page.sync="userQueryParams.pageNum" :limit.sync="userQueryParams.pageSize" @pagination="handleGetUserTable" />
         </el-col>
       </el-row>
       <div slot="footer" class="dialog-footer">
@@ -96,8 +96,10 @@ export default {
       dataRoleTable: [],
       // 已添加用户列表
       dataRoleUserTable: [],
+      dataRoleUserCount: 0,
       // 未添加用户列表
       dataUserTable: [],
+      dataUserCount: 0,
       // 勾选添加用户列表
       addSelections: [],
       // 勾选删除用户列表
@@ -108,6 +110,18 @@ export default {
       roleId: "",
       // 是否显示弹出层
       open: false,
+      roleUserQueryParams: {
+        pageNum: 1,
+        pageSize: 10,
+        roleId: undefined,
+        userName: undefined,
+      },
+      userQueryParams: {
+        pageNum: 1,
+        pageSize: 10,
+        roleId: undefined,
+        userName: undefined,
+      },
     };
   },
   created() {
@@ -124,8 +138,10 @@ export default {
     // 获取角色用户
     getRoleUser() {
       this.loadingRoleUser = true;
-      getRoleUsers(this.roleId).then((response) => {
-        this.dataRoleUserTable = response.data;
+      this.roleUserQueryParams.roleId = this.roleId;
+      getRoleUsers(this.roleUserQueryParams).then((response) => {
+        this.dataRoleUserTable = response.data.result;
+        this.dataRoleUserCount = response.data.totalNum;
         this.loadingRoleUser = false;
       });
     },
@@ -191,8 +207,10 @@ export default {
     handleGetUserTable() {
       this.open = true;
       this.loadingUser = true;
-      getExcludeUsers(this.roleId).then((response) => {
-        this.dataUserTable = response.data;
+      this.userQueryParams.roleId = this.roleId;
+      getExcludeUsers(this.userQueryParams).then((response) => {
+        this.dataUserTable = response.data.result;
+        this.dataUserCount = response.data.totalNum;
         this.loadingUser = false;
       });
     },

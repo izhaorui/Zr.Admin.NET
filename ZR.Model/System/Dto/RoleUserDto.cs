@@ -5,6 +5,13 @@ using System.Text;
 
 namespace ZR.Model.System.Dto
 {
+    public class RoleUserQueryDto : PagerInfo
+    {
+        public long RoleId { get; set; }
+
+        public string UserName { get; set; }
+    }
+
     public class RoleUsersCreateDto
     {
         /// <summary>

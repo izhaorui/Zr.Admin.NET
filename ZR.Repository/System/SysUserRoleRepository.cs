@@ -1,7 +1,9 @@
 ﻿using Infrastructure.Attribute;
 using SqlSugar;
 using System.Collections.Generic;
+using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Repository.System
 {
@@ -72,6 +74,40 @@ namespace ZR.Repository.System
                 .Where((t1, u) => t1.RoleId == roleId && u.DelFlag == "0")
                 .Select((t1, u) => u)
                 .ToList();
+        }
+
+        /// <summary>
+        /// 获取用户数据根据角色id
+        /// </summary>
+        /// <param name="roleUserQueryDto"></param>
+        /// <returns></returns>
+        public PagedInfo<SysUser> GetSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
+        {
+            var query = Context.Queryable<SysUserRole, SysUser>((t1, u) => new JoinQueryInfos(
+                JoinType.Left, t1.UserId == u.UserId))
+                .Where((t1, u) => t1.RoleId == roleUserQueryDto.RoleId && u.DelFlag == "0");
+            if (!string.IsNullOrEmpty(roleUserQueryDto.UserName))
+            {
+                query = query.Where((t1, u) => u.UserName.Contains(roleUserQueryDto.UserName));
+            }
+            return query.Select((t1, u) => u).ToPage(roleUserQueryDto);
+        }
+
+        /// <summary>
+        /// 获取尚未指派的用户数据根据角色id
+        /// </summary>
+        /// <param name="roleUserQueryDto"></param>
+        /// <returns></returns>
+        public PagedInfo<SysUser> GetExcludedSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
+        {
+            var query = Context.Queryable<SysUser>()
+                .Where(it => SqlFunc.Subqueryable<SysUserRole>()
+                .Where(s => s.UserId == it.UserId).NotAny());
+            if (!string.IsNullOrEmpty(roleUserQueryDto.UserName))
+            {
+                query = query.Where(x => x.UserName.Contains(roleUserQueryDto.UserName));
+            }
+            return query.ToPage(roleUserQueryDto);
         }
     }
 }
