@@ -121,7 +121,7 @@ namespace ZR.Service
         /// <param name="role"></param>
         public void CheckRoleAllowed(SysRole role)
         {
-            if (IsAdmin(role.RoleId))
+            if (IsRoleAdmin(role.RoleId))
             {
                 throw new CustomException("不允许操作超级管理员角色");
             }
@@ -189,6 +189,18 @@ namespace ZR.Service
             List<string> roles = SelectUserRoleKeys(userid);
 
             return ((IList)roles).Contains("admin");
+        }
+
+        /// <summary>
+        /// 判断是否是管理员
+        /// </summary>
+        /// <param name="userid"></param>
+        /// <returns></returns>
+        public bool IsRoleAdmin(long roleid)
+        {
+            var roleInfo = GetFirst(x => x.RoleId == roleid);
+
+            return roleInfo.RoleKey == "admin";
         }
 
         /// <summary>

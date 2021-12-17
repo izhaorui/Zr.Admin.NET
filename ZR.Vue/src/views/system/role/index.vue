@@ -439,7 +439,7 @@ export default {
             });
           } else {
             this.form.type = "add";
-            this.form.menuIds = this.getMenuAllCheckedKeys();
+            //this.form.menuIds = this.getMenuAllCheckedKeys();
             addRole(this.form).then((response) => {
               console.log(response);
               this.open = false;
