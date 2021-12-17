@@ -16,23 +16,14 @@ namespace Infrastructure
         [Description("登录错误")]
         LOGIN_ERROR = 105,
 
-        [Description("NO_DATA")]
-        NODATA = 106,
-
         [Description("操作失败")]
         FAIL = 1,
 
         [Description("服务端出错啦")]
         GLOBAL_ERROR = 500,
 
-        [Description("请先绑定手机号")]
-        NOBIND_PHONENUM = 102,
-
         [Description("自定义异常")]
         CUSTOM_ERROR = 110,
-
-        [Description("非法签名")]
-        SIGN_ERROR = 110,
 
         [Description("非法请求")]
         INVALID_REQUEST = 116,
