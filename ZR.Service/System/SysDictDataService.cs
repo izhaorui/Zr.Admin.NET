@@ -55,7 +55,7 @@ namespace ZR.Service.System
             if (CacheHelper.GetCache(CK) is not List<SysDictData> list)
             {
                 list = SysDictDataRepository.SelectDictDataByTypes(dictTypes);
-                CacheHelper.SetCache(CK, list, 30);
+                //CacheHelper.SetCache(CK, list, 30);
             }
             return list;
         }
