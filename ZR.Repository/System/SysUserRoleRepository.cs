@@ -101,6 +101,7 @@ namespace ZR.Repository.System
         public PagedInfo<SysUser> GetExcludedSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
         {
             var query = Context.Queryable<SysUser>()
+                .Where(it => it.DelFlag == "0")
                 .Where(it => SqlFunc.Subqueryable<SysUserRole>()
                 .Where(s => s.UserId == it.UserId).NotAny());
             if (!string.IsNullOrEmpty(roleUserQueryDto.UserName))
