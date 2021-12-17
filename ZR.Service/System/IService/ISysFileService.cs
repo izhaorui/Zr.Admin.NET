@@ -1,10 +1,14 @@
 ﻿using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Http;
+using ZR.Model.Models;
+using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysFileService
+    public interface ISysFileService : IBaseService<SysFile>
     {
+        long InsertFile(SysFile file);
+
         /// <summary>
         /// 上传文件
         /// </summary>

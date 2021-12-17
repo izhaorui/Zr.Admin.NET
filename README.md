@@ -51,8 +51,9 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 10. 在线构建器：拖动表单元素生成相应的VUE代码。
 11. 任务系统：基于Quartz.NET定时任务执行。
 12. 文章管理：可以写文章记录。
-13. 代码生成：可以一键生成前后端代码(.cs、.vue、.js)，自定义配置前端展示控件、让开发更快捷高效。
-
+13. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、SQL文件等)，自定义配置前端展示控件、让开发更快捷高效。
+14. 文件管理：可以上传文件
+15. 通知管理：可以编辑通知
 
 ## 🍻项目结构
 
@@ -124,5 +125,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 <img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/pay.jpg"/>
 
 源码地址
-[Gitee](https://gitee.com/izory/ZrAdminNetCore/)https://gitee.com/izory/ZrAdminNetCore
-[Github](https://github.com/izhaorui/ZrAdmin.NET/)https://github.com/izhaorui/ZrAdmin.NET
+
+- [Gitee](https://gitee.com/izory/ZrAdminNetCore/)
+
+- [Github](https://github.com/izhaorui/ZrAdmin.NET/)
