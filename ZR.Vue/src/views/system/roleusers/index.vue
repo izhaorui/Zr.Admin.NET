@@ -16,7 +16,7 @@
               批量取消授权</el-button>
           </el-form-item>
           <el-form-item style="margin-left:auto">
-            <el-input v-model="roleUserQueryParams.userName" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="getRoleUser" />
+            <el-input v-model="roleUserQueryParams.userName" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="searchRoleUser" />
           </el-form-item>
         </el-form>
         <el-table ref="roleUserTable" v-loading="loadingRoleUser" :data="dataRoleUserTable" row-key="userId" stripe border :height="tableHeight-230">
@@ -47,7 +47,7 @@
     <el-dialog title="添加用户" :visible.sync="open" append-to-body :close-on-click-modal="false" @close="cancel">
       <el-form style="display:flex" :inline="true" @submit.native.prevent>
         <el-form-item style="margin-left:auto">
-          <el-input v-model="userQueryParams.userName" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="handleGetUserTable" />
+          <el-input v-model="userQueryParams.userName" placeholder="请输入用户名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="handleSearchRoleUser" />
         </el-form-item>
       </el-form>
       <el-row>
@@ -135,6 +135,10 @@ export default {
     });
   },
   methods: {
+    searchRoleUser() {
+      this.roleUserQueryParams.pageNum = 1;
+      this.getRoleUser();
+    },
     // 获取角色用户
     getRoleUser() {
       this.loadingRoleUser = true;
@@ -202,6 +206,10 @@ export default {
     handleRoleTableSelection(row) {
       this.roleId = row.roleId;
       this.getRoleUser();
+    },
+    handleSearchRoleUser() {
+      this.userQueryParams.pageNum = 1;
+      this.handleGetUserTable();
     },
     // 获取未添加角色列表
     handleGetUserTable() {
