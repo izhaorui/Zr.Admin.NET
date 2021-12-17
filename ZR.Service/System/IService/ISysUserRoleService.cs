@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
 
@@ -34,7 +35,26 @@ namespace ZR.Service.System.IService
         /// <returns></returns>
         public int AddUserRole(List<SysUserRole> sysUsers);
 
+        /// <summary>
+        /// 获取用户数据根据角色id
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
         public List<SysUser> GetSysUsersByRoleId(long roleId);
+
+        /// <summary>
+        /// 获取用户数据根据角色id
+        /// </summary>
+        /// <param name="roleUserQueryDto"></param>
+        /// <returns></returns>
+        public PagedInfo<SysUser> GetSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto);
+
+        /// <summary>
+        /// 获取尚未指派的用户数据根据角色id
+        /// </summary>
+        /// <param name="roleUserQueryDto"></param>
+        /// <returns></returns>
+        public PagedInfo<SysUser> GetExcludedSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto);
 
         /// <summary>
         /// 新增用户角色信息

@@ -1,7 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Linq;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
@@ -29,13 +28,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 根据角色编号获取已分配的用户
         /// </summary>
-        /// <param name="roleId"></param>
+        /// <param name="roleUserQueryDto"></param>
         /// <returns></returns>
-        [HttpGet("get/{roleId}")]
+        [HttpGet("list")]
         [ActionPermissionFilter(Permission = "system:roleusers:query")]
-        public IActionResult GetList(long roleId = 0)
+        public IActionResult GetList([FromQuery] RoleUserQueryDto roleUserQueryDto)
         {
-            var list = SysUserRoleService.GetSysUsersByRoleId(roleId);
+            var list = SysUserRoleService.GetSysUsersByRoleId(roleUserQueryDto);
 
             return SUCCESS(list, TIME_FORMAT_FULL);
         }
@@ -70,24 +69,19 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 获取未分配用户角色
         /// </summary>
-        /// <param name="roleId"></param>
+        /// <param name="roleUserQueryDto"></param>
         /// <returns></returns>
         [HttpGet("GetExcludeUsers")]
-        public IActionResult GetExcludeUsers(long roleId = 0)
+        public IActionResult GetExcludeUsers([FromQuery] RoleUserQueryDto roleUserQueryDto)
         {
-            if (roleId <= 0)
+            if (roleUserQueryDto.RoleId <= 0)
             {
                 throw new CustomException(ResultCode.PARAM_ERROR, "roleId不能为空");
             }
-            // 取得该角色所有添加的用户
-            var userIds = SysUserRoleService.GetSysUsersByRoleId(roleId).Select(f => f.UserId);
-
-            SysUser userQuery = new();
-            userQuery.Status = "0";
-            PagerInfo pager = new(1, 50);
 
             // 获取未添加用户
-            var list = UserService.SelectUserList(userQuery, pager).Where(m => !userIds.Contains(m.UserId));
+            var list = SysUserRoleService.GetExcludedSysUsersByRoleId(roleUserQueryDto);
+
             return SUCCESS(list, TIME_FORMAT_FULL);
         }
     }
