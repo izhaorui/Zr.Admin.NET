@@ -95,7 +95,7 @@ export default {
         pageSize: 20,
 $foreach(item in genTable.Columns)
 $if(item.IsQuery == true)
-        ${item.columnName}: undefined,
+        ${item.CsharpFieldFl}: undefined,
 $end
 $end
       },
@@ -108,14 +108,14 @@ $end
       columns: [
 $set(index = 0)
 $foreach(column in genTable.Columns)
-        { index: $index, key: '${column.ColumnName}', label: `${column.ColumnComment}`, checked: $if(index < 9) true $else false $end },
+        { index: $index, key: '${column.CsharpFieldFl}', label: `${column.ColumnComment}`, checked: $if(index < 9) true $else false $end },
 $set(index = index + 1)
 $end
       ],
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
       // ${item.ColumnComment}选项列表
-      ${item.ColumnName}Options: [],
+      ${item.CsharpFieldFl}Options: [],
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围
       dateRange${item.CsharpField}: [],
@@ -135,7 +135,7 @@ $end
       rules: {
 $foreach(column in genTable.Columns)
 $if(column.IsRequired)
-        ${column.ColumnName}: [
+        ${column.CsharpFieldFl}: [
           { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
 $if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }
         ],
@@ -152,7 +152,7 @@ $end
     var dictParams = [
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
-      { dictType: "${item.DictType}", columnName: "${item.ColumnName}Options" },
+      { dictType: "${item.DictType}", columnName: "${item.CsharpFieldFl}Options" },
 $set(index = index + 1)
 $end
 $end
@@ -193,10 +193,10 @@ $end
       this.form = {
 $foreach(item in genTable.Columns)
 $if((item.IsEdit || item.IsInsert))
-        $item.ColumnName: undefined,
+        $item.CsharpFieldFl: undefined,
 $end
 $if((item.HtmlType == "checkbox"))
-        ${item.ColumnName}Checked: [],
+        ${item.CsharpFieldFl}Checked: [],
 $end
 $end
       };
@@ -259,7 +259,7 @@ $end
             ...data,
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "checkbox")
-            ${item.ColumnName}Checked: data.${item.columnName} ? data.${item.columnName}.split(',') : [],
+            ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
 $end
 $end
           };
@@ -284,15 +284,15 @@ $if(genTable.SortField != "" && genTable.SortField != null)
 $end
 $if(replaceDto.UploadFile == 1)
     //图片上传成功方法
-    handleUploadSuccess(columnName, filelist) {
-      this.form[columnName] = filelist;
+    handleUploadSuccess(CsharpFieldFl, filelist) {
+      this.form[CsharpFieldFl] = filelist;
     },
 $end
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
     // ${item.ColumnComment}字典翻译
-    ${item.ColumnName}Format(row, column) {
-      return this.selectDictLabel(this.${item.ColumnName}Options, row.${item.ColumnName});
+    ${item.CsharpFieldFl}Format(row, column) {
+      return this.selectDictLabel(this.${item.CsharpFieldFl}Options, row.${item.CsharpFieldFl});
     },
 $end
 $end
@@ -302,7 +302,7 @@ $end
         if (valid) {
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "checkbox")
-          this.form.${item.ColumnName} = this.form.${item.columnName}Checked.toString();
+          this.form.${item.CsharpFieldFl} = this.form.${item.CsharpFieldFl}Checked.toString();
 $end
 $end
           console.log(JSON.stringify(this.form));

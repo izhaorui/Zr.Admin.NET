@@ -20,7 +20,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string TplVueFormContent(GenTableColumn dbFieldInfo)
         {
-            string columnName = dbFieldInfo.ColumnName;
+            string columnName = dbFieldInfo.CsharpFieldFl;
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string labelDisabled = dbFieldInfo.IsPk ? ":disabled=\"true\"" : "";
             StringBuilder sb = new StringBuilder();
@@ -154,7 +154,8 @@ namespace ZR.CodeGenerator
         public static string TplQueryFormHtml(GenTableColumn dbFieldInfo)
         {
             StringBuilder sb = new();
-            string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, dbFieldInfo.ColumnName);
+            string columnName = dbFieldInfo.CsharpFieldFl;
+            string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, dbFieldInfo.CsharpField);
             if (!dbFieldInfo.IsQuery) return sb.ToString();
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
@@ -191,7 +192,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string TplTableColumn(GenTableColumn dbFieldInfo, GenTable genTable)
         {
-            string columnName = dbFieldInfo.ColumnName;
+            string columnName = dbFieldInfo.CsharpFieldFl;
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string showToolTip = dbFieldInfo.CsharpType == "string" ? ":show-overflow-tooltip=\"true\"" : "";
             string formatter = GetFormatter(dbFieldInfo.HtmlType, columnName);
