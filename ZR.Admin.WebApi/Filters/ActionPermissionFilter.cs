@@ -43,7 +43,12 @@ namespace ZR.Admin.WebApi.Filters
             if (info != null && info?.UserId > 0)
             {
                 List<string> perms = info.Permissions;
+                List<string> rolePerms = info.RoleIds;
                 if (perms.Exists(f => f.Equals(GlobalConstant.AdminPerm)))
+                {
+                    HasPermi = true;
+                }
+                else if (rolePerms.Exists(f => f.Equals(GlobalConstant.AdminRole)))
                 {
                     HasPermi = true;
                 }
@@ -55,7 +60,7 @@ namespace ZR.Admin.WebApi.Filters
                 bool isDemoMode = ConfigUtils.Instance.GetAppConfig("DemoMode", false);
 
                 //演示公开环境屏蔽权限
-                string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send" ,"export", "upload", "common"};
+                string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send", "export", "upload", "common" };
                 if (isDemoMode && denyPerms.Any(f => Permission.ToLower().Contains(f)))
                 {
                     context.Result = new JsonResult(new { code = ResultCode.FORBIDDEN, msg = "演示模式 , 不允许操作" });

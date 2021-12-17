@@ -13,5 +13,9 @@ namespace Infrastructure
         /// 管理员权限
         /// </summary>
         public static string AdminPerm = "*:*:*";
+        /// <summary>
+        /// 管理员角色
+        /// </summary>
+        public static string AdminRole = "admin";
     }
 }
