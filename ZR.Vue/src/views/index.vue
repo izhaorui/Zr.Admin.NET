@@ -27,7 +27,7 @@
       </el-col>
     </el-row>
     <el-row :gutter="20">
-      <el-col :span="14">
+      <el-col :span="16">
         <el-card>
           <div slot="header" class="clearfix">
             <span>框架介绍</span>
@@ -50,7 +50,7 @@
           </el-row>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card>
           <div slot="header" class="clearfix">
             <span>技术选型</span>
@@ -82,7 +82,9 @@
           </el-col>
         </el-card>
       </el-col>
-      <el-col :span="4">
+    </el-row>
+    <el-row :gutter="20" class="mt10">
+      <el-col :span="8">
         <el-card>
           <div slot="header" class="clearfix">
             <span>联系信息</span>
@@ -92,14 +94,13 @@
           </div>
         </el-card>
       </el-col>
-    </el-row>
-    <el-row :gutter="20">
-      <el-col :span="14">
+      <el-col :span="8">
         <el-card>
           <div slot="header" class="clearfix">
             <span>捐赠支持</span>
           </div>
           <div class="body">
+						<div style="color:red">打赏作者喝杯咖啡</div>
             <img src="@/assets/image/reward.jpg" alt="donate" width="80%" />
           </div>
         </el-card>
