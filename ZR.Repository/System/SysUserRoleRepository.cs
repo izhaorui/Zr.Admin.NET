@@ -102,7 +102,7 @@ namespace ZR.Repository.System
         {
             var query = Context.Queryable<SysUser>()
                 .Where(it => SqlFunc.Subqueryable<SysUserRole>()
-                .Where(s => s.UserId == it.UserId).NotAny());
+                .Where(s => s.UserId == it.UserId && s.RoleId == roleUserQueryDto.RoleId).NotAny());
             if (!string.IsNullOrEmpty(roleUserQueryDto.UserName))
             {
                 query = query.Where(x => x.UserName.Contains(roleUserQueryDto.UserName));
