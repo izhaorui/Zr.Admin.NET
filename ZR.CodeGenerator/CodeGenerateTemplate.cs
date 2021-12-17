@@ -20,7 +20,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string TplVueFormContent(GenTableColumn dbFieldInfo)
         {
-            string columnName = FirstLowerCase(dbFieldInfo.CsharpField);
+            string columnName = dbFieldInfo.CsharpFieldFl;
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string labelDisabled = dbFieldInfo.IsPk ? ":disabled=\"true\"" : "";
             StringBuilder sb = new StringBuilder();
@@ -154,7 +154,7 @@ namespace ZR.CodeGenerator
         public static string TplQueryFormHtml(GenTableColumn dbFieldInfo)
         {
             StringBuilder sb = new();
-            string columnName = dbFieldInfo.CsharpField;
+            string columnName = dbFieldInfo.CsharpFieldFl;
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, dbFieldInfo.CsharpField);
             if (!dbFieldInfo.IsQuery) return sb.ToString();
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
@@ -192,7 +192,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string TplTableColumn(GenTableColumn dbFieldInfo, GenTable genTable)
         {
-            string columnName = FirstLowerCase(dbFieldInfo.CsharpField);
+            string columnName = dbFieldInfo.CsharpFieldFl;
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string showToolTip = dbFieldInfo.CsharpType == "string" ? ":show-overflow-tooltip=\"true\"" : "";
             string formatter = GetFormatter(dbFieldInfo.HtmlType, columnName);
@@ -286,16 +286,6 @@ namespace ZR.CodeGenerator
                 return $" :formatter=\"{columnName}Format\"";
             }
             return "";
-        }
-
-        /// <summary>
-        /// 首字母转小写，输出前端
-        /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
-        public static string FirstLowerCase(string str)
-        {
-            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToLower() + str[1..];
         }
     }
 }

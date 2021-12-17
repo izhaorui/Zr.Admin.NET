@@ -62,6 +62,7 @@ namespace ZR.CodeGenerator
                 {
                     replaceDto.UploadFile = 1;
                 }
+                dbFieldInfo.CsharpFieldFl = FirstLowerCase(dbFieldInfo.CsharpField);
                 //CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
 
                 replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo);

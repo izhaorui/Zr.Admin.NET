@@ -95,6 +95,11 @@ namespace ZR.Model.System.Generate
             }
         }
         /// <summary>
+        /// C# 字段名 首字母小写，用于前端
+        /// </summary>
+        [SugarColumn(IsIgnore = true)]
+        public string CsharpFieldFl { get; set; }
+        /// <summary>
         /// 字典集合
         /// </summary>
         //[SqlSugar.SugarColumn(IsIgnore = true)]
