@@ -28,10 +28,10 @@
           <span>{{(queryParams.pageNum - 1) * queryParams.pageSize + scope.$index + 1}}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="dbName" label="数据库名" width="100" />
-      <el-table-column prop="tableId" label="表id" width="80" />
-      <el-table-column prop="tableName" label="表名" sortable="custom" width="110" :show-overflow-tooltip="true" />
-      <el-table-column prop="tableComment" label="表描述" :show-overflow-tooltip="true" />
+      <el-table-column prop="dbName" label="数据库名" width="90" />
+      <el-table-column prop="tableId" label="表id" width="70" sortable="" />
+      <el-table-column prop="tableName" label="表名" width="110" :show-overflow-tooltip="true" />
+      <el-table-column prop="tableComment" label="表描述" :show-overflow-tooltip="true" width="120" />
       <el-table-column prop="className" label="实体" :show-overflow-tooltip="true" />
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column prop="updateTime" label="更新时间" />
@@ -97,7 +97,7 @@ import {
   listTable,
   delTable,
   previewTable,
-	synchDb
+  synchDb,
 } from "@/api/tool/gen";
 import importTable from "./importTable";
 import { Loading } from "element-ui";
