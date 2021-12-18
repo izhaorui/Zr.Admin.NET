@@ -57,12 +57,12 @@
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open">
       <el-form ref="form" :model="form" :rules="rules" label-width="135px">
         <el-row>
-          <!-- <el-col :span="12">
+          <!-- <el-col :lg="12">
             <el-form-item label="自定文件名" prop="fileName">
               <el-input v-model="form.fileName" placeholder="请输入文件名" />
             </el-form-item>
           </el-col> -->
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="存储类型" prop="storeType">
               <el-select v-model="form.storeType" placeholder="请选择存储类型" @change="handleSelectStore">
                 <el-option v-for="item in storeTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="parseInt(item.dictValue)">
@@ -70,7 +70,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="存储文件夹前缀" prop="storePath">
               <span slot="label">
                 <el-tooltip content="比如存储到'/uploads' '如果不填写默认按时间存储eg：/2021/12/16(固定段)'" placement="top">
@@ -81,7 +81,7 @@
               <el-input v-model="form.storePath" placeholder="请输入" />
             </el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item label="上传文件" prop="accessUrl">
               <UploadFile v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="fileType" :data="{ 'fileDir' :  form.storePath}"
                 column="accessUrl" @input="handleUploadSuccess" />

@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-row :gutter="20">
       <!--部门数据-->
-      <el-col :span="4">
+      <el-col :lg="4" :sm="24">
         <div class="head-container">
           <el-input v-model="deptName" placeholder="请输入部门名称" clearable size="small" prefix-icon="el-icon-search" style="margin-bottom: 20px" />
         </div>
@@ -12,7 +12,7 @@
         </div>
       </el-col>
       <!--用户数据-->
-      <el-col :span="20">
+      <el-col :lg="20" :sm="24">
         <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
           <el-form-item label="用户名称" prop="userName">
             <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable size="small" style="width: 240px"
@@ -101,12 +101,12 @@
     <el-dialog :title="title" :visible.sync="open" width="600px">
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row v-if="form.userId == undefined">
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="用户名" prop="userName">
               <el-input :disabled="form.userId != undefined" v-model="form.userName" placeholder="请输入用户名(用于登陆)" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="用户密码" prop="password">
               <el-input :disabled="form.userId != undefined" v-model="form.password" placeholder="请输入用户密码" type="password" />
             </el-form-item>
@@ -114,38 +114,38 @@
         </el-row>
 
         <el-row>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="用户昵称" prop="nickName">
               <el-input v-model="form.nickName" placeholder="请输入用户昵称" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="归属部门" prop="deptId">
               <treeselect v-model="form.deptId" :options="deptOptions" :show-count="true" placeholder="请选择归属部门" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="手机号码" prop="phonenumber">
               <el-input v-model="form.phonenumber" placeholder="请输入手机号码" maxlength="11" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="电子邮箱">
               <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="用户性别">
               <el-select v-model="form.sex" placeholder="请选择">
                 <el-option v-for="dict in sexOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="用户状态">
               <el-radio-group v-model="form.status">
                 <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictValue">{{ dict.dictLabel }}</el-radio>
@@ -154,7 +154,7 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="岗位">
               <el-select v-model="form.postIds" multiple placeholder="请选择">
                 <el-option v-for="item in postOptions" :key="item.postId" :label="item.postName" :value="item.postId" :disabled="item.status == 1">
@@ -162,7 +162,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="角色">
               <el-select v-model="form.roleIds" multiple placeholder="请选择" @change="selectRole($event)">
                 <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName" :value="item.roleId" :disabled="item.status == 1">
@@ -172,7 +172,7 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item label="备注">
               <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
             </el-form-item>

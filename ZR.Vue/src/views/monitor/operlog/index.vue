@@ -79,38 +79,38 @@
     <el-dialog title="操作日志详细" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" label-width="100px" size="mini">
         <el-row>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="操作模块：">{{ form.title }} </el-form-item>
             <el-form-item label="登录信息：">{{ form.operName }} / {{ form.operIp }} / {{ form.operLocation }}</el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="请求地址：">{{ form.operUrl }}</el-form-item>
             <el-form-item label="请求方式：">{{ form.requestMethod }}</el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="操作方法：">{{ form.method }}</el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="操作类型：">{{ typeFormat(form) }}</el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item label="请求参数：">{{ form.operParam }}</el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item label="返回结果：">
               {{ form.jsonResult }}
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="操作状态：">
               <div v-if="form.status === 0">正常</div>
               <div v-else-if="form.status === 1">失败</div>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="操作时间：">{{ parseTime(form.operTime) }}</el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item label="异常信息：" v-if="form.status === 1">{{ form.errorMsg }}</el-form-item>
           </el-col>
         </el-row>

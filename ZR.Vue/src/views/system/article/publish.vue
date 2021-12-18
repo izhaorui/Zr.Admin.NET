@@ -3,17 +3,17 @@
     <el-row :gutter="24">
       <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
       <el-form :model="form" label-position="right" ref="form" size="mini" label-width="100px" :rules="rules" @submit.native.prevent>
-        <el-col :span="12">
+        <el-col :lg="12">
           <el-form-item label="文章标题" prop="title">
             <el-input v-model="form.title" placeholder="请输入文章标题（必须）" />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
+        <el-col :lg="12">
           <el-form-item label="文章分类" prop="category_id">
             <treeselect v-model="form.category_id" :options="categoryOptions" :normalizer="normalizer" :show-count="true" />
           </el-form-item>
         </el-col>
-        <el-col :span="24">
+        <el-col :lg="24">
           <el-form-item label="文章标签">
             <el-tag size="large" :key="tag" v-for="tag in form.dynamicTags" closable :disable-transitions="false" @close="handleCloseTag(tag)">
               {{tag}}
@@ -23,12 +23,12 @@
             <el-button v-else class="button-new-tag" size="small" @click="showInput">+ 文章标签</el-button>
           </el-form-item>
         </el-col>
-        <el-col :span="24">
+        <el-col :lg="24">
           <el-form-item prop="content" label="文章内容">
             <mavon-editor v-model="form.content" ref="md" @imgAdd="$imgAdd" @change="change" style="min-height: 400px;width:100%" />
           </el-form-item>
         </el-col>
-        <el-col :span="24">
+        <el-col :lg="24">
           <el-form-item label="" style="text-align:right;">
             <el-button type="cyan" size="mini" @click="handlePublish('1')">发布文章</el-button>
             <el-button type="success" size="mini" @click="handlePublish('2')">存为草稿</el-button>

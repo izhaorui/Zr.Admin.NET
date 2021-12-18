@@ -71,12 +71,12 @@
     <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item label="上级菜单">
               <treeselect v-model="form.parentId" :options="menuOptions" :normalizer="normalizer" :show-count="true" @select="handleTreeSelect" placeholder="选择上级菜单" />
             </el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item label="菜单类型" prop="menuType">
               <el-radio-group size="mini" v-model="form.menuType">
                 <el-radio-button label="M">目录</el-radio-button>
@@ -85,17 +85,17 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="菜单名称" prop="menuName">
               <el-input v-model="form.menuName" placeholder="请输入菜单名称" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="显示排序" prop="orderNum">
               <el-input-number v-model="form.orderNum" controls-position="right" :min="0" :value="999" />
             </el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item v-if="form.menuType != 'F'" label="菜单图标">
               <el-popover placement="bottom-start" width="460" trigger="click" @show="$refs['iconSelect'].reset()">
                 <IconSelect ref="iconSelect" @selected="selected" />
@@ -106,7 +106,7 @@
               </el-popover>
             </el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item v-if="form.menuType != 'F'" label="路由地址" prop="path">
               <span slot="label">
                 <el-tooltip content="访问的路由地址，如：`user`，如外网地址需内链访问则以`http(s)://`开头" placement="top">
@@ -117,7 +117,7 @@
               <el-input v-model="form.path" placeholder="请输入路由地址" />
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="form.menuType == 'C'">
+          <el-col :lg="12" v-if="form.menuType == 'C'">
             <el-form-item label="组件路径" prop="component">
               <span slot="label">
                 <el-tooltip content="访问的组件路径，如：`system/user/index`，默认在`views`目录下" placement="top">
@@ -128,7 +128,7 @@
               <el-input v-model="form.component" placeholder="请输入组件路径" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item v-if="form.menuType != 'M'" label="权限标识">
               <span slot="label">
                 <el-tooltip content="控制器中定义的权限字符，如：[ActionPermissionFilter(Permission = 'system:user:delete')])" placement="top">
@@ -139,7 +139,7 @@
               <el-input v-model="form.perms" placeholder="权限名，规范([分类]:[页面]:[动作])" maxlength="50" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item v-if="form.menuType != 'F'" label="显示状态">
               <span slot="label">
                 <el-tooltip content="选择隐藏则路由将不会出现在侧边栏也不可以访问" placement="top">
@@ -152,7 +152,7 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item v-if="form.menuType != 'F'" label="是否外链">
               <span slot="label">
                 <el-tooltip content="选择是外链则路由地址需要以`http(s)://`开头" placement="top">
@@ -166,7 +166,7 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item v-if="form.menuType != 'F'">
               <span slot="label">
                 <el-tooltip content="选择停用则路由将不会出现在侧边栏，也不能被访问" placement="top">
@@ -179,7 +179,7 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item v-if="form.menuType == 'C'" label="是否缓存">
               <span slot="label">
                 <el-tooltip content="选择是则会被`keep-alive`缓存，需要匹配组件的`name`和地址保持一致" placement="top">

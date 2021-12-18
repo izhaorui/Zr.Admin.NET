@@ -37,7 +37,7 @@ namespace ZR.CodeGenerator
             if (dbFieldInfo.HtmlType == GenConstants.HTML_INPUT_NUMBER)
             {
                 //数字框
-                sb.AppendLine("    <el-col :span=\"12\">");
+                sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-input-number v-model.number=\"form.{columnName}\" placeholder=\"请输入{labelName}\" {labelDisabled}/>");
                 sb.AppendLine("      </el-form-item>");
@@ -46,7 +46,7 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 //时间
-                sb.AppendLine("      <el-col :span=\"12\">");
+                sb.AppendLine("      <el-col :lg=\"12\">");
                 sb.AppendLine($"        <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"           <el-date-picker v-model=\"form.{columnName}\" format=\"yyyy-MM-dd HH:mm:ss\" value-format=\"yyyy-MM-dd HH:mm:ss\"  type=\"datetime\"  placeholder=\"选择日期时间\"> </el-date-picker>");
                 sb.AppendLine("         </el-form-item>");
@@ -55,7 +55,7 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_IMAGE_UPLOAD)
             {
                 //图片
-                sb.AppendLine("    <el-col :span=\"24\">");
+                sb.AppendLine("    <el-col :lg=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($@"        <UploadImage v-model=""form.{columnName}"" column=""{columnName}"" @input=""handleUploadSuccess"" />");
                 sb.AppendLine("      </el-form-item>");
@@ -64,7 +64,7 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_FILE_UPLOAD)
             {
                 //文件
-                sb.AppendLine("    <el-col :span=\"24\">");
+                sb.AppendLine("    <el-col :lg=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($@"        <UploadFile v-model=""form.{columnName}"" column=""{columnName}"" @input=""handleUploadSuccess"" />");
                 sb.AppendLine("      </el-form-item>");
@@ -73,7 +73,7 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_RADIO)
             {
                 //单选按钮
-                sb.AppendLine("    <el-col :span=\"12\">");
+                sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-radio-group v-model=\"form.{columnName}\">");
                 if (string.IsNullOrEmpty(dbFieldInfo.DictType))
@@ -88,7 +88,7 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_TEXTAREA)
             {
                 //文本域
-                sb.AppendLine("    <el-col :span=\"24\">");
+                sb.AppendLine("    <el-col :lg=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-input type=\"textarea\" v-model=\"form.{columnName}\" placeholder=\"请输入{labelName}\"/>");
                 sb.AppendLine("      </el-form-item>");
@@ -97,7 +97,7 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_EDITOR)
             {
                 //编辑器
-                sb.AppendLine("    <el-col :span=\"24\">");
+                sb.AppendLine("    <el-col :lg=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <editor v-model=\"form.{columnName}\" :min-height=\"200\" />");
                 sb.AppendLine("      </el-form-item>");
@@ -106,7 +106,7 @@ namespace ZR.CodeGenerator
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT)
             {
                 //下拉框
-                sb.AppendLine("    <el-col :span=\"12\">");
+                sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-select v-model=\"form.{columnName}\" placeholder=\"请选择{labelName}\"> ");
                 if (string.IsNullOrEmpty(dbFieldInfo.DictType))
@@ -121,7 +121,7 @@ namespace ZR.CodeGenerator
             else if( dbFieldInfo.HtmlType == GenConstants.HTML_CHECKBOX)
             {
                 //多选框
-                sb.AppendLine("    <el-col :span=\"12\">");
+                sb.AppendLine("    <el-col :lg=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-checkbox-group v-model=\"form.{columnName}Checked\"> ");
                 if (string.IsNullOrEmpty(dbFieldInfo.DictType))
@@ -136,7 +136,7 @@ namespace ZR.CodeGenerator
             else
             {
                 string inputNumTxt = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";
-                sb.AppendLine("    <el-col :span=\"12\">");
+                sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"form.{columnName}\" placeholder=\"请输入{labelName}\" {labelDisabled}/>");
                 sb.AppendLine("      </el-form-item>");
