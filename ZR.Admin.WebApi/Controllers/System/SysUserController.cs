@@ -56,7 +56,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var list = UserService.SelectUserList(user, pager);
 
-            return SUCCESS(list.ToPage(pager), TIME_FORMAT_FULL);
+            return SUCCESS(list, TIME_FORMAT_FULL);
         }
 
         /// <summary>
@@ -218,7 +218,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             var list = UserService.SelectUserList(user, new PagerInfo(1, 10000));
 
             //调试模式需要加上
-            string sFileName = ExportExcel(list, "user", "用户列表");
+            string sFileName = ExportExcel(list.Result, "user", "用户列表");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
     }

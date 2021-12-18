@@ -69,8 +69,15 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult FindListTable(string dbName, string tableName, PagerInfo pager)
         {
             List<DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
-
-            return SUCCESS(list.ToPage(pager));
+            var page = new PagedInfo<DbTableInfo>
+            {
+                TotalPage = pager.TotalPage,
+                TotalNum = pager.TotalNum,
+                PageSize = pager.PageSize,
+                PageIndex = pager.PageNum,
+                Result = list
+            };
+            return SUCCESS(page);
         }
 
         /// <summary>

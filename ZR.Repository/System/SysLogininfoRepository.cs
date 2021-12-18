@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
+using SqlSugar;
 
 namespace ZR.Repository.System
 {
@@ -16,19 +17,19 @@ namespace ZR.Repository.System
         /// <param name="logininfoDto"></param>
         /// <param name="pager"></param>
         /// <returns></returns>
-        public List<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager)
+        public PagedInfo<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager)
         {
-            int totalCount = 0;
-            var list = Context.Queryable<SysLogininfor>()
-                .Where(it => it.loginTime >= logininfoDto.BeginTime && it.loginTime <= logininfoDto.EndTime)
-                .WhereIF(logininfoDto.ipaddr.IfNotEmpty(), f => f.ipaddr == logininfoDto.ipaddr)
-                .WhereIF(logininfoDto.userName.IfNotEmpty(), f => f.userName.Contains(logininfoDto.userName))
-                .WhereIF(logininfoDto.status.IfNotEmpty(), f => f.status == logininfoDto.status)
-                .OrderBy(it => it.infoId, SqlSugar.OrderByType.Desc)
-                .IgnoreColumns(it => new { it.Create_by, it.Create_time, it.Update_by, it.Update_time, it.Remark })
-                .ToPageList(pager.PageNum, pager.PageSize, ref totalCount);
-            pager.TotalNum = totalCount;
-            return list;
+            var exp = Expressionable.Create<SysLogininfor>();
+            exp.And(it => it.loginTime >= logininfoDto.BeginTime && it.loginTime <= logininfoDto.EndTime);
+            exp.AndIF(logininfoDto.ipaddr.IfNotEmpty(), f => f.ipaddr == logininfoDto.ipaddr);
+            exp.AndIF(logininfoDto.userName.IfNotEmpty(), f => f.userName.Contains(logininfoDto.userName));
+            exp.AndIF(logininfoDto.status.IfNotEmpty(), f => f.status == logininfoDto.status);
+            var query = Context.Queryable<SysLogininfor>()
+                .Where(exp.ToExpression())
+                .OrderBy(it => it.infoId, OrderByType.Desc)
+                .IgnoreColumns(it => new { it.Create_by, it.Create_time, it.Update_by, it.Update_time, it.Remark });
+
+            return query.ToPage(pager);
         }
 
         /// <summary>

@@ -37,7 +37,7 @@ namespace ZR.Service
         /// 根据条件分页查询用户列表
         /// </summary>
         /// <returns></returns>
-        public List<SysUser> SelectUserList(SysUser user, PagerInfo pager)
+        public PagedInfo<SysUser> SelectUserList(SysUser user, PagerInfo pager)
         {
             var list = UserRepository.SelectUserList(user, pager);
 

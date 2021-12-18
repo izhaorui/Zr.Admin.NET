@@ -10,7 +10,7 @@ namespace ZR.Service.System.IService
 {
     public interface ISysUserService : IBaseService<SysUser>
     {
-        public List<SysUser> SelectUserList(SysUser user, PagerInfo pager);
+        public PagedInfo<SysUser> SelectUserList(SysUser user, PagerInfo pager);
 
         /// <summary>
         /// 通过用户ID查询用户

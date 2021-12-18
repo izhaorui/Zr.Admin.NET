@@ -17,7 +17,7 @@ namespace ZR.Service.System.IService
         /// <param name="logininfoDto"></param>
         /// <param name="pager">分页</param>
         /// <returns></returns>
-        public List<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager);
+        public PagedInfo<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager);
 
         /// <summary>
         /// 记录登录日志

@@ -379,14 +379,17 @@ namespace ZR.Repository
         }
     }
 
+    /// <summary>
+    /// 分页查询扩展
+    /// </summary>
     public static class QueryableExtension
     {
         /// <summary>
         /// 读取列表
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="source"></param>
-        /// <param name="parm"></param>
+        /// <param name="source">查询表单式</param>
+        /// <param name="parm">分页参数</param>
         /// <returns></returns>
         public static PagedInfo<T> ToPage<T>(this ISugarQueryable<T> source, PagerInfo parm)
         {

@@ -96,7 +96,7 @@ namespace ZR.Service.System
             var predicate = Expressionable.Create<GenTable>();
             predicate = predicate.AndIF(genTable.TableName.IfNotEmpty(), it => it.TableName.Contains(genTable.TableName));
 
-            return GenTableRepository.GetPages(predicate.ToExpression(), pagerInfo);
+            return GenTableRepository.GetPages(predicate.ToExpression(), pagerInfo, x => x.TableId, OrderByType.Desc);
         }
 
         /// <summary>
