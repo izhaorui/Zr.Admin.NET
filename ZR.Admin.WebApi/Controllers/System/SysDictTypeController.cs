@@ -3,6 +3,7 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
@@ -89,7 +90,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ApiResult.Error($"修改字典'{dict.DictName}'失败，字典类型已存在"));
             }
             //设置添加人
-            dict.Update_by = HttpContext.User.Identity.Name;
+            dict.Update_by = HttpContext.GetName();
             return SUCCESS(SysDictService.UpdateDictType(dict));
         }
 
