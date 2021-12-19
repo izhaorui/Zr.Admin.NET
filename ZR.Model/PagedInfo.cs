@@ -52,15 +52,5 @@ namespace ZR.Model
         public PagedInfo()
         { 
         }
-
-
-        public PagedInfo(List<T> source, int pageIndex, int pageSize)
-        {
-            PageIndex = pageIndex;
-            PageSize = pageSize;
-            TotalNum = source.Count;
-            TotalPage = (int)Math.Ceiling(TotalNum / (double)PageSize);//计算总页数
-        }
-
     }
 }
