@@ -33,7 +33,7 @@
           </el-table-column>
           <el-table-column label="插入" min-width="5%">
             <template slot-scope="scope">
-              <el-checkbox v-model="scope.row.isInsert" :disabled="scope.row.isPk || scope.row.isIncrement"></el-checkbox>
+              <el-checkbox v-model="scope.row.isInsert" :disabled="scope.row.isIncrement"></el-checkbox>
             </template>
           </el-table-column>
           <el-table-column label="编辑" min-width="5%">

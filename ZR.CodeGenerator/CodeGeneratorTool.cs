@@ -275,7 +275,7 @@ namespace ZR.CodeGenerator
         }
 
         /// <summary>
-        /// 首字母转大写，输出前端
+        /// 首字母转大写
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
@@ -367,6 +367,12 @@ namespace ZR.CodeGenerator
             return genTableColumns;
         }
 
+        /// <summary>
+        /// 初始化表字段数据
+        /// </summary>
+        /// <param name="genTable"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
         private static GenTableColumn InitColumnField(GenTable genTable, DbColumnInfo column)
         {
             GenTableColumn genTableColumn = new()
@@ -378,7 +384,7 @@ namespace ZR.CodeGenerator
                 TableId = genTable.TableId,
                 TableName = genTable.TableName,
                 CsharpType = GetCSharpDatatype(column.DataType),
-                CsharpField = column.DbColumnName.Substring(0, 1).ToUpper() + column.DbColumnName[1..],
+                CsharpField = FirstUpperCase(column.DbColumnName),//TODO 优化下划线处理
                 IsRequired = !column.IsNullable,
                 IsIncrement = column.IsIdentity,
                 Create_by = genTable.Create_by,

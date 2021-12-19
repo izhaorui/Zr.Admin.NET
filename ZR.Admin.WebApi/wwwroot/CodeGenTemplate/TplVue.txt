@@ -134,7 +134,7 @@ $end
       // 表单校验
       rules: {
 $foreach(column in genTable.Columns)
-$if(column.IsRequired)
+$if(column.IsRequired && column.IsIncrement == false)
         ${column.CsharpFieldFl}: [
           { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
 $if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }
@@ -284,8 +284,8 @@ $if(genTable.SortField != "" && genTable.SortField != null)
 $end
 $if(replaceDto.UploadFile == 1)
     //图片上传成功方法
-    handleUploadSuccess(CsharpFieldFl, filelist) {
-      this.form[CsharpFieldFl] = filelist;
+    handleUploadSuccess(column, filelist) {
+      this.form[column] = filelist;
     },
 $end
 $foreach(item in genTable.Columns)

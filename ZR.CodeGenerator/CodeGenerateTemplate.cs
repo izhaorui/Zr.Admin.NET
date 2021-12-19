@@ -30,8 +30,27 @@ namespace ZR.CodeGenerator
             {
                 return sb.ToString();
             }
-            if (!dbFieldInfo.IsInsert && !dbFieldInfo.IsEdit && !dbFieldInfo.IsPk)
+            if (!dbFieldInfo.IsInsert && !dbFieldInfo.IsEdit && !dbFieldInfo.IsPk && !dbFieldInfo.IsIncrement)
             {
+                return sb.ToString();
+            }
+            //主键、非自增要插入，不能编辑
+            if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
+            {
+                sb.AppendLine("    <el-col :lg=\"12\">");
+                sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
+                //主键非自增 显示input
+                if (dbFieldInfo.IsPk && !dbFieldInfo.IsIncrement)
+                {
+                    sb.AppendLine($"        <el-input-number v-model.number=\"form.{columnName}\" placeholder=\"请输入{labelName}\" :disabled=\"title=='修改数据'\"/>");
+                }
+                else if (dbFieldInfo.IsIncrement)  //只有是 自增 就显示label
+                {
+                    sb.AppendLine($"        <span v-html=\"form.{columnName}\"/>");
+                }
+
+                sb.AppendLine("      </el-form-item>");
+                sb.AppendLine("    </el-col>");
                 return sb.ToString();
             }
             if (dbFieldInfo.HtmlType == GenConstants.HTML_INPUT_NUMBER)
@@ -118,7 +137,7 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
             }
-            else if( dbFieldInfo.HtmlType == GenConstants.HTML_CHECKBOX)
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_CHECKBOX)
             {
                 //多选框
                 sb.AppendLine("    <el-col :lg=\"24\">");
@@ -173,7 +192,7 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("        </el-select>");
                 sb.AppendLine("      </el-form-item>");
             }
-            else if(dbFieldInfo.IsQuery)
+            else if (dbFieldInfo.IsQuery)
             {
                 string inputNumTxt = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";
                 sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{dbFieldInfo.ColumnName}\">");
@@ -279,8 +298,8 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string GetFormatter(string htmlType, string columnName)
         {
-            if (htmlType.Equals(GenConstants.HTML_CHECKBOX) || 
-                htmlType.Equals(GenConstants.HTML_SELECT) || 
+            if (htmlType.Equals(GenConstants.HTML_CHECKBOX) ||
+                htmlType.Equals(GenConstants.HTML_SELECT) ||
                 htmlType.Equals(GenConstants.HTML_RADIO))
             {
                 return $" :formatter=\"{columnName}Format\"";
