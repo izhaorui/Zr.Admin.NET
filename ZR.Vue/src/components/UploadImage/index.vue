@@ -2,9 +2,10 @@
   <div class="component-upload-image">
     <el-upload list-type="picture-card" :action="uploadImgUrl" :on-success="handleUploadSuccess" :before-upload="handleBeforeUpload"
       :on-exceed="handleExceed" :on-remove="handleRemove" :on-error="handleUploadError" name="file" :show-file-list="true" :limit="limit"
-      :file-list="fileList" :on-preview="handlePictureCardPreview" :class="{hide: this.fileList.length >= this.limit}" :headers="headers">
+      :file-list="fileList" :on-preview="handlePictureCardPreview" :on-progress="uploadProcess" :class="{hide: this.fileList.length >= this.limit}"
+      :headers="headers">
       <i class="el-icon-plus"></i>
-
+      <el-progress v-if="showProgress == true" type="circle" :percentage="uploadPercent" style="margin-top:10px;"></el-progress>
       <!-- 上传提示 -->
       <div class="el-upload__tip" slot="tip" v-if="showTip">
         请上传
@@ -34,7 +35,7 @@ export default {
     // 上传地址
     uploadUrl: {
       type: String,
-      default: "/Common/UploadFile",
+      default: process.env.VUE_APP_UPLOAD_URL ?? "/Common/UploadFile",
     },
     // 文件类型, 例如['png', 'jpg', 'jpeg']
     fileType: {
@@ -59,6 +60,8 @@ export default {
       dialogImageUrl: "",
       dialogVisible: false,
       hideUpload: false,
+      showProgress: false,
+      uploadPercent: 0,
       uploadImgUrl: process.env.VUE_APP_BASE_API + this.uploadUrl, // 上传的图片服务器地址
       headers: {
         Authorization: "Bearer " + getToken(),
@@ -112,7 +115,9 @@ export default {
     //上传成功回调
     handleUploadSuccess(res) {
       console.log(res);
-      this.loading.close();
+      this.showProgress = false;
+      this.uploadPercent = 0;
+
       if (res.code != 200) {
         this.msgError(`上传失败，原因:${res.msg}!`);
         return;
@@ -150,11 +155,7 @@ export default {
           return false;
         }
       }
-      this.loading = this.$loading({
-        lock: true,
-        text: "上传中",
-        background: "rgba(0, 0, 0, 0.7)",
-      });
+      this.showProgress = true;
     },
     // 文件个数超出
     handleExceed() {
@@ -179,7 +180,14 @@ export default {
         type: "error",
         message: "上传失败",
       });
-      this.loading.close();
+      this.showProgress = false;
+      this.uploadPercent = 0;
+    },
+    // 上传进度
+    uploadProcess(event, file, fileList) {
+      this.showProgress = true;
+      this.videoUploadPercent = file.percentage.toFixed(0);
+      console.log("上传进度" + file.percentage);
     },
   },
 };

@@ -1,8 +1,8 @@
 <template>
   <div class="upload-file">
     <el-upload :action="uploadFileUrl" :before-upload="handleBeforeUpload" :file-list="fileList" :limit="limit" :on-error="handleUploadError"
-      :on-exceed="handleExceed" :on-success="handleUploadSuccess" :show-file-list="false" :data="data" :headers="headers" class="upload-file-uploader"
-      ref="upload">
+      :on-exceed="handleExceed" :on-success="handleUploadSuccess" :on-progress="uploadProcess" :show-file-list="false" :data="data" :headers="headers"
+      class="upload-file-uploader" ref="upload">
       <!-- 上传按钮 -->
       <el-button size="mini" type="primary" icon="el-icon-upload">选取文件</el-button>
       <!-- 上传提示 -->
@@ -12,6 +12,7 @@
         <template v-if="fileType"> 格式为 <b style="color: #f56c6c">{{ fileType.join("/") }}</b> </template>
         的文件
       </div>
+      <el-progress v-show="showProgress == true" :percentage="uploadPercent" style="margin-top:10px;"></el-progress>
     </el-upload>
 
     <!-- 文件列表 -->
@@ -59,17 +60,19 @@ export default {
     // 上传地址
     uploadUrl: {
       type: String,
-      default: "/Common/UploadFile",
+      default: process.env.VUE_APP_UPLOAD_URL ?? "/Common/UploadFile",
     },
-		// form 列名
+    // form 列名
     column: [String],
-		// 上传携带的参数
-		data: {
-			type: Object
-		}
+    // 上传携带的参数
+    data: {
+      type: Object,
+    },
   },
   data() {
     return {
+      showProgress: false,
+      uploadPercent: 0,
       baseUrl: process.env.VUE_APP_BASE_API,
       uploadFileUrl: process.env.VUE_APP_BASE_API + this.uploadUrl, // 上传的图片服务器地址
       headers: {
@@ -137,6 +140,7 @@ export default {
           return false;
         }
       }
+      this.showProgress = true;
       return true;
     },
     // 文件个数超出
@@ -146,17 +150,29 @@ export default {
     // 上传失败
     handleUploadError(err) {
       this.msgError("上传失败, 请重试");
+      this.fileList = [];
+      this.showProgress = false;
+      this.uploadPercent = 0;
     },
     // 上传成功回调
     handleUploadSuccess(res, file) {
+      this.showProgress = false;
+      this.uploadPercent = 0;
+
       if (res.code != 200) {
-				this.fileList = [];
+        this.fileList = [];
         this.msgError(`上传失败，原因:${res.msg}!`);
         return;
       }
       this.msgSuccess("上传成功");
       this.fileList.push({ name: res.data.fileName, url: res.data.url });
       this.$emit("input", this.column, this.listToString(this.fileList));
+    },
+    // 上传进度
+    uploadProcess(event, file, fileList) {
+      this.showProgress = true;
+      this.videoUploadPercent = file.percentage.toFixed(0);
+      console.log("上传进度" + file.percentage);
     },
     // 删除文件
     handleDelete(index) {
