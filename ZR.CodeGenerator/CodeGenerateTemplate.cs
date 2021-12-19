@@ -30,8 +30,11 @@ namespace ZR.CodeGenerator
             {
                 return sb.ToString();
             }
-            if (!dbFieldInfo.IsInsert && !dbFieldInfo.IsEdit && !dbFieldInfo.IsPk && !dbFieldInfo.IsIncrement)
+            if (!dbFieldInfo.IsInsert && !dbFieldInfo.IsEdit)
             {
+                sb.AppendLine("    <el-col v-if=\"title == '修改数据'\" :lg=\"12\">");
+                sb.AppendLine($"      <el-form-item label=\"{labelName}\">{{{{form.{columnName}}}}}</el-form-item>");
+                sb.AppendLine("    </el-col>");
                 return sb.ToString();
             }
             //主键、非自增要插入，不能编辑
