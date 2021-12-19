@@ -95,8 +95,8 @@
               <el-input-number v-model="form.orderNum" controls-position="right" :min="0" :value="999" />
             </el-form-item>
           </el-col>
-          <el-col :lg="24">
-            <el-form-item v-if="form.menuType != 'F'" label="菜单图标">
+          <el-col :lg="24" v-if="form.menuType != 'F'">
+            <el-form-item label="菜单图标" prop="icon">
               <el-popover placement="bottom-start" width="460" trigger="click" @show="$refs['iconSelect'].reset()">
                 <IconSelect ref="iconSelect" @selected="selected" />
                 <el-input slot="reference" v-model="form.icon" placeholder="点击选择图标" readonly>
