@@ -52,9 +52,9 @@ namespace ZR.Service.System
         /// <returns>菜单权限信息</returns>
         public List<string> GetMenuPermission(SysUser user)
         {
-            List<string> perms = new List<string>();
+            List<string> perms = new();
             // 管理员拥有所有权限
-            if (user.IsAdmin())
+            if (user.IsAdmin() || GetRolePermission(user).Exists(f => f.Equals(GlobalConstant.AdminRole)))
             {
                 perms.Add(GlobalConstant.AdminPerm);
             }
