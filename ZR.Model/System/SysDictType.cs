@@ -6,7 +6,7 @@ namespace ZR.Model.System
     /// <summary>
     /// 字典类型表
     /// </summary>
-    [SugarTable("sys_dict_type")]//当和数据库名称不一样可以设置别名
+    [SugarTable("sys_dict_type")]
     [Tenant("0")]
     public class SysDictType : SysBase
     {
@@ -14,7 +14,6 @@ namespace ZR.Model.System
         /// 字典主键
         /// </summary>
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]//主键并且自增 （string不能设置自增）
-        //[Key]
         public long DictId { get; set; }
         /// <summary>
         /// 字典名称
@@ -29,5 +28,9 @@ namespace ZR.Model.System
         /// </summary>
         [EpplusIgnore]
         public string Status { get; set; }
+        /// <summary>
+        /// 系统内置 Y是 N否
+        /// </summary>
+        public string Type { get; set; }
     }
 }

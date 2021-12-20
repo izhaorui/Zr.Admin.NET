@@ -2,18 +2,26 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="字典名称" prop="dictName">
-        <el-input v-model="queryParams.dictName" placeholder="请输入字典名称" clearable size="small" style="width: 240px" @keyup.enter.native="handleQuery" />
+        <el-input v-model="queryParams.dictName" placeholder="请输入字典名称" clearable size="small" style="width: 240px"
+          @keyup.enter.native="handleQuery" />
       </el-form-item>
       <el-form-item label="字典类型" prop="dictType">
-        <el-input v-model="queryParams.dictType" placeholder="请输入字典类型" clearable size="small" style="width: 240px" @keyup.enter.native="handleQuery" />
+        <el-input v-model="queryParams.dictType" placeholder="请输入字典类型" clearable size="small" style="width: 240px"
+          @keyup.enter.native="handleQuery" />
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="字典状态" clearable size="small" style="width: 240px">
           <el-option v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
         </el-select>
       </el-form-item>
+      <el-form-item label="是否内置" prop="type">
+        <el-select v-model="queryParams.type" placeholder="是否内置" clearable size="small" style="width: 240px">
+          <el-option v-for="dict in typeOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="创建时间">
-        <el-date-picker v-model="dateRange" size="small" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+        <el-date-picker v-model="dateRange" size="small" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-"
+          start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -26,10 +34,12 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:dict:add']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['system:dict:edit']">修改</el-button>
+        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['system:dict:edit']">修改
+        </el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['system:dict:remove']">删除</el-button>
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete"
+          v-hasPermi="['system:dict:remove']">删除</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:dict:export']">导出</el-button>
@@ -76,9 +86,14 @@
         <el-form-item label="字典类型" prop="dictType">
           <el-input v-model="form.dictType" placeholder="请输入字典类型" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="字典状态" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictValue">{{dict.dictLabel}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="系统内置" prop="type">
+          <el-radio-group v-model="form.type">
+            <el-radio v-for="dict in typeOptions" :key="dict.dictValue" :label="dict.dictValue">{{dict.dictLabel}}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
@@ -136,6 +151,8 @@ export default {
       dictDataVisible: false,
       // 状态数据字典
       statusOptions: [],
+      // 是否内置
+      typeOptions: [],
       // 日期范围
       dateRange: [],
       // 查询参数
@@ -166,16 +183,19 @@ export default {
     this.getDicts("sys_normal_disable").then((response) => {
       this.statusOptions = response.data;
     });
+    this.getDicts("sys_yes_no").then((response) => {
+      this.typeOptions = response.data;
+    });
   },
   methods: {
     /** 查询字典类型列表 */
     getList() {
-      // this.loading = true;
+      this.loading = true;
       listType(this.addDateRange(this.queryParams, this.dateRange)).then(
         (response) => {
           this.typeList = response.data.result;
           this.total = response.data.totalNum;
-          // this.loading = false;
+          this.loading = false;
         }
       );
     },
@@ -195,6 +215,7 @@ export default {
         dictName: undefined,
         dictType: undefined,
         status: "0",
+        type: "N",
         remark: undefined,
       };
       this.resetForm("form");

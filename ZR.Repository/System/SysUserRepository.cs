@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Extensions;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -21,23 +22,20 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public PagedInfo<SysUser> SelectUserList(SysUser user, PagerInfo pager)
         {
-            var exp = Expressionable.Create<SysUser>();
-            exp.AndIF(!string.IsNullOrEmpty(user.UserName), it => it.UserName.Contains(user.UserName));
-            exp.AndIF(!string.IsNullOrEmpty(user.Status), it => it.Status == user.Status);
-            exp.AndIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, it => it.Create_time >= user.BeginTime);
-            exp.AndIF(user.EndTime != DateTime.MinValue && user.BeginTime != null, it => it.Create_time <= user.EndTime);
-            exp.AndIF(user.DeptId != 0, it => it.DeptId == user.DeptId);
-            exp.And(user => user.DelFlag == "0");
-            
             var query = Context.Queryable<SysUser>()
-                .LeftJoin<SysDept>((user, dept) => user.DeptId == dept.DeptId)
-                .Where(exp.ToExpression())
-                .Select((user, dept) => new SysUser
+                .LeftJoin<SysDept>((u, dept) => u.DeptId == dept.DeptId)
+                .WhereIF(!string.IsNullOrEmpty(user.UserName), u => u.UserName.Contains(user.UserName))
+                .WhereIF(!string.IsNullOrEmpty(user.Status), u => u.Status == user.Status)
+                .WhereIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, u => u.Create_time >= user.BeginTime)
+                .WhereIF(user.EndTime != DateTime.MinValue && user.EndTime != null, u => u.Create_time <= user.EndTime)
+                .WhereIF(!user.Phonenumber.IsEmpty(), u => u.Phonenumber == user.Phonenumber)
+                .WhereIF(user.DeptId != 0, u => u.DeptId == user.DeptId)
+                .Where(u => u.DelFlag == "0")
+                .Select((u, dept) => new SysUser
                 {
-                    UserId = user.UserId.SelectAll(),
+                    UserId = u.UserId.SelectAll(),
                     DeptName = dept.DeptName,
-                })
-                .OrderBy((user) => user.UserId);
+                });
 
             return query.ToPage(pager);
         }
