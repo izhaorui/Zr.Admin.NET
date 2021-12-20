@@ -137,7 +137,7 @@ export default {
       //是否覆盖原先代码
       coverd: true,
       // 生成SQL脚本的数据库类型
-      dbType: 0,
+      dbType: 1,
       // 选中的表
       tableIds: [],
       // 非多个禁用
