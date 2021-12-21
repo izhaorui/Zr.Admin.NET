@@ -70,9 +70,14 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return ToResponse(ApiResult.Error($"请配置邮箱信息"));
             }
-            MailHelper mailHelper = new MailHelper(OptionsSetting.MailOptions.From, OptionsSetting.MailOptions.Smtp, OptionsSetting.MailOptions.Port, OptionsSetting.MailOptions.Password);
+            MailHelper mailHelper = new(OptionsSetting.MailOptions.From, OptionsSetting.MailOptions.Smtp, OptionsSetting.MailOptions.Port, OptionsSetting.MailOptions.Password);
 
-            mailHelper.SendMail(sendEmailVo.ToUser, sendEmailVo.Subject, sendEmailVo.Content, sendEmailVo.FileUrl, sendEmailVo.HtmlContent);
+            string[] toUsers = sendEmailVo.ToUser.Split(",", StringSplitOptions.RemoveEmptyEntries);
+            if (sendEmailVo.SendMe)
+            {
+                toUsers.Append(mailHelper.FromEmail);
+            }
+            mailHelper.SendMail(toUsers, sendEmailVo.Subject, sendEmailVo.Content, sendEmailVo.FileUrl, sendEmailVo.HtmlContent);
 
             logger.Info($"发送邮件{JsonConvert.SerializeObject(sendEmailVo)}");
 

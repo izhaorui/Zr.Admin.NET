@@ -4,12 +4,21 @@
       <el-form-item label="收件邮箱" prop="toUser">
         <el-input v-model="form.toUser">
         </el-input>
+        <span slot="label">
+          <el-tooltip content="多个用','隔开" placement="top">
+            <i class="el-icon-question"></i>
+          </el-tooltip>
+          收件邮箱
+        </span>
       </el-form-item>
       <el-form-item label="邮件主题" prop="subject">
         <el-input v-model="form.subject"></el-input>
       </el-form-item>
       <el-form-item label="邮件内容" prop="content">
         <editor v-model="form.content" :min-height="192" />
+      </el-form-item>
+      <el-form-item label="发送自己" prop="sendMe">
+        <el-switch v-model="form.sendMe" active-text="是" inactive-text="否"></el-switch>
       </el-form-item>
 
       <el-form-item label="附件">
@@ -44,18 +53,17 @@ export default {
         subject: [{ required: true, message: "主题不能为空", trigger: "blur" }],
         toUser: [
           { required: true, message: "请输入邮箱地址", trigger: ["blur"] },
-          {
-            message: "请输入正确的邮箱地址",
-            trigger: ["blur", "change"],
-            type: "email",
-          },
+          // {
+          //   message: "请输入正确的邮箱地址",
+          //   trigger: ["blur", "change"],
+          //   type: "email",
+          // },
         ],
         content: [{ required: true, message: "内容不能为空", trigger: "blur" }],
       },
     };
   },
-  mounted() {
-  },
+  mounted() {},
   methods: {
     // 表单重置
     reset() {
@@ -64,6 +72,7 @@ export default {
         content: undefined,
         subject: undefined,
         fileUrl: undefined,
+        sendMe: false,
       };
       this.resetForm("form");
     },

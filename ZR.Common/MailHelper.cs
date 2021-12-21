@@ -55,7 +55,7 @@ namespace ZR.Common
         public void SendMail(string toAddress, string subject, string text, string path = "", string html = "")
         {
             IEnumerable<MailboxAddress> mailboxes = new List<MailboxAddress>() {
-                new MailboxAddress(toAddress)
+                new MailboxAddress(toAddress, toAddress)
             };
 
             SendMail(mailboxes, subject, text, path, html);
@@ -73,7 +73,7 @@ namespace ZR.Common
             IList<MailboxAddress> mailboxes = new List<MailboxAddress>() { };
             foreach (var item in toAddress)
             {
-                mailboxes.Add(new MailboxAddress(item));
+                mailboxes.Add(new MailboxAddress(item, item));
             }
 
             SendMail(mailboxes, subject, text, path, html);
@@ -92,19 +92,14 @@ namespace ZR.Common
             MimeMessage message = new MimeMessage();
             //发件人
             message.From.Add(new MailboxAddress(FromEmail, FromEmail));
-
             //收件人
-            //message.To.Add(new MailboxAddress(toAddress));
-            //IList<InternetAddress> internets = null;
-            //internets.Add(new MailboxAddress(toAddress));
-
             message.To.AddRange(toAddress);
             message.Subject = subject;
-            message.Date = DateTime.Now;
+            //message.Date = DateTime.Now;
 
             //创建附件Multipart
             Multipart multipart = new Multipart("mixed");
-
+            var alternative = new MultipartAlternative();
             //html内容
             if (!string.IsNullOrEmpty(html))
             {
@@ -112,7 +107,7 @@ namespace ZR.Common
                 {
                     Text = html
                 };
-                multipart.Add(Html);
+                alternative.Add(Html);
             }
             //文本内容
             if (!string.IsNullOrEmpty(text))
@@ -121,7 +116,7 @@ namespace ZR.Common
                 {
                     Text = text + "\r\n\n\n" + mailSign
                 };
-                multipart.Add(plain);
+                alternative.Add(plain);
             }
 
             //附件
@@ -136,12 +131,12 @@ namespace ZR.Common
                     //文件名字
                     FileName = Path.GetFileName(path)
                 };
-                multipart.Add(attachment);
+                alternative.Add(attachment);
             }
-
+            multipart.Add(alternative);
             //赋值邮件内容
             message.Body = multipart;
-
+            
             //开始发送
             using (var client = new SmtpClient())
             {
