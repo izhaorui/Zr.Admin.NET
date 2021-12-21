@@ -60,5 +60,15 @@ namespace ZR.Model.System
         /** 校验返回结果码 */
         public static string UNIQUE = "0";
         public static string NOT_UNIQUE = "1";
+
+        /// <summary>
+        /// http请求
+        /// </summary>
+        public static string HTTP = "http://";
+
+        /// <summary>
+        /// https请求
+        /// </summary>
+        public static string HTTPS = "https://";
     }
 }
