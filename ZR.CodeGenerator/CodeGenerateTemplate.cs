@@ -26,7 +26,7 @@ namespace ZR.CodeGenerator
             StringBuilder sb = new StringBuilder();
             string value = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? "parseInt(item.dictValue)" : "item.dictValue";
 
-            if (GenConstants.inputDtoNoField.Any(f => f.ToLower().Contains(dbFieldInfo.CsharpField.ToLower())))
+            if (GenConstants.inputDtoNoField.Any(f => f.Contains(dbFieldInfo.CsharpField, StringComparison.OrdinalIgnoreCase)))
             {
                 return sb.ToString();
             }
@@ -45,7 +45,7 @@ namespace ZR.CodeGenerator
                 //主键非自增 显示input
                 if (dbFieldInfo.IsPk && !dbFieldInfo.IsIncrement)
                 {
-                    sb.AppendLine($"        <el-input-number v-model.number=\"form.{columnName}\" placeholder=\"请输入{labelName}\" :disabled=\"title=='修改数据'\"/>");
+                    sb.AppendLine($"        <el-input-number v-model.number=\"form.{columnName}\" controls-position=\"right\" placeholder=\"请输入{labelName}\" :disabled=\"title=='修改数据'\"/>");
                 }
                 else if (dbFieldInfo.IsIncrement)  //只有是 自增 就显示label
                 {
@@ -61,7 +61,7 @@ namespace ZR.CodeGenerator
                 //数字框
                 sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
-                sb.AppendLine($"        <el-input-number v-model.number=\"form.{columnName}\" placeholder=\"请输入{labelName}\" {labelDisabled}/>");
+                sb.AppendLine($"        <el-input-number v-model.number=\"form.{columnName}\" controls-position=\"right\" placeholder=\"请输入{labelName}\" {labelDisabled}/>");
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
             }
