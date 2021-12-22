@@ -10,7 +10,7 @@ namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNam
     /// @author ${replaceDto.Author}
     /// @date ${replaceDto.AddTime}
     /// </summary>
-    public interface I${replaceDto.ModelTypeName}Service: IBaseService<${replaceDto.ModelTypeName}>
+    public interface I${replaceDto.ModelTypeName}Service : IBaseService<${replaceDto.ModelTypeName}>
     {
     }
 }
