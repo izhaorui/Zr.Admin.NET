@@ -159,16 +159,6 @@ export default {
       // 上传文件地址
       uploadUrl: "/common/uploadFile",
       fileType: [
-        "doc",
-        "xls",
-        "ppt",
-        "txt",
-        "pdf",
-        "svga",
-        "json",
-        "jpg",
-        "jpeg",
-        "png",
       ],
       // 数据列表
       dataList: [],

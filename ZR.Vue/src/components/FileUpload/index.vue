@@ -115,7 +115,7 @@ export default {
     // 上传前校检格式和大小
     handleBeforeUpload(file) {
       // 校检文件类型
-      if (this.fileType) {
+      if (this.fileType && this.fileType.length > 0) {
         let fileExtension = "";
         if (file.name.lastIndexOf(".") > -1) {
           fileExtension = file.name.slice(file.name.lastIndexOf(".") + 1);
