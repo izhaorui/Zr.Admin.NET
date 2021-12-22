@@ -56,6 +56,16 @@ namespace ZR.Admin.WebApi.Extensions
                         BearerFormat = "JWT",//标识承载令牌的格式 该信息主要是出于文档目的
                         Scheme = JwtBearerDefaults.AuthenticationScheme//授权中要使用的HTTP授权方案的名称
                     });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                        },
+                        new List<string>()
+                    }
+                });
             });
         }
     }
