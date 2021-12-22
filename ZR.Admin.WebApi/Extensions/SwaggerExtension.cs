@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
@@ -7,13 +8,40 @@ using Swashbuckle.AspNetCore.Filters;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ZR.Admin.WebApi.Extensions
 {
     public static class SwaggerExtension
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="app"></param>
+        public static void UseSwagger(this IApplicationBuilder app)
+        {
+            app.UseSwagger(c =>
+            {
+                c.RouteTemplate = "swagger/{documentName}/swagger.json";
+                c.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
+                {
+                    var url = $"{httpReq.Scheme}://{httpReq.Host.Value}";
+                    var referer = httpReq.Headers["Referer"].ToString();
+                    if (referer.Contains(GlobalConstant.DevApiProxy))
+                        url = referer.Substring(0,
+                            referer.IndexOf(GlobalConstant.DevApiProxy, StringComparison.InvariantCulture) + GlobalConstant.DevApiProxy.Length - 1);
+                    swaggerDoc.Servers =
+                        new List<OpenApiServer>
+                        {
+                            new OpenApiServer
+                            {
+                                Url = url
+                            }
+                        };
+                });
+            });
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("v1/swagger.json", "ZrAdmin v1"));
+        }
+
         public static void AddSwaggerConfig(this IServiceCollection services)
         {
             if (services == null) throw new ArgumentNullException(nameof(services));

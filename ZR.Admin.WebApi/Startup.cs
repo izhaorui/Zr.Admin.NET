@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.OpenApi.Models;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Framework;
@@ -93,9 +94,8 @@ namespace ZR.Admin.WebApi
             {
                 app.UseDeveloperExceptionPage();
             }
-            app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("v1/swagger.json", "ZrAdmin v1"));
 
+            app.UseSwagger();
             //使可以多次多去body内容
             app.Use((context, next) =>
             {
