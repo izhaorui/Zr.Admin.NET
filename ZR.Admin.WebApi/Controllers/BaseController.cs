@@ -18,7 +18,7 @@ namespace ZR.Admin.WebApi.Controllers
         public static string TIME_FORMAT_FULL = "yyyy-MM-dd HH:mm:ss";
         public static string TIME_FORMAT_FULL_2 = "MM-dd HH:mm:ss";
 
-        protected IActionResult SUCCESS(object data, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
+        protected IActionResult SUCCESS(object data, string timeFormatStr = "MM-dd HH:mm")
         {
             string jsonStr = GetJsonStr(GetApiResult(data != null ? ResultCode.SUCCESS : ResultCode.FAIL, data), timeFormatStr);
             return Content(jsonStr, "application/json");
@@ -36,13 +36,13 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="apiResult"></param>
         /// <param name="timeFormatStr"></param>
         /// <returns></returns>
-        protected IActionResult ToResponse(ApiResult apiResult, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
+        protected IActionResult ToResponse(ApiResult apiResult, string timeFormatStr = "MM-dd HH:mm")
         {
             string jsonStr = GetJsonStr(apiResult, timeFormatStr);
 
             return Content(jsonStr, "application/json");
         }
-        protected IActionResult ToResponse(long rows, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
+        protected IActionResult ToResponse(long rows, string timeFormatStr = "MM-dd HH:mm")
         {
             string jsonStr = GetJsonStr(ToJson(rows), timeFormatStr);
 
@@ -112,7 +112,7 @@ namespace ZR.Admin.WebApi.Controllers
         protected string ExportExcel<T>(List<T> list, string sheetName, string fileName)
         {
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
-            string sFileName = $"{fileName}{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            string sFileName = $"{fileName}{DateTime.Now:MMddHHmmss}.xlsx";
             string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
             //调试模式需要加上
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
