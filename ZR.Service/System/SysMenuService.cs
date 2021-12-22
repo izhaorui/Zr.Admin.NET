@@ -8,6 +8,7 @@ using ZR.Model.Vo;
 using ZR.Model.Vo.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
+using ZR.Common;
 
 namespace ZR.Service
 {
@@ -359,17 +360,23 @@ namespace ZR.Service
         /// <returns>路由地址</returns>
         public string GetRoutePath(SysMenu menu)
         {
-            string routePath = menu.path;
+            string routerPath = menu.path;
+            // 内链打开外网方式
+            //if (menu.parentId != 0 && IsInnerLink(menu))
+            //{
+            //    routerPath = innerLinkReplaceEach(routerPath);
+            //}
             // 非外链并且是一级目录（类型为目录）
-            if (0 == menu.parentId && UserConstants.TYPE_DIR.Equals(menu.menuType) && UserConstants.NO_FRAME.Equals(menu.isFrame))
+            if (0 == menu.parentId && UserConstants.TYPE_DIR.Equals(menu.menuType)
+                && UserConstants.NO_FRAME.Equals(menu.isFrame))
             {
-                routePath = "/" + menu.path;
+                routerPath = "/" + menu.path;
             }
             else if (IsMeunFrame(menu))// 非外链并且是一级目录（类型为菜单）
             {
-                routePath = "/";
+                routerPath = "/";
             }
-            return routePath;
+            return routerPath;
         }
 
         /// <summary>
@@ -398,7 +405,18 @@ namespace ZR.Service
         /// <returns></returns>
         public bool IsMeunFrame(SysMenu menu)
         {
-            return menu.parentId == 0 && UserConstants.TYPE_MENU.Equals(menu.menuType) && menu.isFrame.Equals(UserConstants.NO_FRAME);
+            return menu.parentId == 0 && UserConstants.TYPE_MENU.Equals(menu.menuType)
+                && menu.isFrame.Equals(UserConstants.NO_FRAME);
+        }
+
+        /// <summary>
+        /// 是否为内链组件
+        /// </summary>
+        /// <param name="menu">菜单信息</param>
+        /// <returns>结果</returns>
+        public bool IsInnerLink(SysMenu menu)
+        {
+            return menu.isFrame.Equals(UserConstants.NO_FRAME) && Tools.IsUrl(menu.path);
         }
 
         ///
@@ -411,7 +429,16 @@ namespace ZR.Service
         {
             return menu.parentId != 0 && UserConstants.TYPE_DIR.Equals(menu.menuType);
         }
-
+        /// <summary>
+        /// 内链域名特殊字符替换
+        /// </summary>
+        /// <param name = "path" ></ param >
+        /// < returns ></ returns >
+        //public string innerLinkReplaceEach(string path)
+        //{
+        //    return stringUtils.replaceEach(path, new String[] { Constants.HTTP, Constants.HTTPS },
+        //            new String[] { "", "" });
+        //}
         #endregion
 
     }
