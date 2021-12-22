@@ -24,36 +24,34 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:role:add']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:role:export']">导出</el-button>
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:role:export']">导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-row :gutter="24">
-      <el-table v-loading="loading" :data="roleList" border @selection-change="handleSelectionChange">
-        <el-table-column label="编号" prop="roleId" width="80" />
-        <el-table-column label="名称" prop="roleName" />
-        <el-table-column label="权限字符" prop="roleKey" />
-        <el-table-column label="状态" align="center">
-          <template slot-scope="scope">
-            <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" align="center" prop="createTime" width="150" />
-        <el-table-column label="备注" align="center" prop="remark" width="150" :show-overflow-tooltip="true" />
-        <el-table-column label="操作" align="center" width="200">
-          <template slot-scope="scope">
-            <el-button size="mini" type="text" icon="el-icon-edit" @click.stop="handleUpdate(scope.row)" v-if="scope.row.roleKey != 'admin'"
-              v-hasPermi="['system:role:edit']">修改</el-button>
-            <el-button size="mini" type="text" icon="el-icon-delete" @click.stop="handleDelete(scope.row)" v-if="scope.row.roleKey != 'admin'"
-              v-hasPermi="['system:role:remove']">删除</el-button>
-            <el-button size="mini" type="text" icon="el-icon-circle-check" @click.stop="handleDataScope(scope.row)"
-              v-if="scope.row.roleKey != 'admin'" v-hasPermi="['system:role:authorize']">数据权限</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <!-- <pagination :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" /> -->
-    </el-row>
+    <el-table v-loading="loading" :data="roleList" border @selection-change="handleSelectionChange">
+      <el-table-column label="编号" prop="roleId" width="80" />
+      <el-table-column label="名称" prop="roleName" />
+      <el-table-column label="权限字符" prop="roleKey" />
+      <el-table-column label="状态" align="center">
+        <template slot-scope="scope">
+          <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" align="center" prop="createTime" width="150" />
+      <el-table-column label="备注" align="center" prop="remark" width="150" :show-overflow-tooltip="true" />
+      <el-table-column label="操作" align="center" width="200">
+        <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-edit" @click.stop="handleUpdate(scope.row)" v-if="scope.row.roleKey != 'admin'"
+            v-hasPermi="['system:role:edit']">修改</el-button>
+          <el-button size="mini" type="text" icon="el-icon-delete" @click.stop="handleDelete(scope.row)" v-if="scope.row.roleKey != 'admin'"
+            v-hasPermi="['system:role:remove']">删除</el-button>
+          <el-button size="mini" type="text" icon="el-icon-circle-check" @click.stop="handleDataScope(scope.row)" v-if="scope.row.roleKey != 'admin'"
+            v-hasPermi="['system:role:authorize']">数据权限</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <pagination :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <el-dialog title="角色权限分配" :visible.sync="showRoleScope" width="600px">
       <el-form :model="form" label-width="80px">
