@@ -273,9 +273,9 @@ INSERT INTO sys_menu VALUES (102, '菜单管理', 1, 3, 'menu', 'system/menu/ind
 INSERT INTO sys_menu VALUES (103, '部门管理', 1, 4, 'dept', 'system/dept/index', 0, 0, 'C', '0', '0', 'system:dept:list', 'tree', '', SYSDATE(), '', NULL, '部门管理菜单');
 INSERT INTO sys_menu VALUES (104, '岗位管理', 1, 5, 'post', 'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', SYSDATE(), '', NULL, '岗位管理菜单');
 INSERT INTO sys_menu VALUES (105, '字典管理', 1, 6, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (106, '用户角色', 1, 2, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (106, '角色分配', 1, 2, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
 INSERT into sys_menu VALUES (107, '参数设置', 1, 8, 'config','system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (108, '日志管理', 1, 9, 'log', ''                     , 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
+INSERT INTO sys_menu VALUES (108, '日志管理', 1, 10, 'log', ''                     , 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
 INSERT INTO sys_menu VALUES (109, '通知公告', 1, 9, 'notice', 'system/notice/index', 0, 0, 'C', '0', '0', 'system:notice:list', 'message', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (110, '定时任务', 2, 10, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', SYSDATE(), '', NULL, '定时任务菜单');
 INSERT INTO sys_menu VALUES (112, '服务监控', 2, 11, 'server', 'monitor/server/index', 0, 0, 'C', '0', '0', 'monitor:server:list', 'server', '', SYSDATE(), '', NULL, '服务监控菜单');
@@ -283,7 +283,7 @@ INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 12, 'cache', 'monitor/cache
 INSERT INTO sys_menu VALUES (114, '表单构建', 3, 13, 'build', 'tool/build/index', 0, 0, 'C', '0', '0', 'tool:build:list', 'build', '', SYSDATE(), '', NULL, '表单构建菜单');
 INSERT INTO sys_menu VALUES (115, '代码生成', 3, 14, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', SYSDATE(), '', NULL, '代码生成菜单');
 INSERT INTO sys_menu VALUES (116, '系统接口', 3, 15, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', SYSDATE(), '', NULL, '系统接口菜单');
-INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 16, 'sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'message', '', SYSDATE(), '', NULL, '发送邮件菜单');
+INSERT INTO sys_menu VALUES (117, '发送邮件', 3, 16, 'sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'email', '', SYSDATE(), '', NULL, '发送邮件菜单');
 INSERT INTO sys_menu VALUES (118, '文章列表', 4, 1, 'index', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'list', '', SYSDATE(), '', NULL, NULL);
 
 -- 三级菜单日志管理
@@ -514,27 +514,29 @@ CREATE TABLE `sys_role_menu`  (
 -- ----------------------------
 
 INSERT INTO `sys_role_menu` VALUES (2, 1, NULL, SYSDATE());
-INSERT INTO `sys_role_menu` VALUES (2, 2, NULL, SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 3, NULL, SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 5, NULL, SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 6, NULL, SYSDATE());
 
 INSERT INTO `sys_role_menu` VALUES (2, 100, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 101, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 102, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 103, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 104, 'admin', SYSDATE());
-INSERT INTO `sys_role_menu` VALUES (2, 105, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 106, 'admin', SYSDATE());
-INSERT INTO `sys_role_menu` VALUES (2, 107, 'admin', SYSDATE());
-INSERT INTO `sys_role_menu` VALUES (2, 110, 'admin', SYSDATE());
-INSERT INTO `sys_role_menu` VALUES (2, 112, 'admin', SYSDATE());
-INSERT INTO `sys_role_menu` VALUES (2, 113, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 108, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 109, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 114, 'admin', SYSDATE());
-INSERT INTO `sys_role_menu` VALUES (2, 117, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 500, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 501, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 1001, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 1008, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 1013, 'admin', SYSDATE());
 INSERT INTO `sys_role_menu` VALUES (2, 1018, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 1022, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 1031, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 1044, 'admin', SYSDATE());
+INSERT INTO `sys_role_menu` VALUES (2, 1051, 'admin', SYSDATE());
 
 -- 编辑者
 INSERT INTO `sys_role_menu` VALUES (3, 4   , NULL, SYSDATE());
