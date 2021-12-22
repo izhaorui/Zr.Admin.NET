@@ -3,7 +3,7 @@
     <template v-for="(item, index) in options">
       <template v-if="values.includes(item.dictValue)">
         <span v-if="item.listClass == 'default' || item.listClass == ''" :key="item.dictValue" :index="index" :class="item.cssClass">{{ item.dictLabel }}</span>
-        <el-tag v-else :disable-transitions="true" :key="item.dictValue" :index="index" :type="item.listClass == 'primary' ? '' : item.listClass" :class="item.cssClass">
+        <el-tag size="mini" v-else :disable-transitions="true" :key="item.dictValue" :index="index" :type="item.listClass == 'primary' ? '' : item.listClass" :class="item.cssClass">
           {{ item.dictLabel }}
         </el-tag>
       </template>
