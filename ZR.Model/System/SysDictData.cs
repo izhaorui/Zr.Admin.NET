@@ -23,8 +23,8 @@ namespace ZR.Model.System
         public string DictLabel { get; set; }
         public string DictValue { get; set; }
         public string DictType { get; set; }
-        public string CssClass { get; set; }
-        public string ListClass { get; set; }
+        public string CssClass { get; set; } = string.Empty;
+        public string ListClass { get; set; } = string.Empty;
         public string IsDefault { get; set; }
         public string Status { get; set; }
     }
