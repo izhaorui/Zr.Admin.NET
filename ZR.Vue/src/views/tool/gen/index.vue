@@ -6,7 +6,7 @@
         <el-input v-model="queryParams.tableName" clearable placeholder="输入要查询的表名" />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch()">查询</el-button>
+        <el-button size="mini" type="primary" icon="el-icon-search" @click="handleSearch()">查询</el-button>
         <!-- <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button> -->
       </el-form-item>
     </el-form>

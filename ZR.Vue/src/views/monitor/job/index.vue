@@ -24,10 +24,10 @@
         <el-button v-hasPermi="['monitor:job:delete']" plain type="danger" icon="el-icon-remove" size="mini" @click="handleDelete(null)" :disabled="single">删除</el-button>
       </el-col>-->
       <el-col :span="1.5">
-        <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['monitor:job:export']">导出</el-button>
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['monitor:job:export']">导出</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog({id: 1})">日志</el-button>
+        <el-button plain v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog({id: 1})">日志</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="searchToggle" @queryTable="handleQuery"></right-toolbar>
     </el-row>
