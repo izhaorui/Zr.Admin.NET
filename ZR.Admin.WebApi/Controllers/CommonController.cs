@@ -45,6 +45,10 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(true);
         }
 
+        /// <summary>
+        /// hello
+        /// </summary>
+        /// <returns></returns>
         [Route("/")]
         [HttpGet]
         public IActionResult Index()
@@ -125,7 +129,9 @@ namespace ZR.Admin.WebApi.Controllers
                 FileSize = fileSize + "kb",
                 StoreType = 1,
                 FileUrl = finalFilePath,
-                Create_time = DateTime.Now
+                RealName = formFile.FileName,
+                Create_time = DateTime.Now,
+                FileType = formFile.ContentType
             };
             long fileId = SysFileService.InsertFile(file);
             return ToResponse(ResultCode.SUCCESS, new
@@ -149,8 +155,8 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);
-            string[] AllowedFileExtensions = new string[] { ".jpg", ".gif", ".png", ".jpeg", ".webp", ".svga", ".xls" };
-            int MaxContentLength = 1024 * 1024 * 5;
+            string[] AllowedFileExtensions = new string[] { ".jpg", ".gif", ".png", ".jpeg", ".webp", ".svga", ".xls", ".doc", ".zip", ".json", ".txt" };
+            int MaxContentLength = 1024 * 1024 * 15;
             double fileSize = formFile.Length / 1024;
             if (!AllowedFileExtensions.Contains(fileExt))
             {
@@ -161,6 +167,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + (MaxContentLength / 1024).ToString() + " MB");
             }
+            
             (bool, string, string) result = SysFileService.SaveFile(fileDir, formFile);
             long fileId = SysFileService.InsertFile(new SysFile()
             {
@@ -170,7 +177,10 @@ namespace ZR.Admin.WebApi.Controllers
                 FileName = result.Item3,
                 FileSize = fileSize + "kb",
                 StoreType = 2,
-                StorePath = fileDir
+                StorePath = fileDir,
+                RealName = formFile.FileName,
+                Create_time = DateTime.Now,
+                FileType = formFile.ContentType
             });
             return ToResponse(ResultCode.SUCCESS, new
             {

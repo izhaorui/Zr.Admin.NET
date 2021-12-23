@@ -16,6 +16,14 @@ namespace ZR.Model.System
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long Id { get; set; }
         /// <summary>
+        /// 文件真实名
+        /// </summary>
+        public string RealName { get; set; }
+        /// <summary>
+        /// 文件类型
+        /// </summary>
+        public string FileType { get; set; }
+        /// <summary>
         /// 描述 : 文件名
         /// 空值 : true  
         /// </summary>

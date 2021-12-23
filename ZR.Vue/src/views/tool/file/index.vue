@@ -36,17 +36,33 @@
     <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column prop="id" label="文件id" align="center" width="80" />
-      <el-table-column prop="fileName" label="文件名" align="center" :show-overflow-tooltip="true" />
-      <el-table-column prop="storePath" label="仓库位置" align="center" :show-overflow-tooltip="true" />
+      <el-table-column prop="fileName" label="文件名" align="center">
+        <template slot-scope="scope">
+          <el-popover :content="scope.row.fileUrl" placement="top-start" title="路径" width="200" trigger="hover">
+            <a slot="reference" :href="scope.row.accessUrl" class="el-link--primary"
+              style="word-break:keep-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color: #1890ff;font-size: 13px;" target="_blank">
+              {{ scope.row.fileName }}
+            </a>
+          </el-popover>
+        </template>
+      </el-table-column>
+      <el-table-column prop="accessUrl" align="center" label="预览图" width="100">
+        <template slot-scope="{row}">
+          <el-image :src="row.accessUrl" :preview-src-list="[row.accessUrl]" fit="contain" lazy class="el-avatar">
+            <div slot="error">
+              <i class="el-icon-document" />
+            </div>
+          </el-image>
+        </template>
+      </el-table-column>
       <el-table-column prop="fileSize" label="文件大小" align="center" :show-overflow-tooltip="true" />
       <el-table-column prop="fileExt" label="扩展名" align="center" :show-overflow-tooltip="true" width="80px" />
       <el-table-column prop="storeType" label="存储类型" align="center" :formatter="storeTypeFormat" />
-			<el-table-column prop="create_time" label="存储时间" align="center"/>
-      <el-table-column prop="accessUrl" label="访问路径" align="center" :show-overflow-tooltip="true">
-      </el-table-column>
+			<el-table-column prop="create_by" label="操作人" align="center"/>
+      <el-table-column prop="create_time" label="创建日期" align="center" />
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
-          <!-- <el-button v-hasPermi="['System:sysfile:update']" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button> -->
+          <el-button v-hasPermi="['System:sysfile:view']" type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button>
           <el-button v-hasPermi="['System:sysfile:delete']" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -54,15 +70,15 @@
     <pagination class="mt10" background :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改文件存储对话框 -->
-    <el-dialog :title="title" :lock-scroll="false" :visible.sync="open">
-      <el-form ref="form" :model="form" :rules="rules" label-width="135px">
+    <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" width="400px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="135px" label-position="left">
         <el-row>
           <!-- <el-col :lg="12">
             <el-form-item label="自定文件名" prop="fileName">
               <el-input v-model="form.fileName" placeholder="请输入文件名" />
             </el-form-item>
           </el-col> -->
-          <el-col :lg="12">
+          <el-col :lg="24">
             <el-form-item label="存储类型" prop="storeType">
               <el-select v-model="form.storeType" placeholder="请选择存储类型" @change="handleSelectStore">
                 <el-option v-for="item in storeTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="parseInt(item.dictValue)">
@@ -70,7 +86,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :lg="12">
+          <el-col :lg="24">
             <el-form-item label="存储文件夹前缀" prop="storePath">
               <span slot="label">
                 <el-tooltip content="比如存储到'/uploads' '如果不填写默认按时间存储eg：/2021/12/16(固定段)'" placement="top">
@@ -83,7 +99,7 @@
           </el-col>
           <el-col :lg="24">
             <el-form-item label="上传文件" prop="accessUrl">
-              <UploadFile v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="fileType" :data="{ 'fileDir' :  form.storePath}"
+              <UploadFile v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="[]" :limit="1" :fileSize="15" :data="{ 'fileDir' :  form.storePath}"
                 column="accessUrl" @input="handleUploadSuccess" />
             </el-form-item>
           </el-col>
@@ -96,16 +112,50 @@
       </div>
     </el-dialog>
 
+    <!-- 添加或修改文件存储对话框 -->
+    <el-dialog title="查看" :lock-scroll="false" :visible.sync="openView">
+      <el-form ref="form" :model="formView" :rules="rules" :label-width="formLabelWidth">
+        <el-row>
+          <el-col :lg="12">
+            <el-form-item label="文件id">{{formView.id}}</el-form-item>
+          </el-col>
+          <el-col :lg="12">
+            <el-form-item label="扩展名">{{formView.fileExt}}</el-form-item>
+          </el-col>
+          <el-col :lg="12">
+            <el-form-item label="源文件名">{{formView.realName}}</el-form-item>
+          </el-col>
+          <el-col :lg="12">
+            <el-form-item label="文件名">{{formView.fileName}}</el-form-item>
+          </el-col>
+          <el-col :lg="12">
+            <el-form-item label="仓库位置">{{formView.storePath}}</el-form-item>
+          </el-col>
+          <el-col :lg="12">
+            <el-form-item label="文件大小">{{formView.fileSize}}</el-form-item>
+          </el-col>
+          <el-col :lg="12">
+            <el-form-item label="创建人">{{formView.create_by}}</el-form-item>
+          </el-col>
+          <el-col :lg="24">
+            <el-form-item label="存储地址">{{formView.fileUrl}}</el-form-item>
+          </el-col>
+          <el-col :lg="24">
+            <el-form-item label="访问路径">{{formView.accessUrl}}</el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
 <script>
 import {
   listSysfile,
-  addSysfile,
+  // addSysfile,
   delSysfile,
   updateSysfile,
   getSysfile,
-  exportSysfile,
+  // exportSysfile,
 } from "@/api/tool/file.js";
 
 export default {
@@ -134,9 +184,10 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      openView: false,
       // 表单参数
-      form: {
-      },
+      form: {},
+      formView: {},
       columns: [
         { index: 0, key: "id", label: `自增id`, checked: true },
         { index: 1, key: "fileName", label: `文件名`, checked: true },
@@ -158,8 +209,7 @@ export default {
       ],
       // 上传文件地址
       uploadUrl: "/common/uploadFile",
-      fileType: [
-      ],
+      fileType: [],
       // 数据列表
       dataList: [],
       // 总记录数
@@ -269,16 +319,15 @@ export default {
         .catch(() => {});
     },
     /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
+    handleView(row) {
+      // this.reset();
       const id = row.id || this.ids;
       getSysfile(id).then((res) => {
         const { code, data } = res;
         if (code == 200) {
-          this.open = true;
-          this.title = "修改数据";
+          this.openView = true;
 
-          this.form = {
+          this.formView = {
             ...data,
           };
         }
@@ -322,21 +371,6 @@ export default {
         }
       });
     },
-    /** 导出按钮操作 */
-    // handleExport() {
-    //   const queryParams = this.queryParams;
-    //   this.$confirm("是否确认导出所有文件存储数据项?", "警告", {
-    //     confirmButtonText: "确定",
-    //     cancelButtonText: "取消",
-    //     type: "warning",
-    //   })
-    //     .then(function () {
-    //       return exportSysfile(queryParams);
-    //     })
-    //     .then((response) => {
-    //       this.download(response.data.path);
-    //     });
-    // },
   },
 };
 </script>

@@ -12,7 +12,6 @@
         <template v-if="fileType"> 格式为 <b style="color: #f56c6c">{{ fileType.join("/") }}</b> </template>
         的文件
       </div>
-      <el-progress v-show="showProgress == true" :percentage="uploadPercent" style="margin-top:10px;"></el-progress>
     </el-upload>
 
     <!-- 文件列表 -->
@@ -71,8 +70,6 @@ export default {
   },
   data() {
     return {
-      showProgress: false,
-      uploadPercent: 0,
       baseUrl: process.env.VUE_APP_BASE_API,
       uploadFileUrl: process.env.VUE_APP_BASE_API + this.uploadUrl, // 上传的图片服务器地址
       headers: {
@@ -140,7 +137,6 @@ export default {
           return false;
         }
       }
-      this.showProgress = true;
       return true;
     },
     // 文件个数超出
@@ -151,14 +147,9 @@ export default {
     handleUploadError(err) {
       this.msgError("上传失败, 请重试");
       this.fileList = [];
-      this.showProgress = false;
-      this.uploadPercent = 0;
     },
     // 上传成功回调
     handleUploadSuccess(res, file) {
-      this.showProgress = false;
-      this.uploadPercent = 0;
-
       if (res.code != 200) {
         this.fileList = [];
         this.msgError(`上传失败，原因:${res.msg}!`);
@@ -170,8 +161,6 @@ export default {
     },
     // 上传进度
     uploadProcess(event, file, fileList) {
-      this.showProgress = true;
-      this.videoUploadPercent = file.percentage.toFixed(0);
       console.log("上传进度" + file.percentage);
     },
     // 删除文件
