@@ -14,8 +14,8 @@
       <el-form-item label="邮件主题" prop="subject">
         <el-input v-model="form.subject"></el-input>
       </el-form-item>
-      <el-form-item label="邮件内容" prop="content">
-        <editor v-model="form.content" :min-height="192" />
+      <el-form-item label="邮件内容" prop="htmlContent">
+        <editor v-model="form.htmlContent" :min-height="192" />
       </el-form-item>
       <el-form-item label="发送自己" prop="sendMe">
         <el-switch v-model="form.sendMe" active-text="是" inactive-text="否"></el-switch>
@@ -69,7 +69,7 @@ export default {
     reset() {
       this.form = {
         toUser: undefined,
-        content: undefined,
+        htmlContent: undefined,
         subject: undefined,
         fileUrl: undefined,
         sendMe: false,
