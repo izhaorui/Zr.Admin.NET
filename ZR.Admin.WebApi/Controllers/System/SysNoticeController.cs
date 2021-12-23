@@ -18,6 +18,7 @@ using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
+    [Verify]
     [Route("system/notice")]
     public class SysNoticeController : BaseController
     {
