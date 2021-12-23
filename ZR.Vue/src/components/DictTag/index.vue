@@ -19,7 +19,7 @@ export default {
       type: Array,
       default: null,
     },
-    value: [Number, String, Array],
+    value: [Number, String, Array, Boolean],
   },
   computed: {
     values() {
