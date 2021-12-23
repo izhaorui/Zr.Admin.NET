@@ -12,7 +12,12 @@ const name = defaultSettings.title // 标题
 // 这里只列一部分，具体配置参考文档
 module.exports = {
   css: {
-    sourceMap: process.env.NODE_ENV == 'production' ? false : true   //开启css  source maps功能，前端可以看到css具体的行数
+    sourceMap: process.env.NODE_ENV == 'production' ? false : true, //开启css  source maps功能，前端可以看到css具体的行数
+    loaderOptions: {
+      sass: {
+        sassOptions: { outputStyle: "expanded" }
+      }
+    }
   },
   // 部署生产环境和开发环境下的URL。
   // 默认情况下，Vue CLI 会假设你的应用是被部署在一个域名的根路径上
@@ -28,16 +33,16 @@ module.exports = {
   productionSourceMap: false,
   // webpack-dev-server 相关配置
   devServer: {
-    host: '0.0.0.0',//项目启动host
-    port: 8887,// 项目启动port,
+    host: '0.0.0.0', //项目启动host
+    port: 8887, // 项目启动port,
     open: true,
     proxy: {
       // detail: https://cli.vuejs.org/config/#devserver-proxy
       [process.env.VUE_APP_BASE_API]: {
-        target: 'http://localhost:8888/',// 后端接口地址
+        target: 'http://localhost:8888/', // 后端接口地址
         changeOrigin: true,
         pathRewrite: {
-          ['^' + process.env.VUE_APP_BASE_API]: ''//需要rewrite的
+          ['^' + process.env.VUE_APP_BASE_API]: '' //需要rewrite的
         }
       }
     },
@@ -51,8 +56,7 @@ module.exports = {
         '@': resolve('src')
       }
     },
-    plugins: [
-    ]
+    plugins: []
   },
   chainWebpack(config) {
     config.plugins.delete('preload') // TODO: need test
