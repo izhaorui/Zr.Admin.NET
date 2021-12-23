@@ -1,6 +1,6 @@
 ﻿-- 菜单
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time, remark) 
-VALUES ('${genTable.functionName}', ${parentId}, 1, '${genTable.ModuleName}/${replaceDto.ModelTypeName}', '${genTable.ModuleName}/${genTable.BusinessName}', 0, 0, 'C', '0', '0', '${replaceDto.PermissionPrefix}:list', 'icon1', '', sysdate(), '${genTable.functionName}菜单');
+VALUES ('${genTable.functionName}', ${parentId}, 1, '${genTable.ModuleName}/${replaceDto.ModelTypeName}', '${genTable.ModuleName}/${genTable.BusinessName}', 0, 0, 'C', '0', '0', '${replaceDto.PermissionPrefix}:list', '', '', sysdate(), '${genTable.functionName}菜单');
 
 -- 按钮父菜单id
 SELECT @menuId := LAST_INSERT_ID();
