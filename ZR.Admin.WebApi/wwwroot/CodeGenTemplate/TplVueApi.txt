@@ -67,7 +67,7 @@ export function export${genTable.BusinessName}(query) {
   })
 }
 
-$if(genTable.SortField != "" && genTable.SortField != null)
+$if(showCustomInput)
 //排序
 export function changeSort(data) {
   return request({

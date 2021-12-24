@@ -176,5 +176,24 @@ $if(replaceDto.ShowBtnExport)
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
 $end
+
+$if(showCustomInput)
+        /// <summary>
+        /// 保存排序
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:update")]
+        [HttpGet("ChangeSort")]
+        [Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
+        public IActionResult ChangeSort(int id = 0, int value = 0)
+        {
+            if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
+            bool result = false;//TODO 自行实现;
+            
+            return SUCCESS(result);
+        }
+$end
     }
 }

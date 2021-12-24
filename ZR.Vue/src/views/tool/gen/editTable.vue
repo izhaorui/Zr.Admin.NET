@@ -84,6 +84,7 @@
                 <el-option label="图片上传" value="imageUpload" />
                 <el-option label="文件上传" value="fileUpload" />
                 <el-option label="富文本控件" value="editor" />
+                <el-option label="自定义输入框" value="customInput" />
               </el-select>
             </template>
           </el-table-column>
@@ -157,7 +158,7 @@ export default {
         getGenTable(tableId).then((res) => {
           this.columns = res.data.columns;
           this.info = res.data.info;
-          this.tables = res.data.tables;//子表
+          this.tables = res.data.tables; //子表
         });
         /** 查询字典下拉列表 */
         listType({ pageSize: 100 }).then((response) => {

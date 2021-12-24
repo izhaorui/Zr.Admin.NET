@@ -24,11 +24,6 @@ $if(replaceDto.ShowBtnExport)
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
       </el-col>
 $end
-$if(genTable.SortField != "" && 1 == 2)
-      <el-col :span="1.5">
-        <el-button type="info" plain icon="el-icon-edit" size="mini" @click="handleShowSort" v-hasPermi="['${replaceDto.PermissionPrefix}:update']">修改排序</el-button>
-      </el-col>
-$end
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -54,7 +49,7 @@ ${VueViewListContent}
 ${VueViewFormContent}
         </el-row>
       </el-form>
-      <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
+      <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
@@ -72,7 +67,7 @@ import {
 $if(replaceDto.ShowBtnExport)
   export${genTable.BusinessName},
 $end
-$if(genTable.SortField != "" && genTable.SortField != null)
+$if(showCustomInput)
   changeSort
 $end
 } from '@/api/${genTable.ModuleName}/${lowerBusinessName}.js';
@@ -124,13 +119,8 @@ $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围
       dateRange${item.CsharpField}: [],
 $elseif(item.HtmlType == "customInput")
-      editIndex = -1; //不加editIndex,整个列都会一块变成可编辑
-      showEditSort = false;
+      editIndex: -1,
 $end
-$end
-$if(genTable.SortField != "" && genTable.SortField != null)
-      // 是否显示编辑排序
-      showEditSort: false,
 $end
       // 数据列表
       dataList: [],
@@ -284,6 +274,27 @@ $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "
     // ${item.ColumnComment}字典翻译
     ${item.CsharpFieldFl}Format(row, column) {
       return this.selectDictLabel(this.${item.CsharpFieldFl}Options, row.${item.CsharpFieldFl});
+    },
+$end
+$if(item.HtmlType == "customInput")
+    // 显示编辑排序
+    editCurrRow(rowId, str) {
+      this.editIndex = rowId;
+      let id = rowId + str;
+      
+      setTimeout(() => {
+        document.getElementById(id).focus();
+      }, 100);
+    },
+    // 保存排序
+    handleChangeSort(info) {
+      this.editIndex = -1;
+      changeSort({ value: info.${item.CsharpFieldFl}, id: info.${replaceDto.FistLowerPk} }).then(
+        (response) => {
+          this.msgSuccess("修改成功");
+          this.getList();
+        }
+      );
     },
 $end
 $end

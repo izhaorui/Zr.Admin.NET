@@ -186,10 +186,9 @@ namespace ZR.CodeGenerator
                 sb.AppendLine($"          end-placeholder=\"结束日期\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" ></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
             }
-            else if ((dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO))
+            else if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO)
             {
-                //string value = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? "parseInt(item.dictValue)" : "item.dictValue";
-                sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{columnName}\">");
+                sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-select v-model=\"queryParams.{columnName}\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" size=\"small\" >");
                 sb.AppendLine($"          <el-option v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"item.dictValue\"></el-option>");
                 sb.AppendLine("        </el-select>");
@@ -220,12 +219,13 @@ namespace ZR.CodeGenerator
             string formatter = GetFormatter(dbFieldInfo.HtmlType, columnName);
             StringBuilder sb = new StringBuilder();
             //自定义排序字段
-            if (GenConstants.HTML_SORT.Equals(dbFieldInfo.HtmlType) && !dbFieldInfo.IsPk && CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType))
+            if (GenConstants.HTML_CUSTOM_INPUT.Equals(dbFieldInfo.HtmlType) && !dbFieldInfo.IsPk)
             {
                 sb.AppendLine($@"      <el-table-column prop=""{columnName}"" label=""{label}"" width=""90"" sortable align=""center"">");
                 sb.AppendLine(@"        <template slot-scope=""scope"">");
-                sb.AppendLine($@"          <el-input size=""mini"" style=""width:50px"" controls-position=""no"" v-model.number=""scope.row.{columnName}"" @blur=""handleChangeSort(scope.row, scope.row.{columnName})"" v-if=""showEditSort"" />");
-                sb.AppendLine($"          <span v-else>{{{{scope.row.{columnName}}}}}</span>");
+                sb.AppendLine($@"          <span v-show=""editIndex != scope.$index"" @click=""editCurrRow(scope.$index,'rowkeY')"">{{{{scope.row.{columnName}}}}}</span>");
+                sb.AppendLine(@"          <el-input :id=""scope.$index+'rowkeY'"" size=""mini"" v-show=""(editIndex == scope.$index)""");
+                sb.AppendLine($@"            v-model=""scope.row.{columnName}"" @blur=""handleChangeSort(scope.row)""></el-input>");
                 sb.AppendLine(@"        </template>");
                 sb.AppendLine(@"      </el-table-column>");
             }
@@ -239,7 +239,7 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("         </template>");
                 sb.AppendLine("       </el-table-column>");
             }
-            else if (dbFieldInfo.IsList && !string.IsNullOrEmpty(dbFieldInfo.DictType))
+            else if (dbFieldInfo.IsList && !string.IsNullOrEmpty(formatter))
             {
                 sb.AppendLine($@"      <el-table-column label=""{label}"" align=""center"" prop=""{columnName}"">");
                 sb.AppendLine(@"        <template slot-scope=""scope"">");

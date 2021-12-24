@@ -111,6 +111,10 @@ namespace ZR.CodeGenerator
         public static string HTML_EDITOR = "editor";
         // 自定义排序
         public static string HTML_SORT = "sort";
+        /// <summary>
+        /// 自定义输入框
+        /// </summary>
+        public static string HTML_CUSTOM_INPUT = "customInput";
         //颜色选择器
         public static string HTML_COLORPICKER = "colorPicker";
         //switch开关

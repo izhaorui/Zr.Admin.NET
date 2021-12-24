@@ -447,6 +447,7 @@ namespace ZR.CodeGenerator
         {
             //Engine.Current.Clean();
             dto.GenTable.Columns = dto.GenTable.Columns.OrderBy(x => x.Sort).ToList();
+            bool showCustomInput = dto.GenTable.Columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_CUSTOM_INPUT, StringComparison.OrdinalIgnoreCase));
             //jnt模板引擎全局变量
             Engine.Configure((options) =>
             {
@@ -461,6 +462,7 @@ namespace ZR.CodeGenerator
                 options.Data.Set("options", dto.GenOptions);
                 options.Data.Set("genTable", dto.GenTable);
                 options.Data.Set("btns", dto.CheckedBtn);
+                options.Data.Set("showCustomInput", showCustomInput);
                 options.Data.Set("tool", new CodeGeneratorTool());
                 options.Data.Set("codeTool", new CodeGenerateTemplate());
                 options.EnableCache = true;
