@@ -160,6 +160,7 @@ ${end}
             return ToResponse(response);
         }
 
+$if(replaceDto.ShowBtnExport)
         /// <summary>
         /// ${genTable.FunctionName}导出
         /// </summary>
@@ -174,5 +175,6 @@ ${end}
             string sFileName = ExportExcel(list, "${replaceDto.ModelTypeName}", "${genTable.FunctionName}");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
+$end
     }
 }

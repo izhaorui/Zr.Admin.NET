@@ -138,7 +138,7 @@
             <el-form-item label="创建人">{{formView.create_by}}</el-form-item>
           </el-col>
           <el-col :lg="24">
-            <el-form-item label="存储地址">{{formView.fileUrl}}</el-form-item>
+            <el-form-item label="存储路径">{{formView.fileUrl}}</el-form-item>
           </el-col>
           <el-col :lg="24">
             <el-form-item label="访问路径">{{formView.accessUrl}}</el-form-item>

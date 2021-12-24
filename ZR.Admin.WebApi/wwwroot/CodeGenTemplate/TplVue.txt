@@ -69,7 +69,9 @@ import {
   del${genTable.BusinessName},
   update${genTable.BusinessName},
   get${genTable.BusinessName},
+$if(replaceDto.ShowBtnExport)
   export${genTable.BusinessName},
+$end
 $if(genTable.SortField != "" && genTable.SortField != null)
   changeSort
 $end
@@ -121,6 +123,9 @@ $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围
       dateRange${item.CsharpField}: [],
+$elseif(item.HtmlType == "customInput")
+      editIndex = -1; //不加editIndex,整个列都会一块变成可编辑
+      showEditSort = false;
 $end
 $end
 $if(genTable.SortField != "" && genTable.SortField != null)
@@ -268,22 +273,6 @@ $end
         }
       });
     },
-$if(genTable.SortField != "" && genTable.SortField != null)
-    // 显示编辑排序
-    handleShowSort() {
-      this.showEditSort = !this.showEditSort;
-    },
-    // 保存排序
-    handleChangeSort(item, orderNum) {
-      changeSort({ orderNum: orderNum, id: item.${replaceDto.FistLowerPk} }).then(
-        (response) => {
-          this.msgSuccess("修改成功");
-          this.getList();
-          this.showEditSort = false;
-        }
-      );
-    },
-$end
 $if(replaceDto.UploadFile == 1)
     //图片上传成功方法
     handleUploadSuccess(column, filelist) {
@@ -333,6 +322,7 @@ $end
         }
       });
     },
+$if(replaceDto.ShowBtnExport)
     /** 导出按钮操作 */
     handleExport() {
       const queryParams = this.queryParams;
@@ -348,6 +338,7 @@ $end
           this.download(response.data.path);
         });
     },
+$end
   },
 };
 </script>

@@ -231,9 +231,11 @@ namespace ZR.CodeGenerator
             }
             else if (dbFieldInfo.IsList && dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
             {
-                sb.AppendLine($"      <el-table-column prop=\"{columnName}\" label=\"{label}\">");
+                sb.AppendLine($"      <el-table-column prop=\"{columnName}\" align=\"center\" label=\"{label}\">");
                 sb.AppendLine("         <template slot-scope=\"scope\">");
-                sb.AppendLine($"            <el-image class=\"table-td-thumb\" :src=\"scope.row.{columnName}\" :preview-src-list=\"[scope.row.{columnName}]\"></el-image>");
+                sb.AppendLine($"            <el-image class=\"table-td-thumb\" fit=\"contain\" :src=\"scope.row.{columnName}\" :preview-src-list=\"[scope.row.{columnName}]\">");
+                sb.AppendLine("              <div slot=\"error\"><i class=\"el-icon-document\" /></div>");
+                sb.AppendLine("            </el-image>");
                 sb.AppendLine("         </template>");
                 sb.AppendLine("       </el-table-column>");
             }
@@ -241,14 +243,12 @@ namespace ZR.CodeGenerator
             {
                 sb.AppendLine($@"      <el-table-column label=""{label}"" align=""center"" prop=""{columnName}"">");
                 sb.AppendLine(@"        <template slot-scope=""scope"">");
+                string checkboxHtml = string.Empty;
                 if (dbFieldInfo.HtmlType == GenConstants.HTML_CHECKBOX)
                 {
-                    sb.AppendLine($@"          <dict-tag :options=""{columnName}Options"" :value=""scope.row.{columnName} ? scope.row.{columnName}.split(',') : []""/>");
+                    checkboxHtml = $" ? scope.row.{columnName}.split(',') : []";
                 }
-                else
-                {
-                    sb.AppendLine($@"          <dict-tag :options=""{columnName}Options"" :value=""scope.row.{columnName}""/>");
-                }
+                sb.AppendLine($"          <dict-tag :options=\"{columnName}Options\" :value=\"scope.row.{columnName}{checkboxHtml}\" />");
                 sb.AppendLine(@"        </template>");
                 sb.AppendLine(@"      </el-table-column>");
             }
