@@ -1,6 +1,6 @@
 ﻿-- ${genTable.functionName}菜单
-INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time, remark) 
-VALUES ('${genTable.functionName}', ${parentId}, 1, '${genTable.ModuleName}/${genTable.BusinessName}', '${genTable.ModuleName}/${genTable.BusinessName}', 0, 0, 'C', '0', '0', '${replaceDto.PermissionPrefix}:list', '',  GETDATE(), '${genTable.functionName}');
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('${genTable.functionName}', ${parentId}, 1, '${genTable.BusinessName}', '${genTable.ModuleName}/${genTable.BusinessName}', 0, 0, 'C', '0', '0', '${replaceDto.PermissionPrefix}:list', '',  GETDATE());
 
 -- 按钮父菜单id
 declare @menuId int = @@identity

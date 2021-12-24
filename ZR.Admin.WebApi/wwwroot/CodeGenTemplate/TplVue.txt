@@ -73,7 +73,7 @@ $end
 } from '@/api/${genTable.ModuleName}/${lowerBusinessName}.js';
 
 export default {
-  name: "${genTable.BusinessName}",
+  name: "${lowerBusinessName}",
   data() {
     return {
       labelWidth: "100px",
