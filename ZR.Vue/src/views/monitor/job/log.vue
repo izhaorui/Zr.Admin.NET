@@ -108,7 +108,7 @@ import {
 } from "@/api/monitor/jobLog";
 
 export default {
-  name: "JobLog",
+  name: "job/log",
   data() {
     return {
       // 遮罩层

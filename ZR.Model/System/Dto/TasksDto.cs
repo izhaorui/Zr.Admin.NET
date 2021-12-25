@@ -79,7 +79,7 @@ namespace ZR.Model.System.Dto
         /// 默认 : 
         /// </summary>
         [Display(Name = "开始时间")]
-        public DateTime BeginTime { get; set; }
+        public DateTime? BeginTime { get; set; }
 
         /// <summary>
         /// 描述 : 结束时间 
@@ -87,7 +87,7 @@ namespace ZR.Model.System.Dto
         /// 默认 : 
         /// </summary>
         [Display(Name = "结束时间")]
-        public DateTime EndTime { get; set; }
+        public DateTime? EndTime { get; set; }
 
         /// <summary>
         /// 描述 : 触发器类型（0、simple 1、cron） 
@@ -186,7 +186,7 @@ namespace ZR.Model.System.Dto
         /// 默认 : 
         /// </summary>
         [Display(Name = "开始时间")]
-        public string BeginTime { get; set; }
+        public DateTime? BeginTime { get; set; }
 
         /// <summary>
         /// 描述 : 结束时间 
@@ -194,7 +194,7 @@ namespace ZR.Model.System.Dto
         /// 默认 : 
         /// </summary>
         [Display(Name = "结束时间")]
-        public string EndTime { get; set; }
+        public DateTime? EndTime { get; set; }
 
         /// <summary>
         /// 描述 : 触发器类型（0、simple 1、cron） 

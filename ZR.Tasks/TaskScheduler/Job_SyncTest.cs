@@ -6,7 +6,6 @@ namespace ZR.Tasks
     /// <summary>
     /// 定时任务测试
     /// </summary>
-    //[AppService(ServiceLifetime = LifeTime.Scoped)]
     public class Job_SyncTest : JobBase, IJob
     {
         //private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
@@ -21,7 +20,6 @@ namespace ZR.Tasks
             await Task.Delay(1);
             //TODO 业务逻辑
 
-            //throw new System.Exception("error");
         }
     }
 }

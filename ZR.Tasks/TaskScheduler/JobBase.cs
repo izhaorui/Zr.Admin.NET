@@ -24,9 +24,9 @@ namespace ZR.Tasks
         /// <param name="job">业务逻辑方法</param>
         public async Task<Dictionary<string,object>> ExecuteJob(IJobExecutionContext context, Func<Task> job)
         {
-            string logMsg = "";
             double elapsed = 0;
             int status = 0;
+            string logMsg;
             try
             {
                 //var s = context.Trigger.Key.Name;
@@ -64,6 +64,7 @@ namespace ZR.Tasks
         protected void RecordTaskLog(IJobExecutionContext context, Dictionary<string, object> executeLog)
         {
             var tasksLogService = (ISysTasksLogService)App.GetRequiredService(typeof(ISysTasksLogService));
+            var taskQzService = (ISysTasksQzService)App.GetRequiredService(typeof(ISysTasksQzService));
 
             // 可以直接获取 JobDetail 的值
             IJobDetail job = context.JobDetail;
@@ -80,7 +81,10 @@ namespace ZR.Tasks
             logModel.JobMessage = executeLog.GetValueOrDefault("content").ToString();
             logModel.Status = executeLog.GetValueOrDefault("status", "0").ToString();
             logModel = tasksLogService.AddTaskLog(job.Key.Name, logModel);
-
+            taskQzService.Update(f => f.ID == job.Key.Name, f => new SysTasksQz()
+            {
+                RunTimes = f.RunTimes + 1
+            });
             logger.Info($"执行任务【{job.Key.Name}|{logModel.JobName}】结果={logModel.JobMessage}");
         }
     }

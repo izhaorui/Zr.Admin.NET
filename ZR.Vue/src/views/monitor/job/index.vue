@@ -4,7 +4,8 @@
       <el-col>
         <el-form :inline="true" @submit.native.prevent>
           <el-form-item>
-            <el-input v-model="queryParams.queryText" placeholder="请输入计划任务名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="handleQuery" @clear="handleQuery" />
+            <el-input v-model="queryParams.queryText" placeholder="请输入计划任务名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="handleQuery"
+              @clear="handleQuery" />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
@@ -27,37 +28,43 @@
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['monitor:job:export']">导出</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button plain v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog({id: 1})">日志</el-button>
+        <el-button plain v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog({id: 1})">日志
+        </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="searchToggle" @queryTable="handleQuery"></right-toolbar>
     </el-row>
     <el-row>
-      <el-table ref="tasks" v-loading="loading" :data="dataTasks" border="" row-key="id" :height="tableHeight*0.65" @sort-change="handleSortable" @selection-change="handleSelectionChange">
+      <el-table ref="tasks" v-loading="loading" :data="dataTasks" border="" row-key="id" :height="tableHeight*0.65" @sort-change="handleSortable"
+        @selection-change="handleSelectionChange">
         <!-- <el-table-column type="selection" width="55" align="center" /> -->
         <el-table-column type="index" :index="handleIndexCalc" label="#" align="center" />
         <el-table-column prop="name" :show-overflow-tooltip="true" label="任务名称" />
         <el-table-column prop="jobGroup" :show-overflow-tooltip="true" align="center" label="任务分组" />
         <el-table-column prop="assemblyName" align="center" label="程序集名称" :show-overflow-tooltip="true" />
         <el-table-column prop="className" align="center" label="任务类名" :show-overflow-tooltip="true" />
+				<el-table-column prop="runTimes" align="center" label="运行次数"/>
         <el-table-column prop="cron" align="center" label="运行表达式" />
         <el-table-column sortable prop="isStart" align="center" label="状态" width="90">
           <template slot-scope="scope">
             <el-tag size="mini" :type="scope.row.isStart ? 'success' : 'danger'" disable-transitions>{{ scope.row.isStart ? "运行中":"已停止" }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="300" class-name="small-padding fixed-width">
+        <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width">
           <template slot-scope="scope">
-
             <el-button type="text" size="mini" icon="el-icon-view" v-hasPermi="['monitor:job:query']">
               <router-link :to="{path: 'job/log', query: {jobId: scope.row.id}}">日志</router-link>
             </el-button>
+            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:run']" size="mini" icon="el-icon-remove" title="运行"
+              @click="handleRun(scope.row)">运行</el-button>
+            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:stop']" size="mini" icon="el-icon-video-pause" style="color:red"
+              title="停止" @click="handleStop(scope.row)">停止</el-button>
 
-            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:run']" size="mini" icon="el-icon-remove" title="运行" @click="handleRun(scope.row)">运行</el-button>
-            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:stop']" size="mini" icon="el-icon-video-pause" style="color:red" title="停止" @click="handleStop(scope.row)">停止</el-button>
-
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:start']" size="mini" icon="el-icon-video-play" title="启动" @click="handleStart(scope.row)">启动</el-button>
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:edit']" size="mini" icon="el-icon-edit" style="color:gray" title="编辑" @click="handleUpdate(scope.row)">编辑</el-button>
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:delete']" size="mini" icon="el-icon-delete" style="color:red" title="删除" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:start']" size="mini" icon="el-icon-video-play" title="启动"
+              @click="handleStart(scope.row)">启动</el-button>
+            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:edit']" size="mini" icon="el-icon-edit" style="color:gray"
+              title="编辑" @click="handleUpdate(scope.row)">编辑</el-button>
+            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:delete']" size="mini" icon="el-icon-delete" style="color:red"
+              title="删除" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -91,11 +98,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="任务状态">
-              <el-tag>{{form.isStart? "运行中":"已停止" }}</el-tag>
-            </el-form-item>
-          </el-col>
           <el-col :span="24">
             <el-form-item label="程序集名称" maxlength="200" prop="assemblyName">
               <el-input v-model="form.assemblyName" placeholder="请输入程序集名称" />
@@ -111,36 +113,41 @@
               <el-input v-model="form.jobParams" placeholder="传入参数" />
             </el-form-item>
           </el-col>
-          <el-col :span="16">
-            <el-form-item v-show="form.triggerType == 1" label="间隔(Cron)" prop="cron">
+          <el-col :span="16" v-show="form.triggerType == 1">
+            <el-form-item label="间隔(Cron)" prop="cron">
               <el-input v-model="form.cron" placeholder="如10分钟执行一次：0/0 0/10 * * * ?" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="8" v-show="form.triggerType == 1">
             <el-form-item label-width="20px">
               <el-link href="https://cron.qqe2.com/" type="primary" target="_blank" class="mr10">cyon在线生成</el-link>
             </el-form-item>
           </el-col>
-          <el-col :span="24">
-            <el-form-item v-show="form.triggerType == 0" label="开始日期" prop="beginTime">
+          <el-col :span="12">
+            <el-form-item label="开始日期" prop="beginTime">
               <el-date-picker v-model="form.beginTime" style="width:100%" type="date" placeholder="选择开始日期" />
             </el-form-item>
           </el-col>
-          <el-col :span="24">
-            <el-form-item v-show="form.triggerType == 0" label="结束日期" prop="endTime">
+          <el-col :span="12">
+            <el-form-item label="结束日期" prop="endTime">
               <el-date-picker v-model="form.endTime" style="width:100%" type="date" placeholder="选择结束日期" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item v-show="form.triggerType == 0" label="执行间隔(单位:秒)" prop="intervalSecond">
+            <el-form-item v-show="form.triggerType == 0" label="执行间隔(秒)" prop="intervalSecond">
               <el-input-number v-model="form.intervalSecond" :max="9999999999" step-strictly controls-position="right" :min="1" />
+            </el-form-item>
+          </el-col>
+					<el-col :span="24">
+            <el-form-item label="备注" prop="remark">
+              <el-input type="textarea" v-model="form.remark"/>
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="open = false">取 消</el-button>
+        <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -155,10 +162,10 @@ import {
   startTasks,
   stopTasks,
   runTasks,
-  exportTasks
+  exportTasks,
 } from "@/api/monitor/job";
 export default {
-  name: "tasks",
+  name: "job",
   data() {
     var cronValidate = (rule, value, callback) => {
       if (this.form.triggerType === 1) {
@@ -235,14 +242,19 @@ export default {
       },
       // 计划任务列表
       dataTasks: [],
+      // 任务状态字典
+      isStartOptions: [
+        { dictLabel: "运行中", dictValue: "true" },
+        { dictLabel: "已停止", dictValue: "false", listClass: "danger" },
+      ],
       //任务组名字典
       jobGroupOptions: [],
       // 触发器类型
       triggerTypeOptions: [
-        // {
-        //   label: 'Simple / [普通]',
-        //   value: 0
-        // },
+        {
+          label: "Simple / [普通]",
+          value: 0,
+        },
         {
           label: "Cron / [表达式]",
           value: 1,
@@ -280,7 +292,6 @@ export default {
   },
   created() {
     this.getList();
-
     this.getDicts("sys_job_group").then((response) => {
       this.jobGroupOptions = response.data;
     });
@@ -468,11 +479,13 @@ export default {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-      }).then(() => {
-        return exportTasks();
-      }).then(response => {
-          this.download(response.data.path)
-      });
+      })
+        .then(() => {
+          return exportTasks();
+        })
+        .then((response) => {
+          this.download(response.data.path);
+        });
     },
   },
 };

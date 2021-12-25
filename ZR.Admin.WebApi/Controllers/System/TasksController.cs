@@ -139,7 +139,9 @@ namespace ZR.Admin.WebApi.Controllers
                 IntervalSecond = parm.IntervalSecond,
                 JobParams = parm.JobParams,
                 Update_by = User.Identity.Name,
-                Update_time = DateTime.Now
+                Update_time = DateTime.Now,
+                BeginTime = parm.BeginTime,
+                EndTime = parm.EndTime
             });
             if (response > 0)
             {
