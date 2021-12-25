@@ -86,7 +86,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int UpdateDept(SysDept dept)
         {
-            SysDept newParentDept = DeptRepository.GetFirst(it => it.ParentId == dept.ParentId);
+            SysDept newParentDept = DeptRepository.GetFirst(it => it.DeptId == dept.ParentId);
             SysDept oldDept = DeptRepository.GetFirst(m => m.DeptId == dept.DeptId);
             if (newParentDept != null && oldDept != null)
             {
@@ -96,10 +96,11 @@ namespace ZR.Service.System
                 UpdateDeptChildren(dept.DeptId, newAncestors, oldAncestors);
             }
             int result = DeptRepository.Context.Updateable(dept).ExecuteCommand();
-            if (UserConstants.DEPT_NORMAL.Equals(dept.Status))
+            if (UserConstants.DEPT_NORMAL.Equals(dept.Status) && dept.Ancestors.IfNotEmpty()
+                && !"0".Equals(dept.Ancestors))
             {
                 // 如果该部门是启用状态，则启用该部门的所有上级部门
-                //UpdateParentDeptStatus(dept);
+                UpdateParentDeptStatusNormal(dept);
             }
             return result;
         }
@@ -108,12 +109,13 @@ namespace ZR.Service.System
         /// 修改该部门的父级部门状态
         /// </summary>
         /// <param name="dept">当前部门</param>
-        private void UpdateParentDeptStatus(SysDept dept)
+        private void UpdateParentDeptStatusNormal(SysDept dept)
         {
-            string updateBy = dept.Update_by;
-            dept = DeptRepository.GetFirst(it => it.DeptId == dept.DeptId);
-            dept.Update_by = updateBy;
-            //DeptRepository.UpdateParentDeptStatus(dept);
+            long[] depts = Tools.SpitLongArrary(dept.Ancestors);
+            dept.Status = "0";
+            dept.Update_time = DateTime.Now;
+
+            DeptRepository.Update(dept, it => new { it.Update_by, it.Update_time, it.Status }, f => depts.Contains(f.DeptId));
         }
 
         /// <summary>
@@ -128,14 +130,22 @@ namespace ZR.Service.System
 
             foreach (var child in children)
             {
-                child.Ancestors = child.Ancestors.Replace(oldAncestors, newAncestors);
+                string ancestors = child.Ancestors.ReplaceFirst(oldAncestors, newAncestors);
+                long[] ancestorsArr = Tools.SpitLongArrary(ancestors).Distinct().ToArray();
+                child.Ancestors = string.Join(",", ancestorsArr);
             }
-            if (children.Count > 0)
+            if (children.Any())
             {
-                //DeptRepository.UdateDeptChildren(child);
+                DeptRepository.UdateDeptChildren(children);
             }
         }
 
+        /// <summary>
+        /// 获取所有子部门
+        /// </summary>
+        /// <param name="depts"></param>
+        /// <param name="deptId"></param>
+        /// <returns></returns>
         public List<SysDept> GetChildrenDepts(List<SysDept> depts, long deptId)
         {
             return depts.FindAll(delegate (SysDept item)

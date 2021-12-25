@@ -3,6 +3,7 @@ using Infrastructure.Extensions;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ZR.Model;
 using ZR.Model.System;
 
@@ -22,15 +23,24 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public PagedInfo<SysUser> SelectUserList(SysUser user, PagerInfo pager)
         {
+            var exp = Expressionable.Create<SysUser>();
+            exp.AndIF(!string.IsNullOrEmpty(user.UserName), u => u.UserName.Contains(user.UserName));
+            exp.AndIF(!string.IsNullOrEmpty(user.Status), u => u.Status == user.Status);
+            exp.AndIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, u => u.Create_time >= user.BeginTime);
+            exp.AndIF(user.EndTime != DateTime.MinValue && user.EndTime != null, u => u.Create_time <= user.EndTime);
+            exp.AndIF(!user.Phonenumber.IsEmpty(), u => u.Phonenumber == user.Phonenumber);
+            exp.And(u => u.DelFlag == "0");
+
+            if (user.DeptId != 0)
+            {
+                SysDept dept = Context.Queryable<SysDept>().First(f => f.DeptId == user.DeptId);
+                string[] deptArr = dept?.Ancestors.Split(",").ToArray();
+
+                exp.AndIF(user.DeptId != 0, u => u.DeptId == user.DeptId);// || deptArr.Contains(u.DeptId.ToString()));
+            }
             var query = Context.Queryable<SysUser>()
                 .LeftJoin<SysDept>((u, dept) => u.DeptId == dept.DeptId)
-                .WhereIF(!string.IsNullOrEmpty(user.UserName), u => u.UserName.Contains(user.UserName))
-                .WhereIF(!string.IsNullOrEmpty(user.Status), u => u.Status == user.Status)
-                .WhereIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, u => u.Create_time >= user.BeginTime)
-                .WhereIF(user.EndTime != DateTime.MinValue && user.EndTime != null, u => u.Create_time <= user.EndTime)
-                .WhereIF(!user.Phonenumber.IsEmpty(), u => u.Phonenumber == user.Phonenumber)
-                .WhereIF(user.DeptId != 0, u => u.DeptId == user.DeptId)
-                .Where(u => u.DelFlag == "0")
+                .Where(exp.ToExpression())
                 .Select((u, dept) => new SysUser
                 {
                     UserId = u.UserId.SelectAll(),

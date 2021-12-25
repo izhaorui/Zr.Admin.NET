@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Infrastructure.Extensions
 {
@@ -25,6 +26,20 @@ namespace Infrastructure.Extensions
         public static bool IfNotEmpty(this string str)
         {
             return !string.IsNullOrEmpty(str);
+        }
+
+        /// <summary>
+        /// 注意：如果替换的旧值中有特殊符号，替换将会失败，解决办法 例如特殊符号是“(”：  要在调用本方法前加oldValue=oldValue.Replace("(","//(");
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="oldValue"></param>
+        /// <param name="newValue"></param>
+        /// <returns></returns>
+        public static string ReplaceFirst(this string input, string oldValue, string newValue)
+        {
+            Regex regEx = new Regex(oldValue, RegexOptions.Multiline);
+            return regEx.Replace(input, newValue == null ? "" : newValue, 1);
+
         }
     }
 }

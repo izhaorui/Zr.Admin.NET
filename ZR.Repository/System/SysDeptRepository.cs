@@ -7,7 +7,7 @@ namespace ZR.Repository.System
     /// <summary>
     /// 部门管理
     /// </summary>
-    [AppService(ServiceLifetime=  LifeTime.Transient)]
+    [AppService(ServiceLifetime = LifeTime.Transient)]
     public class SysDeptRepository : BaseRepository<SysDept>
     {
         /// <summary>
@@ -22,9 +22,10 @@ namespace ZR.Repository.System
             return Context.SqlQueryable<SysDept>(sql).AddParameters(new { @deptId = deptId }).ToList();
         }
 
-        public int UdateDeptChildren(SysDept dept)
+        public int UdateDeptChildren(List<SysDept> dept)
         {
-            return Context.Updateable(dept).UpdateColumns(it => new { it.Ancestors }).ExecuteCommand();
+            return Context.Updateable(dept).WhereColumns(f => new { f.DeptId })
+                .UpdateColumns(it => new { it.Ancestors }).ExecuteCommand();
         }
     }
 }
