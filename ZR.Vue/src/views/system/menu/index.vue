@@ -20,15 +20,13 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:menu:add']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="info" plain icon="el-icon-edit" size="mini" @click="handleShowSort" v-hasPermi="['system:menu:changeSort']">修改排序</el-button>
-      </el-col>
-      <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">展开/折叠</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-if="refreshTable" v-loading="loading" :data="menuList" :default-expand-all="isExpandAll" row-key="menuId" border :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+    <el-table v-if="refreshTable" v-loading="loading" :data="menuList" :default-expand-all="isExpandAll" row-key="menuId" border
+      :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column prop="menuName" label="菜单名称" :show-overflow-tooltip="true" width="160"></el-table-column>
       <el-table-column prop="icon" label="图标" align="center" width="80">
         <template slot-scope="scope">
@@ -45,8 +43,9 @@
       </el-table-column>
       <el-table-column prop="orderNum" label="排序" width="90" align="center">
         <template slot-scope="scope">
-          <el-input size="mini" style="width:50px" controls-position="no" v-model.number="scope.row.orderNum" @blur="changeSort(scope.row)" v-if="showEditSort" />
-          <span v-else>{{scope.row.orderNum}}</span>
+          <span v-show="editIndex != scope.$index" @click="editCurrRow(scope.$index,'rowkeY')">{{scope.row.orderNum}}</span>
+          <el-input :id="scope.$index+'rowkeY'" size="mini" v-show="(editIndex == scope.$index)" v-model="scope.row.orderNum"
+            @blur="handleChangeSort(scope.row)"></el-input>
         </template>
       </el-table-column>
       <el-table-column prop="perms" label="权限标识" :show-overflow-tooltip="true"></el-table-column>
@@ -58,7 +57,7 @@
           <dict-tag :options="statusOptions" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center">
+      <el-table-column label="操作" align="center" width="180" fixed="right">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:menu:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-plus" @click="handleAdd(scope.row)" v-hasPermi="['system:menu:add']">新增</el-button>
@@ -73,7 +72,8 @@
         <el-row>
           <el-col :lg="24">
             <el-form-item label="上级菜单">
-              <treeselect v-model="form.parentId" :options="menuOptions" :normalizer="normalizer" :show-count="true" @select="handleTreeSelect" placeholder="选择上级菜单" />
+              <treeselect v-model="form.parentId" :options="menuOptions" :normalizer="normalizer" :show-count="true" @select="handleTreeSelect"
+                placeholder="选择上级菜单" />
             </el-form-item>
           </el-col>
           <el-col :lg="24">
@@ -250,6 +250,7 @@ export default {
       btnSubmitVisible: true,
       // 是否显示编辑排序
       showEditSort: false,
+      editIndex: -1,
       // 表单参数
       form: {},
       // 表单校验
@@ -414,7 +415,8 @@ export default {
     /**
      * 保存排序
      */
-    changeSort(item) {
+    handleChangeSort(item) {
+      this.editIndex = -1;
       changeMenuSort({ orderNum: item.orderNum, menuId: item.menuId }).then(
         (response) => {
           this.msgSuccess("修改成功");
@@ -426,11 +428,14 @@ export default {
       //如果是链接隐藏提交按钮
       this.btnSubmitVisible = node.menuType == "L" ? false : true;
     },
-    /**
-     * 显示编辑排序
-     */
-    handleShowSort() {
-      this.showEditSort = !this.showEditSort;
+    // 显示编辑排序
+    editCurrRow(rowId, str) {
+      this.editIndex = rowId;
+      let id = rowId + str;
+
+      setTimeout(() => {
+        document.getElementById(id).focus();
+      }, 100);
     },
     //展开/折叠操作
     toggleExpandAll() {
