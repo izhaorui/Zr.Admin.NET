@@ -131,6 +131,13 @@ namespace ZR.Repository
             return Context.Updateable(entity).UpdateColumns(expression).IgnoreColumns(ignoreAllNull).ExecuteCommand();
         }
 
+        /// <summary>
+        /// 根据实体类更新 eg：Update(dept, it => new { it.Status }, f => depts.Contains(f.DeptId));只更新Status列，条件是包含
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="expression"></param>
+        /// <param name="where"></param>
+        /// <returns></returns>
         public int Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
         {
             return Context.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand();
@@ -169,6 +176,13 @@ namespace ZR.Repository
         //    });
         //    return result.IsSuccess;
         //}
+
+        /// <summary>
+        /// 更新指定列 eg：Update(w => w.NoticeId == model.NoticeId, it => new SysNotice(){ Update_time = DateTime.Now, Title = "通知标题" });
+        /// </summary>
+        /// <param name="where"></param>
+        /// <param name="columns"></param>
+        /// <returns></returns>
         public int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
         {
             return Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand();
