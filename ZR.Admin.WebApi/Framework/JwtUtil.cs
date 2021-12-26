@@ -121,7 +121,7 @@ namespace ZR.Admin.WebApi.Framework
         /// </summary>
         /// <param name="jwtToken"></param>
         /// <returns></returns>
-        private static LoginUser ValidateJwtToken(IEnumerable<Claim> jwtToken)
+        public static LoginUser ValidateJwtToken(IEnumerable<Claim> jwtToken)
         {
             try
             {

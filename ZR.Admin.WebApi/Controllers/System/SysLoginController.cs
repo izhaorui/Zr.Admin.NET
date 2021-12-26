@@ -32,7 +32,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysPermissionService permissionService;
         private readonly SecurityCodeHelper SecurityCodeHelper;
         private readonly ISysConfigService sysConfigService;
-
+        private readonly ISysRoleService roleService;
         public SysLoginController(
             IHttpContextAccessor contextAccessor,
             ISysMenuService sysMenuService,
@@ -40,6 +40,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysLoginService sysLoginService,
             ISysPermissionService permissionService,
             ISysConfigService configService,
+            ISysRoleService sysRoleService,
             SecurityCodeHelper captcha)
         {
             httpContextAccessor = contextAccessor;
@@ -49,6 +50,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.sysLoginService = sysLoginService;
             this.permissionService = permissionService;
             this.sysConfigService = configService;
+            roleService = sysRoleService;
         }
 
 
@@ -67,17 +69,18 @@ namespace ZR.Admin.WebApi.Controllers.System
             SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
             if (sysConfig?.ConfigValue != "off" && CacheHelper.Get(loginBody.Uuid) is string str && !str.ToLower().Equals(loginBody.Code.ToLower()))
             {
-                throw new CustomException(ResultCode.CAPTCHA_ERROR, "验证码错误");
+                return CustomError(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
 
             var user = sysLoginService.Login(loginBody, AsyncFactory.RecordLogInfo(httpContextAccessor.HttpContext, "0", "login"));
             #region 存入cookie Action校验权限使用
             //角色集合 eg: admin,yunying,common
-            List<string> roles = permissionService.GetRolePermission(user);
+            //List<string> roles = permissionService.GetRolePermission(user);
+            List<SysRole> roles = roleService.SelectRolePermissionByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
             #endregion
-            LoginUser loginUser = new LoginUser(user.UserId, user.UserName, roles, permissions);
+            LoginUser loginUser = new LoginUser(user, roles, permissions);
 
             return SUCCESS(JwtUtil.GenerateJwtToken(HttpContext.AddClaims(loginUser)));
         }

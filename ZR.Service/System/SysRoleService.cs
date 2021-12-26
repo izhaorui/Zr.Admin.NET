@@ -148,11 +148,33 @@ namespace ZR.Service
             return SysRoleRepository.DeleteRoleMenuByRoleId(roleId);
         }
 
+        /// <summary>
+        /// 修改数据权限信息
+        /// </summary>
+        /// <param name="sysRoleDto"></param>
+        /// <returns></returns>
+        public bool AuthDataScope(SysRole sysRoleDto)
+        {
+            return UseTran2(() =>
+            {
+                int result = Update(sysRoleDto, it => new
+                {
+                    it.DataScope
+                }, f => f.RoleId == sysRoleDto.RoleId);
+
+                //if (result > 0 && sysRoleDto.DataScope == "2")
+                //{
+                //删除角色菜单
+                DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
+                InsertRoleMenu(sysRoleDto);
+                //}
+            });
+        }
         #region Service
 
 
         /// <summary>
-        /// 新增角色菜单信息
+        /// 批量新增角色菜单信息
         /// </summary>
         /// <param name="sysRoleDto"></param>
         /// <returns></returns>

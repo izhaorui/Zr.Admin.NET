@@ -30,6 +30,5 @@ namespace ZR.Admin.WebApi.Framework
 
             return sysLogininfor;
         }
-
     }
 }

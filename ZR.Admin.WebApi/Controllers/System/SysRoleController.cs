@@ -129,13 +129,8 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             sysRoleDto.Create_by = HttpContext.GetName();
             sysRoleService.CheckRoleAllowed(sysRoleDto);
-            
-            bool result = sysRoleService.UseTran2(() =>
-            {
-                //删除角色菜单
-                sysRoleService.DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
-                sysRoleService.InsertRoleMenu(sysRoleDto);
-            });
+
+            bool result = sysRoleService.AuthDataScope(sysRoleDto);
 
             return SUCCESS(result);
         }

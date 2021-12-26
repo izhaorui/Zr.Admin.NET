@@ -76,6 +76,12 @@ namespace ZR.Service.System.IService
         /// <returns></returns>
         public int DeleteRoleMenuByRoleId(long roleId);
 
+        /// <summary>
+        /// 授权数据范围
+        /// </summary>
+        /// <param name="role"></param>
+        /// <returns></returns>
+        bool AuthDataScope(SysRole role);
         #region Service
 
 

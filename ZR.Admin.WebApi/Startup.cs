@@ -9,12 +9,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using SqlSugar.IOC;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using Microsoft.OpenApi.Models;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Framework;
@@ -24,13 +20,11 @@ namespace ZR.Admin.WebApi
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration, IWebHostEnvironment hostEnvironment)
+        public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            CurrentEnvironment = hostEnvironment;
         }
         private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-        private IWebHostEnvironment CurrentEnvironment { get; }
         public IConfiguration Configuration { get; }
         public void ConfigureServices(IServiceCollection services)
         {
@@ -72,7 +66,7 @@ namespace ZR.Admin.WebApi
                 o.TokenValidationParameters = JwtUtil.ValidParameters();
             });
 
-            InjectServices(services);
+            InjectServices(services, Configuration);
 
             services.AddMvc(options =>
             {
@@ -94,7 +88,6 @@ namespace ZR.Admin.WebApi
             {
                 app.UseDeveloperExceptionPage();
             }
-
             app.UseSwagger();
             //使可以多次多去body内容
             app.Use((context, next) =>
@@ -135,59 +128,15 @@ namespace ZR.Admin.WebApi
         /// 注册Services服务
         /// </summary>
         /// <param name="services"></param>
-        private void InjectServices(IServiceCollection services)
+        /// <param name="configuration"></param>
+        private void InjectServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddAppService();
 
             //开启计划任务
             services.AddTaskSchedulers();
-
-            string connStr = Configuration.GetConnectionString(OptionsSetting.ConnAdmin);
-            string connStrBus = Configuration.GetConnectionString(OptionsSetting.ConnBus);
-            string dbKey = Configuration[OptionsSetting.DbKey];
-            int dbType = Convert.ToInt32(Configuration[OptionsSetting.ConnDbType]);
-            int dbType_bus = Convert.ToInt32(Configuration[OptionsSetting.ConnBusDbType]);
-
-            SugarIocServices.AddSqlSugar(new List<IocConfig>() {
-               new IocConfig() {
-                ConfigId = "0",
-                ConnectionString = connStr,
-                DbType = (IocDbType)dbType,
-                IsAutoCloseConnection = true//自动释放
-            }, new IocConfig() {
-                ConfigId = "1",
-                ConnectionString = connStrBus,
-                DbType = (IocDbType)dbType_bus,
-                IsAutoCloseConnection = true//自动释放
-            }
-            });
-
-            //调式代码 用来打印SQL 
-            DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
-            {
-                var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
-                //Console.WriteLine("【SQL语句】" + sql.ToLower() + "\r\n" + param);
-                logger.Info($"Sql语句：{sql}，{param}");
-            };
-            //出错打印日志
-            DbScoped.SugarScope.GetConnection(0).Aop.OnError = (e) =>
-            {
-                Console.WriteLine($"[执行Sql出错]{e.Message}，SQL={e.Sql}");
-                Console.WriteLine();
-            };
-
-            //调式代码 用来打印SQL 
-            DbScoped.SugarScope.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
-            {
-                var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
-                //Console.WriteLine("【SQL语句Bus】" + sql.ToLower() + "\r\n" + param);
-                logger.Info($"Sql语句：{sql}, {param}");
-            };
-            //Bus Db错误日志
-            DbScoped.SugarScope.GetConnection(1).Aop.OnError = (e) =>
-            {
-                logger.Error($"执行Sql语句失败：{e.Sql}，原因：{e.Message}");
-            };
+            //初始化db
+            DbExtension.AddDb(configuration);
         }
     }
 }
