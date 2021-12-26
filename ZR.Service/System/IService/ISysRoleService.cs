@@ -45,7 +45,7 @@ namespace ZR.Service.System.IService
         /// <summary>
         /// 更改角色权限状态
         /// </summary>
-        /// <param name="SysRoleDto"></param>
+        /// <param name="roleDto"></param>
         /// <returns></returns>
         public int UpdateRoleStatus(SysRole roleDto);
 

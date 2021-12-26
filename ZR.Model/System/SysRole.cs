@@ -44,7 +44,10 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true, IsOnlyIgnoreUpdate = true)]
         public string DelFlag { get; set; }
-
+        /// <summary>
+        /// 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 ）
+        /// </summary>
+        public string DataScope { get; set; }
         /// <summary>
         /// 菜单组
         /// </summary>

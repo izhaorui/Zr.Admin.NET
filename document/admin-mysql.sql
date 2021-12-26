@@ -31,7 +31,7 @@ CREATE TABLE `Sys_TasksQz`  (
 -- ----------------------------
 -- Records of Sys_TasksQz
 -- ----------------------------
-INSERT INTO `Sys_TasksQz` VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZRTasks', 'Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL);
+INSERT INTO `Sys_TasksQz` VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL);
 
 -- ----------------------------
 -- Table structure for sys_Tasks_log
@@ -273,7 +273,7 @@ INSERT INTO sys_menu VALUES (102, '菜单管理', 1, 3, 'menu', 'system/menu/ind
 INSERT INTO sys_menu VALUES (103, '部门管理', 1, 4, 'dept', 'system/dept/index', 0, 0, 'C', '0', '0', 'system:dept:list', 'tree', '', SYSDATE(), '', NULL, '部门管理菜单');
 INSERT INTO sys_menu VALUES (104, '岗位管理', 1, 5, 'post', 'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', SYSDATE(), '', NULL, '岗位管理菜单');
 INSERT INTO sys_menu VALUES (105, '字典管理', 1, 6, 'dict', 'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (106, '角色分配', 1, 2, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '0', '0', 'system:role:list', 'people', '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (106, '角色分配', 1, 2, 'roleusers', 'system/roleusers/index', 0, 0, 'C', '1', '0', 'system:roleusers:list', 'people', '', SYSDATE(), '', NULL, NULL);
 INSERT into sys_menu VALUES (107, '参数设置', 1, 8, 'config','system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (108, '日志管理', 1, 10, 'log', ''                     , 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单');
 INSERT INTO sys_menu VALUES (109, '通知公告', 1, 9, 'notice', 'system/notice/index', 0, 0, 'C', '0', '0', 'system:notice:list', 'message', '', SYSDATE(), '', NULL, '');
@@ -304,7 +304,10 @@ INSERT INTO sys_menu VALUES (1008, '角色查询', 101, 1, '', '', 0, 0, 'F', '0
 INSERT INTO sys_menu VALUES (1009, '角色新增', 101, 2, '', '', 0, 0, 'F', '0', '0', 'system:role:add', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1010, '角色修改', 101, 3, '', '', 0, 0, 'F', '0', '0', 'system:role:edit', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1011, '角色删除', 101, 4, '', '', 0, 0, 'F', '0', '0', 'system:role:remove', '#', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (1012, '角色导出', 101, 5, '', '', 0, 0, 'F', '0', '0', 'system:role:export', '#', '', SYSDATE(), '', NULL, '');
+INSERT INTO sys_menu VALUES (1012, '角色授权', 101, 5, '', '', 0, 0, 'F', '0', '0', 'system:role:authorize', '#', '', SYSDATE(), '', NULL, '');
+-- 分配用户 按钮
+INSERT INTO sys_menu VALUES (1029, '新增用户', 106, 2, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:add', NULL, '', SYSDATE(), '', NULL, NULL);
+INSERT INTO sys_menu VALUES (1030, '删除用户', 106, 3, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:remove', NULL, '', SYSDATE(), '', NULL, NULL);
 -- 菜单管理 按钮
 INSERT INTO sys_menu VALUES (1013, '菜单查询', 102, 1, '', '', 0, 0, 'F', '0', '0', 'system:menu:query', '#', '', SYSDATE(), '', NULL, '');
 INSERT INTO sys_menu VALUES (1014, '菜单新增', 102, 2, '', '', 0, 0, 'F', '0', '0', 'system:menu:add', '#', '', SYSDATE(), '', NULL, '');
@@ -327,10 +330,7 @@ INSERT INTO sys_menu VALUES (1026, '字典新增', 105, 1, '', '', 0, 0, 'F', '0
 INSERT INTO sys_menu VALUES (1027, '字典修改', 105, 2, '', '', 0, 0, 'F', '0', '0', 'system:dict:edit', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1028, '字典删除', 105, 3, '', '', 0, 0, 'F', '0', '0', 'system:dict:remove', NULL, '', SYSDATE(), '', NULL, NULL);
 INSERT INTO sys_menu VALUES (1071, '字典导出', 105, 3, '', '', 0, 0, 'F', '0', '0', 'system:dict:export', NULL, '', SYSDATE(), '', NULL, NULL);
--- 分配用户 按钮
-INSERT INTO sys_menu VALUES (1029, '新增用户', 106, 1, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:add', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1030, '删除用户', 106, 2, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:del', NULL, '', SYSDATE(), '', NULL, NULL);
-INSERT INTO sys_menu VALUES (1031, '查询用户', 106, 3, '', '', 0, 0, 'F', '0', '0', 'system:roleusers:query', '', '', SYSDATE(), '', NULL, NULL);
+
 -- 定时任务 按钮
 INSERT INTO sys_menu values (1032, '任务查询', 110, 1, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:list', '#', '', sysdate(), '', null, '');
 INSERT INTO sys_menu VALUES (1033, '任务新增', 110, 2, '#', NULL, 0, 0, 'F', '0', '0', 'monitor:job:add', '', '', SYSDATE(), '', NULL, NULL);
@@ -409,7 +409,7 @@ CREATE TABLE `sys_oper_log`  (
   `operIP` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '主机地址',
   `operLocation` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '操作地点',
   `operParam` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '请求参数',
-  `jsonResult` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '返回参数',
+  `jsonResult` varchar(max) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '返回参数',
   `status` int(1) NULL DEFAULT 0 COMMENT '操作状态（0正常 1异常）',
   `errorMsg` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '错误消息',
   `operTime` datetime(0) NULL DEFAULT NULL COMMENT '操作时间',

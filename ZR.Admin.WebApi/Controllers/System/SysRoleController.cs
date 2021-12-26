@@ -7,7 +7,6 @@ using ZR.Common;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
-using ZR.Model.Vo;
 using ZR.Service.System.IService;
 using ZR.Admin.WebApi.Extensions;
 
@@ -129,6 +128,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (sysRoleDto == null || sysRoleDto.RoleId <= 0) return ToResponse(ApiResult.Error(101, "请求参数错误"));
 
             sysRoleDto.Create_by = HttpContext.GetName();
+            sysRoleService.CheckRoleAllowed(sysRoleDto);
+            
             bool result = sysRoleService.UseTran2(() =>
             {
                 //删除角色菜单
@@ -162,9 +163,10 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPut("changeStatus")]
         [Log(Title = "修改角色状态", BusinessType = BusinessType.UPDATE)]
-        [ActionPermissionFilter(Permission = "system:role:update")]
+        [ActionPermissionFilter(Permission = "system:role:edit")]
         public IActionResult ChangeStatus([FromBody] SysRole roleDto)
         {
+            sysRoleService.CheckRoleAllowed(roleDto);
             int result = sysRoleService.UpdateRoleStatus(roleDto);
 
             return ToResponse(ToJson(result));
@@ -176,7 +178,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "角色导出")]
         [HttpGet("export")]
-        [ActionPermissionFilter(Permission = "system:role:export")]
+        //[ActionPermissionFilter(Permission = "system:role:export")]
         public IActionResult Export()
         {
             var list = sysRoleService.SelectRoleAll();

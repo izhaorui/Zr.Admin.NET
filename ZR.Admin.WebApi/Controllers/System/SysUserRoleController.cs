@@ -1,11 +1,8 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model;
 using ZR.Model.System.Dto;
-using ZR.Model.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
@@ -31,7 +28,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="roleUserQueryDto"></param>
         /// <returns></returns>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "system:roleusers:query")]
+        [ActionPermissionFilter(Permission = "system:roleusers:list")]
         public IActionResult GetList([FromQuery] RoleUserQueryDto roleUserQueryDto)
         {
             var list = SysUserRoleService.GetSysUsersByRoleId(roleUserQueryDto);
@@ -59,7 +56,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="roleUsersCreateDto"></param>
         /// <returns></returns>
         [HttpPost("delete")]
-        [ActionPermissionFilter(Permission = "system:roleusers:del")]
+        [ActionPermissionFilter(Permission = "system:roleusers:remove")]
         [Log(Title = "删除角色用户", BusinessType = Infrastructure.Enums.BusinessType.DELETE)]
         public IActionResult Delete([FromBody] RoleUsersCreateDto roleUsersCreateDto)
         {

@@ -23,13 +23,10 @@
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:role:add']">新增</el-button>
       </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:role:export']">导出</el-button>
-      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="roleList" border @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="roleList" border highlight-current-row @selection-change="handleSelectionChange">
       <el-table-column label="编号" prop="roleId" width="80" />
       <el-table-column label="名称" prop="roleName" />
       <el-table-column label="权限字符" prop="roleKey" />
@@ -41,13 +38,21 @@
       <el-table-column label="创建时间" align="center" prop="createTime" width="150" />
       <el-table-column label="备注" align="center" prop="remark" width="150" :show-overflow-tooltip="true" />
       <el-table-column label="操作" align="center" width="200">
-        <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click.stop="handleUpdate(scope.row)" v-if="scope.row.roleKey != 'admin'"
-            v-hasPermi="['system:role:edit']">修改</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click.stop="handleDelete(scope.row)" v-if="scope.row.roleKey != 'admin'"
-            v-hasPermi="['system:role:remove']">删除</el-button>
-          <el-button size="mini" type="text" icon="el-icon-circle-check" @click.stop="handleDataScope(scope.row)" v-if="scope.row.roleKey != 'admin'"
-            v-hasPermi="['system:role:authorize']">数据权限</el-button>
+        <template slot-scope="scope" v-if="scope.row.roleKey != 'admin'">
+          <el-button size="mini" type="text" icon="el-icon-edit" @click.stop="handleUpdate(scope.row)" v-hasPermi="['system:role:edit']">修改
+          </el-button>
+          <el-button size="mini" type="text" icon="el-icon-delete" @click.stop="handleDelete(scope.row)" v-hasPermi="['system:role:remove']">删除
+          </el-button>
+
+          <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)" v-hasPermi="['system:role:edit']">
+            <span class="el-dropdown-link">
+              <i class="el-icon-d-arrow-right el-icon--right"></i>更多
+            </span>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="handleDataScope" icon="el-icon-circle-check" v-hasPermi="['system:role:authorize']">数据权限</el-dropdown-item>
+              <el-dropdown-item command="handleAuthUser" icon="el-icon-user" v-hasPermi="['system:roleusers:list']">分配用户</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -58,7 +63,12 @@
         <el-form-item label="权限字符">
           {{form.roleKey}}
         </el-form-item>
-        <el-form-item label="数据权限">
+        <el-form-item label="权限范围">
+          <el-select v-model="form.dataScope" @change="dataScopeSelectChange">
+            <el-option v-for="item in dataScopeOptions" :key="item.value" :label="item.label" :value="item.value"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="数据权限" v-show="form.dataScope == 2">
           <el-checkbox v-model="menuExpand" @change="handleCheckedTreeExpand($event, 'menu')">展开/折叠</el-checkbox>
           <el-checkbox v-model="menuNodeAll" @change="handleCheckedTreeNodeAll($event, 'menu')">全选/全不选</el-checkbox>
           <el-checkbox v-model="form.menuCheckStrictly" @change="handleCheckedTreeConnect($event, 'menu')">父子联动</el-checkbox>
@@ -68,6 +78,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitDataScope" v-hasPermi="['system:role:authorize']">保存</el-button>
+        <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -159,26 +170,26 @@ export default {
       showRoleScope: false,
       // 数据范围选项
       dataScopeOptions: [
-        {
-          value: "1",
-          label: "全部数据权限",
-        },
+        // {
+        //   value: "1",
+        //   label: "全部数据权限",
+        // },
         {
           value: "2",
           label: "自定数据权限",
         },
-        {
-          value: "3",
-          label: "本部门数据权限",
-        },
-        {
-          value: "4",
-          label: "本部门及以下数据权限",
-        },
-        {
-          value: "5",
-          label: "仅本人数据权限",
-        },
+        // {
+        //   value: "3",
+        //   label: "本部门数据权限",
+        // },
+        // {
+        //   value: "4",
+        //   label: "本部门及以下数据权限",
+        // },
+        // {
+        //   value: "5",
+        //   label: "仅本人数据权限",
+        // },
       ],
       // 菜单列表
       menuOptions: [],
@@ -302,6 +313,7 @@ export default {
     // 取消按钮
     cancel() {
       this.open = false;
+      this.showRoleScope = false;
       this.reset();
     },
     // 表单重置
@@ -343,6 +355,19 @@ export default {
       this.ids = selection.map((item) => item.roleId);
       this.single = selection.length != 1;
       this.multiple = !selection.length;
+    },
+    // 更多操作触发
+    handleCommand(command, row) {
+      switch (command) {
+        case "handleDataScope":
+          this.handleDataScope(row);
+          break;
+        case "handleAuthUser":
+          this.handleAuthUser(row);
+          break;
+        default:
+          break;
+      }
     },
     // 树权限（展开/折叠）
     handleCheckedTreeExpand(value, type) {
@@ -396,6 +421,12 @@ export default {
         this.title = "修改角色";
       });
     },
+    /** 选择角色权限范围触发 */
+    dataScopeSelectChange(value) {
+      if (value !== "2") {
+        this.$refs.dept.setCheckedKeys([]);
+      }
+    },
     /** 分配角色权限按钮操作 */
     //新增 和上面代码基本相同
     handleDataScope(row) {
@@ -420,8 +451,14 @@ export default {
         roleId: row.roleId,
         roleName: row.roleName,
         roleKey: row.roleKey,
+        dataScope: row.dataScope,
         menuCheckStrictly: true,
       };
+    },
+    /** 分配用户操作 */
+    handleAuthUser: function (row) {
+      const roleId = row.roleId;
+      this.$router.push({ path: "/system/roleusers", query: { roleId } });
     },
     /** 提交按钮 */
     submitForm: function () {
@@ -460,8 +497,7 @@ export default {
         dataScope(this.form).then((response) => {
           this.msgSuccess("修改成功");
           this.getList();
-          this.showRoleScope = false;
-          this.handleDataScope({ roleId: this.form.roleId });
+          this.cancel();
         });
       } else {
         this.msgError("请选择角色");

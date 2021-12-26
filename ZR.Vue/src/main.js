@@ -11,6 +11,7 @@ import App from './App'
 import store from './store'
 import router from './router'
 import permission from './directive/permission'
+import plugins from './plugins' // plugins
 
 import './assets/icons' // icon
 import './permission' // permission control
@@ -63,8 +64,9 @@ Vue.component('DictTag', DictTag)
 Vue.component('Editor', Editor)
 Vue.component('UploadImage', UploadImage)
 Vue.component('UploadFile', UploadFile)
-Vue.use(permission)
 
+Vue.use(permission)
+Vue.use(plugins)
 Vue.use(Element, {
   size: Cookies.get('size') || 'small' // set element-ui default size
 })
