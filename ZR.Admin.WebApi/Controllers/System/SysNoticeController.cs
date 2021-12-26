@@ -37,7 +37,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "system:sysnotice:list")]
+        [ActionPermissionFilter(Permission = "system:notice:list")]
         public IActionResult QuerySysNotice([FromQuery] SysNoticeQueryDto parm)
         {
             //开始拼装查询条件
@@ -57,7 +57,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="NoticeId"></param>
         /// <returns></returns>
         [HttpGet("{NoticeId}")]
-        [ActionPermissionFilter(Permission = "system:sysnotice:query")]
+        [ActionPermissionFilter(Permission = "system:notice:query")]
         public IActionResult GetSysNotice(int NoticeId)
         {
             var response = _SysNoticeService.GetFirst(x => x.NoticeId == NoticeId);
@@ -70,7 +70,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        [ActionPermissionFilter(Permission = "system:sysnotice:add")]
+        [ActionPermissionFilter(Permission = "system:notice:add")]
         [Log(Title = "通知公告表", BusinessType = BusinessType.INSERT)]
         public IActionResult AddSysNotice([FromBody] SysNoticeDto parm)
         {
@@ -100,7 +100,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpPut]
-        [ActionPermissionFilter(Permission = "system:sysnotice:update")]
+        [ActionPermissionFilter(Permission = "system:notice:update")]
         [Log(Title = "通知公告表", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdateSysNotice([FromBody] SysNoticeDto parm)
         {
@@ -131,7 +131,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpDelete("{ids}")]
-        [ActionPermissionFilter(Permission = "system:sysnotice:delete")]
+        [ActionPermissionFilter(Permission = "system:notice:delete")]
         [Log(Title = "通知公告表", BusinessType = BusinessType.DELETE)]
         public IActionResult DeleteSysNotice(string ids)
         {
@@ -149,7 +149,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "通知公告表")]
         [HttpGet("export")]
-        [ActionPermissionFilter(Permission = "system:sysnotice:export")]
+        [ActionPermissionFilter(Permission = "system:notice:export")]
         public IActionResult Export()
         {
             var list = _SysNoticeService.GetAll();
