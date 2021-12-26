@@ -29,9 +29,6 @@ namespace Infrastructure.Startups
 
                 // 添加全局配置和存储服务提供器
                 InternalApp.InternalServices = services;
-
-                // 初始化应用服务
-                //services.AddApp();
             });
 
         }
