@@ -18,7 +18,7 @@ namespace ZR.Admin.WebApi.Controllers
         public static string TIME_FORMAT_FULL = "yyyy-MM-dd HH:mm:ss";
         public static string TIME_FORMAT_FULL_2 = "MM-dd HH:mm:ss";
 
-        protected IActionResult SUCCESS(object data, string timeFormatStr = "MM-dd HH:mm")
+        protected IActionResult SUCCESS(object data, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
         {
             string jsonStr = GetJsonStr(GetApiResult(data != null ? ResultCode.SUCCESS : ResultCode.FAIL, data), timeFormatStr);
             return Content(jsonStr, "application/json");
@@ -36,13 +36,13 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="apiResult"></param>
         /// <param name="timeFormatStr"></param>
         /// <returns></returns>
-        protected IActionResult ToResponse(ApiResult apiResult, string timeFormatStr = "MM-dd HH:mm")
+        protected IActionResult ToResponse(ApiResult apiResult, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
         {
             string jsonStr = GetJsonStr(apiResult, timeFormatStr);
 
             return Content(jsonStr, "application/json");
         }
-        protected IActionResult ToResponse(long rows, string timeFormatStr = "MM-dd HH:mm")
+        protected IActionResult ToResponse(long rows, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
         {
             string jsonStr = GetJsonStr(ToJson(rows), timeFormatStr);
 
