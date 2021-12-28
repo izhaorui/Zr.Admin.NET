@@ -43,7 +43,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="createTime" label="创建时间" width="110"> </el-table-column>
+      <el-table-column prop="createTime" label="创建时间" width="128" :show-overflow-tooltip="true"> </el-table-column>
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
           <!-- <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button> -->

@@ -18,7 +18,8 @@
             <el-tag size="large" :key="tag" v-for="tag in form.dynamicTags" closable :disable-transitions="false" @close="handleCloseTag(tag)">
               {{tag}}
             </el-tag>
-            <el-input class="input-new-tag" v-if="inputVisible" v-model="inputValue" ref="saveTagInput" size="small" @keyup.enter.native="handleInputConfirm" @blur="handleInputConfirm">
+            <el-input class="input-new-tag" v-if="inputVisible" v-model="inputValue" ref="saveTagInput" size="small"
+              @keyup.enter.native="handleInputConfirm" @blur="handleInputConfirm">
             </el-input>
             <el-button v-else class="button-new-tag" size="small" @click="showInput">+ 文章标签</el-button>
           </el-form-item>
@@ -144,14 +145,11 @@ export default {
 
       this.$refs["form"].validate((valid) => {
         if (valid) {
-          console.log(JSON.stringify(this.form));
-
           if (this.form.cid != undefined) {
             updateArticle(this.form).then((res) => {
               if (res.code == 200) {
                 this.msgSuccess("修改文章成功");
-                this.$store.dispatch("tagsView/delView", this.$route);
-                this.$router.push({ path: "/article/manager" });
+                this.$tab.closeOpenPage({ path: '/tool/article/index' });
               } else {
                 this.msgError("修改文章失败");
               }
@@ -160,8 +158,7 @@ export default {
             addArticle(this.form).then((res) => {
               if (res.code == 200) {
                 this.msgSuccess("发布文章成功");
-                this.$store.dispatch("tagsView/delView", this.$route);
-                this.$router.push({ path: "/article/manager" });
+                this.$tab.closeOpenPage({ path: '/tool/article/index' });
               } else {
                 this.msgError("发布文章失败");
               }
