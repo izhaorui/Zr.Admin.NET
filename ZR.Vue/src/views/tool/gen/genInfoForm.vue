@@ -5,7 +5,8 @@
         <el-form-item prop="tplCategory">
           <span slot="label">生成模板</span>
           <el-select v-model="info.tplCategory" @change="tplSelectChange">
-            <el-option label="单表（增删改查）" value="crud" />
+						<el-option label="单表（增删改查）" value="crud" />
+            <!-- <el-option label="单表查询" value="select" /> -->
             <!-- <el-option label="树表（增删改查）" value="tree" />
 						<el-option label="导航查询" value="subNav"></el-option> -->
             <!-- <el-option label="主子表（增删改查）" value="sub" /> -->
