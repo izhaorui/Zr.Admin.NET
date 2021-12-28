@@ -125,11 +125,14 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 - 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
 
 ## 🎀捐赠
-如果这个项目对您有所帮助，请扫下方二维码打赏一杯咖啡。
+如果这个项目对您有所帮助，请扫下方二维码就当打发要饭的吧。
 <img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/pay.jpg"/>
 
-源码地址
+## 使用说明
+如果部署iis访问不了情况可以有以下两种办法：
+1. 直接打开ZR.Admin.WebApi.exe文件然后看控制台的错误日志
+2. web.config里面有个false 改为 true，iis重启项目后运行网站后，跟目录下面 有个文件夹 log 里面有错误日志文件
 
+## 源码地址
 - [Gitee](https://gitee.com/izory/ZrAdminNetCore/)
-
 - [Github](https://github.com/izhaorui/ZrAdmin.NET/)
