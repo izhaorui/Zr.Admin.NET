@@ -39,7 +39,72 @@ namespace Infrastructure.Extensions
         {
             Regex regEx = new Regex(oldValue, RegexOptions.Multiline);
             return regEx.Replace(input, newValue == null ? "" : newValue, 1);
-
         }
+
+        /// <summary>
+        /// 骆驼峰转下划线
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static string ToSmallCamelCase(string name)
+        {
+            var stringBuilder = new StringBuilder();
+            stringBuilder.Append(name.Substring(0, 1).ToLower());
+
+            for (var i = 0; i < name.Length; i++)
+            {
+                if (i == 0)
+                {
+                    stringBuilder.Append(name.Substring(0, 1).ToLower());
+                }
+                else
+                {
+                    if (name[i] >= 'A' && name[i] <= 'Z')
+                    {
+                        stringBuilder.Append($"_{name.Substring(i, 1).ToLower()}");
+                    }
+                    else
+                    {
+                        stringBuilder.Append(name[i]);
+                    }
+                }
+            }
+
+            return stringBuilder.ToString();
+        }
+
+        /// <summary>
+        /// 下划线命名转驼峰命名
+        /// </summary>
+        /// <param name="underscore"></param>
+        /// <returns></returns>
+        public static string UnderScoreToCamelCase(this string underscore)
+        {
+            string[] ss = underscore.Split("_");
+            if (ss.Length == 1)
+            {
+                return underscore;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append(ss[0]);
+            for (int i = 1; i < ss.Length; i++)
+            {
+                sb.Append(ss[i].FirstUpperCase());
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 首字母转大写
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string FirstUpperCase(this string str)
+        {
+            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToUpper() + str[1..];
+        }
+
     }
 }
