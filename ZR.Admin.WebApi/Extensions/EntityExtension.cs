@@ -22,7 +22,10 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 types.GetProperty("CreateTime").SetValue(source, DateTime.Now, null);
             }
-
+            if (types.GetProperty("AddTime") != null)
+            {
+                types.GetProperty("AddTime").SetValue(source, DateTime.Now, null);
+            }
             if (types.GetProperty("UpdateTime") != null)
             {
                 types.GetProperty("UpdateTime").SetValue(source, DateTime.Now, null);

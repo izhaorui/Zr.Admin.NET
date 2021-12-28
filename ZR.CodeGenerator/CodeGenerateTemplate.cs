@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using ZR.CodeGenerator.Model;
 using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator
@@ -98,10 +97,10 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-radio-group v-model=\"form.{columnName}\">");
-                if (string.IsNullOrEmpty(dbFieldInfo.DictType))
-                {
-                    sb.AppendLine("           <el-radio :label=\"1\">请选择字典生成</el-radio>");
-                }
+                //if (string.IsNullOrEmpty(dbFieldInfo.DictType))
+                //{
+                //    sb.AppendLine("           <el-radio :label=\"1\">请选择字典生成</el-radio>");
+                //}
                 sb.AppendLine($"          <el-radio v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"{value}\">{{{{item.dictLabel}}}}</el-radio>");
                 sb.AppendLine("        </el-radio-group>");
                 sb.AppendLine("      </el-form-item>");
@@ -131,10 +130,10 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-select v-model=\"form.{columnName}\" placeholder=\"请选择{labelName}\"> ");
-                if (string.IsNullOrEmpty(dbFieldInfo.DictType))
-                {
-                    sb.AppendLine($"          <el-option label=\"请选择字典生成\" value=\"\"></el-option>");
-                }
+                //if (string.IsNullOrEmpty(dbFieldInfo.DictType))
+                //{
+                //    sb.AppendLine($"          <el-option label=\"请选择字典生成\" value=\"\"></el-option>");
+                //}
                 sb.AppendLine($"          <el-option v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"{value}\"></el-option>");
                 sb.AppendLine("        </el-select>");
                 sb.AppendLine("      </el-form-item>");
@@ -146,10 +145,10 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col :lg=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-checkbox-group v-model=\"form.{columnName}Checked\"> ");
-                if (string.IsNullOrEmpty(dbFieldInfo.DictType))
-                {
-                    sb.AppendLine($"          <el-checkbox>请选择字典生成</el-checkbox>");
-                }
+                //if (string.IsNullOrEmpty(dbFieldInfo.DictType))
+                //{
+                //    sb.AppendLine($"          <el-checkbox>请选择字典生成</el-checkbox>");
+                //}
                 sb.AppendLine($"          <el-checkbox v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictValue\">{{{{item.dictLabel}}}}</el-checkbox>");
                 sb.AppendLine("        </el-checkbox-group>");
                 sb.AppendLine("      </el-form-item>");
@@ -215,7 +214,7 @@ namespace ZR.CodeGenerator
         {
             string columnName = dbFieldInfo.CsharpFieldFl;
             string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
-            string showToolTip = dbFieldInfo.CsharpType == "string" ? ":show-overflow-tooltip=\"true\"" : "";
+            string showToolTip = ShowToolTip(dbFieldInfo);
             string formatter = GetFormatter(dbFieldInfo.HtmlType, columnName);
             StringBuilder sb = new StringBuilder();
             //自定义排序字段
@@ -254,7 +253,7 @@ namespace ZR.CodeGenerator
             }
             else if (dbFieldInfo.IsList)
             {
-                sb.AppendLine($"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\" {showToolTip}{formatter}/>");
+                sb.AppendLine($"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\"{showToolTip}{formatter}/>");
             }
             return sb.ToString();
         }
@@ -306,6 +305,21 @@ namespace ZR.CodeGenerator
                 htmlType.Equals(GenConstants.HTML_RADIO))
             {
                 return $" :formatter=\"{columnName}Format\"";
+            }
+            return "";
+        }
+
+        /// <summary>
+        /// 超出隐藏
+        /// </summary>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        public static string ShowToolTip(GenTableColumn column)
+        {
+            if (column.CsharpType.Equals("string") ||
+                column.HtmlType.Equals(GenConstants.HTML_DATETIME))
+            {
+                return $" :show-overflow-tooltip=\"true\"";
             }
             return "";
         }

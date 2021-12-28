@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Extensions;
 using JinianNet.JNTemplate;
 using SqlSugar;
 using System;
@@ -384,7 +385,7 @@ namespace ZR.CodeGenerator
                 TableId = genTable.TableId,
                 TableName = genTable.TableName,
                 CsharpType = GetCSharpDatatype(column.DataType),
-                CsharpField = FirstUpperCase(column.DbColumnName),//TODO 优化下划线处理
+                CsharpField = FirstUpperCase(column.DbColumnName.UnderScoreToCamelCase()),
                 IsRequired = !column.IsNullable,
                 IsIncrement = column.IsIdentity,
                 Create_by = genTable.Create_by,

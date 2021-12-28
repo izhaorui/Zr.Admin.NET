@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using SqlSugar;
 using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
@@ -48,28 +47,7 @@ namespace ${options.ApiControllerNamespace}.Controllers
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:list")]
         public IActionResult Query${replaceDto.ModelTypeName}([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
         {
-            //开始拼装查询条件
-            var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
-
-            //搜索条件查询语法参考Sqlsugar
-$foreach(column in genTable.Columns)
-$if(column.IsQuery)
-$if(column.CsharpType == "string")
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
-$elseif(column.CsharpType == "DateTime")
-            predicate = predicate.AndIF(parm.Begin${column.CsharpField} == null, it => it.${column.CsharpField} >= DateTime.Now.AddDays(-1));
-            predicate = predicate.AndIF(parm.Begin${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.Begin${column.CsharpField});
-            predicate = predicate.AndIF(parm.End${column.CsharpField} != null, it => it.${column.CsharpField} <= parm.End${column.CsharpField});
-$elseif(column.CsharpType == "int" || column.CsharpType == "long")
-            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
-$end
-$end
-$end
-$if(genTable.SortField != "" && genTable.SortField != null)
-            var response = _${replaceDto.ModelTypeName}Service.GetPages(predicate.ToExpression(), parm, x => x.${genTable.SortField}, "${genTable.SortType}");
-$else
-            var response = _${replaceDto.ModelTypeName}Service.GetPages(predicate.ToExpression(), parm);
-$end
+            var response = _${replaceDto.ModelTypeName}Service.GetList(parm);
             return SUCCESS(response);
         }
 

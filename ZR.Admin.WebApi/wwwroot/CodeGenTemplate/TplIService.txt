@@ -1,6 +1,7 @@
 ﻿using System;
+using ${options.ModelsNamespace};
+using ${options.ModelsNamespace}.Dto;
 using ${options.ModelsNamespace}.Models;
-
 
 namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service
 {
@@ -12,5 +13,6 @@ namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNam
     /// </summary>
     public interface I${replaceDto.ModelTypeName}Service : IBaseService<${replaceDto.ModelTypeName}>
     {
+        PagedInfo<${replaceDto.ModelTypeName}> GetList(${replaceDto.ModelTypeName}QueryDto parm);
     }
 }
