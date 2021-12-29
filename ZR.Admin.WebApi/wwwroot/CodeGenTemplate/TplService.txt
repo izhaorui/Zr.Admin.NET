@@ -52,9 +52,9 @@ $end
 $end
 $end
 $if(genTable.SortField != "" && genTable.SortField != null)
-            var response = Queryable().GetPages(predicate.ToExpression(), parm, x => x.${genTable.SortField}, "${genTable.SortType}");
+            var response = _${replaceDto.ModelTypeName}repository.GetPages(predicate.ToExpression(), parm, x => x.${genTable.SortField}, "${genTable.SortType}");
 $else
-            var response = Queryable().Where(predicate.ToExpression()).ToPage(parm);
+            var response = _${replaceDto.ModelTypeName}repository.Where(predicate.ToExpression()).ToPage(parm);
 $end
             return response;
         }

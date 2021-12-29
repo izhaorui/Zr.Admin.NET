@@ -196,6 +196,10 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult EditSave([FromBody] GenTableDto genTableDto)
         {
             if (genTableDto == null) throw new CustomException("请求参数错误");
+            if (genTableDto.BusinessName.Equals(genTableDto.ModuleName, StringComparison.OrdinalIgnoreCase))
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "模块名不能和业务名一样");
+            }
             var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
 
             genTable.Options = JsonConvert.SerializeObject(new
@@ -204,17 +208,16 @@ namespace ZR.Admin.WebApi.Controllers
                 sortField = genTableDto.SortField,
                 sortType = genTable.SortType
             });
-            int updateCount = 0;
-            bool result = GenTableService.UseTran2(() =>
+            DbResult<bool> result = GenTableService.UseTran(() =>
             {
                 int rows = GenTableService.UpdateGenTable(genTable);
                 if (rows > 0)
                 {
-                    updateCount = GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
+                    GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
                 }
             });
-
-            return SUCCESS(updateCount);
+            
+            return SUCCESS(result.IsSuccess);
         }
 
         /// <summary>
