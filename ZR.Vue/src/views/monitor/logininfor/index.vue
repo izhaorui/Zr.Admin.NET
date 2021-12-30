@@ -29,7 +29,7 @@
         <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="handleClean" v-hasPermi="['monitor:logininfor:remove']">清空</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="warning" icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:logininfor:export']">导出</el-button>
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:logininfor:export']">导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -42,7 +42,11 @@
       <el-table-column label="登录地点" align="center" prop="loginLocation" :show-overflow-tooltip="true" />
       <el-table-column label="浏览器" align="center" prop="browser" />
       <el-table-column label="操作系统" align="center" prop="os" />
-      <el-table-column label="登录状态" align="center" prop="status" :formatter="statusFormat" />
+      <el-table-column label="操作状态" align="center" prop="status">
+        <template slot-scope="{row}">
+          <dict-tag :options="statusOptions" :value="row.status"></dict-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作信息" align="center" prop="msg" />
       <el-table-column label="登录日期" align="center" prop="loginTime" width="180">
         <template slot-scope="scope">
@@ -64,7 +68,7 @@ import {
 } from "@/api/monitor/logininfor";
 
 export default {
-  name: "Logininfor",
+  name: "logininfor",
   data() {
     return {
       // 遮罩层
