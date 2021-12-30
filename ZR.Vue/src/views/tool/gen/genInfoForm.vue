@@ -34,7 +34,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-input v-model="info.moduleName" />
+          <el-input v-model="info.moduleName" auto-complete=""/>
         </el-form-item>
       </el-col>
 
@@ -260,9 +260,6 @@ export default {
         ],
       },
     };
-  },
-  created() {
-    console.log(this.columns);
   },
   watch: {
     "info.subTableName": function (val) {

@@ -4,13 +4,16 @@
       <el-tab-pane label="基本信息" name="basic">
         <basic-info-form ref="basicInfo" :info="info" />
       </el-tab-pane>
+      <el-tab-pane label="生成信息" name="genInfo">
+        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" :columns="columns" />
+      </el-tab-pane>
       <el-tab-pane label="字段信息" name="cloum">
         <el-table ref="dragTable" :data="columns" row-key="columnId" :max-height="tableHeight">
           <el-table-column label="序号" type="index" min-width="5%" class-name="allowDrag" />
           <el-table-column label="字段列名" prop="columnName" min-width="10%" :show-overflow-tooltip="true" />
           <el-table-column label="字段描述" min-width="10%">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.columnComment"></el-input>
+              <el-input v-model="scope.row.columnComment" :ref='scope.row.columnId' @keydown.native="nextFocus(scope.row,scope.$index, $event)"></el-input>
             </template>
           </el-table-column>
           <el-table-column label="物理类型" prop="columnType" min-width="10%" :show-overflow-tooltip="true" />
@@ -90,8 +93,7 @@
           </el-table-column>
           <el-table-column label="字典类型" min-width="12%">
             <template slot-scope="scope">
-              <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择"
-                v-if="scope.row.htmlType == 'select' || scope.row.htmlType == 'radio' || scope.row.htmlType =='checkbox'">
+              <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择" v-if="scope.row.htmlType == 'select' || scope.row.htmlType == 'radio' || scope.row.htmlType =='checkbox'">
                 <el-option v-for="dict in dictOptions" :key="dict.dictType" :label="dict.dictName" :value="dict.dictType">
                   <span style="float: left">{{ dict.dictName }}</span>
                   <span style="float: right; color: #8492a6; font-size: 13px">{{ dict.dictType }}</span>
@@ -100,9 +102,6 @@
             </template>
           </el-table-column>
         </el-table>
-      </el-tab-pane>
-      <el-tab-pane label="生成信息" name="genInfo">
-        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" :columns="columns" />
       </el-tab-pane>
     </el-tabs>
     <el-form label-width="100px">
@@ -210,6 +209,9 @@ export default {
       this.$store.dispatch("tagsView/delView", this.$route);
       this.$router.push({ path: "/tool/gen", query: { t: Date.now() } });
     },
+    /**
+     * 排序保存
+     */
     sortTable(columns) {
       const el = this.$refs.dragTable.$el.querySelectorAll(
         ".el-table__body-wrapper > table > tbody"
@@ -228,6 +230,25 @@ export default {
           });
         },
       });
+    },
+    /**
+     * 回车到下一行
+     */
+    nextFocus(row, index, e) {
+      // const val = e.target.value;
+      var keyCode = e.keyCode || e.which || e.charCode;
+      if (keyCode === 13) {
+        this.$refs[row.columnId].blur();
+        if (Object.keys(this.$refs).length - 1 === index) {
+          index = -1;
+        }
+        var num = Object.keys(this.$refs)[index + 1];
+        if (num > 0) {
+          this.$refs[num].focus();
+        } else {
+          console.warn("最后一行了");
+        }
+      }
     },
   },
   watch: {
