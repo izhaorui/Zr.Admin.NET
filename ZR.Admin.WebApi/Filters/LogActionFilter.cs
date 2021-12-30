@@ -87,7 +87,7 @@ namespace ZR.Admin.WebApi.Filters
                 ei.Properties["status"] = 0;
                 ei.Properties["jsonResult"] = !HttpMethods.IsGet(method) ? jsonResult : "";
                 ei.Properties["requestParam"] = sysOperLog.operParam;
-                ei.Properties["user"] = context.HttpContext.User.Identity.Name;
+                ei.Properties["user"] = userName;
 
                 logger.Log(ei);
             }

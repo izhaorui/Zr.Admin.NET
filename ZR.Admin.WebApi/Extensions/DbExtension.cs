@@ -42,7 +42,7 @@ namespace ZR.Admin.WebApi.Extensions
 
                 FilterData(db0);
 
-                logger.Info($"Sql语句：{sql}，{param}");
+                logger.Info($"{sql}，{param}");
             };
             //出错打印日志
             db0.Aop.OnError = (e) =>
@@ -58,7 +58,7 @@ namespace ZR.Admin.WebApi.Extensions
             DbScoped.SugarScope.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
             {
                 var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
-                //Console.WriteLine("【SQL语句Bus】" + sql.ToLower() + "\r\n" + param);
+                
                 logger.Info($"Sql语句：{sql}, {param}");
             };
             //Db1错误日志
