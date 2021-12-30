@@ -14,7 +14,7 @@ ${vueQueryFormHtml}
         <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
+        <el-button type="success" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
@@ -33,7 +33,7 @@ $end
 ${VueViewListContent}
       <el-table-column label="操作" align="center" width="140">
         <template slot-scope="scope">
-          <el-button size="mini" v-hasPermi="['${replaceDto.PermissionPrefix}:update']" type="success" icon="el-icon-edit" title="编辑" 
+          <el-button size="mini" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" type="success" icon="el-icon-edit" title="编辑" 
             @click="handleUpdate(scope.row)"></el-button>
           <el-button size="mini" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="el-icon-delete" title="删除" 
             @click="handleDelete(scope.row)"></el-button>

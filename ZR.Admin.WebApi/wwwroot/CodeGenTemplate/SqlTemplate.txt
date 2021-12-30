@@ -16,7 +16,7 @@ INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isC
 VALUES ('删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:delete', '', 'system', GETDATE());
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
-VALUES ('修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:update', '', 'system', GETDATE());
+VALUES ('修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', '${replaceDto.PermissionPrefix}:edit', '', 'system', GETDATE());
 
 $if(replaceDto.ShowBtnExport)
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 

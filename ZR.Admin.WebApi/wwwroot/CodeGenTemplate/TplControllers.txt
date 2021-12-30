@@ -97,7 +97,7 @@ ${end}
         /// </summary>
         /// <returns></returns>
         [HttpPut]
-        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:update")]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:edit")]
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update${replaceDto.ModelTypeName}([FromBody] ${replaceDto.ModelTypeName}Dto parm)
         {
@@ -140,10 +140,10 @@ ${end}
 
 $if(replaceDto.ShowBtnExport)
         /// <summary>
-        /// ${genTable.FunctionName}导出
+        /// 导出${genTable.FunctionName}
         /// </summary>
         /// <returns></returns>
-        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "${genTable.FunctionName}")]
+        [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
         [HttpGet("export")]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:export")]
         public IActionResult Export()
@@ -159,18 +159,26 @@ $if(showCustomInput)
         /// <summary>
         /// 保存排序
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="value"></param>
+        /// <param name="id">主键</param>
+        /// <param name="value">排序值</param>
         /// <returns></returns>
-        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:update")]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:edit")]
         [HttpGet("ChangeSort")]
         [Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
         public IActionResult ChangeSort(int id = 0, int value = 0)
         {
             if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-            bool result = false;//TODO 自行实现;
+            var response = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == id, it => new ${replaceDto.ModelTypeName}()
+            {
+                //Update 字段映射
+$foreach(item in genTable.Columns)
+$if((item.htmlType == "customInput"))
+                $item.CsharpField = value,
+$end
+${end}
+            });
             
-            return SUCCESS(result);
+            return ToResponse(response);
         }
 $end
     }
