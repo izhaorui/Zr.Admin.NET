@@ -179,13 +179,13 @@ export default {
           const genTable = Object.assign({}, basicForm.model, genForm.model);
           genTable.columns = this.columns;
           genTable.params = {
-            // treeCode: genTable.treeCode,
-            // treeName: genTable.treeName,
-            // treeParentCode: genTable.treeParentCode,
-            //parentMenuId: genTable.parentMenuId,
+            treeCode: genTable.treeCode,
+            treeName: genTable.treeName,
+            treeParentCode: genTable.treeParentCode,
+            parentMenuId: genTable.parentMenuId,
           };
           console.log("genForm", genTable);
-          // return;
+          
           updateGenTable(genTable).then((res) => {
             this.msgSuccess(res.msg);
             if (res.code === 200) {

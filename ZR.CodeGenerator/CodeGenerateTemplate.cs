@@ -17,7 +17,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="dbFieldInfo"></param>
         /// <returns></returns>
-        public static string TplVueFormContent(GenTableColumn dbFieldInfo)
+        public static string TplVueFormContent(GenTableColumn dbFieldInfo, GenTable genTable)
         {
             string columnName = dbFieldInfo.CsharpFieldFl;
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
@@ -34,6 +34,17 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col v-if=\"title == '修改数据'\" :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">{{{{form.{columnName}}}}}</el-form-item>");
                 sb.AppendLine("    </el-col>");
+                return sb.ToString();
+            }
+
+            //树
+            if (genTable.TplCategory.Equals("tree", StringComparison.OrdinalIgnoreCase) && genTable.TreeParentCode != null && dbFieldInfo.CsharpField.Equals(genTable.TreeParentCode))
+            {
+                sb.AppendLine(@"    <el-col :lg=""24"">");
+                sb.AppendLine($@"      <el-form-item label=""父级id"" prop=""{columnName}"">");
+                sb.AppendLine($@"        <treeselect v-model=""form.{columnName}"" :options=""dataList"" :normalizer=""normalizer"" :show-count=""true"" placeholder=""选择上级菜单"" />");
+                sb.AppendLine(@"      </el-form-item>");
+                sb.AppendLine(@"    </el-col>");
                 return sb.ToString();
             }
             //主键、非自增要插入，不能编辑

@@ -24,12 +24,28 @@ namespace ZR.Model.System.Dto
         /// <summary>
         /// 上级菜单id
         /// </summary>
-        public int? ParentMenuId { get; set; }
-        public string SortField { get; set; }
-        public string SortType { get; set; }
+        //public int? ParentMenuId { get; set; }
+        //public string SortField { get; set; }
+        //public string SortType { get; set; }
+        /// <summary>
+        /// 额外参数
+        /// </summary>
+        public Options Params { get; set; }
         public List<GenTableColumnDto> Columns { get; set; }
     }
 
+    /// <summary>
+    /// 额外参数
+    /// </summary>
+    public class Options
+    {
+        public string treeCode { get; set; }
+        public string treeName { get; set; }
+        public string treeParentCode { get; set; }
+        public int? parentMenuId { get; set; }
+        public string sortField { get; set; }
+        public string sortType { get; set; }
+    }
     public class GenTableColumnDto
     {
         public int ColumnId { get; set; }
@@ -56,4 +72,5 @@ namespace ZR.Model.System.Dto
         /// </summary>
         public string DictType { get; set; }
     }
+
 }

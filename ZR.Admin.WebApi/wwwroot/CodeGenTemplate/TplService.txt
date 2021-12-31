@@ -7,6 +7,7 @@ using ${options.IRepositoriesNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
 using System;
 using SqlSugar;
+using System.Collections.Generic;
 
 namespace ${options.ServicesNamespace}.${options.SubNamespace}
 {
@@ -54,11 +55,39 @@ $end
 $if(genTable.SortField != "" && genTable.SortField != null)
             var response = _${replaceDto.ModelTypeName}repository.GetPages(predicate.ToExpression(), parm, x => x.${genTable.SortField}, "${genTable.SortType}");
 $else
-            var response = _${replaceDto.ModelTypeName}repository.Where(predicate.ToExpression()).ToPage(parm);
+            var response = _${replaceDto.ModelTypeName}repository.Queryable().Where(predicate.ToExpression()).ToPage(parm);
 $end
             return response;
         }
 
+$if(genTable.TplCategory == "tree")
+        /// <summary>
+        /// 查询${genTable.FunctionName}树列表
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public List<${replaceDto.ModelTypeName}> GetTreeList(${replaceDto.ModelTypeName}QueryDto parm)
+        {
+            //开始拼装查询条件
+            var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
+
+            //搜索条件查询语法参考Sqlsugar
+$foreach(column in genTable.Columns)
+$if(column.IsQuery)
+$if(column.CsharpType == "string")
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+$elseif(column.CsharpType == "int" || column.CsharpType == "long")
+            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+$end
+$end
+$end
+
+            var response = _${replaceDto.ModelTypeName}repository.Queryable().Where(predicate.ToExpression())
+                .ToTree(it => it.Children, it => it.${genTable.TreeParentCode}, 0);
+
+            return response;
+        }
+$end
         #endregion
     }
 }

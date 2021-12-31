@@ -2,6 +2,7 @@
 using ${options.ModelsNamespace};
 using ${options.ModelsNamespace}.Dto;
 using ${options.ModelsNamespace}.Models;
+using System.Collections.Generic;
 
 namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service
 {
@@ -14,5 +15,9 @@ namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNam
     public interface I${replaceDto.ModelTypeName}Service : IBaseService<${replaceDto.ModelTypeName}>
     {
         PagedInfo<${replaceDto.ModelTypeName}> GetList(${replaceDto.ModelTypeName}QueryDto parm);
+
+$if(genTable.TplCategory == "tree")
+        List<${replaceDto.ModelTypeName}> GetTreeList(${replaceDto.ModelTypeName}QueryDto parm);
+$end
     }
 }

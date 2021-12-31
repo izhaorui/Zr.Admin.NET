@@ -12,6 +12,20 @@ export function list${genTable.BusinessName}(query) {
   })
 }
 
+$if(genTable.TplCategory == "tree")
+/**
+* ${genTable.functionName}tree查询
+* @param {查询条件} data
+*/
+export function treelist${genTable.BusinessName}(query) {
+  return request({
+    url: '${genTable.ModuleName}/${genTable.BusinessName}/treelist',
+    method: 'get',
+    params: query,
+  })
+}
+$end
+
 /**
 * 新增${genTable.functionName}
 * @param data

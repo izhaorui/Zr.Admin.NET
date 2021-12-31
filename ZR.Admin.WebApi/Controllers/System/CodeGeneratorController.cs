@@ -202,12 +202,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
             var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
 
-            genTable.Options = JsonConvert.SerializeObject(new
-            {
-                parentMenuId = genTableDto.ParentMenuId,
-                sortField = genTableDto.SortField,
-                sortType = genTable.SortType
-            });
+            genTable.Options = JsonConvert.SerializeObject(genTableDto.Params);
             DbResult<bool> result = GenTableService.UseTran(() =>
             {
                 int rows = GenTableService.UpdateGenTable(genTable);

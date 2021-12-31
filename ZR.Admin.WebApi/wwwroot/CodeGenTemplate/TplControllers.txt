@@ -51,6 +51,21 @@ namespace ${options.ApiControllerNamespace}.Controllers
             return SUCCESS(response);
         }
 
+$if(genTable.TplCategory == "tree")
+        /// <summary>
+        /// 查询${genTable.FunctionName}列表树
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        [HttpGet("treeList")]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:list")]
+        public IActionResult QueryTree${replaceDto.ModelTypeName}([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
+        {
+            var response = _${replaceDto.ModelTypeName}Service.GetTreeList(parm);
+            return SUCCESS(response);
+        }
+$end
+
         /// <summary>
         /// 查询${genTable.FunctionName}详情
         /// </summary>

@@ -25,5 +25,10 @@ $elseif(item.CsharpField.ToLower() != item.ColumnName.ToLower())
 $end
         public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
 ${end}
+
+$if(genTable.TplCategory == "tree")
+        [SugarColumn(IsIgnore = true)]
+        public List<${replaceDto.ModelTypeName}> Children { get; set; }
+$end
     }
 }

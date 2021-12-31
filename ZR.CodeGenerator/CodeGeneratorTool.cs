@@ -66,7 +66,7 @@ namespace ZR.CodeGenerator
                 dbFieldInfo.CsharpFieldFl = FirstLowerCase(dbFieldInfo.CsharpField);
                 //CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
 
-                replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo);
+                replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo, dto.GenTable);
                 replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo, dto.GenTable);
                 replaceDto.VueQueryFormHtml += CodeGenerateTemplate.TplQueryFormHtml(dbFieldInfo);
             }
@@ -172,8 +172,19 @@ namespace ZR.CodeGenerator
         private static void GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             var fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", generateDto.GenTable.ModuleName, $"{generateDto.GenTable.BusinessName}.vue");
-
-            var tpl = FileHelper.ReadJtTemplate("TplVue.txt");
+            string fileName = string.Empty;
+            switch (generateDto.GenTable.TplCategory)
+            {
+                case "tree":
+                    fileName = "TplTreeVue.txt";
+                    break;
+                case "crud":
+                    fileName = "TplVue.txt";
+                    break;
+                default:
+                    break;
+            }
+            var tpl = FileHelper.ReadJtTemplate(fileName);
             tpl.Set("vueQueryFormHtml", replaceDto.VueQueryFormHtml);
             tpl.Set("VueViewEditFormRuleContent", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
             tpl.Set("VueViewFormContent", replaceDto.VueViewFormHtml);//添加、修改表单
@@ -459,6 +470,7 @@ namespace ZR.CodeGenerator
                 //options.DisableeLogogram = true;//禁用简写
                 options.Data.Set("refs", "$");//特殊标签替换
                 options.Data.Set("confirm", "$");//特殊标签替换
+                options.Data.Set("nextTick", "$");
                 options.Data.Set("replaceDto", replaceDto);
                 options.Data.Set("options", dto.GenOptions);
                 options.Data.Set("genTable", dto.GenTable);

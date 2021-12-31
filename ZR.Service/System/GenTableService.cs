@@ -79,9 +79,16 @@ namespace ZR.Service.System
             if (!string.IsNullOrEmpty(genTable?.Options))
             {
                 Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTable.Options);
+                if (options == null) return;
+
                 genTable.ParentMenuId = options.GetValueOrDefault("parentMenuId") ?? null;
+                
                 genTable.SortType = options.GetValueOrDefault("sortType") ?? "asc";
-                genTable.SortField = options.GetValueOrDefault("sortField") ?? null;
+                genTable.SortField = options.GetValueOrDefault("sortField") ?? "";
+
+                genTable.TreeParentCode = options.GetValueOrDefault("treeParentCode") ?? "";
+                genTable.TreeName = options.GetValueOrDefault("treeName") ?? "";
+                genTable.TreeCode = options.GetValueOrDefault("treeCode") ?? "";
             }
         }
 

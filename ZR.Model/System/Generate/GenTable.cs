@@ -83,8 +83,18 @@ namespace ZR.Model.System.Generate
         public object ParentMenuId { get; set; }
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public object SortType { get; set; } = "asc";
+
         [SqlSugar.SugarColumn(IsIgnore = true)]
-        public object SortField { get; set; } = "";
+        public object SortField { get; set; } = string.Empty;
+        
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public object TreeCode { get; set; } = string.Empty;
+
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public object TreeName { get; set; } = string.Empty;
+
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public object TreeParentCode { get; set; }
         #endregion
     }
 }
