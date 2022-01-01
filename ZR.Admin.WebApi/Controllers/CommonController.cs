@@ -84,7 +84,7 @@ namespace ZR.Admin.WebApi.Controllers
             mailHelper.SendMail(toUsers, sendEmailVo.Subject, sendEmailVo.Content, sendEmailVo.FileUrl, sendEmailVo.HtmlContent);
 
             logger.Info($"发送邮件{JsonConvert.SerializeObject(sendEmailVo)}");
-
+            
             return SUCCESS(true);
         }
 

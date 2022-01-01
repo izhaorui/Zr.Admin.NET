@@ -11,10 +11,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Framework;
 using ZR.Admin.WebApi.Middleware;
+using ZR.Common.Cache;
 
 namespace ZR.Admin.WebApi
 {
@@ -137,6 +139,12 @@ namespace ZR.Admin.WebApi
             services.AddTaskSchedulers();
             //初始化db
             DbExtension.AddDb(configuration);
+
+            //注册REDIS 服务
+            Task.Run(() =>
+            {
+                RedisServer.Initalize();
+            });
         }
     }
 }

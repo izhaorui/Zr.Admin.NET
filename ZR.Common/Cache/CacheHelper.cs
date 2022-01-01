@@ -1,11 +1,6 @@
-﻿
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using System;
-using System.Web;
 
-/// <summary>
-/// 数据缓存操作类 author by zhaorui 2021-3-6
-/// </summary>
 namespace ZR.Common
 {
     public class CacheHelper
@@ -18,11 +13,6 @@ namespace ZR.Common
                 //SizeLimit = 1024
             });
         }
-
-        /// <summary>
-        /// 全局缓存时间
-        /// </summary>
-        public static int CacheTime = 5; //ConfigHelper.GetConfigInt("CacheTime");
 
         /// <summary>
         /// 获取缓存
@@ -46,7 +36,6 @@ namespace ZR.Common
         public static object GetCache(string CacheKey)
         {
             return Cache.Get<object>(CacheKey);
-            //return HttpRuntime.Cache[CacheKey];
         }
 
         public static object Get(string CacheKey)
@@ -59,9 +48,9 @@ namespace ZR.Common
         /// </summary>
         /// <param name="CacheKey">key</param>
         /// <param name="objObject">值</param>
-        public static void SetCache(string CacheKey, object objObject)
+        public static object SetCache(string CacheKey, object objObject)
         {
-            Cache.Set(CacheKey, objObject);
+            return Cache.Set(CacheKey, objObject);
         }
 
         /// <summary>
@@ -70,9 +59,9 @@ namespace ZR.Common
         /// <param name="CacheKey">key</param>
         /// <param name="objObject">值</param>
         /// <param name="Timeout">过期时间（分钟）</param>
-        public static void SetCache(string CacheKey, object objObject, int Timeout)
+        public static object SetCache(string CacheKey, object objObject, int Timeout)
         {
-            Cache.Set(CacheKey, objObject, DateTime.Now.AddMinutes(Timeout));
+            return Cache.Set(CacheKey, objObject, DateTime.Now.AddMinutes(Timeout));
         }
 
         /// <summary>
@@ -93,9 +82,9 @@ namespace ZR.Common
         /// <param name="objObject">值</param>
         /// <param name="absoluteExpiration">过期时间</param>
         /// <param name="slidingExpiration">过期时间间隔</param>
-        public static void SetCache(string CacheKey, object objObject, DateTime absoluteExpiration, TimeSpan slidingExpiration)
+        public static object SetCache(string CacheKey, object objObject, DateTime absoluteExpiration, TimeSpan slidingExpiration)
         {
-            Cache.Set(CacheKey, objObject, absoluteExpiration);
+            return Cache.Set(CacheKey, objObject, absoluteExpiration);
         }
 
         /// <summary>
@@ -103,7 +92,7 @@ namespace ZR.Common
         /// </summary>
         /// <param name="CacheKey"></param>
         /// <param name="objObject"></param>
-        /// <param name="seconds">超过多少秒后过期</param>
+        /// <param name="Seconds">超过多少秒后过期</param>
         public static void SetCacheDateTime(string CacheKey, object objObject, long Seconds)
         {
             Cache.Set(CacheKey, objObject, DateTime.Now.AddSeconds(Seconds));
