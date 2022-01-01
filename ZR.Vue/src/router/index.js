@@ -72,6 +72,15 @@ export const constantRoutes = [{
       meta: { title: '个人中心', icon: 'user' }
     }]
   },
+	{
+    path: '/echarts',
+    component: (resolve) => require(['@/views/components/Echarts'], resolve),
+    hidden: true
+  },{
+    path: '/icons',
+    component: (resolve) => require(['@/views/components/icons/index'], resolve),
+    hidden: true
+  },
 ]
 
 export default new Router({
