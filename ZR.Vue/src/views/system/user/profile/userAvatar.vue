@@ -9,7 +9,7 @@
         </el-col>
         <el-col :xs="24" :md="12" :style="{height: '350px'}">
           <div class="avatar-upload-preview">
-            <img :src="previews.url" :style="previews.img" />
+            <el-image :src="previews.url" :style="previews.img" />
           </div>
         </el-col>
       </el-row>

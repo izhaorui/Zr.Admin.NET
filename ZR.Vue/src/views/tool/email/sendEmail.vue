@@ -1,15 +1,12 @@
 <template>
   <el-row>
-    <el-form class="mt10" ref="form" :model="form" label-width="100px" :rules="rules" style="width:600px">
-      <el-form-item label="收件邮箱" prop="toUser">
-        <el-input v-model="form.toUser">
-        </el-input>
-        <span slot="label">
-          <el-tooltip content="多个用','隔开" placement="top">
-            <i class="el-icon-question"></i>
-          </el-tooltip>
-          收件邮箱
-        </span>
+    <el-form class="mt10" ref="form" :model="form" label-width="110px" :rules="rules" style="width:600px">
+      <el-form-item v-for="(domain, index) in form.toEmails" :prop="'toEmails.' + index + '.value'" :label="'收件邮箱' + (index === 0 ? '': index)"
+        :key="domain.key"
+        :rules="[{ required: true, message: '邮箱不能为空', trigger: 'blur' }, { message: '请输入正确的邮箱地址', trigger: ['blur', 'change'], type: 'email', }]">
+        <el-input v-model="domain.value" style="width:300px"></el-input>
+        <el-button class="ml10" @click="addDomain" icon="el-icon-plus" />
+        <el-button class="ml10" @click.prevent="removeDomain(domain)" icon="el-icon-minus" />
       </el-form-item>
       <el-form-item label="邮件主题" prop="subject">
         <el-input v-model="form.subject"></el-input>
@@ -20,23 +17,18 @@
       <el-form-item label="发送自己" prop="sendMe">
         <el-switch v-model="form.sendMe" active-text="是" inactive-text="否"></el-switch>
       </el-form-item>
-
       <el-form-item label="附件">
-        <el-upload name="file" ref="upload" :data="{savetype: form.saveType, filePath: form.filePath}" :headers="headers" :auto-upload="false"
-          :on-success="uploadSuccess" :action="uploadActionUrl">
-          <el-button slot="trigger" size="mini" icon="el-icon-upload">选择文件</el-button>
-          <el-button style="margin-left: 10px;" size="mini" type="primary" @click="submitUpload">上传到服务器</el-button>
-        </el-upload>
+        <UploadFile v-model="form.fileUrl" :limit="5" :fileSize="15" :data="{ 'fileDir' : 'email', 'uploadType': 1}" column="fileUrl"
+          @input="uploadSuccess" />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" size="mini" @click="formSubmit">立即提交</el-button>
+        <el-button type="primary" size="mini" @click="formSubmit">发送邮件</el-button>
       </el-form-item>
     </el-form>
   </el-row>
 </template>
 <script>
 import { sendEmail } from "@/api/common";
-import { getToken } from "@/utils/auth";
 
 export default {
   name: "sendEmail",
@@ -44,26 +36,19 @@ export default {
     return {
       form: {
         fileUrl: "",
+        toEmails: [
+          {
+            value: "",
+          },
+        ],
       },
-      headers: {
-        Authorization: "Bearer " + getToken(),
-      },
-      uploadActionUrl: process.env.VUE_APP_BASE_API + "upload/SaveFile",
+      uploadActionUrl: process.env.VUE_APP_BASE_API + "common/uploadFile",
       rules: {
         subject: [{ required: true, message: "主题不能为空", trigger: "blur" }],
-        toUser: [
-          { required: true, message: "请输入邮箱地址", trigger: ["blur"] },
-          // {
-          //   message: "请输入正确的邮箱地址",
-          //   trigger: ["blur", "change"],
-          //   type: "email",
-          // },
-        ],
         content: [{ required: true, message: "内容不能为空", trigger: "blur" }],
       },
     };
   },
-  mounted() {},
   methods: {
     // 表单重置
     reset() {
@@ -73,24 +58,22 @@ export default {
         subject: undefined,
         fileUrl: undefined,
         sendMe: false,
+        toEmails: [
+          {
+            value: "",
+          },
+        ],
       };
       this.resetForm("form");
     },
-    submitUpload() {
-      this.$refs.upload.submit();
-    },
     // 上传成功
-    uploadSuccess(response, file, fileList) {
-      console.log(response);
-      if (response.code == 200) {
-        this.$message.success("上传成功");
-        this.form.fileUrl = response.data;
-      } else {
-        this.$message.error(response.msg);
-      }
+    uploadSuccess(columnName, filelist) {
+      this.form[columnName] = filelist;
     },
+    /**
+     * 提交
+     */
     formSubmit() {
-      console.log(JSON.stringify(this.form));
       this.$refs["form"].validate((valid) => {
         //开启校验
         if (valid) {
@@ -100,14 +83,21 @@ export default {
             spinner: "el-icon-loading",
             background: "rgba(0, 0, 0, 0.7)",
           });
+          var emails = [];
+          this.form.toEmails.filter((x) => {
+            emails.push(x.value);
+          });
+          var p = {
+            ...this.form,
+            toUser: emails.toString(),
+          };
           // 如果校验通过，请求接口，允许提交表单
-          sendEmail(this.form).then((res) => {
+          sendEmail(p).then((res) => {
             this.open = false;
             if (res.code == 200) {
               this.$message.success("发送成功");
               this.reset();
             }
-            this.$refs.upload.clearFiles();
             loading.close();
           });
           setTimeout(() => {
@@ -118,6 +108,23 @@ export default {
           //校验不通过
           return false;
         }
+      });
+    },
+    removeDomain(item) {
+      var index = this.form.toEmails.indexOf(item);
+      if (index !== -1 && this.form.toEmails.length !== 1) {
+        this.form.toEmails.splice(index, 1);
+      } else {
+        this.$message({
+          message: "请至少保留一位联系人",
+          type: "warning",
+        });
+      }
+    },
+    addDomain() {
+      this.form.toEmails.push({
+        value: "",
+        key: Date.now(),
       });
     },
   },

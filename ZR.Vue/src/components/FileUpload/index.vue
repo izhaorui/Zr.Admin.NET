@@ -156,12 +156,12 @@ export default {
         return;
       }
       this.msgSuccess("上传成功");
-      this.fileList.push({ name: res.data.fileName, url: res.data.url });
+      this.fileList.push({ name: res.data.fileName, url: res.data.url, path: res.data.path });
       this.$emit("input", this.column, this.listToString(this.fileList));
     },
     // 上传进度
     uploadProcess(event, file, fileList) {
-      console.log("上传进度" + file.percentage);
+      // console.log("上传进度" + file.percentage);
     },
     // 删除文件
     handleDelete(index) {

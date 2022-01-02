@@ -74,7 +74,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return ToResponse(ApiResult.Error($"请配置邮箱信息"));
             }
-            
+
             MailHelper mailHelper = new();
 
             string[] toUsers = sendEmailVo.ToUser.Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -85,7 +85,7 @@ namespace ZR.Admin.WebApi.Controllers
             mailHelper.SendMail(toUsers, sendEmailVo.Subject, sendEmailVo.Content, sendEmailVo.FileUrl, sendEmailVo.HtmlContent);
 
             logger.Info($"发送邮件{JsonConvert.SerializeObject(sendEmailVo)}");
-            
+
             return SUCCESS(true);
         }
 
@@ -96,11 +96,12 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <param name="formFile"></param>
         /// <param name="fileDir">存储目录</param>
+        /// <param name="uploadType">上传类型 1、发送邮件</param>
         /// <returns></returns>
         [HttpPost()]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileDir = "uploads")
+        public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileDir = "uploads", int uploadType = 0)
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);
@@ -137,7 +138,7 @@ namespace ZR.Admin.WebApi.Controllers
             long fileId = SysFileService.InsertFile(file);
             return ToResponse(ResultCode.SUCCESS, new
             {
-                url = accessPath,
+                url = uploadType == 1 ? finalFilePath : accessPath,
                 fileName,
                 fileId
             });
@@ -168,7 +169,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + (MaxContentLength / 1024).ToString() + " MB");
             }
-            
+
             (bool, string, string) result = SysFileService.SaveFile(fileDir, formFile);
             long fileId = SysFileService.InsertFile(new SysFile()
             {

@@ -55,7 +55,7 @@ namespace ZR.Tasks
                 //{ "quartz.jobStore.driverDelegateType", "Quartz.Impl.AdoJobStore.MySQLDelegate, Quartz"},
                 //{ "quartz.jobStore.useProperties", "true"},
                 //{ "quartz.jobStore.dataSource", "myDS" },
-                //{ "quartz.dataSource.myDS.connectionString", @"server=118.24.27.111;port=3306;database=zrryAdmin;uid=zrry;pwd=@zrry1993^Hz;Charset=utf8;"},
+                //{ "quartz.dataSource.myDS.connectionString", @"server=xxx.xxx.xxx.xxx;port=3306;database=Admin;uid=zrry;pwd=********;Charset=utf8;"},
                 //{ "quartz.dataSource.myDS.provider", "MySql" },
             };
 
@@ -277,7 +277,7 @@ namespace ZR.Tasks
                     //防止创建时存在数据问题 先移除，然后在执行创建操作
                     await _scheduler.Result.DeleteJob(jobKey);
                 }
-                await AddTaskScheduleAsync(tasksQz);
+                //await AddTaskScheduleAsync(tasksQz);
                 return ApiResult.Success("修改计划成功");
             }
             catch (Exception ex)
