@@ -26,8 +26,7 @@ namespace ZR.Repository.System
             exp.AndIF(logininfoDto.status.IfNotEmpty(), f => f.status == logininfoDto.status);
             var query = Context.Queryable<SysLogininfor>()
                 .Where(exp.ToExpression())
-                .OrderBy(it => it.infoId, OrderByType.Desc)
-                .IgnoreColumns(it => new { it.Create_by, it.Create_time, it.Update_by, it.Update_time, it.Remark });
+                .OrderBy(it => it.infoId, OrderByType.Desc);
 
             return query.ToPage(pager);
         }
@@ -40,7 +39,6 @@ namespace ZR.Repository.System
         public void AddLoginInfo(SysLogininfor sysLogininfor)
         {
             int result = Context.Insertable(sysLogininfor)
-                .IgnoreColumns(it => new { it.Create_by, it.Create_time, it.Remark })
                 .ExecuteReturnIdentity();
         }
 

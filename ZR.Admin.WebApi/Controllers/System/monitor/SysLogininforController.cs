@@ -85,7 +85,6 @@ namespace ZR.Admin.WebApi.Controllers.monitor
                 .And(it => it.loginTime >= logininfoDto.BeginTime && it.loginTime <= logininfoDto.EndTime);
 
             var list = sysLoginService.Queryable().Where(exp.ToExpression())
-                .IgnoreColumns(it => new { it.Create_by, it.Create_time, it.Update_by, it.Update_time, it.Remark })
                 .ToList();
 
             string sFileName = ExportExcel(list, "loginlog", "登录日志");

@@ -10,7 +10,7 @@ namespace ZR.Model.System
     /// </summary>
     [SugarTable("sys_logininfor")]
     [Tenant("0")]
-    public class SysLogininfor: SysBase
+    public class SysLogininfor
     {
         //[Key]
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
@@ -55,5 +55,9 @@ namespace ZR.Model.System
         /// </summary>
         [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
         public DateTime loginTime { get; set; } = DateTime.Now;
+        [SugarColumn(IsIgnore = true)]
+        public DateTime? BeginTime { get; set; }
+        [SugarColumn(IsIgnore = true)]
+        public DateTime? EndTime { get; set; }
     }
 }
