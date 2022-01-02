@@ -1,4 +1,5 @@
-﻿using MailKit.Net.Smtp;
+﻿using Infrastructure;
+using MailKit.Net.Smtp;
 using MimeKit;
 using MimeKit.Text;
 using System;
@@ -30,7 +31,16 @@ namespace ZR.Common
         /// </summary>
         public bool UseSsl { get; set; } = false;
         public string mailSign = @"";
+        private readonly MailOptions mailOptions = new();
 
+        public MailHelper()
+        {
+            ConfigUtils.Instance.Bind("MailOptions", mailOptions);
+            FromEmail = mailOptions.From;
+            Smtp = mailOptions.Smtp;
+            FromPwd = mailOptions.Password;
+            Port = mailOptions.Port;
+        }
         public MailHelper(string fromEmail, string smtp, int port, string fromPwd)
         {
             FromEmail = fromEmail;
@@ -82,7 +92,6 @@ namespace ZR.Common
         /// <summary>
         /// 发送邮件
         /// </summary>
-        /// <param name="toName"></param>
         /// <param name="toAddress"></param>
         /// <param name="subject"></param>
         /// <param name="text"></param>
@@ -141,7 +150,7 @@ namespace ZR.Common
             using (var client = new SmtpClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
+                
                 //Smtp服务器
                 //client.Connect("smtp.qq.com", 587, false);
                 client.Connect(Smtp, Port, true);

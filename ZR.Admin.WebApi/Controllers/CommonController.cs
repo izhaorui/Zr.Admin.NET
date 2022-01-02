@@ -74,7 +74,8 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return ToResponse(ApiResult.Error($"请配置邮箱信息"));
             }
-            MailHelper mailHelper = new(OptionsSetting.MailOptions.From, OptionsSetting.MailOptions.Smtp, OptionsSetting.MailOptions.Port, OptionsSetting.MailOptions.Password);
+            
+            MailHelper mailHelper = new();
 
             string[] toUsers = sendEmailVo.ToUser.Split(",", StringSplitOptions.RemoveEmptyEntries);
             if (sendEmailVo.SendMe)

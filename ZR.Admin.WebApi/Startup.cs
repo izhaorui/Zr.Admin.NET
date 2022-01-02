@@ -143,7 +143,7 @@ namespace ZR.Admin.WebApi
             //×¢²áREDIS ·þÎñ
             Task.Run(() =>
             {
-                RedisServer.Initalize();
+                //RedisServer.Initalize();
             });
         }
     }
