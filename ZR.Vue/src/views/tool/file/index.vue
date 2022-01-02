@@ -20,14 +20,11 @@
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" v-hasPermi="['System:sysfile:add']" plain icon="el-icon-upload" size="mini" @click="handleAdd">上传文件</el-button>
+        <el-button type="primary" v-hasPermi="['tool:file:add']" plain icon="el-icon-upload" size="mini" @click="handleAdd">上传文件</el-button>
       </el-col>
-      <!-- <el-col :span="1.5">
-        <el-button type="success" :disabled="single" v-hasPermi="['System:sysfile:update']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
-      </el-col> -->
       <el-col :span="1.5">
-        <el-button type="danger" :disabled="multiple" v-hasPermi="['System:sysfile:delete']" plain icon="el-icon-delete" size="mini"
-          @click="handleDelete">删除</el-button>
+        <el-button type="danger" :disabled="multiple" v-hasPermi="['tool:file:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">
+          删除</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -58,12 +55,12 @@
       <el-table-column prop="fileSize" label="文件大小" align="center" :show-overflow-tooltip="true" />
       <el-table-column prop="fileExt" label="扩展名" align="center" :show-overflow-tooltip="true" width="80px" />
       <el-table-column prop="storeType" label="存储类型" align="center" :formatter="storeTypeFormat" />
-			<el-table-column prop="create_by" label="操作人" align="center"/>
+      <el-table-column prop="create_by" label="操作人" align="center" />
       <el-table-column prop="create_time" label="创建日期" align="center" />
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
-          <el-button v-hasPermi="['System:sysfile:view']" type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button>
-          <el-button v-hasPermi="['System:sysfile:delete']" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
+          <el-button type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button>
+          <el-button v-hasPermi="['tool:file:delete']" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -73,11 +70,11 @@
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" width="400px">
       <el-form ref="form" :model="form" :rules="rules" label-width="135px" label-position="left">
         <el-row>
-          <!-- <el-col :lg="12">
-            <el-form-item label="自定文件名" prop="fileName">
+          <el-col :lg="12">
+            <el-form-item label="文件名" prop="fileName">
               <el-input v-model="form.fileName" placeholder="请输入文件名" />
             </el-form-item>
-          </el-col> -->
+          </el-col>
           <el-col :lg="24">
             <el-form-item label="存储类型" prop="storeType">
               <el-select v-model="form.storeType" placeholder="请选择存储类型" @change="handleSelectStore">
@@ -99,14 +96,14 @@
           </el-col>
           <el-col :lg="24">
             <el-form-item label="上传文件" prop="accessUrl">
-              <UploadFile v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="[]" :limit="1" :fileSize="15" :data="{ 'fileDir' :  form.storePath}"
-                column="accessUrl" @input="handleUploadSuccess" />
+              <UploadFile v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="[]" :limit="1" :fileSize="15"
+                :data="{ 'fileDir' :  form.storePath, 'fileName': form.fileName}" column="accessUrl" @input="handleUploadSuccess" />
             </el-form-item>
           </el-col>
 
         </el-row>
       </el-form>
-      <div slot="footer" class="dialog-footer" v-if="btnSubmitVisible">
+      <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
@@ -153,7 +150,7 @@ import {
   listSysfile,
   // addSysfile,
   delSysfile,
-  updateSysfile,
+  // updateSysfile,
   getSysfile,
   // exportSysfile,
 } from "@/api/tool/file.js";
@@ -271,7 +268,7 @@ export default {
       this.form = {
         fileName: undefined,
         fileUrl: undefined,
-        storePath: "",
+        storePath: "uploads",
         fileSize: undefined,
         fileExt: undefined,
         storeType: 1,
@@ -320,20 +317,16 @@ export default {
     },
     /** 修改按钮操作 */
     handleView(row) {
-      // this.reset();
       const id = row.id || this.ids;
       getSysfile(id).then((res) => {
         const { code, data } = res;
         if (code == 200) {
           this.openView = true;
-
-          this.formView = {
-            ...data,
-          };
+          this.formView = data;
         }
       });
     },
-    //图片上传成功方法
+    //上传成功方法
     handleUploadSuccess(columnName, filelist) {
       this.form[columnName] = filelist;
     },
@@ -350,26 +343,8 @@ export default {
     },
     /** 提交按钮 */
     submitForm: function () {
-      this.$refs["form"].validate((valid) => {
-        if (valid) {
-          console.log(JSON.stringify(this.form));
-
-          if (this.form.id != undefined && this.title === "修改数据") {
-            updateSysfile(this.form)
-              .then((res) => {
-                this.msgSuccess("修改成功");
-                this.open = false;
-                this.getList();
-              })
-              .catch((err) => {
-                //TODO 错误逻辑
-              });
-          } else {
-            this.open = false;
-            this.getList();
-          }
-        }
-      });
+      this.open = false;
+      this.getList();
     },
   },
 };

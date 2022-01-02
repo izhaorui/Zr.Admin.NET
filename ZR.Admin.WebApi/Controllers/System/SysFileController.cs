@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
-using Mapster;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model.System;
@@ -66,66 +63,66 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(response);
         }
 
-        /// <summary>
-        /// 添加文件存储
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost]
-        [ActionPermissionFilter(Permission = "tool:file:add")]
-        [Log(Title = "文件存储", BusinessType = BusinessType.INSERT)]
-        public IActionResult AddSysFile([FromBody] SysFileDto parm)
-        {
-            if (parm == null)
-            {
-                throw new CustomException("请求参数错误");
-            }
-            //从 Dto 映射到 实体
-            var model = parm.Adapt<SysFile>().ToCreate(HttpContext);
+        ///// <summary>
+        ///// 添加文件存储
+        ///// </summary>
+        ///// <returns></returns>
+        //[HttpPost]
+        //[ActionPermissionFilter(Permission = "tool:file:add")]
+        //[Log(Title = "文件存储", BusinessType = BusinessType.INSERT)]
+        //public IActionResult AddSysFile([FromBody] SysFileDto parm)
+        //{
+        //    if (parm == null)
+        //    {
+        //        throw new CustomException("请求参数错误");
+        //    }
+        //    //从 Dto 映射到 实体
+        //    var model = parm.Adapt<SysFile>().ToCreate(HttpContext);
 
-            var response = _SysFileService.Insert(model, it => new
-            {
-                it.FileName,
-                it.FileUrl,
-                it.StorePath,
-                it.FileSize,
-                it.FileExt,
-                it.Create_by,
-                it.Create_time,
-                it.StoreType,
-                it.AccessUrl,
-            });
-            return ToResponse(response);
-        }
+        //    var response = _SysFileService.Insert(model, it => new
+        //    {
+        //        it.FileName,
+        //        it.FileUrl,
+        //        it.StorePath,
+        //        it.FileSize,
+        //        it.FileExt,
+        //        it.Create_by,
+        //        it.Create_time,
+        //        it.StoreType,
+        //        it.AccessUrl,
+        //    });
+        //    return ToResponse(response);
+        //}
 
-        /// <summary>
-        /// 更新文件存储
-        /// </summary>
-        /// <returns></returns>
-        [HttpPut]
-        [ActionPermissionFilter(Permission = "tool:file:update")]
-        [Log(Title = "文件存储", BusinessType = BusinessType.UPDATE)]
-        public IActionResult UpdateSysFile([FromBody] SysFileDto parm)
-        {
-            if (parm == null)
-            {
-                throw new CustomException("请求实体不能为空");
-            }
-            //从 Dto 映射到 实体
-            var model = parm.Adapt<SysFile>().ToUpdate(HttpContext);
+        ///// <summary>
+        ///// 更新文件存储
+        ///// </summary>
+        ///// <returns></returns>
+        //[HttpPut]
+        //[ActionPermissionFilter(Permission = "tool:file:update")]
+        //[Log(Title = "文件存储", BusinessType = BusinessType.UPDATE)]
+        //public IActionResult UpdateSysFile([FromBody] SysFileDto parm)
+        //{
+        //    if (parm == null)
+        //    {
+        //        throw new CustomException("请求实体不能为空");
+        //    }
+        //    //从 Dto 映射到 实体
+        //    var model = parm.Adapt<SysFile>().ToUpdate(HttpContext);
 
-            var response = _SysFileService.Update(w => w.Id == model.Id, it => new SysFile()
-            {
-                //Update 字段映射
-                FileUrl = model.FileUrl,
-                StorePath = model.StorePath,
-                FileSize = model.FileSize,
-                FileExt = model.FileExt,
-                StoreType = model.StoreType,
-                AccessUrl = model.AccessUrl,
-            });
+        //    var response = _SysFileService.Update(w => w.Id == model.Id, it => new SysFile()
+        //    {
+        //        //Update 字段映射
+        //        FileUrl = model.FileUrl,
+        //        StorePath = model.StorePath,
+        //        FileSize = model.FileSize,
+        //        FileExt = model.FileExt,
+        //        StoreType = model.StoreType,
+        //        AccessUrl = model.AccessUrl,
+        //    });
 
-            return ToResponse(response);
-        }
+        //    return ToResponse(response);
+        //}
 
         /// <summary>
         /// 删除文件存储

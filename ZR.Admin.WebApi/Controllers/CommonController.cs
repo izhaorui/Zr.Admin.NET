@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -96,16 +97,19 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <param name="formFile"></param>
         /// <param name="fileDir">存储目录</param>
+        /// <param name="fileName">文件名</param>
         /// <param name="uploadType">上传类型 1、发送邮件</param>
         /// <returns></returns>
         [HttpPost()]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileDir = "uploads", int uploadType = 0)
+        public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "uploads", int uploadType = 0)
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);
-            string fileName = FileUtil.HashFileName(Guid.NewGuid().ToString()).ToLower() + fileExt;
+            string hashFileName = FileUtil.HashFileName(Guid.NewGuid().ToString()).ToLower();
+            fileName = (fileName.IsEmpty() ? hashFileName : fileName) + fileExt;
+            fileDir = fileDir.IsEmpty() ? "uploads" : fileDir;
             string filePath = FileUtil.GetdirPath(fileDir);
             string finalFilePath = Path.Combine(WebHostEnvironment.WebRootPath, filePath, fileName);
             finalFilePath = finalFilePath.Replace("\\", "/").Replace("//", "/");
