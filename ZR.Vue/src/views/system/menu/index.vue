@@ -51,7 +51,11 @@
       <el-table-column prop="perms" label="权限标识" :show-overflow-tooltip="true"></el-table-column>
       <el-table-column prop="path" label="路由地址" :show-overflow-tooltip="true"></el-table-column>
       <el-table-column prop="component" label="组件路径" :show-overflow-tooltip="true"></el-table-column>
-      <el-table-column prop="visible" label="显示" :formatter="visibleFormat" width="70"></el-table-column>
+      <el-table-column prop="visible" label="显示" width="70">
+				<template slot-scope="scope">
+          <dict-tag :options="visibleOptions" :value="scope.row.visible" />
+        </template>
+			</el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="70">
         <template slot-scope="scope">
           <dict-tag :options="statusOptions" :value="scope.row.status" />
