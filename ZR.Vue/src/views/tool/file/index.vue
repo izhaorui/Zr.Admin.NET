@@ -35,7 +35,7 @@
       <el-table-column prop="id" label="文件id" align="center" width="80" />
       <el-table-column prop="fileName" label="文件名" align="center">
         <template slot-scope="scope">
-          <el-popover :content="scope.row.fileUrl" placement="top-start" title="路径" width="200" trigger="hover">
+          <el-popover :content="scope.row.fileUrl" placement="top-start" title="路径" trigger="hover">
             <a slot="reference" :href="scope.row.accessUrl" class="el-link--primary"
               style="word-break:keep-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color: #1890ff;font-size: 13px;" target="_blank">
               {{ scope.row.fileName }}
@@ -70,7 +70,7 @@
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" width="400px">
       <el-form ref="form" :model="form" :rules="rules" label-width="135px" label-position="left">
         <el-row>
-          <el-col :lg="12">
+          <el-col :lg="24">
             <el-form-item label="文件名" prop="fileName">
               <el-input v-model="form.fileName" placeholder="请输入文件名" />
             </el-form-item>
@@ -104,7 +104,7 @@
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <!-- <el-button type="primary" @click="submitForm">确 定</el-button> -->
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -235,8 +235,6 @@ export default {
   created() {
     // 列表数据查询
     this.getList();
-
-    var dictParams = [];
   },
   methods: {
     // 查询数据
@@ -329,6 +327,9 @@ export default {
     //上传成功方法
     handleUploadSuccess(columnName, filelist) {
       this.form[columnName] = filelist;
+
+      this.open = false;
+      this.getList();
     },
     // 存储类型字典翻译
     storeTypeFormat(row, column) {
