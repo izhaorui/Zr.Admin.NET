@@ -57,7 +57,7 @@
           </el-table-column>
           <el-table-column label="查询方式" min-width="10%">
             <template slot-scope="scope">
-              <el-select v-model="scope.row.queryType" :disabled="scope.row.htmlType == 'datetime'">
+              <el-select v-model="scope.row.queryType" :disabled="scope.row.htmlType == 'datetime'" v-if="scope.row.isQuery">
                 <el-option label="=" value="EQ" />
                 <el-option label="!=" value="NE" />
                 <el-option label=">" value="GT" />
@@ -106,9 +106,9 @@
     </el-tabs>
     <el-form label-width="100px">
       <el-form-item style="text-align: center;margin-left:-100px;margin-top:10px;">
-        <el-button type="primary" @click="submitForm()">提交</el-button>
-        <el-button type="success" @click="handleQuery()">刷新</el-button>
-        <el-button @click="close()">返回</el-button>
+        <el-button type="primary" icon="el-icon-check" @click="submitForm()">提交</el-button>
+        <el-button type="success" icon="el-icon-refresh" @click="handleQuery()">刷新</el-button>
+        <el-button icon="el-icon-back" @click="close()">返回</el-button>
       </el-form-item>
     </el-form>
   </el-card>
@@ -183,6 +183,8 @@ export default {
             treeName: genTable.treeName,
             treeParentCode: genTable.treeParentCode,
             parentMenuId: genTable.parentMenuId,
+						sortField: genTable.sortField,
+						sortType: genTable.sortType
           };
           console.log("genForm", genTable);
           
