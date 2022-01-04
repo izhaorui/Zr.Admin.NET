@@ -44,7 +44,7 @@ namespace ZR.CodeGenerator
             string PKType = "int";
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
-            replaceDto.PermissionPrefix = $"{dto.GenTable.ModuleName}:{dto.GenTable.ClassName.ToLower()}";//权限
+            replaceDto.PermissionPrefix = $"{dto.GenTable.ModuleName.ToLower()}:{dto.GenTable.ClassName.ToLower()}";//权限
             replaceDto.Author = dto.GenTable.FunctionAuthor;
             replaceDto.ShowBtnAdd = dto.CheckedBtn.Any(f => f == 1);
             replaceDto.ShowBtnEdit = dto.CheckedBtn.Any(f => f == 2);
@@ -171,7 +171,7 @@ namespace ZR.CodeGenerator
         /// 生成Vue页面
         private static void GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", generateDto.GenTable.ModuleName, $"{generateDto.GenTable.BusinessName}.vue");
+            var fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", FirstLowerCase(generateDto.GenTable.ModuleName), $"{generateDto.GenTable.BusinessName}.vue");
             string fileName = string.Empty;
             switch (generateDto.GenTable.TplCategory)
             {
@@ -203,7 +203,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static void GenerateVueJs(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            string fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", generateDto.GenTable.ModuleName, FirstLowerCase(generateDto.GenTable.BusinessName) + ".js");
+            string fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", FirstLowerCase(generateDto.GenTable.ModuleName), FirstLowerCase(generateDto.GenTable.BusinessName) + ".js");
             var tpl = FileHelper.ReadJtTemplate("TplVueApi.txt");
 
             var result = tpl.Render();
