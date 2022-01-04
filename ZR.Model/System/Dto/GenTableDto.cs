@@ -20,13 +20,7 @@ namespace ZR.Model.System.Dto
         public string FunctionName { get; set; }
         public string FunctionAuthor { get; set; }
         public string GenType { get; set; }
-        public string Options { get; set; }
-        /// <summary>
-        /// 上级菜单id
-        /// </summary>
-        //public int? ParentMenuId { get; set; }
-        //public string SortField { get; set; }
-        //public string SortType { get; set; }
+        public string GenPath { get; set; }
         /// <summary>
         /// 额外参数
         /// </summary>
@@ -36,6 +30,7 @@ namespace ZR.Model.System.Dto
 
     /// <summary>
     /// 额外参数
+    /// ****注意里面参数统一首字母小写*****
     /// </summary>
     public class Options
     {
@@ -45,6 +40,10 @@ namespace ZR.Model.System.Dto
         public int? parentMenuId { get; set; }
         public string sortField { get; set; }
         public string sortType { get; set; }
+        /// <summary>
+        /// 额外参数字符串
+        /// </summary>
+        public string checkedBtn { get; set; }
     }
     public class GenTableColumnDto
     {

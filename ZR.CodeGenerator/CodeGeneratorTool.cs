@@ -85,7 +85,7 @@ namespace ZR.CodeGenerator
             GenerateVueJs(replaceDto, dto);
             GenerateSql(replaceDto, dto);
 
-            if (dto.IsPreview == 1) return;
+            if (dto.IsPreview) return;
 
             foreach (var item in dto.GenCodes)
             {
@@ -102,11 +102,10 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models", _option.SubNamespace, replaceDto.ModelTypeName + ".cs");
-
             var tpl = FileHelper.ReadJtTemplate("TplModel.txt");
             var result = tpl.Render();
 
+            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Models", _option.SubNamespace, replaceDto.ModelTypeName + ".cs");
             generateDto.GenCodes.Add(new GenCode(1, "Model.cs", fullPath, result));
         }
 
@@ -117,10 +116,11 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateInputDto(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto", _option.SubNamespace, $"{replaceDto.ModelTypeName}Dto.cs");
             var tpl = FileHelper.ReadJtTemplate("TplDto.txt");
 
             var result = tpl.Render();
+            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, _option.ModelsNamespace, "Dto", _option.SubNamespace, $"{replaceDto.ModelTypeName}Dto.cs");
+
             generateDto.GenCodes.Add(new GenCode(2, "Dto.cs", fullPath, result));
         }
 
@@ -131,10 +131,10 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Repository.cs");
             var tpl = FileHelper.ReadJtTemplate("TplRepository.txt");
-
             var result = tpl.Render();
+            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, _option.RepositoriesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Repository.cs");
+
             generateDto.GenCodes.Add(new GenCode(3, "Repository.cs", fullPath, result));
         }
 
@@ -143,14 +143,15 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Service.cs");
             var tpl = FileHelper.ReadJtTemplate("TplService.txt");
-            var result = tpl.Render();
-            generateDto.GenCodes.Add(new GenCode(4, "Service.cs", fullPath, result));
-
-            var fullPath2 = Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, _option.SubNamespace, $"I{_option.SubNamespace}Service", $"I{replaceDto.ModelTypeName}Service.cs");
             var tpl2 = FileHelper.ReadJtTemplate("TplIService.txt");
+            var result = tpl.Render();
             var result2 = tpl2.Render();
+
+            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, _option.ServicesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Service.cs");
+            var fullPath2 = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, _option.IServicsNamespace, _option.SubNamespace, $"I{_option.SubNamespace}Service", $"I{replaceDto.ModelTypeName}Service.cs");
+
+            generateDto.GenCodes.Add(new GenCode(4, "Service.cs", fullPath, result));
             generateDto.GenCodes.Add(new GenCode(4, "IService.cs", fullPath2, result2));
         }
 
@@ -159,11 +160,11 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", _option.SubNamespace, $"{replaceDto.ModelTypeName}Controller.cs");
             var tpl = FileHelper.ReadJtTemplate("TplControllers.txt");
-
             tpl.Set("QueryCondition", replaceDto.QueryCondition);
             var result = tpl.Render();
+
+            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, _option.ApiControllerNamespace, "Controllers", _option.SubNamespace, $"{replaceDto.ModelTypeName}Controller.cs");
             generateDto.GenCodes.Add(new GenCode(5, "Controller.cs", fullPath, result));
         }
 
@@ -171,7 +172,6 @@ namespace ZR.CodeGenerator
         /// 生成Vue页面
         private static void GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", FirstLowerCase(generateDto.GenTable.ModuleName), $"{generateDto.GenTable.BusinessName}.vue");
             string fileName = string.Empty;
             switch (generateDto.GenTable.TplCategory)
             {
@@ -192,6 +192,8 @@ namespace ZR.CodeGenerator
             tpl.Set("lowerBusinessName", FirstLowerCase(generateDto.GenTable.BusinessName));
 
             var result = tpl.Render();
+            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", FirstLowerCase(generateDto.GenTable.ModuleName), $"{generateDto.GenTable.BusinessName}.vue");
+
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, result));
         }
 
@@ -203,10 +205,10 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static void GenerateVueJs(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            string fullPath = Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", FirstLowerCase(generateDto.GenTable.ModuleName), FirstLowerCase(generateDto.GenTable.BusinessName) + ".js");
             var tpl = FileHelper.ReadJtTemplate("TplVueApi.txt");
-
             var result = tpl.Render();
+
+            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", FirstLowerCase(generateDto.GenTable.ModuleName), FirstLowerCase(generateDto.GenTable.BusinessName) + ".js");
             generateDto.GenCodes.Add(new GenCode(7, "api.js", fullPath, result));
         }
 
@@ -217,8 +219,6 @@ namespace ZR.CodeGenerator
         /// <param name="generateDto"></param>
         public static void GenerateSql(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            string fullPath = Path.Combine(generateDto.GenCodePath, generateDto.GenTable.BusinessName + ".sql");
-
             var tempName = "";
             switch (generateDto.DbType)
             {
@@ -234,6 +234,8 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate($"{tempName}.txt");
             tpl.Set("parentId", generateDto.GenTable.ParentMenuId ?? 0);
             var result = tpl.Render();
+            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, generateDto.GenTable.BusinessName + ".sql");
+
             generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, result));
         }
 

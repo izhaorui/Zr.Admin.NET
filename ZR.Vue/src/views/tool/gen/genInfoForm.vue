@@ -5,10 +5,10 @@
         <el-form-item prop="tplCategory">
           <span slot="label">生成模板</span>
           <el-select v-model="info.tplCategory" @change="tplSelectChange">
-						<el-option label="单表（增删改查）" value="crud" />
+            <el-option label="单表（增删改查）" value="crud" />
             <!-- <el-option label="单表查询" value="select" /> -->
             <el-option label="树表（增删改查）" value="tree" />
-						<!-- <el-option label="导航查询" value="subNav"></el-option> -->
+            <!-- <el-option label="导航查询" value="subNav"></el-option> -->
             <!-- <el-option label="主子表（增删改查）" value="sub" /> -->
           </el-select>
         </el-form-item>
@@ -34,7 +34,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-input v-model="info.moduleName" auto-complete=""/>
+          <el-input v-model="info.moduleName" auto-complete="" />
         </el-form-item>
       </el-col>
 
@@ -94,12 +94,12 @@
         <el-form-item prop="genType">
           <span slot="label">
             生成代码方式
-            <!-- <el-tooltip content="默认为zip压缩包下载，也可以自定义生成路径" placement="top">
+            <el-tooltip content="默认为zip压缩包下载" placement="top">
               <i class="el-icon-question"></i>
-            </el-tooltip> -->
+            </el-tooltip>
           </span>
           <el-radio v-model="info.genType" label="0">zip压缩包</el-radio>
-          <!-- <el-radio v-model="info.genType" label="1">自定义路径</el-radio> -->
+          <el-radio v-model="info.genType" label="1">自定义路径</el-radio>
         </el-form-item>
       </el-col>
 
@@ -122,6 +122,24 @@
               </el-dropdown-menu>
             </el-dropdown>
           </el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :lg="24">
+        <el-form-item label="显示按钮">
+          <el-checkbox-group v-model="checkedBtn" @change="checkedBtnSelect">
+            <el-checkbox :label="1" disabled>
+              <el-tag type="primary">添加</el-tag>
+            </el-checkbox>
+            <el-checkbox :label="2" disabled>
+              <el-tag type="success">修改</el-tag>
+            </el-checkbox>
+            <el-checkbox :label="3" disabled>
+              <el-tag type="danger">删除</el-tag>
+            </el-checkbox>
+            <el-checkbox :label="4">
+              <el-tag type="warning">导出</el-tag>
+            </el-checkbox>
+          </el-checkbox-group>
         </el-form-item>
       </el-col>
     </el-row>
@@ -234,6 +252,7 @@ export default {
   },
   data() {
     return {
+      checkedBtn: [],
       subColumns: [],
       rules: {
         tplCategory: [
@@ -265,6 +284,10 @@ export default {
     "info.subTableName": function (val) {
       this.setSubTableColumns(val);
     },
+    "info.checkedBtn": function (val) {
+			console.log(val + ',checkedBtn');
+      this.checkedBtn = val;
+    },
   },
   methods: {
     /** 转换菜单数据结构 */
@@ -282,6 +305,9 @@ export default {
     subSelectChange(value) {
       this.info.subTableFkName = "";
     },
+		checkedBtnSelect(value) {
+			this.info.checkedBtn = value;
+		},
     /** 选择生成模板触发 */
     tplSelectChange(value) {
       if (value !== "sub") {
@@ -291,7 +317,6 @@ export default {
     },
     /** 设置关联外键 */
     setSubTableColumns(value) {
-      console.log(value);
       if (value == null || value == undefined || value == "") {
         return;
       }

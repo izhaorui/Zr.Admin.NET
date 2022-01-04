@@ -5,6 +5,7 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ZR.Common;
 using ZR.Model;
 using ZR.Model.System.Generate;
 using ZR.Repository.System;
@@ -89,6 +90,9 @@ namespace ZR.Service.System
                 genTable.TreeParentCode = options.GetValueOrDefault("treeParentCode") ?? "";
                 genTable.TreeName = options.GetValueOrDefault("treeName") ?? "";
                 genTable.TreeCode = options.GetValueOrDefault("treeCode") ?? "";
+                
+                var checkdBtn = options.GetValueOrDefault("checkedBtn");
+                genTable.CheckedBtn = Tools.SpitIntArrary(checkdBtn.ToString());
             }
         }
 

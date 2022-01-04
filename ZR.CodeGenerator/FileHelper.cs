@@ -123,31 +123,31 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 压缩代码
         /// </summary>
-        /// <param name="dto"></param>
+        /// <param name="zipPath"></param>
+        /// <param name="genCodePath"></param>
+        /// <param name="zipFileName">压缩后的文件名</param>
         /// <returns></returns>
-        public static string ZipGenCode(GenerateDto dto)
+        public static bool ZipGenCode(string zipPath, string genCodePath,string zipFileName)
         {
+            if (string.IsNullOrEmpty(zipPath)) return false;
             try
             {
-                //生成压缩包
-                string zipReturnFileName = "ZrAdmin.NET" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".zip";
-
-                CreateDirectory(dto.GenCodePath);
-                string zipFileName = Path.Combine(dto.ZipPath, zipReturnFileName);
-                if (File.Exists(zipFileName))
+                CreateDirectory(genCodePath);
+                string zipFileFullName = Path.Combine(zipPath, zipFileName);
+                if (File.Exists(zipFileFullName))
                 {
-                    File.Delete(zipFileName);
+                    File.Delete(zipFileFullName);
                 }
 
-                ZipFile.CreateFromDirectory(dto.GenCodePath, zipFileName);
-                DeleteDirectory(dto.GenCodePath);
-                dto.ZipFileName = zipReturnFileName;
-                return zipReturnFileName;
+                ZipFile.CreateFromDirectory(genCodePath, zipFileFullName);
+                DeleteDirectory(genCodePath);
+                
+                return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("压缩文件出错。" + ex.Message);
-                return "";
+                return false;
             }
         }
 

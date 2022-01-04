@@ -37,11 +37,11 @@
       <el-table-column prop="updateTime" label="更新时间" />
       <el-table-column label="操作" align="center" width="350">
         <template slot-scope="scope">
-          <el-button type="text" icon="el-icon-view" @click="handleShowDialog(scope.row, 'preview')" v-hasPermi="['tool:gen:preview']">预览</el-button>
+          <el-button type="text" icon="el-icon-view" @click="handlePreview(scope.row)" v-hasPermi="['tool:gen:preview']">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)" v-hasPermi="['tool:gen:edit']">编辑</el-button>
           <el-button type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:gen:remove']">删除</el-button>
           <el-button type="text" icon="el-icon-refresh" @click="handleSynchDb(scope.row)" v-hasPermi="['tool:gen:edit']">同步</el-button>
-          <el-button type="text" icon="el-icon-download" @click="handleShowDialog(scope.row, 'generate')" v-hasPermi="['tool:gen:code']">生成代码
+          <el-button type="text" icon="el-icon-download" @click="handleGenTable(scope.row)" v-hasPermi="['tool:gen:code']">生成代码
           </el-button>
         </template>
       </el-table-column>
@@ -59,35 +59,6 @@
       </el-tabs>
     </el-dialog>
     <import-table ref="import" @ok="handleSearch" />
-
-    <el-dialog :visible.sync="showGenerate" :title="preview.title" width="800px">
-      <el-form ref="codeGenerateForm" label-width="140px">
-        <el-form-item label="显示按钮">
-          <el-checkbox-group v-model="checkedBtnForm">
-            <el-checkbox :label="1" :disabled=true>
-              <el-tag type="primary">添加</el-tag>
-            </el-checkbox>
-            <el-checkbox :label="2" :disabled=true>
-              <el-tag type="success">修改</el-tag>
-            </el-checkbox>
-            <el-checkbox :label="3" :disabled=true>
-              <el-tag type="danger">删除</el-tag>
-            </el-checkbox>
-            <el-checkbox :label="4">
-              <el-tag type="warning">导出</el-tag>
-            </el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-        <el-form-item label="数据库类型">
-          <el-radio v-model="dbType" :label="0">mySql</el-radio>
-          <el-radio v-model="dbType" :label="1">sqlServer</el-radio>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="handleGenerate">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -122,8 +93,6 @@ export default {
         activeName: "0",
       },
       showGenerate: false,
-      // 显示的button
-      checkedBtnForm: [1, 2, 3],
       rules: {},
       // 表数据
       tableData: [],
@@ -171,39 +140,26 @@ export default {
     },
     // 代码预览
     handlePreview(row) {
-      var seachdata = {
-        tableId: this.currentSelected.tableId,
-        checkedBtn: this.checkedBtnForm,
-        dbType: this.dbType,
-      };
-      previewTable(row.tableId, seachdata).then((res) => {
-        if (res.code === 200) {
-          this.showGenerate = false;
-          this.preview.open = true;
-          this.preview.data = res.data;
+      this.$refs["codeform"].validate((valid) => {
+        if (!valid) {
+          this.msgError("请先完成表格");
+          return;
         }
+        previewTable(row.tableId).then((res) => {
+          if (res.code === 200) {
+            this.showGenerate = false;
+            this.preview.open = true;
+            this.preview.data = res.data;
+          }
+        });
       });
-    },
-    // 打开对话框、预览、生成
-    handleShowDialog(row, type) {
-      this.showGenerate = true;
-      if (type == "generate") {
-        this.preview.title = "代码生成";
-      }
-      if (type == "preview") {
-        this.preview.title = "预览";
-      }
-      this.currentSelected = row;
     },
     /**
      * 点击生成服务端代码
      */
-    handleGenerate: async function () {
+    handleGenTable(row) {
       console.log(JSON.stringify(this.currentSelected));
-      if (this.preview.title == "预览") {
-        this.handlePreview(this.currentSelected);
-        return;
-      }
+      this.currentSelected = row;
       if (!this.currentSelected) {
         this.msgError("请先选择要生成代码的数据表");
         return false;
@@ -221,8 +177,6 @@ export default {
           var seachdata = {
             tableId: this.currentSelected.tableId,
             tableName: this.currentSelected.name,
-            checkedBtn: this.checkedBtnForm,
-            dbType: this.dbType,
             // queryColumn: this.checkedQueryColumn,
           };
           console.log(JSON.stringify(seachdata));
@@ -232,8 +186,12 @@ export default {
               const { code, data } = res;
               if (code == 200) {
                 this.showGenerate = false;
-                this.msgSuccess("恭喜你，代码生成完成！");
-                this.download(data.path);
+                if (row.genType === "1") {
+                  this.msgSuccess("成功生成到自定义路径：" + row.genPath);
+                } else {
+                  this.msgSuccess("恭喜你，代码生成完成！");
+                  this.download(data.path);
+                }
               } else {
                 this.msgError(res.msg);
               }
@@ -251,7 +209,7 @@ export default {
       this.showGenerate = false;
       this.currentSelected = {};
     },
-    // 导入代码生成
+    /** 打开导入表弹窗 */
     openImportTable() {
       this.$refs.import.show();
     },

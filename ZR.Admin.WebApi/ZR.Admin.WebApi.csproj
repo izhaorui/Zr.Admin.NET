@@ -68,7 +68,6 @@
   <ItemGroup>
     <Folder Include="DataProtection\" />
     <Folder Include="wwwroot\export\" />
-    <Folder Include="wwwroot\Generatecode\" />
   </ItemGroup>
 
   <ItemGroup>
