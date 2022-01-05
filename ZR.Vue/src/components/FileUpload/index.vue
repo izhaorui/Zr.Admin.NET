@@ -1,8 +1,7 @@
 <template>
   <div class="upload-file">
     <el-upload :action="uploadFileUrl" :before-upload="handleBeforeUpload" :file-list="fileList" :limit="limit" :on-error="handleUploadError"
-      :on-exceed="handleExceed" :on-success="handleUploadSuccess" :on-progress="uploadProcess" :show-file-list="false" :data="data" :headers="headers"
-      class="upload-file-uploader" ref="upload">
+      :on-exceed="handleExceed" :on-success="handleUploadSuccess" :on-progress="uploadProcess" :show-file-list="false" :data="data" :headers="headers" ref="upload">
       <!-- 上传按钮 -->
       <el-button size="mini" type="primary" icon="el-icon-upload">选取文件</el-button>
       <!-- 上传提示 -->
@@ -190,9 +189,6 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.upload-file-uploader {
-  margin-bottom: 5px;
-}
 .upload-file-list .el-upload-list__item {
   border: 1px solid #e4e7ed;
   line-height: 2;
