@@ -70,13 +70,14 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             Dictionary<string, object> dic = new();
             var roles = RoleService.SelectRoleAll();
-            dic.Add("roles", roles);
+            dic.Add("roles", SysUser.IsAdmin(userId) ? roles : roles.FindAll(f => !f.IsAdmin()));
             dic.Add("posts", PostService.GetAll());
 
             //编辑
             if (userId > 0)
             {
-                dic.Add("user", UserService.SelectUserById(userId));
+                SysUser sysUser = UserService.SelectUserById(userId);
+                dic.Add("user", sysUser);
                 dic.Add("postIds", UserPostService.GetUserPostsByUserId(userId));
                 dic.Add("roleIds", RoleService.SelectUserRoles(userId));
             }
