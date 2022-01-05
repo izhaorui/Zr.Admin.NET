@@ -37,9 +37,5 @@ namespace ZR.Service.System
             return logModel;
         }
 
-        public PagedInfo<SysTasksLog> GetPages(Expression<Func<SysTasksLog, bool>> where, PagerInfo parm, Expression<Func<SysTasksLog, object>> order, string orderType)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

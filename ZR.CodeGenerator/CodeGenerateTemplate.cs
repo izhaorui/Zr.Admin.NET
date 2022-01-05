@@ -80,7 +80,7 @@ namespace ZR.CodeGenerator
                 //时间
                 sb.AppendLine("      <el-col :lg=\"12\">");
                 sb.AppendLine($"        <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
-                sb.AppendLine($"           <el-date-picker v-model=\"form.{columnName}\" format=\"yyyy-MM-dd HH:mm:ss\" value-format=\"yyyy-MM-dd HH:mm:ss\"  type=\"datetime\"  placeholder=\"选择日期时间\"> </el-date-picker>");
+                sb.AppendLine($"           <el-date-picker v-model=\"form.{columnName}\" format=\"yyyy-MM-dd HH:mm:ss\" value-format=\"yyyy-MM-dd HH:mm:ss\"  type=\"datetimerange\"  placeholder=\"选择日期时间\"> </el-date-picker>");
                 sb.AppendLine("         </el-form-item>");
                 sb.AppendLine("     </el-col>");
             }
@@ -192,7 +192,7 @@ namespace ZR.CodeGenerator
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">");
-                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
+                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"datetimerange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
                 sb.AppendLine($"          end-placeholder=\"结束日期\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" ></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
             }
@@ -270,6 +270,7 @@ namespace ZR.CodeGenerator
         }
 
         #endregion
+
         //模板调用
         public static string QueryExp(string propertyName, string queryType)
         {
@@ -303,6 +304,7 @@ namespace ZR.CodeGenerator
             }
             return "";
         }
+
         /// <summary>
         /// 格式化字典数据显示到table
         /// </summary>
