@@ -47,7 +47,8 @@ namespace ZR.Service
         public List<SysMenu> SelectMenuList(SysMenu menu, long userId)
         {
             List<SysMenu> menuList;
-            if (SysUser.IsAdmin(userId))
+            //if (SysUser.IsAdmin(userId))
+            if (SysRoleService.IsAdmin(userId))
             {
                 menuList = MenuRepository.SelectMenuList(menu);
             }
