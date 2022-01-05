@@ -87,6 +87,7 @@ namespace ZR.Repository
         PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm);
 
         PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, OrderByType orderEnum = OrderByType.Asc);
+        PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderByType);
         
         bool Any(Expression<Func<T, bool>> expression);
 

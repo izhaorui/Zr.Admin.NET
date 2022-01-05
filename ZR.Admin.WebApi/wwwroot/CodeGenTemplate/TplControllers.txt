@@ -80,6 +80,7 @@ $end
             return SUCCESS(response);
         }
 
+$if(replaceDto.ShowBtnAdd)
         /// <summary>
         /// 添加${genTable.FunctionName}
         /// </summary>
@@ -106,7 +107,9 @@ ${end}
             });
             return ToResponse(response);
         }
+$end
 
+$if(replaceDto.ShowBtnEdit)
         /// <summary>
         /// 更新${genTable.FunctionName}
         /// </summary>
@@ -135,7 +138,9 @@ ${end}
 
             return ToResponse(response);
         }
+$end
 
+$if(replaceDto.ShowBtnDelete)
         /// <summary>
         /// 删除${genTable.FunctionName}
         /// </summary>
@@ -152,6 +157,7 @@ ${end}
 
             return ToResponse(response);
         }
+$end
 
 $if(replaceDto.ShowBtnExport)
         /// <summary>

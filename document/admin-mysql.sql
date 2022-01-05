@@ -54,8 +54,8 @@ CREATE TABLE `sys_Tasks_log`  (
 -- ----------------------------
 -- Records of sys_Tasks_log
 -- ----------------------------
-INSERT INTO `sys_Tasks_log` VALUES (196, '1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, '2021-08-02 15:10:00', 'ZRTasks.Job_SyncTest', 18);
-INSERT INTO `sys_Tasks_log` VALUES (197, '1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, '2021-08-02 15:20:00', 'ZRTasks.Job_SyncTest', 14);
+INSERT INTO `sys_Tasks_log` VALUES (196, '1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, SYSDATE(), 'ZRTasks.Job_SyncTest', 18);
+INSERT INTO `sys_Tasks_log` VALUES (197, '1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, SYSDATE(), 'ZRTasks.Job_SyncTest', 14);
 
 
 -- ----------------------------
@@ -197,17 +197,17 @@ CREATE TABLE `sys_dict_type`  (
 -- ----------------------------
 -- Records of sys_dict_type
 -- ----------------------------
-INSERT INTO `sys_dict_type` VALUES (1, '用户性别', 'sys_user_sex', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '用户性别列表');
-INSERT INTO `sys_dict_type` VALUES (2, '菜单状态', 'sys_show_hide', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '菜单状态列表');
-INSERT INTO `sys_dict_type` VALUES (3, '系统开关', 'sys_normal_disable', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '系统开关列表');
-INSERT INTO `sys_dict_type` VALUES (4, '任务状态', 'sys_job_status', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '任务状态列表');
-INSERT INTO `sys_dict_type` VALUES (5, '任务分组', 'sys_job_group', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '任务分组列表');
-INSERT INTO `sys_dict_type` VALUES (6, '系统是否', 'sys_yes_no', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '系统是否列表');
-INSERT INTO `sys_dict_type` VALUES (7, '通知类型', 'sys_notice_type', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '通知类型列表');
-INSERT INTO `sys_dict_type` VALUES (8, '通知状态', 'sys_notice_status', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '通知状态列表');
-INSERT INTO `sys_dict_type` VALUES (9, '操作类型', 'sys_oper_type', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '操作类型列表');
-INSERT INTO `sys_dict_type` VALUES (10, '系统状态', 'sys_common_status', '0', 'Y', 'admin', '2021-02-24 10:55:27', '', NULL, '登录状态列表');
-INSERT INTO `sys_dict_type` VALUES (11, '文章状态', 'sys_article_status', '0', 'Y', 'admin', '2021-08-19 10:34:33', '', NULL, NULL);
+INSERT INTO `sys_dict_type` VALUES (1, '用户性别', 'sys_user_sex', '0', 'Y', 'admin', SYSDATE(), '', NULL, '用户性别列表');
+INSERT INTO `sys_dict_type` VALUES (2, '菜单状态', 'sys_show_hide', '0', 'Y', 'admin', SYSDATE(), '', NULL, '菜单状态列表');
+INSERT INTO `sys_dict_type` VALUES (3, '系统开关', 'sys_normal_disable', '0', 'Y', 'admin', SYSDATE(), '', NULL, '系统开关列表');
+INSERT INTO `sys_dict_type` VALUES (4, '任务状态', 'sys_job_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '任务状态列表');
+INSERT INTO `sys_dict_type` VALUES (5, '任务分组', 'sys_job_group', '0', 'Y', 'admin', SYSDATE(), '', NULL, '任务分组列表');
+INSERT INTO `sys_dict_type` VALUES (6, '系统是否', 'sys_yes_no', '0', 'Y', 'admin', SYSDATE(), '', NULL, '系统是否列表');
+INSERT INTO `sys_dict_type` VALUES (7, '通知类型', 'sys_notice_type', '0', 'Y', 'admin', SYSDATE(), '', NULL, '通知类型列表');
+INSERT INTO `sys_dict_type` VALUES (8, '通知状态', 'sys_notice_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '通知状态列表');
+INSERT INTO `sys_dict_type` VALUES (9, '操作类型', 'sys_oper_type', '0', 'Y', 'admin', SYSDATE(), '', NULL, '操作类型列表');
+INSERT INTO `sys_dict_type` VALUES (10, '系统状态', 'sys_common_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '登录状态列表');
+INSERT INTO `sys_dict_type` VALUES (11, '文章状态', 'sys_article_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -440,19 +440,19 @@ CREATE TABLE `sys_post`  (
 -- ----------------------------
 -- Records of sys_post
 -- ----------------------------
-INSERT INTO `sys_post` VALUES (1, 'CEO', '董事长', 1, '0', 'admin', '2021-04-20 20:43:23', '', NULL, '');
-INSERT INTO `sys_post` VALUES (2, 'SE', '项目经理', 2, '0', 'admin', '2021-04-20 20:43:23', '', NULL, '');
-INSERT INTO `sys_post` VALUES (3, 'HR', '人力资源', 3, '0', 'admin', '2021-04-20 20:43:23', '', NULL, '');
-INSERT INTO `sys_post` VALUES (4, 'USER', '普通员工', 4, '0', 'admin', '2021-04-20 20:43:23', 'admin', '2021-07-07 14:56:39', '普通用户');
-INSERT INTO `sys_post` VALUES (6, 'PM', '人事经理', 0, '0', NULL, '2021-07-07 15:01:20', 'admin', '2021-07-12 15:31:45', NULL);
-INSERT INTO `sys_post` VALUES (7, 'GM', '总经理', 0, '0', NULL, '2021-07-09 18:29:25', '', NULL, NULL);
-INSERT INTO `sys_post` VALUES (8, 'COO', '首席运营官', 0, '0', NULL, '2021-07-09 18:30:06', '', NULL, NULL);
-INSERT INTO `sys_post` VALUES (9, 'CFO', '首席财务官', 0, '0', NULL, '2021-07-09 18:30:28', '', NULL, NULL);
-INSERT INTO `sys_post` VALUES (10, 'CTO', '首席技术官', 0, '0', NULL, '2021-07-09 18:30:53', '', NULL, NULL);
-INSERT INTO `sys_post` VALUES (11, 'HRD', '人力资源总监', 0, '0', NULL, '2021-07-09 18:31:19', '', NULL, NULL);
-INSERT INTO `sys_post` VALUES (12, 'VP', '副总裁', 0, '0', NULL, '2021-07-09 18:31:31', '', NULL, NULL);
-INSERT INTO `sys_post` VALUES (13, 'OD', '运营总监', 0, '0', NULL, '2021-07-09 18:31:55', '', NULL, NULL);
-INSERT INTO `sys_post` VALUES (14, 'MD', '市场总监', 0, '0', NULL, '2021-07-09 18:32:16', '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (1, 'CEO', '董事长', 1, '0', '', SYSDATE(), '', NULL, '');
+INSERT INTO `sys_post` VALUES (2, 'SE', '项目经理', 2, '0', '', SYSDATE(), '', NULL, '');
+INSERT INTO `sys_post` VALUES (3, 'HR', '人力资源', 3, '0', '', SYSDATE(), '', NULL, '');
+INSERT INTO `sys_post` VALUES (4, 'USER', '普通员工', 4, '0', '', SYSDATE(), '', NULL, '');
+INSERT INTO `sys_post` VALUES (6, 'PM', '人事经理', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (7, 'GM', '总经理', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (8, 'COO', '首席运营官', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (9, 'CFO', '首席财务官', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (10, 'CTO', '首席技术官', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (11, 'HRD', '人力资源总监', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (12, 'VP', '副总裁', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (13, 'OD', '运营总监', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
+INSERT INTO `sys_post` VALUES (14, 'MD', '市场总监', 0, '0', NULL, SYSDATE(), '', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_role
@@ -479,8 +479,8 @@ CREATE TABLE `sys_role`  (
 -- ----------------------------
 -- Records of sys_role
 -- ----------------------------
-INSERT INTO `sys_role` VALUES (1, '超级管理员', 'admin', 1, '1', 1, 0, '0', '0', 'admin', '2020-11-26 11:53:16', '', NULL, '超级管理员');
-INSERT INTO `sys_role` VALUES (2, '普通角色', 'common', 2, '2', 1, 0, '0', '0', 'admin', '2020-11-26 11:53:16', 'admin', '2021-08-02 15:05:29', '普通角色');
+INSERT INTO `sys_role` VALUES (1, '超级管理员', 'admin', 1, '1', 1, 0, '0', '0', 'admin', SYSDATE(), 'system', NULL, '超级管理员');
+INSERT INTO `sys_role` VALUES (2, '普通角色', 'common', 2, '2', 1, 0, '0', '0', 'admin', SYSDATE(), 'system', NULL, '普通角色');
 
 -- ----------------------------
 -- Table structure for sys_role_dept

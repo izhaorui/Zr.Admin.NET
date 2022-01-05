@@ -68,6 +68,7 @@ namespace ZR.Model.System.Generate
         /// 生成代码方式（0zip压缩包 1自定义路径）
         /// </summary>
         public string GenType { get; set; }
+        public string GenPath { get; set; }
         /// <summary>
         /// 其他生成选项
         /// </summary>
@@ -86,7 +87,7 @@ namespace ZR.Model.System.Generate
 
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public object SortField { get; set; } = string.Empty;
-        
+
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public object TreeCode { get; set; } = string.Empty;
 
@@ -95,6 +96,11 @@ namespace ZR.Model.System.Generate
 
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public object TreeParentCode { get; set; }
+        /// <summary>
+        /// 生成的按钮功能
+        /// </summary>
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public int[] CheckedBtn { get; set; } = new int[] { 1, 2, 3 };
         #endregion
     }
 }

@@ -8,12 +8,13 @@
         <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus" :columns="columns" />
       </el-tab-pane>
       <el-tab-pane label="字段信息" name="cloum">
-        <el-table ref="dragTable" :data="columns" row-key="columnId" :max-height="tableHeight">
+        <el-table ref="dragTable" v-loading="loading" :data="columns" row-key="columnId" :max-height="tableHeight">
           <el-table-column label="序号" type="index" min-width="5%" class-name="allowDrag" />
           <el-table-column label="字段列名" prop="columnName" min-width="10%" :show-overflow-tooltip="true" />
           <el-table-column label="字段描述" min-width="10%">
             <template slot-scope="scope">
-              <el-input v-model="scope.row.columnComment" :ref='scope.row.columnId' @keydown.native="nextFocus(scope.row,scope.$index, $event)"></el-input>
+              <el-input v-model="scope.row.columnComment" :ref='scope.row.columnId' @keydown.native="nextFocus(scope.row,scope.$index, $event)">
+              </el-input>
             </template>
           </el-table-column>
           <el-table-column label="物理类型" prop="columnType" min-width="10%" :show-overflow-tooltip="true" />
@@ -57,7 +58,7 @@
           </el-table-column>
           <el-table-column label="查询方式" min-width="10%">
             <template slot-scope="scope">
-              <el-select v-model="scope.row.queryType" :disabled="scope.row.htmlType == 'datetime'">
+              <el-select v-model="scope.row.queryType" :disabled="scope.row.htmlType == 'datetime'" v-if="scope.row.isQuery">
                 <el-option label="=" value="EQ" />
                 <el-option label="!=" value="NE" />
                 <el-option label=">" value="GT" />
@@ -93,7 +94,8 @@
           </el-table-column>
           <el-table-column label="字典类型" min-width="12%">
             <template slot-scope="scope">
-              <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择" v-if="scope.row.htmlType == 'select' || scope.row.htmlType == 'radio' || scope.row.htmlType =='checkbox'">
+              <el-select v-model="scope.row.dictType" clearable filterable placeholder="请选择"
+                v-if="scope.row.htmlType == 'select' || scope.row.htmlType == 'radio' || scope.row.htmlType =='checkbox'">
                 <el-option v-for="dict in dictOptions" :key="dict.dictType" :label="dict.dictName" :value="dict.dictType">
                   <span style="float: left">{{ dict.dictName }}</span>
                   <span style="float: right; color: #8492a6; font-size: 13px">{{ dict.dictType }}</span>
@@ -106,9 +108,9 @@
     </el-tabs>
     <el-form label-width="100px">
       <el-form-item style="text-align: center;margin-left:-100px;margin-top:10px;">
-        <el-button type="primary" @click="submitForm()">提交</el-button>
-        <el-button type="success" @click="handleQuery()">刷新</el-button>
-        <el-button @click="close()">返回</el-button>
+        <el-button type="primary" icon="el-icon-check" @click="submitForm()">提交</el-button>
+        <el-button type="success" icon="el-icon-refresh" @click="handleQuery()">刷新</el-button>
+        <el-button icon="el-icon-back" @click="close()">返回</el-button>
       </el-form-item>
     </el-form>
   </el-card>
@@ -143,6 +145,7 @@ export default {
       menus: [],
       // 表详细信息
       info: {},
+      loading: true,
     };
   },
   created() {
@@ -155,7 +158,8 @@ export default {
       if (tableId) {
         // 获取表详细信息
         getGenTable(tableId).then((res) => {
-          this.columns = res.data.columns;
+          this.loading = false;
+          this.columns = res.data.info.columns;
           this.info = res.data.info;
           this.tables = res.data.tables; //子表
         });
@@ -178,14 +182,18 @@ export default {
         if (validateResult) {
           const genTable = Object.assign({}, basicForm.model, genForm.model);
           genTable.columns = this.columns;
+          // 额外参数拼接
           genTable.params = {
             treeCode: genTable.treeCode,
             treeName: genTable.treeName,
             treeParentCode: genTable.treeParentCode,
             parentMenuId: genTable.parentMenuId,
+            sortField: genTable.sortField,
+            sortType: genTable.sortType,
+            checkedBtn: genTable.checkedBtn.toString(),
           };
           console.log("genForm", genTable);
-          
+
           updateGenTable(genTable).then((res) => {
             this.msgSuccess(res.msg);
             if (res.code === 200) {

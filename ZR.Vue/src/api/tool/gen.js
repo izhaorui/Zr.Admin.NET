@@ -1,23 +1,5 @@
-import request from '@/utils/request'
+import request from '@/utils/request';
 
-// 预览生成代码
-// export function previewTable(tableId) {
-//   return request({
-//     url: '/tool/gen/preview/' + tableId,
-//     method: 'get'
-//   })
-// }
-
-/**
- * 创建数据库连接
- */
-// export function createGetDBConn(data) {
-//   return request({
-//     url: 'tool/gen/CreateDBConn',
-//     method: 'post',
-//     data: data,
-//   })
-// }
 /**
  * 获取数据库
  */
@@ -43,7 +25,7 @@ export function listDbTable(data) {
 export async function codeGenerator(data) {
   return await request({
     url: 'tool/gen/genCode',
-    method: 'post',
+    method: 'POST',
     data: data,
   })
 }
@@ -103,11 +85,11 @@ export function updateGenTable(data) {
 }
 
 // 预览生成代码
-export function previewTable(tableId, data) {
+export function previewTable(tableId) {
   return request({
     url: '/tool/gen/preview/' + tableId,
     method: 'post',
-    data: data
+    // data: data
   })
 }
 

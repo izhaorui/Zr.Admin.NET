@@ -349,6 +349,12 @@ namespace ZR.Repository
 
             return source.ToPage(parm);
         }
+
+        public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, string orderByType)
+        {
+            return GetPages(where, parm, order, orderByType == "desc" ? OrderByType.Desc : OrderByType.Asc);
+        }
+
         /// <summary>
         /// 查询所有数据(无分页,请慎用)
         /// </summary>

@@ -9,7 +9,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 是否预览代码
         /// </summary>
-        public int IsPreview { get; set; }
+        public bool IsPreview { get; set; }
         /// <summary>
         /// 生成代码的数据库类型 0、mysql 1、sqlserver
         /// </summary>
@@ -17,7 +17,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 生成的按钮功能
         /// </summary>
-        public int[] CheckedBtn { get; set; }
+        public int[] CheckedBtn { get; set; } = System.Array.Empty<int>();
         public GenTable GenTable { get; set; }
         public CodeGenerateOption GenOptions { get; set; }
         #region 存储路径
@@ -37,6 +37,11 @@ namespace ZR.CodeGenerator.Model
         /// 代码生成压缩包名称
         /// </summary>
         public string ZipFileName { get; set; }
+        /// <summary>
+        /// 生成代码方式（0zip压缩包 1自定义路径）
+        /// </summary>
+        public string GenType { get; set; }
+        public string GenPath { get; set; } = "";
         #endregion
     }
 
