@@ -127,13 +127,13 @@
       <el-col :lg="24">
         <el-form-item label="显示按钮">
           <el-checkbox-group v-model="checkedBtn" @change="checkedBtnSelect">
-            <el-checkbox :label="1" disabled>
+            <el-checkbox :label="1">
               <el-tag type="primary">添加</el-tag>
             </el-checkbox>
-            <el-checkbox :label="2" disabled>
+            <el-checkbox :label="2">
               <el-tag type="success">修改</el-tag>
             </el-checkbox>
-            <el-checkbox :label="3" disabled>
+            <el-checkbox :label="3">
               <el-tag type="danger">删除</el-tag>
             </el-checkbox>
             <el-checkbox :label="4">

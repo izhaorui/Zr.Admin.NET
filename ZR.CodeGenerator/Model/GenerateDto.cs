@@ -41,7 +41,7 @@ namespace ZR.CodeGenerator.Model
         /// 生成代码方式（0zip压缩包 1自定义路径）
         /// </summary>
         public string GenType { get; set; }
-        public string GenPath { get; set; } = "/";
+        public string GenPath { get; set; } = "";
         #endregion
     }
 

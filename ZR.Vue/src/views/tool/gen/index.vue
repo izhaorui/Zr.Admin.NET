@@ -183,17 +183,13 @@ export default {
 
           codeGenerator(seachdata)
             .then((res) => {
-              const { code, data } = res;
-              if (code == 200) {
-                this.showGenerate = false;
-                if (row.genType === "1") {
-                  this.msgSuccess("成功生成到自定义路径：" + row.genPath);
-                } else {
-                  this.msgSuccess("恭喜你，代码生成完成！");
-                  this.download(data.path);
-                }
+              const { data } = res;
+              this.showGenerate = false;
+              if (row.genType === "1") {
+                this.msgSuccess("成功生成到自定义路径：" + row.genPath);
               } else {
-                this.msgError(res.msg);
+                this.msgSuccess("恭喜你，代码生成完成！");
+                this.download(data.path);
               }
               pageLoading.close();
             })

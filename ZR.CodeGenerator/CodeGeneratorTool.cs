@@ -46,10 +46,10 @@ namespace ZR.CodeGenerator
             replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
             replaceDto.PermissionPrefix = $"{dto.GenTable.ModuleName.ToLower()}:{dto.GenTable.ClassName.ToLower()}";//权限
             replaceDto.Author = dto.GenTable.FunctionAuthor;
-            replaceDto.ShowBtnAdd = dto.CheckedBtn.Any(f => f == 1);
-            replaceDto.ShowBtnEdit = dto.CheckedBtn.Any(f => f == 2);
-            replaceDto.ShowBtnDelete = dto.CheckedBtn.Any(f => f == 3);
-            replaceDto.ShowBtnExport = dto.CheckedBtn.Any(f => f == 4);
+            replaceDto.ShowBtnAdd = dto.GenTable.CheckedBtn.Any(f => f == 1);
+            replaceDto.ShowBtnEdit = dto.GenTable.CheckedBtn.Any(f => f == 2);
+            replaceDto.ShowBtnDelete = dto.GenTable.CheckedBtn.Any(f => f == 3);
+            replaceDto.ShowBtnExport = dto.GenTable.CheckedBtn.Any(f => f == 4);
 
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in dto.GenTable.Columns.OrderBy(x => x.Sort))
