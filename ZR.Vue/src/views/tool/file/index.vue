@@ -339,7 +339,7 @@ export default {
       if (val == 1) {
         this.uploadUrl = "/common/uploadFile";
       } else if (val == 2) {
-        thiis.uploadUrl = "/common/UploadFileAliyun";
+        this.uploadUrl = "/common/UploadFileAliyun";
       }
     },
     /** 提交按钮 */
