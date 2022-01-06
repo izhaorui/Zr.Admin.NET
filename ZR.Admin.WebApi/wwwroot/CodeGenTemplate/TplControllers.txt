@@ -167,9 +167,10 @@ $if(replaceDto.ShowBtnExport)
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
         [HttpGet("export")]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:export")]
-        public IActionResult Export()
+        public IActionResult Export([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
         {
-            var list = _${replaceDto.ModelTypeName}Service.GetAll();
+            parm.PageSize = 10000;
+            var list = _${replaceDto.ModelTypeName}Service.GetList(parm).Result;
 
             string sFileName = ExportExcel(list, "${replaceDto.ModelTypeName}", "${genTable.FunctionName}");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
