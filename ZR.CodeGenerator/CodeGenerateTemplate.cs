@@ -192,7 +192,7 @@ namespace ZR.CodeGenerator
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">");
-                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" size=\"small\" value-format=\"yyyy-MM-dd\" type=\"datetimerange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
+                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" size=\"small\" type=\"datetimerange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
                 sb.AppendLine($"          end-placeholder=\"结束日期\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" ></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
             }
