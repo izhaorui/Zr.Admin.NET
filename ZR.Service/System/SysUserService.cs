@@ -51,7 +51,12 @@ namespace ZR.Service
         /// <returns></returns>
         public SysUser SelectUserById(long userId)
         {
-            return UserRepository.SelectUserById(userId);
+            var user = UserRepository.SelectUserById(userId);
+            if (user != null && user.UserId > 0)
+            {
+                user.Roles = RoleService.SelectUserRoleListByUserId(userId);
+            }
+            return user;
         }
 
         /// <summary>

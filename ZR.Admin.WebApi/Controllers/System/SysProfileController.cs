@@ -56,11 +56,10 @@ namespace ZR.Admin.WebApi.Controllers.System
             long userId = HttpContext.GetUId();
             var user = UserService.SelectUserById(userId);
 
-            user.Roles = RoleService.SelectUserRoleListByUserId(userId);
             var roles = RoleService.SelectUserRoleNames(userId);
             var postGroup = UserPostService.GetPostsStrByUserId(userId);
             var deptInfo = DeptService.GetFirst(f => f.DeptId == user.DeptId);
-            user.DeptName = deptInfo?.DeptName;
+            user.DeptName = deptInfo?.DeptName ?? "-";
 
             return SUCCESS(new { user, roles, postGroup }, TIME_FORMAT_FULL);
         }

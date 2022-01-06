@@ -99,7 +99,7 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(IsIgnore = true)]
         [EpplusIgnore]
-        public int[] RoleIds { get; set; }
+        public long[] RoleIds { get; set; }
         /// <summary>
         /// 岗位集合
         /// </summary>
