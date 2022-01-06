@@ -91,7 +91,7 @@ namespace ZR.Service.System
                 genTable.TreeName = options.GetValueOrDefault("treeName") ?? "";
                 genTable.TreeCode = options.GetValueOrDefault("treeCode") ?? "";
                 
-                var checkdBtn = options.GetValueOrDefault("checkedBtn");
+                var checkdBtn = options.GetValueOrDefault("checkedBtn") ?? "";
                 genTable.CheckedBtn = Tools.SpitIntArrary(checkdBtn.ToString());
             }
         }
