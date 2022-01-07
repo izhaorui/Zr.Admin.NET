@@ -234,7 +234,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate($"{tempName}.txt");
             tpl.Set("parentId", generateDto.GenTable.ParentMenuId ?? 0);
             var result = tpl.Render();
-            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, generateDto.GenTable.BusinessName + ".sql");
+            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "sql", generateDto.GenTable.BusinessName + ".sql");
 
             generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, result));
         }
