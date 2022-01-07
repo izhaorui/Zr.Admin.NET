@@ -4,7 +4,7 @@
       :on-exceed="handleExceed" :on-remove="handleRemove" :on-error="handleUploadError" name="file" :show-file-list="true" :limit="limit"
       :file-list="fileList" :on-preview="handlePictureCardPreview" :on-progress="uploadProcess" :class="{hide: this.fileList.length >= this.limit}"
       :headers="headers">
-      <i class="el-icon-plus"></i>
+      <i slot="default" class="el-icon-plus"></i>
       <!-- 上传提示 -->
       <div class="el-upload__tip" slot="tip" v-if="showTip">
         请上传

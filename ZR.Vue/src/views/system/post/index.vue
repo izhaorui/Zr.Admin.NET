@@ -100,7 +100,7 @@ import {
 } from "@/api/system/post";
 
 export default {
-  name: "Post",
+  name: "post",
   data() {
     return {
       // 遮罩层

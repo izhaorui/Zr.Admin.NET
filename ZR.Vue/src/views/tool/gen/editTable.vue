@@ -125,7 +125,7 @@ import genInfoForm from "./genInfoForm";
 import Sortable from "sortablejs";
 
 export default {
-  name: "GenEdit",
+  name: "genedit",
   components: {
     basicInfoForm,
     genInfoForm,

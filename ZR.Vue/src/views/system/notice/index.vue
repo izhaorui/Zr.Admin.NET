@@ -113,7 +113,7 @@ import {
 } from "@/api/system/notice";
 
 export default {
-  name: "Notice",
+  name: "notice",
   data() {
     return {
       // 遮罩层

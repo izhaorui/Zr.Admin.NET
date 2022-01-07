@@ -146,15 +146,12 @@
 <script>
 import {
   listSysfile,
-  // addSysfile,
   delSysfile,
-  // updateSysfile,
   getSysfile,
-  // exportSysfile,
 } from "@/api/tool/file.js";
 
 export default {
-  name: "Sysfile",
+  name: "sysfile",
   data() {
     return {
       labelWidth: "100px",

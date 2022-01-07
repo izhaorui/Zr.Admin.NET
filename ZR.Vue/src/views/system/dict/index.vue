@@ -125,7 +125,7 @@ import {
   exportType,
 } from "@/api/system/dict/type";
 export default {
-  name: "Dict",
+  name: "dict",
   components: { dictData },
   data() {
     return {

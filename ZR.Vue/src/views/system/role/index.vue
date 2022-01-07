@@ -133,7 +133,7 @@ import {
 // } from "@/api/system/dept";
 
 export default {
-  name: "Role",
+  name: "role",
   data() {
     return {
       // 添加、修改模式是否显示菜单分配
