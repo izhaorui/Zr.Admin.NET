@@ -91,9 +91,9 @@ namespace ZR.Admin.WebApi.Extensions
                             }
                             else if ("2".Equals(dataScope))
                             {
-                                var roleDepts = db0.Queryable<SysRoleDept>()
-                                .Where(f => f.RoleId == role.RoleId).Select(f => f.DeptId).ToList();
-                                var filter1 = new TableFilterItem<SysDept>(it => roleDepts.Contains(it.DeptId));
+                                //var roleDepts = db0.Queryable<SysRoleDept>()
+                                //.Where(f => f.RoleId == role.RoleId).Select(f => f.DeptId).ToList();
+                                //var filter1 = new TableFilterItem<SysDept>(it => roleDepts.Contains(it.DeptId));
                             }
                             else if ("3".Equals(dataScope))
                             {

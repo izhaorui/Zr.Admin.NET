@@ -73,15 +73,15 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             var user = sysLoginService.Login(loginBody, AsyncFactory.RecordLogInfo(httpContextAccessor.HttpContext, "0", "login"));
+            
             #region 存入cookie Action校验权限使用
-            //角色集合 eg: admin,yunying,common
-            //List<string> roles = permissionService.GetRolePermission(user);
-            List<SysRole> roles = roleService.SelectRolePermissionByUserId(user.UserId);
+            List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
             #endregion
-            LoginUser loginUser = new LoginUser(user, roles, permissions);
 
+            LoginUser loginUser = new(user, roles, permissions);
+            CacheHelper.SetCache(GlobalConstant.UserPermKEY + user.UserId, loginUser);
             return SUCCESS(JwtUtil.GenerateJwtToken(HttpContext.AddClaims(loginUser)));
         }
 
@@ -98,7 +98,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             //    //注销登录的用户，相当于ASP.NET中的FormsAuthentication.SignOut  
             //    await HttpContext.SignOutAsync();
             //}).Wait();
+            var id = HttpContext.GetUId();
 
+            CacheHelper.Remove(GlobalConstant.UserPermKEY + id);
             return SUCCESS(1);
         }
 

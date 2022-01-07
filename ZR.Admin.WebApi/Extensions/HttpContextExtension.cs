@@ -137,14 +137,6 @@ namespace ZR.Admin.WebApi.Extensions
                     new Claim(ClaimTypes.Name, user.UserName),
                     new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
                 };
-            if (user.RoleIds != null)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, string.Join(",", user.RoleIds)));
-            }
-            if (user.Permissions != null)
-            {
-                claims.Add(new Claim("perm", string.Join(",", user.Permissions)));
-            }
 
             //写入Cookie
             //WhiteCookie(context, claims);

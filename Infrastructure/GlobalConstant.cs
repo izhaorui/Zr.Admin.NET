@@ -21,5 +21,9 @@ namespace Infrastructure
         /// 开发版本API映射路径
         /// </summary>
         public static string DevApiProxy = "/dev-api/";
+        /// <summary>
+        /// 用户权限缓存key
+        /// </summary>
+        public static string UserPermKEY = "CACHE-USER-PERM";
     }
 }

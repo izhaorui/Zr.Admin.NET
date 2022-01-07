@@ -67,7 +67,7 @@ namespace ZR.Admin.WebApi.Filters
                 }
                 if (!HasPermi && !Permission.Equals("common"))
                 {
-                    logger.Info($"用户{info.NickName}没有权限访问{context.HttpContext.Request.Path}，当前权限[{Permission}]");
+                    logger.Info($"用户{info.UserName}没有权限访问{context.HttpContext.Request.Path}，当前权限[{Permission}]");
                     context.Result = new JsonResult(new { code = ResultCode.FORBIDDEN, msg = "你没有权限访问" });
                 }
             }
