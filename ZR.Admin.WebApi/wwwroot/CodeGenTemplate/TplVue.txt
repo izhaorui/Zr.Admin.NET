@@ -85,7 +85,7 @@ export default {
       // 非多个禁用
       multiple: true,
       // 遮罩层
-      loading: true,
+      loading: false,
       // 显示搜索条件
       showSearch: true,
       // 查询参数
