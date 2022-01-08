@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -74,7 +75,10 @@ namespace ZR.Admin.WebApi.Framework
         {
             JwtSettings jwtSettings = new();
             ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
-
+            if (jwtSettings == null || jwtSettings.SecretKey.IsEmpty())
+            {
+                return null;
+            }
             var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
            
             var tokenDescriptor = new TokenValidationParameters
@@ -125,8 +129,8 @@ namespace ZR.Admin.WebApi.Framework
         {
             try
             {
-                var userId = jwtToken.FirstOrDefault(x => x.Type == "primarysid").Value;
-                var userName = jwtToken.FirstOrDefault(x => x.Type == "unique_name").Value;
+                //var userId = jwtToken.FirstOrDefault(x => x.Type == "primarysid").Value;
+                //var userName = jwtToken.FirstOrDefault(x => x.Type == "unique_name").Value;
                 var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData).Value;
 
                 LoginUser loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);

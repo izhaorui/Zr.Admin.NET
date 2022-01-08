@@ -55,6 +55,7 @@ namespace ZR.Service
             if (user != null && user.UserId > 0)
             {
                 user.Roles = RoleService.SelectUserRoleListByUserId(userId);
+                user.RoleIds = user.Roles.Select(x => x.RoleId).ToArray();
             }
             return user;
         }

@@ -22,7 +22,7 @@ namespace ZR.Admin.WebApi.Filters
     public class VerifyAttribute : Attribute, IAuthorizationFilter
     {
         static readonly Logger logger = LogManager.GetCurrentClassLogger();
-        IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+        //IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
 
         //public VerifyAttribute() { }
 

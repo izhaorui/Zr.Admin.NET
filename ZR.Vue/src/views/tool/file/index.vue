@@ -3,7 +3,8 @@
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
       <el-form-item label="上传时间">
-        <el-date-picker v-model="dateRangeCreate_time" size="small" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择上传时间"></el-date-picker>
+        <el-date-picker v-model="dateRangeCreate_time" size="small" value-format="yyyy-MM-dd" type="daterange" range-separator="-"
+          start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择上传时间"></el-date-picker>
       </el-form-item>
       <el-form-item label="存储类型" prop="storeType">
         <el-select v-model="queryParams.storeType" placeholder="请选择存储类型" size="small" clearable="">
@@ -35,7 +36,8 @@
       <el-table-column prop="fileName" label="文件名" align="center">
         <template slot-scope="scope">
           <el-popover :content="scope.row.fileUrl" placement="top-start" title="路径" trigger="hover">
-            <a slot="reference" :href="scope.row.accessUrl" class="el-link--primary" style="word-break:keep-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color: #1890ff;font-size: 13px;" target="_blank">
+            <a slot="reference" :href="scope.row.accessUrl" class="el-link--primary"
+              style="word-break:keep-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color: #1890ff;font-size: 13px;" target="_blank">
               {{ scope.row.fileName }}
             </a>
           </el-popover>
@@ -79,10 +81,10 @@
           <el-col :lg="24">
             <el-form-item label="存储文件夹前缀" prop="storePath">
               <span slot="label">
+                存储文件夹前缀
                 <el-tooltip content="比如存储到'/uploads' '如果不填写默认按时间存储eg：/2021/12/16(固定段)'" placement="top">
                   <i class="el-icon-question"></i>
                 </el-tooltip>
-                存储文件夹前缀
               </span>
               <el-input v-model="form.storePath" placeholder="请输入" />
             </el-form-item>
@@ -94,15 +96,14 @@
           </el-col>
           <el-col :lg="24">
             <el-form-item label="上传文件" prop="accessUrl">
-              <UploadFile v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="[]" :limit="1" :fileSize="15" :data="{ 'fileDir' :  form.storePath, 'fileName': form.fileName}" column="accessUrl"
-                @input="handleUploadSuccess" />
+              <UploadFile v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="[]" :limit="1" :fileSize="15"
+                :data="{ 'fileDir' :  form.storePath, 'fileName': form.fileName}" column="accessUrl" @input="handleUploadSuccess" />
             </el-form-item>
           </el-col>
 
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <!-- <el-button type="primary" @click="submitForm">确 定</el-button> -->
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -144,11 +145,7 @@
   </div>
 </template>
 <script>
-import {
-  listSysfile,
-  delSysfile,
-  getSysfile,
-} from "@/api/tool/file.js";
+import { listSysfile, delSysfile, getSysfile } from "@/api/tool/file.js";
 
 export default {
   name: "sysfile",
@@ -308,7 +305,7 @@ export default {
         })
         .catch(() => {});
     },
-    /** 修改按钮操作 */
+    /**查看按钮操作 */
     handleView(row) {
       const id = row.id || this.ids;
       getSysfile(id).then((res) => {
@@ -336,11 +333,6 @@ export default {
       } else if (val == 2) {
         this.uploadUrl = "/common/UploadFileAliyun";
       }
-    },
-    /** 提交按钮 */
-    submitForm: function () {
-      this.open = false;
-      this.getList();
     },
   },
 };
