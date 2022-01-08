@@ -1,87 +1,62 @@
 <template>
   <div class="app-container">
     <el-row>
-      <el-col :lg="12" class="card-box">
-        <el-card>
-          <div slot="header"><span>CPU</span></div>
-          <div class="el-table el-table--enable-row-hover el-table--medium">
-            <table cellspacing="0" style="width: 100%;">
-              <thead>
-                <tr>
-                  <th class="is-leaf">
-                    属性
-                  </th>
-                  <th class="is-leaf">
-                    值
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <div class="cell">核心数</div>
-                  </td>
-                  <td>
-                    <div class="cell" v-if="server.sys">{{ server.sys.cpuNum }}</div>
-                  </td>
-                </tr>
-                <!-- <tr>
-                  <td><div class="cell">用户使用率</div></td>
-                  <td><div class="cell" v-if="server.cpu">{{ server.cpu.used }}%</div></td>
-                </tr> -->
-                <tr>
-                  <td>
-                    <div class="cell">cpu使用率</div>
-                  </td>
-                  <td>
-                    <div class="cell" v-if="server.cpu">{{ server.cpu.cpuRate }}</div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+      <el-col :lg="24" class="card-box">
+        <el-card class="box-card">
+          <div slot="header" class="clearfix">
+            <span style="font-weight: bold;color: #666;font-size: 15px">状态</span>
           </div>
-        </el-card>
-      </el-col>
-
-      <el-col :lg="12" class="card-box">
-        <el-card>
-          <div slot="header"><span>内存</span></div>
-          <div class="el-table el-table--enable-row-hover el-table--medium">
-            <table cellspacing="0" style="width: 100%;">
-              <thead>
-                <tr>
-                  <th class="is-leaf">
-                    属性
-                  </th>
-                  <th class="is-leaf">
-                    内存
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <div class="cell">总内存</div>
-                  </td>
-                  <td>
-                    <div class="cell" v-if="server.cpu">{{ server.cpu.totalRAM }}</div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div class="cell">内存使用率</div>
-                  </td>
-                  <td>
-                    <div class="cell" v-if="server.cpu">{{ server.cpu.ramRate}}</div>
-                  </td>
-                </tr>
-                <!-- <tr>
-                  <td><div class="cell">运行时间</div></td>
-                  <td><div class="cell" v-if="server.cpu">{{ server.cpu.runTime }}</div></td>
-                </tr> -->
-
-              </tbody>
-            </table>
+          <div>
+            <el-col :xs="24" :sm="24" :md="6" :lg="6" :xl="6" style="margin-bottom: 10px">
+              <div class="title">CPU使用率</div>
+              <el-tooltip placement="top-end">
+                <div class="content" v-if="server.cpu">
+                  <el-progress type="dashboard" :percentage="parseFloat(server.cpu.cpuRate)" />
+                </div>
+              </el-tooltip>
+              <div class="footer" v-if="server.sys">{{ server.sys.cpuNum }} 核心</div>
+            </el-col>
+            <el-col :xs="24" :sm="24" :md="6" :lg="6" :xl="6" style="margin-bottom: 10px" v-if="server.cpu">
+              <div class="title">内存使用率</div>
+              <el-tooltip placement="top-end">
+                <div slot="content" style="font-size: 12px;">
+                  <div style="padding: 3px;">
+                    总量：{{ server.cpu.totalRAM }}
+                  </div>
+                  <div style="padding: 3px">
+                    已使用：{{ server.cpu.usedRam }}
+                  </div>
+                  <div style="padding: 3px">
+                    空闲：{{ server.cpu.freeRam }}
+                  </div>
+                </div>
+                <div class="content">
+                  <el-progress type="dashboard" :percentage="parseFloat( server.cpu.ramRate)" />
+                </div>
+              </el-tooltip>
+              <div class="footer"> {{server.cpu.usedRam}} / {{ server.cpu.totalRAM }}</div>
+            </el-col>
+            <!--
+            
+            <el-col :xs="24" :sm="24" :md="6" :lg="6" :xl="6" style="margin-bottom: 10px">
+              <div class="title">磁盘使用率</div>
+              <div class="content">
+                <el-tooltip placement="top-end">
+                  <div slot="content" style="font-size: 12px;">
+                    <div style="padding: 3px">
+                      总量：{{ 1 }}
+                    </div>
+                    <div style="padding: 3px">
+                      空闲：{{ 1 }}
+                    </div>
+                  </div>
+                  <div class="content">
+                    <el-progress type="dashboard" :percentage="parseFloat(3)" />
+                  </div>
+                </el-tooltip>
+              </div>
+              <div class="footer">{{ 1 }} / {{ 100 }}</div>
+            </el-col> -->
           </div>
         </el-card>
       </el-col>
@@ -92,20 +67,20 @@
             <span>服务器信息</span>
           </div>
           <div class="el-table el-table--enable-row-hover el-table--medium">
-            <table cellspacing="0" style="width: 100%;">
+            <table cellspacing="0" style="width: 100%;" v-if="server.sys">
               <tbody>
                 <tr>
                   <td>
                     <div class="cell">服务器名称</div>
                   </td>
                   <td>
-                    <div class="cell" v-if="server.sys">{{ server.sys.computerName }}</div>
+                    <div class="cell">{{ server.sys.computerName }}</div>
                   </td>
                   <td>
                     <div class="cell">操作系统</div>
                   </td>
                   <td>
-                    <div class="cell" v-if="server.sys">{{ server.sys.osName }}</div>
+                    <div class="cell">{{ server.sys.osName }}</div>
                   </td>
                 </tr>
                 <tr>
@@ -113,13 +88,13 @@
                     <div class="cell">服务器IP</div>
                   </td>
                   <td>
-                    <div class="cell" v-if="server.sys">{{ server.sys.serverIP }}</div>
+                    <div class="cell">{{ server.sys.serverIP }}</div>
                   </td>
                   <td>
                     <div class="cell">系统架构</div>
                   </td>
                   <td>
-                    <div class="cell" v-if="server.sys">{{ server.sys.osArch }}</div>
+                    <div class="cell">{{ server.sys.osArch }}</div>
                   </td>
                 </tr>
                 <tr>
@@ -127,7 +102,7 @@
                     <div class="cell">系统运行时长</div>
                   </td>
                   <td>
-                    <div class="cell" v-if="server.cpu">{{ server.cpu.runTime }}</div>
+                    <div class="cell">{{ server.sys.runTime }}</div>
                   </td>
                   <td>
                     <div class="cell"></div>
@@ -139,6 +114,33 @@
               </tbody>
             </table>
           </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="24" class="card-box">
+        <el-card>
+          <div slot="header">
+            <span>磁盘状态</span>
+          </div>
+					<el-col :xs="24" :sm="24" :md="6" :lg="6" :xl="6" v-for="sysFile in server.disk" :key="sysFile.diskName" style="margin-bottom: 10px">
+              <div class="title">{{sysFile.dickName }}盘使用率</div>
+              <div class="content">
+                <el-tooltip placement="top-end">
+                  <div slot="content" style="font-size: 12px;">
+                    <div style="padding: 3px">
+                      总量：{{ sysFile.totalSize }}GB
+                    </div>
+                    <div style="padding: 3px">
+                      空闲：{{ sysFile.availableFreeSpace }}GB
+                    </div>
+                  </div>
+                  <div class="content">
+                    <el-progress type="dashboard" :percentage="parseFloat(sysFile.availablePercent)" />
+                  </div>
+                </el-tooltip>
+              </div>
+              <div class="footer">{{ sysFile.availableFreeSpace }}G / {{ sysFile.totalSize }}G</div>
+            </el-col>
         </el-card>
       </el-col>
 
@@ -211,68 +213,7 @@
           </div>
         </el-card>
       </el-col>
-      <!--
-      <el-col :span="24" class="card-box">
-        <el-card>
-          <div slot="header">
-            <span>磁盘状态</span>
-          </div>
-          <div class="el-table el-table--enable-row-hover el-table--medium">
-            <table cellspacing="0" style="width: 100%;">
-              <thead>
-                <tr>
-                  <th class="is-leaf">
-                    <div class="cell">盘符路径</div>
-                  </th>
-                  <th class="is-leaf">
-                    <div class="cell">文件系统</div>
-                  </th>
-                  <th class="is-leaf">
-                    <div class="cell">盘符类型</div>
-                  </th>
-                  <th class="is-leaf">
-                    <div class="cell">总大小</div>
-                  </th>
-                  <th class="is-leaf">
-                    <div class="cell">可用大小</div>
-                  </th>
-                  <th class="is-leaf">
-                    <div class="cell">已用大小</div>
-                  </th>
-                  <th class="is-leaf">
-                    <div class="cell">已用百分比</div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody v-if="server.sysFiles">
-                <tr v-for="sysFile in server.sysFiles">
-                  <td>
-                    <div class="cell">{{ sysFile.dirName }}</div>
-                  </td>
-                  <td>
-                    <div class="cell">{{ sysFile.sysTypeName }}</div>
-                  </td>
-                  <td>
-                    <div class="cell">{{ sysFile.typeName }}</div>
-                  </td>
-                  <td>
-                    <div class="cell">{{ sysFile.total }}</div>
-                  </td>
-                  <td>
-                    <div class="cell">{{ sysFile.free }}</div>
-                  </td>
-                  <td>
-                    <div class="cell">{{ sysFile.used }}</div>
-                  </td>
-                  <td>
-                    <div class="cell" :class="{'text-danger': sysFile.usage > 80}">{{ sysFile.usage }}%</div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </el-card>
-      </el-col> -->
+
     </el-row>
   </div>
 </template>
@@ -343,7 +284,27 @@ table tr {
   height: 30px;
 }
 .is-leaf {
-  text-align: left;
+  text-align: center;
   padding: 0 10px;
+}
+.title {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: #999;
+  margin-bottom: 16px;
+}
+.footer {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: #999;
+  margin-top: -5px;
+  margin-bottom: 10px;
+}
+.content {
+  text-align: center;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 </style>

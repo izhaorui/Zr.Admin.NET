@@ -7,6 +7,11 @@ namespace Infrastructure
 {
     public class ShellHelper
     {
+        /// <summary>
+        /// linux 系统命令
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
         public static string Bash(string command)
         {
             var escapedArgs = command.Replace("\"", "\\\"");
@@ -28,6 +33,12 @@ namespace Infrastructure
             return result;
         }
 
+        /// <summary>
+        /// windows系统命令
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public static string Cmd(string fileName, string args)
         {
             string output = string.Empty;
