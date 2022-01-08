@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
@@ -66,7 +67,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             Dictionary<string, object> dic = new();
             var roles = RoleService.SelectRoleAll();
-            dic.Add("roles", SysUser.IsAdmin(userId) ? roles : roles.FindAll(f => !f.IsAdmin()));
+            dic.Add("roles", roles);
+            //dic.Add("roles", SysUser.IsAdmin(userId) ? roles : roles.FindAll(f => !f.IsAdmin()));
             dic.Add("posts", PostService.GetAll());
 
             //编辑
@@ -75,7 +77,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 SysUser sysUser = UserService.SelectUserById(userId);
                 dic.Add("user", sysUser);
                 dic.Add("postIds", UserPostService.GetUserPostsByUserId(userId));
-                dic.Add("roleIds", RoleService.SelectUserRoles(userId));
+                dic.Add("roleIds", sysUser.RoleIds);
             }
 
             return ToResponse(ApiResult.Success(dic));
