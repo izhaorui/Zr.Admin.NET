@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Extensions;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,19 +20,20 @@ namespace Infrastructure
             try
             {
                 MemoryMetricsClient client = new();
-                MemoryMetrics memoryMetrics = client.GetMetrics();
-                memoryMetrics.FreeRam = Math.Ceiling(memoryMetrics.Free / 1024) + "GB";
-                memoryMetrics.UsedRam = Math.Ceiling(memoryMetrics.Used / 1024) + "GB";
-                memoryMetrics.TotalRAM = Math.Ceiling(memoryMetrics.Total / 1024).ToString() + " GB";
+                MemoryMetrics memoryMetrics = IsUnix() ? client.GetUnixMetrics() : client.GetWindowsMetrics();
+
+                memoryMetrics.FreeRam = Math.Round(memoryMetrics.Free / 1024, 2) + "GB";
+                memoryMetrics.UsedRam = Math.Round(memoryMetrics.Used / 1024, 2) + "GB";
+                memoryMetrics.TotalRAM = Math.Round(memoryMetrics.Total / 1024, 2) + "GB";
                 memoryMetrics.RAMRate = Math.Ceiling(100 * memoryMetrics.Used / memoryMetrics.Total).ToString() + "%";
                 memoryMetrics.CPURate = Math.Ceiling(GetCPURate().ParseToDouble()) + "%";
                 return memoryMetrics;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("获取内存使用出错，msg=" + ex.Message + "," + ex.StackTrace);
             }
-            return null;
+            return new MemoryMetrics();
         }
 
         /// <summary>
@@ -42,20 +44,52 @@ namespace Infrastructure
         {
             List<DiskInfo> diskInfos = new();
 
-            var driv = DriveInfo.GetDrives();
-            foreach (var item in driv)
+            if (IsUnix())
             {
-                var obj = new DiskInfo()
+                try
                 {
-                    DickName = item.Name,
-                    TypeName = item.DriveType.ToString(),
-                    TotalFree = item.TotalFreeSpace / 1024 / 1024 / 1024,
-                    TotalSize = item.TotalSize / 1024 / 1024 / 1024,
-                    AvailableFreeSpace = item.AvailableFreeSpace / 1024 / 1024 / 1024,
-                };
-                obj.AvailablePercent =  decimal.Ceiling(((decimal)(obj.TotalSize - obj.AvailableFreeSpace) /(decimal)obj.TotalSize) * 100);
-                diskInfos.Add(obj);
+                    string output = ShellHelper.Bash("df -m / | awk '{print $2,$3,$4,$5,$6}'");
+                    var arr = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                    if (arr.Length == 0) return diskInfos;
+
+                    var rootDisk = arr[1].Split(' ', (char)StringSplitOptions.RemoveEmptyEntries);
+                    if (rootDisk == null || rootDisk.Length == 0)
+                    {
+                        return diskInfos;
+                    }
+                    DiskInfo diskInfo = new()
+                    {
+                        DiskName = "/",
+                        TotalSize = long.Parse(rootDisk[0]) / 1024,
+                        Used = long.Parse(rootDisk[1]) / 1024,
+                        AvailableFreeSpace = long.Parse(rootDisk[2]) / 1024,
+                        AvailablePercent = decimal.Parse(rootDisk[3].Replace("%", ""))
+                    };
+                    diskInfos.Add(diskInfo);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("获取磁盘信息出错了" + ex.Message);
+                }
             }
+            else
+            {
+                var driv = DriveInfo.GetDrives();
+                foreach (var item in driv)
+                {
+                    var obj = new DiskInfo()
+                    {
+                        DiskName = item.Name,
+                        TypeName = item.DriveType.ToString(),
+                        TotalSize = item.TotalSize / 1024 / 1024 / 1024,
+                        AvailableFreeSpace = item.AvailableFreeSpace / 1024 / 1024 / 1024,
+                    };
+                    obj.Used = obj.TotalSize - obj.AvailableFreeSpace;
+                    obj.AvailablePercent = decimal.Ceiling(obj.Used / (decimal)obj.TotalSize * 100);
+                    diskInfos.Add(obj);
+                }
+            }
+
             return diskInfos;
         }
 
@@ -81,6 +115,10 @@ namespace Infrastructure
             return cpuRate;
         }
 
+        /// <summary>
+        /// 获取系统运行时间
+        /// </summary>
+        /// <returns></returns>
         public static string GetRunTime()
         {
             string runTime = string.Empty;
@@ -88,8 +126,7 @@ namespace Infrastructure
             {
                 if (IsUnix())
                 {
-                    string output = ShellHelper.Bash("uptime -s");
-                    output = output.Trim();
+                    string output = ShellHelper.Bash("uptime -s").Trim();
                     runTime = DateTimeHelper.FormatTime((DateTime.Now - output.ParseToDateTime()).TotalMilliseconds.ToString().Split('.')[0].ParseToLong());
                 }
                 else
@@ -104,7 +141,7 @@ namespace Infrastructure
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("获取runTime出错" + ex.Message);
             }
             return runTime;
         }
@@ -115,8 +152,11 @@ namespace Infrastructure
     /// </summary>
     public class MemoryMetrics
     {
+        [JsonIgnore]
         public double Total { get; set; }
+        [JsonIgnore]
         public double Used { get; set; }
+        [JsonIgnore]
         public double Free { get; set; }
 
         public string UsedRam { get; set; }
@@ -143,10 +183,14 @@ namespace Infrastructure
         /// <summary>
         /// 磁盘名
         /// </summary>
-        public string DickName { get; set; }
+        public string DiskName { get; set; }
         public string TypeName { get; set; }
         public long TotalFree { get; set; }
         public long TotalSize { get; set; }
+        /// <summary>
+        /// 已使用
+        /// </summary>
+        public long Used { get; set; }
         /// <summary>
         /// 可使用
         /// </summary>
@@ -156,63 +200,54 @@ namespace Infrastructure
 
     public class MemoryMetricsClient
     {
-        public MemoryMetrics GetMetrics()
-        {
-            if (ComputerHelper.IsUnix())
-            {
-                return GetUnixMetrics();
-            }
-            return GetWindowsMetrics();
-        }
+        #region 获取内存信息
 
         /// <summary>
         /// windows系统获取内存信息
         /// </summary>
         /// <returns></returns>
-        private MemoryMetrics GetWindowsMetrics()
+        public MemoryMetrics GetWindowsMetrics()
         {
             string output = ShellHelper.Cmd("wmic", "OS get FreePhysicalMemory,TotalVisibleMemorySize /Value");
+            var metrics = new MemoryMetrics();
+            var lines = output.Trim().Split('\n', (char)StringSplitOptions.RemoveEmptyEntries);
 
-            var lines = output.Trim().Split('\n');
+            if (lines.Length <= 0) return metrics;
+
             var freeMemoryParts = lines[0].Split('=', (char)StringSplitOptions.RemoveEmptyEntries);
             var totalMemoryParts = lines[1].Split('=', (char)StringSplitOptions.RemoveEmptyEntries);
 
-            var metrics = new MemoryMetrics();
             metrics.Total = Math.Round(double.Parse(totalMemoryParts[1]) / 1024, 0);
-            metrics.Free = Math.Round(double.Parse(freeMemoryParts[1]) / 1024, 0);
+            metrics.Free = Math.Round(double.Parse(freeMemoryParts[1]) / 1024, 0);//m
             metrics.Used = metrics.Total - metrics.Free;
 
             return metrics;
         }
 
         /// <summary>
-        /// windows 获取磁盘信息
-        /// </summary>
-        private void GetWindowsDiskInfo()
-        {
-            string output = ShellHelper.Cmd("wmic", "diskdrive get Size /Value");
-
-            Console.WriteLine(output);
-        }
-
-        /// <summary>
         /// Unix系统获取
         /// </summary>
         /// <returns></returns>
-        private MemoryMetrics GetUnixMetrics()
+        public MemoryMetrics GetUnixMetrics()
         {
-            string output = ShellHelper.Bash("free -m");
-
-            var lines = output.Split('\n');
-            var memory = lines[1].Split(' ', (char)StringSplitOptions.RemoveEmptyEntries);
-
+            string output = ShellHelper.Bash("free -m | awk '{print $2,$3,$4,$5,$6}'");
             var metrics = new MemoryMetrics();
-            metrics.Total = double.Parse(memory[1]);
-            metrics.Used = double.Parse(memory[2]);
-            metrics.Free = double.Parse(memory[3]);
+            var lines = output.Split('\n', (char)StringSplitOptions.RemoveEmptyEntries);
 
+            if (lines.Length <= 0) return metrics;
+
+            if (lines != null && lines.Length > 0)
+            {
+                var memory = lines[1].Split(' ', (char)StringSplitOptions.RemoveEmptyEntries);
+                if (memory.Length >= 3)
+                {
+                    metrics.Total = double.Parse(memory[0]);
+                    metrics.Used = double.Parse(memory[1]);
+                    metrics.Free = double.Parse(memory[2]);//m
+                }
+            }
             return metrics;
         }
+        #endregion
     }
-
 }

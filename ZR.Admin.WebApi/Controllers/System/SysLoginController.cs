@@ -16,6 +16,7 @@ using ZR.Service.System.IService;
 using Hei.Captcha;
 using ZR.Common;
 using ZR.Service.System;
+using Microsoft.Extensions.Options;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -33,6 +34,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly SecurityCodeHelper SecurityCodeHelper;
         private readonly ISysConfigService sysConfigService;
         private readonly ISysRoleService roleService;
+        private readonly OptionsSetting jwtSettings;
+
         public SysLoginController(
             IHttpContextAccessor contextAccessor,
             ISysMenuService sysMenuService,
@@ -41,7 +44,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysPermissionService permissionService,
             ISysConfigService configService,
             ISysRoleService sysRoleService,
-            SecurityCodeHelper captcha)
+            SecurityCodeHelper captcha,
+            IOptions<OptionsSetting> jwtSettings)
         {
             httpContextAccessor = contextAccessor;
             SecurityCodeHelper = captcha;
@@ -51,6 +55,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.permissionService = permissionService;
             this.sysConfigService = configService;
             roleService = sysRoleService;
+            this.jwtSettings = jwtSettings.Value;
         }
 
 
@@ -82,7 +87,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             LoginUser loginUser = new(user, roles, permissions);
             CacheHelper.SetCache(GlobalConstant.UserPermKEY + user.UserId, loginUser);
-            return SUCCESS(JwtUtil.GenerateJwtToken(HttpContext.AddClaims(loginUser)));
+            return SUCCESS(JwtUtil.GenerateJwtToken(HttpContext.AddClaims(loginUser), jwtSettings.JwtSettings));
         }
 
         /// <summary>

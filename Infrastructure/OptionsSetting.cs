@@ -22,6 +22,7 @@ namespace Infrastructure
         public MailOptions MailOptions { get; set; }
         public Upload Upload { get; set; }
         public ALYUN_OCS ALYUN_OCS { get; set; }
+        public JwtSettings JwtSettings { get; set; }
     }
     /// <summary>
     /// 发送邮件数据配置

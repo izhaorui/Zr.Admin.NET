@@ -39,11 +39,12 @@ namespace ZR.Admin.WebApi.Framework
         /// 生成token
         /// </summary>
         /// <param name="claims"></param>
+        /// <param name="jwtSettings"></param>
         /// <returns></returns>
-        public static string GenerateJwtToken(List<Claim> claims)
+        public static string GenerateJwtToken(List<Claim> claims, JwtSettings jwtSettings)
         {
-            JwtSettings jwtSettings = new();
-            ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
+            //JwtSettings jwtSettings = new();
+            //ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
 
             var authTime = DateTime.Now;
             var expiresAt = authTime.AddMinutes(jwtSettings.Expire);

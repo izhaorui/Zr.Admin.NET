@@ -123,7 +123,7 @@
             <span>磁盘状态</span>
           </div>
 					<el-col :xs="24" :sm="24" :md="6" :lg="6" :xl="6" v-for="sysFile in server.disk" :key="sysFile.diskName" style="margin-bottom: 10px">
-              <div class="title">{{sysFile.dickName }}盘使用率</div>
+              <div class="title">{{sysFile.diskName }}盘使用率</div>
               <div class="content">
                 <el-tooltip placement="top-end">
                   <div slot="content" style="font-size: 12px;">
@@ -133,13 +133,16 @@
                     <div style="padding: 3px">
                       空闲：{{ sysFile.availableFreeSpace }}GB
                     </div>
+										<div style="padding: 3px">
+                      已用：{{ sysFile.used }}GB
+                    </div>
                   </div>
                   <div class="content">
                     <el-progress type="dashboard" :percentage="parseFloat(sysFile.availablePercent)" />
                   </div>
                 </el-tooltip>
               </div>
-              <div class="footer">{{ sysFile.availableFreeSpace }}G / {{ sysFile.totalSize }}G</div>
+              <div class="footer">{{ sysFile.availableFreeSpace }}GB可用，共{{ sysFile.totalSize }}GB</div>
             </el-col>
         </el-card>
       </el-col>
@@ -264,7 +267,7 @@ export default {
       }
       this.intervalId = setInterval(() => {
         this.getList();
-      }, 5000);
+      }, 10000);
     },
     /**
      * 停止定时器
