@@ -269,16 +269,6 @@ namespace ZR.CodeGenerator
         }
 
         /// <summary>
-        /// 获取业务名
-        /// </summary>
-        /// <param name="tableName">tableName 表名</param>
-        /// <returns>业务名</returns>
-        public static string GetBusinessName(string tableName)
-        {
-            return tableName.Substring(0, 1).ToUpper() + tableName[1..].Replace("_", "");
-        }
-
-        /// <summary>
         /// 首字母转小写，输出前端
         /// </summary>
         /// <param name="str"></param>
@@ -356,7 +346,7 @@ namespace ZR.CodeGenerator
                 BaseNameSpace = "ZR.",//导入默认命名空间前缀
                 ModuleName = "business",//导入默认模块名
                 ClassName = GetClassName(tableName),
-                BusinessName = GetBusinessName(tableName),
+                BusinessName = FirstUpperCase(tableName.UnderScoreToCamelCase()),
                 FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
                 TableName = tableName,
                 TableComment = desc,
