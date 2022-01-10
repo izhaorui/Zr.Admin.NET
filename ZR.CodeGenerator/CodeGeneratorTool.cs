@@ -29,7 +29,7 @@ namespace ZR.CodeGenerator
         public static void Generate(GenerateDto dto)
         {
             _option.BaseNamespace = dto.GenTable.BaseNameSpace;
-            _option.SubNamespace = FirstUpperCase(dto.GenTable.ModuleName);
+            _option.SubNamespace = dto.GenTable.ModuleName.FirstUpperCase();
             _option.DtosNamespace = _option.BaseNamespace + "Model";
             _option.ModelsNamespace = _option.BaseNamespace + "Model";
             _option.RepositoriesNamespace = _option.BaseNamespace + "Repository";
@@ -63,7 +63,7 @@ namespace ZR.CodeGenerator
                 {
                     replaceDto.UploadFile = 1;
                 }
-                dbFieldInfo.CsharpFieldFl = FirstLowerCase(dbFieldInfo.CsharpField);
+                dbFieldInfo.CsharpFieldFl = dbFieldInfo.CsharpField.FirstLowerCase();
                 //CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
 
                 replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo, dto.GenTable);
@@ -73,7 +73,7 @@ namespace ZR.CodeGenerator
 
             replaceDto.PKName = PKName;
             replaceDto.PKType = PKType;
-            replaceDto.FistLowerPk = FirstLowerCase(PKName);
+            replaceDto.FistLowerPk = PKName.FirstLowerCase();
             InitJntTemplate(dto, replaceDto);
 
             GenerateModels(replaceDto, dto);
@@ -189,10 +189,10 @@ namespace ZR.CodeGenerator
             tpl.Set("VueViewEditFormRuleContent", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
             tpl.Set("VueViewFormContent", replaceDto.VueViewFormHtml);//添加、修改表单
             tpl.Set("VueViewListContent", replaceDto.VueViewListHtml);//查询 table列
-            tpl.Set("lowerBusinessName", FirstLowerCase(generateDto.GenTable.BusinessName));
+            //tpl.Set("lowerBusinessName", FirstLowerCase(generateDto.GenTable.BusinessName));
 
             var result = tpl.Render();
-            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", FirstLowerCase(generateDto.GenTable.ModuleName), $"{generateDto.GenTable.BusinessName}.vue");
+            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
 
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, result));
         }
@@ -208,7 +208,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("TplVueApi.txt");
             var result = tpl.Render();
 
-            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", FirstLowerCase(generateDto.GenTable.ModuleName), FirstLowerCase(generateDto.GenTable.BusinessName) + ".js");
+            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", generateDto.GenTable.ModuleName.FirstLowerCase(), generateDto.GenTable.BusinessName.FirstLowerCase() + ".js");
             generateDto.GenCodes.Add(new GenCode(7, "api.js", fullPath, result));
         }
 
@@ -256,36 +256,16 @@ namespace ZR.CodeGenerator
 
             if (!string.IsNullOrEmpty(tablePrefix) && autoRemovePre)
             {
-                string[] searcList = tablePrefix.Split(",", StringSplitOptions.RemoveEmptyEntries);
-                for (int i = 0; i < searcList.Length; i++)
+                string[] prefixList = tablePrefix.Split(",", StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < prefixList.Length; i++)
                 {
-                    if (!string.IsNullOrEmpty(searcList[i].ToString()))
+                    if (!string.IsNullOrEmpty(prefixList[i].ToString()))
                     {
-                        tableName = tableName.Replace(searcList[i], "", StringComparison.OrdinalIgnoreCase);
+                        tableName = tableName.Replace(prefixList[i], "", StringComparison.OrdinalIgnoreCase);
                     }
                 }
             }
-            return tableName.Substring(0, 1).ToUpper() + tableName[1..].Replace("_", "");
-        }
-
-        /// <summary>
-        /// 首字母转小写，输出前端
-        /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
-        public static string FirstLowerCase(string str)
-        {
-            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToLower() + str[1..];
-        }
-
-        /// <summary>
-        /// 首字母转大写
-        /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
-        public static string FirstUpperCase(string str)
-        {
-            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToUpper() + str[1..];
+            return tableName.UnderScoreToCamelCase();
         }
 
         /// <summary>
@@ -298,6 +278,17 @@ namespace ZR.CodeGenerator
         {
             return string.IsNullOrEmpty(columnDescription) ? columnName : columnDescription;
         }
+
+        /// <summary>
+        /// 首字母转小写,模板使用(勿删)
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string FirstLowerCase(string str)
+        {
+            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToLower() + str[1..];
+        }
+
         /// <summary>
         /// 获取C# 类型
         /// </summary>
@@ -345,8 +336,8 @@ namespace ZR.CodeGenerator
                 DbName = dbName,
                 BaseNameSpace = "ZR.",//导入默认命名空间前缀
                 ModuleName = "business",//导入默认模块名
-                ClassName = GetClassName(tableName),
-                BusinessName = FirstUpperCase(tableName.UnderScoreToCamelCase()),
+                ClassName = GetClassName(tableName).FirstUpperCase(),
+                BusinessName = tableName.UnderScoreToCamelCase().FirstUpperCase(),
                 FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
                 TableName = tableName,
                 TableComment = desc,
@@ -381,14 +372,14 @@ namespace ZR.CodeGenerator
         {
             GenTableColumn genTableColumn = new()
             {
-                ColumnName = FirstLowerCase(column.DbColumnName),
+                ColumnName = column.DbColumnName.FirstLowerCase(),
                 ColumnComment = column.ColumnDescription,
                 IsPk = column.IsPrimarykey,
                 ColumnType = column.DataType,
                 TableId = genTable.TableId,
                 TableName = genTable.TableName,
                 CsharpType = GetCSharpDatatype(column.DataType),
-                CsharpField = FirstUpperCase(column.DbColumnName.UnderScoreToCamelCase()),
+                CsharpField = column.DbColumnName.UnderScoreToCamelCase().FirstUpperCase(),
                 IsRequired = !column.IsNullable,
                 IsIncrement = column.IsIdentity,
                 Create_by = genTable.Create_by,

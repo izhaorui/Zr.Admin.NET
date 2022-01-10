@@ -72,12 +72,12 @@ $end
 $if(showCustomInput)
   changeSort
 $end
-} from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${lowerBusinessName}.js';
+} from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${tool.FirstLowerCase(genTable.BusinessName)}.js';
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
-  name: "${lowerBusinessName}",
+  name: "${genTable.BusinessName.ToLower()}",
   components: { Treeselect },
   data() {
     return {

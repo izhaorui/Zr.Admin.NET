@@ -70,10 +70,10 @@ $end
 $if(showCustomInput)
   changeSort
 $end
-} from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${lowerBusinessName}.js';
+} from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${tool.FirstLowerCase(genTable.BusinessName)}.js';
 
 export default {
-  name: "${lowerBusinessName}",
+  name: "${genTable.BusinessName.ToLower()}",
   data() {
     return {
       labelWidth: "100px",

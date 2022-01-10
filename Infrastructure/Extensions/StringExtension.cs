@@ -107,6 +107,16 @@ namespace Infrastructure.Extensions
         }
 
         /// <summary>
+        /// 首字母转小写
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string FirstLowerCase(this string str)
+        {
+            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToLower() + str[1..];
+        }
+
+        /// <summary>
         /// 截取指定字符串中间内容
         /// </summary>
         /// <param name="sourse"></param>
