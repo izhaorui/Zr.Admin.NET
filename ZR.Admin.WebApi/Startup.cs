@@ -50,12 +50,8 @@ namespace ZR.Admin.WebApi
             services.AddSession();
             services.AddHttpContextAccessor();
 
-
             //绑定整个对象到Model上
             services.Configure<OptionsSetting>(Configuration);
-            services.Configure<JwtSettings>(Configuration);
-            var jwtSettings = new JwtSettings();
-            Configuration.Bind("JwtSettings", jwtSettings);
 
             //Cookie 认证
             services.AddAuthentication(options =>

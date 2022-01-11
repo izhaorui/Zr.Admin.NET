@@ -30,11 +30,6 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [HttpGet("monitor/cache")]
         public ApiResult GetCache()
         {
-            string redis_connString = Options.Redis;
-            var rs = new CSRedis.CSRedisClient(redis_connString);
-
-            RedisHelper.Initialization(rs);//初始化Redis
-
             return ToJson(1);
         }
 

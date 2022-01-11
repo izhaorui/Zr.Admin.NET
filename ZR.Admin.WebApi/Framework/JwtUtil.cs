@@ -43,9 +43,6 @@ namespace ZR.Admin.WebApi.Framework
         /// <returns></returns>
         public static string GenerateJwtToken(List<Claim> claims, JwtSettings jwtSettings)
         {
-            //JwtSettings jwtSettings = new();
-            //ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
-
             var authTime = DateTime.Now;
             var expiresAt = authTime.AddMinutes(jwtSettings.Expire);
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -74,14 +71,14 @@ namespace ZR.Admin.WebApi.Framework
         /// <returns></returns>
         public static TokenValidationParameters ValidParameters()
         {
-            JwtSettings jwtSettings = new();
+            JwtSettings jwtSettings = new JwtSettings();
             ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
             if (jwtSettings == null || jwtSettings.SecretKey.IsEmpty())
             {
-                return null;
+                throw new Exception("JwtSettings获取失败");
             }
             var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
-           
+
             var tokenDescriptor = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -130,8 +127,6 @@ namespace ZR.Admin.WebApi.Framework
         {
             try
             {
-                //var userId = jwtToken.FirstOrDefault(x => x.Type == "primarysid").Value;
-                //var userName = jwtToken.FirstOrDefault(x => x.Type == "unique_name").Value;
                 var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData).Value;
 
                 LoginUser loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
