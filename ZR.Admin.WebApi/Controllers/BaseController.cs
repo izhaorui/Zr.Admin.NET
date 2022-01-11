@@ -125,7 +125,8 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 // 添加worksheet
                 ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(sheetName);
-
+                //单元格自动适应大小
+                worksheet.Cells.Style.ShrinkToFit = true;
                 //全部字段导出
                 worksheet.Cells.LoadFromCollection(list, true, OfficeOpenXml.Table.TableStyles.Light13);
                 package.Save();
