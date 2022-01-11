@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using SqlSugar;
+using OfficeOpenXml.Attributes;
 
 namespace ${options.ModelsNamespace}.Models
 {
@@ -18,6 +19,9 @@ $foreach(item in genTable.Columns)
         /// 描述 : ${item.ColumnComment}
         /// 空值 :$if(item.IsRequired == "True") false $else true $end 
         /// </summary>
+$if(item.CsharpType == "DateTime")
+        [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
+$end
 $if(item.IsPk || item.IsIncrement)
         [SqlSugar.SugarColumn(IsPrimaryKey = ${item.IsPk.ToString().ToLower()}, IsIdentity = ${item.IsIncrement.ToString().ToLower()}$if(item.CsharpField.ToLower() != item.ColumnName.ToLower()), ColumnName = "$item.ColumnName"$end)]
 $elseif(item.CsharpField.ToLower() != item.ColumnName.ToLower())
