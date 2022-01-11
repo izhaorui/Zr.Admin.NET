@@ -10,21 +10,22 @@ namespace ZR.Common
         /// <summary>
         /// 要分割的字符串 eg: 1,3,10,00
         /// </summary>
-        /// <param name="infoIds"></param>
+        /// <param name="str"></param>
+        /// <param name="split">分割的字符串</param>
         /// <returns></returns>
-        public static long[] SpitLongArrary(string str)
+        public static long[] SpitLongArrary(string str, char split = ',')
         {
             if (string.IsNullOrEmpty(str)) { return Array.Empty<long>(); }
-            str = str.TrimStart(',').TrimEnd(',');
-            string[] strIds = str.Split(',', (char)StringSplitOptions.RemoveEmptyEntries);
+            str = str.TrimStart(split).TrimEnd(split);
+            string[] strIds = str.Split(split, (char)StringSplitOptions.RemoveEmptyEntries);
             long[] infoIdss = Array.ConvertAll(strIds, s => long.Parse(s));
             return infoIdss;
         }
 
-        public static int[] SpitIntArrary(string str)
+        public static int[] SpitIntArrary(string str, char split = ',')
         {
             if (string.IsNullOrEmpty(str)) { return Array.Empty<int>(); }
-            string[] strIds = str.Split(',', (char)StringSplitOptions.RemoveEmptyEntries);
+            string[] strIds = str.Split(split, (char)StringSplitOptions.RemoveEmptyEntries);
             int[] infoIdss = Array.ConvertAll(strIds, s => int.Parse(s));
             return infoIdss;
         }
