@@ -19,8 +19,8 @@ $foreach(item in genTable.Columns)
         /// 描述 : ${item.ColumnComment}
         /// 空值 :$if(item.IsRequired == "True") false $else true $end 
         /// </summary>
-$if(item.CsharpType == "DateTime")
-        [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
+$if(replaceDto.ShowBtnExport)
+        [EpplusTableColumn(Header = "$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}"$if(item.CsharpType == "DateTime"), NumberFormat = "yyyy-MM-dd HH:mm:ss"$end)]
 $end
 $if(item.IsPk || item.IsIncrement)
         [SqlSugar.SugarColumn(IsPrimaryKey = ${item.IsPk.ToString().ToLower()}, IsIdentity = ${item.IsIncrement.ToString().ToLower()}$if(item.CsharpField.ToLower() != item.ColumnName.ToLower()), ColumnName = "$item.ColumnName"$end)]
@@ -28,9 +28,10 @@ $elseif(item.CsharpField.ToLower() != item.ColumnName.ToLower())
         [SugarColumn(ColumnName = "$item.ColumnName")]
 $end
         public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
-${end}
 
+${end}
 $if(genTable.TplCategory == "tree")
+
         [SugarColumn(IsIgnore = true)]
         public List<${replaceDto.ModelTypeName}> Children { get; set; }
 $end
