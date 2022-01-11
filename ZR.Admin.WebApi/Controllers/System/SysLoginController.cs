@@ -74,7 +74,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
             if (sysConfig?.ConfigValue != "off" && CacheHelper.Get(loginBody.Uuid) is string str && !str.ToLower().Equals(loginBody.Code.ToLower()))
             {
-                return CustomError(ResultCode.CAPTCHA_ERROR, "验证码错误");
+                return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
 
             var user = sysLoginService.Login(loginBody, AsyncFactory.RecordLogInfo(httpContextAccessor.HttpContext, "0", "login"));

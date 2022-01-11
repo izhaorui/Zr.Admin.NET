@@ -185,7 +185,7 @@ namespace ZR.Admin.WebApi.Controllers
                 }
             }
 
-            return ToResponse(ResultCode.FAIL);
+            return ToResponse(ResultCode.FAIL, "生成失败");
         }
 
         /// <summary>

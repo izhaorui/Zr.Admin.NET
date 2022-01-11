@@ -7,7 +7,6 @@ using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
-using ZR.Service;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
@@ -151,11 +150,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (sysMenuService.HasChildByMenuId(menuId))
             {
-                return CustomError(ResultCode.CUSTOM_ERROR, "存在子菜单,不允许删除");
+                return ToResponse(ResultCode.CUSTOM_ERROR, "存在子菜单,不允许删除");
             }
             if (sysMenuService.CheckMenuExistRole(menuId))
             {
-                return CustomError(ResultCode.CUSTOM_ERROR, "菜单已分配,不允许删除");
+                return ToResponse(ResultCode.CUSTOM_ERROR, "菜单已分配,不允许删除");
             }
             int result = sysMenuService.DeleteMenuById(menuId);
 

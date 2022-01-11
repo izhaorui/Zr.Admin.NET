@@ -140,7 +140,7 @@ namespace ZR.Admin.WebApi.Controllers
                 FileType = formFile.ContentType
             };
             long fileId = SysFileService.InsertFile(file);
-            return ToResponse(ResultCode.SUCCESS, new
+            return SUCCESS(new
             {
                 url = uploadType == 1 ? finalFilePath : accessPath,
                 fileName,
@@ -188,7 +188,7 @@ namespace ZR.Admin.WebApi.Controllers
                 Create_time = DateTime.Now,
                 FileType = formFile.ContentType
             });
-            return ToResponse(ResultCode.SUCCESS, new
+            return SUCCESS(new
             {
                 url = result.Item2,
                 fileName = result.Item3,
