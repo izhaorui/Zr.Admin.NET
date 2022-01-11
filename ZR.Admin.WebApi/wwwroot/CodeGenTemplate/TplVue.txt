@@ -28,7 +28,7 @@ $end
     </el-row>
 
     <!-- 数据区域 -->
-    <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @selection-change="handleSelectionChange">
+    <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @sort-change="sortChange" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center"/>
 ${VueViewListContent}
       <el-table-column label="操作" align="center" width="140">
@@ -92,6 +92,8 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 20,
+        sort: undefined,
+        sortType: undefined,
 $foreach(item in genTable.Columns)
 $if(item.IsQuery == true)
         ${item.CsharpFieldFl}: undefined,
@@ -199,7 +201,7 @@ $end
       };
       this.resetForm("form");
     },
-    /** 重置查询操作 */
+    // 重置查询操作
     resetQuery() {
       this.timeRange = [];
 $foreach(item in genTable.Columns)
@@ -216,6 +218,18 @@ $end
       this.ids = selection.map((item) => item.${replaceDto.FistLowerPk});
       this.single = selection.length != 1
       this.multiple = !selection.length;
+    },
+     // 自定义排序
+    sortChange(column) {
+      if (column.prop == null || column.order == null) {
+        this.queryParams.sort = undefined;
+        this.queryParams.sortType = undefined;
+      } else {
+        this.queryParams.sort = column.prop;
+        this.queryParams.sortType = column.order;
+      }
+
+      this.handleQuery();
     },
     /** 搜索按钮操作 */
     handleQuery() {

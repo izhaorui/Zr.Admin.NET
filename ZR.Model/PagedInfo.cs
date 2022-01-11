@@ -18,14 +18,6 @@ namespace ZR.Model
         /// </summary>
         public int PageIndex { get; set; } = 1;
         /// <summary>
-        /// 排序列
-        /// </summary>
-        public string Sort { get; set; }
-        /// <summary>
-        /// 排序类型
-        /// </summary>
-        public string SortType { get; set; }
-        /// <summary>
         /// 总记录数
         /// </summary>
         public int TotalNum { get; set; }
@@ -50,7 +42,7 @@ namespace ZR.Model
         public List<T> Result { get; set; }
 
         public PagedInfo()
-        { 
+        {
         }
     }
 }

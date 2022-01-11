@@ -418,7 +418,7 @@ namespace ZR.Repository
             page.PageSize = parm.PageSize;
             page.PageIndex = parm.PageNum;
 
-            page.Result = source.OrderByIF(!string.IsNullOrEmpty(parm.Sort), $"{parm.OrderBy} {(parm.Sort == "desc" ? "desc" : "asc")}")
+            page.Result = source.OrderByIF(!string.IsNullOrEmpty(parm.Sort), $"{parm.Sort} {(parm.SortType.Contains("desc") ? "desc" : "asc")}")
                 .ToPageList(parm.PageNum, parm.PageSize, ref total);
             page.TotalNum = total;
             return page;

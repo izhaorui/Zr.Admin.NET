@@ -10,7 +10,7 @@ namespace ZR.Model
         /// 当前页码
         /// </summary>
         public int PageNum { get; set; }
-        private int pageSize;
+        public int PageSize { get; set; }
         /// <summary>
         /// 总记录数
         /// </summary>
@@ -27,11 +27,16 @@ namespace ZR.Model
             {
                 return TotalNum > 0 ? TotalNum % PageSize == 0 ? TotalNum / PageSize : TotalNum / PageSize + 1 : 0;
             }
-            set { }
         }
-        public int PageSize { get => pageSize; set => pageSize = value; }
-        public string Sort { get; set; }
-        public string OrderBy { get; set; }
+        
+        /// <summary>
+        /// 排序字段
+        /// </summary>
+        public string Sort { get; set; } = string.Empty;
+        /// <summary>
+        /// 排序类型,前端传入的是"ascending"，"descending"
+        /// </summary>
+        public string SortType { get; set; } = string.Empty;
         public PagerInfo()
         {
             PageNum = 1;
