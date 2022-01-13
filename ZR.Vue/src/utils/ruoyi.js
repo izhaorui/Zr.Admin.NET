@@ -89,6 +89,9 @@ export function selectDictLabel(datas, value) {
 
 // 回显数据字典（字符串数组）
 export function selectDictLabels(datas, value, separator) {
+  if (value === undefined) {
+    return "";
+  }
   var actions = [];
   var currentSeparator = undefined === separator ? "," : separator;
   var temp = value.split(currentSeparator);
@@ -104,7 +107,7 @@ export function selectDictLabels(datas, value, separator) {
 
 // table是否显示当前列
 export function showColumn(columns, value) {
-  columns.filter((item,index) => {
+  columns.filter((item, index) => {
     // console.log(item);
     return item.key == value;
   });
