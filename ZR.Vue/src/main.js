@@ -79,4 +79,3 @@ new Vue({
   store,
   render: h => h(App)
 })
-console.log('环境变量:', process.env)
