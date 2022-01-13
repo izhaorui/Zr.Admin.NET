@@ -193,7 +193,7 @@ namespace ZR.CodeGenerator
             {
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">");
                 sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" size=\"small\" type=\"datetimerange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
-                sb.AppendLine($"          end-placeholder=\"结束日期\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" ></el-date-picker>");
+                sb.AppendLine($"          end-placeholder=\"结束日期\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" :picker-options=\"{{ firstDayOfWeek: 1}}\"></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
             }
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO)
@@ -258,7 +258,7 @@ namespace ZR.CodeGenerator
                 {
                     checkboxHtml = $" ? scope.row.{columnName}.split(',') : []";
                 }
-                sb.AppendLine($"          <dict-tag :options=\"{columnName}Options\" :value=\"scope.row.{columnName}{checkboxHtml}\" />");
+                sb.AppendLine($"          <dict-tag :options=\"{columnName}Options\" :value=\"scope.row.{columnName}{checkboxHtml}\"/>");
                 sb.AppendLine(@"        </template>");
                 sb.AppendLine(@"      </el-table-column>");
             }
