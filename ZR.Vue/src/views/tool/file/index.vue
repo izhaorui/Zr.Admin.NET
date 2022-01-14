@@ -328,6 +328,7 @@ export default {
       return this.selectDictLabel(this.storeTypeOptions, row.storeType);
     },
     handleSelectStore(val) {
+			this.queryParams.storeType = val;
       if (val == 1) {
         this.uploadUrl = "/common/uploadFile";
       } else if (val == 2) {
