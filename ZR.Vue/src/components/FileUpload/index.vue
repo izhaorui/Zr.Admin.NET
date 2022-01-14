@@ -162,7 +162,7 @@ export default {
       }
       this.msgSuccess("上传成功");
       this.fileList.push({ name: res.data.fileName, url: res.data.url, path: res.data.path });
-      this.$emit("input", this.column, this.listToString(this.fileList));
+      this.$emit("input", this.column, this.listToString(this.fileList), res.data);
     },
     // 上传进度
     uploadProcess(event, file, fileList) {

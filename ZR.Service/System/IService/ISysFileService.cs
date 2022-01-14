@@ -16,7 +16,7 @@ namespace ZR.Service.System.IService
         /// <param name="formFile"></param>
         /// <returns>结果、地址、文件名</returns>
         (bool, string, string) SaveFile(string picdir, IFormFile formFile);
-
+        (bool, string, string) SaveFile(string picdir, IFormFile formFile, string customFileName);
         /// <summary>
         /// 按时间来创建文件夹
         /// </summary>

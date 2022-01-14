@@ -2,6 +2,9 @@
   <div class="app-container">
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
+      <el-form-item label="文件id" prop="fileId">
+        <el-input v-model="queryParams.fileId" placeholder="请输入文件id" clearable size="small" />
+      </el-form-item>
       <el-form-item label="上传时间">
         <el-date-picker v-model="dateRangeCreate_time" size="small" value-format="yyyy-MM-dd" type="daterange" range-separator="-"
           start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择上传时间"></el-date-picker>
@@ -11,11 +14,10 @@
           <el-option v-for="item in storeTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
         </el-select>
       </el-form-item>
-
-      <el-row class="mb8" style="text-align:center">
+      <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-row>
+      </el-form-item>
     </el-form>
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
@@ -168,6 +170,7 @@ export default {
         pageNum: 1,
         pageSize: 20,
         storeType: 1,
+        fileId: undefined,
       },
       // 弹出层标题
       title: "",
@@ -257,12 +260,12 @@ export default {
     reset() {
       this.form = {
         fileName: "",
-        fileUrl: undefined,
+        fileUrl: "",
         storePath: "uploads",
-        fileSize: undefined,
-        fileExt: undefined,
+        fileSize: 0,
+        fileExt: "",
         storeType: 1,
-        accessUrl: undefined,
+        accessUrl: "",
       };
       this.resetForm("form");
     },
@@ -317,9 +320,9 @@ export default {
       });
     },
     //上传成功方法
-    handleUploadSuccess(columnName, filelist) {
+    handleUploadSuccess(columnName, filelist, data) {
       this.form[columnName] = filelist;
-
+      this.queryParams.fileId = data.fileId;
       this.open = false;
       this.getList();
     },
@@ -328,7 +331,7 @@ export default {
       return this.selectDictLabel(this.storeTypeOptions, row.storeType);
     },
     handleSelectStore(val) {
-			this.queryParams.storeType = val;
+      this.queryParams.storeType = val;
       if (val == 1) {
         this.uploadUrl = "/common/uploadFile";
       } else if (val == 2) {

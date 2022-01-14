@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using System.Net;
 using ZR.Model.System;
 using ZR.Repository.System;
+using Infrastructure.Extensions;
 
 namespace ZR.Service.System
 {
@@ -35,9 +36,13 @@ namespace ZR.Service.System
         /// <returns></returns>
         public (bool, string, string) SaveFile(string picdir, IFormFile formFile)
         {
-            // eg: idcard/2020/08/18
+            return SaveFile(picdir, formFile, "");
+        }
+        public (bool, string, string) SaveFile(string picdir, IFormFile formFile, string customFileName)
+        {
+            // eg: uploads/2020/08/18
             string dir = GetdirPath(picdir.ToString());
-            string tempName = HashFileName();
+            string tempName = customFileName.IsEmpty() ? HashFileName() : customFileName;
             string fileExt = Path.GetExtension(formFile.FileName);
             string fileName = $"{tempName}{fileExt}";
             string webUrl = $"{domainUrl}/{dir}/{fileName}";
@@ -46,7 +51,6 @@ namespace ZR.Service.System
 
             return (statusCode == HttpStatusCode.OK, webUrl, fileName);
         }
-
         public string GetdirPath(string path = "")
         {
             DateTime date = DateTime.Now;

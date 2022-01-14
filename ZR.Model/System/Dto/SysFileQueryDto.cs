@@ -25,5 +25,6 @@ namespace ZR.Model.System.Dto
         public DateTime? BeginCreate_time { get; set; }
         public DateTime? EndCreate_time { get; set; }
         public int? StoreType { get; set; }
+        public int? FileId { get; set; }
     }
 }

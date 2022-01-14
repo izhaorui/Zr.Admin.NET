@@ -175,7 +175,7 @@ namespace ZR.Admin.WebApi.Controllers
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + (MaxContentLength / 1024).ToString() + " MB");
             }
 
-            (bool, string, string) result = SysFileService.SaveFile(fileDir, formFile);
+            (bool, string, string) result = SysFileService.SaveFile(fileDir, formFile, fileName);
             long fileId = SysFileService.InsertFile(new SysFile()
             {
                 AccessUrl = result.Item2,
