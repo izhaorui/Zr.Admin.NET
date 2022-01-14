@@ -256,7 +256,7 @@ export default {
     // 重置数据表单
     reset() {
       this.form = {
-        fileName: undefined,
+        fileName: "",
         fileUrl: undefined,
         storePath: "uploads",
         fileSize: undefined,
