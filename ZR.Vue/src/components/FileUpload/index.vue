@@ -58,7 +58,7 @@ export default {
     // 上传地址
     uploadUrl: {
       type: String,
-      default: process.env.VUE_APP_UPLOAD_URL ?? "/Common/UploadFile",
+      default: process.env.VUE_APP_UPLOAD_URL,
     },
     // form 列名
     column: [String],
@@ -100,6 +100,12 @@ export default {
       deep: true,
       immediate: true,
     },
+	uploadUrl: {
+		handler(val){
+			this.uploadFileUrl = process.env.VUE_APP_BASE_API + val;
+		},
+		immediate: true
+	}
   },
   computed: {
     // 是否显示提示

@@ -97,7 +97,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <param name="formFile"></param>
         /// <param name="fileDir">存储目录</param>
-        /// <param name="fileName">文件名</param>
+        /// <param name="fileName">自定义文件名</param>
         /// <param name="uploadType">上传类型 1、发送邮件</param>
         /// <returns></returns>
         [HttpPost()]
@@ -152,16 +152,17 @@ namespace ZR.Admin.WebApi.Controllers
         /// 存储文件到阿里云
         /// </summary>
         /// <param name="formFile"></param>
+        /// <param name="fileName">自定义文件名</param>
         /// <param name="fileDir">上传文件夹路径</param>
         /// <returns></returns>
         [HttpPost]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileDir = "")
+        public IActionResult UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "")
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);
-            string[] AllowedFileExtensions = new string[] { ".jpg", ".gif", ".png", ".jpeg", ".webp", ".svga", ".xls", ".doc", ".zip", ".json", ".txt" };
+            string[] AllowedFileExtensions = new string[] { ".jpg", ".gif", ".png", ".jpeg", ".webp", ".svga", ".xls", ".doc", ".zip", ".json", ".txt", ".bundle" };
             int MaxContentLength = 1024 * 1024 * 15;
             double fileSize = formFile.Length / 1024;
             if (!AllowedFileExtensions.Contains(fileExt))
