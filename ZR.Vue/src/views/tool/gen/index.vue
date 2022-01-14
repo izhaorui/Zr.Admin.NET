@@ -76,7 +76,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/idea.css"; //这里有多个样式，自己可以根据需要切换
 
 export default {
-  name: "code_generator",
+  name: "gen",
   components: { importTable, hljs },
   data() {
     return {
