@@ -4,7 +4,6 @@ using System.Linq;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Model.System.Vo;
-using ZR.Model.Vo;
 using ZR.Model.Vo.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
@@ -30,31 +29,39 @@ namespace ZR.Service
         }
 
         /// <summary>
-        /// 根据用户查询系统菜单列表
+        /// 获取所有菜单数（菜单管理）
         /// </summary>
-        /// <param name="menu"></param>
-        /// <param name="userId"></param>
         /// <returns></returns>
-        public List<SysMenu> SelectMenuList(long userId)
+        public List<SysMenu> SelectTreeMenuList(SysMenu menu, long userId)
         {
-            return SelectMenuList(new SysMenu(), userId);
+            List<SysMenu> menuList;
+            if (SysRoleService.IsAdmin(userId))
+            {
+                menuList = MenuRepository.SelectTreeMenuList(menu);
+            }
+            else
+            {
+                var userRoles = SysRoleService.SelectUserRoles(userId);
+                menuList = MenuRepository.SelectTreeMenuListByUserId(menu, userRoles);
+            }
+            return menuList;
         }
 
         /// <summary>
-        /// 获取所有菜单（菜单管理）
+        /// 获取所有菜单列表
         /// </summary>
         /// <returns></returns>
         public List<SysMenu> SelectMenuList(SysMenu menu, long userId)
         {
             List<SysMenu> menuList;
-            //if (SysUser.IsAdmin(userId))
             if (SysRoleService.IsAdmin(userId))
             {
                 menuList = MenuRepository.SelectMenuList(menu);
             }
             else
             {
-                menuList = MenuRepository.SelectMenuListByUserId(menu, userId);
+                var userRoles = SysRoleService.SelectUserRoles(userId);
+                menuList = MenuRepository.SelectMenuListByRoles(menu, userRoles);
             }
             return menuList;
         }

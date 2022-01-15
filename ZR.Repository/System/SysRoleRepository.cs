@@ -2,6 +2,7 @@
 using Infrastructure.Model;
 using SqlSugar;
 using System.Collections.Generic;
+using System.Linq;
 using ZR.Model;
 using ZR.Model.System;
 
@@ -108,6 +109,16 @@ namespace ZR.Repository.System
         public List<SysRoleMenu> SelectRoleMenuByRoleId(long roleId)
         {
             return Context.Queryable<SysRoleMenu>().Where(it => it.Role_id == roleId).ToList();
+        }
+
+        /// <summary>
+        /// 根据用户所有角色获取菜单
+        /// </summary>
+        /// <param name="roleIds"></param>
+        /// <returns></returns>
+        public List<SysRoleMenu> SelectRoleMenuByRoleIds(long[] roleIds)
+        {
+            return Context.Queryable<SysRoleMenu>().Where(it => roleIds.Contains(it.Role_id)).ToList();
         }
 
         /// <summary>

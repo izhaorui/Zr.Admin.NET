@@ -8,7 +8,7 @@ namespace ZR.Model.System
     /// </summary>
     [SugarTable("sys_menu")]
     [Tenant("0")]
-    public class SysMenu: SysBase
+    public class SysMenu : SysBase
     {
         /// <summary>
         /// 菜单ID
@@ -84,6 +84,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 子菜单
         /// </summary>
-        public List<SysMenu> children = new List<SysMenu>();
+        [SugarColumn(IsIgnore = true)]
+        public List<SysMenu> children { get; set; } = new List<SysMenu>();
     }
 }
