@@ -4,6 +4,7 @@
     <el-input v-model="name" style="position: relative;" clearable placeholder="请输入图标名称" @clear="filterIcons" @input.native="filterIcons">
       <i slot="suffix" class="el-icon-search el-input__icon" />
     </el-input>
+		<el-link type="danger" @click="selectedIcon('')">清空</el-link>
     <div class="icon-list">
       <div v-for="(item, index) in iconList" :key="index" @click="selectedIcon(item)">
         <svg-icon :icon-class="item" style="height: 30px;width: 16px;" />
