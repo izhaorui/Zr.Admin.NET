@@ -216,7 +216,7 @@ namespace ZR.Service
         /// <summary>
         /// 判断是否是管理员
         /// </summary>
-        /// <param name="userid"></param>
+        /// <param name="roleid"></param>
         /// <returns></returns>
         public bool IsRoleAdmin(long roleid)
         {
@@ -228,13 +228,25 @@ namespace ZR.Service
         /// <summary>
         /// 获取角色菜单id集合
         /// </summary>
-        /// <param name="userId"></param>
+        /// <param name="roleId"></param>
         /// <returns></returns>
         public List<long> SelectUserRoleMenus(long roleId)
         {
             var list = SysRoleRepository.SelectRoleMenuByRoleId(roleId);
 
-            return list.Select(x => x.Menu_id).ToList();
+            return list.Select(x => x.Menu_id).Distinct().ToList();
+        }
+
+        /// <summary>
+        /// 根据用户所有角色获取菜单
+        /// </summary>
+        /// <param name="roleIds"></param>
+        /// <returns></returns>
+        public List<long> SelectRoleMenuByRoleIds(long[] roleIds)
+        {
+            return SysRoleRepository.SelectRoleMenuByRoleIds(roleIds)
+                .Select(x => x.Menu_id)
+                .Distinct().ToList();
         }
 
         /// <summary>
@@ -270,6 +282,11 @@ namespace ZR.Service
             return list.Select(x => x.RoleKey).ToList();
         }
 
+        /// <summary>
+        /// 获取用户所有角色名
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public List<string> SelectUserRoleNames(long userId)
         {
             var list = SelectUserRoleListByUserId(userId);

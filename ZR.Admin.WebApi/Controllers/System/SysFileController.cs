@@ -43,6 +43,7 @@ namespace ZR.Admin.WebApi.Controllers
             predicate = predicate.AndIF(parm.BeginCreate_time != null, it => it.Create_time >= parm.BeginCreate_time);
             predicate = predicate.AndIF(parm.EndCreate_time != null, it => it.Create_time <= parm.EndCreate_time);
             predicate = predicate.AndIF(parm.StoreType != null, m => m.StoreType == parm.StoreType);
+            predicate = predicate.AndIF(parm.FileId != null, m => m.Id == parm.FileId);
 
             //搜索条件查询语法参考Sqlsugar
             var response = _SysFileService.GetPages(predicate.ToExpression(), parm);
@@ -59,7 +60,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult GetSysFile(int Id)
         {
             var response = _SysFileService.GetFirst(x => x.Id == Id);
-            
+
             return SUCCESS(response);
         }
 

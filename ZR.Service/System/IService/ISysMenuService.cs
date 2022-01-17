@@ -8,34 +8,34 @@ namespace ZR.Service.System.IService
 {
     public interface ISysMenuService
     {
-        public List<SysMenu> SelectMenuList(long userId);
+        //List<SysMenu> SelectMenuList(long userId);
 
-        public List<SysMenu> SelectMenuList(SysMenu menu, long userId);
+        List<SysMenu> SelectMenuList(SysMenu menu, long userId);
+        List<SysMenu> SelectTreeMenuList(SysMenu menu, long userId);
 
-        public SysMenu GetMenuByMenuId(int menuId);
+        SysMenu GetMenuByMenuId(int menuId);
+        int AddMenu(SysMenu menu);
 
-        public int AddMenu(SysMenu menu);
+        int EditMenu(SysMenu menu);
 
-        public int EditMenu(SysMenu menu);
+        int DeleteMenuById(int menuId);
 
-        public int DeleteMenuById(int menuId);
+        string CheckMenuNameUnique(SysMenu menu);
 
-        public string CheckMenuNameUnique(SysMenu menu);
+        int ChangeSortMenu(MenuDto menuDto);
 
-        public int ChangeSortMenu(MenuDto menuDto);
+        bool HasChildByMenuId(long menuId);
 
-        public bool HasChildByMenuId(long menuId);
+        List<SysMenu> SelectMenuTreeByUserId(long userId);
 
-        public List<SysMenu> SelectMenuTreeByUserId(long userId);
+        List<SysMenu> SelectMenuPermsListByUserId(long userId);
 
-        public List<SysMenu> SelectMenuPermsListByUserId(long userId);
+        List<string> SelectMenuPermsByUserId(long userId);
 
-        public List<string> SelectMenuPermsByUserId(long userId);
+        bool CheckMenuExistRole(long menuId);
 
-        public bool CheckMenuExistRole(long menuId);
+        List<RouterVo> BuildMenus(List<SysMenu> menus);
 
-        public List<RouterVo> BuildMenus(List<SysMenu> menus);
-
-        public List<TreeSelectVo> BuildMenuTreeSelect(List<SysMenu> menus);
+        List<TreeSelectVo> BuildMenuTreeSelect(List<SysMenu> menus);
     }
 }

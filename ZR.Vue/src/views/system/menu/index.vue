@@ -52,10 +52,10 @@
       <el-table-column prop="path" label="路由地址" :show-overflow-tooltip="true"></el-table-column>
       <el-table-column prop="component" label="组件路径" :show-overflow-tooltip="true"></el-table-column>
       <el-table-column prop="visible" label="显示" width="70">
-				<template slot-scope="scope">
+        <template slot-scope="scope">
           <dict-tag :options="visibleOptions" :value="scope.row.visible" />
         </template>
-			</el-table-column>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="70">
         <template slot-scope="scope">
           <dict-tag :options="statusOptions" :value="scope.row.status" />
@@ -103,11 +103,13 @@
             <el-form-item label="菜单图标" prop="icon">
               <el-popover placement="bottom-start" width="460" trigger="click" @show="$refs['iconSelect'].reset()">
                 <IconSelect ref="iconSelect" @selected="selected" />
-                <el-input slot="reference" v-model="form.icon" placeholder="点击选择图标" readonly>
+                <el-input slot="reference" v-model="form.icon" placeholder="点击选择图标" clearable="" readonly>
                   <svg-icon v-if="form.icon" slot="prefix" :icon-class="form.icon" class="el-input__icon" style="height: 32px;width: 16px;" />
-                  <i v-else slot="prefix" class="el-icon-search el-input__icon" />
+                  <i v-else slot="prefix" class="el-icon-search el-input__icon"></i>
                 </el-input>
               </el-popover>
+
+              <!-- <el-link type="danger" @click="form.icon = ''">清空</el-link> -->
             </el-form-item>
           </el-col>
           <el-col :lg="24">
@@ -221,7 +223,7 @@ import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 import IconSelect from "@/components/IconSelect";
 
 export default {
-  name: "menu",
+  name: "menu1",
   components: { Treeselect, IconSelect },
   data() {
     return {
@@ -289,7 +291,8 @@ export default {
     getList() {
       this.loading = true;
       listMenu(this.queryParams).then((response) => {
-        this.menuList = this.handleTree(response.data, "menuId");
+        this.menuList = response.data;
+        // this.menuList = this.handleTree(response.data, "menuId");
         this.loading = false;
       });
     },
@@ -309,7 +312,8 @@ export default {
       listMenu().then((response) => {
         this.menuOptions = [];
         const menu = { menuId: 0, menuName: "根菜单", children: [] };
-        menu.children = this.handleTree(response.data, "menuId");
+				menu.children = response.data;
+        //menu.children = this.handleTree(response.data, "menuId");
         this.menuOptions.push(menu);
       });
     },

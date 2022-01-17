@@ -105,7 +105,7 @@ namespace ZR.Service.System.IService
         /// <param name="userId"></param>
         /// <returns></returns>
         public List<long> SelectUserRoleMenus(long roleId);
-
+        List<long> SelectRoleMenuByRoleIds(long[] roleIds);
         /// <summary>
         /// 获取用户角色列表
         /// </summary>

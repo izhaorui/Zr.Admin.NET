@@ -2,11 +2,12 @@
   <div class="app-container">
 
     <el-form ref="codeform" :inline="true" :rules="rules" :model="queryParams" size="small">
-      <el-form-item label="表名">
+      <el-form-item label="表名" prop="tableName">
         <el-input v-model="queryParams.tableName" clearable placeholder="输入要查询的表名" />
       </el-form-item>
       <el-form-item>
         <el-button size="mini" type="primary" icon="el-icon-search" @click="handleSearch()">查询</el-button>
+        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
         <!-- <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button> -->
       </el-form-item>
     </el-form>
@@ -76,7 +77,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/idea.css"; //这里有多个样式，自己可以根据需要切换
 
 export default {
-  name: "code_generator",
+  name: "gen",
   components: { importTable, hljs },
   data() {
     return {
@@ -133,6 +134,9 @@ export default {
      * 编辑表格
      */
     handleEditTable(row) {
+      this.queryParams.tableName = row.tableName;
+      this.handleSearch();
+
       this.$router.push({
         path: "/gen/editTable",
         query: { tableId: row.tableId },
@@ -158,7 +162,6 @@ export default {
      * 点击生成服务端代码
      */
     handleGenTable(row) {
-      console.log(JSON.stringify(this.currentSelected));
       this.currentSelected = row;
       if (!this.currentSelected) {
         this.msgError("请先选择要生成代码的数据表");
@@ -179,7 +182,6 @@ export default {
             tableName: this.currentSelected.name,
             // queryColumn: this.checkedQueryColumn,
           };
-          console.log(JSON.stringify(seachdata));
 
           codeGenerator(seachdata)
             .then((res) => {
@@ -204,6 +206,11 @@ export default {
     cancel() {
       this.showGenerate = false;
       this.currentSelected = {};
+    },
+    /** 重置按钮操作 */
+    resetQuery() {
+      this.resetForm("queryParams");
+      this.handleSearch();
     },
     /** 打开导入表弹窗 */
     openImportTable() {

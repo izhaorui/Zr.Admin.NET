@@ -128,10 +128,9 @@ export default {
     $imgAdd(pos, $file) {
       var formdata = new FormData();
       formdata.append("file", $file);
-      // 这里没有服务器供大家尝试，可将下面上传接口替换为你自己的服务器接口
       upload(formdata).then((res) => {
         console.log(JSON.stringify(res));
-        this.$refs.md.$img2Url(pos, res.data);
+        this.$refs.md.$img2Url(pos, res.data.url);
       });
     },
     change(value, render) {
