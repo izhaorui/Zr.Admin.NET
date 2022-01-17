@@ -3,10 +3,10 @@
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
 ${vueQueryFormHtml}
-      <el-row class="mb8" style="text-align:center">
+      <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-row>
+      </el-form-item>
     </el-form>
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
