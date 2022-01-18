@@ -276,31 +276,31 @@ namespace ZR.CodeGenerator
         {
             if (queryType.Equals("EQ"))
             {
-                return $"m => m.{ propertyName} == parm.{propertyName})";
+                return $"it => it.{ propertyName} == parm.{propertyName})";
             }
             if (queryType.Equals("GTE"))
             {
-                return $"m => m.{ propertyName} >= parm.{propertyName})";
+                return $"it => it.{ propertyName} >= parm.{propertyName})";
             }
             if (queryType.Equals("GT"))
             {
-                return $"m => m.{ propertyName} > parm.{propertyName})";
+                return $"it => it.{ propertyName} > parm.{propertyName})";
             }
             if (queryType.Equals("LT"))
             {
-                return $"m => m.{ propertyName} < parm.{propertyName})";
+                return $"it => it.{ propertyName} < parm.{propertyName})";
             }
             if (queryType.Equals("LTE"))
             {
-                return $"m => m.{ propertyName} <= parm.{propertyName})";
+                return $"it => it.{ propertyName} <= parm.{propertyName})";
             }
             if (queryType.Equals("NE"))
             {
-                return $"m => m.{ propertyName} != parm.{propertyName})";
+                return $"it => it.{ propertyName} != parm.{propertyName})";
             }
             if (queryType.Equals("LIKE"))
             {
-                return $"m => m.{ propertyName}.Contains(parm.{propertyName}))";
+                return $"it => it.{ propertyName}.Contains(parm.{propertyName}))";
             }
             return "";
         }
