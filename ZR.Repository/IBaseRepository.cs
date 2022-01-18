@@ -43,7 +43,7 @@ namespace ZR.Repository
         #endregion add
 
         #region update
-
+        IUpdateable<T> Updateable(T entity);
         int Update(T entity, bool ignoreNullColumns = false);
 
         /// <summary>

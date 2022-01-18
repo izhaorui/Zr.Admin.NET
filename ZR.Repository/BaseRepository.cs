@@ -120,7 +120,10 @@ namespace ZR.Repository
         #endregion add
 
         #region update
-
+        public IUpdateable<T> Updateable(T entity)
+        {
+            return Context.Updateable(entity);
+        }
         public int Update(T entity, bool ignoreNullColumns = false)
         {
             return Context.Updateable(entity).IgnoreColumns(ignoreNullColumns).ExecuteCommand();
@@ -132,7 +135,7 @@ namespace ZR.Repository
         }
 
         /// <summary>
-        /// 根据实体类更新 eg：Update(dept, it => new { it.Status }, f => depts.Contains(f.DeptId));只更新Status列，条件是包含
+        /// 根据实体类更新指定列 eg：Update(dept, it => new { it.Status }, f => depts.Contains(f.DeptId));只更新Status列，条件是包含
         /// </summary>
         /// <param name="entity"></param>
         /// <param name="expression"></param>
