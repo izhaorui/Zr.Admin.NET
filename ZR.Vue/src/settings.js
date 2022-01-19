@@ -2,7 +2,7 @@ module.exports = {
   /**
    * 框架版本号
    */
-  version: '3.7.5',
+  version: '3.7.6',
   title: 'ZrAdmin.NET-后台管理',
   /**
    * 主题颜色
