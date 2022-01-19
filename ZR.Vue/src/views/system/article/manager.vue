@@ -24,7 +24,7 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" v-hasPermi="['system:article:add']" @click="handleAdd">新增</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" v-hasPermi="['system:article:add']" @click="handleAdd">发布文章</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch"></right-toolbar>
     </el-row>
@@ -34,7 +34,7 @@
       <el-table-column prop="title" label="文章标题" width="180" :show-overflow-tooltip="true"> </el-table-column>
       <el-table-column prop="authorName" label="作者" width="80"> </el-table-column>
       <el-table-column prop="fmt_type" label="编辑器类型" width="100"> </el-table-column>
-      <el-table-column prop="tags" label="标签" width="100"> </el-table-column>
+      <el-table-column prop="tags" label="标签" width="100" :show-overflow-tooltip="true"> </el-table-column>
       <el-table-column prop="hits" label="点击量" width="80" align="center"> </el-table-column>
       <el-table-column prop="content" label="文章内容" :show-overflow-tooltip="true"> </el-table-column>
       <el-table-column sortable prop="status" align="center" label="状态" width="90">
@@ -44,7 +44,7 @@
       </el-table-column>
 
       <el-table-column prop="createTime" label="创建时间" width="128" :show-overflow-tooltip="true"> </el-table-column>
-      <el-table-column label="操作" align="center" width="200">
+      <el-table-column label="操作" align="center" width="160">
         <template slot-scope="scope">
           <!-- <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button> -->
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:article:update']">编辑</el-button>
@@ -62,7 +62,7 @@
 import { listArticle, delArticle } from "@/api/system/article.js";
 
 export default {
-  name: "articleIndex",
+  name: "articleindex",
   data() {
     return {
       // 遮罩层

@@ -54,7 +54,7 @@ import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
-  name: "articlePublish",
+  name: "articlepublish",
   components: {
     mavonEditor,
     Treeselect,
@@ -93,7 +93,7 @@ export default {
             title: data.title,
             content: data.content,
             category_id: data.category_id,
-            dynamicTags: data.tags.length > 0 ? data.tags.split(",") : [],
+            dynamicTags: data.tags != null && data.tags.length > 0 ? data.tags.split(",") : [],
           };
         }
       });
