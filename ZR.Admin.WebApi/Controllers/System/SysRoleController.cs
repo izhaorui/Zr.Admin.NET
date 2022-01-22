@@ -103,13 +103,10 @@ namespace ZR.Admin.WebApi.Controllers.System
                     return ToResponse(ApiResult.Error($"编辑角色'{sysRoleDto.RoleName}'失败，角色权限已存在"));
                 }
             }
-
             sysRoleDto.Update_by = User.Identity.Name;
             int upResult = sysRoleService.UpdateRole(sysRoleDto);
             if (upResult > 0)
             {
-                //TODO 更新缓存用户权限信息
-
                 return SUCCESS(upResult);
             }
             return ToResponse(ApiResult.Error($"修改角色'{sysRoleDto.RoleName}'失败，请联系管理员"));

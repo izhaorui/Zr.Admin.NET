@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model.System;
@@ -71,6 +72,24 @@ namespace ZR.Admin.WebApi.Controllers.System
             var depts = DeptService.GetSysDepts(dept);
 
             return SUCCESS(DeptService.BuildDeptTreeSelect(depts), TIME_FORMAT_FULL);
+        }
+
+        /// <summary>
+        /// 获取角色部门信息
+        /// 加载对应角色部门列表树
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>        
+        [HttpGet("roleDeptTreeselect/{roleId}")]
+        public IActionResult RoleMenuTreeselect(int roleId)
+        {
+            var depts = DeptService.GetSysDepts(new SysDept());
+            var checkedKeys = DeptService.SelectRoleDepts(roleId);
+            return SUCCESS(new
+            {
+                checkedKeys,
+                depts = DeptService.BuildDeptTreeSelect(depts),
+            });
         }
 
         /// <summary>

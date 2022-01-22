@@ -45,9 +45,19 @@ namespace ZR.Model.System
         [SugarColumn(IsOnlyIgnoreInsert = true, IsOnlyIgnoreUpdate = true)]
         public string DelFlag { get; set; }
         /// <summary>
-        /// 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 ）
+        /// 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限））
         /// </summary>
         public string DataScope { get; set; }
+        /// <summary>
+        /// 菜单树选择项是否关联显示
+        /// </summary>
+        [SugarColumn(ColumnName = "menu_check_strictly")]
+        public bool MenuCheckStrictly { get; set; }
+        /// <summary>
+        /// 部门树选择项是否关联显示
+        /// </summary>
+        [SugarColumn(ColumnName = "dept_check_strictly")]
+        public bool DeptCheckStrictly { get; set; }
         /// <summary>
         /// 菜单组
         /// </summary>
@@ -58,6 +68,11 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(IsIgnore = true)]
         public long[] DeptIds { get; set; }
+        /// <summary>
+        /// 用户个数
+        /// </summary>
+        [SugarColumn(IsIgnore = true)]
+        public int UserNum { get; set; }
 
         public SysRole() { }
 

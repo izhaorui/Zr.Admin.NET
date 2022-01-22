@@ -45,13 +45,12 @@ namespace ZR.Admin.WebApi.Extensions
                 IsAutoCloseConnection = true//自动释放
             }
             });
-            //每次Sql执行前事件
-            
+            //每次Sql执行前事件            
             DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
             {
                 var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
-                FilterData(DbScoped.SugarScope.GetConnection(0));
+                FilterData();
 
                 logger.Info($"{sql}，{param}");
             };
@@ -79,7 +78,10 @@ namespace ZR.Admin.WebApi.Extensions
             };
         }
 
-        private static void FilterData(SqlSugarProvider db0)
+        /// <summary>
+        /// 分页获取count 不会追加sql
+        /// </summary>
+        private static void FilterData()
         {
             var u = App.User;
             if (u == null) return;
@@ -98,9 +100,11 @@ namespace ZR.Admin.WebApi.Extensions
                 }
                 else if (DATA_SCOPE_CUSTOM.Equals(dataScope))//自定数据权限
                 {
+                    //有问题
                     //var roleDepts = db0.Queryable<SysRoleDept>()
                     //.Where(f => f.RoleId == role.RoleId).Select(f => f.DeptId).ToList();
                     //var filter1 = new TableFilterItem<SysDept>(it => roleDepts.Contains(it.DeptId));
+                    //DbScoped.SugarScope.GetConnection(0).QueryFilter.Add(filter1);
                 }
                 else if (DATA_SCOPE_DEPT.Equals(dataScope))//本部门数据
                 {

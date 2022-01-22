@@ -21,19 +21,23 @@ namespace ZR.Service
     {
         private SysRoleRepository SysRoleRepository;
         private ISysUserRoleService SysUserRoleService;
+        private ISysDeptService DeptService;
 
         public SysRoleService(
             SysRoleRepository sysRoleRepository,
-            ISysUserRoleService sysUserRoleService) : base(sysRoleRepository)
+            ISysUserRoleService sysUserRoleService,
+            ISysDeptService deptService) : base(sysRoleRepository)
         {
             SysRoleRepository = sysRoleRepository;
             SysUserRoleService = sysUserRoleService;
+            DeptService = deptService;
         }
 
         /// <summary>
         /// 根据条件分页查询角色数据
         /// </summary>
         /// <param name="role">角色信息</param>
+        /// <param name="pager">分页信息</param>
         /// <returns>角色数据集合信息</returns>
         public PagedInfo<SysRole> SelectRoleList(SysRole role, PagerInfo pager)
         {
@@ -157,17 +161,9 @@ namespace ZR.Service
         {
             return UseTran2(() =>
             {
-                int result = Update(sysRoleDto, it => new
-                {
-                    it.DataScope
-                }, f => f.RoleId == sysRoleDto.RoleId);
-
-                //if (result > 0 && sysRoleDto.DataScope == "2")
-                //{
                 //删除角色菜单
                 DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
                 InsertRoleMenu(sysRoleDto);
-                //}
             });
         }
         #region Service
@@ -185,11 +181,13 @@ namespace ZR.Service
             List<SysRoleMenu> sysRoleMenus = new List<SysRoleMenu>();
             foreach (var item in sysRoleDto.MenuIds)
             {
-                SysRoleMenu rm = new SysRoleMenu();
-                rm.Menu_id = item;
-                rm.Role_id = sysRoleDto.RoleId;
-                rm.Create_by = sysRoleDto.Create_by;
-                rm.Create_time = DateTime.Now;
+                SysRoleMenu rm = new SysRoleMenu
+                {
+                    Menu_id = item,
+                    Role_id = sysRoleDto.RoleId,
+                    Create_by = sysRoleDto.Create_by,
+                    Create_time = DateTime.Now
+                };
                 sysRoleMenus.Add(rm);
             }
             //添加角色菜单
@@ -301,7 +299,17 @@ namespace ZR.Service
         /// <returns></returns>
         public int UpdateRole(SysRole sysRole)
         {
-            return SysRoleRepository.UpdateSysRole(sysRole);
+            var result = UseTran(() =>
+            {
+                //修改角色信息
+                SysRoleRepository.UpdateSysRole(sysRole);
+                //删除角色与部门管理
+                DeptService.DeleteRoleDeptByRoleId(sysRole.RoleId);
+                //插入角色部门数据
+                DeptService.InsertRoleDepts(sysRole);
+            });
+
+            return result.IsSuccess ? 1 : 0;
         }
     }
 }

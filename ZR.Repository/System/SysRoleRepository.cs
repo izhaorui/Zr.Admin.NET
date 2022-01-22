@@ -15,9 +15,8 @@ namespace ZR.Repository.System
     public class SysRoleRepository : BaseRepository<SysRole>
     {
         /// <summary>
-        /// 根据条件分页查询角色数据
+        /// 查询所有角色数据
         /// </summary>
-        /// <param name="sysRole"></param>
         /// <returns></returns>
         public List<SysRole> SelectRoleList()
         {
@@ -40,7 +39,16 @@ namespace ZR.Repository.System
             exp.AndIF(!string.IsNullOrEmpty(sysRole.Status), role => role.Status == sysRole.Status);
             exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleKey), role => role.RoleKey == sysRole.RoleKey);
 
-            return GetPages(exp.ToExpression(), pager, x => x.RoleSort);
+            var query = Context.Queryable<SysRole>()
+                .Where(exp.ToExpression())
+                .OrderBy(x => x.RoleSort)
+                .Select((role) => new SysRole
+                {
+                    RoleId = role.RoleId.SelectAll(),
+                    UserNum = SqlFunc.Subqueryable<SysUserRole>().Where(f => f.RoleId == role.RoleId).Count()
+                });
+
+            return query.ToPage(pager);
         }
 
         /// <summary>
@@ -55,15 +63,6 @@ namespace ZR.Repository.System
                 .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == userId).Any())
                 .OrderBy(role => role.RoleSort)
                 .ToList();
-        }
-
-        /// <summary>
-        /// 查询所有角色
-        /// </summary>
-        /// <returns></returns>
-        public List<SysRole> SelectRoleAll()
-        {
-            return Context.Queryable<SysRole>().OrderBy(it => it.RoleSort).ToList();
         }
 
         /// <summary>
@@ -93,8 +92,8 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public List<SysRole> SelectUserRoleListByUserId(long userId)
         {
-            return Context.Queryable<SysUserRole, SysRole>((ur, r) => new SqlSugar.JoinQueryInfos(
-                    SqlSugar.JoinType.Left, ur.RoleId == r.RoleId
+            return Context.Queryable<SysUserRole, SysRole>((ur, r) => new JoinQueryInfos(
+                    JoinType.Left, ur.RoleId == r.RoleId
                 )).Where((ur, r) => ur.UserId == userId)
                 .Select((ur, r) => r).ToList();
         }
@@ -166,8 +165,11 @@ namespace ZR.Repository.System
 
             return db.Updateable<SysRole>()
             .SetColumns(it => it.Update_time == sysRole.Update_time)
+            .SetColumns(it => it.DataScope == sysRole.DataScope)
             .SetColumns(it => it.Remark == sysRole.Remark)
             .SetColumns(it => it.Update_by == sysRole.Update_by)
+            //.SetColumns(it => it.MenuCheckStrictly == sysRole.MenuCheckStrictly)
+            .SetColumns(it => it.DeptCheckStrictly == sysRole.DeptCheckStrictly)
             .SetColumnsIF(!string.IsNullOrEmpty(sysRole.RoleName), it => it.RoleName == sysRole.RoleName)
             .SetColumnsIF(!string.IsNullOrEmpty(sysRole.RoleKey), it => it.RoleKey == sysRole.RoleKey)
             .SetColumnsIF(sysRole.RoleSort >= 0, it => it.RoleSort == sysRole.RoleSort)

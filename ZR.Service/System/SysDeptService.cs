@@ -21,10 +21,11 @@ namespace ZR.Service.System
     public class SysDeptService : BaseService<SysDept>, ISysDeptService
     {
         public SysDeptRepository DeptRepository;
-
-        public SysDeptService(SysDeptRepository deptRepository) : base(deptRepository)
+        public SysRoleDeptRepository RoleDeptRepository;
+        public SysDeptService(SysDeptRepository deptRepository, SysRoleDeptRepository roleDeptRepository) : base(deptRepository)
         {
             DeptRepository = deptRepository;
+            RoleDeptRepository = roleDeptRepository;
         }
 
         /// <summary>
@@ -225,5 +226,60 @@ namespace ZR.Service.System
         {
             return list.Where(p => p.ParentId == dept.DeptId).ToList();
         }
+
+        #region 角色部门
+
+        /// <summary>
+        /// 根据角色获取菜单id
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
+        public List<SysRoleDept> SelectRoleDeptByRoleId(long roleId)
+        {
+            return RoleDeptRepository.SelectRoleDeptByRoleId(roleId);
+        }
+
+        /// <summary>
+        /// 获取角色部门id集合
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
+        public List<long> SelectRoleDepts(long roleId)
+        {
+            var list = SelectRoleDeptByRoleId(roleId);
+
+            return list.Select(x => x.DeptId).Distinct().ToList();
+        }
+
+        /// <summary>
+        /// 删除角色部门数据
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
+        public int DeleteRoleDeptByRoleId(long roleId)
+        {
+            return RoleDeptRepository.Delete(f => f.RoleId == roleId);
+        }
+
+        /// <summary>
+        /// 批量插入角色部门
+        /// </summary>
+        /// <param name="role"></param>
+        /// <returns></returns>
+        public int InsertRoleDepts(SysRole role)
+        {
+            int rows = 1;
+            List<SysRoleDept> list = new();
+            foreach (var item in role.DeptIds)
+            {
+                list.Add(new SysRoleDept() { DeptId = item, RoleId = role.RoleId });
+            }
+            if (list.Count > 0)
+            {
+                rows = RoleDeptRepository.Insert(list);
+            }
+            return rows;
+        }
+        #endregion
     }
 }
