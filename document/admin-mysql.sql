@@ -104,11 +104,11 @@ CREATE TABLE `sys_dept`  (
 -- ----------------------------
 -- Records of sys_dept
 -- ----------------------------
-INSERT INTO `sys_dept` VALUES (100, 0, '', '某上市公司', 0, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (101, 100, '0', '研发部门', 1, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (102, 100, '0', '市场部门', 2, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (103, 100, '0', '测试部门', 3, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
-INSERT INTO `sys_dept` VALUES (104, 100, '0', '财务部门', 4, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (100, 0,   '0',      'XXX公司', 0, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (101, 100, '0,100', '研发部门', 1, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (102, 100, '0,100', '市场部门', 2, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (103, 100, '0,100', '测试部门', 3, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (104, 100, '0,100', '财务部门', 4, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_dict_data
