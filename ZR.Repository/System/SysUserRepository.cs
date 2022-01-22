@@ -2,6 +2,7 @@
 using Infrastructure.Extensions;
 using SqlSugar;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ZR.Model;
@@ -33,10 +34,15 @@ namespace ZR.Repository.System
 
             if (user.DeptId != 0)
             {
-                SysDept dept = Context.Queryable<SysDept>().First(f => f.DeptId == user.DeptId);
-                string[] deptArr = dept?.Ancestors.Split(",").ToArray();
+                List<SysDept> depts = Context.Queryable<SysDept>().ToList();
 
-                exp.AndIF(user.DeptId != 0, u => u.DeptId == user.DeptId);// || deptArr.Contains(u.DeptId.ToString()));
+                var newDepts = depts.FindAll(delegate (SysDept dept)
+                {
+                    string[] parentDeptId = dept.Ancestors.Split(",", StringSplitOptions.RemoveEmptyEntries);
+                    return parentDeptId.Contains(user.DeptId.ToString());
+                });
+                string[] deptArr = newDepts.Select(x => x.DeptId.ToString()).ToArray();
+                exp.AndIF(user.DeptId != 0, u => u.DeptId == user.DeptId || deptArr.Contains(u.DeptId.ToString()));
             }
             var query = Context.Queryable<SysUser>()
                 .LeftJoin<SysDept>((u, dept) => u.DeptId == dept.DeptId)
