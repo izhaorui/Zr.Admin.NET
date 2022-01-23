@@ -6,7 +6,7 @@
           <span slot="label">生成模板</span>
           <el-select v-model="info.tplCategory" @change="tplSelectChange">
             <el-option label="单表（增删改查）" value="crud" />
-            <!-- <el-option label="单表查询" value="select" /> -->
+            <el-option label="单表查询" value="select" />
             <el-option label="树表（增删改查）" value="tree" />
             <!-- <el-option label="导航查询" value="subNav"></el-option> -->
             <!-- <el-option label="主子表（增删改查）" value="sub" /> -->
@@ -125,7 +125,7 @@
           </el-input>
         </el-form-item>
       </el-col>
-      <el-col :lg="24">
+      <el-col :lg="24" v-show="info.tplCategory != 'select'">
         <el-form-item label="显示按钮">
           <el-checkbox-group v-model="checkedBtn" @change="checkedBtnSelect">
             <el-checkbox :label="1">

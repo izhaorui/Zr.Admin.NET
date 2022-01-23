@@ -7,7 +7,6 @@
       </el-form-item>
       <el-form-item>
         <el-button size="mini" type="primary" icon="el-icon-search" @click="handleSearch()">查询</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
         <!-- <el-button type="default" icon="el-icon-refresh" size="small" @click="loadTableData()">刷新</el-button> -->
       </el-form-item>
     </el-form>
@@ -36,7 +35,7 @@
       <el-table-column prop="className" label="实体" :show-overflow-tooltip="true" />
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column prop="updateTime" label="更新时间" />
-      <el-table-column label="操作" align="center" width="350">
+      <el-table-column label="操作" align="center" width="320">
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-view" @click="handlePreview(scope.row)" v-hasPermi="['tool:gen:preview']">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)" v-hasPermi="['tool:gen:edit']">编辑</el-button>

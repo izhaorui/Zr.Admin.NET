@@ -11,12 +11,6 @@ ${vueQueryFormHtml}
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
-      </el-col>
-       <el-col :span="1.5">
-        <el-button type="info" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">展开/折叠</el-button>
-      </el-col>
-      <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
 $if(replaceDto.ShowBtnExport)
@@ -28,57 +22,52 @@ $end
     </el-row>
 
     <!-- 数据区域 -->
-    <el-table v-if="refreshTable" :data="dataList" v-loading="loading" ref="table" border highlight-current-row @selection-change="handleSelectionChange"
-      :default-expand-all="isExpandAll" row-key="${tool.FirstLowerCase(genTable.TreeCode)}" :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+    <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center"/>
 ${VueViewListContent}
       <el-table-column label="操作" align="center" width="140">
         <template slot-scope="scope">
-          <el-button size="mini" v-hasPermi="['${replaceDto.PermissionPrefix}:update']" type="success" icon="el-icon-edit" title="编辑" 
-            @click="handleUpdate(scope.row)"></el-button>
-          <el-button size="mini" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="el-icon-delete" title="删除" 
-            @click="handleDelete(scope.row)"></el-button>
+          <el-button size="mini" type="success" icon="el-icon-view" title="查看" 
+            @click="handleView(scope.row)"></el-button>      
         </template>
       </el-table-column>
     </el-table>
     <pagination class="mt10" background :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改${genTable.functionName}对话框 -->
-    <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
-      <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
-        <el-row :gutter="20">
-${VueViewFormContent}
-        </el-row>
+    <el-dialog :lock-scroll="false" :visible.sync="open" >
+      <el-form ref="form" :model="form" label-position="left" :label-width="formLabelWidth">
+$foreach(item in genTable.Columns)
+        <el-form-item label="$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}">
+$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
+          <dict-tag :options="${item.CsharpFieldFl}Options" :value="form.${item.CsharpFieldFl}" />
+$elseif(item.HtmlType == "imageUpload")
+          <el-image fit="contain" :src="form.${item.CsharpFieldFl}" :preview-src-list="[form.${item.CsharpFieldFl}]">
+            <div slot="error"><i class="el-icon-picture" /></div>
+          </el-image>
+$else
+          {{form.${item.CsharpFieldFl}}}
+$end
+        </el-form-item>
+$end
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="text" @click="cancel">取 消</el-button>
-        <el-button type="primary" @click="submitForm">确 定</el-button>
       </div>
     </el-dialog>
-
   </div>
 </template>
 <script>
 import { 
-  treelist${genTable.BusinessName},
   list${genTable.BusinessName},
-  add${genTable.BusinessName},
-  del${genTable.BusinessName},
-  update${genTable.BusinessName},
   get${genTable.BusinessName},
 $if(replaceDto.ShowBtnExport)
   export${genTable.BusinessName},
 $end
-$if(showCustomInput)
-  changeSort
-$end
 } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${tool.FirstLowerCase(genTable.BusinessName)}.js';
-import Treeselect from "@riophae/vue-treeselect";
-import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
   name: "${genTable.BusinessName.ToLower()}",
-  components: { Treeselect },
   data() {
     return {
       labelWidth: "100px",
@@ -97,6 +86,8 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 20,
+        sort: undefined,
+        sortType: undefined,
 $foreach(item in genTable.Columns)
 $if(item.IsQuery == true)
         ${item.CsharpFieldFl}: undefined,
@@ -107,10 +98,6 @@ $end
       title: "",
       // 是否显示弹出层
       open: false,
-      // 是否展开，默认全部折叠
-      isExpandAll: false,
-      // 重新渲染表格状态
-      refreshTable: true,
       // 表单参数
       form: {},
       columns: [
@@ -127,8 +114,6 @@ $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围
       dateRange${item.CsharpField}: [],
-$elseif(item.HtmlType == "customInput")
-      editIndex: -1,
 $end
 $end
       // 数据列表
@@ -137,17 +122,6 @@ $end
       total: 0,
       // 提交按钮是否显示
       btnSubmitVisible: true,
-      // 表单校验
-      rules: {
-$foreach(column in genTable.Columns)
-$if(column.IsRequired && column.IsIncrement == false)
-        ${column.CsharpFieldFl}: [
-          { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
-$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }
-        ],
-$end
-$end
-      },
     };
   },
   created() {
@@ -181,24 +155,13 @@ $if(item.HtmlType == "datetime" && item.IsQuery == true)
 $end
 $end
       this.loading = true;
-      treelist${genTable.BusinessName}(this.queryParams).then(res => {
+      list${genTable.BusinessName}(this.queryParams).then(res => {
          if (res.code == 200) {
-           this.dataList = res.data;
-           //this.total = res.data.totalNum;
+           this.dataList = res.data.result;
+           this.total = res.data.totalNum;
            this.loading = false;
          }
        })
-    },
-    /** 转换菜单数据结构 */
-    normalizer(node) {
-      if (node.children && !node.children.length) {
-        delete node.children;
-      }
-      return {
-        id: node.${tool.FirstLowerCase(genTable.TreeCode)},
-        label: node.${tool.FirstLowerCase(genTable.TreeName)},
-        children: node.children,
-      };
     },
     // 取消按钮
     cancel() {
@@ -219,7 +182,7 @@ $end
       };
       this.resetForm("form");
     },
-    /** 重置查询操作 */
+    // 重置查询操作
     resetQuery() {
       this.timeRange = [];
 $foreach(item in genTable.Columns)
@@ -242,12 +205,6 @@ $end
       this.queryParams.pageNum = 1;
       this.getList();
     },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加";
-    },
     /** 删除按钮操作 */
     handleDelete(row) {
       const Ids = row.${replaceDto.FistLowerPk} || this.ids;
@@ -262,8 +219,8 @@ $end
         })
         .catch(() => {});
     },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
+    /** 预览按钮操作 */
+    handleView(row) {
       this.reset();
       const id = row.${replaceDto.FistLowerPk} || this.ids;
       get${genTable.BusinessName}(id).then((res) => {
@@ -280,76 +237,6 @@ $if(item.HtmlType == "checkbox")
 $end
 $end
           };
-        }
-      });
-    },
-$if(replaceDto.UploadFile == 1)
-    //图片上传成功方法
-    handleUploadSuccess(column, filelist) {
-      this.form[column] = filelist;
-    },
-$end
-$foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
-    // ${item.ColumnComment}字典翻译
-    ${item.CsharpFieldFl}Format(row, column) {
-      return this.selectDictLabel(this.${item.CsharpFieldFl}Options, row.${item.CsharpFieldFl});
-    },
-$end
-$if(item.HtmlType == "customInput")
-    // 显示编辑排序
-    editCurrRow(rowId, str) {
-      this.editIndex = rowId;
-      let id = rowId + str;
-      
-      setTimeout(() => {
-        document.getElementById(id).focus();
-      }, 100);
-    },
-    // 保存排序
-    handleChangeSort(info) {
-      this.editIndex = -1;
-      changeSort({ value: info.${item.CsharpFieldFl}, id: info.${replaceDto.FistLowerPk} }).then(
-        (response) => {
-          this.msgSuccess("修改成功");
-          this.getList();
-        }
-      );
-    },
-$end
-$end
-    /** 提交按钮 */
-    submitForm: function () {
-      this.${refs}refs["form"].validate((valid) => {
-        if (valid) {
-$foreach(item in genTable.Columns)
-$if(item.HtmlType == "checkbox")
-          this.form.${item.CsharpFieldFl} = this.form.${item.CsharpFieldFl}Checked.toString();
-$end
-$end
-          console.log(JSON.stringify(this.form));
-          
-          if (this.form.${replaceDto.FistLowerPk} != undefined && this.title === "修改数据") {
-            update${genTable.BusinessName}(this.form)
-              .then((res) => {
-                this.msgSuccess("修改成功");
-                this.open = false;
-                this.getList();
-            })
-            .catch((err) => {
-                //TODO 错误逻辑
-              });
-          } else {
-            add${genTable.BusinessName}(this.form)
-              .then((res) => {
-                this.msgSuccess("新增成功");
-                this.open = false;
-                this.getList();
-            })
-            .catch((err) => {
-                //TODO 错误逻辑
-              });
-          }
         }
       });
     },
@@ -370,14 +257,6 @@ $if(replaceDto.ShowBtnExport)
         });
     },
 $end
-    //展开/折叠操作
-    toggleExpandAll() {
-      this.refreshTable = false;
-      this.isExpandAll = !this.isExpandAll;
-      this.${nextTick}nextTick(() => {
-        this.refreshTable = true;
-      });
-    },
   },
 };
 </script>

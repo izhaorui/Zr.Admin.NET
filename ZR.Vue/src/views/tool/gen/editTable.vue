@@ -36,12 +36,12 @@
               <el-input v-model="scope.row.csharpField"></el-input>
             </template>
           </el-table-column>
-          <el-table-column label="插入" min-width="5%">
+          <el-table-column label="插入" min-width="5%" v-if="info.tplCategory != 'select'">
             <template slot-scope="scope">
               <el-checkbox v-model="scope.row.isInsert" :disabled="scope.row.isIncrement"></el-checkbox>
             </template>
           </el-table-column>
-          <el-table-column label="编辑" min-width="5%">
+          <el-table-column label="编辑" min-width="5%" v-if="info.tplCategory != 'select'">
             <template slot-scope="scope">
               <el-checkbox v-model="scope.row.isEdit" :disabled="scope.row.isPk  || scope.row.isIncrement"></el-checkbox>
             </template>

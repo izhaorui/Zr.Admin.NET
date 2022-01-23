@@ -45,13 +45,13 @@ ${VueViewListContent}
     <!-- 添加或修改${genTable.functionName}对话框 -->
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
       <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
-        <el-row>
+        <el-row :gutter="20">
 ${VueViewFormContent}
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
+        <el-button type="text" @click="cancel">取 消</el-button>
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
 

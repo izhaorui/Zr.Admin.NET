@@ -181,6 +181,9 @@ namespace ZR.CodeGenerator
                 case "crud":
                     fileName = "TplVue.txt";
                     break;
+                case "select":
+                    fileName = "TplVueSelect.txt";
+                    break;
                 default:
                     break;
             }
@@ -189,7 +192,6 @@ namespace ZR.CodeGenerator
             tpl.Set("VueViewEditFormRuleContent", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
             tpl.Set("VueViewFormContent", replaceDto.VueViewFormHtml);//添加、修改表单
             tpl.Set("VueViewListContent", replaceDto.VueViewListHtml);//查询 table列
-            //tpl.Set("lowerBusinessName", FirstLowerCase(generateDto.GenTable.BusinessName));
 
             var result = tpl.Render();
             var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");

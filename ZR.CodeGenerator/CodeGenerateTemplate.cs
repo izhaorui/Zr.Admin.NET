@@ -108,10 +108,6 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-radio-group v-model=\"form.{columnName}\">");
-                //if (string.IsNullOrEmpty(dbFieldInfo.DictType))
-                //{
-                //    sb.AppendLine("           <el-radio :label=\"1\">请选择字典生成</el-radio>");
-                //}
                 sb.AppendLine($"          <el-radio v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"{value}\">{{{{item.dictLabel}}}}</el-radio>");
                 sb.AppendLine("        </el-radio-group>");
                 sb.AppendLine("      </el-form-item>");
@@ -141,10 +137,6 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col :lg=\"12\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-select v-model=\"form.{columnName}\" placeholder=\"请选择{labelName}\"> ");
-                //if (string.IsNullOrEmpty(dbFieldInfo.DictType))
-                //{
-                //    sb.AppendLine($"          <el-option label=\"请选择字典生成\" value=\"\"></el-option>");
-                //}
                 sb.AppendLine($"          <el-option v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"{value}\"></el-option>");
                 sb.AppendLine("        </el-select>");
                 sb.AppendLine("      </el-form-item>");
@@ -156,10 +148,6 @@ namespace ZR.CodeGenerator
                 sb.AppendLine("    <el-col :lg=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
                 sb.AppendLine($"        <el-checkbox-group v-model=\"form.{columnName}Checked\"> ");
-                //if (string.IsNullOrEmpty(dbFieldInfo.DictType))
-                //{
-                //    sb.AppendLine($"          <el-checkbox>请选择字典生成</el-checkbox>");
-                //}
                 sb.AppendLine($"          <el-checkbox v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictValue\">{{{{item.dictLabel}}}}</el-checkbox>");
                 sb.AppendLine("        </el-checkbox-group>");
                 sb.AppendLine("      </el-form-item>");
