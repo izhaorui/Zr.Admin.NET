@@ -180,23 +180,23 @@ namespace ZR.CodeGenerator
             if (dbFieldInfo.HtmlType == GenConstants.HTML_DATETIME)
             {
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">");
-                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" size=\"small\" type=\"datetimerange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
+                sb.AppendLine($"        <el-date-picker v-model=\"dateRange{dbFieldInfo.CsharpField}\" style=\"width: 240px\" value-format=\"yyyy-MM-dd\" type=\"daterange\" range-separator=\"-\" start-placeholder=\"开始日期\"");
                 sb.AppendLine($"          end-placeholder=\"结束日期\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" :picker-options=\"{{ firstDayOfWeek: 1}}\"></el-date-picker>");
                 sb.AppendLine("      </el-form-item>");
             }
             else if (dbFieldInfo.HtmlType == GenConstants.HTML_SELECT || dbFieldInfo.HtmlType == GenConstants.HTML_RADIO)
             {
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
-                sb.AppendLine($"        <el-select v-model=\"queryParams.{columnName}\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" size=\"small\" >");
+                sb.AppendLine($"        <el-select v-model=\"queryParams.{columnName}\" placeholder=\"请选择{dbFieldInfo.ColumnComment}\" >");
                 sb.AppendLine($"          <el-option v-for=\"item in {columnName}Options\" :key=\"item.dictValue\" :label=\"item.dictLabel\" :value=\"item.dictValue\"></el-option>");
                 sb.AppendLine("        </el-select>");
                 sb.AppendLine("      </el-form-item>");
             }
-            else if (dbFieldInfo.IsQuery)
+            else
             {
                 string inputNumTxt = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? ".number" : "";
                 sb.AppendLine($"      <el-form-item label=\"{ labelName}\" prop=\"{columnName}\">");
-                sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"queryParams.{columnName}\" placeholder=\"请输入{dbFieldInfo.ColumnComment}\" size=\"small\"/>");
+                sb.AppendLine($"        <el-input v-model{inputNumTxt}=\"queryParams.{columnName}\" placeholder=\"请输入{dbFieldInfo.ColumnComment}\" />");
                 sb.AppendLine("      </el-form-item>");
             }
 

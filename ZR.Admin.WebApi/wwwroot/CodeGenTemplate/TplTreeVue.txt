@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="app-container">
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
-    <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
+    <el-form :model="queryParams" size="small" label-position="right" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
 ${vueQueryFormHtml}
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -176,15 +176,13 @@ $end
     getList() {
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "datetime" && item.IsQuery == true)
-      this.queryParams["begin${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 0);
-      this.queryParams["end${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 1);
+      this.addDateRange(this.queryParams, this.dateRange${item.CsharpField}, '${item.CsharpField}');
 $end
 $end
       this.loading = true;
       treelist${genTable.BusinessName}(this.queryParams).then(res => {
          if (res.code == 200) {
            this.dataList = res.data;
-           //this.total = res.data.totalNum;
            this.loading = false;
          }
        })
