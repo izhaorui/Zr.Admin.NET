@@ -150,8 +150,7 @@ $end
     getList() {
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "datetime" && item.IsQuery == true)
-      this.queryParams["begin${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 0);
-      this.queryParams["end${item.CsharpField}"] = this.addDateRange2(this.dateRange${item.CsharpField}, 1);
+      this.addDateRange(this.queryParams, this.dateRange${item.CsharpField}, ${item.CsharpField});
 $end
 $end
       this.loading = true;

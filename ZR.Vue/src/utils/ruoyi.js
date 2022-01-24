@@ -53,14 +53,36 @@ export function resetForm(refName) {
   }
 }
 
+// // 添加日期范围
+// export function addDateRange(params, dateRange) {
+//   var search = params;
+//   search.beginTime = "";
+//   search.endTime = "";
+//   if (null != dateRange && '' != dateRange) {
+//     search.beginTime = dateRange[0];
+//     search.endTime = dateRange[1];
+//   }
+//   return search;
+// }
+
+/**
+ * 添加日期范围
+ * @param { beginTime: '', endTime: '', page: 1} params 
+ * @param {*} dateRange 日期范围数组
+ * @param {*} propName C#属性名首字母大写
+ * @returns 
+ */
 // 添加日期范围
-export function addDateRange(params, dateRange) {
-  var search = params;
-  search.beginTime = "";
-  search.endTime = "";
-  if (null != dateRange && '' != dateRange) {
-    search.beginTime = dateRange[0];
-    search.endTime = dateRange[1];
+export function addDateRange(params, dateRange, propName) {
+  let search = params;
+  search = typeof (search) === 'object' && search !== null && !Array.isArray(search) ? search : {};
+  dateRange = Array.isArray(dateRange) ? dateRange : [];
+  if (typeof (propName) === 'undefined') {
+    search['beginTime'] = dateRange[0];
+    search['endTime'] = dateRange[1];
+  } else {
+    search['begin' + propName] = dateRange[0];
+    search['end' + propName] = dateRange[1];
   }
   return search;
 }
