@@ -128,7 +128,7 @@ $end
     // 列表数据查询
     this.getList();
 
-    $set(index = 0)
+$set(index = 0)
     var dictParams = [
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
