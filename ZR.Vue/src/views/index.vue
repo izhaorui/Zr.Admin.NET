@@ -14,13 +14,15 @@
           <el-link href="https://curl.qcloud.com/5J4nag8D" type="primary" target="_blank">https://curl.qcloud.com/5J4nag8D</el-link>
           <br />
 
-          <!-- 阿里云服务器折扣区
-          <el-link href="http://www.izhaorui.cn" type="primary" target="_blank">>☛☛点我进入☚☚</el-link>
-          <br/> -->
+          腾讯云限时秒杀活动<br>
+          <el-link href="https://curl.qcloud.com/4yEoRquq" type="primary" target="_blank">https://curl.qcloud.com/4yEoRquq</el-link>
+					<br />
 
-          腾讯云限时秒杀活动
-          <el-link href="https://curl.qcloud.com/4yEoRquq" type="primary" target="_blank">>☛☛点我进入☚☚</el-link><br />
-          <h4 class="text-danger">
+          华为特惠专区，多款产品限时特价
+          <el-link
+            href="https://activity.huaweicloud.com/discount_area_v5/index.html?fromacct=a53709d1-149d-49f4-9b89-bf62bd96ef65&utm_source=aGlkX3N0dnZkMWNxejBnOTJ5OA===&utm_medium=cps&utm_campaign=201905"
+            type="primary" target="_blank">☛☛点我进入☚☚</el-link>
+					<h4 class="text-danger">
             云产品通用红包，可叠加官网常规优惠使用。(仅限新用户)
           </h4>
         </blockquote>
@@ -29,7 +31,7 @@
     <el-row :gutter="20">
       <el-col :lg="16" :sm="24">
         <h2>ZRAdmin.NET后台管理框架</h2>
-        <p>ZrAdmin.NET借鉴了很多开源项目的优点，让你开发Web管理系统更简单，所以我也把它给开源了（前端 <code>vue页面</code>主要参考若依，在此表示感谢.)</p>
+        <p>ZRAdmin.NET借鉴了很多开源项目的优点，让你开发Web管理系统更简单，所以我也把它给开源了（前端 <code>vue页面</code>主要参考若依，在此表示感谢.)</p>
         <p>代码完全免费开源，易读易懂、界面简洁美观，给你的项目多一种选择与参考。</p>
         <p>
           <b>当前版本:</b> <span>v{{ version }}</span>
