@@ -290,7 +290,7 @@ namespace ZR.CodeGenerator
             {
                 return $"it => it.{ propertyName}.Contains(parm.{propertyName}))";
             }
-            return "";
+            return $"it => it.{ propertyName} == parm.{propertyName})";
         }
 
         /// <summary>
