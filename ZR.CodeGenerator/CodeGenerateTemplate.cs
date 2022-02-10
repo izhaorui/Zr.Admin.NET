@@ -22,7 +22,7 @@ namespace ZR.CodeGenerator
             string columnName = dbFieldInfo.CsharpFieldFl;
             string labelName = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
             string labelDisabled = dbFieldInfo.IsPk ? ":disabled=\"true\"" : "";
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             string value = CodeGeneratorTool.IsNumber(dbFieldInfo.CsharpType) ? "parseInt(item.dictValue)" : "item.dictValue";
 
             if (GenConstants.inputDtoNoField.Any(f => f.Contains(dbFieldInfo.CsharpField, StringComparison.OrdinalIgnoreCase)))
@@ -31,7 +31,7 @@ namespace ZR.CodeGenerator
             }
             if (!dbFieldInfo.IsInsert && !dbFieldInfo.IsEdit)
             {
-                sb.AppendLine("    <el-col v-if=\"title == '修改数据'\" :lg=\"12\">");
+                sb.AppendLine("    <el-col :lg=\"12\" v-if=\"opertype == 2\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">{{{{form.{columnName}}}}}</el-form-item>");
                 sb.AppendLine("    </el-col>");
                 return sb.ToString();

@@ -105,6 +105,7 @@ $end
       },
       // 弹出层标题
       title: "",
+      // 操作类型 1、add 2、edit
       // 是否显示弹出层
       open: false,
       // 是否展开，默认全部折叠
@@ -245,6 +246,7 @@ $end
       this.reset();
       this.open = true;
       this.title = "添加";
+      this.opertype = 1;
     },
     /** 删除按钮操作 */
     handleDelete(row) {
@@ -269,6 +271,7 @@ $end
         if (code == 200) {
           this.open = true;
           this.title = "修改数据";
+          this.opertype = 2;
 
           this.form = {
             ...data,
@@ -327,7 +330,7 @@ $end
 $end
           console.log(JSON.stringify(this.form));
           
-          if (this.form.${replaceDto.FistLowerPk} != undefined && this.title === "修改数据") {
+          if (this.form.${replaceDto.FistLowerPk} != undefined && this.opertype === 2) {
             update${genTable.BusinessName}(this.form)
               .then((res) => {
                 this.msgSuccess("修改成功");
