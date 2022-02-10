@@ -211,6 +211,10 @@ namespace ZR.Repository
         }
 
         #region delete
+        public IDeleteable<T> Deleteable()
+        {
+            return Context.Deleteable<T>();
+        }
 
         /// <summary>
         /// 删除表达式

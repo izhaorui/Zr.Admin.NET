@@ -212,6 +212,14 @@ namespace ZR.Service
         #region delete
 
         /// <summary>
+        /// 删除
+        /// </summary>
+        /// <returns></returns>
+        public IDeleteable<T> Deleteable()
+        {
+            return baseRepository.Deleteable();
+        }
+        /// <summary>
         /// 删除表达式
         /// </summary>
         /// <param name="expression"></param>

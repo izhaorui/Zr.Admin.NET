@@ -81,7 +81,7 @@ namespace ZR.Service
         bool UseTran2(Action action);
 
         #region delete
-
+        IDeleteable<T> Deleteable();
         int Delete(Expression<Func<T, bool>> expression);
         int Delete(object[] obj);
         int Delete(object id);
