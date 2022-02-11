@@ -68,7 +68,7 @@ namespace ZR.CodeGenerator
 
                 replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo, dto.GenTable);
                 replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo, dto.GenTable);
-                replaceDto.VueQueryFormHtml += CodeGenerateTemplate.TplQueryFormHtml(dbFieldInfo);
+                //replaceDto.VueQueryFormHtml += CodeGenerateTemplate.TplQueryFormHtml(dbFieldInfo);
             }
 
             replaceDto.PKName = PKName;
@@ -76,6 +76,7 @@ namespace ZR.CodeGenerator
             replaceDto.FistLowerPk = PKName.FirstLowerCase();
             InitJntTemplate(dto, replaceDto);
 
+            replaceDto.VueQueryFormHtml = GenerateVueQueryForm();
             GenerateModels(replaceDto, dto);
             GenerateInputDto(replaceDto, dto);
             GenerateRepository(replaceDto, dto);
@@ -241,6 +242,18 @@ namespace ZR.CodeGenerator
             generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, result));
         }
 
+        /// <summary>
+        /// 生成vue页面查询form
+        /// </summary>
+        /// <param name="replaceDto"></param>
+        /// <param name="generateDto"></param>
+        /// <returns></returns>
+        public static string GenerateVueQueryForm()
+        {
+            var tpl = FileHelper.ReadJtTemplate("QueryForm.txt");
+            var result = tpl.Render();
+            return result;
+        }
         #endregion
 
         #region 帮助方法

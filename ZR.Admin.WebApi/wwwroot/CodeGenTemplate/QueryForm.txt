@@ -1,0 +1,36 @@
+﻿$foreach(column in genTable.Columns)
+$set(labelName = "")
+$set(columnName = "")
+$set(numLabel = "")
+
+$if(column.IsQuery == true)
+    $set(columnName = column.CsharpFieldFl)
+
+	$if(column.ColumnComment != "")
+		$set(labelName = column.ColumnComment)
+	$else
+		$set(labelName = column.CsharpFieldFl)
+	$end
+    $if(column.CsharpType == "int" || column.CsharpType == "long")
+        $set(numLabel = ".number")
+    $end
+
+$if(column.HtmlType == "datetime")
+      <el-form-item label="$labelName">
+        <el-date-picker v-model="dateRange${column.CsharpField}" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-"
+          start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择$labelName" :picker-options="{ firstDayOfWeek: 1}"></el-date-picker>
+      </el-form-item>
+$elseif(column.HtmlType == "select" || column.HtmlType == "radio")
+      <el-form-item label="${labelName}" prop="${columnName}">
+        <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
+          <el-option v-for="item in ${columnName}Options" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
+        </el-select>
+      </el-form-item>
+$else
+      <el-form-item label="${labelName}" prop="${columnName}">
+        <el-input v-model${numLabel}="queryParams.${columnName}" placeholder="请输入${labelName}" />
+      </el-form-item>
+$end
+
+$end
+$end
