@@ -2,10 +2,8 @@
 $set(labelName = "")
 $set(columnName = "")
 $set(numLabel = "")
-
 $if(column.IsQuery == true)
     $set(columnName = column.CsharpFieldFl)
-
 	$if(column.ColumnComment != "")
 		$set(labelName = column.ColumnComment)
 	$else
@@ -31,6 +29,5 @@ $else
         <el-input v-model${numLabel}="queryParams.${columnName}" placeholder="请输入${labelName}" />
       </el-form-item>
 $end
-
 $end
 $end
