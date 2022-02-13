@@ -1,0 +1,45 @@
+﻿$foreach(column in genTable.Columns)
+$set(labelName = "")
+$set(checkboxHtml = "")
+$set(showToolTipHtml = "")
+$set(columnName = column.CsharpFieldFl)
+$if(column.CsharpType == "string" || column.HtmlType == "datetime")
+$set(showToolTipHtml = " :show-overflow-tooltip=\"true\"")
+$end
+$if(column.ColumnComment != "")
+$set(labelName = column.ColumnComment)
+$else
+$set(labelName = column.CsharpFieldFl)
+$end
+$if(column.IsList == true)
+$if(column.HtmlType == "customInput" && column.IsPk == false)
+      <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center">
+        <template slot-scope="scope">;
+          <span v-show="editIndex != scope.${index}index" @click="editCurrRow(scope.${index}index,'rowkeY')">{{{{scope.row.${columnName}}}}}</span>
+          <el-input :id="scope.${index}index+'rowkeY'" size="mini" v-show="(editIndex == scope.${index}index)"
+            v-model="scope.row.${columnName}" @blur="handleChangeSort(scope.row)"></el-input>
+        </template>
+      </el-table-column>
+$elseif(column.HtmlType == "imageUpload")
+      <el-table-column prop="${columnName}" align="center" label="${labelName}">
+        <template slot-scope="scope">
+          <el-image class="table-td-thumb" fit="contain" :src="scope.row.${columnName}" :preview-src-list="[scope.row.${columnName}]">
+            <div slot="error"><i class="el-icon-document" /></div>
+          </el-image>
+        </template>
+      </el-table-column>
+$elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio")
+      <el-table-column label="${labelName}" align="center" prop="${columnName}">
+        <template slot-scope="scope">
+$if(column.HtmlType == "checkbox")
+          <dict-tag :options="${columnName}Options" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
+$else
+          <dict-tag :options="${columnName}Options" :value="scope.row.${columnName}" />
+$end
+        </template>
+      </el-table-column>
+$else
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml} />
+$end
+$end
+$end

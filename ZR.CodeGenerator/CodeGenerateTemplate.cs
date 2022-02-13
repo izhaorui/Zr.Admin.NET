@@ -203,59 +203,59 @@ namespace ZR.CodeGenerator
         //    return sb.ToString();
         //}
 
-        /// <summary>
-        /// Vue 查询列表
-        /// </summary>
-        /// <param name="dbFieldInfo"></param>
-        /// <param name="genTable"></param>
-        /// <returns></returns>
-        public static string TplTableColumn(GenTableColumn dbFieldInfo, GenTable genTable)
-        {
-            string columnName = dbFieldInfo.CsharpFieldFl;
-            string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
-            string showToolTip = ShowToolTip(dbFieldInfo);
-            string formatter = GetFormatter(dbFieldInfo.HtmlType, columnName);
-            StringBuilder sb = new StringBuilder();
-            //自定义排序字段
-            if (GenConstants.HTML_CUSTOM_INPUT.Equals(dbFieldInfo.HtmlType) && !dbFieldInfo.IsPk)
-            {
-                sb.AppendLine($@"      <el-table-column prop=""{columnName}"" label=""{label}"" width=""90"" sortable align=""center"">");
-                sb.AppendLine(@"        <template slot-scope=""scope"">");
-                sb.AppendLine($@"          <span v-show=""editIndex != scope.$index"" @click=""editCurrRow(scope.$index,'rowkeY')"">{{{{scope.row.{columnName}}}}}</span>");
-                sb.AppendLine(@"          <el-input :id=""scope.$index+'rowkeY'"" size=""mini"" v-show=""(editIndex == scope.$index)""");
-                sb.AppendLine($@"            v-model=""scope.row.{columnName}"" @blur=""handleChangeSort(scope.row)""></el-input>");
-                sb.AppendLine(@"        </template>");
-                sb.AppendLine(@"      </el-table-column>");
-            }
-            else if (dbFieldInfo.IsList && dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
-            {
-                sb.AppendLine($"      <el-table-column prop=\"{columnName}\" align=\"center\" label=\"{label}\">");
-                sb.AppendLine("         <template slot-scope=\"scope\">");
-                sb.AppendLine($"            <el-image class=\"table-td-thumb\" fit=\"contain\" :src=\"scope.row.{columnName}\" :preview-src-list=\"[scope.row.{columnName}]\">");
-                sb.AppendLine("              <div slot=\"error\"><i class=\"el-icon-document\" /></div>");
-                sb.AppendLine("            </el-image>");
-                sb.AppendLine("         </template>");
-                sb.AppendLine("       </el-table-column>");
-            }
-            else if (dbFieldInfo.IsList && !string.IsNullOrEmpty(formatter))
-            {
-                sb.AppendLine($@"      <el-table-column label=""{label}"" align=""center"" prop=""{columnName}"">");
-                sb.AppendLine(@"        <template slot-scope=""scope"">");
-                string checkboxHtml = string.Empty;
-                if (dbFieldInfo.HtmlType == GenConstants.HTML_CHECKBOX)
-                {
-                    checkboxHtml = $" ? scope.row.{columnName}.split(',') : []";
-                }
-                sb.AppendLine($"          <dict-tag :options=\"{columnName}Options\" :value=\"scope.row.{columnName}{checkboxHtml}\"/>");
-                sb.AppendLine(@"        </template>");
-                sb.AppendLine(@"      </el-table-column>");
-            }
-            else if (dbFieldInfo.IsList)
-            {
-                sb.AppendLine($"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\"{showToolTip}{formatter}/>");
-            }
-            return sb.ToString();
-        }
+        ///// <summary>
+        ///// Vue 查询列表
+        ///// </summary>
+        ///// <param name="dbFieldInfo"></param>
+        ///// <param name="genTable"></param>
+        ///// <returns></returns>
+        //public static string TplTableColumn(GenTableColumn dbFieldInfo, GenTable genTable)
+        //{
+        //    string columnName = dbFieldInfo.CsharpFieldFl;
+        //    string label = CodeGeneratorTool.GetLabelName(dbFieldInfo.ColumnComment, columnName);
+        //    string showToolTip = ShowToolTip(dbFieldInfo);
+        //    string formatter = GetFormatter(dbFieldInfo.HtmlType, columnName);
+        //    StringBuilder sb = new StringBuilder();
+        //    //自定义排序字段
+        //    if (GenConstants.HTML_CUSTOM_INPUT.Equals(dbFieldInfo.HtmlType) && !dbFieldInfo.IsPk)
+        //    {
+        //        sb.AppendLine($@"      <el-table-column prop=""{columnName}"" label=""{label}"" width=""90"" sortable align=""center"">");
+        //        sb.AppendLine(@"        <template slot-scope=""scope"">");
+        //        sb.AppendLine($@"          <span v-show=""editIndex != scope.$index"" @click=""editCurrRow(scope.$index,'rowkeY')"">{{{{scope.row.{columnName}}}}}</span>");
+        //        sb.AppendLine(@"          <el-input :id=""scope.$index+'rowkeY'"" size=""mini"" v-show=""(editIndex == scope.$index)""");
+        //        sb.AppendLine($@"            v-model=""scope.row.{columnName}"" @blur=""handleChangeSort(scope.row)""></el-input>");
+        //        sb.AppendLine(@"        </template>");
+        //        sb.AppendLine(@"      </el-table-column>");
+        //    }
+        //    else if (dbFieldInfo.IsList && dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD))
+        //    {
+        //        sb.AppendLine($"      <el-table-column prop=\"{columnName}\" align=\"center\" label=\"{label}\">");
+        //        sb.AppendLine("         <template slot-scope=\"scope\">");
+        //        sb.AppendLine($"            <el-image class=\"table-td-thumb\" fit=\"contain\" :src=\"scope.row.{columnName}\" :preview-src-list=\"[scope.row.{columnName}]\">");
+        //        sb.AppendLine("              <div slot=\"error\"><i class=\"el-icon-document\" /></div>");
+        //        sb.AppendLine("            </el-image>");
+        //        sb.AppendLine("         </template>");
+        //        sb.AppendLine("       </el-table-column>");
+        //    }
+        //    else if (dbFieldInfo.IsList && !string.IsNullOrEmpty(formatter))
+        //    {
+        //        sb.AppendLine($@"      <el-table-column label=""{label}"" align=""center"" prop=""{columnName}"">");
+        //        sb.AppendLine(@"        <template slot-scope=""scope"">");
+        //        string checkboxHtml = string.Empty;
+        //        if (dbFieldInfo.HtmlType == GenConstants.HTML_CHECKBOX)
+        //        {
+        //            checkboxHtml = $" ? scope.row.{columnName}.split(',') : []";
+        //        }
+        //        sb.AppendLine($"          <dict-tag :options=\"{columnName}Options\" :value=\"scope.row.{columnName}{checkboxHtml}\"/>");
+        //        sb.AppendLine(@"        </template>");
+        //        sb.AppendLine(@"      </el-table-column>");
+        //    }
+        //    else if (dbFieldInfo.IsList)
+        //    {
+        //        sb.AppendLine($"      <el-table-column prop=\"{columnName}\" label=\"{label}\" align=\"center\"{showToolTip}{formatter}/>");
+        //    }
+        //    return sb.ToString();
+        //}
 
         #endregion
 

@@ -26,8 +26,6 @@ import RightToolbar from "@/components/RightToolbar"
 import Editor from "@/components/Editor";
 // 字典标签组件
 import DictTag from '@/components/DictTag'
-// 字典数据组件
-// import DictData from '@/components/DictData'
 // 上传图片
 import UploadImage from '@/components/UploadImage/index';
 // 上传文件

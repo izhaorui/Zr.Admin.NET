@@ -51,6 +51,7 @@ namespace ZR.CodeGenerator
             replaceDto.ShowBtnDelete = dto.GenTable.CheckedBtn.Any(f => f == 3);
             replaceDto.ShowBtnExport = dto.GenTable.CheckedBtn.Any(f => f == 4);
 
+
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in dto.GenTable.Columns.OrderBy(x => x.Sort))
             {
@@ -67,7 +68,7 @@ namespace ZR.CodeGenerator
                 //CodeGenerateTemplate.GetQueryDtoProperty(dbFieldInfo, replaceDto);
 
                 replaceDto.VueViewFormHtml += CodeGenerateTemplate.TplVueFormContent(dbFieldInfo, dto.GenTable);
-                replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo, dto.GenTable);
+                //replaceDto.VueViewListHtml += CodeGenerateTemplate.TplTableColumn(dbFieldInfo, dto.GenTable);
                 //replaceDto.VueQueryFormHtml += CodeGenerateTemplate.TplQueryFormHtml(dbFieldInfo);
             }
 
@@ -75,8 +76,9 @@ namespace ZR.CodeGenerator
             replaceDto.PKType = PKType;
             replaceDto.FistLowerPk = PKName.FirstLowerCase();
             InitJntTemplate(dto, replaceDto);
-
+            replaceDto.VueViewListHtml = GenerateVueTableList();
             replaceDto.VueQueryFormHtml = GenerateVueQueryForm();
+            
             GenerateModels(replaceDto, dto);
             GenerateInputDto(replaceDto, dto);
             GenerateRepository(replaceDto, dto);
@@ -245,13 +247,22 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 生成vue页面查询form
         /// </summary>
-        /// <param name="replaceDto"></param>
-        /// <param name="generateDto"></param>
         /// <returns></returns>
         public static string GenerateVueQueryForm()
         {
             var tpl = FileHelper.ReadJtTemplate("QueryForm.txt");
             var result = tpl.Render();
+            return result;
+        }
+        /// <summary>
+        /// 生成vue页面table
+        /// </summary>
+        /// <returns></returns>
+        public static string GenerateVueTableList()
+        {
+            var tpl = FileHelper.ReadJtTemplate("TableList.txt");
+            var result = tpl.Render();
+            Console.WriteLine(result);
             return result;
         }
         #endregion
@@ -467,6 +478,7 @@ namespace ZR.CodeGenerator
                 options.OutMode = OutMode.Auto;
                 //options.DisableeLogogram = true;//禁用简写
                 options.Data.Set("refs", "$");//特殊标签替换
+                options.Data.Set("index", "$");//特殊标签替换
                 options.Data.Set("confirm", "$");//特殊标签替换
                 options.Data.Set("nextTick", "$");
                 options.Data.Set("replaceDto", replaceDto);
