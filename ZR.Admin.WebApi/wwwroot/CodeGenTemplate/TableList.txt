@@ -14,8 +14,8 @@ $end
 $if(column.IsList == true)
 $if(column.HtmlType == "customInput" && column.IsPk == false)
       <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center">
-        <template slot-scope="scope">;
-          <span v-show="editIndex != scope.${index}index" @click="editCurrRow(scope.${index}index,'rowkeY')">{{{{scope.row.${columnName}}}}}</span>
+        <template slot-scope="scope">
+          <span v-show="editIndex != scope.${index}index" @click="editCurrRow(scope.${index}index,'rowkeY')">{{scope.row.${columnName}}}</span>
           <el-input :id="scope.${index}index+'rowkeY'" size="mini" v-show="(editIndex == scope.${index}index)"
             v-model="scope.row.${columnName}" @blur="handleChangeSort(scope.row)"></el-input>
         </template>
