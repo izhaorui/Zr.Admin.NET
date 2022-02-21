@@ -14,6 +14,7 @@ using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 using ZR.Tasks;
+using Snowflake.Core;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -92,6 +93,9 @@ namespace ZR.Admin.WebApi.Controllers
 
             //从 Dto 映射到 实体
             var tasksQz = parm.Adapt<SysTasksQz>().ToCreate();
+            var worker = new IdWorker(1, 1);
+
+            tasksQz.ID = worker.NextId().ToString();
             tasksQz.IsStart = false;
             tasksQz.Create_by = User.Identity.Name;
 
