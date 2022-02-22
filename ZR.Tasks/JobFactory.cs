@@ -2,13 +2,13 @@
 using Quartz;
 using Quartz.Spi;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ZR.Tasks
 {
     public class JobFactory : IJobFactory
     {
+        private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         /// <summary>
         /// 注入反射获取依赖对象
         /// </summary>
@@ -32,8 +32,10 @@ namespace ZR.Tasks
                 return job;
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
+                logger.Error(ex, ex.Message);
                 throw;
             }
         }
