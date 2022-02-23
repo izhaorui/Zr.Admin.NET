@@ -71,8 +71,9 @@ namespace ZR.Admin.WebApi.Framework
         /// <returns></returns>
         public static TokenValidationParameters ValidParameters()
         {
-            JwtSettings jwtSettings = new JwtSettings();
-            ConfigUtils.Instance.Bind("JwtSettings", jwtSettings);
+            JwtSettings jwtSettings = new();
+            AppSettings.Bind("JwtSettings", jwtSettings);
+
             if (jwtSettings == null || jwtSettings.SecretKey.IsEmpty())
             {
                 throw new Exception("JwtSettings获取失败");

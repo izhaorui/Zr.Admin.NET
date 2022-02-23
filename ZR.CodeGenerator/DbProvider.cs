@@ -23,8 +23,8 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public SqlSugarClient GetSugarDbContext(string dbName = "")
         {
-            string connStr = ConfigUtils.Instance.GetConfig(GenConstants.Gen_conn);
-            int dbType = ConfigUtils.Instance.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
+            string connStr = AppSettings.GetConfig(GenConstants.Gen_conn);
+            int dbType = AppSettings.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
 
             if (!string.IsNullOrEmpty(dbName))
             {

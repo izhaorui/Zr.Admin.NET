@@ -78,7 +78,7 @@ namespace ZR.CodeGenerator
             InitJntTemplate(dto, replaceDto);
             replaceDto.VueViewListHtml = GenerateVueTableList();
             replaceDto.VueQueryFormHtml = GenerateVueQueryForm();
-            
+
             GenerateModels(replaceDto, dto);
             GenerateInputDto(replaceDto, dto);
             GenerateRepository(replaceDto, dto);
@@ -277,8 +277,8 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string GetClassName(string tableName)
         {
-            bool autoRemovePre = ConfigUtils.Instance.GetAppConfig(GenConstants.Gen_autoPre, false);
-            string tablePrefix = ConfigUtils.Instance.GetAppConfig<string>(GenConstants.Gen_tablePrefix);
+            bool autoRemovePre = AppSettings.GetAppConfig(GenConstants.Gen_autoPre, false);
+            string tablePrefix = AppSettings.GetAppConfig<string>(GenConstants.Gen_tablePrefix);
 
             if (!string.IsNullOrEmpty(tablePrefix) && autoRemovePre)
             {
@@ -364,7 +364,7 @@ namespace ZR.CodeGenerator
                 ModuleName = "business",//导入默认模块名
                 ClassName = GetClassName(tableName).FirstUpperCase(),
                 BusinessName = tableName.UnderScoreToCamelCase().FirstUpperCase(),
-                FunctionAuthor = ConfigUtils.Instance.GetConfig(GenConstants.Gen_author),
+                FunctionAuthor = AppSettings.GetConfig(GenConstants.Gen_author),
                 TableName = tableName,
                 TableComment = desc,
                 FunctionName = desc,

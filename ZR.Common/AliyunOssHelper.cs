@@ -8,10 +8,10 @@ namespace ZR.Common
 {
     public class AliyunOssHelper
     { 
-        static string accessKeyId = ConfigUtils.Instance.GetConfig("ALIYUN_OSS:KEY");
-        static string accessKeySecret = ConfigUtils.Instance.GetConfig("ALIYUN_OSS:SECRET");
-        static string endpoint = ConfigUtils.Instance.GetConfig("ALIYUN_OSS:REGIONID");
-        static string bucketName1 = ConfigUtils.Instance.GetConfig("ALIYUN_OSS:bucketName");
+        static string accessKeyId = AppSettings.GetConfig("ALIYUN_OSS:KEY");
+        static string accessKeySecret = AppSettings.GetConfig("ALIYUN_OSS:SECRET");
+        static string endpoint = AppSettings.GetConfig("ALIYUN_OSS:REGIONID");
+        static string bucketName1 = AppSettings.GetConfig("ALIYUN_OSS:bucketName");
         
         /// <summary>
         /// 上传到阿里云

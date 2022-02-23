@@ -20,7 +20,7 @@ namespace Infrastructure
                 Instance = new ConfigUtils();
         }
 
-        public static ConfigUtils Instance { get; private set; }
+        public static ConfigUtils Instance { get; }
         #endregion
         private static IConfiguration Configuration { get; set; }
 

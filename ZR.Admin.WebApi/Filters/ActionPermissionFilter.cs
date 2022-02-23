@@ -57,7 +57,7 @@ namespace ZR.Admin.WebApi.Filters
                     HasPermi = perms.Exists(f => f.ToLower() == Permission.ToLower());
                 }
 
-                bool isDemoMode = ConfigUtils.Instance.GetAppConfig("DemoMode", false);
+                bool isDemoMode = AppSettings.GetAppConfig("DemoMode", false);
 
                 //演示公开环境屏蔽权限
                 string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send", "export", "upload", "common" };

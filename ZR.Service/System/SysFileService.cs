@@ -20,7 +20,7 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysFileService), ServiceLifetime = LifeTime.Transient)]
     public class SysFileService : BaseService<SysFile>, ISysFileService
     {
-        private string domainUrl = ConfigUtils.Instance.GetConfig("ALIYUN_OSS:domainUrl");
+        private string domainUrl = AppSettings.GetConfig("ALIYUN_OSS:domainUrl");
         private readonly SysFileRepository SysFileRepository;
 
         public SysFileService(SysFileRepository repository) : base(repository)

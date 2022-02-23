@@ -35,7 +35,7 @@ namespace ZR.Common
 
         public MailHelper()
         {
-            ConfigUtils.Instance.Bind("MailOptions", mailOptions);
+            AppSettings.Bind("MailOptions", mailOptions);
             FromEmail = mailOptions.From;
             Smtp = mailOptions.Smtp;
             FromPwd = mailOptions.Password;

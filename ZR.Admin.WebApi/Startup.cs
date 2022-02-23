@@ -44,7 +44,8 @@ namespace ZR.Admin.WebApi
                 });
             });
             //消除Error unprotecting the session cookie警告
-            services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
+            services.AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
             //普通验证码
             services.AddHeiCaptcha();
             services.AddSession();
@@ -130,12 +131,12 @@ namespace ZR.Admin.WebApi
         private void InjectServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddAppService();
-
+            services.AddSingleton(new AppSettings(configuration));
             //开启计划任务
             services.AddTaskSchedulers();
             //初始化db
             DbExtension.AddDb(configuration);
-
+            
             //注册REDIS 服务
             Task.Run(() =>
             {

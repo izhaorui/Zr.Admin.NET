@@ -237,7 +237,7 @@ namespace ZR.Admin.WebApi.Controllers
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
 
-            dto.DbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.ConnBusDbType, 0);
+            dto.DbType = AppSettings.GetAppConfig(OptionsSetting.ConnBusDbType, 0);
             dto.GenTable = genTableInfo;
             dto.IsPreview = true;
             //生成代码
@@ -263,7 +263,7 @@ namespace ZR.Admin.WebApi.Controllers
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
 
-            dto.DbType = ConfigUtils.Instance.GetAppConfig(OptionsSetting.ConnBusDbType, 0);
+            dto.DbType = AppSettings.GetAppConfig(OptionsSetting.ConnBusDbType, 0);
             dto.GenTable = genTableInfo;
             //自定义路径
             if (genTableInfo.GenType == "1")

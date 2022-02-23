@@ -10,8 +10,8 @@ namespace ZR.Common.Cache
 
         public static void Initalize()
         {
-            Cache = new CSRedisClient(ConfigUtils.Instance.GetConfig("RedisServer:Cache"));
-            Session = new CSRedisClient(ConfigUtils.Instance.GetConfig("RedisServer:Session"));
+            Cache = new CSRedisClient(AppSettings.GetConfig("RedisServer:Cache"));
+            Session = new CSRedisClient(AppSettings.GetConfig("RedisServer:Session"));
         }
     }
 }
