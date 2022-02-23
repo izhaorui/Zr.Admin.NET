@@ -82,3 +82,71 @@
 .el-range-separator {
   box-sizing: content-box;
 }
+
+
+/* 解决element-ui的table表格控件表头与内容列不对齐问题 */
+
+.el-table th.gutter {
+  display: table-cell !important;
+}
+
+.el-checkbox.mini .el-checkbox__label {
+  font-size: 12px !important;
+}
+
+.el-checkbox.small .el-checkbox__label {
+  font-size: 12px !important;
+}
+
+.el-checkbox.medium .el-checkbox__label {
+  font-size: 14px !important;
+}
+
+.el-table .fixed-width .el-button--mini {
+  color: #409EFF;
+  padding-left: 0;
+  padding-right: 0;
+  width: inherit;
+}
+
+.el-tree-node__content>.el-checkbox {
+  margin-right: 8px;
+}
+
+// element ui 移动端组件适配
+@media screen and (max-width: 500px) {
+  .el-message {
+    min-width: 300px !important;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .el-message-box {
+    width: 300px !important;
+  }
+	.el-pagination__jump{
+		display: none !important;
+	}
+	.el-pagination__sizes{
+		display: none !important;
+	}
+}
+
+// dialog
+@media screen and (max-width: 500px) {
+  .el-dialog__wrapper .el-dialog {
+    width: 95% !important;
+  }
+}
+
+/** 表格更多操作下拉样式 */
+.el-table .el-dropdown-link {
+	cursor: pointer;
+	color: #409EFF;
+	margin-left: 5px;
+}
+
+.el-table .el-dropdown, .el-icon-arrow-down {
+	font-size: 12px;
+}
+//适配完毕
