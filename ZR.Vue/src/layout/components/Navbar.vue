@@ -4,8 +4,8 @@
     <hamburger id="hamburger-container" class="hamburger-container" :is-active="sidebar.opened" @toggleClick="toggleSideBar" />
 
     <!-- 面包屑导航 -->
-    <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!topNav"/>
-    <top-nav id="topmenu-container" class="topmenu-container" v-if="topNav"/>
+    <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!topNav" />
+    <top-nav id="topmenu-container" class="topmenu-container" v-if="topNav" />
 
     <div class="right-menu">
       <template v-if="device!=='mobile'">
@@ -21,6 +21,15 @@
           <zr-doc id="zr-doc" class="right-menu-item hover-effect" />
         </el-tooltip>
       </template>
+			<!-- 通知 -->
+      <div class="right-menu-item">
+        <el-popover placement="bottom" trigger="click" v-model="isShowUserNewsPopover" width="300" popper-class="el-popover-pupop-user-news">
+          <el-badge @click.stop="isShowUserNewsPopover = !isShowUserNewsPopover" slot="reference">
+            <i class="el-icon-bell" title="通知"></i>
+          </el-badge>
+          <Notice v-show="isShowUserNewsPopover" />
+        </el-popover>
+      </div>
 
       <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
         <div class="avatar-wrapper">
@@ -46,13 +55,14 @@
 <script>
 import { mapGetters } from "vuex";
 import Breadcrumb from "@/components/Breadcrumb";
-import TopNav from '@/components/TopNav'
+import TopNav from "@/components/TopNav";
 import Hamburger from "@/components/Hamburger";
 import Screenfull from "@/components/Screenfull";
 import SizeSelect from "@/components/SizeSelect";
 import Search from "@/components/HeaderSearch";
 import ZrGit from "@/components/Zr/Git";
-import ZrDoc from '@/components/Zr/Doc'
+import ZrDoc from "@/components/Zr/Doc";
+import Notice from "@/components/Notice/Index.vue";
 
 export default {
   components: {
@@ -63,7 +73,13 @@ export default {
     SizeSelect,
     Search,
     ZrGit,
-    ZrDoc
+    ZrDoc,
+    Notice,
+  },
+  data() {
+    return {
+      isShowUserNewsPopover: false,
+    };
   },
   computed: {
     ...mapGetters(["sidebar", "avatar", "device"]),
@@ -80,9 +96,9 @@ export default {
     },
     topNav: {
       get() {
-        return this.$store.state.settings.topNav
-      }
-    }
+        return this.$store.state.settings.topNav;
+      },
+    },
   },
   methods: {
     toggleSideBar() {
@@ -135,7 +151,7 @@ export default {
     float: left;
   }
 
- .topmenu-container {
+  .topmenu-container {
     position: absolute;
     left: 50px;
   }

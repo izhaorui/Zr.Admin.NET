@@ -28,5 +28,6 @@ namespace ZR.Model.Dto
         public string NoticeTitle { get; set; }
         public string NoticeType { get; set; }
         public string CreateBy { get; set; }
+        public string Status { get; set; }
     }
 }

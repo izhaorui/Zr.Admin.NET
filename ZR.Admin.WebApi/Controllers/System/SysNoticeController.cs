@@ -36,6 +36,22 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 查询通知公告表列表
         /// </summary>
         /// <returns></returns>
+        [HttpGet("queryNotice")]
+        public IActionResult QueryNotice([FromQuery] SysNoticeQueryDto parm)
+        {
+            //开始拼装查询条件
+            var predicate = Expressionable.Create<SysNotice>();
+
+            //搜索条件查询语法参考Sqlsugar
+            predicate = predicate.And(m => m.Status == "0");
+            var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 查询通知公告表列表
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("list")]
         [ActionPermissionFilter(Permission = "system:notice:list")]
         public IActionResult QuerySysNotice([FromQuery] SysNoticeQueryDto parm)
@@ -47,6 +63,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeTitle), m => m.NoticeTitle.Contains(parm.NoticeTitle));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeType), m => m.NoticeType == parm.NoticeType);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.CreateBy), m => m.Create_by.Contains(parm.CreateBy) ||  m.Update_by.Contains(parm.CreateBy));
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
             var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
             return SUCCESS(response);
         }

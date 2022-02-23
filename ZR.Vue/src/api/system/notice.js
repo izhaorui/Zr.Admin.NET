@@ -1,5 +1,14 @@
 import request from '@/utils/request'
 
+// 导航栏查询公告列表
+export function queryNotice(query) {
+  return request({
+    url: '/system/notice/queryNotice',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询公告列表
 export function listNotice(query) {
   return request({
