@@ -140,7 +140,7 @@
         <el-row>
           <el-col :lg="12">
             <el-form-item label="用户性别">
-              <el-select v-model="form.sex" placeholder="请选择">
+              <el-select v-model="form.sex" placeholder="请选择用户性别">
                 <el-option v-for="dict in sexOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue"></el-option>
               </el-select>
             </el-form-item>
