@@ -11,15 +11,21 @@
     </el-form>
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
+$if(replaceDto.ShowBtnAdd)
       <el-col :span="1.5">
         <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增</el-button>
       </el-col>
+$end
+$if(replaceDto.ShowBtnEdit)
       <el-col :span="1.5">
         <el-button type="success" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" plain icon="el-icon-edit" size="mini" @click="handleUpdate">修改</el-button>
       </el-col>
+$end
+$if(replaceDto.ShowBtnDelete)
       <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="el-icon-delete" size="mini" @click="handleDelete">删除</el-button>
       </el-col>
+$end
 $if(replaceDto.ShowBtnExport)
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
@@ -34,10 +40,14 @@ $end
 ${VueViewListContent}
       <el-table-column label="操作" align="center" width="140">
         <template slot-scope="scope">
+$if(replaceDto.ShowBtnEdit)
           <el-button size="mini" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" type="success" icon="el-icon-edit" title="编辑" 
             @click="handleUpdate(scope.row)"></el-button>      
+$end
+$if(replaceDto.ShowBtnDelete)
           <el-button size="mini" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="el-icon-delete" title="删除" 
             @click="handleDelete(scope.row)"></el-button>
+$end
         </template>
       </el-table-column>
     </el-table>
@@ -118,7 +128,7 @@ $end
       ],
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
-      // ${item.ColumnComment}选项列表
+      // ${item.ColumnComment}选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
       ${item.CsharpFieldFl}Options: [],
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围

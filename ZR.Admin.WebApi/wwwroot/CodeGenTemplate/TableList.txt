@@ -21,7 +21,7 @@ $if(column.HtmlType == "customInput" && column.IsPk == false)
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "imageUpload")
-      <el-table-column prop="${columnName}" align="center" label="${labelName}">
+      <el-table-column prop="${columnName}" label="${labelName}" align="center">
         <template slot-scope="scope">
           <el-image class="table-td-thumb" fit="contain" :src="scope.row.${columnName}" :preview-src-list="[scope.row.${columnName}]">
             <div slot="error"><i class="el-icon-document" /></div>
@@ -29,7 +29,7 @@ $elseif(column.HtmlType == "imageUpload")
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio")
-      <el-table-column label="${labelName}" align="center" prop="${columnName}">
+      <el-table-column prop="${columnName}" label="${labelName}" align="center">
         <template slot-scope="scope">
 $if(column.HtmlType == "checkbox")
           <dict-tag :options="${columnName}Options" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
