@@ -107,12 +107,13 @@ namespace ZR.Repository.System
         public List<SysMenu> SelectMenuTreeByRoleIds(List<long> roleIds)
         {
             var menuTypes = new string[] { "M", "C" };
-            return Context.Queryable<SysMenu, SysRoleMenu>((menu, roleMenu) => new JoinQueryInfos(
-                 JoinType.Left, menu.menuId == roleMenu.Menu_id
-                 ))
-                .Where((menu, roleMenu) => roleIds.Contains(roleMenu.Role_id) && menuTypes.Contains(menu.menuType) && menu.status == "0")
-                .OrderBy((menu, roleMenu) => new { menu.parentId, menu.orderNum })
-                .Select((menu, roleMenu) => menu).ToList();
+            return Context.Queryable<SysMenu>()
+                .Where((menu) =>
+                menuTypes.Contains(menu.menuType)
+                    && menu.status == "0"
+                    && SqlFunc.Subqueryable<SysRoleMenu>().Where( s => roleIds.Contains(s.Role_id) && s.Menu_id == menu.menuId).Any())
+                .OrderBy((menu) => new { menu.parentId, menu.orderNum })
+                .Select((menu) => menu).ToList();
         }
 
         #endregion
