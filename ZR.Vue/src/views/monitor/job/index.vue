@@ -44,11 +44,12 @@
         <el-table-column prop="className" align="center" label="任务类名" :show-overflow-tooltip="true" />
 				<el-table-column prop="runTimes" align="center" label="运行次数"/>
         <el-table-column prop="cron" align="center" label="运行表达式" />
-        <el-table-column sortable prop="isStart" align="center" label="状态" width="90">
+        <el-table-column sortable prop="isStart" align="center" label="任务状态" width="100">
           <template slot-scope="scope">
             <el-tag size="mini" :type="scope.row.isStart ? 'success' : 'danger'" disable-transitions>{{ scope.row.isStart ? "运行中":"已停止" }}</el-tag>
           </template>
         </el-table-column>
+				<el-table-column prop="remark" align="center" label="备注" :show-overflow-tooltip="true"/>
         <el-table-column label="操作" align="center" width="250" class-name="small-padding fixed-width">
           <template slot-scope="scope">
             <el-button type="text" size="mini" icon="el-icon-view" v-hasPermi="['monitor:job:query']">
