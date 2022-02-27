@@ -15,8 +15,8 @@ using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Framework;
+using ZR.Admin.WebApi.Hubs;
 using ZR.Admin.WebApi.Middleware;
-using ZR.Common.Cache;
 
 namespace ZR.Admin.WebApi
 {
@@ -42,6 +42,14 @@ namespace ZR.Admin.WebApi
                     .AllowCredentials()//允许cookie
                     .AllowAnyMethod();//允许任意方法
                 });
+            });
+            //注入SignalR实时通讯，默认用json传输
+            services.AddSignalR(options =>
+            {
+                //客户端发保持连接请求到服务端最长间隔，默认30秒，改成4分钟，网页需跟着设置connection.keepAliveIntervalInMilliseconds = 12e4;即2分钟
+                //options.ClientTimeoutInterval = TimeSpan.FromMinutes(4);
+                //服务端发保持连接请求到客户端间隔，默认15秒，改成2分钟，网页需跟着设置connection.serverTimeoutInMilliseconds = 24e4;即4分钟
+                //options.KeepAliveInterval = TimeSpan.FromMinutes(2);
             });
             //消除Error unprotecting the session cookie警告
             services.AddDataProtection()
@@ -96,7 +104,7 @@ namespace ZR.Admin.WebApi
             });
             //开启访问静态文件/wwwroot目录文件，要放在UseRouting前面
             app.UseStaticFiles();
-
+            //开启路由访问
             app.UseRouting();
             app.UseCors("Policy");//要放在app.UseEndpoints前。
 
@@ -107,12 +115,13 @@ namespace ZR.Admin.WebApi
             app.UseAuthentication();
             //2.再开启授权
             app.UseAuthorization();
+            //开启session
             app.UseSession();
+            //开启缓存
             app.UseResponseCaching();
-
-            // 恢复/启动任务
+            //恢复/启动任务
             app.UseAddTaskSchedulers();
-
+            //使用全局异常中间件
             app.UseMiddleware<GlobalExceptionMiddleware>();
 
             app.UseEndpoints(endpoints =>
@@ -120,6 +129,9 @@ namespace ZR.Admin.WebApi
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+                //设置socket连接
+                endpoints.MapHub<MessageHub>("/msgHub");
             });
         }
 

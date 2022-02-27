@@ -44,7 +44,15 @@ module.exports = {
         pathRewrite: {
           ['^' + process.env.VUE_APP_BASE_API]: '' //需要rewrite的
         }
-      }
+      },
+			"msgHub": {
+				target: 'http://localhost:8888/msgHub',
+				ws: true,
+				changeOrigin: true,
+				pathRewrite: {
+          ['^/msgHub']: '' //需要rewrite的
+        }
+			}
     },
     disableHostCheck: true
   },

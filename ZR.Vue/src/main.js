@@ -12,6 +12,7 @@ import store from './store'
 import router from './router'
 import permission from './directive/permission'
 import plugins from './plugins' // plugins
+import signalR from '@/utils/signalR'
 
 import './assets/icons' // icon
 import './permission' // permission control
@@ -42,6 +43,9 @@ Vue.prototype.selectDictLabel = selectDictLabel
 Vue.prototype.selectDictLabels = selectDictLabels
 Vue.prototype.download = download
 Vue.prototype.handleTree = handleTree
+
+signalR.init(process.env.VUE_APP_SOCKET_API);
+Vue.prototype.signalr = signalR
 
 Vue.prototype.msgSuccess = function (msg) {
   this.$message({ showClose: true, message: msg, type: "success" });

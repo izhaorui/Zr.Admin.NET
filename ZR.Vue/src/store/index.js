@@ -5,6 +5,7 @@ import user from './modules/user'
 import tagsView from './modules/tagsView'
 import permission from './modules/permission'
 import settings from './modules/settings'
+import socket from './modules/socket'
 import getters from './getters'
 
 Vue.use(Vuex)
@@ -21,7 +22,8 @@ const store = new Vuex.Store({
     user,
     tagsView,
     permission,
-    settings
+    settings,
+		socket
   },
   state: state,//这里放全局参数
   getters
