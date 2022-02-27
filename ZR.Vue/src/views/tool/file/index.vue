@@ -88,12 +88,12 @@
                   <i class="el-icon-question"></i>
                 </el-tooltip>
               </span>
-              <el-input v-model="form.storePath" placeholder="请输入" />
+              <el-input v-model="form.storePath" placeholder="请输入" clearable=""/>
             </el-form-item>
           </el-col>
           <el-col :lg="24">
             <el-form-item label="自定文件名" prop="fileName">
-              <el-input v-model="form.fileName" placeholder="请输入文件名" />
+              <el-input v-model="form.fileName" placeholder="请输入文件名" clearable=""/>
             </el-form-item>
           </el-col>
           <el-col :lg="24">
@@ -293,6 +293,7 @@ export default {
       this.reset();
       this.open = true;
       this.title = "上传文件";
+      this.form.storeType = this.queryParams.storeType;
     },
     /** 删除按钮操作 */
     handleDelete(row) {
@@ -342,7 +343,6 @@ export default {
 };
 </script>
 <style scoped>
-
 .el-avatar {
   display: inline-block;
   text-align: center;
