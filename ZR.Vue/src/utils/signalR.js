@@ -1,6 +1,7 @@
 // 官方文档：https://docs.microsoft.com/zh-cn/aspnet/core/signalr/javascript-client?view=aspnetcore-6.0&viewFallbackFrom=aspnetcore-2.2&tabs=visual-studio
 import * as signalR from '@microsoft/signalr'
 import store from '../store'
+import { getToken } from '@/utils/auth'
 
 export default {
   // signalR对象
@@ -10,21 +11,24 @@ export default {
   baseUrl: '',
   init(url) {
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(url)
+      .withUrl(url, { accessTokenFactory: () => getToken() })
       .build();
-    // console.log('conn', connection);
     this.SR = connection;
 
     // 断线重连
     connection.onclose(async () => {
-      await this.SR.start();
+			console.log('断开连接了')
+      await this.start();
     })
 
+    connection.onreconnected(() => {
+      console.log('断线重连')
+    })
     connection.on("onlineNum", (data) => {
-			store.dispatch("socket/changeOnlineNum", data);
+      store.dispatch("socket/changeOnlineNum", data);
     });
     // 启动
-    this.start();
+    // this.start();
   },
   async start() {
     var that = this;
