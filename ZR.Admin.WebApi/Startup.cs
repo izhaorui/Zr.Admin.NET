@@ -62,7 +62,7 @@ namespace ZR.Admin.WebApi
             //绑定整个对象到Model上
             services.Configure<OptionsSetting>(Configuration);
 
-            //Cookie 认证
+            //jwt 认证
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -100,6 +100,10 @@ namespace ZR.Admin.WebApi
             app.Use((context, next) =>
             {
                 context.Request.EnableBuffering();
+                if (context.Request.Query.TryGetValue("access_token", out var token))
+                {
+                    context.Request.Headers.Add("Authorization", $"Bearer {token}");
+                }
                 return next();
             });
             //开启访问静态文件/wwwroot目录文件，要放在UseRouting前面
@@ -126,12 +130,12 @@ namespace ZR.Admin.WebApi
 
             app.UseEndpoints(endpoints =>
             {
+                //设置socket连接
+                endpoints.MapHub<MessageHub>("/msgHub");
+
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-                //设置socket连接
-                endpoints.MapHub<MessageHub>("/msgHub");
             });
         }
 

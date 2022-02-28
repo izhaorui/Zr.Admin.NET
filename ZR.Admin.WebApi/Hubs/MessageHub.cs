@@ -11,7 +11,6 @@ using ZR.Model;
 
 namespace ZR.Admin.WebApi.Hubs
 {
-    [Verify]
     public class MessageHub : Hub
     {
         //创建用户集合，用于存储所有链接的用户数据
@@ -25,14 +24,14 @@ namespace ZR.Admin.WebApi.Hubs
         /// <returns></returns>
         public override Task OnConnectedAsync()
         {
-            //name 获取不到有待研究
             var name = Context.User.Identity.Name;
+            
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
             //判断用户是否存在，否则添加集合
-            if (!user)
+            if (!user && Context.User.Identity.IsAuthenticated)
             {
-                clientUsers.Add(new OnlineUsers(Context.ConnectionId, Context.User.Identity.Name));
-                Console.WriteLine($"{DateTime.Now}：{Context.User.Identity.Name},{Context.ConnectionId}连接服务端success，当前已连接{clientUsers.Count}个");
+                clientUsers.Add(new OnlineUsers(Context.ConnectionId, name));
+                Console.WriteLine($"{DateTime.Now}：{name},{Context.ConnectionId}连接服务端success，当前已连接{clientUsers.Count}个");
             }
 
             Clients.All.SendAsync("onlineNum", clientUsers.Count);
@@ -51,7 +50,6 @@ namespace ZR.Admin.WebApi.Hubs
             {
                 Console.WriteLine($"用户{user?.Name}离开了，当前已连接{clientUsers.Count}个");
                 clientUsers.Remove(user);
-
                 Clients.All.SendAsync("onlineNum", clientUsers.Count);
             }
             return base.OnDisconnectedAsync(exception);
