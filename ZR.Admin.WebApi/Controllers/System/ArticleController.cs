@@ -55,6 +55,27 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 查询最新文章列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("newList")]
+        public IActionResult QueryNew()
+        {
+            //开始拼装查询条件
+            var predicate = Expressionable.Create<Article>();
+
+            //搜索条件
+            predicate = predicate.And(m => m.Status == "1");
+
+            var response = _ArticleService.Queryable()
+                .Where(predicate.ToExpression())
+                .Take(10)
+                .OrderBy(f => f.UpdateTime, OrderByType.Desc).ToList();
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
         /// 获取文章目录,前端没用到
         /// </summary>
         /// <returns></returns>

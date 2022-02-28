@@ -8,6 +8,14 @@ export function listArticle(query) {
     params: query
   })
 }
+// 查询最新列表
+export function listNewArticle(query) {
+  return request({
+    url: '/Article/newList',
+    method: 'get',
+    params: query
+  })
+}
 
 // 查询详细
 export function getArticle(Id) {
