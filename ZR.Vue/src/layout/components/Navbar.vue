@@ -15,16 +15,16 @@
         <size-select id="size-select" class="right-menu-item hover-effect" />
         <!-- </el-tooltip> -->
         <el-tooltip content="源码地址" effect="dark" placement="bottom">
-          <zr-git id="zr-git" class="right-menu-item hover-effect" />
+          <zr-git class="right-menu-item hover-effect" />
         </el-tooltip>
         <el-tooltip content="文档地址" effect="dark" placement="bottom">
-          <zr-doc id="zr-doc" class="right-menu-item hover-effect" />
+          <zr-doc class="right-menu-item hover-effect" />
         </el-tooltip>
       </template>
 			<!-- 通知 -->
       <div class="right-menu-item">
         <el-popover placement="bottom" trigger="click" v-model="isShowUserNewsPopover" width="300" popper-class="el-popover-pupop-user-news">
-          <el-badge @click.stop="isShowUserNewsPopover = !isShowUserNewsPopover" slot="reference">
+          <el-badge @click.stop="isShowUserNewsPopover = !isShowUserNewsPopover" :is-dot="true" slot="reference">
             <i class="el-icon-bell" title="通知"></i>
           </el-badge>
           <Notice v-show="isShowUserNewsPopover" />
@@ -162,9 +162,9 @@ export default {
   }
 
   .right-menu {
-    float: right;
-    height: 100%;
-    line-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 
     &:focus {
       outline: none;

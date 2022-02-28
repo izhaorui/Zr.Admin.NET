@@ -21,9 +21,7 @@ namespace ZR.Model.System
         public long UserId { get; set; }
         //[Duplication]//校验模板类该列数据是否重复
         public string UserName { get; set; }
-
         public string NickName { get; set; }
-
         /// <summary>
         /// '用户类型（00系统用户）',
         /// </summary>
@@ -32,16 +30,15 @@ namespace ZR.Model.System
         [SugarColumn(IsOnlyIgnoreInsert = true)]
         [EpplusIgnore]
         public string Avatar { get; set; }
-
         public string Email { get; set; }
 
         [JsonIgnore]
         [EpplusIgnore]
         public string Password { get; set; }
-
-        //[ColName("手机号")]
+        /// <summary>
+        /// 手机号
+        /// </summary>
         public string Phonenumber { get; set; }
-
         /// <summary>
         /// 用户性别（0男 1女 2未知）
         /// </summary>
@@ -76,7 +73,7 @@ namespace ZR.Model.System
         /// 部门Id
         /// </summary>
         public long DeptId { get; set; }
-        
+
         #region 表额外字段
         public bool IsAdmin()
         {
@@ -110,6 +107,37 @@ namespace ZR.Model.System
         [SugarColumn(IsIgnore = true)]
         [EpplusIgnore]
         public List<SysRole> Roles { get; set; }
+        [SugarColumn(IsIgnore = true)]
+        public string WelcomeMessage
+        {
+            get
+            {
+                int now = DateTime.Now.Hour;
+
+                if (now > 0 && now <= 6)
+                {
+                    return "午夜好";
+                }
+                else if (now > 6 && now <= 11)
+                {
+                    return "早上好";
+                }
+                else if (now > 11 && now <= 14)
+                {
+                    return "中午好";
+                }
+                else if (now > 14 && now <= 18)
+                {
+                    return "下午好";
+                }
+                else
+                {
+                    return "晚上好";
+                }
+            }
+        }
+        [SugarColumn(IsIgnore = true)]
+        public string WelcomeContent { get; set; }
 
         #endregion
     }

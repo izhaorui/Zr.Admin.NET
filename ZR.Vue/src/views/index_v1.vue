@@ -14,31 +14,32 @@
 
             <div class="user-item-right overflow">
               <el-row>
-                <el-col :span="24" class="right-title mb20 one-text-overflow">您好，{{ userInfo.nickName }}，{{ dailyMessage }}
+                <el-col :xs="24" :md="24" class="right-title mb20 one-text-overflow">
+                  {{userInfo.welcomeMessage}}，{{ userInfo.nickName }}，{{ userInfo.welcomeContent }}
                 </el-col>
-                <el-col :span="24">
-                  <el-col :xs="12" :sm="12" :md="8" class="right-l-v">
+                <el-col :xs="24" :sm="24" :md="24">
+                  <el-col :xs="24" :md="8" class="right-l-v">
                     <div class="right-label">昵称：</div>
                     <div class="right-value">{{userInfo.nickName}}</div>
                   </el-col>
-                  <el-col :xs="12" :sm="12" :md="16" class="right-l-v">
+                  <el-col :xs="24" :md="16" class="right-l-v">
                     <div class="right-label">身份：</div>
                     <div class="right-value">
                       <span v-for="item in userInfo.roles" :key="item.roleId">{{item.roleName}}</span>
                     </div>
                   </el-col>
                 </el-col>
-                <el-col :span="24" class="mt10">
-                  <el-col :xs="12" :sm="12" :md="8" class="right-l-v">
+                <el-col :md="24" class="mt10">
+                  <el-col :xs="24" :sm="12" :md="8" class="right-l-v">
                     <div class="right-label one-text-overflow">IP：</div>
                     <div class="right-value one-text-overflow">{{userInfo.loginIP}}</div>
                   </el-col>
-                  <el-col :xs="12" :sm="12" :md="16" class="right-l-v">
+                  <el-col :xs="24" :sm="12" :md="16" class="right-l-v">
                     <div class="right-label one-text-overflow">时间：</div>
                     <div class="right-value one-text-overflow">{{ currentTime }}</div>
                   </el-col>
                 </el-col>
-                <el-col :span="24" class="mt10">
+                <el-col :lg="24" class="mt10">
                   <el-button size="small" icon="el-icon-edit-outline">
                     <router-link to="/user/profile">
                       修改信息
@@ -52,7 +53,6 @@
         </el-card>
       </el-col>
       <el-col :md="24" :lg="8" :xl="8" class="mb10">
-        <!-- {{userInfo}} -->
         <el-card shadow="hover">
           <div slot="header">
             <span>最新文章</span>
@@ -160,7 +160,6 @@ export default {
   },
   data() {
     return {
-      dailyMessage: "世间美好，与你环环相扣！",
       lineChartData: lineChartData.newVisitis,
       newArticleList: [],
     };

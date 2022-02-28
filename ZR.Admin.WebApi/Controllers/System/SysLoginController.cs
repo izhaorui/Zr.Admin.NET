@@ -125,7 +125,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             List<string> roles = permissionService.GetRolePermission(user);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
-
+            user.WelcomeContent = GlobalConstant.WelcomeMessages[new Random().Next(0, GlobalConstant.WelcomeMessages.Length)];
             return SUCCESS(new { user, roles, permissions });
         }
 
