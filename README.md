@@ -29,7 +29,7 @@
 Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 element-ui，前端采用vscode工具开发
 
 ## 🍀后端技术
-核心框架：.Net5.0 + Web API + sqlsugar + swagger
+核心框架：.Net5.0 + Web API + sqlsugar + swagger + signalR
 
 定时计划任务：Quartz.Net组件
 
@@ -56,7 +56,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 12. 文章管理：可以写文章记录。
 13. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、SQL文件等)，支持下载，自定义配置前端展示控件、让开发更快捷高效。
 14. 文件管理：可以上传文件
-15. 通知管理：系统通知公告信息发布维护。
+15. 通知管理：系统通知公告信息发布维护，使用signalr实现对用户实时通知。
 16. 参数管理：对系统动态配置常用参数。
 
 ## 🍻项目结构
