@@ -269,3 +269,4 @@ __pycache__/
 /ZR.Admin.WebApi/Properties/launchSettings.json
 /ZR.Admin.WebApi/ZRAdmin.xml
 /ZR.Admin.WebApi/DataProtection
+/Quartz.NET.WindowsService
