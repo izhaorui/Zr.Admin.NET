@@ -111,7 +111,7 @@ namespace ZR.Repository.System
         }
 
         /// <summary>
-        /// 删除用户
+        /// 删除用户(物理删除)
         /// </summary>
         /// <param name="userid">用户id</param>
         /// <returns></returns>
@@ -125,26 +125,25 @@ namespace ZR.Repository.System
         /// <summary>
         /// 修改用户信息
         /// </summary>
-        /// <param name="sysUser"></param>
+        /// <param name="user"></param>
         /// <returns></returns>
         public int UpdateUser(SysUser user)
         {
             return Context.Updateable(user)
-                //.SetColumns(t => new SysUser()
-                //{
-                //    UserName = user.UserName,
-                //    Status = user.Status,
-                //    NickName = user.NickName,
-                //    Remark = user.Remark,
-                //    Email = user.Email,
-                //    Update_by = user.Update_by,
-                //    Phonenumber = user.Phonenumber,
-                //    Update_time = DateTime.Now,
-                //    Sex = user.Sex,
-                //    DeptId = user.DeptId
-                //})
+                .UpdateColumns(t => new
+                {
+                    t.NickName,
+                    t.Email,
+                    t.Phonenumber,
+                    t.DeptId,
+                    t.Status,
+                    t.Sex,
+                    t.PostIds,
+                    t.Remark,
+                    t.Update_by,
+                    t.Update_time
+                })
                 .IgnoreColumns(ignoreAllNullColumns: true)//忽略所有为null
-                .IgnoreColumns(it => new { it.Password, it.Avatar })
                 .Where(f => f.UserId == user.UserId).ExecuteCommand();
         }
 

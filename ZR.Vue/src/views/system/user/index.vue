@@ -60,9 +60,9 @@
         </el-row>
         <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="50" align="center" />
-          <el-table-column label="用户编号" align="center" prop="userId" width="80" />
-          <el-table-column label="用户名称" align="center" prop="userName" :show-overflow-tooltip="true" />
-          <el-table-column label="用户昵称" align="center" prop="nickName" :show-overflow-tooltip="true" />
+          <el-table-column label="编号" align="center" prop="userId" width="60" />
+          <el-table-column label="登录名" align="center" prop="userName" :show-overflow-tooltip="true" />
+          <el-table-column label="昵称" align="center" prop="nickName" :show-overflow-tooltip="true" />
           <el-table-column label="头像" prop="avatar">
             <template slot-scope="scope">
               <el-image :src="scope.row.avatar" :preview-src-list="[scope.row.avatar]"></el-image>
@@ -82,10 +82,12 @@
               <span>{{ parseTime(scope.row.createTime) }}</span>
             </template>
           </el-table-column>
+					<el-table-column label="创建人" align="center" prop="createBy" v-if="columns[2].checked"></el-table-column>
+					<el-table-column label="备注" align="center" prop="remark" v-if="columns[3].checked"></el-table-column>
           <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="160">
-            <template slot-scope="scope">
+            <template slot-scope="scope" v-if="scope.row.userId !== 1 | scope.row.userName != 'admin'">
               <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:user:edit']">修改</el-button>
-              <el-button v-if="scope.row.userId !== 1 | scope.row.userName != 'admin'" size="mini" type="text" icon="el-icon-delete"
+              <el-button size="mini" type="text" icon="el-icon-delete"
                 @click="handleDelete(scope.row)" v-hasPermi="['system:user:remove']">删除</el-button>
               <el-button size="mini" type="text" icon="el-icon-key" @click="handleResetPwd(scope.row)" v-hasPermi="['system:user:resetPwd']">重置
               </el-button>
@@ -304,6 +306,8 @@ export default {
         // { key: 6, label: `创建时间`, checked: true },
         { key: 0, label: `登录IP`, checked: false },
         { key: 1, label: `最后登录时间`, checked: false },
+				{ key: 2, label: `创建人`, checked: false },
+				{ key: 3, label: `备注`, checked: false },
       ],
       // 表单校验
       rules: {
@@ -463,6 +467,10 @@ export default {
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
+			if(row.userId !== 1 | row.userName != 'admin'){
+				this.msgError("不能对管理进行修改")
+				return;
+			}
       this.reset();
       this.getTreeselect();
       const userId = row.userId || this.ids;
@@ -488,7 +496,6 @@ export default {
 
         this.open = true;
         this.title = "修改用户";
-        console.log(this.form.roleIds);
       });
     },
     /** 重置密码按钮操作 */
