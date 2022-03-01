@@ -53,18 +53,6 @@ export function resetForm(refName) {
   }
 }
 
-// // 添加日期范围
-// export function addDateRange(params, dateRange) {
-//   var search = params;
-//   search.beginTime = "";
-//   search.endTime = "";
-//   if (null != dateRange && '' != dateRange) {
-//     search.beginTime = dateRange[0];
-//     search.endTime = dateRange[1];
-//   }
-//   return search;
-// }
-
 /**
  * 添加日期范围
  * @param { beginTime: '', endTime: '', page: 1} params 
@@ -209,6 +197,29 @@ export function handleTree(data, id, parentId, children, rootId) {
     return father[parentId] === rootId;
   });
   return treeData != '' ? treeData : data;
+}
+
+/**
+ * 构造自定义字典数据
+ * @param {*} data 数据源
+ * @param {*} lableId id字段 默认 'lableId'
+ * @param {*} labelName 名称 默认 'labelName'
+ */
+export function handleDict(data, lableId, labelName) {
+  lableId = lableId || 'id'
+  labelName = labelName || 'name'
+  //循环所有项
+  var dictList = [];
+  if (!Array.isArray(data)) {
+    return [];
+  }
+  data.forEach((element) => {
+    dictList.push({
+      dictLabel: element[labelName],
+      dictValue: element[lableId].toString(),
+    });
+  });
+  return dictList;
 }
 
 // 验证是否为blob格式

@@ -234,14 +234,7 @@ export default {
   methods: {
     // 查询数据
     getList() {
-      this.queryParams["beginCreate_time"] = this.addDateRange2(
-        this.dateRangeCreate_time,
-        0
-      );
-      this.queryParams["endCreate_time"] = this.addDateRange2(
-        this.dateRangeCreate_time,
-        1
-      );
+      this.addDateRange(this.queryParams, this.dateRangeCreate_time, 'Create_time');
       this.loading = true;
       listSysfile(this.queryParams).then((res) => {
         if (res.code == 200) {
