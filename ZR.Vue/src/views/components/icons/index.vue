@@ -1,9 +1,9 @@
 <template>
   <div class="icons-container">
-    <aside>
+    <!-- <aside>
       <a href="#" target="_blank">Add and use
       </a>
-    </aside>
+    </aside> -->
     <el-tabs type="border-card">
       <el-tab-pane label="Icons">
         <div v-for="item of svgIcons" :key="item">
