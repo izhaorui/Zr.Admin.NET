@@ -1,7 +1,7 @@
 import tab from './tab'
 // import auth from './auth'
 // import cache from './cache'
-// import modal from './modal'
+import modal from './modal'
 // import download from './download'
 
 export default {
@@ -13,7 +13,7 @@ export default {
     // 缓存对象
     // Vue.prototype.$cache = cache
     // 模态框对象
-    // Vue.prototype.$modal = modal
+    Vue.prototype.$modal = modal
     // 下载文件
     // Vue.prototype.$download = download
   }
