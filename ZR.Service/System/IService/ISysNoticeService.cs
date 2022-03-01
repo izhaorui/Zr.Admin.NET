@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ZR.Model.Models;
 
 namespace ZR.Service.System.IService
@@ -11,5 +12,6 @@ namespace ZR.Service.System.IService
     /// </summary>
     public interface ISysNoticeService: IBaseService<SysNotice>
     {
+        List<SysNotice> GetSysNotices();
     }
 }

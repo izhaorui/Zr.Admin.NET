@@ -1,5 +1,7 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using SqlSugar;
+using System.Collections.Generic;
 using ZR.Model.Models;
 using ZR.Repository;
 using ZR.Repository.System;
@@ -23,6 +25,20 @@ namespace ZR.Service.System
         }
 
         #region 业务逻辑代码
+
+        /// <summary>
+        /// 查询系统通知
+        /// </summary>
+        /// <returns></returns>
+        public List<SysNotice> GetSysNotices()
+        {
+            //开始拼装查询条件
+            var predicate = Expressionable.Create<SysNotice>();
+
+            //搜索条件查询语法参考Sqlsugar
+            predicate = predicate.And(m => m.Status == "0");
+            return _SysNoticerepository.GetList(predicate.ToExpression());
+        }
 
         #endregion
     }

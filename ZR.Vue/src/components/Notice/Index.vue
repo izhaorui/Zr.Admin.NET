@@ -2,11 +2,11 @@
   <div class="layout-navbars-breadcrumb-user-news">
     <div class="head-box">
       <div class="head-box-title">通知</div>
-      <div class="head-box-btn" v-if="dataList.length > 0" @click="onAllReadClick">全部已读</div>
+      <!-- <div class="head-box-btn" v-if="noticeList.length > 0" @click="onAllReadClick">全部已读</div> -->
     </div>
     <div class="content-box">
-      <template v-if="dataList.length > 0">
-        <div class="content-box-item" v-for="(v, k) in dataList" :key="k">
+      <template v-if="noticeList.length > 0">
+        <div class="content-box-item" v-for="(v, k) in noticeList" :key="k">
           <div>{{ v.noticeTitle }}</div>
           <div class="content-box-msg" v-html="v.noticeContent"></div>
           <div class="content-box-time">{{ v.updateTime }}</div>
@@ -19,12 +19,12 @@
         </div>
       </div>
     </div>
-    <div class="foot-box" @click="onGoToGiteeClick" v-if="dataList.length > 0">前往通知中心</div>
+    <div class="foot-box" @click="onGoToGiteeClick" v-if="noticeList.length > 0">前往通知中心</div>
   </div>
 </template>
 
 <script>
-import { queryNotice } from "@/api/system/notice";
+import { mapGetters } from "vuex";
 export default {
   name: "noticeIndex",
   data() {
@@ -32,15 +32,15 @@ export default {
       dataList: [],
     };
   },
+	computed: {
+		...mapGetters(['noticeList'])
+	},
   mounted() {
-    queryNotice().then((res) => {
-			this.dataList = res.data.result;
-    });
   },
   methods: {
     // 全部已读点击
     onAllReadClick() {
-      this.dataList = [];
+      
     },
     // 前往通知中心点击
     onGoToGiteeClick() {

@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
@@ -15,6 +12,9 @@ using ZR.Common;
 using ZR.Model.Dto;
 using ZR.Model.Models;
 using ZR.Service.System.IService;
+using ZR.Admin.WebApi.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using Infrastructure.Constant;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -26,10 +26,12 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 通知公告表接口
         /// </summary>
         private readonly ISysNoticeService _SysNoticeService;
+        private readonly IHubContext<MessageHub> _hubContext;
 
-        public SysNoticeController(ISysNoticeService SysNoticeService)
+        public SysNoticeController(ISysNoticeService SysNoticeService, IHubContext<MessageHub> hubContext)
         {
             _SysNoticeService = SysNoticeService;
+            _hubContext = hubContext;
         }
 
         /// <summary>
@@ -96,11 +98,11 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException("请求参数错误");
             }
             //从 Dto 映射到 实体
-            var model = parm.Adapt<SysNotice>().ToCreate(HttpContext);
-            model.Create_by = User.Identity.Name;
-            model.Create_time = DateTime.Now;
+            var modal = parm.Adapt<SysNotice>().ToCreate(HttpContext);
+            modal.Create_by = User.Identity.Name;
+            modal.Create_time = DateTime.Now;
 
-            return SUCCESS(_SysNoticeService.Insert(model, it => new
+            int result = _SysNoticeService.Insert(modal, it => new
             {
                 it.NoticeTitle,
                 it.NoticeType,
@@ -109,7 +111,9 @@ namespace ZR.Admin.WebApi.Controllers.System
                 it.Remark,
                 it.Create_by,
                 it.Create_time
-            }));
+            });
+            
+            return SUCCESS(result);
         }
 
         /// <summary>
@@ -140,6 +144,26 @@ namespace ZR.Admin.WebApi.Controllers.System
                 Update_time = DateTime.Now
             });
 
+            return SUCCESS(response);
+        }
+        /// <summary>
+        /// 发送通知公告表
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("send/{NoticeId}")]
+        [ActionPermissionFilter(Permission = "system:notice:update")]
+        [Log(Title = "通知公告表", BusinessType = BusinessType.OTHER)]
+        public IActionResult SendNotice(int NoticeId = 0)
+        {
+            if (NoticeId <= 0)
+            {
+                throw new CustomException("请求实体不能为空");
+            }
+            var response = _SysNoticeService.GetFirst(x => x.NoticeId == NoticeId);
+            if (response != null && response.Status == "0")
+            {
+                _hubContext.Clients.All.SendAsync(HubsConstant.ReceiveNotice, response.NoticeTitle, response.NoticeContent);
+            }
             return SUCCESS(response);
         }
 

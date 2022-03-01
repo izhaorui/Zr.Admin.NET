@@ -44,9 +44,6 @@ Vue.prototype.selectDictLabels = selectDictLabels
 Vue.prototype.download = download
 Vue.prototype.handleTree = handleTree
 
-signalR.init(process.env.VUE_APP_SOCKET_API);
-Vue.prototype.signalr = signalR
-
 Vue.prototype.msgSuccess = function (msg) {
   this.$message({ showClose: true, message: msg, type: "success" });
 }
@@ -74,6 +71,9 @@ Vue.use(Element, {
 })
 
 Vue.config.productionTip = false
+
+signalR.init(process.env.VUE_APP_SOCKET_API);
+Vue.prototype.signalr = signalR
 
 new Vue({
   el: '#app',

@@ -2,6 +2,7 @@
 import * as signalR from '@microsoft/signalr'
 import store from '../store'
 import { getToken } from '@/utils/auth'
+import { Notification } from 'element-ui'
 
 export default {
   // signalR对象
@@ -14,19 +15,16 @@ export default {
       .withUrl(url, { accessTokenFactory: () => getToken() })
       .build();
     this.SR = connection;
-
     // 断线重连
     connection.onclose(async () => {
-			console.log('断开连接了')
+      console.log('断开连接了')
       await this.start();
     })
 
     connection.onreconnected(() => {
       console.log('断线重连')
     })
-    connection.on("onlineNum", (data) => {
-      store.dispatch("socket/changeOnlineNum", data);
-    });
+    this.receiveMsg(connection);
     // 启动
     // this.start();
   },
@@ -49,5 +47,32 @@ export default {
         }, 5000);
       }
     }
+  },
+	// 接收消息处理
+  receiveMsg(connection) {
+    connection.on("onlineNum", (data) => {
+      store.dispatch("socket/changeOnlineNum", data);
+    });
+    // 接收欢迎语
+    connection.on("welcome", (data) => {
+      console.log('welcome', data)
+      Notification.info(data)
+    });
+    // 接收后台手动推送消息
+    connection.on("receiveNotice", (title, data) => {
+      Notification({
+        type: 'info',
+        title: title,
+        message: data,
+        dangerouslyUseHTMLString: true,
+        duration: 0
+      })
+    })
+    // 接收系统通知/公告
+    connection.on("moreNotice", (data) => {
+      if (data.code == 200) {
+        store.dispatch("socket/getNoticeList", data.data);
+      }
+    })
   }
 }

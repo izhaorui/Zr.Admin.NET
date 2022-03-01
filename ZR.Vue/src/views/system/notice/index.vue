@@ -23,11 +23,13 @@
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:notice:add']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['system:notice:edit']">修改
+        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['system:notice:edit']">
+          修改
         </el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['system:notice:remove']">删除
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete"
+          v-hasPermi="['system:notice:remove']">删除
         </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
@@ -37,7 +39,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" align="center" prop="noticeId" width="100" />
       <el-table-column label="公告标题" align="center" prop="noticeTitle" :show-overflow-tooltip="true" />
-			<el-table-column label="内容" align="center" prop="noticeContent" :show-overflow-tooltip="true" />
+      <el-table-column label="内容" align="center" prop="noticeContent" :show-overflow-tooltip="true" />
       <el-table-column label="公告类型" align="center" prop="noticeType" width="100">
         <template slot-scope="scope">
           <dict-tag :options="typeOptions" :value="scope.row.noticeType" />
@@ -56,6 +58,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-bell" @click="handleNotice(scope.row)" v-hasPermi="['system:notice:edit']">通知</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:notice:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['system:notice:remove']">删除
           </el-button>
@@ -110,6 +113,7 @@ import {
   delNotice,
   addNotice,
   updateNotice,
+  sendNotice,
   // exportNotice,
 } from "@/api/system/notice";
 
@@ -226,6 +230,13 @@ export default {
         this.open = true;
         this.title = "修改公告";
       });
+    },
+		// 发送通知
+    handleNotice(row) {
+      const noticeId = row.noticeId || this.ids;
+      sendNotice(noticeId).then(res => {
+				this.msgSuccess("发送通知成功");
+			});
     },
     /** 提交按钮 */
     submitForm: function () {
