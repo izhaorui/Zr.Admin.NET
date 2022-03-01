@@ -1,9 +1,0 @@
-如果你只是将本项目发布到IIS，IIS应用池回收后就不能执行任务了，那么可以使用此windows服务器定时调用本项目的站点
-
-1、修改App.config中的url属性value值为你当前部署的quertz.net的站点+/Common/Health
-2、用记事本打开Install.bat文件修改 项目发布后的目录\bin\Debug\Quartz.NET.WindowsService.exe
-改为：(这里填写你项目所在路径)\Quartz.NET.WindowsService\bin\Debug\Quartz.NET.WindowsService.exe
-3、编译项目
-4、点击Install.bat安装windows服务
-
-卸载服务：运行Uninstall.bat(运行前按上面一样将修改Quartz.NET.WindowsService.exe路径)
