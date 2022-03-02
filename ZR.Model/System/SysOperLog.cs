@@ -69,16 +69,16 @@ namespace ZR.Model.System
         //@Excel(name = "状态", readConverterExp = "0=正常,1=异常")
         public int status { get; set; }
 
-        /** 错误消息 */
-        //@Excel(name = "错误消息")
+        /// <summary>
+        /// 错误消息
+        /// </summary>
+        [EpplusTableColumn(Header = "错误消息")]
         public string errorMsg { get; set; }
 
-        /** 操作时间 */
-        //@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        //@Excel(name = "操作时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
-        //[DataType]
-        [JsonConverter(typeof(JsonDateConverter))]
-        [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
+        /// <summary>
+        /// 操作时间
+        /// </summary>
+        [EpplusTableColumn(Header = "操作时间", NumberFormat = "yyyy-MM-dd HH:mm:ss")]
         public DateTime? operTime { get; set; }
         /// <summary>
         /// 操作用时

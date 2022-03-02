@@ -42,7 +42,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
 
             var list = sysOperLogService.SelectOperLogList(sysOperLog, pagerInfo);
 
-            return ToResponse(ToJson(list.TotalNum, list), TIME_FORMAT_FULL_2);
+            return ToResponse(ToJson(list.TotalNum, list), "MM/dd HH:mm");
         }
 
         /// <summary>

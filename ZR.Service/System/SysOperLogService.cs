@@ -43,6 +43,11 @@ namespace ZR.Service.System
             operLog.BeginTime = DateTimeHelper.GetBeginTime(operLog.BeginTime, -1);
             operLog.EndTime = DateTimeHelper.GetBeginTime(operLog.EndTime, 1);
 
+            bool isDemoMode = AppSettings.GetAppConfig("DemoMode", false);
+            if (isDemoMode)
+            {
+                return new PagedInfo<SysOperLog>();
+            }
             var list = sysOperLogRepository.GetSysOperLog(operLog, pager);
 
             return list;
