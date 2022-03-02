@@ -58,7 +58,7 @@ namespace ZR.Admin.WebApi.Filters
                 }
 
                 bool isDemoMode = AppSettings.GetAppConfig("DemoMode", false);
-
+                var url = context.HttpContext.Request.Path;
                 //演示公开环境屏蔽权限
                 string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send", "export", "upload", "common" };
                 if (isDemoMode && denyPerms.Any(f => Permission.ToLower().Contains(f)))
@@ -67,8 +67,13 @@ namespace ZR.Admin.WebApi.Filters
                 }
                 if (!HasPermi && !Permission.Equals("common"))
                 {
-                    logger.Info($"用户{info.UserName}没有权限访问{context.HttpContext.Request.Path}，当前权限[{Permission}]");
-                    context.Result = new JsonResult(new { code = ResultCode.FORBIDDEN, msg = "你没有权限访问" });
+                    logger.Info($"用户{info.UserName}没有权限访问{url}，当前权限[{Permission}]");
+                    context.Result = new JsonResult(new
+                    {
+                        code = ResultCode.FORBIDDEN,
+                        msg = $"你当前没有权限[{Permission}]访问,请联系管理员",
+                        data = url
+                    });
                 }
             }
 
