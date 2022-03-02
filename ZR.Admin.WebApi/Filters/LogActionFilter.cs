@@ -56,7 +56,7 @@ namespace ZR.Admin.WebApi.Filters
                 string ip = HttpContextExtension.GetClientUserIp(context.HttpContext);
                 var ip_info = IpTool.Search(ip);
 
-                SysOperLog sysOperLog = new SysOperLog
+                SysOperLog sysOperLog = new()
                 {
                     status = 0,
                     operName = userName,

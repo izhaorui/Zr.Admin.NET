@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Collections.Generic;
@@ -68,12 +69,16 @@ namespace ZR.Admin.WebApi.Filters
                 if (!HasPermi && !Permission.Equals("common"))
                 {
                     logger.Info($"用户{info.UserName}没有权限访问{url}，当前权限[{Permission}]");
-                    context.Result = new JsonResult(new
+                    JsonResult result = new(new ApiResult()
                     {
-                        code = ResultCode.FORBIDDEN,
-                        msg = $"你当前没有权限[{Permission}]访问,请联系管理员",
-                        data = url
-                    });
+                        Code = (int)ResultCode.FORBIDDEN,
+                        Msg = $"你当前没有权限[{Permission}]访问,请联系管理员",
+                        Data = url
+                    })
+                    {
+                        ContentType = "text/json",
+                    };
+                    context.Result = result;
                 }
             }
 

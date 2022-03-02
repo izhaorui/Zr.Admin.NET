@@ -52,7 +52,7 @@ namespace ZR.Admin.WebApi.Filters
 
             if (info != null && info.UserId > 0)
             {
-                logger.Info($"[{info.UserId}-{userName}-{ip}]用户登录校验成功");
+                //logger.Info($"[{info.UserId}-{userName}-{ip}]用户登录校验成功");
             }
             else
             {

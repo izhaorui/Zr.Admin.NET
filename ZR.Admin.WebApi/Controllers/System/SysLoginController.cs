@@ -66,7 +66,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Route("login")]
         [HttpPost]
-        [Log(Title = "登录")]
+        //[Log(Title = "登录")]
         public IActionResult Login([FromBody] LoginBodyDto loginBody)
         {
             if (loginBody == null) { throw new CustomException("请求参数错误"); }
@@ -79,11 +79,9 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             var user = sysLoginService.Login(loginBody, AsyncFactory.RecordLogInfo(httpContextAccessor.HttpContext, "0", "login"));
             
-            #region 存入cookie Action校验权限使用
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
-            #endregion
 
             LoginUser loginUser = new(user, roles, permissions);
             CacheHelper.SetCache(GlobalConstant.UserPermKEY + user.UserId, loginUser);
@@ -104,9 +102,10 @@ namespace ZR.Admin.WebApi.Controllers.System
             //    await HttpContext.SignOutAsync();
             //}).Wait();
             var id = HttpContext.GetUId();
+            var name = HttpContext.GetName();
 
             CacheHelper.Remove(GlobalConstant.UserPermKEY + id);
-            return SUCCESS(1);
+            return SUCCESS(name);
         }
 
         /// <summary>
