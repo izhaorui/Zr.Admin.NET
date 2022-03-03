@@ -11,6 +11,7 @@ namespace ZR.Model.System.Dto
         /// 页码
         /// </summary>
         public int pageNum { get; set; }
+        public int PageSize { get; set; }
         /// <summary>
         /// 操作人员
         /// </summary>

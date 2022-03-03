@@ -45,7 +45,7 @@ namespace ZR.Admin.WebApi.Hubs
             {
                 clientUsers.Add(new OnlineUsers(Context.ConnectionId, name));
                 Console.WriteLine($"{DateTime.Now}：{name},{Context.ConnectionId}连接服务端success，当前已连接{clientUsers.Count}个");
-                Clients.All.SendAsync("welcome", $"欢迎您：{name},当前时间：{DateTime.Now}");
+                //Clients.All.SendAsync("welcome", $"欢迎您：{name},当前时间：{DateTime.Now}");
                 Clients.All.SendAsync(HubsConstant.MoreNotice, SendNotice());
             }
             

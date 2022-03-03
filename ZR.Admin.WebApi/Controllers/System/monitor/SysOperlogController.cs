@@ -38,7 +38,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [HttpGet("list")]
         public IActionResult OperList([FromQuery] SysOperLogDto sysOperLog)
         {
-            PagerInfo pagerInfo = new PagerInfo(sysOperLog.pageNum);
+            PagerInfo pagerInfo = new(sysOperLog.pageNum, sysOperLog.PageSize);
 
             var list = sysOperLogService.SelectOperLogList(sysOperLog, pagerInfo);
 

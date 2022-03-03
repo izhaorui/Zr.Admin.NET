@@ -43,15 +43,18 @@
       </el-col>
       <el-col :span="18" :xs="24">
         <el-card>
-          <div slot="header" class="clearfix">
+          <!-- <div slot="header" class="clearfix">
             <span>基本资料</span>
-          </div>
+          </div> -->
           <el-tabs v-model="activeTab">
             <el-tab-pane label="基本资料" name="userinfo">
               <userInfo :user="user" />
             </el-tab-pane>
             <el-tab-pane label="修改密码" name="resetPwd">
               <resetPwd :user="user" />
+            </el-tab-pane>
+            <el-tab-pane label="操作日志" name="log">
+              <operLog></operLog>
             </el-tab-pane>
           </el-tabs>
         </el-card>
@@ -64,17 +67,19 @@
 import userAvatar from "./userAvatar";
 import userInfo from "./userInfo";
 import resetPwd from "./resetPwd";
+import operLog from "./operLog.vue";
 import { getUserProfile } from "@/api/system/user";
 
 export default {
   name: "Profile",
-  components: { userAvatar, userInfo, resetPwd },
+  components: { userAvatar, userInfo, resetPwd, operLog },
   data() {
     return {
       user: {},
       roles: [],
-      postGroup: '',
+      postGroup: "",
       activeTab: "userinfo",
+      activeName: "first",
     };
   },
   created() {
@@ -88,6 +93,9 @@ export default {
         this.roleGroup = response.data.roleGroup;
         this.postGroup = response.data.postGroup;
       });
+    },
+    handleTabClick(tab, event) {
+      console.log(tab, event);
     },
   },
 };
