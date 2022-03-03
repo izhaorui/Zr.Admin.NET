@@ -30,7 +30,7 @@ namespace ZR.Admin.WebApi
         public IConfiguration Configuration { get; }
         public void ConfigureServices(IServiceCollection services)
         {
-            string corsUrls = Configuration["sysConfig:cors"];
+            string corsUrls = Configuration["corsUrls"];
 
             //ÅäÖÃ¿çÓò
             services.AddCors(c =>
