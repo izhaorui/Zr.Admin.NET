@@ -105,7 +105,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             var name = HttpContext.GetName();
 
             CacheHelper.Remove(GlobalConstant.UserPermKEY + id);
-            return SUCCESS(name);
+            return SUCCESS(new { name , id});
         }
 
         /// <summary>
