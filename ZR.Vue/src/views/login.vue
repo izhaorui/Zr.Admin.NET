@@ -166,7 +166,7 @@ export default {
   border-radius: 6px;
   // background: #ffffff;
   background-color: hsla(0, 0%, 100%, 0.3);
-  width: 350px;
+  width: 310px;
   padding: 25px 25px 5px 25px;
   .el-input {
     height: 38px;
