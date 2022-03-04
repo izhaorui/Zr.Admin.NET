@@ -76,7 +76,7 @@ namespace ZR.Admin.WebApi.Filters
                         Data = url
                     })
                     {
-                        ContentType = "text/json",
+                        ContentType = "application/json",
                     };
                     context.Result = result;
                 }

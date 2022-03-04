@@ -1,10 +1,12 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Model;
 using IPTools.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Newtonsoft.Json;
 using NLog;
 using System;
 using System.IO;
@@ -41,10 +43,13 @@ namespace ZR.Admin.WebApi.Filters
                 // 获取当前的用户
                 string userName = context.HttpContext.GetName();
                 string jsonResult = string.Empty;
-
                 if (context.Result is ContentResult result && result.ContentType == "application/json")
                 {
                     jsonResult = result.Content.Replace("\r\n", "").Trim();
+                }
+                if (context.Result is JsonResult result2)
+                {
+                    jsonResult = result2.Value?.ToString();
                 }
                 //获取当前执行方法的类名
                 //string className =  System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name;
