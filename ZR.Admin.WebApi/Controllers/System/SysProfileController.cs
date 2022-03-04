@@ -69,7 +69,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpPut]
-        [ActionPermissionFilter(Permission = "system")]
+        [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "修改信息", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdateProfile([FromBody] SysUserDto userDto)
         {
@@ -89,7 +89,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpPut("updatePwd")]
-        [ActionPermissionFilter(Permission = "system")]
+        [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "修改密码", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdatePwd(string oldPassword, string newPassword)
         {
@@ -122,7 +122,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="formFile"></param>
         /// <returns></returns>
         [HttpPost("Avatar")]
-        [ActionPermissionFilter(Permission = "system")]
+        [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "修改头像", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false)]
         public IActionResult Avatar([FromForm(Name = "picture")] IFormFile formFile)
         {
@@ -133,7 +133,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             string fileExt = Path.GetExtension(formFile.FileName);
             string savePath = Path.Combine(hostEnvironment.WebRootPath, FileUtil.GetdirPath("uploads"));
 
-            Console.WriteLine(savePath);
             if (!Directory.Exists(savePath)) { Directory.CreateDirectory(savePath); }
 
             string fileName = FileUtil.HashFileName() + fileExt;
@@ -146,7 +145,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             string accessUrl = $"{OptionsSetting.Upload.UploadUrl}/{FileUtil.GetdirPath("uploads")}{fileName}";
 
             UserService.UpdatePhoto(new SysUser() { Avatar = accessUrl, UserId = loginUser.UserId });
-            logger.Info("修改头像：" + accessUrl);
             return SUCCESS(new { imgUrl = accessUrl });
         }
     }
