@@ -12,7 +12,6 @@ using ZR.Admin.WebApi.Filters;
 
 namespace ZR.Admin.WebApi.Controllers
 {
-    [LogActionFilter]
     public class BaseController : ControllerBase
     {
         public static string TIME_FORMAT_FULL = "yyyy-MM-dd HH:mm:ss";

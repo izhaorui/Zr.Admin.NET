@@ -111,6 +111,11 @@ namespace Infrastructure.Model
         /// <param name="msg"></param>
         /// <returns></returns>
         public static ApiResult Error(string msg) { return new ApiResult((int)ResultCode.CUSTOM_ERROR, msg); }
+
+        public override string ToString()
+        {
+            return $"msg={Msg},data={Data}";
+        }
     }
 
     public class ApiResult<T> : ApiResult

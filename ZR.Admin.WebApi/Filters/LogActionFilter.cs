@@ -74,7 +74,7 @@ namespace ZR.Admin.WebApi.Filters
                     //Elapsed = _stopwatch.ElapsedMilliseconds,
                     operTime = DateTime.Now
                 };
-                GetRequestValue(sysOperLog, context.HttpContext);
+                HttpContextExtension.GetRequestValue(context.HttpContext, sysOperLog);
 
                 if (logAttribute != null)
                 {
@@ -108,30 +108,6 @@ namespace ZR.Admin.WebApi.Filters
                 .FirstOrDefault(a => a.GetType().Equals(typeof(LogAttribute)));
 
             return (LogAttribute)attribute;
-        }
-
-        /// <summary>
-        /// 设置请求参数
-        /// </summary>
-        /// <param name="operLog"></param>
-        /// <param name="context"></param>
-        public static void GetRequestValue(SysOperLog operLog, HttpContext context)
-        {
-            string reqMethod = operLog.requestMethod;
-            string param;
-
-            if (HttpMethods.IsPost(reqMethod) || HttpMethods.IsPut(reqMethod))
-            {
-                context.Request.Body.Seek(0, SeekOrigin.Begin);
-                using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
-                //需要使用异步方式才能获取
-                param = reader.ReadToEndAsync().Result;
-            }
-            else
-            {
-                param = context.Request.QueryString.Value.ToString();
-            }
-            operLog.operParam = param;
         }
 
     }

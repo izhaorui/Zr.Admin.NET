@@ -77,7 +77,7 @@ namespace ZR.Admin.WebApi
 
             services.AddMvc(options =>
             {
-                options.Filters.Add(typeof(GlobalActionMonitor));//全局注册异常
+                options.Filters.Add(typeof(GlobalActionMonitor));//全局注册
             })
             .AddJsonOptions(options =>
             {

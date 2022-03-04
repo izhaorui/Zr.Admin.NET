@@ -84,7 +84,7 @@ namespace ZR.Admin.WebApi.Middleware
                 operLocation = ip_info.Province + " " + ip_info.City,
                 operTime = DateTime.Now
             };
-            LogActionFilter.GetRequestValue(sysOperLog, context);
+            HttpContextExtension.GetRequestValue(context, sysOperLog);
             LogEventInfo ei = new(logLevel, "GlobalExceptionMiddleware", error);
 
             ei.Exception = ex;
