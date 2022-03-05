@@ -17,6 +17,8 @@ using Hei.Captcha;
 using ZR.Common;
 using ZR.Service.System;
 using Microsoft.Extensions.Options;
+using UAParser;
+using IPTools.Core;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -77,7 +79,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
 
-            var user = sysLoginService.Login(loginBody, AsyncFactory.RecordLogInfo(httpContextAccessor.HttpContext, "0", "login"));
+            var user = sysLoginService.Login(loginBody, RecordLogInfo(httpContextAccessor.HttpContext));
             
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
@@ -177,6 +179,28 @@ namespace ZR.Admin.WebApi.Controllers.System
             var obj = new { uuid, img = base64Str };// File(stream, "image/png")
 
             return ToJson(1, obj);
+        }
+
+        /// <summary>
+        /// 记录用户登陆信息
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public SysLogininfor RecordLogInfo(HttpContext context)
+        {
+            var ipAddr = context.GetClientUserIp();
+            var ip_info = IpTool.Search(ipAddr);
+            ClientInfo clientInfo = context.GetClientInfo();
+            SysLogininfor sysLogininfor = new()
+            {
+                browser = clientInfo.Device.Family,
+                os = clientInfo.OS.ToString(),
+                ipaddr = ipAddr,
+                userName = context.GetName(),
+                loginLocation = ip_info.Province + "-" + ip_info.City
+        };
+
+            return sysLogininfor;
         }
     }
 }
