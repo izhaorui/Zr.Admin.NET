@@ -1,8 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -22,9 +20,6 @@ namespace ZR.Admin.WebApi.Filters
     public class VerifyAttribute : Attribute, IAuthorizationFilter
     {
         static readonly Logger logger = LogManager.GetCurrentClassLogger();
-        //IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
-
-        //public VerifyAttribute() { }
 
         /// <summary>
         /// 只判断token是否正确，不判断权限
@@ -45,20 +40,15 @@ namespace ZR.Admin.WebApi.Filters
             string ip = HttpContextExtension.GetClientUserIp(context.HttpContext);
             string url = context.HttpContext.Request.Path;
             var isAuthed = context.HttpContext.User.Identity.IsAuthenticated;
-            var userName = context.HttpContext.User.Identity.Name;
 
             //使用jwt token校验2020-11-21
             LoginUser info = JwtUtil.GetLoginUser(context.HttpContext);
 
-            if (info != null && info.UserId > 0)
+            if (info == null || !isAuthed)
             {
-                //logger.Info($"[{info.UserId}-{userName}-{ip}]用户登录校验成功");
-            }
-            else
-            {
-                string msg = $"请求访问:{url}授权认证失败，无法访问系统资源";
-                logger.Info($"用户{userName}{msg}");
-                
+                string msg = $"请求访问[{url}]失败，无法访问系统资源";
+                logger.Info($"{msg}");
+
                 context.Result = new JsonResult(new ApiResult((int)ResultCode.DENY, msg));
             }
         }

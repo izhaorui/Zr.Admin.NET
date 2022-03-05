@@ -34,8 +34,6 @@ namespace ZR.Admin.WebApi.Extensions
         {
             var _tasksQzService = (ISysTasksQzService)App.GetRequiredService(typeof(ISysTasksQzService));
 
-            //此写法不通过有待研究
-            //var _tasksQzService2 = (ISysTasksQzService)services.GetRequiredService(typeof(SysTasksQzService));
             ITaskSchedulerServer _schedulerServer = App.GetRequiredService<ITaskSchedulerServer>();
 
             var tasks = _tasksQzService.GetList(m => m.IsStart);

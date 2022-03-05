@@ -122,8 +122,8 @@ namespace ZR.Admin.WebApi.Filters
                     sysOperLog.jsonResult = logAttribute.IsSaveResponseData ? sysOperLog.jsonResult : "";
                 }
 
-                LogEventInfo ei = new(LogLevel.Info, "GlobalExceptionMiddleware", "");
-                ei.Properties["status"] = 0;
+                LogEventInfo ei = new(LogLevel.Info, "GlobalActionMonitor", "");
+                
                 ei.Properties["jsonResult"] = !HttpMethods.IsGet(method) ? jsonResult : "";
                 ei.Properties["requestParam"] = sysOperLog.operParam;
                 ei.Properties["user"] = userName;

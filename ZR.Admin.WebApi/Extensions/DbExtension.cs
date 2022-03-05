@@ -37,12 +37,12 @@ namespace ZR.Admin.WebApi.Extensions
                 ConfigId = "0",
                 ConnectionString = connStr,
                 DbType = (IocDbType)dbType,
-                IsAutoCloseConnection = true//自动释放
+                IsAutoCloseConnection = true
             }, new IocConfig() {
                 ConfigId = "1",
                 ConnectionString = connStrBus,
                 DbType = (IocDbType)dbType_bus,
-                IsAutoCloseConnection = true//自动释放
+                IsAutoCloseConnection = true
             }
             });
             //每次Sql执行前事件            

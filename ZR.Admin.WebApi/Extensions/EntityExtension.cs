@@ -34,21 +34,11 @@ namespace ZR.Admin.WebApi.Extensions
             if (types.GetProperty("Create_by") != null && context != null)
             {
                 types.GetProperty("Create_by").SetValue(source, context.GetName(), null);
-
-                // types.GetProperty("CreateName").SetValue(source, userSession.UserName, null);
             }
             if (types.GetProperty("UserId") != null && context != null)
             {
                 types.GetProperty("UserId").SetValue(source, context.GetUId(), null);
             }
-            //if (types.GetProperty("UpdateID") != null)
-            //{
-            //    types.GetProperty("UpdateID").SetValue(source, userSession.UserID, null);
-
-            //    types.GetProperty("UpdateName").SetValue(source, userSession.UserName, null);
-            //}
-
-
             return source;
         }
 
