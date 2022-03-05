@@ -150,7 +150,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Remove(int userid = 0)
         {
             if (userid <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-
+            if (userid == 1) return ToResponse(Infrastructure.ResultCode.FAIL, "不能删除管理员账号");
             int result = UserService.DeleteUser(userid);
 
             return ToResponse(ToJson(result));

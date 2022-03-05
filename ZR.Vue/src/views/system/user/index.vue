@@ -82,13 +82,13 @@
               <span>{{ parseTime(scope.row.createTime) }}</span>
             </template>
           </el-table-column>
-					<el-table-column label="创建人" align="center" prop="createBy" v-if="columns[2].checked"></el-table-column>
-					<el-table-column label="备注" align="center" prop="remark" v-if="columns[3].checked"></el-table-column>
+          <el-table-column label="创建人" align="center" prop="createBy" v-if="columns[2].checked"></el-table-column>
+          <el-table-column label="备注" align="center" prop="remark" v-if="columns[3].checked"></el-table-column>
           <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="160">
             <template slot-scope="scope" v-if="scope.row.userId !== 1 | scope.row.userName != 'admin'">
               <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:user:edit']">修改</el-button>
-              <el-button size="mini" type="text" icon="el-icon-delete"
-                @click="handleDelete(scope.row)" v-hasPermi="['system:user:remove']">删除</el-button>
+              <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['system:user:remove']">删除
+              </el-button>
               <el-button size="mini" type="text" icon="el-icon-key" @click="handleResetPwd(scope.row)" v-hasPermi="['system:user:resetPwd']">重置
               </el-button>
             </template>
@@ -306,8 +306,8 @@ export default {
         // { key: 6, label: `创建时间`, checked: true },
         { key: 0, label: `登录IP`, checked: false },
         { key: 1, label: `最后登录时间`, checked: false },
-				{ key: 2, label: `创建人`, checked: false },
-				{ key: 3, label: `备注`, checked: false },
+        { key: 2, label: `创建人`, checked: false },
+        { key: 3, label: `备注`, checked: false },
       ],
       // 表单校验
       rules: {
@@ -467,13 +467,10 @@ export default {
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-			if(row.userId !== 1 | row.userName != 'admin'){
-				this.msgError("不能对管理进行修改")
-				return;
-			}
       this.reset();
       this.getTreeselect();
       const userId = row.userId || this.ids;
+			
       getUser(userId).then((response) => {
         // this.form = response.data.user;
         var data = response.data;
@@ -536,6 +533,10 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const userIds = row.userId || this.ids;
+      if (userIds == 1 || row.userName == "admin") {
+        this.msgError("不能对管理进行删除");
+        return;
+      }
       this.$confirm(
         '是否确认删除用户编号为"' + userIds + '"的数据项?',
         "警告",

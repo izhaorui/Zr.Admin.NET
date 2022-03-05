@@ -111,7 +111,7 @@ namespace ZR.Repository.System
         }
 
         /// <summary>
-        /// 删除用户(物理删除)
+        /// 删除用户(软删除)
         /// </summary>
         /// <param name="userid">用户id</param>
         /// <returns></returns>
