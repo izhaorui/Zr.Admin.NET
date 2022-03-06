@@ -2,16 +2,10 @@
 using Infrastructure.Attribute;
 using Infrastructure.Model;
 using IPTools.Core;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using NLog;
-using System;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Model.System;
 using ZR.Service.System.IService;
@@ -122,7 +116,7 @@ namespace ZR.Admin.WebApi.Filters
                     sysOperLog.jsonResult = logAttribute.IsSaveResponseData ? sysOperLog.jsonResult : "";
                 }
 
-                LogEventInfo ei = new(LogLevel.Info, "GlobalActionMonitor", "");
+                LogEventInfo ei = new(NLog.LogLevel.Info, "GlobalActionMonitor", "");
                 
                 ei.Properties["jsonResult"] = !HttpMethods.IsGet(method) ? jsonResult : "";
                 ei.Properties["requestParam"] = sysOperLog.operParam;
@@ -137,12 +131,12 @@ namespace ZR.Admin.WebApi.Filters
             }
         }
 
-        private LogAttribute GetLogAttribute(ControllerActionDescriptor controllerActionDescriptor)
+        private LogAttribute? GetLogAttribute(ControllerActionDescriptor controllerActionDescriptor)
         {
             var attribute = controllerActionDescriptor.MethodInfo.GetCustomAttributes(inherit: true)
                 .FirstOrDefault(a => a.GetType().Equals(typeof(LogAttribute)));
 
-            return (LogAttribute)attribute;
+            return attribute as LogAttribute;
         }
     }
 }

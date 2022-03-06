@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace ZRAdmin.Middleware
+namespace ZR.Admin.WebApi.Middleware
 {
     public class RequestIPMiddleware
     {

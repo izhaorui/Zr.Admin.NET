@@ -73,7 +73,7 @@ namespace ZR.Service.System
             {
                 str = Guid.NewGuid().ToString();
             }
-            MD5CryptoServiceProvider md5 = new();
+            MD5 md5 = MD5.Create();
             return BitConverter.ToString(md5.ComputeHash(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
         }
 

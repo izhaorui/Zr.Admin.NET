@@ -1,20 +1,19 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using Infrastructure;
+﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Constant;
 using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using SqlSugar;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
-using ZR.Common;
-using ZR.Model.Dto;
-using ZR.Model.Models;
-using ZR.Service.System.IService;
 using ZR.Admin.WebApi.Hubs;
-using Microsoft.AspNetCore.SignalR;
-using Infrastructure.Constant;
+using ZR.Common;
+using ZR.Model.System;
+using ZR.Model.System.Dto;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -99,7 +98,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
             //从 Dto 映射到 实体
             var modal = parm.Adapt<SysNotice>().ToCreate(HttpContext);
-            modal.Create_by = User.Identity.Name;
+            modal.Create_by = HttpContext.GetName();
             modal.Create_time = DateTime.Now;
 
             int result = _SysNoticeService.Insert(modal, it => new

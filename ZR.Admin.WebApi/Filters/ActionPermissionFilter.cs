@@ -2,9 +2,6 @@
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ZR.Model.System;
 
 namespace ZR.Admin.WebApi.Filters
@@ -22,9 +19,7 @@ namespace ZR.Admin.WebApi.Filters
         public string Permission { get; set; }
         private bool HasPermi { get; set; }
         private bool HasRole { get; set; }
-
         public ActionPermissionFilter() { }
-
         public ActionPermissionFilter(string permission)
         {
             Permission = permission;

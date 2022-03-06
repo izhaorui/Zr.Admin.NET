@@ -1,6 +1,6 @@
 using System;
 
-namespace ZR.Model.Dto
+namespace ZR.Model.System.Dto
 {
     /// <summary>
     /// 参数配置输入对象模型
@@ -18,7 +18,7 @@ namespace ZR.Model.Dto
     /// <summary>
     /// 参数配置查询对象模型
     /// </summary>
-    public class SysConfigQueryDto: PagerInfo 
+    public class SysConfigQueryDto : PagerInfo
     {
         public string ConfigName { get; set; }
         public string ConfigKey { get; set; }

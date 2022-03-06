@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using ZR.Model.Models;
+using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {

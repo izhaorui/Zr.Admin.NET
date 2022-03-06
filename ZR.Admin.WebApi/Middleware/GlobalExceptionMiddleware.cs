@@ -7,7 +7,6 @@ using NLog;
 using System;
 using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 
@@ -44,7 +43,7 @@ namespace ZR.Admin.WebApi.Middleware
 
         private async Task HandleExceptionAsync(HttpContext context, Exception ex)
         {
-            LogLevel logLevel = LogLevel.Info;
+            NLog.LogLevel logLevel = NLog.LogLevel.Info;
             int code = (int)ResultCode.GLOBAL_ERROR;
             string msg;
             string error = string.Empty;
@@ -64,7 +63,7 @@ namespace ZR.Admin.WebApi.Middleware
             {
                 msg = "服务器好像出了点问题......";
                 error = $"{ex.Message}";
-                logLevel = LogLevel.Error;
+                logLevel = NLog.LogLevel.Error;
                 context.Response.StatusCode = 500;
             }
 
@@ -80,7 +79,7 @@ namespace ZR.Admin.WebApi.Middleware
                 requestMethod = context.Request.Method,
                 jsonResult = responseResult,
                 errorMsg = string.IsNullOrEmpty(error) ? msg : error,
-                operName = context.User.Identity.Name,
+                operName = HttpContextExtension.GetName(context) ,
                 operLocation = ip_info.Province + " " + ip_info.City,
                 operTime = DateTime.Now
             };
@@ -92,7 +91,7 @@ namespace ZR.Admin.WebApi.Middleware
             ei.Properties["status"] = 1;//走正常返回都是通过走GlobalExceptionFilter不通过
             ei.Properties["jsonResult"] = responseResult;
             ei.Properties["requestParam"] = sysOperLog.operParam;
-            ei.Properties["user"] = context.User.Identity.Name;
+            ei.Properties["user"] = context.User.Identity?.Name;
 
             Logger.Log(ei);
             await context.Response.WriteAsync(responseResult);

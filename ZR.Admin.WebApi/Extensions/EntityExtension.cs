@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Http;
-using Snowflake.Core;
+﻿//using Microsoft.AspNetCore.Http;
+//using Snowflake.Core;
 using System;
 
 namespace ZR.Admin.WebApi.Extensions
 {
     public static class EntityExtension
     {
-        public static TSource ToCreate<TSource>(this TSource source, HttpContext context = null)
+        public static TSource ToCreate<TSource>(this TSource source, HttpContext? context = null)
         {
-            var types = source.GetType();
+            var types = source?.GetType();
 
             //var worker = new IdWorker(1, 1);
             //if (types.GetProperty("ID") != null)

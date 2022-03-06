@@ -67,7 +67,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpGet("getTableList")]
         [ActionPermissionFilter(Permission = "tool:gen:list")]
-        public IActionResult FindListTable(string dbName, string tableName, PagerInfo pager)
+        public IActionResult FindListTable(string dbName, string? tableName, PagerInfo pager)
         {
             List<DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
             var page = new PagedInfo<DbTableInfo>
@@ -89,7 +89,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpGet("list")]
         [ActionPermissionFilter(Permission = "tool:gen:list")]
-        public IActionResult GetGenTable(string tableName, PagerInfo pagerInfo)
+        public IActionResult GetGenTable(string? tableName, PagerInfo pagerInfo)
         {
             //查询原表数据，部分字段映射到代码生成表字段
             var rows = GenTableService.GetGenTables(new GenTable() { TableName = tableName }, pagerInfo);
@@ -160,7 +160,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("表不能为空");
             }
             string[] tableNames = tables.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            string userName = User.Identity.Name;
+            var userName = HttpContext.GetName();
 
             foreach (var tableName in tableNames)
             {
@@ -269,9 +269,9 @@ namespace ZR.Admin.WebApi.Controllers
             if (genTableInfo.GenType == "1")
             {
                 string tempPath = WebHostEnvironment.ContentRootPath;
-
+                var parentPath = Directory.GetParent(tempPath)?.Parent?.FullName;
                 //代码生成文件夹路径
-                dto.GenCodePath = genTableInfo.GenPath.IsEmpty() ? Directory.GetParent(tempPath).FullName : genTableInfo.GenPath;
+                dto.GenCodePath = genTableInfo.GenPath.IsEmpty() ? parentPath : genTableInfo.GenPath;
             }
             else
             {

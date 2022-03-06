@@ -9,12 +9,12 @@ namespace Infrastructure
         /// <summary>
         /// 应用服务
         /// </summary>
-        internal static IServiceCollection InternalServices;
+        public static IServiceCollection InternalServices;
 
         /// <summary>
         /// 全局配置构建器
         /// </summary>
-        internal static IConfigurationBuilder ConfigurationBuilder;
+        public static IConfigurationBuilder ConfigurationBuilder;
 
         /// <summary>
         /// 获取Web主机环境
@@ -24,6 +24,6 @@ namespace Infrastructure
         /// <summary>
         /// 获取泛型主机环境
         /// </summary>
-        internal static IHostEnvironment HostEnvironment;
+        public static IHostEnvironment HostEnvironment;
     }
 }

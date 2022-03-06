@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ZR.Model
+namespace ZR.Admin.WebApi.Hubs
 {
     public class OnlineUsers
     {
@@ -16,7 +16,7 @@ namespace ZR.Model
         public int Userid { get; set; }
         public string Name { get; set; }
         public DateTime LoginTime { get; set; }
-        
+
         public OnlineUsers(string clientid, string name)
         {
             ConnnectionId = clientid;

@@ -1,13 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
-using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace ZR.Admin.WebApi.Extensions
 {
@@ -51,7 +45,7 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "ZrAdmin.NET Api - .NET5",
+                    Title = "ZrAdmin.NET Api - .NET6",
                     Version = "v1",
                     Description = "",
                 });

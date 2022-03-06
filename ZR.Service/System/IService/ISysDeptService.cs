@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using ZR.Model.System;
-using ZR.Model.Vo.System;
+using ZR.Model.System.Vo;
 
 namespace ZR.Service.System.IService
 {

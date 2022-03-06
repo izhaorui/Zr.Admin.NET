@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Infrastructure.Constant;
+﻿using Infrastructure.Constant;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.SignalR;
-using ZR.Model;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Hubs
@@ -37,7 +32,7 @@ namespace ZR.Admin.WebApi.Hubs
         /// <returns></returns>
         public override Task OnConnectedAsync()
         {
-            var name = Context.User.Identity.Name;
+            var name = Context.User?.Identity?.Name;
 
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
             //判断用户是否存在，否则添加集合

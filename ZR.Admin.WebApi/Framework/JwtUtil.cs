@@ -1,12 +1,8 @@
 ﻿using Infrastructure;
 using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using ZR.Admin.WebApi.Extensions;
@@ -99,7 +95,7 @@ namespace ZR.Admin.WebApi.Framework
         /// </summary>
         /// <param name="token">令牌</param>
         /// <returns></returns>
-        public static IEnumerable<Claim> ParseToken(string token)
+        public static IEnumerable<Claim>? ParseToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var validateParameter = ValidParameters();
@@ -124,13 +120,13 @@ namespace ZR.Admin.WebApi.Framework
         /// </summary>
         /// <param name="jwtToken"></param>
         /// <returns></returns>
-        public static LoginUser ValidateJwtToken(IEnumerable<Claim> jwtToken)
+        public static LoginUser? ValidateJwtToken(IEnumerable<Claim> jwtToken)
         {
             try
             {
-                var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData).Value;
+                var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData);
 
-                LoginUser loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
+                LoginUser loginUser = JsonConvert.DeserializeObject<LoginUser>(value: userData?.Value);
                 return loginUser;
             }
             catch (Exception ex)

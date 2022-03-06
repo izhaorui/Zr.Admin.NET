@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using SqlSugar;
-using ZR.Model.System;
 
-namespace ZR.Model.Models
+namespace ZR.Model.System
 {
     /// <summary>
     /// 通知公告表，数据实体对象
@@ -19,7 +18,7 @@ namespace ZR.Model.Models
         /// 描述 : 公告ID
         /// 空值 : true  
         /// </summary>
-        [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true, ColumnName = "notice_id")]
+        [SugarColumn(IsPrimaryKey = true, IsIdentity = true, ColumnName = "notice_id")]
         public int NoticeId { get; set; }
         /// <summary>
         /// 描述 : 公告标题

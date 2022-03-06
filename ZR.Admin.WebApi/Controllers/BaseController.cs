@@ -75,7 +75,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="resultCode"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        protected ApiResult GetApiResult(ResultCode resultCode, object data = null)
+        protected ApiResult GetApiResult(ResultCode resultCode, object? data = null)
         {
             var apiResult = new ApiResult((int)resultCode, resultCode.ToString())
             {

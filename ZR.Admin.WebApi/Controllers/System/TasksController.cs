@@ -97,7 +97,7 @@ namespace ZR.Admin.WebApi.Controllers
 
             tasksQz.ID = worker.NextId().ToString();
             tasksQz.IsStart = false;
-            tasksQz.Create_by = User.Identity.Name;
+            tasksQz.Create_by = HttpContext.GetName();
 
             return SUCCESS(_tasksQzService.Add(tasksQz));
         }

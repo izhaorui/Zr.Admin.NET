@@ -51,7 +51,7 @@ namespace ZR.Admin.WebApi.Extensions
             var result = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
             if (string.IsNullOrEmpty(result))
             {
-                result = context.Connection.RemoteIpAddress.ToString();
+                result = context.Connection.RemoteIpAddress?.ToString();
             }
             if (string.IsNullOrEmpty(result) || result.Contains("::1"))
                 result = "127.0.0.1";
@@ -72,7 +72,7 @@ namespace ZR.Admin.WebApi.Extensions
 
             return !string.IsNullOrEmpty(uid) ? long.Parse(uid) : 0;
         }
-        public static string GetName(this HttpContext context)
+        public static string? GetName(this HttpContext context)
         {
             var uid = context.User?.Identity?.Name;
 
@@ -84,7 +84,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static IEnumerable<ClaimsIdentity> GetClaims(this HttpContext context)
+        public static IEnumerable<ClaimsIdentity>? GetClaims(this HttpContext context)
         {
             return context.User?.Identities;
         }
@@ -119,7 +119,7 @@ namespace ZR.Admin.WebApi.Extensions
             return c;
         }
 
-        public static string GetRequestUrl(this HttpContext context)
+        public static string? GetRequestUrl(this HttpContext context)
         {
             return context != null ? context.Request.Path.Value : "";
         }

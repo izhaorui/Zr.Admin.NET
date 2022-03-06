@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using ZR.Model.System;
 
-namespace ZR.Model.Vo.System
+namespace ZR.Model.System.Vo
 {
     /// <summary>
     /// Treeselect树结构实体类

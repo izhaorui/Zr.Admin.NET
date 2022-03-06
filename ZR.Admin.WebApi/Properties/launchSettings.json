@@ -1,12 +1,23 @@
-{
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:63521",
+      "sslPort": 44395
+    }
+  },
   "profiles": {
-    "ZRAdmin": {
+    "ZR.Admin.WebApi": {
       "commandName": "Project",
-      "launchBrowser": false,
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:8888",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Stage"
-      },
-      "applicationUrl": "http://localhost:8888"
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   }
 }
