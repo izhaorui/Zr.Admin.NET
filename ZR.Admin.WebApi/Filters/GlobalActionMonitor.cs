@@ -60,7 +60,7 @@ namespace ZR.Admin.WebApi.Filters
                 logger.Info($"请求参数错误,{response.Msg}");
                 context.Result = new JsonResult(response);
             }
-            return next();
+            return base.OnActionExecutionAsync(context, next);
         }
 
         /// <summary>
