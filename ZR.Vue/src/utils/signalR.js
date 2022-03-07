@@ -13,16 +13,19 @@ export default {
   init(url) {
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(url, { accessTokenFactory: () => getToken() })
+			.withAutomaticReconnect()//自动重新连接
       .build();
     this.SR = connection;
     // 断线重连
     connection.onclose(async () => {
       console.log('断开连接了')
+			console.assert(connection.state === signalR.HubConnectionState.Disconnected);
+			// 建议用户重新刷新浏览器
       await this.start();
     })
 
     connection.onreconnected(() => {
-      console.log('断线重连')
+      console.log('断线重新连接成功')
     })
     this.receiveMsg(connection);
     // 启动
