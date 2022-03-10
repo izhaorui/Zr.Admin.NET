@@ -46,7 +46,7 @@ namespace ZR.Admin.WebApi.Controllers
             predicate = predicate.AndIF(parm.FileId != null, m => m.Id == parm.FileId);
 
             //搜索条件查询语法参考Sqlsugar
-            var response = _SysFileService.GetPages(predicate.ToExpression(), parm);
+            var response = _SysFileService.GetPages(predicate.ToExpression(), parm, x => x.Id, OrderByType.Desc);
             return SUCCESS(response);
         }
 
