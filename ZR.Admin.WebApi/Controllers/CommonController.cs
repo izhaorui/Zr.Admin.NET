@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Snowflake.Core;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
@@ -158,25 +160,29 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "")
+        public async Task<IActionResult> UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "")
         {
+            if (fileDir.IsEmpty()) fileDir = "uploads";
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
-            string fileExt = Path.GetExtension(formFile.FileName);
-            string[] AllowedFileExtensions = new string[] { ".jpg", ".gif", ".png", ".jpeg", ".webp", ".svga", ".xls", ".doc", ".zip", ".json", ".txt", ".bundle" };
-            int MaxContentLength = 1024 * 1024 * 15;
-            double fileSize = formFile.Length / 1024;
-            if (!AllowedFileExtensions.Contains(fileExt))
+            string fileExt = Path.GetExtension(formFile.FileName);//文件后缀
+            double fileSize = formFile.Length / 1024.0;//文件大小KB
+            string[] NotAllowedFileExtensions = new string[] { ".bat", ".exe", ".jar", ".js" };
+            int MaxContentLength = 15;
+            if (NotAllowedFileExtensions.Contains(fileExt))
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传失败，未经允许上传类型");
             }
-
-            if (formFile.Length > MaxContentLength)
+            if ((fileSize / 1024) > MaxContentLength)
             {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + (MaxContentLength / 1024).ToString() + " MB");
+                return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + MaxContentLength + " MB");
             }
 
-            (bool, string, string) result = SysFileService.SaveFile(fileDir, formFile, fileName);
-            long fileId = SysFileService.InsertFile(new SysFile()
+            (bool, string, string) result = new();
+            await Task.Run(() =>
+            {
+                result = SysFileService.SaveFile(fileDir, formFile, fileName, "");
+            });
+            long id = SysFileService.InsertFile(new SysFile()
             {
                 AccessUrl = result.Item2,
                 Create_by = HttpContext.GetName(),
@@ -193,7 +199,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 url = result.Item2,
                 fileName = result.Item3,
-                fileId
+                fileId = id
             });
         }
         #endregion

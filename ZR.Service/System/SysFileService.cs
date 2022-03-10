@@ -11,6 +11,7 @@ using System.Net;
 using ZR.Model.System;
 using ZR.Repository.System;
 using Infrastructure.Extensions;
+using SqlSugar.DistributedSystem.Snowflake;
 
 namespace ZR.Service.System
 {
@@ -36,18 +37,28 @@ namespace ZR.Service.System
         /// <returns></returns>
         public (bool, string, string) SaveFile(string picdir, IFormFile formFile)
         {
-            return SaveFile(picdir, formFile, "");
+            return SaveFile(picdir, formFile, "", "");
         }
-        public (bool, string, string) SaveFile(string picdir, IFormFile formFile, string customFileName)
+
+        /// <summary>
+        /// 存储文件
+        /// </summary>
+        /// <param name="picdir">文件夹</param>
+        /// <param name="formFile"></param>
+        /// <param name="customFileName">自定义文件名</param>
+        /// <param name="bucketName">存储桶</param>
+        /// <returns></returns>
+        public (bool, string, string) SaveFile(string picdir, IFormFile formFile, string customFileName, string bucketName)
         {
             // eg: uploads/2020/08/18
-            string dir = GetdirPath(picdir.ToString());
+            //string dir = GetdirPath(picdir.ToString());
+
             string tempName = customFileName.IsEmpty() ? HashFileName() : customFileName;
             string fileExt = Path.GetExtension(formFile.FileName);
-            string fileName = $"{tempName}{fileExt}";
-            string webUrl = $"{domainUrl}/{dir}/{fileName}";
+            string fileName = tempName + fileExt;
+            string webUrl = string.Concat(domainUrl, "/", picdir, "/", fileName);
 
-            HttpStatusCode statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), Path.Combine(dir, fileName));
+            HttpStatusCode statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), Path.Combine(picdir, fileName), bucketName);
 
             return (statusCode == HttpStatusCode.OK, webUrl, fileName);
         }
@@ -81,13 +92,13 @@ namespace ZR.Service.System
         {
             try
             {
-                return InsertReturnBigIdentity(file);
+                return Insertable(file).ExecuteReturnSnowflakeId();//单条插入返回雪花ID;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("存储图片失败" + ex.Message);
+                throw new Exception(ex.Message);
             }
-            return 1;
         }
     }
 }

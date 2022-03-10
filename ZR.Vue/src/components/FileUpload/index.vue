@@ -228,7 +228,7 @@ export default {
   margin-right: 10px;
 }
 ::v-deep .el-upload-dragger {
-	width: 220px;
+	width: 270px;
 	height: 150px;
 }
 </style>

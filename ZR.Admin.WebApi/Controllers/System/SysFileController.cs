@@ -57,73 +57,12 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpGet("{Id}")]
         [ActionPermissionFilter(Permission = "tool:file:query")]
-        public IActionResult GetSysFile(int Id)
+        public IActionResult GetSysFile(long Id)
         {
             var response = _SysFileService.GetFirst(x => x.Id == Id);
 
             return SUCCESS(response);
         }
-
-        ///// <summary>
-        ///// 添加文件存储
-        ///// </summary>
-        ///// <returns></returns>
-        //[HttpPost]
-        //[ActionPermissionFilter(Permission = "tool:file:add")]
-        //[Log(Title = "文件存储", BusinessType = BusinessType.INSERT)]
-        //public IActionResult AddSysFile([FromBody] SysFileDto parm)
-        //{
-        //    if (parm == null)
-        //    {
-        //        throw new CustomException("请求参数错误");
-        //    }
-        //    //从 Dto 映射到 实体
-        //    var model = parm.Adapt<SysFile>().ToCreate(HttpContext);
-
-        //    var response = _SysFileService.Insert(model, it => new
-        //    {
-        //        it.FileName,
-        //        it.FileUrl,
-        //        it.StorePath,
-        //        it.FileSize,
-        //        it.FileExt,
-        //        it.Create_by,
-        //        it.Create_time,
-        //        it.StoreType,
-        //        it.AccessUrl,
-        //    });
-        //    return ToResponse(response);
-        //}
-
-        ///// <summary>
-        ///// 更新文件存储
-        ///// </summary>
-        ///// <returns></returns>
-        //[HttpPut]
-        //[ActionPermissionFilter(Permission = "tool:file:update")]
-        //[Log(Title = "文件存储", BusinessType = BusinessType.UPDATE)]
-        //public IActionResult UpdateSysFile([FromBody] SysFileDto parm)
-        //{
-        //    if (parm == null)
-        //    {
-        //        throw new CustomException("请求实体不能为空");
-        //    }
-        //    //从 Dto 映射到 实体
-        //    var model = parm.Adapt<SysFile>().ToUpdate(HttpContext);
-
-        //    var response = _SysFileService.Update(w => w.Id == model.Id, it => new SysFile()
-        //    {
-        //        //Update 字段映射
-        //        FileUrl = model.FileUrl,
-        //        StorePath = model.StorePath,
-        //        FileSize = model.FileSize,
-        //        FileExt = model.FileExt,
-        //        StoreType = model.StoreType,
-        //        AccessUrl = model.AccessUrl,
-        //    });
-
-        //    return ToResponse(response);
-        //}
 
         /// <summary>
         /// 删除文件存储
@@ -134,7 +73,7 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "文件存储", BusinessType = BusinessType.DELETE)]
         public IActionResult DeleteSysFile(string ids)
         {
-            int[] idsArr = Tools.SpitIntArrary(ids);
+            long[] idsArr = Tools.SpitLongArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
             var response = _SysFileService.Delete(idsArr);

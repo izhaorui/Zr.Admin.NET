@@ -1,4 +1,5 @@
-﻿using SqlSugar;
+﻿using Newtonsoft.Json;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,7 +14,8 @@ namespace ZR.Model.System
         /// 描述 : 自增id
         /// 空值 : false  
         /// </summary>
-        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
+        [JsonConverter(typeof(ValueToStringConverter))]
+        [SugarColumn(IsPrimaryKey = true)]
         public long Id { get; set; }
         /// <summary>
         /// 文件真实名
