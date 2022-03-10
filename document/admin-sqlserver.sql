@@ -745,7 +745,7 @@ IF EXISTS (SELECT * FROM sys.all_objects WHERE object_id = OBJECT_ID(N'[dbo].[sy
 GO
 
 CREATE TABLE [dbo].[sys_file](
-	[id] [BIGINT] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[id] [BIGINT] NOT NULL PRIMARY KEY,
 	[realName] VARCHAR(50) NULL,
 	[fileName] [VARCHAR](20) NULL,
 	[fileUrl] [VARCHAR](500) NULL,
