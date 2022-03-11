@@ -95,7 +95,7 @@ $if(replaceDto.ShowBtnAdd)
                 throw new CustomException("请求参数错误");
             }
             //从 Dto 映射到 实体
-            var model = parm.Adapt<${replaceDto.ModelTypeName}>().ToCreate(HttpContext);
+            var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToCreate(HttpContext);
 
             var response = _${replaceDto.ModelTypeName}Service.Insert(model, it => new
             {
@@ -124,7 +124,7 @@ $if(replaceDto.ShowBtnEdit)
                 throw new CustomException("请求实体不能为空");
             }
             //从 Dto 映射到 实体
-            var model = parm.Adapt<${replaceDto.ModelTypeName}>().ToUpdate(HttpContext);
+            var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToUpdate(HttpContext);
 
             var response = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == model.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
             {
