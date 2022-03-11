@@ -776,7 +776,7 @@ CREATE TABLE `gen_demo`  (
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_file`;
 CREATE TABLE `sys_file`  (
-  `id` BIGINT(11) NOT NULL AUTO_INCREMENT,
+  `id` BIGINT(11) NOT NULL,
   `realName` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件真实名',
   `fileName` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件名',
   `fileUrl` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件存储地址',
@@ -789,5 +789,5 @@ CREATE TABLE `sys_file`  (
   `create_time` datetime(0) NULL DEFAULT NULL COMMENT '上传时间',
   `storeType` int(4) NULL DEFAULT NULL COMMENT '存储类型',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 

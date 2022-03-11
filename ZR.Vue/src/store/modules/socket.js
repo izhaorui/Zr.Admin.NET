@@ -16,7 +16,7 @@ const actions = {
   changeOnlineNum({ commit }, data) {
     commit('SET_ONLINEUSER_NUM', data)
   },
-	// 更新系统通知
+  // 更新系统通知
   getNoticeList({ commit }, data) {
     commit('SET_NOTICE_list', data)
   }

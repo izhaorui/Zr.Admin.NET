@@ -9,7 +9,7 @@ namespace ZR.Model.System.Dto
     /// </summary>
     public class SysFileDto
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string FileName { get; set; }
         public string FileUrl { get; set; }
         public string StorePath { get; set; }
@@ -25,6 +25,6 @@ namespace ZR.Model.System.Dto
         public DateTime? BeginCreate_time { get; set; }
         public DateTime? EndCreate_time { get; set; }
         public int? StoreType { get; set; }
-        public int? FileId { get; set; }
+        public long? FileId { get; set; }
     }
 }

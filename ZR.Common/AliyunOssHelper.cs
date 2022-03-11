@@ -21,7 +21,7 @@ namespace ZR.Common
         /// <param name="bucketName">存储桶 如果为空默认取配置文件</param>
         public static System.Net.HttpStatusCode PutObjectFromFile(Stream filestreams, string dirPath, string bucketName = "")
         {
-            OssClient client = new OssClient(endpoint, accessKeyId, accessKeySecret);
+            OssClient client = new(endpoint, accessKeyId, accessKeySecret);
             if (string.IsNullOrEmpty(bucketName)) { bucketName = bucketName1; }
             try
             {
