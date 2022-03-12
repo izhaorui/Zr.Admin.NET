@@ -97,7 +97,7 @@ $if(replaceDto.ShowBtnAdd)
             //从 Dto 映射到 实体
             var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToCreate(HttpContext);
 
-            var response = _${replaceDto.ModelTypeName}Service.Insert(model, it => new
+            var response = _${replaceDto.ModelTypeName}Service.Insert(modal, it => new
             {
 $foreach(item in genTable.Columns)
 $if((item.IsInsert))
@@ -126,12 +126,12 @@ $if(replaceDto.ShowBtnEdit)
             //从 Dto 映射到 实体
             var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToUpdate(HttpContext);
 
-            var response = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == model.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
+            var response = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == modal.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
             {
                 //Update 字段映射
 $foreach(item in genTable.Columns)
 $if((item.IsEdit))
-                $item.CsharpField = model.$item.CsharpField,
+                $item.CsharpField = modal.$item.CsharpField,
 $end
 ${end}
             });
