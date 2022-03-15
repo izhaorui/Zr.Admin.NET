@@ -63,7 +63,7 @@ namespace ZR.Service.System
             foreach (var dictId in dictIds)
             {
                 SysDictType dictType = DictRepository.GetFirst(x => x.DictId == dictId);
-                if (DictRepository.Count(f => f.DictType == dictType.DictType) > 0)
+                if (DictDataRepository.Count(f => f.DictType == dictType.DictType) > 0)
                 {
                     throw new CustomException($"{dictType.DictName}已分配,不能删除");
                 }
