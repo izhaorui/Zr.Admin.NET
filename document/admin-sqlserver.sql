@@ -2,36 +2,37 @@
 GO
 USE ZrAdmin
 GO
-if OBJECT_ID(N'Sys_tasksQz',N'U') is not NULL DROP TABLE Sys_tasksQz
+if OBJECT_ID(N'sys_tasksQz',N'U') is not NULL DROP TABLE sys_tasksQz
 GO
-CREATE TABLE Sys_tasksQz
+CREATE TABLE sys_tasksQz
 (
-	ID VARCHAR(100) NOT NULL PRIMARY KEY,	--任务ID
-	Name VARCHAR(50) NOT NULL,				--任务名
-	JobGroup varchar(255) NOT NULL,			--'任务分组',
-	Cron varchar(255) NOT NULL ,			--'运行时间表达式',
-	AssemblyName varchar(255)  NOT NULL ,	--'程序集名称',
-	ClassName varchar(255)  NOT NULL ,		--'任务所在类',
-	Remark VARCHAR(200)  NULL ,				--'任务描述',
-	RunTimes int NOT NULL ,					--'执行次数',
-	BeginTime datetime NULL DEFAULT NULL ,	--'开始时间',
-	EndTime datetime NULL DEFAULT NULL ,	--'结束时间',
-	TriggerType int NOT NULL ,				--'触发器类型（0、simple 1、cron）',
-	IntervalSecond int NOT NULL ,			--'执行间隔时间(单位:秒)',
-	IsStart int NOT NULL ,					--'是否启动',
-	JobParams TEXT  NULL ,					--'传入参数',
+	id VARCHAR(100) NOT NULL PRIMARY KEY,	--任务ID
+	name VARCHAR(50) NOT NULL,				--任务名
+	jobGroup varchar(255) NOT NULL,			--'任务分组',
+	cron varchar(255) NOT NULL ,			--'运行时间表达式',
+	assemblyName varchar(255)  NOT NULL ,	--'程序集名称',
+	className varchar(255)  NOT NULL ,		--'任务所在类',
+	remark VARCHAR(200)  NULL ,				--'任务描述',
+	runTimes int NOT NULL ,					--'执行次数',
+	beginTime datetime NULL DEFAULT NULL ,	--'开始时间',
+	endTime datetime NULL DEFAULT NULL ,	--'结束时间',
+	triggerType int NOT NULL ,				--'触发器类型（0、simple 1、cron）',
+	intervalSecond int NOT NULL ,			--'执行间隔时间(单位:秒)',
+	isStart int NOT NULL ,					--'是否启动',
+	jobParams TEXT  NULL ,					--'传入参数',
 	create_time datetime NULL DEFAULT NULL , --'创建时间',
 	update_time datetime NULL DEFAULT NULL , --'最后更新时间',
 	create_by varchar(50)  NULL DEFAULT NULL , --'创建人编码',
 	update_by varchar(50)  NULL DEFAULT NULL , --'更新人编码',
+	lastRunTime datetime					,  --最后执行时间
 )
 GO
-INSERT INTO Sys_TasksQz VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL);
+INSERT INTO sys_tasksQz VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL);
 GO
 if OBJECT_ID(N'sys_Tasks_log',N'U') is not NULL DROP TABLE sys_Tasks_log
 GO
 /**定时任务调度日志表*/
-CREATE TABLE sys_Tasks_log  (
+CREATE TABLE sys_tasks_log  (
   jobLogId bigint NOT NULL PRIMARY KEY IDENTITY(1,1), -- '任务日志ID',
   jobId varchar(20)  NOT NULL  ,		-- '任务id',
   jobName varchar(64) NOT NULL ,		-- '任务名称',

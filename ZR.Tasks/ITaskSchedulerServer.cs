@@ -23,6 +23,6 @@ namespace ZR.Tasks
 
 		Task<ApiResult> RunTaskScheduleAsync(SysTasksQz tasksQz);
 
-		Task<ApiResult> UpdateTaskScheduleAsync(SysTasksQz tasksQz, string groupName);
+		Task<ApiResult> UpdateTaskScheduleAsync(SysTasksQz tasksQz);
 	}
 }
