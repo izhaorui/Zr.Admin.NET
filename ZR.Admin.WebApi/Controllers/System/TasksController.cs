@@ -86,7 +86,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"添加 {parm.Name} 失败，该用任务存在，不能重复！");
             }
-            if (string.IsNullOrEmpty(parm.Cron) || !CronExpression.IsValidExpression(parm.Cron))
+            if (!string.IsNullOrEmpty(parm.Cron) && !CronExpression.IsValidExpression(parm.Cron))
             {
                 throw new CustomException($"cron表达式不正确");
             }
@@ -116,11 +116,11 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"更新 {parm.Name} 失败，该用任务存在，不能重复！");
             }
-            if (string.IsNullOrEmpty(parm.Cron))
+            if (string.IsNullOrEmpty(parm.Cron) && parm.TriggerType == 1)
             {
                 throw new CustomException($"触发器 Corn 模式下，运行时间表达式必须填写");
             }
-            if (!CronExpression.IsValidExpression(parm.Cron))
+            if (!string.IsNullOrEmpty(parm.Cron) && !CronExpression.IsValidExpression(parm.Cron))
             {
                 throw new CustomException($"cron表达式不正确");
             }
@@ -150,7 +150,7 @@ namespace ZR.Admin.WebApi.Controllers
             if (response > 0)
             {
                 //先暂停原先的任务
-                var respon = await _schedulerServer.UpdateTaskScheduleAsync(tasksQz, tasksQz.JobGroup);
+                var respon = await _schedulerServer.UpdateTaskScheduleAsync(tasksQz);
             }
 
             return SUCCESS(response);
@@ -263,11 +263,6 @@ namespace ZR.Admin.WebApi.Controllers
             }
             var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
             var taskResult = await _schedulerServer.RunTaskScheduleAsync(tasksQz);
-
-            if (taskResult.Code == 200)
-            {
-                //_tasksQzService.Update(tasksQz);
-            }
 
             return ToResponse(taskResult);
         }

@@ -28,7 +28,7 @@ namespace ZR.Admin.WebApi.Extensions
         {
             string connStr = Configuration.GetConnectionString(OptionsSetting.ConnAdmin);
             string connStrBus = Configuration.GetConnectionString(OptionsSetting.ConnBus);
-            string dbKey = Configuration[OptionsSetting.DbKey];
+
             int dbType = Convert.ToInt32(Configuration[OptionsSetting.ConnDbType]);
             int dbType_bus = Convert.ToInt32(Configuration[OptionsSetting.ConnBusDbType]);
 
@@ -45,37 +45,44 @@ namespace ZR.Admin.WebApi.Extensions
                 IsAutoCloseConnection = true
             }
             });
-            //每次Sql执行前事件            
-            DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
+            SugarIocServices.ConfigurationSugar(db =>
             {
-                var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                #region db0
+                db.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
+                {
+                    var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
-                FilterData();
+                    FilterData();
 
-                logger.Info($"{sql}，{param}");
-            };
-            //出错打印日志
-            DbScoped.SugarScope.GetConnection(0).Aop.OnError = (e) =>
-            {
-                logger.Error(e, $"执行SQL出错：{e.Message}");
-            };
-            //SQL执行完
-            DbScoped.SugarScope.GetConnection(0).Aop.OnLogExecuted = (sql, pars) =>
-            {
-                //执行完了可以输出SQL执行时间 (OnLogExecutedDelegate) 
-            };
-            //Db1
-            DbScoped.SugarScope.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
-            {
-                var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                    logger.Info($"{sql}，{param}");
+                };
 
-                logger.Info($"Sql语句：{sql}, {param}");
-            };
-            //Db1错误日志
-            DbScoped.SugarScope.GetConnection(1).Aop.OnError = (e) =>
-            {
-                logger.Error($"执行Sql语句失败：{e.Sql}，原因：{e.Message}");
-            };
+                db.GetConnection(0).Aop.OnError = (e) =>
+                {
+                    logger.Error(e, $"执行SQL出错：{e.Message}");
+                };
+                //SQL执行完
+                db.GetConnection(0).Aop.OnLogExecuted = (sql, pars) =>
+                {
+                    //执行完了可以输出SQL执行时间 (OnLogExecutedDelegate) 
+                };
+                #endregion
+
+                #region db1
+                //Db1
+                db.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
+                {
+                    var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+
+                    logger.Info($"Sql语句：{sql}, {param}");
+                };
+                //Db1错误日志
+                db.GetConnection(1).Aop.OnError = (e) =>
+                {
+                    logger.Error($"执行Sql语句失败：{e.Sql}，原因：{e.Message}");
+                };
+                #endregion
+            });
         }
 
         /// <summary>

@@ -1,4 +1,11 @@
-# ZRAdmin.NET
+<h2 align="center"> ZRAdmin.NET后台管理系统</h2>
+<h4 align="center">基于.NET5 + vue前后端分离的.net快速开发框架</h4>  
+
+
+<p align="center">
+	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
+	<a href="https://gitee.com/izory/ZrAdminNetCore/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
+</p>
 
 ## 🍟概述
 * 本项目适合有一定NetCore和 vue基础的开发人员
@@ -11,7 +18,7 @@
 * 七牛云通用云产品优惠券：[点我进入](https://s.qiniu.com/FzEfay)。
 * 腾讯云秒杀场：[点我进入](https://curl.qcloud.com/4yEoRquq)。
 * 腾讯云优惠券：[点我领取](https://curl.qcloud.com/5J4nag8D)。
-*
+
 ```
 如果对您有帮助，您可以点右上角 “Star” 收藏一下 ，这样作者才有继续免费下去的动力，谢谢！~
 ```
@@ -123,6 +130,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 ## 💐 特别鸣谢
 - 👉Ruoyi.vue：[Ruoyi](http://www.ruoyi.vip/)
 - 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
+- 👉vue-element-admin：[vue-element-admin](https://github.com/PanJiaChen/vue-element-admin)
 
 ## 🎀捐赠
 如果这个项目对您有所帮助，请扫下方二维码就当打发要饭的吧。

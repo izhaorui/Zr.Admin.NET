@@ -5,33 +5,34 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 -- Table structure for Sys_TasksQz
 -- ----------------------------
-DROP TABLE IF EXISTS `Sys_TasksQz`;
+DROP TABLE IF EXISTS `sys_tasksQz`;
 CREATE TABLE `Sys_TasksQz`  (
-  `ID` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'UID',
-  `Name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务名称',
-  `JobGroup` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务分组',
-  `Cron` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '运行时间表达式',
-  `AssemblyName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '程序集名称',
-  `ClassName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务所在类',
-  `Remark` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '任务描述',
-  `RunTimes` int(11) NOT NULL COMMENT '执行次数',
-  `BeginTime` datetime(0) NULL DEFAULT NULL COMMENT '开始时间',
-  `EndTime` datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
-  `TriggerType` int(11) NOT NULL COMMENT '触发器类型（0、simple 1、cron）',
-  `IntervalSecond` int(11) NOT NULL COMMENT '执行间隔时间(单位:秒)',
-  `IsStart` tinyint(4) NOT NULL COMMENT '是否启动',
-  `JobParams` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '传入参数',
+  `id` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'UID',
+  `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务名称',
+  `jobGroup` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务分组',
+  `cron` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '运行时间表达式',
+  `assemblyName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '程序集名称',
+  `className` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务所在类',
+  `remark` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '任务描述',
+  `runTimes` int(11) NOT NULL COMMENT '执行次数',
+  `beginTime` datetime(0) NULL DEFAULT NULL COMMENT '开始时间',
+  `endTime` datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
+  `triggerType` int(11) NOT NULL COMMENT '触发器类型（0、simple 1、cron）',
+  `intervalSecond` int(11) NOT NULL COMMENT '执行间隔时间(单位:秒)',
+  `isStart` tinyint(4) NOT NULL COMMENT '是否启动',
+  `jobParams` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '传入参数',
   `create_time` datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
   `update_time` datetime(0) NULL DEFAULT NULL COMMENT '最后更新时间',
   `create_by` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '创建人编码',
   `update_by` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '更新人编码',
+  `lastRunTime` datetime(0) NULL DEFAULT NULL COMMENT '最后执行时间',
   PRIMARY KEY (`ID`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '计划任务' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of Sys_TasksQz
 -- ----------------------------
-INSERT INTO `Sys_TasksQz` VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL);
+INSERT INTO `sys_tasksQz` VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_Tasks_log
@@ -50,13 +51,6 @@ CREATE TABLE `sys_Tasks_log`  (
   `elapsed` double(10, 0) NULL DEFAULT NULL COMMENT '作业用时',
   PRIMARY KEY (`jobLogId`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 198 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '定时任务调度日志表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of sys_Tasks_log
--- ----------------------------
-INSERT INTO `sys_Tasks_log` VALUES (196, '1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, SYSDATE(), 'ZRTasks.Job_SyncTest', 18);
-INSERT INTO `sys_Tasks_log` VALUES (197, '1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, SYSDATE(), 'ZRTasks.Job_SyncTest', 14);
-
 
 -- ----------------------------
 -- 通知公告表

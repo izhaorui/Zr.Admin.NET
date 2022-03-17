@@ -2,10 +2,13 @@
 using NLog;
 using Quartz;
 using Quartz.Impl;
+using Quartz.Impl.Matchers;
 using Quartz.Impl.Triggers;
 using Quartz.Spi;
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using ZR.Model.System;
@@ -60,7 +63,7 @@ namespace ZR.Tasks
             };
 
             StdSchedulerFactory factory = new StdSchedulerFactory(collection);
-            
+
             return _scheduler = factory.GetScheduler();
         }
 
@@ -153,11 +156,15 @@ namespace ZR.Tasks
                     trigger = CreateCronTrigger(tasksQz);
                     //解决Quartz启动后第一次会立即执行问题解决办法
                     ((CronTriggerImpl)trigger).MisfireInstruction = MisfireInstruction.CronTrigger.DoNothing;
-
-                    // 5、将触发器和任务器绑定到调度器中
-                    await _scheduler.Result.ScheduleJob(job, trigger);
                 }
-                
+                else
+                {
+                    trigger = CreateSimpleTrigger(tasksQz);
+                    ((SimpleTriggerImpl)trigger).MisfireInstruction = MisfireInstruction.CronTrigger.DoNothing;
+                }
+
+                // 5、将触发器和任务器绑定到调度器中
+                await _scheduler.Result.ScheduleJob(job, trigger);
                 //任务没有启动、暂停任务
                 if (!tasksQz.IsStart)
                 {
@@ -252,8 +259,19 @@ namespace ZR.Tasks
             try
             {
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
+                List<JobKey> jobKeys = _scheduler.Result.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(tasksQz.JobGroup)).Result.ToList();
+                if (jobKeys == null || jobKeys.Count == 0)
+                {
+                    return new ApiResult(110, $"未找到分组[{ tasksQz.JobGroup }]");
+                }
 
+                var triggers = await _scheduler.Result.GetTriggersOfJob(jobKey);
+                if (triggers.Count <= 0)
+                {
+                    return new ApiResult(110, $"未找到触发器[{jobKey.Name}]");
+                }
                 await _scheduler.Result.TriggerJob(jobKey);
+
                 return ApiResult.Success($"运行计划任务:【{tasksQz.Name}】成功");
             }
             catch (Exception ex)
@@ -267,11 +285,11 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        public async Task<ApiResult> UpdateTaskScheduleAsync(SysTasksQz tasksQz, string groupName)
+        public async Task<ApiResult> UpdateTaskScheduleAsync(SysTasksQz tasksQz)
         {
             try
             {
-                JobKey jobKey = new JobKey(tasksQz.ID, groupName);
+                JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
                 if (await _scheduler.Result.CheckExists(jobKey))
                 {
                     //防止创建时存在数据问题 先移除，然后在执行创建操作
@@ -294,33 +312,30 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        //private ITrigger CreateSimpleTrigger(SysTasksQz tasksQz)
-        //{
-        //    if (tasksQz.RunTimes > 0)
-        //    {
-        //        ITrigger trigger = TriggerBuilder.Create()
-        //        .WithIdentity(tasksQz.ID, tasksQz.JobGroup)
-        //        .StartAt(tasksQz.BeginTime.Value)
-        //        .EndAt(tasksQz.EndTime.Value)
-        //        .WithSimpleSchedule(x =>
-        //        x.WithIntervalInSeconds(tasksQz.IntervalSecond)
-        //        .WithRepeatCount(tasksQz.RunTimes)).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
-        //        return trigger;
-        //    }
-        //    else
-        //    {
-        //        ITrigger trigger = TriggerBuilder.Create()
-        //        .WithIdentity(tasksQz.ID, tasksQz.JobGroup)
-        //        .StartAt(tasksQz.BeginTime.Value)
-        //        .EndAt(tasksQz.EndTime.Value)
-        //        .WithSimpleSchedule(x =>
-        //        x.WithIntervalInSeconds(tasksQz.IntervalSecond)
-        //        .RepeatForever()).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
-        //        return trigger;
-        //    }
-        //    // 触发作业立即运行，然后每10秒重复一次，无限循环
-
-        //}
+        private ITrigger CreateSimpleTrigger(SysTasksQz tasksQz)
+        {
+            if (tasksQz.RunTimes > 0)
+            {
+                ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity(tasksQz.ID, tasksQz.JobGroup)
+                .StartAt(tasksQz.BeginTime.Value)
+                .EndAt(tasksQz.EndTime.Value)
+                .WithSimpleSchedule(x => x.WithIntervalInSeconds(tasksQz.IntervalSecond)
+                .WithRepeatCount(tasksQz.RunTimes)).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
+                return trigger;
+            }
+            else
+            {
+                ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity(tasksQz.ID, tasksQz.JobGroup)
+                .StartAt(tasksQz.BeginTime.Value)
+                .EndAt(tasksQz.EndTime.Value)
+                .WithSimpleSchedule(x => x.WithIntervalInSeconds(tasksQz.IntervalSecond)
+                .RepeatForever()).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
+                return trigger;
+            }
+            // 触发作业立即运行，然后每10秒重复一次，无限循环
+        }
 
         /// <summary>
         /// 创建类型Cron的触发器

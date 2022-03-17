@@ -153,5 +153,9 @@ namespace ZR.Model.System
         [SugarColumn(IsOnlyIgnoreInsert = true)]//设置后插入数据不会有此字段
         [JsonProperty(propertyName: "UpdateTime")]
         public DateTime Update_time { get; set; } = DateTime.Now;
+        /// <summary>
+        /// 最后运行时间
+        /// </summary>
+        public DateTime? LastRunTime { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz.Spi;
 using System;
+using System.Threading.Tasks;
 using ZR.Service.System.IService;
 using ZR.Tasks;
 
@@ -20,7 +21,7 @@ namespace ZR.Admin.WebApi.Extensions
             //添加Quartz服务
             services.AddSingleton<IJobFactory, JobFactory>();
             //添加我们的服务
-            services.AddTransient<Job_SyncTest>();
+            //services.AddTransient<Job_SyncTest>();
 
             services.AddTransient<ITaskSchedulerServer, TaskSchedulerServer>();
         }
@@ -41,7 +42,11 @@ namespace ZR.Admin.WebApi.Extensions
             //程序启动后注册所有定时任务
             foreach (var task in tasks)
             {
-                _schedulerServer.AddTaskScheduleAsync(task);
+                var result = _schedulerServer.AddTaskScheduleAsync(task);
+                if (result.Result.Code == 200)
+                {
+                    Console.WriteLine($"注册任务[{task.Name}]ID：{task.ID}成功");
+                }
             }
 
             return app;

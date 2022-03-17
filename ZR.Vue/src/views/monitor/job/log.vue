@@ -46,7 +46,7 @@
       <el-table-column label="执行状态" align="center" prop="status" :formatter="statusFormat" />
       <el-table-column label="作业用时" align="center" prop="elapsed">
         <template slot-scope="scope">
-          <span :style="scope.row.elapsed < 1000 ? 'color:green':scope.row.elapsed <3000 ?'color:orange':'color:red'">{{ scope.row.elapsed }} ms</span>
+          <span :style="scope.row.elapsed < 1000 ? 'color:green':scope.row.elapsed <3000 ?'color:orange':'color:red'">{{ scope.row.elapsed /1000 }} ms</span>
         </template>
       </el-table-column>
       <el-table-column label="执行时间" align="center" prop="createTime" width="180">
@@ -87,13 +87,13 @@
               <div v-else-if="form.status == 1">失败</div>
             </el-form-item>
           </el-col>
-          <el-col :span="24">
-            <el-form-item label="异常信息：" v-if="form.status == 1">{{ form.exceptionInfo }}</el-form-item>
+          <el-col :span="24" v-if="form.status == 1">>
+            <el-form-item label="异常信息：">{{ form.exception }}</el-form-item>
           </el-col>
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="open = false">关 闭</el-button>
+        <el-button type="text" @click="open = false">关 闭</el-button>
       </div>
     </el-dialog>
   </div>
