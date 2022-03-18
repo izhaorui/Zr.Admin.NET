@@ -50,11 +50,11 @@ namespace ZR.Admin.WebApi.Extensions
                 #region db0
                 db.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
                 {
-                    var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                    var param = db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
                     FilterData();
 
-                    logger.Info($"{sql}，{param}");
+                    logger.Info($"【sql语句】{sql}，{param}");
                 };
 
                 db.GetConnection(0).Aop.OnError = (e) =>
@@ -74,7 +74,7 @@ namespace ZR.Admin.WebApi.Extensions
                 {
                     var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
-                    logger.Info($"Sql语句：{sql}, {param}");
+                    logger.Info($"【sql语句】{sql}, {param}");
                 };
                 //Db1错误日志
                 db.GetConnection(1).Aop.OnError = (e) =>
