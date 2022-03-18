@@ -131,6 +131,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 - 👉Ruoyi.vue：[Ruoyi](http://www.ruoyi.vip/)
 - 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
 - 👉vue-element-admin：[vue-element-admin](https://github.com/PanJiaChen/vue-element-admin)
+- 👉Meiam.System：[Meiam.System](https://github.com/91270/Meiam.System)
 
 ## 🎀捐赠
 如果这个项目对您有所帮助，请扫下方二维码就当打发要饭的吧。
@@ -144,3 +145,4 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 ## 源码地址
 - [Gitee](https://gitee.com/izory/ZrAdminNetCore/)
 - [Github](https://github.com/izhaorui/ZrAdmin.NET/)
+- [NET6版本](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/)
