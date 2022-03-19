@@ -19,7 +19,7 @@ namespace ZR.Service.System
     public class SysNoticeService : BaseService<SysNotice>, ISysNoticeService
     {
         private readonly SysNoticeRepository _SysNoticerepository;
-        public SysNoticeService(SysNoticeRepository repository) : base(repository)
+        public SysNoticeService(SysNoticeRepository repository)
         {
             _SysNoticerepository = repository;
         }

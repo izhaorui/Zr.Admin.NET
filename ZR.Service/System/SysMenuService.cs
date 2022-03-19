@@ -22,7 +22,7 @@ namespace ZR.Service
 
         public SysMenuService(
             SysMenuRepository menuRepository,
-            ISysRoleService sysRoleService) : base(menuRepository)
+            ISysRoleService sysRoleService)
         {
             MenuRepository = menuRepository;
             SysRoleService = sysRoleService;

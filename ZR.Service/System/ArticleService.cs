@@ -12,8 +12,5 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(IArticleService), ServiceLifetime = LifeTime.Transient)]
     public class ArticleService : BaseService<Article>, IArticleService
     {
-        public ArticleService(ArticleRepository repository) : base(repository)
-        {
-        }
     }
 }

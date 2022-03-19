@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ZR.Model.System;
 using ZR.Model.Vo.System;
+using ZR.Repository;
 
 namespace ZR.Service.System.IService
 {
@@ -19,7 +20,7 @@ namespace ZR.Service.System.IService
         List<SysRoleDept> SelectRoleDeptByRoleId(long roleId);
 
         List<long> SelectRoleDepts(long roleId);
-        int DeleteRoleDeptByRoleId(long roleId);
+        bool DeleteRoleDeptByRoleId(long roleId);
         int InsertRoleDepts(SysRole role);
     }
 }

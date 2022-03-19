@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Repository;
 
 namespace ZR.Service.System.IService
 {

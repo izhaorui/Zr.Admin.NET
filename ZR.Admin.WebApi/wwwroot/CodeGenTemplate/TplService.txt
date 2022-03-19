@@ -21,7 +21,7 @@ namespace ${options.ServicesNamespace}.${options.SubNamespace}
     public class ${replaceDto.ModelTypeName}Service : BaseService<${replaceDto.ModelTypeName}>, I${replaceDto.ModelTypeName}Service
     {
         private readonly ${replaceDto.ModelTypeName}Repository _${replaceDto.ModelTypeName}repository;
-        public ${replaceDto.ModelTypeName}Service(${replaceDto.ModelTypeName}Repository repository) : base(repository)
+        public ${replaceDto.ModelTypeName}Service(${replaceDto.ModelTypeName}Repository repository)
         {
             _${replaceDto.ModelTypeName}repository = repository;
         }

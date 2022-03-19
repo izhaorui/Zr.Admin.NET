@@ -59,7 +59,7 @@ namespace ZR.Service.System
             return string.Join(',', list.Select(x => x.PostName));
         }
 
-        public int Delete(long userId)
+        public bool Delete(long userId)
         {
             return UserPostRepository.Delete(x => x.UserId == userId);
         }

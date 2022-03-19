@@ -10,6 +10,6 @@ namespace ZR.Service.System.IService
         public List<long> GetUserPostsByUserId(long userId);
 
         public string GetPostsStrByUserId(long userId);
-        int Delete(long userId);
+        bool Delete(long userId);
     }
 }

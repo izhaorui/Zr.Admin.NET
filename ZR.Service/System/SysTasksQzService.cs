@@ -11,7 +11,7 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysTasksQzService), ServiceLifetime = LifeTime.Transient)]
     public class SysTasksQzService : BaseService<SysTasksQz>, ISysTasksQzService
     {
-        public SysTasksQzService(SysTasksQzRepository repository) : base(repository)
+        public SysTasksQzService(SysTasksQzRepository repository)
         {
         }
     }

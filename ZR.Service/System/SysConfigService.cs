@@ -11,7 +11,7 @@ namespace ZR.Service.System
     public class SysConfigService : BaseService<SysConfig>, ISysConfigService
     {
         private readonly SysConfigRepository _SysConfigrepository;
-        public SysConfigService(SysConfigRepository repository) : base(repository)
+        public SysConfigService(SysConfigRepository repository)
         {
             _SysConfigrepository = repository;
         }

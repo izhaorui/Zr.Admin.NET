@@ -15,16 +15,17 @@ namespace ZR.Repository
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class BaseRepository<T> : IBaseRepository<T> where T : class, new()
+    public class BaseRepository<T> : SimpleClient<T> where T : class, new()
     {
-        public ISqlSugarClient Context;
-
-        public BaseRepository(ISqlSugarClient client = null)
+        public ITenant itenant = null;//多租户事务
+        public BaseRepository(ISqlSugarClient client = null) : base(client)
         {
+            //通过特性拿到ConfigId
             var configId = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
-            if(configId != null)
+            if (configId != null)
             {
                 Context = DbScoped.SugarScope.GetConnection(configId);
+                itenant = DbScoped.SugarScope;//设置租户接口
             }
             else
             {
@@ -53,10 +54,10 @@ namespace ZR.Repository
         {
             return Context.Insertable(t).ExecuteCommand();
         }
-        public long InsertReturnBigIdentity(T t)
-        {
-            return Context.Insertable(t).ExecuteReturnBigIdentity();
-        }
+        //public long InsertReturnBigIdentity(T t)
+        //{
+        //    return Context.Insertable(t).ExecuteReturnBigIdentity();
+        //}
 
         //public int InsertIgnoreNullColumn(List<T> t)
         //{
@@ -194,14 +195,38 @@ namespace ZR.Repository
 
         public DbResult<bool> UseTran(Action action)
         {
-            var result = Context.Ado.UseTran(() => action());
-            return result;
+            try
+            {
+                var result = Context.Ado.UseTran(() => action());
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Context.Ado.RollbackTran();
+                Console.WriteLine(ex.Message);
+                throw;
+            }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="action">增删改查方法</param>
+        /// <returns></returns>
         public DbResult<bool> UseTran(SqlSugarClient client, Action action)
         {
-            var result = client.Ado.UseTran(() => action());
-            return result;
+            try
+            {
+                var result = client.AsTenant().UseTran(() => action());
+                return result;
+            }
+            catch (Exception ex)
+            {
+                client.AsTenant().RollbackTran();
+                Console.WriteLine(ex.Message);
+                throw;
+            }
         }
 
         public bool UseTran2(Action action)
@@ -214,16 +239,6 @@ namespace ZR.Repository
         public IDeleteable<T> Deleteable()
         {
             return Context.Deleteable<T>();
-        }
-
-        /// <summary>
-        /// 删除表达式
-        /// </summary>
-        /// <param name="expression"></param>
-        /// <returns></returns>
-        public int Delete(Expression<Func<T, bool>> expression)
-        {
-            return Context.Deleteable<T>().Where(expression).ExecuteCommand();
         }
 
         /// <summary>
@@ -258,32 +273,6 @@ namespace ZR.Repository
             return Context.Queryable<T>();
         }
 
-        //public ISugarQueryable<ExpandoObject> Queryable(string tableName, string shortName)
-        //{
-        //    return Context.Queryable(tableName, shortName);
-        //}
-
-        public List<T> GetList(Expression<Func<T, bool>> expression)
-        {
-            return Context.Queryable<T>().Where(expression).ToList();
-        }
-
-        //public Task<List<T>> QueryableToListAsync(Expression<Func<T, bool>> expression)
-        //{
-        //    return Context.Queryable<T>().Where(expression).ToListAsync();
-        //}
-
-        //public string QueryableToJson(string select, Expression<Func<T, bool>> expressionWhere)
-        //{
-        //    var query = base.Context.Queryable<T>().Select(select).Where(expressionWhere).ToList();
-        //    return query.JilToJson();
-        //}
-
-        //public List<T> QueryableToList(string tableName)
-        //{
-        //    return Context.Queryable<T>(tableName).ToList();
-        //}
-
         public (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10)
         {
             int totalNumber = 0;
@@ -317,15 +306,6 @@ namespace ZR.Repository
         public List<T> SqlQueryToList(string sql, object obj = null)
         {
             return Context.Ado.SqlQuery<T>(sql, obj);
-        }
-        /// <summary>
-        /// 获得一条数据
-        /// </summary>
-        /// <param name="where">Expression<Func<T, bool>></param>
-        /// <returns></returns>
-        public T GetFirst(Expression<Func<T, bool>> where)
-        {
-            return Context.Queryable<T>().Where(where).First();
         }
 
         /// <summary>
@@ -371,10 +351,6 @@ namespace ZR.Repository
             return Context.Queryable<T>().WithCacheIF(useCache, cacheSecond).ToList();
         }
 
-        public int Count(Expression<Func<T, bool>> where)
-        {
-            return Context.Queryable<T>().Count(where);
-        }
         #endregion query
 
         /// <summary>

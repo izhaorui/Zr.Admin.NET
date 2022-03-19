@@ -19,7 +19,7 @@ namespace ZR.Service.System
     {
 
         private readonly SysDictDataRepository SysDictDataRepository;
-        public SysDictDataService(SysDictDataRepository sysDictDataRepository) : base(sysDictDataRepository)
+        public SysDictDataService(SysDictDataRepository sysDictDataRepository)
         {
             SysDictDataRepository = sysDictDataRepository;
         }

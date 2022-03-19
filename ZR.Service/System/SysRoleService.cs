@@ -26,7 +26,7 @@ namespace ZR.Service
         public SysRoleService(
             SysRoleRepository sysRoleRepository,
             ISysUserRoleService sysUserRoleService,
-            ISysDeptService deptService) : base(sysRoleRepository)
+            ISysDeptService deptService)
         {
             SysRoleRepository = sysRoleRepository;
             SysUserRoleService = sysUserRoleService;

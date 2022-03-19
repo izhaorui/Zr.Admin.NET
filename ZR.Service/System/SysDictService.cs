@@ -18,7 +18,7 @@ namespace ZR.Service.System
         private SysDictRepository DictRepository;
         private SysDictDataRepository DictDataRepository;
 
-        public SysDictService(SysDictRepository sysDictRepository, SysDictDataRepository dictDataRepository) : base(sysDictRepository)
+        public SysDictService(SysDictRepository sysDictRepository, SysDictDataRepository dictDataRepository)
         {
             this.DictRepository = sysDictRepository;
             this.DictDataRepository = dictDataRepository;
