@@ -19,7 +19,7 @@ namespace ZR.Service.System
     {
         private SysLogininfoRepository SysLogininfoRepository;
 
-        public SysLoginService(SysLogininfoRepository sysLogininfo): base(sysLogininfo)
+        public SysLoginService(SysLogininfoRepository sysLogininfo)
         {
             SysLogininfoRepository = sysLogininfo;
         }

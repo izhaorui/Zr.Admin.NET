@@ -16,7 +16,7 @@ namespace ZR.Service.System
     public class SysPostService : BaseService<SysPost>, ISysPostService
     {
         public SysPostRepository PostRepository;
-        public SysPostService(SysPostRepository postRepository): base(postRepository)
+        public SysPostService(SysPostRepository postRepository)
         {
             PostRepository = postRepository;
         }
@@ -49,6 +49,11 @@ namespace ZR.Service.System
                 return UserConstants.NOT_UNIQUE;
             }
             return UserConstants.UNIQUE;
+        }
+
+        public List<SysPost> GetAll()
+        {
+            return PostRepository.GetAll();
         }
     }
 }

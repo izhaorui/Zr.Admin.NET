@@ -21,7 +21,7 @@ namespace ZR.Service.System
     {
         private GenTableRepository GenTableRepository;
         private IGenTableColumnService GenTableColumnService;
-        public GenTableService(IGenTableColumnService genTableColumnService, GenTableRepository genTableRepository) : base(genTableRepository)
+        public GenTableService(IGenTableColumnService genTableColumnService, GenTableRepository genTableRepository)
         {
             GenTableColumnService = genTableColumnService;
             GenTableRepository = genTableRepository;
@@ -45,7 +45,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableByTbName(string tableName)
         {
-            return GenTableRepository.Delete(f => f.TableName == tableName);
+            return GenTableRepository.Delete(f => f.TableName == tableName) ? 1: 0;
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace ZR.Service.System
     {
 
         private GenTableColumnRepository GetTableColumnRepository;
-        public GenTableColumnService(GenTableColumnRepository genTableColumnRepository) : base(genTableColumnRepository)
+        public GenTableColumnService(GenTableColumnRepository genTableColumnRepository)
         {
             GetTableColumnRepository = genTableColumnRepository;
         }

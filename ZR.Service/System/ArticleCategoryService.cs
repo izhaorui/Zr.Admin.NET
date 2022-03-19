@@ -15,9 +15,6 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(IArticleCategoryService), ServiceLifetime = LifeTime.Transient)]
     public class ArticleCategoryService : BaseService<ArticleCategory>, IArticleCategoryService
     {
-        public ArticleCategoryService(ArticleCategoryRepository repository) : base(repository)
-        {
-        }
         /// <summary>
         /// 构建前端所需要树结构
         /// </summary>

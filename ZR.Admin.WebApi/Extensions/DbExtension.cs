@@ -50,11 +50,11 @@ namespace ZR.Admin.WebApi.Extensions
                 #region db0
                 db.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
                 {
-                    var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                    var param = db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
-                    FilterData();
+                    FilterData(db.GetConnection(0));
 
-                    logger.Info($"{sql}，{param}");
+                    logger.Info($"【sql语句】{sql}，{param}");
                 };
 
                 db.GetConnection(0).Aop.OnError = (e) =>
@@ -74,7 +74,7 @@ namespace ZR.Admin.WebApi.Extensions
                 {
                     var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
-                    logger.Info($"Sql语句：{sql}, {param}");
+                    logger.Info($"【sql语句】{sql}, {param}");
                 };
                 //Db1错误日志
                 db.GetConnection(1).Aop.OnError = (e) =>
@@ -88,7 +88,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// <summary>
         /// 分页获取count 不会追加sql
         /// </summary>
-        private static void FilterData()
+        private static void FilterData(ISqlSugarClient sqlSugarClient)
         {
             var u = App.User;
             if (u == null) return;
@@ -119,8 +119,7 @@ namespace ZR.Admin.WebApi.Extensions
                     var exp = Expressionable.Create<SysDept>();
                     exp.Or(it => it.DeptId == user.DeptId);
                     var filter1 = new TableFilterItem<SysDept>(exp.ToExpression());
-                    DbScoped.SugarScope.GetConnection(0).QueryFilter.Add(filter1);
-                    Console.WriteLine("本部门数据过滤");
+                    sqlSugarClient.QueryFilter.Add(filter1);
                 }
                 else if (DATA_SCOPE_DEPT_AND_CHILD.Equals(dataScope))//本部门及以下数据
                 {
@@ -128,8 +127,8 @@ namespace ZR.Admin.WebApi.Extensions
                 }
                 else if (DATA_SCOPE_SELF.Equals(dataScope))//仅本人数据
                 {
-                    var filter1 = new TableFilterItem<SysUser>(it => it.UserId == user.UserId);
-                    DbScoped.SugarScope.GetConnection(0).QueryFilter.Add(filter1);
+                    var filter1 = new TableFilterItem<SysUser>(it => it.UserId == user.UserId, true);
+                    sqlSugarClient.QueryFilter.Add(filter1);
                 }
             }
         }

@@ -11,11 +11,9 @@
     </el-form>
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
-$if(replaceDto.ShowBtnExport)
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
       </el-col>
-$end
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -59,9 +57,7 @@ $end
 import { 
   list${genTable.BusinessName},
   get${genTable.BusinessName},
-$if(replaceDto.ShowBtnExport)
   export${genTable.BusinessName},
-$end
 } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${tool.FirstLowerCase(genTable.BusinessName)}.js';
 
 export default {

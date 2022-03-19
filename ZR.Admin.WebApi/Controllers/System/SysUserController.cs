@@ -20,26 +20,21 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Route("system/user")]
     public class SysUserController : BaseController
     {
-        private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
         private readonly ISysUserService UserService;
         private readonly ISysRoleService RoleService;
         private readonly ISysPostService PostService;
         private readonly ISysUserPostService UserPostService;
-        private IWebHostEnvironment WebHostEnvironment;
 
         public SysUserController(
             ISysUserService userService,
             ISysRoleService roleService,
             ISysPostService postService,
-            ISysUserPostService userPostService,
-            IWebHostEnvironment HostEnvironment)
+            ISysUserPostService userPostService)
         {
             UserService = userService;
             RoleService = roleService;
             PostService = postService;
             UserPostService = userPostService;
-            WebHostEnvironment = HostEnvironment;
         }
 
         /// <summary>

@@ -22,7 +22,7 @@ namespace ZR.Service.System
     {
         public SysDeptRepository DeptRepository;
         public SysRoleDeptRepository RoleDeptRepository;
-        public SysDeptService(SysDeptRepository deptRepository, SysRoleDeptRepository roleDeptRepository) : base(deptRepository)
+        public SysDeptService(SysDeptRepository deptRepository, SysRoleDeptRepository roleDeptRepository)
         {
             DeptRepository = deptRepository;
             RoleDeptRepository = roleDeptRepository;
@@ -256,7 +256,7 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="roleId"></param>
         /// <returns></returns>
-        public int DeleteRoleDeptByRoleId(long roleId)
+        public bool DeleteRoleDeptByRoleId(long roleId)
         {
             return RoleDeptRepository.Delete(f => f.RoleId == roleId);
         }

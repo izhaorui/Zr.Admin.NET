@@ -25,7 +25,7 @@ namespace ZR.Service
             SysUserRepository userRepository,
             ISysRoleService sysRoleService,
             ISysUserRoleService userRoleService,
-            ISysUserPostService userPostService) : base(userRepository)
+            ISysUserPostService userPostService)
         {
             UserRepository = userRepository;
             RoleService = sysRoleService;

@@ -11,7 +11,6 @@ using System.Net;
 using ZR.Model.System;
 using ZR.Repository.System;
 using Infrastructure.Extensions;
-using SqlSugar.DistributedSystem.Snowflake;
 
 namespace ZR.Service.System
 {
@@ -24,7 +23,7 @@ namespace ZR.Service.System
         private string domainUrl = AppSettings.GetConfig("ALIYUN_OSS:domainUrl");
         private readonly SysFileRepository SysFileRepository;
 
-        public SysFileService(SysFileRepository repository) : base(repository)
+        public SysFileService(SysFileRepository repository)
         {
             SysFileRepository = repository;
         }

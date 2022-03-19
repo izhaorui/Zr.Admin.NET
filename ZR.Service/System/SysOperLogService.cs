@@ -1,12 +1,10 @@
-﻿using Infrastructure.Attribute;
-using System.Collections.Generic;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
 using ZR.Model;
-using ZR.Model.System.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
-using Infrastructure;
-using Infrastructure.Model;
 
 namespace ZR.Service.System
 {
@@ -18,7 +16,7 @@ namespace ZR.Service.System
     {
         public SysOperLogRepository sysOperLogRepository;
 
-        public SysOperLogService(SysOperLogRepository sysOperLog) : base(sysOperLog)
+        public SysOperLogService(SysOperLogRepository sysOperLog)
         {
             sysOperLogRepository = sysOperLog;
         }

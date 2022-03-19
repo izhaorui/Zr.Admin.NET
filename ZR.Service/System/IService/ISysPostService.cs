@@ -10,5 +10,6 @@ namespace ZR.Service.System.IService
     {
         string CheckPostNameUnique(SysPost sysPost);
         string CheckPostCodeUnique(SysPost sysPost);
+        List<SysPost> GetAll();
     }
 }
