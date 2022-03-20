@@ -436,7 +436,7 @@ export default {
         this.form.deptCheckStrictly = !!value
       }
     },
-		//菜单筛选
+    // 菜单筛选
     menuFilterNode(value, data) {
       if (!value) return true
       return data.label.indexOf(value) !== -1
@@ -589,3 +589,12 @@ export default {
   }
 }
 </script>
+<style scoped>
+/* tree border */
+.tree-border {
+  margin-top: 5px;
+  border: 1px solid #e5e6e7;
+  background: #ffffff none;
+  border-radius: 4px;
+}
+</style>

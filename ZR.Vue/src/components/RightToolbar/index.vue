@@ -86,4 +86,10 @@ export default {
 .el-dropdown-item {
   padding: 5px;
 }
+
+.top-right-btn {
+  position: relative;
+  float: right;
+}
+
 </style>

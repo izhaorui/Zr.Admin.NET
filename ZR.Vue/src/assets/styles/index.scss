@@ -96,69 +96,13 @@ div:focus {
   }
 }
 
-aside {
-  background: #eef1f6;
-  padding: 8px 24px;
-  margin-bottom: 20px;
-  border-radius: 2px;
-  display: block;
-  line-height: 32px;
-  font-size: 16px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  color: #2c3e50;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  a {
-    color: #337ab7;
-    cursor: pointer;
-
-    &:hover {
-      color: rgb(32, 160, 255);
-    }
-  }
-}
-
 //main-container全局样式
 .app-container {
   padding: 20px;
 }
 
-.components-container {
-  margin: 30px 50px;
-  position: relative;
-}
-
-.pagination-container {
-  margin-top: 30px;
-}
-
 .text-center {
   text-align: center
-}
-
-.sub-navbar {
-  height: 50px;
-  line-height: 50px;
-  position: relative;
-  width: 100%;
-  text-align: right;
-  padding-right: 20px;
-  transition: 600ms ease position;
-  background: linear-gradient(90deg, rgba(32, 182, 249, 1) 0%, rgba(32, 182, 249, 1) 0%, rgba(33, 120, 241, 1) 100%, rgba(33, 120, 241, 1) 100%);
-
-  .subtitle {
-    font-size: 20px;
-    color: #fff;
-  }
-
-  &.draft {
-    background: #d0d0d0;
-  }
-
-  &.deleted {
-    background: #d0d0d0;
-  }
 }
 
 .link-type,
@@ -169,15 +113,6 @@ aside {
   &:hover {
     color: rgb(32, 160, 255);
   }
-}
-
-//refine vue-multiselect plugin
-.multiselect {
-  line-height: 16px;
-}
-
-.multiselect--active {
-  z-index: 1000 !important;
 }
 
 /** 基础通用 **/
@@ -265,27 +200,6 @@ aside {
   margin-top: 6vh !important;
 }
 
-/** 表格布局 **/
-.pagination-container {
-  position: relative;
-  height: 25px;
-  margin-top: 5px;
-  padding: 10px 20px !important;
-}
-
-/* tree border */
-.tree-border {
-  margin-top: 5px;
-  border: 1px solid #e5e6e7;
-  background: #FFFFFF none;
-  border-radius: 4px;
-}
-
-.pagination-container .el-pagination {
-  right: 0;
-  position: absolute;
-}
-
 .pull-right {
   float: right !important;
 }
@@ -336,137 +250,10 @@ aside {
   border-radius: 50%;
 }
 
-.img-lg {
-  width: 120px;
-  height: 120px;
-}
-
-.vue-treeselect.mini {
-  font-size: 12px !important;
-}
-
-.vue-treeselect.small {
-  font-size: 13px !important;
-}
-
-.vue-treeselect.medium {
-  font-size: 14px !important;
-}
-
-.vue-treeselect.mini .vue-treeselect__control {
-  height: 28px;
-}
-
-.vue-treeselect.small .vue-treeselect__control {
-  height: 32px;
-}
-
-.vue-treeselect.medium .vue-treeselect__control {
-  height: 34px;
-}
-
-.vue-treeselect.mini .vue-treeselect__single-value {
-  line-height: 28px;
-}
-
-.vue-treeselect.small .vue-treeselect__single-value {
-  line-height: 32px;
-}
-
-.vue-treeselect.medium .vue-treeselect__single-value {
-  line-height: 34px;
-}
-
-
-.list-group-striped>.list-group-item {
-  border-left: 0;
-  border-right: 0;
-  border-radius: 0;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.list-group {
-  padding-left: 0px;
-  list-style: none;
-}
-
-.list-group-item {
-  border-bottom: 1px solid #e7eaec;
-  border-top: 1px solid #e7eaec;
-  margin-bottom: -1px;
-  padding: 11px 0px;
-  font-size: 13px;
-}
-
-.pull-right {
-  float: right !important;
-}
-
-.el-card__header {
-  padding: 14px 15px 7px;
-  min-height: 40px;
-}
-
-.el-card__body {
-  padding: 15px 20px 20px 20px;
-}
-
 .card-box {
   padding-right: 15px;
   padding-left: 15px;
   margin-bottom: 10px;
-}
-
-/* button color */
-.el-button--cyan.is-active,
-.el-button--cyan:active {
-  background: #20B2AA;
-  border-color: #20B2AA;
-  color: #FFFFFF;
-}
-
-.el-button--cyan:focus,
-.el-button--cyan:hover {
-  background: #48D1CC;
-  border-color: #48D1CC;
-  color: #FFFFFF;
-}
-
-.el-button--cyan {
-  background-color: #20B2AA;
-  border-color: #20B2AA;
-  color: #FFFFFF;
-}
-
-
-.img-lg {
-  width: 120px;
-  height: 120px;
-}
-
-// 导航栏头像
-.avatar-upload-preview {
-  position: absolute;
-  top: 50%;
-  transform: translate(50%, -50%);
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  box-shadow: 0 0 4px #ccc;
-  overflow: hidden;
-}
-
-/* 拖拽列样式 */
-.sortable-ghost {
-  opacity: .8;
-  color: #fff !important;
-  background: #42b983 !important;
-}
-
-.top-right-btn {
-  position: relative;
-  float: right;
 }
 
 .icon {

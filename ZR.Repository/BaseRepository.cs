@@ -45,75 +45,14 @@ namespace ZR.Repository
             return Context.Insertable(t).IgnoreColumns(true).ExecuteCommand();
         }
 
-        //public int Insert(SqlSugarClient client, T t)
-        //{
-        //    return client.Insertable(t).ExecuteCommand();
-        //}
-
         public int Insert(List<T> t)
         {
             return Context.Insertable(t).ExecuteCommand();
         }
-        //public long InsertReturnBigIdentity(T t)
-        //{
-        //    return Context.Insertable(t).ExecuteReturnBigIdentity();
-        //}
-
-        //public int InsertIgnoreNullColumn(List<T> t)
-        //{
-        //    return base.Context.Insertable(t).IgnoreColumns(true).ExecuteCommand();
-        //}
-
-        //public int InsertIgnoreNullColumn(List<T> t, params string[] columns)
-        //{
-        //    return base.Context.Insertable(t).IgnoreColumns(columns).ExecuteCommand();
-        //}
         public int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true)
         {
             return Context.Insertable(parm).InsertColumns(iClumns).IgnoreColumns(ignoreNullColumn: ignoreNull).ExecuteCommand();
         }
-        //public DbResult<bool> InsertTran(T t)
-        //{
-        //    var result = base.Context.Ado.UseTran(() =>
-        //    {
-        //        base.Context.Insertable(t).ExecuteCommand();
-        //    });
-        //    return result;
-        //}
-
-        //public DbResult<bool> InsertTran(List<T> t)
-        //{
-        //    var result = base.Context.Ado.UseTran(() =>
-        //    {
-        //        base.Context.Insertable(t).ExecuteCommand();
-        //    });
-        //    return result;
-        //}
-
-        //public T InsertReturnEntity(T t)
-        //{
-        //    return base.Context.Insertable(t).ExecuteReturnEntity();
-        //}
-
-        //public T InsertReturnEntity(T t, string sqlWith = SqlWith.UpdLock)
-        //{
-        //    return base.Context.Insertable(t).With(sqlWith).ExecuteReturnEntity();
-        //}
-
-        //public bool ExecuteCommand(string sql, object parameters)
-        //{
-        //    return base.Context.Ado.ExecuteCommand(sql, parameters) > 0;
-        //}
-
-        //public bool ExecuteCommand(string sql, params SugarParameter[] parameters)
-        //{
-        //    return base.Context.Ado.ExecuteCommand(sql, parameters) > 0;
-        //}
-
-        //public bool ExecuteCommand(string sql, List<SugarParameter> parameters)
-        //{
-        //    return base.Context.Ado.ExecuteCommand(sql, parameters) > 0;
-        //}
         public IInsertable<T> Insertable(T t)
         {
             return Context.Insertable<T>(t);
