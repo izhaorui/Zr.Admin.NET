@@ -31,7 +31,7 @@
         </el-col>
         <el-col :lg="24">
           <el-form-item label="" style="text-align:right;">
-            <el-button type="cyan" size="mini" @click="handlePublish('1')">发布文章</el-button>
+            <el-button size="mini" @click="handlePublish('1')">发布文章</el-button>
             <el-button type="success" size="mini" @click="handlePublish('2')">存为草稿</el-button>
           </el-form-item>
         </el-col>

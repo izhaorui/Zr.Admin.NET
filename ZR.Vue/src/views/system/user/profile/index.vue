@@ -64,39 +64,65 @@
 </template>
 
 <script>
-import userAvatar from "./userAvatar";
-import userInfo from "./userInfo";
-import resetPwd from "./resetPwd";
-import operLog from "./operLog.vue";
-import { getUserProfile } from "@/api/system/user";
+import userAvatar from './userAvatar'
+import userInfo from './userInfo'
+import resetPwd from './resetPwd'
+import operLog from './operLog.vue'
+import { getUserProfile } from '@/api/system/user'
 
 export default {
-  name: "Profile",
+  name: 'Profile',
   components: { userAvatar, userInfo, resetPwd, operLog },
   data() {
     return {
       user: {},
       roles: [],
-      postGroup: "",
-      activeTab: "userinfo",
-      activeName: "first",
-    };
+      postGroup: '',
+      activeTab: 'userinfo',
+      activeName: 'first'
+    }
   },
   created() {
-    this.getUser();
+    this.getUser()
   },
   methods: {
     getUser() {
       getUserProfile().then((response) => {
-        this.user = response.data.user;
-        this.roles = response.data.roles;
-        this.roleGroup = response.data.roleGroup;
-        this.postGroup = response.data.postGroup;
-      });
+        this.user = response.data.user
+        this.roles = response.data.roles
+        this.roleGroup = response.data.roleGroup
+        this.postGroup = response.data.postGroup
+      })
     },
     handleTabClick(tab, event) {
-      console.log(tab, event);
-    },
-  },
-};
+      console.log(tab, event)
+    }
+  }
+}
 </script>
+<style scoped>
+.list-group-striped > .list-group-item {
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.list-group {
+  padding-left: 0px;
+  list-style: none;
+}
+
+.list-group-item {
+  border-bottom: 1px solid #e7eaec;
+  border-top: 1px solid #e7eaec;
+  margin-bottom: -1px;
+  padding: 11px 0px;
+  font-size: 13px;
+}
+
+.pull-right {
+  float: right !important;
+}
+</style>
