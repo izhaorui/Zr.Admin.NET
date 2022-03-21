@@ -146,7 +146,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 url = uploadType == 1 ? finalFilePath : accessPath,
                 fileName,
-                fileId
+                fileId = fileId.ToString()
             });
         }
 
