@@ -16,16 +16,11 @@ namespace Infrastructure
         public static string GetdirPath(string path = "")
         {
             DateTime date = DateTime.Now;
-            int year = date.Year;
-            int month = date.Month;
-            int day = date.Day;
-            int hour = date.Hour;
-
-            string timeDir = $"{year}{month}{day}/";// date.ToString("yyyyMM/dd/HH/");
+            string timeDir = Path.Combine(date.ToString("yyyyMMdd"));// date.ToString("yyyyMM/dd/HH/");
 
             if (!string.IsNullOrEmpty(path))
             {
-                timeDir = $"{path}/{timeDir}/";
+                timeDir = Path.Combine(path, timeDir);
             }
             return timeDir;
         }
@@ -41,7 +36,7 @@ namespace Infrastructure
             {
                 str = Guid.NewGuid().ToString();
             }
-            MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
+            MD5CryptoServiceProvider md5 = new();
             return BitConverter.ToString(md5.ComputeHash(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
         }
     }
