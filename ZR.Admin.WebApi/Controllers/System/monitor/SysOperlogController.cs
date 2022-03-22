@@ -1,19 +1,14 @@
 ﻿using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.System.Dto;
-using ZR.Model.System;
-using ZR.Model.Vo;
 using ZR.Service.System.IService;
-using System;
-using System.IO;
-using OfficeOpenXml;
-using Microsoft.AspNetCore.Hosting;
-using System.Collections.Generic;
 
 namespace ZR.Admin.WebApi.Controllers.monitor
 {
@@ -40,6 +35,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         {
             PagerInfo pagerInfo = new(sysOperLog.pageNum, sysOperLog.PageSize);
 
+            sysOperLog.operName = !HttpContextExtension.IsAdmin(HttpContext) ? HttpContextExtension.GetName(HttpContext) : sysOperLog.operName;
             var list = sysOperLogService.SelectOperLogList(sysOperLog, pagerInfo);
 
             return SUCCESS(list, "MM/dd HH:mm");
@@ -55,6 +51,10 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [HttpDelete("{operIds}")]
         public IActionResult Remove(string operIds)
         {
+            if (!HttpContextExtension.IsAdmin(HttpContext))
+            {
+                return ToResponse(ApiResult.Error("操作失败"));
+            }
             long[] operIdss = Tools.SpitLongArrary(operIds);
             return SUCCESS(sysOperLogService.DeleteOperLogByIds(operIdss));
         }
@@ -68,6 +68,10 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [HttpDelete("clean")]
         public ApiResult ClearOperLog()
         {
+            if (!HttpContextExtension.IsAdmin(HttpContext))
+            {
+                return ApiResult.Error("操作失败");
+            }
             sysOperLogService.CleanOperLog();
 
             return ToJson(1);
