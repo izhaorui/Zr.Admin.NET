@@ -113,7 +113,12 @@
             <el-form-item label="文件id">{{formView.id}}</el-form-item>
           </el-col>
           <el-col :lg="12">
-            <el-form-item label="扩展名">{{formView.fileExt}}</el-form-item>
+            <el-form-item label="文件类型">{{formView.fileType}}</el-form-item>
+          </el-col>
+          <el-col :lg="12">
+            <el-form-item label="扩展名">
+              <el-tag>{{formView.fileExt}}</el-tag>
+            </el-form-item>
           </el-col>
           <el-col :lg="12">
             <el-form-item label="源文件名">{{formView.realName}}</el-form-item>
@@ -130,12 +135,9 @@
           <el-col :lg="12">
             <el-form-item label="创建人">{{formView.create_by}}</el-form-item>
           </el-col>
-          <el-col :lg="24">
-            <el-form-item label="存储路径">{{formView.fileUrl}}</el-form-item>
-          </el-col>
           <el-col :lg="24" v-if="['.png','.jpg', '.jpeg'].includes(formView.fileExt)">
             <el-form-item label="预览">
-              <el-image :src="formView.accessUrl" fit="contain"></el-image>
+              <el-image :src="formView.accessUrl" fit="contain" style="width:100px"></el-image>
             </el-form-item>
           </el-col>
           <el-col :lg="24">
@@ -145,6 +147,9 @@
                 复制
               </el-button>
             </el-form-item>
+          </el-col>
+          <el-col :lg="24">
+            <el-form-item label="存储路径">{{formView.fileUrl}}</el-form-item>
           </el-col>
         </el-row>
       </el-form>

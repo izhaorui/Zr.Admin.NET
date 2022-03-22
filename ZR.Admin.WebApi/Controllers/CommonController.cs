@@ -110,13 +110,12 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);
-            string hashFileName = FileUtil.HashFileName(Guid.NewGuid().ToString()).ToLower();
+            string hashFileName = FileUtil.HashFileName();
             fileName = (fileName.IsEmpty() ? hashFileName : fileName) + fileExt;
             fileDir = fileDir.IsEmpty() ? "uploads" : fileDir;
             string filePath = FileUtil.GetdirPath(fileDir);
             string finalFilePath = Path.Combine(WebHostEnvironment.WebRootPath, filePath, fileName);
-            finalFilePath = finalFilePath.Replace("\\", "/").Replace("//", "/");
-            double fileSize = formFile.Length / 1024;
+            double fileSize = formFile.Length / 1024.0;
 
             if (!Directory.Exists(Path.GetDirectoryName(finalFilePath)))
             {
@@ -128,18 +127,10 @@ namespace ZR.Admin.WebApi.Controllers
                 formFile.CopyTo(stream);
             }
 
-            string accessPath = $"{OptionsSetting.Upload.UploadUrl}/{filePath.Replace("\\", " /")}{fileName}";
-            SysFile file = new()
+            string accessPath = string.Concat(OptionsSetting.Upload.UploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
+            SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, accessPath, HttpContext.GetName())
             {
-                AccessUrl = accessPath,
-                Create_by = HttpContext.GetName(),
-                FileExt = fileExt,
-                FileName = fileName,
-                FileSize = fileSize + "kb",
-                StoreType = 1,
-                FileUrl = finalFilePath,
-                RealName = formFile.FileName,
-                Create_time = DateTime.Now,
+                StoreType = (int)Infrastructure.Enums.StoreType.LOCAL,
                 FileType = formFile.ContentType
             };
             long fileId = SysFileService.InsertFile(file);
@@ -183,17 +174,9 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 result = SysFileService.SaveFile(fileDir, formFile, fileName, "");
             });
-            long id = SysFileService.InsertFile(new SysFile()
+            long id = SysFileService.InsertFile(new(formFile.FileName, fileName, fileExt, fileSize + "kb", "", result.Item2, HttpContext.GetName())
             {
-                AccessUrl = result.Item2,
-                Create_by = HttpContext.GetName(),
-                FileExt = fileExt,
-                FileName = result.Item3,
-                FileSize = fileSize + "kb",
-                StoreType = 2,
-                StorePath = fileDir,
-                RealName = formFile.FileName,
-                Create_time = DateTime.Now,
+                StoreType = (int)Infrastructure.Enums.StoreType.ALIYUN,
                 FileType = formFile.ContentType
             });
             return SUCCESS(new

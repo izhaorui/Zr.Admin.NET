@@ -16,7 +16,7 @@ namespace Infrastructure
         public static string GetdirPath(string path = "")
         {
             DateTime date = DateTime.Now;
-            string timeDir = Path.Combine(date.ToString("yyyyMMdd"));// date.ToString("yyyyMM/dd/HH/");
+            string timeDir = date.ToString("yyyyMMdd");// date.ToString("yyyyMM/dd/HH/");
 
             if (!string.IsNullOrEmpty(path))
             {
@@ -28,7 +28,7 @@ namespace Infrastructure
         /// <summary>
         /// 取文件名的MD5值(16位)
         /// </summary>
-        /// <param name="name">文件名，不包括扩展名</param>
+        /// <param name="str">文件名，不包括扩展名</param>
         /// <returns></returns>
         public static string HashFileName(string str = null)
         {

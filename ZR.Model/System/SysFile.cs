@@ -70,5 +70,18 @@ namespace ZR.Model.System
         /// 空值 : true  
         /// </summary>
         public string AccessUrl { get; set; }
+
+        public SysFile() { }
+        public SysFile(string realName, string fileName, string ext, string fileSize, string storePath, string accessUrl,string create_by)
+        {
+            StorePath = storePath;
+            RealName = realName;
+            FileName = fileName;
+            FileExt = ext;
+            FileSize = fileSize;
+            AccessUrl = accessUrl;
+            Create_by = create_by;
+            Create_time = DateTime.Now;
+        }
     }
 }
