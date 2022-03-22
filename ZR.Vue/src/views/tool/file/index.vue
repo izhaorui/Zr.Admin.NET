@@ -2,14 +2,14 @@
   <div class="app-container">
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="left" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" @submit.native.prevent>
-      <el-form-item label="文件id" prop="fileId">
+      <el-form-item label="" prop="fileId">
         <el-input v-model="queryParams.fileId" placeholder="请输入文件id" clearable size="small" />
       </el-form-item>
-      <el-form-item label="上传时间">
+      <el-form-item label="">
         <el-date-picker v-model="dateRangeAddTime" size="small" value-format="yyyy-MM-dd" type="daterange" range-separator="-"
           start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择上传时间"></el-date-picker>
       </el-form-item>
-      <el-form-item label="存储类型" prop="storeType">
+      <el-form-item label="" prop="storeType">
         <el-select v-model="queryParams.storeType" placeholder="请选择存储类型" size="small" clearable="">
           <el-option v-for="item in storeTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
         </el-select>
@@ -34,13 +34,10 @@
     <!-- 数据区域 -->
     <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center" />
-      <el-table-column prop="id" label="文件id" align="center" width="180" />
-      <el-table-column prop="fileName" label="文件名" align="center">
+      <el-table-column prop="id" label="文件id" align="center" width="150" />
+      <el-table-column prop="fileName" label="文件名" align="center" width="175" :show-overflow-tooltip="true">
         <template slot-scope="scope">
-            <a slot="reference" :href="scope.row.accessUrl" class="el-link--primary"
-              style="word-break:keep-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color: #1890ff;font-size: 13px;" target="_blank">
-              {{ scope.row.fileName }}
-            </a>
+          <el-link type="primary" :href="scope.row.accessUrl" target="_blank">{{ scope.row.fileName }}</el-link>
         </template>
       </el-table-column>
       <el-table-column prop="accessUrl" align="center" label="预览图" width="100">
@@ -56,7 +53,7 @@
       <el-table-column prop="fileExt" label="扩展名" align="center" :show-overflow-tooltip="true" width="80px" />
       <el-table-column prop="storeType" label="存储类型" align="center" :formatter="storeTypeFormat" />
       <el-table-column prop="create_by" label="操作人" align="center" />
-      <el-table-column prop="create_time" label="创建日期" align="center" />
+      <el-table-column prop="create_time" label="创建日期" align="center" width="150" />
       <el-table-column label="操作" align="center" width="200">
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button>
@@ -71,37 +68,40 @@
     <pagination class="mt10" background :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改文件存储对话框 -->
-    <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" width="320px">
+    <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" width="380px">
       <el-form ref="form" :model="form" :rules="rules" label-position="left">
         <el-row>
           <el-col :lg="24">
-            <el-form-item prop="storeType">
-              <el-select v-model="form.storeType" placeholder="请选择存储类型" @change="handleSelectStore">
-                <el-option v-for="item in storeTypeOptions" :key="item.dictValue" :label="item.dictLabel" :value="parseInt(item.dictValue)">
-                </el-option>
-              </el-select>
+            <el-form-item label="" prop="storeType">
+              <el-radio-group v-model="form.storeType" placeholder="请选择存储类型" @change="handleSelectStore">
+                <el-radio v-for="item in storeTypeOptions" :key="item.dictValue" :label="parseInt(item.dictValue)">
+                  {{item.dictLabel}}
+                </el-radio>
+              </el-radio-group>
             </el-form-item>
           </el-col>
           <el-col :lg="24">
-            <el-form-item prop="">
+            <el-form-item label="" prop="">
               <el-input v-model="form.storePath" placeholder="请输入存储文件夹" clearable="" auto-complete="" />
             </el-form-item>
           </el-col>
           <el-col :lg="24">
-            <el-form-item  prop="fileName">
+            <el-form-item label="" prop="fileName">
               <el-input v-model="form.fileName" placeholder="请输入文件名" clearable="" />
             </el-form-item>
           </el-col>
           <el-col :lg="24">
             <el-form-item prop="accessUrl">
-              <UploadFile v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="[]" :limit="1" :fileSize="15" :drag="true"
-                :data="{ 'fileDir' :  form.storePath, 'fileName': form.fileName}" column="accessUrl" @input="handleUploadSuccess" />
+              <UploadFile ref="upload" v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="[]" :limit="5" :fileSize="15" :drag="true"
+                :data="{ 'fileDir' :  form.storePath, 'fileName': form.fileName}" :autoUpload="false" column="accessUrl"
+                @input="handleUploadSuccess" />
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="text" @click="cancel">取 消</el-button>
+        <el-button type="primary" @click="submitUpload">确定上传</el-button>
       </div>
     </el-dialog>
 
@@ -132,6 +132,11 @@
           </el-col>
           <el-col :lg="24">
             <el-form-item label="存储路径">{{formView.fileUrl}}</el-form-item>
+          </el-col>
+          <el-col :lg="24" v-if="['.png','.jpg', '.jpeg'].includes(formView.fileExt)">
+            <el-form-item label="预览">
+              <el-image :src="formView.accessUrl" fit="contain"></el-image>
+            </el-form-item>
           </el-col>
           <el-col :lg="24">
             <el-form-item label="访问路径">{{formView.accessUrl}}
@@ -305,9 +310,12 @@ export default {
     // 上传成功方法
     handleUploadSuccess(columnName, filelist, data) {
       this.form[columnName] = filelist
-      this.queryParams.fileId = data.fileId
       this.open = false
       this.getList()
+    },
+    // 手动上传
+    submitUpload() {
+      this.$refs.upload.submitUpload()
     },
     // 存储类型字典翻译
     storeTypeFormat(row, column) {
