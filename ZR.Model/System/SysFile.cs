@@ -18,7 +18,7 @@ namespace ZR.Model.System
         [SugarColumn(IsPrimaryKey = true)]
         public long Id { get; set; }
         /// <summary>
-        /// 文件真实名
+        /// 文件原名
         /// </summary>
         public string RealName { get; set; }
         /// <summary>
@@ -26,17 +26,17 @@ namespace ZR.Model.System
         /// </summary>
         public string FileType { get; set; }
         /// <summary>
-        /// 描述 : 文件名
+        /// 描述 : 存储文件名
         /// 空值 : true  
         /// </summary>
         public string FileName { get; set; }
         /// <summary>
-        /// 描述 : 文件存储地址
+        /// 描述 : 文件存储地址 eg：/uploads/20220202
         /// 空值 : true  
         /// </summary>
         public string FileUrl { get; set; }
         /// <summary>
-        /// 描述 : 仓库位置
+        /// 描述 : 仓库位置 eg：/uploads
         /// 空值 : true  
         /// </summary>
         public string StorePath { get; set; }
@@ -72,10 +72,10 @@ namespace ZR.Model.System
         public string AccessUrl { get; set; }
 
         public SysFile() { }
-        public SysFile(string realName, string fileName, string ext, string fileSize, string storePath, string accessUrl,string create_by)
+        public SysFile(string originFileName, string fileName, string ext, string fileSize, string storePath, string accessUrl,string create_by)
         {
             StorePath = storePath;
-            RealName = realName;
+            RealName = originFileName;
             FileName = fileName;
             FileExt = ext;
             FileSize = fileSize;
