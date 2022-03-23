@@ -11,6 +11,8 @@ using System.Net;
 using ZR.Model.System;
 using ZR.Repository.System;
 using Infrastructure.Extensions;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
 namespace ZR.Service.System
 {
@@ -22,25 +24,49 @@ namespace ZR.Service.System
     {
         private string domainUrl = AppSettings.GetConfig("ALIYUN_OSS:domainUrl");
         private readonly SysFileRepository SysFileRepository;
-
-        public SysFileService(SysFileRepository repository)
+        private OptionsSetting OptionsSetting;
+        public SysFileService(SysFileRepository repository, IOptions<OptionsSetting> options)
         {
             SysFileRepository = repository;
+            OptionsSetting = options.Value;
+        }
+
+        /// <summary>
+        /// 存储本地
+        /// </summary>
+        /// <returns></returns>
+        public async Task<SysFile> SaveFileLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
+        {
+            string fileExt = Path.GetExtension(formFile.FileName);
+            string hashFileName = FileUtil.HashFileName();
+            fileName = (fileName.IsEmpty() ? hashFileName : fileName) + fileExt;
+            fileDir = fileDir.IsEmpty() ? "uploads" : fileDir;
+            string filePath = FileUtil.GetdirPath(fileDir);
+            string finalFilePath = Path.Combine(rootPath, filePath, fileName);
+            double fileSize = Math.Round(formFile.Length / 1024.0, 2);
+
+            if (!Directory.Exists(Path.GetDirectoryName(finalFilePath)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(finalFilePath));
+            }
+
+            using (var stream = new FileStream(finalFilePath, FileMode.Create))
+            {
+                await formFile.CopyToAsync(stream);
+            }
+            string accessPath = string.Concat(OptionsSetting.Upload.UploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
+            SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, accessPath, userName)
+            {
+                StoreType = (int)Infrastructure.Enums.StoreType.LOCAL,
+                FileType = formFile.ContentType,
+                FileUrl = finalFilePath
+            };
+            file.Id = await InsertFile(file);
+            return file;
         }
 
         /// <summary>
         /// 上传文件到阿里云
-        /// </summary>
-        /// <param name="picdir"></param>
-        /// <param name="formFile"></param>
-        /// <returns></returns>
-        public (bool, string, string) SaveFile(string picdir, IFormFile formFile)
-        {
-            return SaveFile(picdir, formFile, "", "");
-        }
-
-        /// <summary>
-        /// 存储文件
         /// </summary>
         /// <param name="picdir">文件夹</param>
         /// <param name="formFile"></param>
@@ -87,11 +113,11 @@ namespace ZR.Service.System
             return BitConverter.ToString(md5.ComputeHash(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
         }
 
-        public long InsertFile(SysFile file)
+        public Task<long> InsertFile(SysFile file)
         {
             try
             {
-                return Insertable(file).ExecuteReturnSnowflakeId();//单条插入返回雪花ID;
+                return Insertable(file).ExecuteReturnSnowflakeIdAsync();//单条插入返回雪花ID;
             }
             catch (Exception ex)
             {

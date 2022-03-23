@@ -40,16 +40,6 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 心跳
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public IActionResult Health()
-        {
-            return SUCCESS(true);
-        }
-
-        /// <summary>
         /// hello
         /// </summary>
         /// <returns></returns>
@@ -106,39 +96,16 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost()]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "uploads", int uploadType = 0)
+        public async Task<IActionResult> UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "uploads", int uploadType = 0)
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
-            string fileExt = Path.GetExtension(formFile.FileName);
-            string hashFileName = FileUtil.HashFileName();
-            fileName = (fileName.IsEmpty() ? hashFileName : fileName) + fileExt;
-            fileDir = fileDir.IsEmpty() ? "uploads" : fileDir;
-            string filePath = FileUtil.GetdirPath(fileDir);
-            string finalFilePath = Path.Combine(WebHostEnvironment.WebRootPath, filePath, fileName);
-            double fileSize = formFile.Length / 1024.0;
 
-            if (!Directory.Exists(Path.GetDirectoryName(finalFilePath)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(finalFilePath));
-            }
-
-            using (var stream = new FileStream(finalFilePath, FileMode.Create))
-            {
-                formFile.CopyTo(stream);
-            }
-
-            string accessPath = string.Concat(OptionsSetting.Upload.UploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
-            SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, accessPath, HttpContext.GetName())
-            {
-                StoreType = (int)Infrastructure.Enums.StoreType.LOCAL,
-                FileType = formFile.ContentType
-            };
-            long fileId = SysFileService.InsertFile(file);
+            SysFile file = await SysFileService.SaveFileLocal(WebHostEnvironment.WebRootPath, fileName, fileDir, HttpContext.GetName(), formFile); 
             return SUCCESS(new
             {
-                url = uploadType == 1 ? finalFilePath : accessPath,
+                url = uploadType == 1 ? file.FileUrl : file.AccessUrl,
                 fileName,
-                fileId = fileId.ToString()
+                fileId = file.Id.ToString()
             });
         }
 
@@ -174,7 +141,11 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 result = SysFileService.SaveFile(fileDir, formFile, fileName, "");
             });
-            long id = SysFileService.InsertFile(new(formFile.FileName, fileName, fileExt, fileSize + "kb", "", result.Item2, HttpContext.GetName())
+            if (!result.Item1)
+            {
+                return ToResponse(ApiResult.Error("阿里云连接失败"));
+            }
+            long id = await SysFileService.InsertFile(new(formFile.FileName, fileName, fileExt, fileSize + "kb", "", result.Item2, HttpContext.GetName())
             {
                 StoreType = (int)Infrastructure.Enums.StoreType.ALIYUN,
                 FileType = formFile.ContentType

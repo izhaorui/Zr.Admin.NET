@@ -73,7 +73,7 @@
         <el-row>
           <el-col :lg="24">
             <el-form-item label="" prop="storeType">
-              <el-radio-group v-model="form.storeType" placeholder="请选择存储类型" @change="handleSelectStore">
+              <el-radio-group v-model="form.storeType" placeholder="请选择存储类型">
                 <el-radio v-for="item in storeTypeOptions" :key="item.dictValue" :label="parseInt(item.dictValue)">
                   {{item.dictLabel}}
                 </el-radio>
@@ -113,15 +113,17 @@
             <el-form-item label="文件id">{{formView.id}}</el-form-item>
           </el-col>
           <el-col :lg="12">
-            <el-form-item label="文件类型">{{formView.fileType}}</el-form-item>
+            <el-form-item label="源文件名">{{formView.realName}}</el-form-item>
+          </el-col>
+          <el-col :lg="12">
+            <el-form-item label="文件类型">
+              <el-tag>{{formView.fileType}}</el-tag>
+            </el-form-item>
           </el-col>
           <el-col :lg="12">
             <el-form-item label="扩展名">
               <el-tag>{{formView.fileExt}}</el-tag>
             </el-form-item>
-          </el-col>
-          <el-col :lg="12">
-            <el-form-item label="源文件名">{{formView.realName}}</el-form-item>
           </el-col>
           <el-col :lg="12">
             <el-form-item label="文件名">{{formView.fileName}}</el-form-item>
@@ -230,6 +232,17 @@ export default {
     // 列表数据查询
     this.getList()
   },
+  watch: {
+    'form.storeType': {
+      handler: function(val) {
+        if (val == 1) {
+          this.uploadUrl = '/common/uploadFile'
+        } else if (val == 2) {
+          this.uploadUrl = '/common/UploadFileAliyun'
+        }
+      }
+    }
+  },
   methods: {
     // 查询数据
     getList() {
@@ -325,14 +338,6 @@ export default {
     // 存储类型字典翻译
     storeTypeFormat(row, column) {
       return this.selectDictLabel(this.storeTypeOptions, row.storeType)
-    },
-    handleSelectStore(val) {
-      this.queryParams.storeType = val
-      if (val == 1) {
-        this.uploadUrl = '/common/uploadFile'
-      } else if (val == 2) {
-        this.uploadUrl = '/common/UploadFileAliyun'
-      }
     },
     /** 复制代码成功 */
     clipboardSuccess() {
