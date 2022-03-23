@@ -52,7 +52,8 @@
         <el-table-column prop="remark" align="center" label="备注" :show-overflow-tooltip="true" />
         <el-table-column label="操作" align="center" width="230" class-name="small-padding fixed-width">
           <template slot-scope="scope">
-            <el-button type="text" size="mini" icon="el-icon-view" v-hasPermi="['monitor:job:query']" @click="handleJobLog(scope.row.id, scope.row.name)">
+            <el-button type="text" size="mini" icon="el-icon-view" v-hasPermi="['monitor:job:query']"
+              @click="handleJobLog(scope.row.id, scope.row.name)">
               日志
               <!-- <router-link :to="{path: 'job/log', query: {jobId: scope.row.id}}">日志</router-link> -->
             </el-button>
@@ -117,8 +118,16 @@
           </el-col>
           <el-col :span="24" v-show="form.triggerType == 1">
             <el-form-item label="间隔(Cron)" prop="cron">
-              <el-input placeholder="如10分钟执行一次：0/0 0/10 * * * ?" v-model="form.cron">
+              <!-- <el-input placeholder="如10分钟执行一次：0/0 0/10 * * * ?" v-model="form.cron">
                 <el-link slot="append" href="https://qqe2.com/cron" type="primary" target="_blank" class="mr10">cron在线生成</el-link>
+              </el-input> -->
+              <el-input v-model="form.cron" placeholder="请输入cron执行表达式">
+                <template slot="append">
+                  <el-button type="primary" @click="handleShowCron">
+                    生成表达式
+                    <i class="el-icon-time el-icon--right"></i>
+                  </el-button>
+                </template>
               </el-input>
             </el-form-item>
           </el-col>
@@ -150,6 +159,10 @@
       </div>
     </el-dialog>
 
+    <el-dialog title="Cron表达式生成器" :visible.sync="openCron" append-to-body destroy-on-close class="scrollbar">
+      <crontab @hide="openCron=false" @fill="crontabFill" :expression="expression"></crontab>
+    </el-dialog>
+
     <el-drawer :title="logTitle" :visible.sync="drawer">
       <el-timeline>
         <el-timeline-item :timestamp="item.createTime" placement="top" v-for="(item, i) in jobLogList" :key="i">
@@ -157,7 +170,7 @@
           <p>{{item.exception}}</p>
         </el-timeline-item>
       </el-timeline>
-			<el-empty v-if="jobLogList.length <= 0"></el-empty>
+      <el-empty v-if="jobLogList.length <= 0"></el-empty>
     </el-drawer>
   </div>
 </template>
@@ -174,9 +187,11 @@ import {
   exportTasks
 } from '@/api/monitor/job'
 import { listJobLog } from '@/api/monitor/jobLog'
+import Crontab from '@/components/Crontab'
 
 export default {
   name: 'job',
+  components: { Crontab },
   data() {
     var cronValidate = (rule, value, callback) => {
       if (this.form.triggerType === 1) {
@@ -223,6 +238,10 @@ export default {
       }
     }
     return {
+      // 是否显示Cron表达式弹出层
+      openCron: false,
+      // 传入的表达式
+      expression: '',
       drawer: false,
       // 选中数组
       ids: [],
@@ -256,7 +275,7 @@ export default {
       dataTasks: [],
       // 任务日志列表
       jobLogList: [],
-			logTitle: "",
+      logTitle: '',
       // 任务状态字典
       isStartOptions: [
         { dictLabel: '运行中', dictValue: 'true' },
@@ -368,11 +387,21 @@ export default {
       } else {
         this.drawer = true
         this.jobLogList = []
-				this.logTitle = title
+        this.logTitle = title
         listJobLog({ JobId: id }).then((response) => {
           this.jobLogList = response.data.result
         })
       }
+    },
+    /** cron表达式按钮操作 */
+    handleShowCron() {
+      this.expression = this.form.cron
+      this.openCron = true
+    },
+    /** 确定后回传值 */
+    crontabFill(value) {
+			console.log(value)
+      this.form.cron = value
     },
     // 启动按钮
     handleStart(row) {
