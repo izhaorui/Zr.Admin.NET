@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
@@ -94,7 +95,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ApiResult.Error($"新增用户 '{user.UserName}'失败，登录账号已存在"));
             }
 
-            user.Create_by = User.Identity.Name;
+            user.Create_by = HttpContext.GetName();
             user.Password = NETCore.Encrypt.EncryptProvider.Md5(user.Password);
 
             return ToResponse(UserService.InsertUser(user));
@@ -112,7 +113,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (user == null || user.UserId <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
-            user.Update_by = User.Identity.Name;
+            user.Update_by = HttpContext.GetName();
             int upResult = UserService.UpdateUser(user);
 
             return ToResponse(upResult);

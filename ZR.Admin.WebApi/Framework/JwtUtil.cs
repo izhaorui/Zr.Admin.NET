@@ -10,6 +10,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using ZR.Admin.WebApi.Extensions;
+using ZR.Common;
 using ZR.Model.System;
 
 namespace ZR.Admin.WebApi.Framework
@@ -129,8 +130,9 @@ namespace ZR.Admin.WebApi.Framework
             try
             {
                 var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData).Value;
-
-                LoginUser loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
+                var loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
+                var permissions = CacheHelper.GetCache(GlobalConstant.UserPermKEY + loginUser?.UserId);
+                loginUser.Permissions = (List<string>)permissions;
                 return loginUser;
             }
             catch (Exception ex)
@@ -139,5 +141,27 @@ namespace ZR.Admin.WebApi.Framework
                 return null;
             }
         }
+
+        /// <summary>
+        ///组装Claims
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public static List<Claim> AddClaims(LoginUser user)
+        {
+            user.Permissions = new List<string>();
+            //1、创建Cookie保存用户信息，使用claim
+            var claims = new List<Claim>()
+                {
+                    new Claim(ClaimTypes.PrimarySid, user.UserId.ToString()),
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
+                };
+
+            //写入Cookie
+            //WhiteCookie(context, claims);
+            return claims;
+        }
+
     }
 }
