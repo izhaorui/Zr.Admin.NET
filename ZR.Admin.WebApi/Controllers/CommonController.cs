@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Snowflake.Core;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,16 +37,6 @@ namespace ZR.Admin.WebApi.Controllers
             WebHostEnvironment = webHostEnvironment;
             SysFileService = fileService;
             OptionsSetting = options.Value;
-        }
-
-        /// <summary>
-        /// 心跳
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public IActionResult Health()
-        {
-            return SUCCESS(true);
         }
 
         /// <summary>
@@ -105,48 +96,16 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost()]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "uploads", int uploadType = 0)
+        public async Task<IActionResult> UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "uploads", int uploadType = 0)
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
-            string fileExt = Path.GetExtension(formFile.FileName);
-            string hashFileName = FileUtil.HashFileName(Guid.NewGuid().ToString()).ToLower();
-            fileName = (fileName.IsEmpty() ? hashFileName : fileName) + fileExt;
-            fileDir = fileDir.IsEmpty() ? "uploads" : fileDir;
-            string filePath = FileUtil.GetdirPath(fileDir);
-            string finalFilePath = Path.Combine(WebHostEnvironment.WebRootPath, filePath, fileName);
-            finalFilePath = finalFilePath.Replace("\\", "/").Replace("//", "/");
-            double fileSize = formFile.Length / 1024;
 
-            if (!Directory.Exists(Path.GetDirectoryName(finalFilePath)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(finalFilePath));
-            }
-
-            using (var stream = new FileStream(finalFilePath, FileMode.Create))
-            {
-                formFile.CopyTo(stream);
-            }
-
-            string accessPath = $"{OptionsSetting.Upload.UploadUrl}/{filePath.Replace("\\", " /")}{fileName}";
-            SysFile file = new()
-            {
-                AccessUrl = accessPath,
-                Create_by = HttpContext.GetName(),
-                FileExt = fileExt,
-                FileName = fileName,
-                FileSize = fileSize + "kb",
-                StoreType = 1,
-                FileUrl = finalFilePath,
-                RealName = formFile.FileName,
-                Create_time = DateTime.Now,
-                FileType = formFile.ContentType
-            };
-            long fileId = SysFileService.InsertFile(file);
+            SysFile file = await SysFileService.SaveFileToLocal(WebHostEnvironment.WebRootPath, fileName, fileDir, HttpContext.GetName(), formFile);
             return SUCCESS(new
             {
-                url = uploadType == 1 ? finalFilePath : accessPath,
+                url = uploadType == 1 ? file.FileUrl : file.AccessUrl,
                 fileName,
-                fileId
+                fileId = file.Id.ToString()
             });
         }
 
@@ -162,10 +121,9 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public async Task<IActionResult> UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "")
         {
-            if (fileDir.IsEmpty()) fileDir = "uploads";
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);//文件后缀
-            double fileSize = formFile.Length / 1024.0;//文件大小KB
+            double fileSize = Math.Round(formFile.Length / 1024.0, 2);//文件大小KB
             string[] NotAllowedFileExtensions = new string[] { ".bat", ".exe", ".jar", ".js" };
             int MaxContentLength = 15;
             if (NotAllowedFileExtensions.Contains(fileExt))
@@ -176,30 +134,20 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + MaxContentLength + " MB");
             }
-
-            (bool, string, string) result = new();
-            await Task.Run(() =>
+            SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", fileDir, "", HttpContext.GetName())
             {
-                result = SysFileService.SaveFile(fileDir, formFile, fileName, "");
-            });
-            long id = SysFileService.InsertFile(new SysFile()
-            {
-                AccessUrl = result.Item2,
-                Create_by = HttpContext.GetName(),
-                FileExt = fileExt,
-                FileName = result.Item3,
-                FileSize = fileSize + "kb",
-                StoreType = 2,
-                StorePath = fileDir,
-                RealName = formFile.FileName,
-                Create_time = DateTime.Now,
+                StoreType = (int)Infrastructure.Enums.StoreType.ALIYUN,
                 FileType = formFile.ContentType
-            });
+            };
+            file = await SysFileService.SaveFileToAliyun(file, formFile);
+
+            if (file.Id <= 0) { return ToResponse(ApiResult.Error("阿里云连接失败")); }
+
             return SUCCESS(new
             {
-                url = result.Item2,
-                fileName = result.Item3,
-                fileId = id
+                url = file.AccessUrl,
+                fileName = file.FileName,
+                fileId = file.Id.ToString()
             });
         }
         #endregion

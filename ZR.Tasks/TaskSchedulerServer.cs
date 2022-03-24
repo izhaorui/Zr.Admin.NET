@@ -262,7 +262,7 @@ namespace ZR.Tasks
                 List<JobKey> jobKeys = _scheduler.Result.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(tasksQz.JobGroup)).Result.ToList();
                 if (jobKeys == null || jobKeys.Count == 0)
                 {
-                    return new ApiResult(110, $"未找到分组[{ tasksQz.JobGroup }]");
+                    await AddTaskScheduleAsync(tasksQz);
                 }
 
                 var triggers = await _scheduler.Result.GetTriggersOfJob(jobKey);

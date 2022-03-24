@@ -79,6 +79,12 @@ namespace ZR.Admin.WebApi.Extensions
             return uid;
         }
 
+        public static bool IsAdmin(this HttpContext context)
+        {
+            long id = GetUId(context);
+            return id == 1;
+        }
+
         /// <summary>
         /// ClaimsIdentity
         /// </summary>

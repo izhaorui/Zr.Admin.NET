@@ -1,11 +1,12 @@
 <template>
   <div class="upload-file">
     <el-upload :action="uploadFileUrl" :before-upload="handleBeforeUpload" :file-list="fileList" :limit="limit" :on-error="handleUploadError"
-      :on-exceed="handleExceed" :on-success="handleUploadSuccess" :on-progress="uploadProcess" :show-file-list="true" :data="data" :headers="headers"
-      :drag="drag" ref="upload">
-			<i class="el-icon-upload" v-if="drag"></i>
-			<div class="el-upload__text" v-if="drag">将文件拖到此处，或<em>点击上传</em></div>
-      <!-- 上传按钮 -->
+      :on-exceed="handleExceed" :on-success="handleUploadSuccess" :show-file-list="true" :data="data" :headers="headers" :drag="drag" ref="upload"
+      :auto-upload="autoUpload">
+      <!-- 拖拽上传文件 -->
+      <i class="el-icon-upload" v-if="drag"></i>
+      <div class="el-upload__text" v-if="drag">将文件拖到此处，或<em>点击上传</em></div>
+      <!-- 选择文件按钮 -->
       <el-button size="mini" icon="el-icon-upload" v-if="!drag">选取文件</el-button>
       <!-- 上传提示 -->
       <div class="el-upload__tip" slot="tip" v-if="showTip">
@@ -23,7 +24,7 @@
           <span class="el-icon-document"> {{ getFileName(file.name) }} </span>
         </el-link>
         <div class="ele-upload-list__item-content-action">
-          <el-link :underline="false" @click="handleDelete(index)" type="danger">删除</el-link>
+          <el-link @click="handleDelete(index)" type="danger">删除</el-link>
         </div>
       </li>
     </transition-group>
@@ -73,6 +74,11 @@ export default {
     drag: {
       type: Boolean,
       default: false
+    },
+    // 自动上传
+    autoUpload: {
+      type: Boolean,
+      default: true
     }
   },
   data() {
@@ -181,10 +187,6 @@ export default {
         res.data
       )
     },
-    // 上传进度
-    uploadProcess(event, file, fileList) {
-      // console.log("上传进度" + file.percentage);
-    },
     // 删除文件
     handleDelete(index) {
       this.fileList.splice(index, 1)
@@ -206,6 +208,11 @@ export default {
         strs += list[i].url + separator
       }
       return strs != '' ? strs.substr(0, strs.length - 1) : ''
+    },
+    // 提交上传
+    submitUpload() {
+      console.log(this.fileList)
+      this.$refs.upload.submit()
     }
   }
 }
@@ -228,7 +235,7 @@ export default {
   margin-right: 10px;
 }
 ::v-deep .el-upload-dragger {
-	width: 270px;
-	height: 150px;
+  width: 270px;
+  height: 150px;
 }
 </style>

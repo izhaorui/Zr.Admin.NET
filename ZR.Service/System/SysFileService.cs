@@ -11,6 +11,8 @@ using System.Net;
 using ZR.Model.System;
 using ZR.Repository.System;
 using Infrastructure.Extensions;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
 namespace ZR.Service.System
 {
@@ -22,57 +24,82 @@ namespace ZR.Service.System
     {
         private string domainUrl = AppSettings.GetConfig("ALIYUN_OSS:domainUrl");
         private readonly SysFileRepository SysFileRepository;
-
-        public SysFileService(SysFileRepository repository)
+        private OptionsSetting OptionsSetting;
+        public SysFileService(SysFileRepository repository, IOptions<OptionsSetting> options)
         {
             SysFileRepository = repository;
+            OptionsSetting = options.Value;
+        }
+
+        /// <summary>
+        /// 存储本地
+        /// </summary>
+        /// <returns></returns>
+        public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
+        {
+            string fileExt = Path.GetExtension(formFile.FileName);
+            fileName = (fileName.IsEmpty() ? HashFileName() : fileName) + fileExt;
+            fileDir = fileDir.IsEmpty() ? "uploads" : fileDir;
+            string filePath = GetdirPath(fileDir);
+            string finalFilePath = Path.Combine(rootPath, filePath, fileName);
+            double fileSize = Math.Round(formFile.Length / 1024.0, 2);
+
+            if (!Directory.Exists(Path.GetDirectoryName(finalFilePath)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(finalFilePath));
+            }
+
+            using (var stream = new FileStream(finalFilePath, FileMode.Create))
+            {
+                await formFile.CopyToAsync(stream);
+            }
+            string accessPath = string.Concat(OptionsSetting.Upload.UploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
+            SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, accessPath, userName)
+            {
+                StoreType = (int)Infrastructure.Enums.StoreType.LOCAL,
+                FileType = formFile.ContentType,
+                FileUrl = finalFilePath
+            };
+            file.Id = await InsertFile(file);
+            return file;
         }
 
         /// <summary>
         /// 上传文件到阿里云
         /// </summary>
-        /// <param name="picdir"></param>
+        /// <param name="file"></param>
         /// <param name="formFile"></param>
         /// <returns></returns>
-        public (bool, string, string) SaveFile(string picdir, IFormFile formFile)
+        public async Task<SysFile> SaveFileToAliyun(SysFile file, IFormFile formFile)
         {
-            return SaveFile(picdir, formFile, "", "");
+            file.FileName = (file.FileName.IsEmpty() ? HashFileName() : file.FileName) + file.FileExt;
+            file.StorePath = GetdirPath(file.StorePath);
+            string finalPath = Path.Combine(file.StorePath, file.FileName);
+            HttpStatusCode statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), finalPath, "");
+            if (statusCode != HttpStatusCode.OK) return file;
+
+            file.StorePath = file.StorePath;
+            file.FileUrl = finalPath;
+            file.AccessUrl = string.Concat(domainUrl, "/", file.StorePath.Replace("\\", "/"), "/", file.FileName);
+            file.Id = await InsertFile(file);
+
+            return file;
         }
 
         /// <summary>
-        /// 存储文件
+        /// 获取文件存储目录
         /// </summary>
-        /// <param name="picdir">文件夹</param>
-        /// <param name="formFile"></param>
-        /// <param name="customFileName">自定义文件名</param>
-        /// <param name="bucketName">存储桶</param>
+        /// <param name="storePath"></param>
+        /// <param name="byTimeStore">是否按年月日存储</param>
         /// <returns></returns>
-        public (bool, string, string) SaveFile(string picdir, IFormFile formFile, string customFileName, string bucketName)
-        {
-            // eg: uploads/2020/08/18
-            //string dir = GetdirPath(picdir.ToString());
-
-            string tempName = customFileName.IsEmpty() ? HashFileName() : customFileName;
-            string fileExt = Path.GetExtension(formFile.FileName);
-            string fileName = tempName + fileExt;
-            string webUrl = string.Concat(domainUrl, "/", picdir, "/", fileName);
-
-            HttpStatusCode statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), Path.Combine(picdir, fileName), bucketName);
-
-            return (statusCode == HttpStatusCode.OK, webUrl, fileName);
-        }
-        public string GetdirPath(string path = "")
+        public string GetdirPath(string storePath = "", bool byTimeStore = true)
         {
             DateTime date = DateTime.Now;
-            int year = date.Year;
-            int month = date.Month;
-            int day = date.Day;
-            //int hour = date.Hour;
+            string timeDir = date.ToString("yyyyMMdd");
 
-            string timeDir = $"{year}/{month}/{day}";// date.ToString("yyyyMM/dd/HH/");
-            if (!string.IsNullOrEmpty(path))
+            if (!string.IsNullOrEmpty(storePath))
             {
-                timeDir = path + "/" + timeDir;
+                timeDir = Path.Combine(storePath, timeDir);
             }
             return timeDir;
         }
@@ -87,11 +114,11 @@ namespace ZR.Service.System
             return BitConverter.ToString(md5.ComputeHash(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
         }
 
-        public long InsertFile(SysFile file)
+        public Task<long> InsertFile(SysFile file)
         {
             try
             {
-                return Insertable(file).ExecuteReturnSnowflakeId();//单条插入返回雪花ID;
+                return Insertable(file).ExecuteReturnSnowflakeIdAsync();//单条插入返回雪花ID;
             }
             catch (Exception ex)
             {

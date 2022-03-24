@@ -1,9 +1,10 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
+using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using System.Linq.Expressions;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
@@ -51,6 +52,10 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [HttpDelete("clean")]
         public IActionResult CleanLoginInfo()
         {
+            if (!HttpContextExtension.IsAdmin(HttpContext))
+            {
+                return ToResponse(ApiResult.Error("操作失败"));
+            }
             sysLoginService.TruncateLogininfo();
             return SUCCESS(1);
         }
@@ -65,6 +70,10 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [ActionPermissionFilter(Permission = "monitor:logininfor:remove")]
         public IActionResult Remove(string infoIds)
         {
+            if (!HttpContextExtension.IsAdmin(HttpContext))
+            {
+                return ToResponse(ApiResult.Error("操作失败"));
+            }
             long[] infoIdss = Tools.SpitLongArrary(infoIds);
             return SUCCESS(sysLoginService.DeleteLogininforByIds(infoIdss));
         }

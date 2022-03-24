@@ -16,16 +16,11 @@ namespace Infrastructure
         public static string GetdirPath(string path = "")
         {
             DateTime date = DateTime.Now;
-            int year = date.Year;
-            int month = date.Month;
-            int day = date.Day;
-            int hour = date.Hour;
-
-            string timeDir = $"{year}{month}{day}/";// date.ToString("yyyyMM/dd/HH/");
+            string timeDir = date.ToString("yyyyMMdd");// date.ToString("yyyyMM/dd/HH/");
 
             if (!string.IsNullOrEmpty(path))
             {
-                timeDir = $"{path}/{timeDir}/";
+                timeDir = Path.Combine(path, timeDir);
             }
             return timeDir;
         }
@@ -33,7 +28,7 @@ namespace Infrastructure
         /// <summary>
         /// 取文件名的MD5值(16位)
         /// </summary>
-        /// <param name="name">文件名，不包括扩展名</param>
+        /// <param name="str">文件名，不包括扩展名</param>
         /// <returns></returns>
         public static string HashFileName(string str = null)
         {
