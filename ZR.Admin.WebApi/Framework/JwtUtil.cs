@@ -132,6 +132,7 @@ namespace ZR.Admin.WebApi.Framework
                 var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData).Value;
                 var loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
                 var permissions = CacheHelper.GetCache(GlobalConstant.UserPermKEY + loginUser?.UserId);
+                if (permissions == null) return null;
                 loginUser.Permissions = (List<string>)permissions;
                 return loginUser;
             }
