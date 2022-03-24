@@ -35,13 +35,12 @@ namespace ZR.Service.System
         /// 存储本地
         /// </summary>
         /// <returns></returns>
-        public async Task<SysFile> SaveFileLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
+        public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
         {
             string fileExt = Path.GetExtension(formFile.FileName);
-            string hashFileName = FileUtil.HashFileName();
-            fileName = (fileName.IsEmpty() ? hashFileName : fileName) + fileExt;
+            fileName = (fileName.IsEmpty() ? HashFileName() : fileName) + fileExt;
             fileDir = fileDir.IsEmpty() ? "uploads" : fileDir;
-            string filePath = FileUtil.GetdirPath(fileDir);
+            string filePath = GetdirPath(fileDir);
             string finalFilePath = Path.Combine(rootPath, filePath, fileName);
             double fileSize = Math.Round(formFile.Length / 1024.0, 2);
 
@@ -68,37 +67,39 @@ namespace ZR.Service.System
         /// <summary>
         /// 上传文件到阿里云
         /// </summary>
-        /// <param name="picdir">文件夹</param>
+        /// <param name="file"></param>
         /// <param name="formFile"></param>
-        /// <param name="customFileName">自定义文件名</param>
-        /// <param name="bucketName">存储桶</param>
         /// <returns></returns>
-        public (bool, string, string) SaveFile(string picdir, IFormFile formFile, string customFileName, string bucketName)
+        public async Task<SysFile> SaveFileToAliyun(SysFile file, IFormFile formFile)
         {
-            // eg: uploads/2020/08/18
-            //string dir = GetdirPath(picdir.ToString());
+            file.FileName = (file.FileName.IsEmpty() ? HashFileName() : file.FileName) + file.FileExt;
+            file.StorePath = GetdirPath(file.StorePath);
+            string finalPath = Path.Combine(file.StorePath, file.FileName);
+            HttpStatusCode statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), finalPath, "");
+            if (statusCode != HttpStatusCode.OK) return file;
 
-            string tempName = customFileName.IsEmpty() ? HashFileName() : customFileName;
-            string fileExt = Path.GetExtension(formFile.FileName);
-            string fileName = tempName + fileExt;
-            string webUrl = string.Concat(domainUrl, "/", picdir, "/", fileName);
+            file.StorePath = file.StorePath;
+            file.FileUrl = finalPath;
+            file.AccessUrl = string.Concat(domainUrl, "/", file.StorePath.Replace("\\", "/"), "/", file.FileName);
+            file.Id = await InsertFile(file);
 
-            HttpStatusCode statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), Path.Combine(picdir, fileName), bucketName);
-
-            return (statusCode == HttpStatusCode.OK, webUrl, fileName);
+            return file;
         }
-        public string GetdirPath(string path = "")
+
+        /// <summary>
+        /// 获取文件存储目录
+        /// </summary>
+        /// <param name="storePath"></param>
+        /// <param name="byTimeStore">是否按年月日存储</param>
+        /// <returns></returns>
+        public string GetdirPath(string storePath = "", bool byTimeStore = true)
         {
             DateTime date = DateTime.Now;
-            int year = date.Year;
-            int month = date.Month;
-            int day = date.Day;
-            //int hour = date.Hour;
+            string timeDir = date.ToString("yyyyMMdd");
 
-            string timeDir = $"{year}/{month}/{day}";// date.ToString("yyyyMM/dd/HH/");
-            if (!string.IsNullOrEmpty(path))
+            if (!string.IsNullOrEmpty(storePath))
             {
-                timeDir = path + "/" + timeDir;
+                timeDir = Path.Combine(storePath, timeDir);
             }
             return timeDir;
         }

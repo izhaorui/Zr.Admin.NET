@@ -24,7 +24,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 权限集合
         /// </summary>
-        public List<string> Permissions { get; set; }
+        public List<string> Permissions { get; set; } = new List<string>();
         public LoginUser()
         {
         }

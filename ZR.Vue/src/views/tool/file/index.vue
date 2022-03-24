@@ -68,11 +68,11 @@
     <pagination class="mt10" background :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改文件存储对话框 -->
-    <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" width="380px">
-      <el-form ref="form" :model="form" :rules="rules" label-position="left">
+    <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" width="400px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="90px" label-position="left">
         <el-row>
           <el-col :lg="24">
-            <el-form-item label="" prop="storeType">
+            <el-form-item label="存储类型" prop="storeType">
               <el-radio-group v-model="form.storeType" placeholder="请选择存储类型">
                 <el-radio v-for="item in storeTypeOptions" :key="item.dictValue" :label="parseInt(item.dictValue)">
                   {{item.dictLabel}}
@@ -80,13 +80,21 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
+          <!-- <el-col :lg="24">
+            <el-form-item label="按时间存储" prop="timeStore">
+              <el-radio-group v-model="form.storeType" placeholder="是否按时间(yyyyMMdd)存储">
+                <el-radio :key="1" :label="1">是 </el-radio>
+                <el-radio :key="0" :label="0">否 </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col> -->
           <el-col :lg="24">
-            <el-form-item label="" prop="">
+            <el-form-item label="存储文件夹" prop="storePath">
               <el-input v-model="form.storePath" placeholder="请输入存储文件夹" clearable="" auto-complete="" />
             </el-form-item>
           </el-col>
           <el-col :lg="24">
-            <el-form-item label="" prop="fileName">
+            <el-form-item label="自定文件名" prop="fileName">
               <el-input v-model="form.fileName" placeholder="请输入文件名" clearable="" />
             </el-form-item>
           </el-col>

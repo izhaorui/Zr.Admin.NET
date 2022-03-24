@@ -100,7 +100,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
 
-            SysFile file = await SysFileService.SaveFileLocal(WebHostEnvironment.WebRootPath, fileName, fileDir, HttpContext.GetName(), formFile); 
+            SysFile file = await SysFileService.SaveFileToLocal(WebHostEnvironment.WebRootPath, fileName, fileDir, HttpContext.GetName(), formFile);
             return SUCCESS(new
             {
                 url = uploadType == 1 ? file.FileUrl : file.AccessUrl,
@@ -121,10 +121,9 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public async Task<IActionResult> UploadFileAliyun([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "")
         {
-            if (fileDir.IsEmpty()) fileDir = "uploads";
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             string fileExt = Path.GetExtension(formFile.FileName);//文件后缀
-            double fileSize = formFile.Length / 1024.0;//文件大小KB
+            double fileSize = Math.Round(formFile.Length / 1024.0, 2);//文件大小KB
             string[] NotAllowedFileExtensions = new string[] { ".bat", ".exe", ".jar", ".js" };
             int MaxContentLength = 15;
             if (NotAllowedFileExtensions.Contains(fileExt))
@@ -135,26 +134,20 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + MaxContentLength + " MB");
             }
-
-            (bool, string, string) result = new();
-            await Task.Run(() =>
-            {
-                result = SysFileService.SaveFile(fileDir, formFile, fileName, "");
-            });
-            if (!result.Item1)
-            {
-                return ToResponse(ApiResult.Error("阿里云连接失败"));
-            }
-            long id = await SysFileService.InsertFile(new(formFile.FileName, fileName, fileExt, fileSize + "kb", "", result.Item2, HttpContext.GetName())
+            SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", fileDir, "", HttpContext.GetName())
             {
                 StoreType = (int)Infrastructure.Enums.StoreType.ALIYUN,
                 FileType = formFile.ContentType
-            });
+            };
+            file = await SysFileService.SaveFileToAliyun(file, formFile);
+
+            if (file.Id <= 0) { return ToResponse(ApiResult.Error("阿里云连接失败")); }
+
             return SUCCESS(new
             {
-                url = result.Item2,
-                fileName = result.Item3,
-                fileId = id
+                url = file.AccessUrl,
+                fileName = file.FileName,
+                fileId = file.Id.ToString()
             });
         }
         #endregion
