@@ -78,11 +78,11 @@ namespace ZR.Tasks
             //成功后执行次数+1
             if (logModel.Status == "0")
             {
-                taskQzService.Update(f => f.ID == job.Key.Name, f => new SysTasksQz()
+                taskQzService.UpdateAsync(f => new SysTasksQz()
                 {
                     RunTimes = f.RunTimes + 1,
                     LastRunTime = DateTime.Now
-                });
+                }, f => f.ID == job.Key.Name);
             }
             logger.Info($"执行任务【{job.Key.Name}|{logModel.JobName}】结果={logModel.JobMessage}");
         }

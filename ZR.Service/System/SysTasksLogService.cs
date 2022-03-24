@@ -23,7 +23,7 @@ namespace ZR.Service.System
         public SysTasksLog AddTaskLog(string jobId, SysTasksLog logModel)
         {
             //获取任务信息
-            var model = _tasksQzService.GetId(jobId);
+            var model = _tasksQzService.GetSingleAsync(f => f.ID == jobId).Result;
 
             if (model != null)
             {
@@ -33,7 +33,7 @@ namespace ZR.Service.System
                 logModel.CreateTime = DateTime.Now;
             }
 
-            Add(logModel);
+            InsertAsync(logModel);
             return logModel;
         }
 
