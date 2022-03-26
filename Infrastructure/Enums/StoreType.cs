@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 
 namespace Infrastructure.Enums
 {
@@ -30,5 +25,10 @@ namespace Infrastructure.Enums
         [Description("腾讯云")]
         TENCENT = 3,
 
+        /// <summary>
+        /// 七牛
+        /// </summary>
+        [Description("七牛云")]
+        QINIU = 4
     }
 }
