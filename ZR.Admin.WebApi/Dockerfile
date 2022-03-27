@@ -4,7 +4,7 @@ WORKDIR /app
 #创建挂载目录,用于将程序部署在服务器本地
 #VOLUME /app
 #设置docker容器对外暴露端口
-EXPOSE 5000
+EXPOSE 8888
 VOLUME /app/logs
 #COPY bin/Release/net5.0/publish/ app/
 COPY . app/
@@ -15,5 +15,7 @@ RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 # 复制发布文件到工作目录
 #COPY . app/
+WORKDIR /app
 
-ENTRYPOINT ["dotnet", "ZR.Admin.WebApi.dll"]
+#等价于 dotnet ZR.Admin.WebApi.dll，如果不指定启动端口默认在docker里面启动端口是80端口
+ENTRYPOINT ["dotnet", "ZR.Admin.WebApi.dll", "--server.urls","http://*:8888"]
