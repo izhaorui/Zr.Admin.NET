@@ -86,8 +86,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             List<string> permissions = permissionService.GetMenuPermission(user);
 
             LoginUser loginUser = new(user, roles, permissions);
-            CacheHelper.SetCache(GlobalConstant.UserPermKEY + user.UserId, loginUser);
-            return SUCCESS(JwtUtil.GenerateJwtToken(HttpContext.AddClaims(loginUser), jwtSettings.JwtSettings));
+            CacheHelper.SetCache(GlobalConstant.UserPermKEY + user.UserId, permissions);
+            return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser), jwtSettings.JwtSettings));
         }
 
         /// <summary>
@@ -103,11 +103,11 @@ namespace ZR.Admin.WebApi.Controllers.System
             //    //注销登录的用户，相当于ASP.NET中的FormsAuthentication.SignOut  
             //    await HttpContext.SignOutAsync();
             //}).Wait();
-            var id = HttpContext.GetUId();
+            var userid = HttpContext.GetUId();
             var name = HttpContext.GetName();
-
-            CacheHelper.Remove(GlobalConstant.UserPermKEY + id);
-            return SUCCESS(new { name , id});
+            
+            CacheHelper.Remove(GlobalConstant.UserPermKEY + userid);
+            return SUCCESS(new { name , id = userid });
         }
 
         /// <summary>

@@ -43,5 +43,25 @@ namespace ZR.Common
             return System.Net.HttpStatusCode.BadRequest;
         }
 
+        /// <summary>
+        /// 删除资源
+        /// </summary>
+        /// <param name="dirPath"></param>
+        /// <param name="bucketName"></param>
+        /// <returns></returns>
+        public static System.Net.HttpStatusCode DeleteFile(string dirPath, string bucketName = "")
+        {
+            if (string.IsNullOrEmpty(bucketName)) { bucketName = bucketName1; }
+            try
+            {
+                OssClient client = new(endpoint, accessKeyId, accessKeySecret);
+                DeleteObjectResult putObjectResult = client.DeleteObject(bucketName, dirPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return System.Net.HttpStatusCode.BadRequest;
+        }
     }
 }

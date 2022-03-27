@@ -89,7 +89,7 @@ namespace ZR.CodeGenerator
                 //图片
                 sb.AppendLine("    <el-col :lg=\"24\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\" prop=\"{columnName}\">");
-                sb.AppendLine($@"        <UploadImage v-model=""form.{columnName}"" column=""{columnName}"" @input=""handleUploadSuccess"" />");
+                sb.AppendLine($@"        <UploadImage v-model=""form.{columnName}"" :data=""{{ 'storeType' : 1}}"" column=""{columnName}"" @input=""handleUploadSuccess"" />");
                 sb.AppendLine("      </el-form-item>");
                 sb.AppendLine("    </el-col>");
             }

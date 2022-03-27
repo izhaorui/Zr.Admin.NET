@@ -1,4 +1,5 @@
-﻿using ZR.Model.System;
+﻿using System.Threading.Tasks;
+using ZR.Model.System;
 using ZR.Repository;
 
 namespace ZR.Service.System.IService
@@ -10,6 +11,6 @@ namespace ZR.Service.System.IService
         /// </summary>
         /// <returns></returns>
         //public int AddTaskLog(string jobId);
-        SysTasksLog AddTaskLog(string jobId, SysTasksLog tasksLog);
+        Task<SysTasksLog> AddTaskLog(string jobId, SysTasksLog tasksLog);
     }
 }

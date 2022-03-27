@@ -56,7 +56,7 @@ namespace ZR.Tasks
                 JobMessage = logMsg
             };
 
-            RecordTaskLog(context, logModel);
+            await RecordTaskLog(context, logModel);
             return logModel;
         }
 
@@ -65,7 +65,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="context"></param>
         /// <param name="logModel"></param>
-        protected void RecordTaskLog(IJobExecutionContext context, SysTasksLog logModel)
+        protected async Task RecordTaskLog(IJobExecutionContext context, SysTasksLog logModel)
         {
             var tasksLogService = (ISysTasksLogService)App.GetRequiredService(typeof(ISysTasksLogService));
             var taskQzService = (ISysTasksQzService)App.GetRequiredService(typeof(ISysTasksQzService));
@@ -74,15 +74,15 @@ namespace ZR.Tasks
             IJobDetail job = context.JobDetail;
 
             logModel.InvokeTarget = job.JobType.FullName;
-            logModel = tasksLogService.AddTaskLog(job.Key.Name, logModel);
+            logModel = await tasksLogService.AddTaskLog(job.Key.Name, logModel);
             //成功后执行次数+1
             if (logModel.Status == "0")
             {
-                taskQzService.Update(f => f.ID == job.Key.Name, f => new SysTasksQz()
+                await taskQzService.UpdateAsync(f => new SysTasksQz()
                 {
                     RunTimes = f.RunTimes + 1,
                     LastRunTime = DateTime.Now
-                });
+                }, f => f.ID == job.Key.Name);
             }
             logger.Info($"执行任务【{job.Key.Name}|{logModel.JobName}】结果={logModel.JobMessage}");
         }

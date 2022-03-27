@@ -123,6 +123,10 @@ namespace ZR.Tasks
                 {
                     return ApiResult.Error(500, $"该计划任务已经在执行:【{tasksQz.Name}】,请勿重复添加！");
                 }
+                if (tasksQz?.EndTime <= DateTime.Now)
+                {
+                    return ApiResult.Error(500, $"结束时间小于当前时间计划将不会被执行");
+                }
                 #region 设置开始时间和结束时间
 
                 tasksQz.BeginTime = tasksQz.BeginTime == null ? DateTime.Now : tasksQz.BeginTime;
@@ -166,10 +170,12 @@ namespace ZR.Tasks
                 // 5、将触发器和任务器绑定到调度器中
                 await _scheduler.Result.ScheduleJob(job, trigger);
                 //任务没有启动、暂停任务
-                if (!tasksQz.IsStart)
-                {
-                    _scheduler.Result.PauseJob(jobKey).Wait();
-                }
+                //if (!tasksQz.IsStart)
+                //{
+                //    _scheduler.Result.PauseJob(jobKey).Wait();
+                //}
+                //按新的trigger重新设置job执行
+                await _scheduler.Result.ResumeTrigger(trigger.Key);
                 return ApiResult.Success($"启动计划任务:【{tasksQz.Name}】成功！");
             }
             catch (Exception ex)

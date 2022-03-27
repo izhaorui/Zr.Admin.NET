@@ -130,27 +130,6 @@ namespace ZR.Admin.WebApi.Extensions
             return context != null ? context.Request.Path.Value : "";
         }
 
-        /// <summary>
-        ///组装Claims
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public static List<Claim> AddClaims(this HttpContext context, LoginUser user)
-        {
-            //1、创建Cookie保存用户信息，使用claim
-            var claims = new List<Claim>()
-                {
-                    new Claim(ClaimTypes.PrimarySid, user.UserId.ToString()),
-                    new Claim(ClaimTypes.Name, user.UserName),
-                    new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
-                };
-
-            //写入Cookie
-            //WhiteCookie(context, claims);
-            return claims;
-        }
-
         private static void WhiteCookie(HttpContext context, List<Claim> claims)
         {
             //2.创建声明主题 指定认证方式 这里使用cookie

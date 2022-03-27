@@ -51,14 +51,15 @@ namespace ZR.Service.System
 
             using (var stream = new FileStream(finalFilePath, FileMode.Create))
             {
-                await formFile.CopyToAsync(stream);
+                await formFile.CopyToAsync(stream);//await 不能少
             }
             string accessPath = string.Concat(OptionsSetting.Upload.UploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
-            SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, accessPath, userName)
+            SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, userName)
             {
                 StoreType = (int)Infrastructure.Enums.StoreType.LOCAL,
                 FileType = formFile.ContentType,
-                FileUrl = finalFilePath
+                FileUrl = finalFilePath,
+                AccessUrl = accessPath
             };
             file.Id = await InsertFile(file);
             return file;

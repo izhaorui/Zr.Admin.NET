@@ -1,6 +1,7 @@
 ﻿using Infrastructure.Attribute;
 using System;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Repository;
@@ -12,7 +13,7 @@ namespace ZR.Service.System
     /// 任务日志
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient, ServiceType = typeof(ISysTasksLogService))]
-    public class SysTasksLogService : BaseRepository<SysTasksLog>, ISysTasksLogService
+    public class SysTasksLogService : BaseService<SysTasksLog>, ISysTasksLogService
     {
         private ISysTasksQzService _tasksQzService;
         public SysTasksLogService(ISysTasksQzService tasksQzService)
@@ -20,10 +21,10 @@ namespace ZR.Service.System
             _tasksQzService = tasksQzService;
         }
 
-        public SysTasksLog AddTaskLog(string jobId, SysTasksLog logModel)
+        public async Task<SysTasksLog> AddTaskLog(string jobId, SysTasksLog logModel)
         {
             //获取任务信息
-            var model = _tasksQzService.GetId(jobId);
+            var model = await _tasksQzService.GetSingleAsync(f => f.ID == jobId);
 
             if (model != null)
             {
@@ -33,7 +34,7 @@ namespace ZR.Service.System
                 logModel.CreateTime = DateTime.Now;
             }
 
-            Add(logModel);
+            await InsertAsync(logModel);
             return logModel;
         }
 

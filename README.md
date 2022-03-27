@@ -15,6 +15,7 @@
 * 后端采用Net5/Net6、Sqlsugar、MySQL。
 * 权限认证使用Jwt，支持多终端认证系统。
 * 支持加载动态权限菜单，多方式轻松权限控制
+* 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
 * 七牛云通用云产品优惠券：[点我进入](https://s.qiniu.com/FzEfay)。
 * 腾讯云秒杀场：[点我进入](https://curl.qcloud.com/4yEoRquq)。
 * 腾讯云优惠券：[点我领取](https://curl.qcloud.com/5J4nag8D)。
