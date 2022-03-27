@@ -145,7 +145,7 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 存储文件到阿里云
+        /// 存储文件到阿里云(已弃用)
         /// </summary>
         /// <param name="formFile"></param>
         /// <param name="fileName">自定义文件名</param>
