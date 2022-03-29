@@ -131,9 +131,13 @@ namespace ZR.Admin.WebApi.Framework
             {
                 var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData).Value;
                 var loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
-                var permissions = CacheHelper.GetCache(GlobalConstant.UserPermKEY + loginUser?.UserId);
+                var permissions = (List<string>)CacheHelper.GetCache(GlobalConstant.UserPermKEY + loginUser?.UserId);
+                if (loginUser?.UserName == "admin")
+                {
+                    permissions = new List<string>() { GlobalConstant.AdminPerm };
+                }
                 if (permissions == null) return null;
-                loginUser.Permissions = (List<string>)permissions;
+                loginUser.Permissions = permissions;
                 return loginUser;
             }
             catch (Exception ex)
@@ -150,8 +154,10 @@ namespace ZR.Admin.WebApi.Framework
         /// <returns></returns>
         public static List<Claim> AddClaims(LoginUser user)
         {
-            user.Permissions = new List<string>();
-            //1、创建Cookie保存用户信息，使用claim
+            if (user?.Permissions.Count > 50)
+            {
+                user.Permissions = new List<string>();
+            }
             var claims = new List<Claim>()
                 {
                     new Claim(ClaimTypes.PrimarySid, user.UserId.ToString()),
@@ -159,8 +165,6 @@ namespace ZR.Admin.WebApi.Framework
                     new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
                 };
 
-            //写入Cookie
-            //WhiteCookie(context, claims);
             return claims;
         }
 

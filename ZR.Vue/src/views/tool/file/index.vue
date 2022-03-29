@@ -100,8 +100,8 @@
           </el-col>
           <el-col :lg="24">
             <el-form-item prop="accessUrl">
-              <UploadFile ref="upload" v-model="form.accessUrl" :uploadUrl="uploadUrl" :fileType="[]" :limit="5" :fileSize="15" :drag="true"
-                :data="{ 'fileDir' :  form.storePath, 'fileName': form.fileName}" :autoUpload="false" column="accessUrl"
+              <UploadFile ref="upload" v-model="form.accessUrl" :fileType="[]" :limit="5" :fileSize="15" :drag="true"
+                :data="{ 'fileDir' :  form.storePath, 'fileName': form.fileName, 'storeType': form.storeType}" :autoUpload="false" column="accessUrl"
                 @input="handleUploadSuccess" />
             </el-form-item>
           </el-col>
@@ -208,8 +208,8 @@ export default {
         { dictLabel: '本地存储', dictValue: 1 },
         { dictLabel: '阿里云存储', dictValue: 2 }
       ],
-      // 上传文件地址
-      uploadUrl: '/common/uploadFile',
+      // 存储类型 1、本地 2、阿里云
+      storeType: 0,
       fileType: [],
       // 数据列表
       dataList: [],
@@ -239,17 +239,6 @@ export default {
   created() {
     // 列表数据查询
     this.getList()
-  },
-  watch: {
-    'form.storeType': {
-      handler: function(val) {
-        if (val == 1) {
-          this.uploadUrl = '/common/uploadFile'
-        } else if (val == 2) {
-          this.uploadUrl = '/common/UploadFileAliyun'
-        }
-      }
-    }
   },
   methods: {
     // 查询数据
