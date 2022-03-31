@@ -212,16 +212,17 @@ namespace ZR.CodeGenerator
             string fileName = string.Empty;
             switch (generateDto.GenTable.TplCategory)
             {
-                case "tree":
-                    fileName = "TplTreeVue.txt";
-                    break;
+                //case "tree":
+                //    fileName = "TplTreeVue.txt";
+                //    break;
                 case "crud":
-                    fileName = "Vue3.txt";
+                    fileName = "Vue.txt";
                     break;
-                case "select":
-                    fileName = "TplVueSelect.txt";
-                    break;
+                //case "select":
+                //    fileName = "TplVueSelect.txt";
+                //    break;
                 default:
+                    fileName = "Vue.txt";
                     break;
             }
             fileName = Path.Combine("v3", fileName);

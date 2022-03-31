@@ -186,13 +186,13 @@ $elseif(column.HtmlType == "datetime")
 $elseif(column.HtmlType == "imageUpload")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <UploadImage v-model="form.${columnName}" column="${columnName}" @input="handleUploadSuccess" />
+              <UploadImage v-model="form.${columnName}" column="${columnName}" @success="handleUploadSuccess" />
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "fileUpload")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <UploadFile v-model="form.${columnName}" column="${columnName}" @input="handleUploadSuccess" />
+              <UploadFile v-model="form.${columnName}" column="${columnName}" @success="handleUploadSuccess" />
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "radio")
@@ -398,7 +398,7 @@ $end
         })
         .then(() => {
           handleQuery();
-          proxy.msgSuccess("删除成功");
+          proxy.$modal.msgSuccess("删除成功");
         })
         .catch(() => {});
     }
@@ -432,7 +432,7 @@ $end
           if (form.value.${replaceDto.FistLowerPk} != undefined && opertype.value === 2) {
             update${genTable.BusinessName}(form.value)
               .then((res) => {
-                proxy.msgSuccess("修改成功");
+                proxy.$modal.msgSuccess("修改成功");
                 open.value = false;
                 getList();
             })
@@ -442,7 +442,7 @@ $end
           } else {
             add${genTable.BusinessName}(form.value)
               .then((res) => {
-                proxy.msgSuccess("新增成功");
+                proxy.$modal.msgSuccess("新增成功");
                 open.value = false;
                 getList();
             })
