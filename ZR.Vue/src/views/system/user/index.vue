@@ -41,14 +41,10 @@
           <el-col :span="1.5">
             <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:user:add']">新增</el-button>
           </el-col>
-          <el-col :span="1.5">
+          <!-- <el-col :span="1.5">
             <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate"
               v-hasPermi="['system:user:edit']">修改</el-button>
-          </el-col>
-          <el-col :span="1.5">
-            <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete"
-              v-hasPermi="['system:user:remove']">删除</el-button>
-          </el-col>
+          </el-col> -->
           <el-col :span="1.5">
             <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['system:user:import']">导入</el-button>
           </el-col>
@@ -59,7 +55,6 @@
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
         </el-row>
         <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
-          <el-table-column type="selection" width="50" align="center" />
           <el-table-column label="编号" align="center" prop="userId" width="60" />
           <el-table-column label="登录名" align="center" prop="userName" :show-overflow-tooltip="true" />
           <el-table-column label="昵称" align="center" prop="nickName" :show-overflow-tooltip="true" />
