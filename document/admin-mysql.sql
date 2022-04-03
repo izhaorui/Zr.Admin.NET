@@ -26,6 +26,8 @@ CREATE TABLE `Sys_TasksQz`  (
   `create_by` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '创建人编码',
   `update_by` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '更新人编码',
   `lastRunTime` datetime(0) NULL DEFAULT NULL COMMENT '最后执行时间',
+  `apiUrl` varchar(200) NULL DEFAULT NULL COMMENT '网络请求地址',
+  `taskType` int(11) NULL DEFAULT NULL COMMENT '任务类型1程序集 2网络请求'
   PRIMARY KEY (`ID`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '计划任务' ROW_FORMAT = Dynamic;
 

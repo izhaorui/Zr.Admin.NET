@@ -77,46 +77,71 @@
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
-          <el-col :span="24" v-if="this.form.id">
+          <el-col :lg="24" v-if="this.form.id">
             <el-form-item label="任务ID">
               <div>{{form.id}}</div>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="任务名称" maxlength="200" prop="name">
               <el-input v-model="form.name" placeholder="请输入任务名称" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="触发器类型" prop="triggerType">
               <el-select v-model="form.triggerType" placeholder="请选择触发器类型" style="width:100%">
                 <el-option v-for="item in triggerTypeOptions" :key="item.value" :label="item.label" :value="parseInt(item.value)" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="任务分组" maxlength="200" prop="jobGroup">
               <el-select v-model="form.jobGroup" placeholder="请选择">
                 <el-option v-for="dict in jobGroupOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="24">
-            <el-form-item label="程序集名称" maxlength="200" prop="assemblyName">
-              <el-input v-model="form.assemblyName" placeholder="请输入程序集名称" />
+          <el-col :lg="24">
+            <el-form-item label="任务类型" prop="taskType">
+              <el-radio-group v-model="form.taskType">
+                <el-radio :label="1">执行程序集</el-radio>
+                <el-radio :label="2">执行url</el-radio>
+              </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="24">
-            <el-form-item label="任务类名" maxlength="200" prop="className">
-              <el-input v-model="form.className" placeholder="请输入任务类名" />
+
+          <el-col :lg="24" v-if="form.taskType == 2">
+            <el-form-item label="apiUrl" prop="apiUrl">
+              <el-input v-model="form.apiUrl" placeholder="远程调用接口url">
+                <template slot="prepend">Http://</template>
+              </el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="24">
+          <template v-else>
+            <el-col :lg="24">
+              <el-form-item label="程序集名称" maxlength="200" prop="assemblyName">
+                <el-input v-model="form.assemblyName" placeholder="请输入程序集名称" />
+              </el-form-item>
+            </el-col>
+            <el-col :lg="24">
+              <el-form-item label="任务类名" maxlength="200" prop="className">
+                <el-input v-model="form.className" placeholder="请输入任务类名" />
+              </el-form-item>
+            </el-col>
+          </template>
+
+          <el-col :lg="24">
             <el-form-item label="传入参数" prop="jobParams">
+              <span slot="label">
+                <el-tooltip content="eg：{ token: abc123}" placement="top">
+                  <i class="el-icon-question"></i>
+                </el-tooltip>
+                传入参数
+              </span>
               <el-input v-model="form.jobParams" placeholder="传入参数" />
             </el-form-item>
           </el-col>
-          <el-col :span="24" v-show="form.triggerType == 1">
+          <el-col :lg="24" v-show="form.triggerType == 1">
             <el-form-item label="间隔(Cron)" prop="cron">
               <!-- <el-input placeholder="如10分钟执行一次：0/0 0/10 * * * ?" v-model="form.cron">
                 <el-link slot="append" href="https://qqe2.com/cron" type="primary" target="_blank" class="mr10">cron在线生成</el-link>
@@ -131,22 +156,28 @@
               </el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="开始日期" prop="beginTime">
+              <span slot="label">
+                <el-tooltip content="如果不写开始时间和结束时间，任务将以当前时间开始执行，到9999年结束" placement="top">
+                  <i class="el-icon-question"></i>
+                </el-tooltip>
+                开始日期
+              </span>
               <el-date-picker v-model="form.beginTime" style="width:100%" type="date" :picker-options="pickerOptions" placeholder="选择开始日期" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :lg="12">
             <el-form-item label="结束日期" prop="endTime">
               <el-date-picker v-model="form.endTime" style="width:100%" type="date" placeholder="选择结束日期" />
             </el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item v-show="form.triggerType == 0" label="执行间隔(秒)" prop="intervalSecond">
               <el-input-number v-model="form.intervalSecond" :max="9999999999" step-strictly controls-position="right" :min="1" />
             </el-form-item>
           </el-col>
-          <el-col :span="24">
+          <el-col :lg="24">
             <el-form-item label="备注" prop="remark">
               <el-input type="textarea" v-model="form.remark" />
             </el-form-item>
@@ -178,6 +209,7 @@
 <script>
 import {
   queryTasks,
+  getTasks,
   createTasks,
   updateTasks,
   deleteTasks,
@@ -311,6 +343,9 @@ export default {
         triggerType: [
           { required: true, message: '请选择触发器类型', trigger: 'blur' }
         ],
+        apiUrl: [
+          { required: true, message: '请输入apiUrl地址', trigger: 'blur' }
+        ],
         cron: [{ validator: cronValidate, trigger: 'blur' }],
         beginTime: [{ validator: beginTimeValidate, trigger: 'blur' }],
         endTime: [{ validator: endTimeValidate, trigger: 'blur' }],
@@ -376,9 +411,11 @@ export default {
     handleUpdate(row) {
       this.reset()
 
-      this.form = row
-      this.open = true
-      this.title = '修改计划任务'
+      getTasks(row.id).then((res) => {
+        this.form = res.data
+        this.open = true
+        this.title = '修改计划任务'
+      })
     },
     /** 任务日志列表查询 */
     handleJobLog(id, title) {
@@ -400,17 +437,14 @@ export default {
     },
     /** 确定后回传值 */
     crontabFill(value) {
-			console.log(value)
+      console.log(value)
       this.form.cron = value
     },
     // 启动按钮
     handleStart(row) {
       startTasks(row.id).then((response) => {
         if (response.code === 200) {
-          this.$message({
-            message: response.msg,
-            type: 'success'
-          })
+          this.msgSuccess(response.msg)
           this.open = false
           this.getList()
         }
@@ -420,10 +454,7 @@ export default {
     handleStop(row) {
       stopTasks(row.id).then((response) => {
         if (response.code === 200) {
-          this.$message({
-            message: response.msg,
-            type: 'success'
-          })
+          this.msgSuccess(response.msg)
           this.open = false
           this.getList()
         }
@@ -446,10 +477,7 @@ export default {
           deleteTasks(jobInfo.id).then((response) => {
             if (response.code === 200) {
               this.getList()
-              this.$message({
-                message: '删除成功',
-                type: 'success'
-              })
+              this.msgSuccess('删除成功')
             }
           })
         })
@@ -466,10 +494,7 @@ export default {
       }).then((res) => {
         runTasks(jobInfo.id).then((res) => {
           if (res.code === 200) {
-            this.$message({
-              message: '执行成功',
-              type: 'success'
-            })
+            this.msgSuccess('执行成功')
             this.getList()
           }
         })
@@ -482,10 +507,7 @@ export default {
           if (this.form.id !== undefined) {
             updateTasks(this.form).then((response) => {
               if (response.code === 200) {
-                this.$message({
-                  message: '修改成功',
-                  type: 'success'
-                })
+                this.msgSuccess('修改成功')
                 this.open = false
                 this.getList()
               }
@@ -493,10 +515,7 @@ export default {
           } else {
             createTasks(this.form).then((response) => {
               if (response.code === 200) {
-                this.$message({
-                  message: '新增成功',
-                  type: 'success'
-                })
+                this.msgSuccess('新增成功')
                 this.open = false
                 this.getList()
               }
@@ -524,7 +543,8 @@ export default {
         beginTime: undefined,
         endTime: undefined,
         intervalSecond: 1,
-        cron: undefined
+        cron: undefined,
+        taskType: 1
       }
       this.resetForm('form')
     },

@@ -157,5 +157,13 @@ namespace ZR.Model.System
         /// 最后运行时间
         /// </summary>
         public DateTime? LastRunTime { get; set; }
+        /// <summary>
+        /// api执行地址
+        /// </summary>
+        public string ApiUrl { get; set; }
+        /// <summary>
+        /// 任务类型 1程序集2网络请求
+        /// </summary>
+        public int TaskType { get; set; }
     }
 }

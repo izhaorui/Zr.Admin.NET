@@ -15,6 +15,7 @@ using ZR.Model.System;
 using ZR.Service.System.IService;
 using ZR.Tasks;
 using Snowflake.Core;
+using Infrastructure.Extensions;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -62,14 +63,14 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <param name="id">编码</param>
         /// <returns></returns>
-        [HttpGet("{id}")]
+        [HttpGet("get")]
         public IActionResult Get(string id)
         {
             if (!string.IsNullOrEmpty(id))
             {
                 return SUCCESS(_tasksQzService.GetId(id));
             }
-            return SUCCESS(_tasksQzService.GetAll());
+            return SUCCESS(null);
         }
 
         /// <summary>
@@ -90,7 +91,10 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"cron表达式不正确");
             }
-
+            if (string.IsNullOrEmpty(parm.ApiUrl) && parm.TaskType == 2)
+            {
+                throw new CustomException($"地址不能为空");
+            }
             //从 Dto 映射到 实体
             var tasksQz = parm.Adapt<SysTasksQz>().ToCreate();
             var worker = new IdWorker(1, 1);
@@ -98,7 +102,13 @@ namespace ZR.Admin.WebApi.Controllers
             tasksQz.ID = worker.NextId().ToString();
             tasksQz.IsStart = false;
             tasksQz.Create_by = HttpContext.GetName();
-
+            tasksQz.TaskType = parm.TaskType;
+            tasksQz.ApiUrl = parm.ApiUrl;
+            if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
+            {
+                tasksQz.AssemblyName = "ZR.Tasks";
+                tasksQz.ClassName = "TaskScheduler.HttpResultfulJob";
+            }
             return SUCCESS(_tasksQzService.Add(tasksQz));
         }
 
@@ -125,7 +135,15 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException($"cron表达式不正确");
             }
             var tasksQz = _tasksQzService.GetFirst(m => m.ID == parm.ID);
-
+            if (string.IsNullOrEmpty(parm.ApiUrl) && parm.TaskType == 2)
+            {
+                throw new CustomException($"api地址不能为空");
+            }
+            if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
+            {
+                parm.AssemblyName = "ZR.Tasks";
+                parm.ClassName = "TaskScheduler.HttpResultfulJob";
+            }
             if (tasksQz.IsStart)
             {
                 throw new CustomException($"该任务正在运行中，请先停止在更新");
@@ -142,10 +160,12 @@ namespace ZR.Admin.WebApi.Controllers
                 TriggerType = parm.TriggerType,
                 IntervalSecond = parm.IntervalSecond,
                 JobParams = parm.JobParams,
-                Update_by = User.Identity.Name,
+                Update_by = HttpContextExtension.GetName(HttpContext),
                 Update_time = DateTime.Now,
                 BeginTime = parm.BeginTime,
-                EndTime = parm.EndTime
+                EndTime = parm.EndTime,
+                TaskType = parm.TaskType,
+                ApiUrl = parm.ApiUrl,
             });
             if (response > 0)
             {
