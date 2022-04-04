@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+	<PackageReference Include="AspNetCoreRateLimit" Version="4.0.2" />
 	<PackageReference Include="EPPlus" Version="5.8.6" />
 	<PackageReference Include="Hei.Captcha" Version="0.3.0" />
 	<PackageReference Include="IPTools.China" Version="1.6.0" />

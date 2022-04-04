@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using Hei.Captcha;
 using Infrastructure;
 using Infrastructure.Extensions;
@@ -56,7 +57,9 @@ namespace ZR.Admin.WebApi
                 .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
             //普通验证码
             services.AddHeiCaptcha();
+            services.AddIPRate(Configuration);
             services.AddSession();
+            services.AddMemoryCache();
             services.AddHttpContextAccessor();
 
             //绑定整个对象到Model上
@@ -127,6 +130,8 @@ namespace ZR.Admin.WebApi
             app.UseAddTaskSchedulers();
             //使用全局异常中间件
             app.UseMiddleware<GlobalExceptionMiddleware>();
+            //启用客户端IP限制速率
+            app.UseIpRateLimiting();
 
             app.UseEndpoints(endpoints =>
             {
