@@ -1,13 +1,15 @@
 ﻿using Infrastructure;
+using Infrastructure.Attribute;
 using Infrastructure.Model;
 using IPTools.Core;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
+using Microsoft.AspNetCore.Http.Features;
 using NLog;
 using System;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 
@@ -67,8 +69,15 @@ namespace ZR.Admin.WebApi.Middleware
                 logLevel = LogLevel.Error;
                 context.Response.StatusCode = 500;
             }
+            var options = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            };
 
-            string responseResult = System.Text.Json.JsonSerializer.Serialize(new ApiResult(code, msg)).ToLower();
+            ApiResult apiResult = new(code, msg);
+            string responseResult = JsonSerializer.Serialize(apiResult, options).ToLower();
             string ip = HttpContextExtension.GetClientUserIp(context);
             var ip_info = IpTool.Search(ip);
 
@@ -84,6 +93,18 @@ namespace ZR.Admin.WebApi.Middleware
                 operLocation = ip_info.Province + " " + ip_info.City,
                 operTime = DateTime.Now
             };
+            var endpoint = GetEndpoint(context);
+            if (endpoint != null)
+            {
+                var logAttribute = endpoint.Metadata.GetMetadata<LogAttribute>();
+                if (logAttribute != null)
+                {
+                    sysOperLog.businessType = (int)logAttribute?.BusinessType;
+                    sysOperLog.title = logAttribute?.Title;
+                    sysOperLog.operParam = logAttribute.IsSaveRequestData ? sysOperLog.operParam : "";
+                    sysOperLog.jsonResult = logAttribute.IsSaveResponseData ? sysOperLog.jsonResult : "";
+                }
+            }
             HttpContextExtension.GetRequestValue(context, sysOperLog);
             LogEventInfo ei = new(logLevel, "GlobalExceptionMiddleware", error);
 
@@ -92,12 +113,22 @@ namespace ZR.Admin.WebApi.Middleware
             ei.Properties["status"] = 1;//走正常返回都是通过走GlobalExceptionFilter不通过
             ei.Properties["jsonResult"] = responseResult;
             ei.Properties["requestParam"] = sysOperLog.operParam;
-            ei.Properties["user"] = context.User.Identity.Name;
+            ei.Properties["user"] = HttpContextExtension.GetName(context);
 
             Logger.Log(ei);
-            await context.Response.WriteAsync(responseResult);
+            await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
 
             SysOperLogService.InsertOperlog(sysOperLog);
+        }
+
+        public static Endpoint GetEndpoint(HttpContext context)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            return context.Features.Get<IEndpointFeature>()?.Endpoint;
         }
     }
 }

@@ -1,16 +1,13 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
-using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Snowflake.Core;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -171,7 +168,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
             SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", fileDir, HttpContext.GetName())
             {
-                StoreType = (int)Infrastructure.Enums.StoreType.ALIYUN,
+                StoreType = (int)StoreType.ALIYUN,
                 FileType = formFile.ContentType
             };
             file = await SysFileService.SaveFileToAliyun(file, formFile);
