@@ -139,7 +139,7 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(new
             {
                 url = file.AccessUrl,
-                fileName,
+                fileName = file.FileName,
                 fileId = file.Id.ToString()
             });
         }

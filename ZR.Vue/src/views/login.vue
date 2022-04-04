@@ -126,8 +126,7 @@ export default {
           this.$store
             .dispatch("Login", this.loginForm)
             .then(() => {
-              this.msgSuccess("登陆成功");
-              this.loading = true;
+              this.msgSuccess("登录成功");
               this.$router.push({ path: this.redirect || "/" });
             })
             .catch((error) => {

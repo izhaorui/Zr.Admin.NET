@@ -112,6 +112,11 @@ namespace ZR.Model.System.Dto
         /// </summary>
         [Display(Name = "传入参数")]
         public string JobParams { get; set; }
+        public string ApiUrl { get; set; }
+        /// <summary>
+        /// 1、程序集任务 2、apiUrl任务
+        /// </summary>
+        public int TaskType { get; set; }
     }
 
     /// <summary>
@@ -219,6 +224,10 @@ namespace ZR.Model.System.Dto
         /// </summary>
         [Display(Name = "传入参数")]
         public string JobParams { get; set; }
+        public string ApiUrl { get; set; }
+        /// <summary>
+        /// 1、程序集任务 2、apiUrl任务
+        /// </summary>
+        public int TaskType { get; set; }
     }
-
 }

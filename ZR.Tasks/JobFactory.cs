@@ -7,7 +7,7 @@ namespace ZR.Tasks
 {
     public class JobFactory : IJobFactory
     {
-        private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+        private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         /// <summary>
         /// 注入反射获取依赖对象
@@ -42,12 +42,10 @@ namespace ZR.Tasks
 
         public void ReturnJob(IJob job)
         {
-            var disposable = job as IDisposable;
-            if (disposable != null)
+            if (job is IDisposable disposable)
             {
                 disposable.Dispose();
             }
-
         }
     }
 }

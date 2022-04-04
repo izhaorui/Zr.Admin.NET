@@ -97,7 +97,7 @@ export default {
       if (routes.length === 0) {
         activePath = this.currentIndex || this.defaultRouter();
 
-      console.log("activePath", activePath);
+      	console.log("activePath", activePath);
         this.activeRoutes(activePath);
       }
       return activePath;

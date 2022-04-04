@@ -15,6 +15,8 @@ using ZR.Common;
 using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Service.System.IService;
+using Infrastructure.Extensions;
+using System.Threading.Tasks;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -27,6 +29,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysRoleService RoleService;
         private readonly ISysUserPostService UserPostService;
         private readonly ISysDeptService DeptService;
+        private readonly ISysFileService FileService;
         private OptionsSetting OptionsSetting;
         private IWebHostEnvironment hostEnvironment;
 
@@ -35,6 +38,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysRoleService roleService,
             ISysUserPostService postService,
             ISysDeptService deptService,
+            ISysFileService sysFileService,
             IOptions<OptionsSetting> options,
             IWebHostEnvironment hostEnvironment)
         {
@@ -42,6 +46,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             RoleService = roleService;
             UserPostService = postService;
             DeptService = deptService;
+            FileService = sysFileService;
             OptionsSetting = options.Value;
             this.hostEnvironment = hostEnvironment;
         }
@@ -124,28 +129,17 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPost("Avatar")]
         [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "修改头像", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false)]
-        public IActionResult Avatar([FromForm(Name = "picture")] IFormFile formFile)
+        public async Task<IActionResult> Avatar([FromForm(Name = "picture")] IFormFile formFile)
         {
             LoginUser loginUser = Framework.JwtUtil.GetLoginUser(HttpContext);
-
             if (formFile == null) throw new CustomException("请选择文件");
 
             string fileExt = Path.GetExtension(formFile.FileName);
-            string savePath = Path.Combine(hostEnvironment.WebRootPath, FileUtil.GetdirPath("uploads"));
+            string fileName = FileUtil.HashFileName() + (fileExt.IsEmpty() ? ".png" : fileExt);
+            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, fileName, "", HttpContext.GetName(), formFile);
 
-            if (!Directory.Exists(savePath)) { Directory.CreateDirectory(savePath); }
-
-            string fileName = FileUtil.HashFileName() + fileExt;
-            string finalFilePath = savePath + fileName;
-
-            using (var stream = new FileStream(finalFilePath, FileMode.Create))
-            {
-                formFile.CopyTo(stream);
-            }
-            string accessUrl = $"{OptionsSetting.Upload.UploadUrl}/{FileUtil.GetdirPath("uploads")}{fileName}";
-
-            UserService.UpdatePhoto(new SysUser() { Avatar = accessUrl, UserId = loginUser.UserId });
-            return SUCCESS(new { imgUrl = accessUrl });
+            UserService.UpdatePhoto(new SysUser() { Avatar = file.AccessUrl, UserId = loginUser.UserId });
+            return SUCCESS(new { imgUrl = file.AccessUrl });
         }
     }
 }

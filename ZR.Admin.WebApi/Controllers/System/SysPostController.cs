@@ -9,6 +9,7 @@ using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure;
 using ZR.Service.System.IService;
+using ZR.Common;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -106,9 +107,10 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpDelete("{id}")]
         [ActionPermissionFilter(Permission = "system:post:remove")]
         [Log(Title = "岗位删除", BusinessType = BusinessType.DELETE)]
-        public IActionResult Delete(int id = 0)
+        public IActionResult Delete(string id)
         {
-            return ToResponse(ToJson(PostService.Delete(id)));
+            int[] ids = Tools.SpitIntArrary(id);
+            return ToResponse(ToJson(PostService.Delete(ids)));
         }
 
         /// <summary>

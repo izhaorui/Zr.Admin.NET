@@ -85,6 +85,7 @@ namespace ZR.CodeGenerator
             GenerateService(replaceDto, dto);
             GenerateControllers(replaceDto, dto);
             GenerateVueViews(replaceDto, dto);
+            GenerateVue3Views(replaceDto, dto);
             GenerateVueJs(replaceDto, dto);
             GenerateSql(replaceDto, dto);
 
@@ -201,7 +202,41 @@ namespace ZR.CodeGenerator
 
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, result));
         }
+        /// <summary>
+        /// vue3
+        /// </summary>
+        /// <param name="replaceDto"></param>
+        /// <param name="generateDto"></param>
+        private static void GenerateVue3Views(ReplaceDto replaceDto, GenerateDto generateDto)
+        {
+            string fileName = string.Empty;
+            switch (generateDto.GenTable.TplCategory)
+            {
+                //case "tree":
+                //    fileName = "TplTreeVue.txt";
+                //    break;
+                case "crud":
+                    fileName = "Vue.txt";
+                    break;
+                //case "select":
+                //    fileName = "TplVueSelect.txt";
+                //    break;
+                default:
+                    fileName = "Vue.txt";
+                    break;
+            }
+            fileName = Path.Combine("v3", fileName);
+            var tpl = FileHelper.ReadJtTemplate(fileName);
+            //tpl.Set("vueQueryFormHtml", replaceDto.VueQueryFormHtml);
+            //tpl.Set("VueViewEditFormRuleContent", replaceDto.VueViewEditFormRuleContent);//添加、修改表单验证规则
+            //tpl.Set("VueViewFormContent", replaceDto.VueViewFormHtml);//添加、修改表单
+            //tpl.Set("VueViewListContent", replaceDto.VueViewListHtml);//查询 table列
 
+            var result = tpl.Render();
+            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue3", "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
+            //Console.WriteLine(result);
+            generateDto.GenCodes.Add(new GenCode(16, "index.vue", fullPath, result));
+        }
         /// <summary>
         /// 生成vue页面api
         /// </summary>
@@ -478,6 +513,7 @@ namespace ZR.CodeGenerator
                 options.OutMode = OutMode.Auto;
                 //options.DisableeLogogram = true;//禁用简写
                 options.Data.Set("refs", "$");//特殊标签替换
+                options.Data.Set("modal", "$");//特殊标签替换
                 options.Data.Set("index", "$");//特殊标签替换
                 options.Data.Set("confirm", "$");//特殊标签替换
                 options.Data.Set("nextTick", "$");
