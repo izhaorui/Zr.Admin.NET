@@ -29,7 +29,7 @@ CREATE TABLE sys_tasksQz
 	apiUrl	varchar(200)					--网络请求地址
 )
 GO
-INSERT INTO sys_tasksQz VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL);
+INSERT INTO sys_tasksQz VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL, 1, '');
 GO
 if OBJECT_ID(N'sys_Tasks_log',N'U') is not NULL DROP TABLE sys_Tasks_log
 GO
@@ -488,8 +488,8 @@ GO
 IF OBJECT_ID(N'sys_role_dept',N'U') is not NULL DROP TABLE sys_role_dept
 GO
 CREATE TABLE sys_role_dept  (
-  roleId bigint(20) NOT NULL, 				-- '角色ID',
-  deptId bigint(20) NOT NULL ,				-- '部门ID',
+  roleId bigint NOT NULL, 				-- '角色ID',
+  deptId bigint NOT NULL ,				-- '部门ID',
 )
 
 GO
@@ -643,9 +643,6 @@ create table gen_table (
   dbName			VARCHAR(100)							   , --数据库名
 )
 GO
-INSERT INTO [dbo].[gen_table]([tableId], [tableName], [tableComment], [subTableName], [subTableFkName], [className], [tplCategory], [baseNameSpace], [moduleName], [businessName], [functionName], [functionAuthor], [genType], [genPath], [options], [create_by], [create_time], [update_by], [update_Time], [remark], [dbName]) 
-VALUES (1, 'gen_demo', 'demo', NULL, NULL, 'Gendemo', 'crud', 'ZR.', 'business', 'Gendemo', '演示', 'zr', '0', '/', '{"parentMenuId":null,"sortField":"","sortType":"asc"}', 'admin', '2021-12-20 21:47:45.797', 'admin', '2021-12-20 21:49:39.503', NULL, 'ZrAdmin');
-GO
 -- ----------------------------
 -- 代码生成业务表字段
 -- ----------------------------
@@ -677,18 +674,6 @@ create table gen_table_column (
   update_time       datetime                                   , --'更新时间',
   remark			VARCHAR(200)
 )
-GO
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (1, 1, 'gen_demo', 'id', '', 'int', 'int', 'Id', 1, 1, 1, 0, 0, 1, 0, 'EQ', 'input', '', 0, 'admin', '2021-12-20 21:47:46.187', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (2, 1, 'gen_demo', 'name', '', 'varchar', 'string', 'Name', 0, 0, 0, 1, 1, 1, 0, 'EQ', 'input', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (3, 1, 'gen_demo', 'icon', '', 'varchar', 'string', 'Icon', 0, 0, 0, 1, 1, 1, 0, 'EQ', 'imageUpload', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (4, 1, 'gen_demo', 'showStatus', '', 'int', 'int', 'ShowStatus', 0, 0, 1, 1, 1, 1, 0, 'EQ', 'radio', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (5, 1, 'gen_demo', 'addTime', '', 'datetime', 'DateTime', 'AddTime', 0, 0, 0, 1, 1, 1, 0, 'BETWEEN', 'datetime', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (6, 1, 'gen_demo', 'sex', '', 'int', 'int', 'Sex', 0, 0, 0, 1, 1, 1, 0, 'EQ', 'select', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (7, 1, 'gen_demo', 'sort', '', 'int', 'int', 'Sort', 0, 0, 0, 1, 1, 1, 0, 'EQ', 'input', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (8, 1, 'gen_demo', 'beginTime', '', 'datetime', 'DateTime', 'BeginTime', 0, 0, 0, 1, 1, 1, 0, 'BETWEEN', 'datetime', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (9, 1, 'gen_demo', 'endTime', '', 'datetime', 'DateTime', 'EndTime', 0, 0, 0, 1, 1, 1, 0, 'BETWEEN', 'datetime', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (10, 1, 'gen_demo', 'remark', '', 'varchar', 'string', 'Remark', 0, 0, 0, 1, 1, 1, 0, 'EQ', 'input', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
-INSERT INTO [dbo].[gen_table_column]([columnId], [tableId], [tableName], [columnName], [columnComment], [columnType], [csharpType], [csharpField], [isPk], [isIncrement], [isRequired], [isInsert], [isEdit], [isList], [isQuery], [queryType], [htmlType], [dictType], [sort], [create_by], [create_time], [update_by], [update_time], [remark]) VALUES (11, 1, 'gen_demo', 'feature', '', 'varchar', 'string', 'Feature', 0, 0, 0, 1, 1, 1, 0, 'EQ', 'input', '', 0, 'admin', '2021-12-20 21:47:46.190', NULL, NULL, NULL);
 GO
 -- ----------------------------
 -- 参数配置表

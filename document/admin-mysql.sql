@@ -6,41 +6,36 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Table structure for Sys_TasksQz
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_tasksQz`;
-CREATE TABLE `Sys_TasksQz`  (
-  `id` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'UID',
-  `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务名称',
-  `jobGroup` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务分组',
-  `cron` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '运行时间表达式',
-  `assemblyName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '程序集名称',
-  `className` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务所在类',
-  `remark` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '任务描述',
-  `runTimes` int(11) NOT NULL COMMENT '执行次数',
-  `beginTime` datetime(0) NULL DEFAULT NULL COMMENT '开始时间',
-  `endTime` datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
-  `triggerType` int(11) NOT NULL COMMENT '触发器类型（0、simple 1、cron）',
-  `intervalSecond` int(11) NOT NULL COMMENT '执行间隔时间(单位:秒)',
-  `isStart` tinyint(4) NOT NULL COMMENT '是否启动',
-  `jobParams` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '传入参数',
+CREATE TABLE `sys_tasksQz`  (
+  `ID` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'UID',
+  `Name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务名称',
+  `JobGroup` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务分组',
+  `Cron` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '运行时间表达式',
+  `AssemblyName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '程序集名称',
+  `ClassName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务所在类',
+  `Remark` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '任务描述',
+  `RunTimes` int(11) NOT NULL COMMENT '执行次数',
+  `BeginTime` datetime(0) NULL DEFAULT NULL COMMENT '开始时间',
+  `EndTime` datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
+  `TriggerType` int(11) NOT NULL COMMENT '触发器类型（0、simple 1、cron）',
+  `IntervalSecond` int(11) NOT NULL COMMENT '执行间隔时间(单位:秒)',
+  `IsStart` tinyint(4) NOT NULL COMMENT '是否启动',
+  `JobParams` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '传入参数',
   `create_time` datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
   `update_time` datetime(0) NULL DEFAULT NULL COMMENT '最后更新时间',
   `create_by` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '创建人编码',
   `update_by` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '更新人编码',
   `lastRunTime` datetime(0) NULL DEFAULT NULL COMMENT '最后执行时间',
-  `apiUrl` varchar(200) NULL DEFAULT NULL COMMENT '网络请求地址',
-  `taskType` int(11) NULL DEFAULT NULL COMMENT '任务类型1程序集 2网络请求'
+  `apiUrl` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT 'api执行地址',
+  `taskType` int(4) NULL DEFAULT 1 COMMENT '任务类型1程序集任务 2网络请求',
   PRIMARY KEY (`ID`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '计划任务' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Records of Sys_TasksQz
--- ----------------------------
-INSERT INTO `sys_tasksQz` VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL);
-
--- ----------------------------
 -- Table structure for sys_Tasks_log
 -- ----------------------------
-DROP TABLE IF EXISTS `sys_Tasks_log`;
-CREATE TABLE `sys_Tasks_log`  (
+DROP TABLE IF EXISTS `sys_tasks_log`;
+CREATE TABLE `sys_tasks_log`  (
   `jobLogId` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '任务日志ID',
   `jobId` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务id',
   `jobName` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务名称',
@@ -148,7 +143,7 @@ INSERT INTO `sys_dict_data` VALUES (15, 2, '公告', '2', 'sys_notice_type', '',
 INSERT INTO `sys_dict_data` VALUES (16, 1, '正常', '0', 'sys_notice_status', '', 'primary', 'Y', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '正常状态');
 INSERT INTO `sys_dict_data` VALUES (17, 2, '关闭', '1', 'sys_notice_status', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '关闭状态');
 INSERT INTO `sys_dict_data` VALUES (18, 0, '其他', '0', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '其他操作');
-INSERT INTO `sys_dict_data` VALUES (18, 1, '新增', '1', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '新增操作');
+INSERT INTO `sys_dict_data` VALUES (31, 1, '新增', '1', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '新增操作');
 INSERT INTO `sys_dict_data` VALUES (19, 2, '修改', '2', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '修改操作');
 INSERT INTO `sys_dict_data` VALUES (20, 3, '删除', '3', 'sys_oper_type', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '删除操作');
 INSERT INTO `sys_dict_data` VALUES (21, 4, '授权', '4', 'sys_oper_type', '', 'primary', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '授权操作');
