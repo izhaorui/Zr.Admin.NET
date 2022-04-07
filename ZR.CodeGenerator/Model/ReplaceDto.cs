@@ -40,10 +40,6 @@ namespace ZR.CodeGenerator.Model
         public string VueQueryFormHtml { get; set; }
 
         /// <summary>
-        /// vue 添加、编辑表单规则
-        /// </summary>
-        public string VueViewEditFormRuleContent { get; set; }
-        /// <summary>
         /// 查询条件
         /// </summary>
         public string QueryCondition { get; set; } = "";

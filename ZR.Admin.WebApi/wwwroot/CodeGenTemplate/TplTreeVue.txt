@@ -48,7 +48,7 @@ ${VueViewListContent}
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
       <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
         <el-row :gutter="20">
-${VueViewFormContent}
+        ${VueViewFormContent}
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -107,6 +107,7 @@ $end
       // 弹出层标题
       title: "",
       // 操作类型 1、add 2、edit
+      opertype: 0,
       // 是否显示弹出层
       open: false,
       // 是否展开，默认全部折叠

@@ -1,0 +1,109 @@
+﻿$foreach(column in genTable.Columns)
+$set(labelName = "")
+$set(labelDisabled = "")
+$set(columnName = column.CsharpFieldFl)
+$set(value = "item.dictValue")
+
+$if(column.ColumnComment != "")
+$set(labelName = column.ColumnComment)
+$else
+$set(labelName = column.CsharpFieldFl)
+$end
+$if(column.IsPk == true)
+$set(labelDisabled = ":disabled=true")
+$end
+$if(column.CsharpType == "int" || column.CsharpType == "long")
+    $set(value = "parseInt(item.dictValue)")
+$end
+
+$if(tool.CheckInputDtoNoField(column.CsharpField))
+$elseif(column.IsInsert == false && column.IsEdit == false)
+          <el-col :lg="12" v-if="opertype == 2">
+            <el-form-item label="${labelName}">{{form.${columnName}}}</el-form-item>
+          </el-col>
+$elseif(tool.CheckTree(genTable ,column.CsharpField))
+          <el-col :lg="24">
+            <el-form-item label="父级id" prop="${columnName}">
+              <treeselect v-model="form.${columnName}" :options="dataList" :normalizer="normalizer" :show-count="true" placeholder="选择上级菜单" />
+            </el-form-item>
+          </el-col>
+$elseif(column.IsPK || column.IsIncrement)
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+$if(column.IsIncrement == false)
+              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" :disabled="title=='修改数据'"/>
+$else
+              <span v-html="form.${columnName}"/>
+$end
+            </el-form-item>
+          </el-col>
+$else
+$if(column.HtmlType == "inputNumber")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" ${labelDisabled}/>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "datetime")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-date-picker v-model="form.${columnName}" type="datetime" placeholder="选择日期时间"></el-date-picker>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "imageUpload")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <UploadImage v-model="form.${columnName}" column="${columnName}" @success="handleUploadSuccess" />
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "fileUpload")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <UploadFile v-model="form.${columnName}" column="${columnName}" @success="handleUploadSuccess" />
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "radio")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-radio-group v-model="form.${columnName}">
+                <el-radio v-for="item in ${columnName}Options" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "textarea")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-input type="textarea" v-model="form.${columnName}" placeholder="请输入${labelName}"/>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "editor")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <editor v-model="form.${columnName}" :min-height="200" />
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "select")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-select v-model="form.${columnName}" placeholder="请选择${labelName}">
+                <el-option v-for="item in ${columnName}Options" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "checkbox")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-checkbox-group v-model="form.${columnName}Checked">
+                <el-checkbox v-for="item in ${columnName}Options" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-col>
+$else
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-input v-model="form.${columnName}" placeholder="请输入${labelName}" ${labelDisabled}/>
+            </el-form-item>
+          </el-col>
+$end
+$end
+$end

@@ -3,7 +3,6 @@
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" 
       @submit.prevent>
-
 $foreach(column in genTable.Columns)
 $set(labelName = "")
 $set(columnName = "")
