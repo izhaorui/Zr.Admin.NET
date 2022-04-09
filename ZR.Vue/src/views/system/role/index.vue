@@ -203,10 +203,10 @@ export default {
           dictValue: '1',
           dictLabel: '全部'
         },
-        // {
-        //   dictValue: "2",
-        //   dictLabel: "自定义",
-        // },
+        {
+          dictValue: "2",
+          dictLabel: "自定义",
+        },
         {
           dictValue: '3',
           dictLabel: '本部门'

@@ -123,7 +123,7 @@ namespace ZR.Admin.WebApi
             //2.再开启授权
             app.UseAuthorization();
             //开启session
-            app.UseSession();
+            //app.UseSession();
             //开启缓存
             app.UseResponseCaching();
             //恢复/启动任务
