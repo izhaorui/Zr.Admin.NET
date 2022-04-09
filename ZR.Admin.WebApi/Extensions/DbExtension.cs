@@ -47,11 +47,13 @@ namespace ZR.Admin.WebApi.Extensions
                 });
             SugarIocServices.ConfigurationSugar(db =>
             {
+                FilterData(0);
+                FilterData(1);
                 #region db0
                 db.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
                 {
                     var param = db.GetConnection(0).Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
-                    FilterData(0);
+
                     logger.Info($"【sql语句】{sql}，{param}\n");
                 };
 
@@ -71,7 +73,7 @@ namespace ZR.Admin.WebApi.Extensions
                 db.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
                 {
                     var param = db.GetConnection(1).Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
-                    FilterData(1);
+
                     logger.Info($"【sql语句】{sql}, {param}");
                 };
                 //Db1错误日志
