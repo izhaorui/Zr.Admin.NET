@@ -15,24 +15,23 @@
             <div class="user-item-right overflow">
               <el-row>
                 <el-col :xs="24" :md="24" class="right-title mb20 one-text-overflow">
-                  {{userInfo.welcomeMessage}}，{{ userInfo.nickName }}，{{ userInfo.welcomeContent }}
-                </el-col>
+                  {{ userInfo.welcomeMessage }}，{{ userInfo.nickName }}，{{ userInfo.welcomeContent }}</el-col>
                 <el-col :xs="24" :sm="24" :md="24">
                   <el-col :xs="24" :md="8" class="right-l-v">
                     <div class="right-label">昵称：</div>
-                    <div class="right-value">{{userInfo.nickName}}</div>
+                    <div class="right-value">{{ userInfo.nickName }}</div>
                   </el-col>
                   <el-col :xs="24" :md="16" class="right-l-v">
                     <div class="right-label">身份：</div>
                     <div class="right-value">
-                      <span v-for="item in userInfo.roles" :key="item.roleId">{{item.roleName}}</span>
+                      <span v-for="item in userInfo.roles" :key="item.roleId">{{ item.roleName }}</span>
                     </div>
                   </el-col>
                 </el-col>
                 <el-col :md="24" class="mt10">
                   <el-col :xs="24" :sm="12" :md="8" class="right-l-v">
                     <div class="right-label one-text-overflow">IP：</div>
-                    <div class="right-value one-text-overflow">{{userInfo.loginIP}}</div>
+                    <div class="right-value one-text-overflow">{{ userInfo.loginIP }}</div>
                   </el-col>
                   <el-col :xs="24" :sm="12" :md="16" class="right-l-v">
                     <div class="right-label one-text-overflow">时间：</div>
@@ -41,9 +40,7 @@
                 </el-col>
                 <el-col :lg="24" class="mt10">
                   <el-button size="small" icon="el-icon-edit-outline">
-                    <router-link to="/user/profile">
-                      修改信息
-                    </router-link>
+                    <router-link to="/user/profile">修改信息</router-link>
                   </el-button>
                   <!-- <el-button size="small" icon="el-icon-position" type="primary">发布活动</el-button> -->
                 </el-col>
@@ -94,56 +91,55 @@
         </div>
       </el-col>
     </el-row>
-
   </div>
 </template>
 
 <script>
-import PanelGroup from "./dashboard/PanelGroup";
-import LineChart from "./dashboard/LineChart";
-import RaddarChart from "./dashboard/RaddarChart";
-import PieChart from "./dashboard/PieChart";
-import BarChart from "./dashboard/BarChart";
-import Scroll from "vue-seamless-scroll";
-import { listNewArticle } from "@/api/system/article.js";
+import PanelGroup from './dashboard/PanelGroup'
+import LineChart from './dashboard/LineChart'
+import RaddarChart from './dashboard/RaddarChart'
+import PieChart from './dashboard/PieChart'
+import BarChart from './dashboard/BarChart'
+import Scroll from 'vue-seamless-scroll'
+import { listNewArticle } from '@/api/system/article.js'
 
 const lineChartData = {
   newVisitis: {
     expectedData: [100, 120, 161, 134, 105, 160, 165],
-    actualData: [120, 82, 91, 154, 162, 140, 145],
+    actualData: [120, 82, 91, 154, 162, 140, 145]
   },
   messages: {
     expectedData: [200, 192, 120, 144, 160, 130, 140],
-    actualData: [180, 160, 151, 106, 145, 150, 130],
+    actualData: [180, 160, 151, 106, 145, 150, 130]
   },
   purchases: {
     expectedData: [80, 100, 121, 104, 105, 90, 100],
-    actualData: [120, 90, 100, 138, 142, 130, 130],
+    actualData: [120, 90, 100, 138, 142, 130, 130]
   },
   shoppings: {
     expectedData: [130, 140, 141, 142, 145, 150, 160],
-    actualData: [120, 82, 91, 154, 162, 140, 130],
-  },
-};
+    actualData: [120, 82, 91, 154, 162, 140, 130]
+  }
+}
 export default {
-  name: "Index",
+  name: 'Index',
   components: {
     PanelGroup,
     LineChart,
     RaddarChart,
     PieChart,
     BarChart,
-    Scroll,
+    Scroll
   },
   computed: {
     photo() {
-      return this.$store.getters.photo;
+      return this.$store.getters.photo
     },
     userInfo() {
-      return this.$store.getters.userinfo;
+      return this.$store.getters.userinfo
     },
     currentTime() {
-      return this.parseTime(new Date());
+      return this.parseTime(new Date())
     },
     optionSingleHeight() {
       return {
@@ -154,28 +150,28 @@ export default {
         openWatch: true, // 开启数据实时监控刷新dom
         singleHeight: 0, // 单步运动停止的高度(默认值0是无缝不停止的滚动) direction => 0/1
         singleWidth: 0, // 单步运动停止的宽度(默认值0是无缝不停止的滚动) direction => 2/3
-        waitTime: 1000, // 单步运动停止的时间(默认值1000ms)
-      };
-    },
+        waitTime: 1000 // 单步运动停止的时间(默认值1000ms)
+      }
+    }
   },
   data() {
     return {
       lineChartData: lineChartData.newVisitis,
-      newArticleList: [],
-    };
+      newArticleList: []
+    }
   },
   created() {
     listNewArticle().then((res) => {
-      this.newArticleList = res.data;
-    });
+      this.newArticleList = res.data
+    })
   },
   methods: {
     handleSetLineChartData(type) {
-      this.lineChartData = lineChartData[type];
+      this.lineChartData = lineChartData[type]
     },
-    onOpenGitee() {},
-  },
-};
+    onOpenGitee() {}
+  }
+}
 </script>
 
 <style lang="scss" scoped>

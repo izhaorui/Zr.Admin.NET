@@ -77,10 +77,10 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="templateName">模板名称，应包括文件扩展名称。比如：template.txt</param>
         /// <returns></returns>
-        public static string ReadTemplate(string templateName)
+        public static string ReadTemplate(string tplName)
         {
             string path = Environment.CurrentDirectory;
-            string fullName = $"{path}/wwwroot/CodeGenTemplate/{templateName}";
+            string fullName = Path.Combine(path, "wwwroot", "CodeGenTemplate", tplName);
 
             Console.WriteLine("开始读取模板=" + fullName);
             string temp = fullName;

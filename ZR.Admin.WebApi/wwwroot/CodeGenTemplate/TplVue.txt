@@ -57,7 +57,7 @@ $end
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
       <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
         <el-row :gutter="20">
-${VueViewFormContent}
+        ${VueViewFormContent}
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">

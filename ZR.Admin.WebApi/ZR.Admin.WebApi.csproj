@@ -21,6 +21,7 @@
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="AspNetCoreRateLimit" Version="4.0.2" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.2" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.2" />
@@ -37,11 +38,4 @@
 	<ItemGroup>
 		<Folder Include="Controllers\" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="ip2region.db">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
 </Project>

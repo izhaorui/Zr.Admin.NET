@@ -27,9 +27,8 @@ namespace ZR.CodeGenerator
 
             if (GenConstants.inputDtoNoField.Any(f => f.Contains(dbFieldInfo.CsharpField, StringComparison.OrdinalIgnoreCase)))
             {
-                return sb.ToString();
             }
-            if (!dbFieldInfo.IsInsert && !dbFieldInfo.IsEdit)
+            else if (!dbFieldInfo.IsInsert && !dbFieldInfo.IsEdit)
             {
                 sb.AppendLine("    <el-col :lg=\"12\" v-if=\"opertype == 2\">");
                 sb.AppendLine($"      <el-form-item label=\"{labelName}\">{{{{form.{columnName}}}}}</el-form-item>");
@@ -200,36 +199,5 @@ namespace ZR.CodeGenerator
             return $"it => it.{ propertyName} == parm.{propertyName})";
         }
 
-        /// <summary>
-        /// 格式化字典数据显示到table
-        /// </summary>
-        /// <param name="htmlType"></param>
-        /// <param name="columnName"></param>
-        /// <returns></returns>
-        public static string GetFormatter(string htmlType, string columnName)
-        {
-            if (htmlType.Equals(GenConstants.HTML_CHECKBOX) ||
-                htmlType.Equals(GenConstants.HTML_SELECT) ||
-                htmlType.Equals(GenConstants.HTML_RADIO))
-            {
-                return $" :formatter=\"{columnName}Format\"";
-            }
-            return "";
-        }
-
-        /// <summary>
-        /// 超出隐藏
-        /// </summary>
-        /// <param name="column"></param>
-        /// <returns></returns>
-        public static string ShowToolTip(GenTableColumn column)
-        {
-            if (column.CsharpType.Equals("string") ||
-                column.HtmlType.Equals(GenConstants.HTML_DATETIME))
-            {
-                return $" :show-overflow-tooltip=\"true\"";
-            }
-            return "";
-        }
     }
 }
