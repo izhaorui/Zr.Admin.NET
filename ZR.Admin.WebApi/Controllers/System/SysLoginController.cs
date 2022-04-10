@@ -86,7 +86,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             List<string> permissions = permissionService.GetMenuPermission(user);
 
             LoginUser loginUser = new(user, roles, permissions);
-            CacheHelper.SetCache(GlobalConstant.UserPermKEY + user.UserId, permissions);
+            CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser), jwtSettings.JwtSettings));
         }
 
@@ -106,7 +106,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             var userid = HttpContext.GetUId();
             var name = HttpContext.GetName();
             
-            CacheHelper.Remove(GlobalConstant.UserPermKEY + userid);
+            CacheService.RemoveUserPerms(GlobalConstant.UserPermKEY + userid);
             return SUCCESS(new { name , id = userid });
         }
 
