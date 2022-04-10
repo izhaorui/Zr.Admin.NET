@@ -75,11 +75,7 @@
         </el-form-item>
       </el-col>
       <el-col :lg="12">
-        <el-form-item>
-          <span slot="label">
-            查询排序字段
-          </span>
-
+        <el-form-item label="查询排序字段">
           <el-select v-model="info.sortField" placeholder="请选择字段" class="mr10" clearable="">
             <el-option v-for="item in columns" :key="item.columnId" :label="item.csharpField" :value="item.csharpField">
             </el-option>
@@ -89,7 +85,17 @@
           <el-radio v-model="info.sortType" label="desc">倒序</el-radio>
         </el-form-item>
       </el-col>
-
+      <el-col :lg="12">
+        <el-form-item prop="permissionPrefix">
+          <span slot="label">
+            权限前缀
+            <el-tooltip content="eg：system:user:add中的'system:user'" placement="top">
+              <i class="el-icon-question"></i>
+            </el-tooltip>
+          </span>
+          <el-input v-model="info.permissionPrefix" placeholder="请输入权限前缀"></el-input>
+        </el-form-item>
+      </el-col>
       <el-col :lg="12">
         <el-form-item prop="genType">
           <span slot="label">
@@ -224,32 +230,32 @@
   </el-form>
 </template>
 <script>
-import { queryColumnInfo } from "@/api/tool/gen";
-import Treeselect from "@riophae/vue-treeselect";
-import "@riophae/vue-treeselect/dist/vue-treeselect.css";
+import { queryColumnInfo } from '@/api/tool/gen'
+import Treeselect from '@riophae/vue-treeselect'
+import '@riophae/vue-treeselect/dist/vue-treeselect.css'
 
 export default {
-  name: "BasicInfoForm",
+  name: 'BasicInfoForm',
   components: { Treeselect },
   props: {
     info: {
       type: Object,
-      default: null,
+      default: null
     },
     // 子表
     tables: {
       type: Array,
-      default: null,
+      default: null
     },
     menus: {
       type: Array,
-      default: [],
+      default: []
     },
     // 列
     columns: {
       type: Array,
-      default: [],
-    },
+      default: []
+    }
   },
   data() {
     return {
@@ -257,82 +263,87 @@ export default {
       subColumns: [],
       rules: {
         tplCategory: [
-          { required: true, message: "请选择生成模板", trigger: "blur" },
+          { required: true, message: '请选择生成模板', trigger: 'blur' }
         ],
         moduleName: [
           {
             required: true,
-            message: "请输入生成模块名",
-            trigger: "blur",
-            pattern: /^[A-Za-z]+$/,
-          },
+            message: '请输入生成模块名',
+            trigger: 'blur',
+            pattern: /^[A-Za-z]+$/
+          }
         ],
         businessName: [
           {
             required: true,
-            message: "请输入生成业务名",
-            trigger: "blur",
-            pattern: /^[A-Za-z]+$/,
-          },
+            message: '请输入生成业务名',
+            trigger: 'blur',
+            pattern: /^[A-Za-z]+$/
+          }
         ],
         functionName: [
-          { required: true, message: "请输入生成功能名", trigger: "blur" },
+          { required: true, message: '请输入生成功能名', trigger: 'blur' }
         ],
-      },
-    };
+        permissionPrefix: {
+          required: true,
+          message: '请输入权限前缀',
+          trigger: 'blur'
+        }
+      }
+    }
   },
   watch: {
-    "info.subTableName": function (val) {
-      this.setSubTableColumns(val);
+    'info.subTableName': function(val) {
+      this.setSubTableColumns(val)
     },
-    "info.checkedBtn": function (val) {
-			console.log(val + ',checkedBtn');
-      this.checkedBtn = val;
-    },
+    'info.checkedBtn': function(val) {
+      console.log(val + ',checkedBtn')
+      this.checkedBtn = val
+    }
   },
   methods: {
     /** 转换菜单数据结构 */
     normalizer(node) {
       if (node.children && !node.children.length) {
-        delete node.children;
+        delete node.children
       }
       return {
         id: node.menuId,
         label: node.menuName,
-        children: node.children,
-      };
+        children: node.children
+      }
     },
     /** 选择子表名触发 */
     subSelectChange(value) {
-      this.info.subTableFkName = "";
+      this.info.subTableFkName = ''
     },
-		checkedBtnSelect(value) {
-			this.info.checkedBtn = value;
-		},
+    checkedBtnSelect(value) {
+      this.info.checkedBtn = value
+    },
     /** 选择生成模板触发 */
     tplSelectChange(value) {
-      if (value !== "sub") {
-        this.info.subTableName = "";
-        this.info.subTableFkName = "";
+      if (value !== 'sub') {
+        this.info.subTableName = ''
+        this.info.subTableFkName = ''
       }
     },
     /** 设置关联外键 */
     setSubTableColumns(value) {
-      if (value == null || value == undefined || value == "") {
-        return;
+      if (value == null || value == undefined || value == '') {
+        return
       }
       for (var item in this.tables) {
-        const obj = this.tables[item];
+        const obj = this.tables[item]
         if (value === obj.tableName) {
           queryColumnInfo(obj.tableId).then((res) => {
             if (res.code == 200) {
-              this.subColumns = res.data.columns;
+              this.subColumns = res.data.columns
             }
-          });
-          break;
+          })
+          break
         }
       }
-    },
-  },
-};
+    }
+  }
+}
 </script>

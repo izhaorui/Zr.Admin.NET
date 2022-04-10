@@ -27,7 +27,7 @@
                 <el-option label="double" value="double" />
                 <el-option label="decimal" value="decimal" />
                 <el-option label="DateTime" value="DateTime" />
-								<el-option label="bool" value="bool" />
+                <el-option label="bool" value="bool" />
               </el-select>
             </template>
           </el-table-column>
@@ -117,25 +117,25 @@
   </el-card>
 </template>
 <script>
-import { updateGenTable, getGenTable } from "@/api/tool/gen";
-import { listType } from "@/api/system/dict/type";
-import { listMenu as getMenuTreeselect } from "@/api/system/menu";
-import basicInfoForm from "./basicInfoForm";
-import genInfoForm from "./genInfoForm";
-import Sortable from "sortablejs";
+import { updateGenTable, getGenTable } from '@/api/tool/gen'
+import { listType } from '@/api/system/dict/type'
+import { listMenu as getMenuTreeselect } from '@/api/system/menu'
+import basicInfoForm from './basicInfoForm'
+import genInfoForm from './genInfoForm'
+import Sortable from 'sortablejs'
 
 export default {
-  name: "genedit",
+  name: 'genedit',
   components: {
     basicInfoForm,
-    genInfoForm,
+    genInfoForm
   },
   data() {
     return {
       // 选中选项卡的 name
-      activeName: "cloum",
+      activeName: 'cloum',
       // 表格的高度
-      tableHeight: document.documentElement.scrollHeight - 245 + "px",
+      tableHeight: document.documentElement.scrollHeight - 245 + 'px',
       // 表信息
       tables: [],
       // 表列信息
@@ -146,43 +146,43 @@ export default {
       menus: [],
       // 表详细信息
       info: {},
-      loading: true,
-    };
+      loading: true
+    }
   },
   created() {
-    this.handleQuery();
+    this.handleQuery()
   },
   methods: {
     handleQuery() {
-      const tableId = this.$route.query && this.$route.query.tableId;
+      const tableId = this.$route.query && this.$route.query.tableId
 
       if (tableId) {
         // 获取表详细信息
         getGenTable(tableId).then((res) => {
-          this.loading = false;
-          this.columns = res.data.info.columns;
-          this.info = res.data.info;
-          this.tables = res.data.tables; //子表
-        });
+          this.loading = false
+          this.columns = res.data.info.columns
+          this.info = res.data.info
+          this.tables = res.data.tables // 子表
+        })
         /** 查询字典下拉列表 */
         listType({ pageSize: 100 }).then((response) => {
-          this.dictOptions = response.data.result;
-        });
+          this.dictOptions = response.data.result
+        })
         /** 查询菜单下拉列表 */
         getMenuTreeselect().then((response) => {
-          this.menus = this.handleTree(response.data, "menuId");
-        });
+          this.menus = this.handleTree(response.data, 'menuId')
+        })
       }
     },
     /** 提交按钮 */
     submitForm() {
-      const basicForm = this.$refs.basicInfo.$refs.basicInfoForm;
-      const genForm = this.$refs.genInfo.$refs.genInfoForm;
+      const basicForm = this.$refs.basicInfo.$refs.basicInfoForm
+      const genForm = this.$refs.genInfo.$refs.genInfoForm
       Promise.all([basicForm, genForm].map(this.getFormPromise)).then((res) => {
-        const validateResult = res.every((item) => !!item);
+        const validateResult = res.every((item) => !!item)
         if (validateResult) {
-          const genTable = Object.assign({}, basicForm.model, genForm.model);
-          genTable.columns = this.columns;
+          const genTable = Object.assign({}, basicForm.model, genForm.model)
+          genTable.columns = this.columns
           // 额外参数拼接
           genTable.params = {
             treeCode: genTable.treeCode,
@@ -192,80 +192,84 @@ export default {
             sortField: genTable.sortField,
             sortType: genTable.sortType,
             checkedBtn: genTable.checkedBtn.toString(),
-          };
-          console.log("genForm", genTable);
+            permissionPrefix: genTable.permissionPrefix
+          }
+          console.log('genForm', genTable)
 
           updateGenTable(genTable).then((res) => {
-            this.msgSuccess(res.msg);
+            this.msgSuccess(res.msg)
             if (res.code === 200) {
-              this.close();
+              this.close()
             }
-          });
+          })
         } else {
-          this.msgError("表单校验未通过，请重新检查提交内容");
+          this.msgError('表单校验未通过，请重新检查提交内容')
         }
-      });
+      })
     },
     getFormPromise(form) {
       return new Promise((resolve) => {
         form.validate((res) => {
-          resolve(res);
-        });
-      });
+          resolve(res)
+        })
+      })
     },
     /** 关闭按钮 */
     close() {
-			const obj = { path: "/tool/gen", query: { t: Date.now(), pageNum: this.$route.query.pageNum } };
-      this.$tab.closeOpenPage(obj);
+      const obj = {
+        path: '/tool/gen',
+        query: { t: Date.now(), pageNum: this.$route.query.pageNum }
+      }
+      this.$tab.closeOpenPage(obj)
     },
     /**
      * 排序保存
      */
     sortTable(columns) {
       const el = this.$refs.dragTable.$el.querySelectorAll(
-        ".el-table__body-wrapper > table > tbody"
-      )[0];
-      var that = this;
+        '.el-table__body-wrapper > table > tbody'
+      )[0]
+      var that = this
       const sortable = Sortable.create(el, {
-        handle: ".allowDrag",
+        handle: '.allowDrag',
         onEnd: (evt) => {
-          const targetRow = that.columns.splice(evt.oldIndex, 1)[0];
-          columns.splice(evt.newIndex, 0, targetRow);
-          for (let index in columns) {
-            columns[index].sort = parseInt(index) + 1;
+          const targetRow = that.columns.splice(evt.oldIndex, 1)[0]
+          columns.splice(evt.newIndex, 0, targetRow)
+          for (const index in columns) {
+            columns[index].sort = parseInt(index) + 1
           }
           this.$nextTick(() => {
-            this.columns = columns;
-          });
-        },
-      });
+            this.columns = columns
+          })
+        }
+      })
     },
     /**
      * 回车到下一行
      */
     nextFocus(row, index, e) {
       // const val = e.target.value;
-      var keyCode = e.keyCode || e.which || e.charCode;
+      var keyCode = e.keyCode || e.which || e.charCode
       if (keyCode === 13) {
-        this.$refs[row.columnId].blur();
+        this.$refs[row.columnId].blur()
         if (Object.keys(this.$refs).length - 1 === index) {
-          index = -1;
+          index = -1
         }
-        var num = Object.keys(this.$refs)[index + 1];
+        var num = Object.keys(this.$refs)[index + 1]
         if (num > 0) {
-          this.$refs[num].focus();
+          this.$refs[num].focus()
         } else {
-          console.warn("最后一行了");
+          console.warn('最后一行了')
         }
       }
-    },
+    }
   },
   watch: {
     columns: {
       handler(val) {
-        this.sortTable(val);
-      },
-    },
-  },
-};
+        this.sortTable(val)
+      }
+    }
+  }
+}
 </script>

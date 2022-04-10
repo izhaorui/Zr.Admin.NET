@@ -45,7 +45,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableByTbName(string tableName)
         {
-            return GenTableRepository.Delete(f => f.TableName == tableName) ? 1: 0;
+            return GenTableRepository.Delete(f => f.TableName == tableName) ? 1 : 0;
         }
 
         /// <summary>
@@ -83,16 +83,24 @@ namespace ZR.Service.System
                 if (options == null) return;
 
                 genTable.ParentMenuId = options.GetValueOrDefault("parentMenuId") ?? null;
-                
+
                 genTable.SortType = options.GetValueOrDefault("sortType") ?? "asc";
                 genTable.SortField = options.GetValueOrDefault("sortField") ?? "";
 
                 genTable.TreeParentCode = options.GetValueOrDefault("treeParentCode") ?? "";
                 genTable.TreeName = options.GetValueOrDefault("treeName") ?? "";
                 genTable.TreeCode = options.GetValueOrDefault("treeCode") ?? "";
-                
+
                 var checkdBtn = options.GetValueOrDefault("checkedBtn") ?? "";
                 genTable.CheckedBtn = Tools.SpitIntArrary(checkdBtn.ToString());
+
+                var permPrefix = options.GetValueOrDefault("permissionPrefix", "");
+
+                genTable.PermissionPrefix = permPrefix?.ToString();
+            }
+            if (genTable.PermissionPrefix.IsEmpty())
+            {
+                genTable.PermissionPrefix = $"{genTable.ModuleName.ToLower()}:{genTable.ClassName.ToLower()}";//权限
             }
         }
 
@@ -102,7 +110,7 @@ namespace ZR.Service.System
         /// <param name="genTable"></param>
         /// <param name="pagerInfo"></param>
         /// <returns></returns>
-        public PagedInfo<GenTable> GetGenTables(GenTable genTable, Model.PagerInfo pagerInfo)
+        public PagedInfo<GenTable> GetGenTables(GenTable genTable, PagerInfo pagerInfo)
         {
             var predicate = Expressionable.Create<GenTable>();
             predicate = predicate.AndIF(genTable.TableName.IfNotEmpty(), it => it.TableName.Contains(genTable.TableName));
@@ -165,7 +173,7 @@ namespace ZR.Service.System
             GenTableColumnService.Insert(insertColumns);
 
             List<GenTableColumn> delColumns = tableColumns.FindAll(column => !dbTableColumneNames.Contains(column.ColumnName));
-            if (delColumns!= null && delColumns.Count > 0)
+            if (delColumns != null && delColumns.Count > 0)
             {
                 GenTableColumnService.Delete(delColumns.Select(f => f.ColumnId).ToList());
             }
