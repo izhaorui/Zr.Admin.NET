@@ -11,8 +11,6 @@ namespace Infrastructure
         public static string ConnBus = "conn_bus";
         public static string ConnBusDbType = "conn_bus_type";
 
-        public static string DbKey = "DbKey";
-
         public string Redis { get; set; }
         public string Database { get; set; }
         /// <summary>

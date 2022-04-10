@@ -1,12 +1,9 @@
-﻿using Infrastructure.Model;
-using SqlSugar;
+﻿using SqlSugar;
 using SqlSugar.IOC;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using ZR.Model;
 
 namespace ZR.Repository
@@ -35,7 +32,7 @@ namespace ZR.Repository
             itenant = DbScoped.SugarScope;//设置租户接口
             if (Context == null)
             {
-                Context = context ?? DbScoped.SugarScope.GetConnection(1);//根据类传入的ConfigId自动选择
+                Context = DbScoped.SugarScope.GetConnection(1);//根据类传入的ConfigId自动选择
             }
         }
 
