@@ -48,7 +48,7 @@ namespace ZR.Admin.WebApi.Extensions
             SugarIocServices.ConfigurationSugar(db =>
             {
                 FilterData(0);
-                FilterData(1);
+                //FilterData(1);
                 #region db0
                 db.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
                 {
@@ -114,12 +114,19 @@ namespace ZR.Admin.WebApi.Extensions
                 }
                 else if (DATA_SCOPE_DEPT.Equals(dataScope))//本部门数据
                 {
-                    var filter1 = new TableFilterItem<SysDept>(it => it.DeptId == user.DeptId);
+                    var filter1 = new TableFilterItem<SysUser>(it => it.DeptId == user.DeptId);
                     db.QueryFilter.Add(filter1);
                 }
                 else if (DATA_SCOPE_DEPT_AND_CHILD.Equals(dataScope))//本部门及以下数据
                 {
                     //SQl  OR {}.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = {} or find_in_set( {} , ancestors ) )
+                    var allChildDepts = db.Queryable<SysDept>().ToChildList(it => it.ParentId, user.DeptId);
+
+                    var filter1 = new TableFilterItem<SysUser>(it => allChildDepts.Select(f => f.DeptId).ToList().Contains(it.DeptId));
+                    db.QueryFilter.Add(filter1);
+
+                    var filter2 = new TableFilterItem<SysDept>(it => allChildDepts.Select(f => f.DeptId).ToList().Contains(it.DeptId));
+                    db.QueryFilter.Add(filter2);
                 }
                 else if (DATA_SCOPE_SELF.Equals(dataScope))//仅本人数据
                 {

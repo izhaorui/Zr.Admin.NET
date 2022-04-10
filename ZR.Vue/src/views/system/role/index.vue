@@ -211,10 +211,10 @@ export default {
           dictValue: '3',
           dictLabel: '本部门'
         },
-        // {
-        //   dictValue: "4",
-        //   dictLabel: "本部门及以下数据权限",
-        // },
+        {
+          dictValue: "4",
+          dictLabel: "本部门及以下数据权限",
+        },
         {
           dictValue: '5',
           dictLabel: '仅本人'
