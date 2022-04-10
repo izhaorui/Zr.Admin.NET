@@ -121,7 +121,7 @@ namespace ZR.Admin.WebApi.Middleware
             SysOperLogService.InsertOperlog(sysOperLog);
         }
 
-        public static Endpoint? GetEndpoint(HttpContext context)
+        public static Endpoint GetEndpoint(HttpContext context)
         {
             if (context == null)
             {

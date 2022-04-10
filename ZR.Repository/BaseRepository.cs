@@ -1,12 +1,9 @@
-﻿using Infrastructure.Model;
-using SqlSugar;
+﻿using SqlSugar;
 using SqlSugar.IOC;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using ZR.Model;
 
 namespace ZR.Repository
@@ -18,18 +15,24 @@ namespace ZR.Repository
     public class BaseRepository<T> : SimpleClient<T> where T : class, new()
     {
         public ITenant itenant = null;//多租户事务
-        public BaseRepository(ISqlSugarClient client = null) : base(client)
+        public BaseRepository(ISqlSugarClient context = null) : base(context)
         {
             //通过特性拿到ConfigId
-            var configId = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
-            if (configId != null)
+            //var configId = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
+            //if (configId != null)
+            //{
+            //    itenant = DbScoped.SugarScope;//设置租户接口
+            //    Context = DbScoped.SugarScope.GetConnection(configId);
+            //}
+            //else
+            //{
+            //    Context = context ?? DbScoped.SugarScope.GetConnection(1);//根据类传入的ConfigId自动选择
+            //}
+            Context = DbScoped.SugarScope.GetConnectionWithAttr<T>();
+            itenant = DbScoped.SugarScope;//设置租户接口
+            if (Context == null)
             {
-                Context = DbScoped.SugarScope.GetConnection(configId);
-                itenant = DbScoped.SugarScope;//设置租户接口
-            }
-            else
-            {
-                Context = client ?? DbScoped.SugarScope.GetConnection(1);//根据类传入的ConfigId自动选择
+                Context = DbScoped.SugarScope.GetConnection(1);//根据类传入的ConfigId自动选择
             }
         }
 

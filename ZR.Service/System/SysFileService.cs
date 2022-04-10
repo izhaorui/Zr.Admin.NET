@@ -23,11 +23,11 @@ namespace ZR.Service.System
     public class SysFileService : BaseService<SysFile>, ISysFileService
     {
         private string domainUrl = AppSettings.GetConfig("ALIYUN_OSS:domainUrl");
-        private readonly SysFileRepository SysFileRepository;
+        private readonly ISysConfigService SysConfigService;
         private OptionsSetting OptionsSetting;
-        public SysFileService(SysFileRepository repository, IOptions<OptionsSetting> options)
+        public SysFileService(ISysConfigService sysConfigService, IOptions<OptionsSetting> options)
         {
-            SysFileRepository = repository;
+            SysConfigService = sysConfigService;
             OptionsSetting = options.Value;
         }
 
@@ -53,7 +53,8 @@ namespace ZR.Service.System
             {
                 await formFile.CopyToAsync(stream);//await 不能少
             }
-            string accessPath = string.Concat(OptionsSetting.Upload.UploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
+            string uploadUrl = SysConfigService.GetSysConfigByKey("sys.file.uploadUrl")?.ConfigValue ?? OptionsSetting.Upload.UploadUrl;
+            string accessPath = string.Concat(uploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
             SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, userName)
             {
                 StoreType = (int)Infrastructure.Enums.StoreType.LOCAL,

@@ -33,28 +33,28 @@ namespace ZR.Admin.WebApi.Extensions
             int dbType_bus = Convert.ToInt32(Configuration[OptionsSetting.ConnBusDbType]);
 
             SugarIocServices.AddSqlSugar(new List<IocConfig>() {
-               new IocConfig() {
-                ConfigId = "0",
-                ConnectionString = connStr,
-                DbType = (IocDbType)dbType,
-                IsAutoCloseConnection = true
-            }, new IocConfig() {
-                ConfigId = "1",
-                ConnectionString = connStrBus,
-                DbType = (IocDbType)dbType_bus,
-                IsAutoCloseConnection = true
-            }
-            });
+                   new IocConfig() {
+                    ConfigId = "0",
+                    ConnectionString = connStr,
+                    DbType = (IocDbType)dbType,
+                    IsAutoCloseConnection = true
+                }, new IocConfig() {
+                    ConfigId = "1",
+                    ConnectionString = connStrBus,
+                    DbType = (IocDbType)dbType_bus,
+                    IsAutoCloseConnection = true
+                }
+                });
             SugarIocServices.ConfigurationSugar(db =>
             {
+                FilterData(0);
+                //FilterData(1);
                 #region db0
                 db.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
                 {
-                    var param = db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                    var param = db.GetConnection(0).Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
-                    FilterData(db.GetConnection(0));
-
-                    logger.Info($"【sql语句】{sql}，{param}");
+                    logger.Info($"【sql语句】{sql}，{param}\n");
                 };
 
                 db.GetConnection(0).Aop.OnError = (e) =>
@@ -72,7 +72,7 @@ namespace ZR.Admin.WebApi.Extensions
                 //Db1
                 db.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
                 {
-                    var param = DbScoped.SugarScope.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                    var param = db.GetConnection(1).Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
                     logger.Info($"【sql语句】{sql}, {param}");
                 };
@@ -88,7 +88,8 @@ namespace ZR.Admin.WebApi.Extensions
         /// <summary>
         /// 分页获取count 不会追加sql
         /// </summary>
-        private static void FilterData(ISqlSugarClient sqlSugarClient)
+        /// <param name="configId">多库id</param>
+        private static void FilterData(int configId)
         {
             var u = App.User;
             if (u == null) return;
@@ -97,8 +98,8 @@ namespace ZR.Admin.WebApi.Extensions
             if (user == null) return;
             //管理员不过滤
             if (user.RoleIds.Any(f => f.Equals("admin"))) return;
-
-            foreach (var role in user.Roles)
+            var db = DbScoped.SugarScope.GetConnection(configId);
+            foreach (var role in user.Roles.OrderBy(f => f.DataScope))
             {
                 string dataScope = role.DataScope;
                 if (DATA_SCOPE_ALL.Equals(dataScope))//所有权限
@@ -107,28 +108,30 @@ namespace ZR.Admin.WebApi.Extensions
                 }
                 else if (DATA_SCOPE_CUSTOM.Equals(dataScope))//自定数据权限
                 {
-                    //有问题
-                    //var roleDepts = db0.Queryable<SysRoleDept>()
-                    //.Where(f => f.RoleId == role.RoleId).Select(f => f.DeptId).ToList();
-                    //var filter1 = new TableFilterItem<SysDept>(it => roleDepts.Contains(it.DeptId));
-                    //DbScoped.SugarScope.GetConnection(0).QueryFilter.Add(filter1);
+                    //" OR {}.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = {} ) ", deptAlias, role.getRoleId()));
+                    var filter1 = new TableFilterItem<SysUser>(it => SqlFunc.Subqueryable<SysRoleDept>().Where(f => f.DeptId == it.DeptId && f.RoleId == role.RoleId).Any());
+                    db.QueryFilter.Add(filter1);
                 }
                 else if (DATA_SCOPE_DEPT.Equals(dataScope))//本部门数据
                 {
-                    //有问题添加后的SQL 语句 是 AND deptId = @deptId
-                    var exp = Expressionable.Create<SysDept>();
-                    exp.Or(it => it.DeptId == user.DeptId);
-                    var filter1 = new TableFilterItem<SysDept>(exp.ToExpression());
-                    sqlSugarClient.QueryFilter.Add(filter1);
+                    var filter1 = new TableFilterItem<SysUser>(it => it.DeptId == user.DeptId);
+                    db.QueryFilter.Add(filter1);
                 }
                 else if (DATA_SCOPE_DEPT_AND_CHILD.Equals(dataScope))//本部门及以下数据
                 {
                     //SQl  OR {}.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = {} or find_in_set( {} , ancestors ) )
+                    var allChildDepts = db.Queryable<SysDept>().ToChildList(it => it.ParentId, user.DeptId);
+
+                    var filter1 = new TableFilterItem<SysUser>(it => allChildDepts.Select(f => f.DeptId).ToList().Contains(it.DeptId));
+                    db.QueryFilter.Add(filter1);
+
+                    var filter2 = new TableFilterItem<SysDept>(it => allChildDepts.Select(f => f.DeptId).ToList().Contains(it.DeptId));
+                    db.QueryFilter.Add(filter2);
                 }
                 else if (DATA_SCOPE_SELF.Equals(dataScope))//仅本人数据
                 {
                     var filter1 = new TableFilterItem<SysUser>(it => it.UserId == user.UserId, true);
-                    sqlSugarClient.QueryFilter.Add(filter1);
+                    db.QueryFilter.Add(filter1);
                 }
             }
         }

@@ -12,7 +12,7 @@
 * 基于.NET5/.NET6实现的通用权限管理平台（RBAC模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
 * 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让web开发更快速、简单高效（从此告别996），解决70%的重复工作，专注您的业务，轻松开发从现在开始！
 * 前端采用Vue2.0、Element UI。
-* 后端采用Net5/Net6、Sqlsugar、MySQL。
+* 后端采用Net5/Net6、Sqlsugar、MySQL等，可以自动分库分表。
 * 权限认证使用Jwt，支持多终端认证系统。
 * 支持加载动态权限菜单，多方式轻松权限控制
 * 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
@@ -37,13 +37,13 @@
 Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 element-ui，前端采用vscode工具开发
 
 ## 🍀后端技术
-核心框架：.Net5.0/.Net6 + Web API + sqlsugar + swagger + signalR
+核心框架：.Net5.0/.Net6 + Web API + sqlsugar + swagger + signalR + IpRateLimit
 
-定时计划任务：Quartz.Net组件
+定时计划任务：Quartz.Net组件，支持执行程序集或者http网络请求
 
-安全支持：过滤器、Sql注入、请求伪造
+安全支持：过滤器(数据权限过滤)、Sql注入、请求伪造
 
-日志管理：NLog、登录日志、操作日志
+日志管理：NLog、登录日志、操作日志、定时任务日志
 
 工具类：验证码、丰富公共功能、代码生成
 
@@ -63,9 +63,10 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 11. 任务系统：基于Quartz.NET，可以在线（添加、修改、删除、手动执行)任务调度包含执行结果日志。
 12. 文章管理：可以写文章记录。
 13. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、SQL文件等)，支持下载，自定义配置前端展示控件、让开发更快捷高效。
-14. 文件管理：可以上传文件
+14. 文件管理：可以进行上传文件管理，目前支持上传到本地、阿里云
 15. 通知管理：系统通知公告信息发布维护，使用signalr实现对用户实时通知。
 16. 参数管理：对系统动态配置常用参数。
+17. 发送邮件：可以对多个用户进行发送邮件
 
 ## 🍻项目结构
 
@@ -104,7 +105,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
     </tr>
 	<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/11.png"/></td>
-        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/12.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/12.jpeg"/></td>
     </tr>
 	<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/13.png"/></td>
@@ -115,9 +116,13 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/16.png"/></td>
     </tr>
 	<tr>
-        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/17.png"/></td>
-		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/18.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/17.jpeg"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/18.png"/></td>
     </tr>
+	<tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/19.jpeg"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/20.jpeg"/></td>
+	</tr>
 </table>
 
 ## 🎉优势

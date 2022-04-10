@@ -106,7 +106,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("请求参数错误");
             }
             //从 Dto 映射到 实体
-            var model = parm.Adapt<SysConfig>().ToCreate();
+            var model = parm.Adapt<SysConfig>().ToCreate(HttpContext);
 
             return SUCCESS(_SysConfigService.Insert(model, it => new
             {
