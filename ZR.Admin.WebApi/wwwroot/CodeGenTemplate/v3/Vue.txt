@@ -130,7 +130,7 @@ $end
         </template>
       </el-table-column>
     </el-table>
-    <pagination class="mt10" background :total="total" :page="queryParams.pageNum" :limit="queryParams.pageSize" @pagination="getList" />
+    <pagination class="mt10" background :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改${genTable.functionName}对话框 -->
     <el-dialog :title="title" :lock-scroll="false" v-model="open" >
