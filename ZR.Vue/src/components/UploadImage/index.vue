@@ -34,7 +34,7 @@ export default {
     // 上传地址
     uploadUrl: {
       type: String,
-      default: process.env.VUE_APP_UPLOAD_URL ?? '/Common/UploadFile'
+      default: process.env.VUE_APP_UPLOAD_URL
     },
     // 文件类型, 例如['png', 'jpg', 'jpeg']
     fileType: {
