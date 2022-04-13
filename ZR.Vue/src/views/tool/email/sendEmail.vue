@@ -42,7 +42,7 @@ export default {
           },
         ],
       },
-      uploadActionUrl: process.env.VUE_APP_BASE_API + "common/uploadFile",
+      uploadActionUrl: process.env.VUE_APP_BASE_API + "/common/uploadFile",
       rules: {
         subject: [{ required: true, message: "主题不能为空", trigger: "blur" }],
         content: [{ required: true, message: "内容不能为空", trigger: "blur" }],

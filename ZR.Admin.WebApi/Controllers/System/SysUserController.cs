@@ -174,7 +174,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="formFile">使用IFromFile必须使用name属性否则获取不到文件</param>
         /// <returns></returns>
         [HttpPost("importData")]
-        [Log(Title = "用户导入", BusinessType = BusinessType.IMPORT)]
+        [Log(Title = "用户导入", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false, IsSaveResponseData = false)]
         [ActionPermissionFilter(Permission = "system:user:import")]
         public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
         {
@@ -189,7 +189,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpGet("importTemplate")]
-        [Log(Title = "用户模板", BusinessType = BusinessType.EXPORT)]
+        [Log(Title = "用户模板", BusinessType = BusinessType.EXPORT, IsSaveRequestData = false, IsSaveResponseData = false)]
         [AllowAnonymous]
         public IActionResult ImportTemplateExcel()
         {
