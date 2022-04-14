@@ -9,6 +9,12 @@ namespace ZR.Service.System.IService
 {
     public interface ISysLoginService: IBaseService<SysLogininfor>
     {
+        /// <summary>
+        /// 登录
+        /// </summary>
+        /// <param name="loginBody"></param>
+        /// <param name="logininfor"></param>
+        /// <returns></returns>
         public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor);
 
         /// <summary>

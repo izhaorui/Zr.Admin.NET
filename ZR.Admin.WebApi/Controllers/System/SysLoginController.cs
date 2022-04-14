@@ -19,6 +19,8 @@ using ZR.Service.System;
 using Microsoft.Extensions.Options;
 using UAParser;
 using IPTools.Core;
+using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -80,7 +82,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             var user = sysLoginService.Login(loginBody, RecordLogInfo(httpContextAccessor.HttpContext));
-            
+
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
@@ -105,9 +107,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             //}).Wait();
             var userid = HttpContext.GetUId();
             var name = HttpContext.GetName();
-            
+
             CacheService.RemoveUserPerms(GlobalConstant.UserPermKEY + userid);
-            return SUCCESS(new { name , id = userid });
+            return SUCCESS(new { name, id = userid });
         }
 
         /// <summary>
@@ -198,9 +200,41 @@ namespace ZR.Admin.WebApi.Controllers.System
                 ipaddr = ipAddr,
                 userName = context.GetName(),
                 loginLocation = ip_info.Province + "-" + ip_info.City
-        };
+            };
 
             return sysLogininfor;
+        }
+
+        /// <summary>
+        /// 注册
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("/register")]
+        [AllowAnonymous]
+        [Log(Title = "注册", BusinessType = Infrastructure.Enums.BusinessType.INSERT)]
+        public IActionResult Register([FromBody] RegisterDto dto)
+        {
+            SysConfig config = sysConfigService.GetSysConfigByKey("sys.account.register");
+            if (config?.ConfigValue != "true")
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "当前系统没有开启注册功能！");
+            }
+            SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
+            if (sysConfig?.ConfigValue != "off" && CacheHelper.Get(dto.Uuid) is string str && !str.ToLower().Equals(dto.Code.ToLower()))
+            {
+                return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
+            }
+            if (UserConstants.NOT_UNIQUE.Equals(sysUserService.CheckUserNameUnique(dto.Username)))
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, $"保存用户{dto.Username}失败，注册账号已存在");
+            }
+            SysUser user = sysUserService.Register(dto);
+            if (user.UserId > 0)
+            {
+                return SUCCESS(user);
+            }
+            return ToResponse(ResultCode.CUSTOM_ERROR, "注册失败，请联系管理员");
         }
     }
 }
