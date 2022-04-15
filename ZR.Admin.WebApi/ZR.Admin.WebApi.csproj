@@ -38,4 +38,10 @@
 	<ItemGroup>
 		<Folder Include="Controllers\" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="ip2region.db">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>
