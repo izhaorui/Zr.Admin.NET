@@ -27,7 +27,8 @@ export default defineConfig(({
       target: 'modules',
       outDir: 'dist', //指定输出目录
       assetsDir: 'assets', //指定静态资源存储目录
-      minify: 'terser' //混淆器，terser构建后文件体积更小
+      minify: 'terser', //混淆器，terser构建后文件体积更小
+			publicDir: import.meta.env.VITE_APP_ROUTER_PREFIX
     },
     // vite 相关配置
     server: {
