@@ -11,7 +11,7 @@
 * 本项目适合有一定NetCore和 vue基础的开发人员
 * 基于.NET5/.NET6实现的通用权限管理平台（RBAC模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
 * 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让web开发更快速、简单高效（从此告别996），解决70%的重复工作，专注您的业务，轻松开发从现在开始！
-* 前端采用Vue2.0、Element UI。
+* 前端采用Vue2.0/vue3、Element UI/Element-UI plus、vite。
 * 后端采用Net5/Net6、Sqlsugar、MySQL等，可以自动分库分表。
 * 权限认证使用Jwt，支持多终端认证系统。
 * 支持加载动态权限菜单，多方式轻松权限控制
@@ -67,6 +67,7 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 15. 通知管理：系统通知公告信息发布维护，使用signalr实现对用户实时通知。
 16. 参数管理：对系统动态配置常用参数。
 17. 发送邮件：可以对多个用户进行发送邮件
+18. 账号注册：可以注册账号登录系统。
 
 ## 🍻项目结构
 
@@ -137,7 +138,6 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 - 👉Ruoyi.vue：[Ruoyi](http://www.ruoyi.vip/)
 - 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
 - 👉vue-element-admin：[vue-element-admin](https://github.com/PanJiaChen/vue-element-admin)
-- 👉Meiam.System：[Meiam.System](https://github.com/91270/Meiam.System)
 
 ## 🎀捐赠
 如果这个项目对您有所帮助，请扫下方二维码就当打发要饭的吧。
