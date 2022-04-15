@@ -45,10 +45,13 @@ const user = {
             setToken(res.data)
             //提交上面的mutaions方法
             commit('SET_TOKEN', res.data)
-            resolve()//then处理
+            resolve() //then处理
           } else {
-            reject(res)//catch处理
+            console.log('login error ' + res);
+            reject(res) //catch处理
           }
+        }).catch(err => {
+          reject(err);
         })
       })
     },
@@ -69,7 +72,7 @@ const user = {
 
           commit('SET_NAME', data.user.nickName)
           commit('SET_AVATAR', avatar)
-          commit('SET_USERINFO', data.user)//新加
+          commit('SET_USERINFO', data.user) //新加
           resolve(res)
         }).catch(error => {
           reject(error)
@@ -79,10 +82,10 @@ const user = {
 
     // 退出系统
     LogOut({ commit, state }) {
-			console.log('退出登录')
+      console.log('退出登录')
       return new Promise((resolve, reject) => {
         logout().then((res) => {
-          removeToken()// 必须先移除token
+          removeToken() // 必须先移除token
           commit('SET_TOKEN', '')
           commit('SET_ROLES', [])
           commit('SET_PERMISSIONS', [])

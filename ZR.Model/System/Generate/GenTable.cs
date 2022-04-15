@@ -96,6 +96,8 @@ namespace ZR.Model.System.Generate
 
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public object TreeParentCode { get; set; }
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public string PermissionPrefix { get; set; }
         /// <summary>
         /// 生成的按钮功能
         /// </summary>

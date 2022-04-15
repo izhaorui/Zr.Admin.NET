@@ -134,9 +134,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             LoginUser loginUser = Framework.JwtUtil.GetLoginUser(HttpContext);
             if (formFile == null) throw new CustomException("请选择文件");
 
-            string fileExt = Path.GetExtension(formFile.FileName);
-            string fileName = FileUtil.HashFileName() + (fileExt.IsEmpty() ? ".png" : fileExt);
-            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, fileName, "", HttpContext.GetName(), formFile);
+            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, "", "", HttpContext.GetName(), formFile);
 
             UserService.UpdatePhoto(new SysUser() { Avatar = file.AccessUrl, UserId = loginUser.UserId });
             return SUCCESS(new { imgUrl = file.AccessUrl });

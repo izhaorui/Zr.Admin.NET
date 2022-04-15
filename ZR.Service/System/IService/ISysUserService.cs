@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ZR.Model;
+﻿using ZR.Model;
 using ZR.Model.System;
-using ZR.Repository;
+using ZR.Model.System.Dto;
 
 namespace ZR.Service.System.IService
 {
@@ -66,5 +61,12 @@ namespace ZR.Service.System.IService
         /// <param name="user"></param>
         /// <returns></returns>
         public int UpdatePhoto(SysUser user);
+
+        /// <summary>
+        /// 注册
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        SysUser Register(RegisterDto dto);
     }
 }

@@ -2,7 +2,7 @@ module.exports = {
   /**
    * 框架版本号
    */
-  version: '3.7.8',
+  version: '3.8.0',
   title: 'ZrAdmin.NET-后台管理',
   /**
    * 主题颜色
@@ -47,5 +47,6 @@ module.exports = {
    * The default is only used in the production env
    * If you want to also use it in dev, you can pass ['production', 'development']
    */
-  errorLog: 'production'
+  errorLog: 'production',
+  copyRight: 'Copyright ©2022 izhaorui.cn All Rights Reserved.'
 }

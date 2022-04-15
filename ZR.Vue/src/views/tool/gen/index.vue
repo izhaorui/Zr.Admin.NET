@@ -68,29 +68,29 @@ import {
   listTable,
   delTable,
   previewTable,
-  synchDb,
-} from "@/api/tool/gen";
-import importTable from "./importTable";
-import { Loading } from "element-ui";
-import hljs from "highlight.js";
-import "highlight.js/styles/idea.css"; //这里有多个样式，自己可以根据需要切换
+  synchDb
+} from '@/api/tool/gen'
+import importTable from './importTable'
+import { Loading } from 'element-ui'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/idea.css' // 这里有多个样式，自己可以根据需要切换
 
 export default {
-  name: "gen",
+  name: 'gen',
   components: { importTable, hljs },
   data() {
     return {
       queryParams: {
         pageNum: 1,
         pageSize: 20,
-        tableName: "",
+        tableName: ''
       },
       // 预览参数
       preview: {
         open: false,
-        title: "代码预览",
+        title: '代码预览',
         data: {},
-        activeName: "0",
+        activeName: '0'
       },
       showGenerate: false,
       rules: {},
@@ -103,169 +103,169 @@ export default {
       currentSelected: {},
       // 选中的列
       checkedQueryColumn: [],
-      //是否覆盖原先代码
+      // 是否覆盖原先代码
       coverd: true,
-      // 生成SQL脚本的数据库类型
-      dbType: 1,
       // 选中的表
       tableIds: [],
       // 非多个禁用
-      multiple: true,
-    };
+      multiple: true
+    }
   },
   created() {
-    this.handleSearch();
+    this.handleSearch()
   },
   methods: {
     /**
      * 点击查询
      */
     handleSearch() {
-      this.tableloading = true;
+      this.tableloading = true
 
       listTable(this.queryParams).then((res) => {
-        this.tableData = res.data.result;
-        this.total = res.data.totalNum;
-        this.tableloading = false;
-      });
+        this.tableData = res.data.result
+        this.total = res.data.totalNum
+        this.tableloading = false
+      })
     },
     /**
      * 编辑表格
      */
     handleEditTable(row) {
-      this.queryParams.tableName = row.tableName;
-      this.handleSearch();
+      this.queryParams.tableName = row.tableName
+      this.handleSearch()
 
       this.$router.push({
-        path: "/gen/editTable",
-        query: { tableId: row.tableId },
-      });
+        path: '/gen/editTable',
+        query: { tableId: row.tableId }
+      })
     },
     // 代码预览
     handlePreview(row) {
-      this.$refs["codeform"].validate((valid) => {
+      this.$refs['codeform'].validate((valid) => {
         if (!valid) {
-          this.msgError("请先完成表格");
-          return;
+          this.msgError('请先完成表格')
+          return
         }
+        this.$modal.loading('请稍后...')
         previewTable(row.tableId).then((res) => {
           if (res.code === 200) {
-            this.showGenerate = false;
-            this.preview.open = true;
-            this.preview.data = res.data;
+            this.showGenerate = false
+            this.preview.open = true
+            this.preview.data = res.data
+            this.$modal.closeLoading()
           }
-        });
-      });
+        })
+      })
     },
     /**
      * 点击生成服务端代码
      */
     handleGenTable(row) {
-      this.currentSelected = row;
+      this.currentSelected = row
       if (!this.currentSelected) {
-        this.msgError("请先选择要生成代码的数据表");
-        return false;
+        this.msgError('请先选择要生成代码的数据表')
+        return false
       }
-      this.$refs["codeform"].validate((valid) => {
+      this.$refs['codeform'].validate((valid) => {
         if (valid) {
           var loadop = {
             lock: true,
-            text: "正在生成代码...",
-            spinner: "el-icon-loading",
-            background: "rgba(0, 0, 0, 0.7)",
-          };
-          const pageLoading = Loading.service(loadop);
+            text: '正在生成代码...',
+            spinner: 'el-icon-loading',
+            background: 'rgba(0, 0, 0, 0.7)'
+          }
+          const pageLoading = Loading.service(loadop)
 
           var seachdata = {
             tableId: this.currentSelected.tableId,
-            tableName: this.currentSelected.name,
+            tableName: this.currentSelected.name
             // queryColumn: this.checkedQueryColumn,
-          };
+          }
 
           codeGenerator(seachdata)
             .then((res) => {
-              const { data } = res;
-              this.showGenerate = false;
-              if (row.genType === "1") {
-                this.msgSuccess("成功生成到自定义路径：" + row.genPath);
+              const { data } = res
+              this.showGenerate = false
+              if (row.genType === '1') {
+                this.msgSuccess('成功生成到自定义路径')
               } else {
-                this.msgSuccess("恭喜你，代码生成完成！");
-                this.download(data.path);
+                this.msgSuccess('恭喜你，代码生成完成！')
+                this.download(data.path)
               }
-              pageLoading.close();
+              pageLoading.close()
             })
             .catch((erre) => {
-              pageLoading.close();
-            });
+              pageLoading.close()
+            })
         } else {
-          return false;
+          return false
         }
-      });
+      })
     },
     cancel() {
-      this.showGenerate = false;
-      this.currentSelected = {};
+      this.showGenerate = false
+      this.currentSelected = {}
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.resetForm("queryParams");
-      this.handleSearch();
+      this.resetForm('queryParams')
+      this.handleSearch()
     },
     /** 打开导入表弹窗 */
     openImportTable() {
-      this.$refs.import.show();
+      this.$refs.import.show()
     },
     handleDelete(row) {
-      const tableIds = row.tableId || this.tableIds;
-      this.$confirm("此操作将永久删除该文件, 是否继续?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
+      const tableIds = row.tableId || this.tableIds
+      this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
       })
         .then(() => {
           delTable(tableIds.toString()).then((res) => {
             if (res.code == 200) {
-              this.msgSuccess("删除成功");
+              this.msgSuccess('删除成功')
 
-              this.handleSearch();
+              this.handleSearch()
             }
-          });
+          })
         })
         .catch(() => {
           this.$message({
-            type: "info",
-            message: "已取消删除",
-          });
-        });
+            type: 'info',
+            message: '已取消删除'
+          })
+        })
     },
     /** 复制代码成功 */
     clipboardSuccess() {
-      this.msgSuccess("复制成功");
+      this.msgSuccess('复制成功')
     },
     // 多选框选中数据
     handleSelectionChange(section) {
-      this.tableIds = section.map((item) => item.tableId);
-      this.multiple = !section.length;
-      console.log(this.tableIds);
+      this.tableIds = section.map((item) => item.tableId)
+      this.multiple = !section.length
+      console.log(this.tableIds)
     },
     /** 高亮显示 */
     highlightedCode(code, key) {
       // var language = key.substring(key.lastIndexOf(".") , key.length)
-      const result = hljs.highlightAuto(code || "");
-      return result.value || "&nbsp;";
+      const result = hljs.highlightAuto(code || '')
+      return result.value || '&nbsp;'
     },
     // 同步代码
     handleSynchDb(row) {
-      const tableName = row.tableName;
+      const tableName = row.tableName
       this.$confirm('确认要强制同步"' + tableName + '"表结构吗？')
-        .then(function () {
-          return synchDb(row.tableId, { tableName, dbName: row.dbName });
+        .then(function() {
+          return synchDb(row.tableId, { tableName, dbName: row.dbName })
         })
         .then(() => {
-          this.msgSuccess("同步成功");
+          this.msgSuccess('同步成功')
         })
-        .catch(() => {});
-    },
-  },
-};
+        .catch(() => {})
+    }
+  }
+}
 </script>

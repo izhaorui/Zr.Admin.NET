@@ -44,7 +44,7 @@ namespace ZR.CodeGenerator
             string PKType = "int";
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
-            replaceDto.PermissionPrefix = $"{dto.GenTable.ModuleName.ToLower()}:{dto.GenTable.ClassName.ToLower()}";//权限
+            replaceDto.PermissionPrefix = dto.GenTable.PermissionPrefix;
             replaceDto.Author = dto.GenTable.FunctionAuthor;
             replaceDto.ShowBtnAdd = dto.GenTable.CheckedBtn.Any(f => f == 1);
             replaceDto.ShowBtnEdit = dto.GenTable.CheckedBtn.Any(f => f == 2);

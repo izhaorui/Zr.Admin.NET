@@ -9,9 +9,9 @@ export function login(username, password, code, uuid) {
     uuid
   }
   return request({
-      url: '/login',
-      method: 'POST',
-      data: data,
+    url: '/login',
+    method: 'POST',
+    data: data,
   })
 }
 
@@ -26,8 +26,8 @@ export function getInfo() {
 // 退出方法
 export function logout() {
   return request({
-      url: '/LogOut',
-      method: 'POST'
+    url: '/LogOut',
+    method: 'POST'
   })
 }
 
@@ -36,5 +36,17 @@ export function getCodeImg() {
   return request({
     url: '/captchaImage',
     method: 'get'
+  })
+}
+
+/**
+ * 注册
+ * @returns 
+ */
+export function register(data) {
+  return request({
+    url: '/register',
+    method: 'post',
+		data: data
   })
 }

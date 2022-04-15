@@ -680,6 +680,7 @@ insert into sys_config values(2, '用户管理-账号初始密码',         'sys
 insert into sys_config values(3, '主框架页-侧边栏主题',           'sys.index.sideTheme',           'theme-dark',    'Y', 'admin', sysdate(), '', null, '深色主题theme-dark，浅色主题theme-light' );
 insert into sys_config values(4, '账号自助-验证码开关',           'sys.account.captchaOnOff',      'true',          'Y', 'admin', sysdate(), '', null, '是否开启验证码功能（off、关闭，1、动态验证码 2、动态gif泡泡 3、泡泡 4、静态验证码）');
 INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (5, '本地文件上传访问域名', 'sys.file.uploadurl', 'http://localhost:8888', 'Y', '', '2022-04-10 10:11:27', '', NULL, NULL);
+INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (6, '开启注册功能', 'sys.account.register', 'true', 'Y', 'admin', '2022-04-14 00:00:00', 'admin', NULL, NULL);
 
 -- ----------------------------
 -- 18、代码生成业务表

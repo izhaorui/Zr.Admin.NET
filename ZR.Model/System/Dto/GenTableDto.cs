@@ -21,6 +21,7 @@ namespace ZR.Model.System.Dto
         public string FunctionAuthor { get; set; }
         public string GenType { get; set; }
         public string GenPath { get; set; }
+        public string PermissionPrefix { get; set; }
         /// <summary>
         /// 额外参数
         /// </summary>
@@ -44,6 +45,7 @@ namespace ZR.Model.System.Dto
         /// 额外参数字符串
         /// </summary>
         public string checkedBtn { get; set; }
+        public string permissionPrefix { get; set; }
     }
     public class GenTableColumnDto
     {

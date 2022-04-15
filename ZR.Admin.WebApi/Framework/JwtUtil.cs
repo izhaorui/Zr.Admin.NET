@@ -6,8 +6,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Common;
 using ZR.Model.System;
+using ZR.Service.System;
 
 namespace ZR.Admin.WebApi.Framework
 {
@@ -127,7 +127,7 @@ namespace ZR.Admin.WebApi.Framework
             {
                 var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData).Value;
                 var loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
-                var permissions = (List<string>)CacheHelper.GetCache(GlobalConstant.UserPermKEY + loginUser?.UserId);
+                var permissions = CacheService.GetUserPerms(GlobalConstant.UserPermKEY + loginUser?.UserId);
                 if (loginUser?.UserName == "admin")
                 {
                     permissions = new List<string>() { GlobalConstant.AdminPerm };

@@ -160,14 +160,13 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("表不能为空");
             }
             string[] tableNames = tables.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            var userName = HttpContext.GetName();
-
+            int result = 0;
             foreach (var tableName in tableNames)
             {
                 var tabInfo = _CodeGeneraterService.GetTableInfo(dbName, tableName);
                 if (tabInfo != null)
                 {
-                    GenTable genTable = CodeGeneratorTool.InitTable(dbName, userName, tableName, tabInfo?.Description);
+                    GenTable genTable = CodeGeneratorTool.InitTable(dbName, HttpContext.GetName(), tableName, tabInfo?.Description);
                     genTable.TableId = GenTableService.ImportGenTable(genTable);
 
                     if (genTable.TableId > 0)
@@ -179,13 +178,12 @@ namespace ZR.Admin.WebApi.Controllers
                         GenTableColumnService.DeleteGenTableColumnByTableName(tableName);
                         GenTableColumnService.InsertGenTableColumn(genTableColumns);
                         genTable.Columns = genTableColumns;
-
-                        return SUCCESS(genTable);
+                        result++;
                     }
                 }
             }
 
-            return ToResponse(ResultCode.FAIL, "生成失败");
+            return ToResponse(result);
         }
 
         /// <summary>

@@ -10,14 +10,6 @@ namespace ZR.Admin.WebApi.Extensions
         {
             var types = source?.GetType();
 
-            //var worker = new IdWorker(1, 1);
-            //if (types.GetProperty("ID") != null)
-            //{
-            //    long id = worker.NextId();
-
-            //    types.GetProperty("ID").SetValue(source, id.ToString(), null);
-            //}
-
             if (types.GetProperty("CreateTime") != null)
             {
                 types.GetProperty("CreateTime").SetValue(source, DateTime.Now, null);
@@ -30,7 +22,6 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 types.GetProperty("UpdateTime").SetValue(source, DateTime.Now, null);
             }
-
             if (types.GetProperty("Create_by") != null && context != null)
             {
                 types.GetProperty("Create_by").SetValue(source, context.GetName(), null);
@@ -54,10 +45,6 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 types.GetProperty("Update_time").SetValue(source, DateTime.Now, null);
             }
-            //if (types.GetProperty("UpdateID") != null)
-            //{
-            //    types.GetProperty("UpdateID").SetValue(source, userSession.UserID, null);
-            //}
 
             if (types.GetProperty("UpdateBy") != null)
             {

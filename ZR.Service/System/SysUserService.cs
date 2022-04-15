@@ -1,10 +1,14 @@
+using Infrastructure;
 using Infrastructure.Attribute;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
 
@@ -156,5 +160,34 @@ namespace ZR.Service
         {
             return UserRepository.UpdatePhoto(user);
         }
+
+        /// <summary>
+        /// 注册用户
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        public SysUser Register(RegisterDto dto)
+        {
+            //密码md5
+            string password = NETCore.Encrypt.EncryptProvider.Md5(dto.Password);
+            if (!Tools.PasswordStrength(dto.Password))
+            {
+                throw new CustomException("密码强度不符合要求");
+            }
+            SysUser user = new()
+            {
+                Create_time = DateTime.Now,
+                UserName = dto.Username,
+                NickName = dto.Username,
+                Password = password,
+                Status = "0",
+                DeptId = 0,
+                Remark = "用户注册"
+            };
+
+            user.UserId = UserRepository.AddUser(user);
+            return user;
+        }
+
     }
 }
