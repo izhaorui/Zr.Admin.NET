@@ -10,7 +10,7 @@
         </el-col>
         <el-col :span="6">
           <el-form-item label="文章状态" prop="status">
-            <el-select v-model="queryParams.status" size="small" >
+            <el-select v-model="queryParams.status" size="small">
               <el-option v-for="item in statusOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
             </el-select>
           </el-form-item>
@@ -39,15 +39,17 @@
       <el-table-column prop="content" label="文章内容" :show-overflow-tooltip="true"> </el-table-column>
       <el-table-column sortable prop="status" align="center" label="状态" width="90">
         <template slot-scope="scope">
-          <el-tag size="mini" :type="scope.row.status == '2' ? 'danger' : 'success'" disable-transitions>{{ scope.row.status == '2' ? "草稿":"已发布" }}</el-tag>
+          <el-tag size="mini" :type="scope.row.status == '2' ? 'danger' : 'success'" disable-transitions>{{ scope.row.status == '2' ? "草稿":"已发布" }}
+          </el-tag>
         </template>
       </el-table-column>
 
       <el-table-column prop="createTime" label="创建时间" width="128" :show-overflow-tooltip="true"> </el-table-column>
-      <el-table-column label="操作" align="center" width="160">
+      <el-table-column label="操作" align="center" width="190">
         <template slot-scope="scope">
-          <!-- <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button> -->
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:article:update']">编辑</el-button>
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button>
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:article:update']">编辑
+          </el-button>
           <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left:10px">
             <el-button slot="reference" size="mini" type="text" icon="el-icon-delete" v-hasPermi="['system:article:delete']">删除</el-button>
           </el-popconfirm>
@@ -59,10 +61,10 @@
   </div>
 </template>
 <script>
-import { listArticle, delArticle } from "@/api/system/article.js";
+import { listArticle, delArticle } from '@/api/system/article.js'
 
 export default {
-  name: "articleindex",
+  name: 'articleindex',
   data() {
     return {
       // 遮罩层
@@ -70,10 +72,9 @@ export default {
       // 显示搜索条件
       showSearch: true,
       // 查询参数
-      queryParams: {
-      },
+      queryParams: {},
       // 弹出层标题
-      title: "",
+      title: '',
       // 是否显示弹出层
       open: false,
       // 表单参数
@@ -86,56 +87,62 @@ export default {
       total: 0,
       // 提交按钮是否显示
       btnSubmitVisible: true,
-    };
+			// 文章预览地址
+			previewUrl: ''
+    }
   },
   created() {
-    this.getList();
-    this.getDicts("sys_article_status").then((response) => {
-      this.statusOptions = response.data;
-    });
+    this.getList()
+    this.getDicts('sys_article_status').then((response) => {
+      this.statusOptions = response.data
+    })
+
+    this.getConfigKey('sys.article.preview.url').then((response) => {
+      this.previewUrl = response.data
+    })
   },
   methods: {
     // 查询数据
     getList() {
       listArticle(this.queryParams).then((res) => {
         if (res.code == 200) {
-          this.dataList = res.data.result;
-          this.total = res.data.totalNum;
+          this.dataList = res.data.result
+          this.total = res.data.totalNum
         }
-      });
+      })
     },
     /** 重置查询操作 */
     resetQuery() {
-      this.resetForm("queryForm");
+      this.resetForm('queryForm')
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.getList();
+      this.getList()
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.$router.replace({ path: "/article/publish" });
+      this.$router.replace({ path: '/article/publish' })
     },
     /** 删除按钮操作 */
     handleDelete(row) {
       delArticle(row.cid).then((res) => {
         if (res.code == 200) {
-          this.msgSuccess("删除成功");
-          this.handleQuery();
+          this.msgSuccess('删除成功')
+          this.handleQuery()
         }
-      });
+      })
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.$router.push({ path: "/article/publish", query: { cid: row.cid } });
+      this.$router.push({ path: '/article/publish', query: { cid: row.cid }})
     },
     // 详情
     handleView(row) {
-      this.open = true;
-      this.title = "详情";
+			var link = `${this.previewUrl}${row.cid}`
+			window.open(link)
     },
     handleImport() {},
-    handleExport() {},
-  },
-};
+    handleExport() {}
+  }
+}
 </script>

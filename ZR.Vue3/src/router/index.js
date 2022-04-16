@@ -38,11 +38,11 @@ export const constantRoutes = [
   component: () => import('@/views/login'),
   hidden: true
 },
-{
-  path: '/register',
-  component: () => import('@/views/register'),
-  hidden: true
-},
+// {
+//   path: '/register',
+//   component: () => import('@/views/register'),
+//   hidden: true
+// },
 {
   path: "/:pathMatch(.*)*",
   component: () => import('@/views/error/404'),
@@ -80,7 +80,7 @@ export const constantRoutes = [
 }];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.VITE_APP_ROUTER_PREFIX),
   routes: constantRoutes,
   // scrollBehavior(to, from, savedPosition) {
   //   if (savedPosition) {
