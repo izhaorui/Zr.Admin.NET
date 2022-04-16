@@ -80,7 +80,7 @@ export const constantRoutes = [
 }];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.VITE_APP_ROUTER_PREFIX),
   routes: constantRoutes,
   // scrollBehavior(to, from, savedPosition) {
   //   if (savedPosition) {
