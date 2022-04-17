@@ -152,3 +152,4 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 - [Gitee](https://gitee.com/izory/ZrAdminNetCore/)
 - [Github](https://github.com/izhaorui/ZrAdmin.NET/)
 - [NET6版本](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/)
+- [配套vue3地址](https://gitee.com/izory/ZRAdmin-vue)
