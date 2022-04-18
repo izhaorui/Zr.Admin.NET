@@ -38,30 +38,30 @@ $end
 $end
 
       <el-form-item>
-        <el-button icon="search" size="small" type="primary" @click="handleQuery">搜索</el-button>
-        <el-button icon="refresh" size="small" @click="resetQuery">重置</el-button>
+        <el-button icon="search" type="primary" @click="handleQuery">搜索</el-button>
+        <el-button icon="refresh" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
 $if(replaceDto.ShowBtnAdd)
       <el-col :span="1.5">
-        <el-button type="primary" size="small" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="plus" @click="handleAdd">新增</el-button>
+        <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="plus" @click="handleAdd">新增</el-button>
       </el-col>
 $end
 $if(replaceDto.ShowBtnEdit)
       <el-col :span="1.5">
-        <el-button type="success" size="small" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" plain icon="edit" @click="handleUpdate">修改</el-button>
+        <el-button type="success" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" plain icon="edit" @click="handleUpdate">修改</el-button>
       </el-col>
 $end
 $if(replaceDto.ShowBtnDelete)
       <el-col :span="1.5">
-        <el-button type="danger" size="small" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="delete" @click="handleDelete">删除</el-button>
+        <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="delete" @click="handleDelete">删除</el-button>
       </el-col>
 $end
 $if(replaceDto.ShowBtnExport)
       <el-col :span="1.5">
-        <el-button type="warning" size="small" plain icon="download" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
+        <el-button type="warning" plain icon="download" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
       </el-col>
 $end
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
@@ -97,7 +97,7 @@ $elseif(column.HtmlType == "imageUpload")
       <el-table-column prop="${columnName}" label="${labelName}" align="center">
         <template #default="scope">
           <el-image class="table-td-thumb" fit="contain" :src="scope.row.${columnName}" :preview-src-list="[scope.row.${columnName}]">
-            <div><i class="el-icon-document" /></div>
+            <div><el-icon :size="15"><document /></el-icon></div>
           </el-image>
         </template>
       </el-table-column>
