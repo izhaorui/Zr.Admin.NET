@@ -1,5 +1,5 @@
 <h2 align="center"> ZRAdmin.NET后台管理系统</h2>
-<h4 align="center">基于.NET5 + vue前后端分离的.net快速开发框架</h4>  
+<h4 align="center">基于.NET5/.NET6 + vue2.x/vue3.x前后端分离的.net快速开发框架</h4>  
 
 
 <p align="center">
@@ -11,7 +11,7 @@
 * 本项目适合有一定NetCore和 vue基础的开发人员
 * 基于.NET5/.NET6实现的通用权限管理平台（RBAC模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
 * 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让web开发更快速、简单高效（从此告别996），解决70%的重复工作，专注您的业务，轻松开发从现在开始！
-* 前端采用Vue2.0/vue3、Element UI/Element-UI plus、vite。
+* 前端采用vue2.x/vue3.x、Element UI/Element-UI plus、vite。
 * 后端采用Net5/Net6、Sqlsugar、MySQL等，可以自动分库分表。
 * 权限认证使用Jwt，支持多终端认证系统。
 * 支持加载动态权限菜单，多方式轻松权限控制
@@ -26,15 +26,22 @@
 
 ## 🍿在线体验
 - 官方文档：http://www.izhaorui.cn/doc
-- 体验地址：http://www.izhaorui.cn/admin
-- 管理员：admin
-- 密  码：123456
+- vue3.x版本体验：http://www.izhaorui.cn/vue3
+- vue2.x版本体验：http://www.izhaorui.cn/admin
+- 账号密码：admin/123456
+
 
 ```
 由于是个人项目，资金有限，体验服是低配，请大家爱惜，轻戳，不胜感激！！！
 ```
+## 💒代码仓库
+- [【Gitee】 vue2+后端代码](https://gitee.com/izory/ZrAdminNetCore/)
+- [【Github】vue2+后端代码](https://github.com/izhaorui/ZrAdmin.NET/)
+- [【NET6版本】](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/)
+- [【Gitee】vue3地址](https://gitee.com/izory/ZRAdmin-vue)
+
 ## 🍁前端技术
-Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 element-ui，前端采用vscode工具开发
+Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios 和 element-ui/element-ui-plus，前端采用vscode工具开发
 
 ## 🍀后端技术
 核心框架：.Net5.0/.Net6 + Web API + sqlsugar + swagger + signalR + IpRateLimit
@@ -147,9 +154,3 @@ Vue版前端技术栈 ：基于vue、vuex、vue-router 、vue-cli 、axios 和 e
 如果部署iis访问不了情况可以有以下两种办法：
 1. 直接打开ZR.Admin.WebApi.exe文件然后看控制台的错误日志
 2. web.config里面有个false 改为 true，iis重启项目后运行网站后，跟目录下面 有个文件夹 log 里面有错误日志文件
-
-## 源码地址
-- [Gitee](https://gitee.com/izory/ZrAdminNetCore/)
-- [Github](https://github.com/izhaorui/ZrAdmin.NET/)
-- [NET6版本](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/)
-- [配套vue3地址](https://gitee.com/izory/ZRAdmin-vue)
