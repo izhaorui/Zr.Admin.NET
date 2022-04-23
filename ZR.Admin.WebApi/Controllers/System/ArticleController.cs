@@ -141,7 +141,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             //从 Dto 映射到 实体
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
-            addModel.AuthorName = User.Identity.Name;
+            addModel.AuthorName = HttpContext.GetName();
 
             var response = _ArticleService.Update(it => it.Cid == addModel.Cid,
                 f => new Article
@@ -149,7 +149,7 @@ namespace ZR.Admin.WebApi.Controllers
                     Title = addModel.Title,
                     Content = addModel.Content,
                     Tags = addModel.Tags,
-                    Category_id = addModel.Category_id,
+                    Category_Id = addModel.Category_Id,
                     UpdateTime = addModel.UpdateTime,
                     Status = addModel.Status
                 }).ToCreate();
