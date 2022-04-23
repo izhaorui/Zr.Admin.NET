@@ -114,14 +114,14 @@ namespace ZR.Service
         /// <returns></returns>
         public string CheckMenuNameUnique(SysMenu menu)
         {
-            long menuId = menu.menuId == 0 ? -1 : menu.menuId;
+            long menuId = menu.MenuId == 0 ? -1 : menu.MenuId;
             SysMenu info = MenuRepository.CheckMenuNameUnique(menu);
 
             //if (info != null && menuId != info.menuId && menu.menuName.Equals(info.menuName))
             //{
             //    return UserConstants.NOT_UNIQUE;
             //}
-            if (info != null && info.menuId != menu.menuId)
+            if (info != null && info.MenuId != menu.MenuId)
             {
                 return UserConstants.NOT_UNIQUE;
             }
@@ -253,7 +253,7 @@ namespace ZR.Service
         /// <returns></returns>
         private List<SysMenu> GetChildList(List<SysMenu> list, SysMenu sysMenu)
         {
-            return list.Where(p => p.parentId == sysMenu.menuId).ToList();
+            return list.Where(p => p.parentId == sysMenu.MenuId).ToList();
         }
 
         /// <summary>
@@ -273,7 +273,7 @@ namespace ZR.Service
                     Name = GetRouteName(menu),
                     Path = GetRoutePath(menu),
                     Component = GetComponent(menu),
-                    Meta = new Meta(menu.menuName, menu.icon, "1".Equals(menu.isCache))
+                    Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache))
                 };
 
                 List<SysMenu> cMenus = menu.children;
@@ -292,7 +292,7 @@ namespace ZR.Service
                         Path = menu.path,
                         Component = menu.component,
                         Name = string.IsNullOrEmpty(menu.path) ? "" : menu.path.ToLower(),
-                        Meta = new Meta(menu.menuName, menu.icon, "1".Equals(menu.isCache))
+                        Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache))
                     };
                     childrenList.Add(children);
                     router.Children = childrenList;
@@ -311,7 +311,7 @@ namespace ZR.Service
         public List<SysMenu> BuildMenuTree(List<SysMenu> menus)
         {
             List<SysMenu> returnList = new List<SysMenu>();
-            List<long> tempList = menus.Select(f => f.menuId).ToList();
+            List<long> tempList = menus.Select(f => f.MenuId).ToList();
 
             foreach (var menu in menus)
             {

@@ -24,8 +24,8 @@ namespace ZR.Model.Vo.System
 
         public TreeSelectVo(SysMenu menu)
         {
-            Id = menu.menuId;
-            Label = menu.menuName;
+            Id = menu.MenuId;
+            Label = menu.MenuName;
 
             //menu.getChildren().stream().map(TreeSelect::new).collect(Collectors.toList()); java写法
             List<TreeSelectVo> child = new List<TreeSelectVo>();
