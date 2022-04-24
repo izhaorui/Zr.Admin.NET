@@ -88,9 +88,8 @@ $if(column.IsList == true)
 $if(column.HtmlType == "customInput" && column.IsPk == false)
       <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center">
         <template #default="scope">
-          <span v-show="editIndex != scope.${index}index" @click="editCurrRow(scope.${index}index,'rowkeY')">{{scope.row.${columnName}}}</span>
-          <el-input :id="scope.${index}index+'rowkeY'" size="mini" v-show="(editIndex == scope.${index}index)"
-            v-model="scope.row.${columnName}" @blur="handleChangeSort(scope.row)"></el-input>
+          <span v-show="editIndex != scope.$${index}index" @click="editCurrRow(scope.$${index}index)">{{scope.row.${columnName}}}</span>
+          <el-input :id="scope.$${index}index" v-show="(editIndex == scope.$${index}index)" v-model="scope.row.${columnName}" @blur="handleChangeSort(scope.row)"></el-input>
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "imageUpload")
@@ -320,8 +319,34 @@ const ${item.CsharpFieldFl}Options = ref([])
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
 // ${item.ColumnComment}时间范围
 const dateRange${item.CsharpField} = ref([])
+
 $elseif(item.HtmlType == "customInput")
-    const editIndex = ref(-1)
+// ******************自定义编辑 start **********************
+
+const editIndex = ref(-1)
+// 显示编辑排序
+function editCurrRow(rowId) {
+  editIndex.value = rowId
+
+  setTimeout(() => {
+    document.getElementById(rowId).focus()
+  }, 100)
+}
+// 保存排序
+function handleChangeSort(info) {
+  editIndex.value = -1
+  proxy
+    .${confirm}confirm('是否保存数据?')
+    .then(function () {
+      return changeSort({ value: info.${item.CsharpFieldFl}, id: info.${replaceDto.FistLowerPk} })
+    })
+    .then(() => {
+      handleQuery()
+      proxy.${modal}modal.msgSuccess('修改成功')
+    })
+}
+// ******************自定义编辑 end **********************
+
 $end
 $end
 
@@ -398,7 +423,7 @@ function handleDelete(row) {
   .catch(() => {})
 }
 
-//  修改按钮操作
+// 修改按钮操作
 function handleUpdate(row) {
   reset()
   const id = row.${replaceDto.FistLowerPk} || ids.value

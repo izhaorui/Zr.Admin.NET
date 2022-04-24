@@ -289,7 +289,7 @@ namespace ZR.CodeGenerator
         {
             var tpl = FileHelper.ReadJtTemplate("CurdForm.txt");
             var result = tpl.Render();
-            Console.WriteLine(result);
+            //Console.WriteLine(result);
             return result;
         }
         #endregion
