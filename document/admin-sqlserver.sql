@@ -739,7 +739,7 @@ GO
 CREATE TABLE [dbo].[sys_file](
 	[id] [BIGINT] NOT NULL PRIMARY KEY,
 	[realName] VARCHAR(50) NULL,
-	[fileName] [VARCHAR](20) NULL,
+	[fileName] [VARCHAR](50) NULL,
 	[fileUrl] [VARCHAR](500) NULL,
 	[storePath] [VARCHAR](50) NULL,
 	[accessUrl] [VARCHAR](300) NULL,
