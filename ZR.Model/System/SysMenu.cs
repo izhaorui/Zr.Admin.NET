@@ -14,12 +14,12 @@ namespace ZR.Model.System
         /// 菜单ID
         /// </summary>
         //[Key]//非自动增长主键时使用ExplicitKey
-        [SqlSugar.SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
-        public long menuId { get; set; }
+        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
+        public long MenuId { get; set; }
         /// <summary>
         /// 菜单名称
         /// </summary>
-        public string menuName { get; set; }
+        public string MenuName { get; set; }
 
         /// <summary>
         /// 父菜单名称

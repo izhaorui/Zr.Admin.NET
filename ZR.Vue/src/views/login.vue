@@ -134,7 +134,8 @@ export default {
               this.msgSuccess('登录成功')
               this.$router.push({ path: this.redirect || '/' })
             })
-            .catch(() => {
+            .catch((error) => {
+							this.msgError(error.msg);
               this.loading = false
               this.getCode()
               this.$refs.codeTxt.focus()

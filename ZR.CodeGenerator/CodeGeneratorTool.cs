@@ -211,7 +211,7 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate(fileName);
 
             var result = tpl.Render();
-            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue3", "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
+            var fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZRAdmin-vue", "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
             //Console.WriteLine(result);
             generateDto.GenCodes.Add(new GenCode(16, "vue3.vue", fullPath, result));
         }
@@ -226,8 +226,11 @@ namespace ZR.CodeGenerator
             var tpl = FileHelper.ReadJtTemplate("TplVueApi.txt");
             var result = tpl.Render();
 
-            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", generateDto.GenTable.ModuleName.FirstLowerCase(), generateDto.GenTable.BusinessName.FirstLowerCase() + ".js");
+            string fullPath = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZR.Vue", "src", "api", generateDto.GenTable.ModuleName.FirstLowerCase(), generateDto.GenTable.BusinessName.FirstUpperCase() + ".js");
             generateDto.GenCodes.Add(new GenCode(7, "api.js", fullPath, result));
+
+            string fullPathV3 = generateDto.IsPreview ? string.Empty : Path.Combine(generateDto.GenCodePath, "ZRAdmin-vue", "src", "api", generateDto.GenTable.ModuleName.FirstLowerCase(), generateDto.GenTable.BusinessName.ToLower() + ".js");
+            generateDto.GenCodes.Add(new GenCode(7, "api.js", fullPathV3, result));
         }
 
         /// <summary>
@@ -286,7 +289,7 @@ namespace ZR.CodeGenerator
         {
             var tpl = FileHelper.ReadJtTemplate("CurdForm.txt");
             var result = tpl.Render();
-            Console.WriteLine(result);
+            //Console.WriteLine(result);
             return result;
         }
         #endregion

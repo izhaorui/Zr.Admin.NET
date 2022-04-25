@@ -22,6 +22,7 @@ namespace ZR.Model.System.Dto
         public string GenType { get; set; }
         public string GenPath { get; set; }
         public string PermissionPrefix { get; set; }
+        public string Remark { get; set; }
         /// <summary>
         /// 额外参数
         /// </summary>

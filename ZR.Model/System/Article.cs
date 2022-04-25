@@ -8,15 +8,15 @@ namespace ZR.Model.System
     /// <summary>
     /// 文章表
     /// </summary>
-    [SqlSugar.SugarTable("article")]
+    [SugarTable("article")]
     [Tenant("0")]
     public class Article
     {
-        [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
+        [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public int Cid { get; set; }
         public string Title { get; set; }
         public DateTime? CreateTime { get; set; }
-        [SqlSugar.SugarColumn(IsOnlyIgnoreInsert = true)]
+        [SugarColumn(IsOnlyIgnoreInsert = true)]
         public DateTime UpdateTime { get; set; }
         /// <summary>
         /// 文章内容
@@ -44,6 +44,6 @@ namespace ZR.Model.System
         /// </summary>
         public string Tags { get; set; }
         public int Hits { get; set; }
-        public int Category_id { get; set; }
+        public int Category_Id { get; set; }
     }
 }
