@@ -190,7 +190,7 @@ $elseif(column.HtmlType == "imageUpload")
 $elseif(column.HtmlType == "fileUpload")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <UploadFile v-model="form.${columnName}" column="${columnName}" @success="handleUploadSuccess" />
+              <UploadFile v-model="form.${columnName}" :data="{ uploadType: 1 }" />
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "radio")
@@ -322,7 +322,6 @@ const dateRange${item.CsharpField} = ref([])
 
 $elseif(item.HtmlType == "customInput")
 // ******************自定义编辑 start **********************
-
 const editIndex = ref(-1)
 // 显示编辑排序
 function editCurrRow(rowId) {
@@ -519,12 +518,6 @@ function sortChange(column) {
 
   handleQuery()
 }
-$if(replaceDto.UploadFile == 1)
-// 图片上传成功方法
-function handleUploadSuccess(column, filelist) {
-  form.value[column] = filelist;
-}
-$end
 
 handleQuery()
 </script>
