@@ -68,5 +68,7 @@ namespace ZR.Service.System.IService
         /// <param name="dto"></param>
         /// <returns></returns>
         SysUser Register(RegisterDto dto);
+        void CheckUserAllowed(SysUser user);
+        void CheckUserDataScope(long userid, long loginUserId);
     }
 }

@@ -1,5 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -144,10 +145,15 @@ namespace ZR.Service
         /// <summary>
         /// 删除用户
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="userid"></param>
         /// <returns></returns>
         public int DeleteUser(long userid)
         {
+            CheckUserAllowed(new SysUser() { UserId = userid});
+            //删除用户与角色关联
+            UserRoleService.DeleteUserRoleByUserId((int)userid);
+            // 删除用户与岗位关联
+            UserPostService.Delete(userid);
             return UserRepository.DeleteUser(userid);
         }
 
@@ -189,5 +195,31 @@ namespace ZR.Service
             return user;
         }
 
+        /// <summary>
+        /// 校验角色是否允许操作
+        /// </summary>
+        /// <param name="user"></param>
+        public void CheckUserAllowed(SysUser user)
+        {
+            if (user.IsAdmin())
+            {
+                throw new CustomException("不允许操作超级管理员角色");
+            }
+        }
+
+        /// <summary>
+        /// 校验用户是否有数据权限
+        /// </summary>
+        /// <param name="userid"></param>
+        /// <param name="loginUserId"></param>
+        public void CheckUserDataScope(long userid, long loginUserId)
+        {
+            if (!SysUser.IsAdmin(loginUserId))
+            {
+                SysUser user = new SysUser() { UserId = userid};
+                
+                //TODO 判断用户是否有数据权限
+            }
+        }
     }
 }
