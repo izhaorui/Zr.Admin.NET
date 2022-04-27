@@ -4,7 +4,7 @@
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Stage"
+        "ASPNETCORE_ENVIRONMENT": ""
       },
       "applicationUrl": "http://localhost:8888"
     }
