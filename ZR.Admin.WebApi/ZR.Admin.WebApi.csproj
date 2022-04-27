@@ -59,7 +59,6 @@
 
 	<ItemGroup>
 		<Folder Include="DataProtection\" />
-		<Folder Include="wwwroot\export\" />
 	</ItemGroup>
 
 	<ItemGroup>

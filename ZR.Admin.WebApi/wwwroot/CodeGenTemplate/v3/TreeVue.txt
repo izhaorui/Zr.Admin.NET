@@ -1,0 +1,559 @@
+﻿<!--
+ * @Descripttion: (${genTable.functionName}/${genTable.remark})
+ * @version: (1.0)
+ * @Author: (${replaceDto.Author})
+ * @Date: (${replaceDto.AddTime})
+ * @LastEditors: (最后更新作者)
+ * @LastEditTime: (最后更新时间)
+-->
+<template>
+  <div class="app-container">
+    <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
+    <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" 
+      @submit.prevent>
+$foreach(column in genTable.Columns)
+$set(labelName = "")
+$set(columnName = "")
+$set(numLabel = "")
+$if(column.IsQuery == true)
+    $set(columnName = column.CsharpFieldFl)
+	$if(column.ColumnComment != "")
+		$set(labelName = column.ColumnComment)
+	$else
+		$set(labelName = column.CsharpFieldFl)
+	$end
+    $if(column.CsharpType == "int" || column.CsharpType == "long")
+        $set(numLabel = ".number")
+    $end
+
+$if(column.HtmlType == "datetime")
+      <el-form-item label="$labelName">
+        <el-date-picker v-model="dateRange${column.CsharpField}" style="width: 240px" type="daterange" range-separator="-"
+          start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择$labelName" :picker-options="{ firstDayOfWeek: 1}"></el-date-picker>
+      </el-form-item>
+$elseif(column.HtmlType == "select" || column.HtmlType == "radio")
+      <el-form-item label="${labelName}" prop="${columnName}">
+        <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
+          <el-option v-for="item in ${column.DictType}" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
+        </el-select>
+      </el-form-item>
+$else
+      <el-form-item label="${labelName}" prop="${columnName}">
+        <el-input v-model${numLabel}="queryParams.${columnName}" placeholder="请输入${labelName}" />
+      </el-form-item>
+$end
+$end
+$end
+      <el-form-item>
+        <el-button icon="search" type="primary" @click="handleQuery">搜索</el-button>
+        <el-button icon="refresh" @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-form>
+    <!-- 工具区域 -->
+    <el-row :gutter="10" class="mb8">
+$if(replaceDto.ShowBtnAdd)
+      <el-col :span="1.5">
+        <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="plus" @click="handleAdd">新增</el-button>
+      </el-col>
+$end
+       <el-col :span="1.5">
+        <el-button type="info" plain icon="sort" @click="toggleExpandAll">展开/折叠</el-button>
+      </el-col>
+$if(replaceDto.ShowBtnDelete)
+      <el-col :span="1.5">
+        <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="delete" @click="handleDelete">删除</el-button>
+      </el-col>
+$end
+$if(replaceDto.ShowBtnExport)
+      <el-col :span="1.5">
+        <el-button type="warning" plain icon="download" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
+      </el-col>
+$end
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+    </el-row>
+
+    <!-- 数据区域 -->
+    <el-table
+      v-if="refreshTable"
+      :data="dataList"
+      v-loading="loading"
+      ref="tableRef"
+      border
+      highlight-current-row
+      @selection-change="handleSelectionChange"
+      :default-expand-all="isExpandAll"
+      row-key="${tool.FirstLowerCase(genTable.TreeCode)}"
+      :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+    >
+      <el-table-column type="selection" width="50" align="center"/>
+$foreach(column in genTable.Columns)
+$set(labelName = "")
+$set(checkboxHtml = "")
+$set(showToolTipHtml = "")
+$set(columnName = column.CsharpFieldFl)
+$if(column.CsharpType == "string" || column.HtmlType == "datetime")
+$set(showToolTipHtml = " :show-overflow-tooltip=\"true\"")
+$end
+$if(column.ColumnComment != "")
+$set(labelName = column.ColumnComment)
+$else
+$set(labelName = column.CsharpFieldFl)
+$end
+$if(column.IsList == true)
+$if(column.HtmlType == "customInput" && column.IsPk == false)
+      <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center">
+        <template #default="scope">
+          <span v-show="editIndex != scope.$${index}index" @click="editCurrRow(scope.$${index}index)">{{scope.row.${columnName}}}</span>
+          <el-input :id="scope.$${index}index" v-show="(editIndex == scope.$${index}index)" v-model="scope.row.${columnName}" @blur="handleChangeSort(scope.row)"></el-input>
+        </template>
+      </el-table-column>
+$elseif(column.HtmlType == "imageUpload")
+      <el-table-column prop="${columnName}" label="${labelName}" align="center">
+        <template #default="scope">
+          <el-image preview-teleported :hide-on-click-modal="true" lazy class="table-td-thumb" fit="contain" :src="scope.row.${columnName}" :preview-src-list="[scope.row.${columnName}]">
+            <div><el-icon :size="15"><document /></el-icon></div>
+          </el-image>
+        </template>
+      </el-table-column>
+$elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio")
+      <el-table-column prop="${columnName}" label="${labelName}" align="center">
+        <template #default="scope">
+$if(column.HtmlType == "checkbox")
+          <dict-tag :options="${column.DictType}" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
+$else
+          <dict-tag :options="${column.DictType}" :value="scope.row.${columnName}" />
+$end
+        </template>
+      </el-table-column>
+$else
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml} />
+$end
+$end
+$end
+
+      <el-table-column label="操作" align="center" width="140">
+        <template #default="scope">
+$if(replaceDto.ShowBtnEdit)
+          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" type="success" icon="edit" title="编辑" 
+            @click="handleUpdate(scope.row)"></el-button>      
+$end
+$if(replaceDto.ShowBtnDelete)
+          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="delete" title="删除" 
+            @click="handleDelete(scope.row)"></el-button>
+$end
+        </template>      
+      </el-table-column>
+    </el-table>
+
+    <!-- 添加或修改${genTable.functionName}对话框 -->
+    <el-dialog :title="title" :lock-scroll="false" v-model="open" >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-row :gutter="20">
+$foreach(column in genTable.Columns)
+$set(labelName = "")
+$set(labelDisabled = "")
+$set(columnName = column.CsharpFieldFl)
+$set(value = "item.dictValue")
+$if(column.ColumnComment != "")
+$set(labelName = column.ColumnComment)
+$else
+$set(labelName = column.CsharpFieldFl)
+$end
+$if(column.IsPk == true)
+$set(labelDisabled = ":disabled=true")
+$end
+$if(column.CsharpType == "int" || column.CsharpType == "long")
+    $set(value = "parseInt(item.dictValue)")
+$end
+
+$if(column.IsInsert == false && column.IsEdit == false)
+          <el-col :lg="12" v-if="opertype == 2">
+            <el-form-item label="${labelName}">{{form.${columnName}}}</el-form-item>
+          </el-col>
+$elseif(tool.CheckTree(genTable ,column.CsharpField))
+          <el-col :lg="24">
+            <el-form-item label="父级id" prop="${columnName}">
+              <el-cascader
+                class="w100"
+                :options="dataList"
+                :props="{ checkStrictly: true, value: '${treeCode}', label: '${treeName}', emitPath: false }"
+                placeholder="请选择上级菜单"
+                clearable
+                v-model="form.${columnName}"
+              >
+                <template #default="{ node, data }">
+                  <span>{{ data.${treeName} }}</span>
+                  <span v-if="!node.isLeaf"> ({{ data.children.length }}) </span>
+                </template>
+              </el-cascader>
+            </el-form-item>
+          </el-col>
+$elseif(column.IsPK || column.IsIncrement)
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+$if(column.IsIncrement == false)
+              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" :disabled="title=='修改数据'"/>
+$else
+              <span v-html="form.${columnName}"/>
+$end
+            </el-form-item>
+          </el-col>
+$else
+$if(column.HtmlType == "inputNumber")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" ${labelDisabled}/>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "datetime")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-date-picker v-model="form.${columnName}" type="datetime" placeholder="选择日期时间"></el-date-picker>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "imageUpload")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <UploadImage v-model="form.${columnName}" :data="{ uploadType: 1 }" />
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "fileUpload")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <UploadFile v-model="form.${columnName}" :data="{ uploadType: 1 }" />
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "radio")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-radio-group v-model="form.${columnName}">
+                <el-radio v-for="item in ${column.DictType}" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "textarea")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-input type="textarea" v-model="form.${columnName}" placeholder="请输入${labelName}"/>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "editor")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <editor v-model="form.${columnName}" :min-height="200" />
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "select")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-select v-model="form.${columnName}" placeholder="请选择${labelName}">
+                <el-option v-for="item in ${column.DictType}" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "checkbox")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-checkbox-group v-model="form.${columnName}Checked">
+                <el-checkbox v-for="item in ${column.DictType}" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-col>
+$else
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-input v-model="form.${columnName}" placeholder="请输入${labelName}" ${labelDisabled}/>
+            </el-form-item>
+          </el-col>
+$end
+$end
+$end
+        </el-row>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="text" @click="cancel">取 消</el-button>
+          <el-button type="primary" @click="submitForm">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+  </div>
+</template>
+<script setup name="${genTable.BusinessName.ToLower()}">
+import { treelist${genTable.BusinessName}, list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName},
+$if(replaceDto.ShowBtnExport) export${genTable.BusinessName}, $end $if(showCustomInput) changeSort $end } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+
+const { proxy } = getCurrentInstance()
+// 是否展开，默认全部折叠
+const isExpandAll = ref(false)
+const refreshTable = ref(true)
+//展开/折叠操作
+function toggleExpandAll() {
+  refreshTable.value = false
+  isExpandAll.value = !isExpandAll.value
+  nextTick(() => {
+    refreshTable.value = true
+  })
+}
+
+// 选中${replaceDto.FistLowerPk}数组数组
+const ids = ref([])
+// 非单选禁用
+const single = ref(true)
+// 非多个禁用
+const multiple = ref(true)
+// 遮罩层
+const loading = ref(false)
+// 显示搜索条件
+const showSearch = ref(true)
+// 查询参数
+const queryParams = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  sort: undefined,
+  sortType: undefined,
+$foreach(item in genTable.Columns)
+$if(item.IsQuery == true)
+  ${item.CsharpFieldFl}: undefined,
+$end
+$end
+})
+// 弹出层标题
+const title = ref("")
+// 操作类型 1、add 2、edit
+const opertype = ref(0)
+// 是否显示弹出层
+const open = ref(false)
+// 表单参数
+const state = reactive({
+  form: {},
+  rules: {
+    $foreach(column in genTable.Columns)
+$if(column.IsRequired && column.IsIncrement == false)
+    ${column.CsharpFieldFl}: [
+        { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
+$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }
+    ],
+$end
+$end
+  }
+})
+
+const { form, rules } = toRefs(state)
+// 总记录数
+const total = ref(0)
+const dataList = ref([])
+const queryRef = ref()
+const formRef = ref()
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
+// ${item.ColumnComment}选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
+const ${item.DictType} = ref([])
+$elseif(item.HtmlType == "datetime" && item.IsQuery == true)
+// ${item.ColumnComment}时间范围
+const dateRange${item.CsharpField} = ref([])
+
+$elseif(item.HtmlType == "customInput")
+// ******************自定义编辑 start **********************
+const editIndex = ref(-1)
+// 显示编辑排序
+function editCurrRow(rowId) {
+  editIndex.value = rowId
+
+  setTimeout(() => {
+    document.getElementById(rowId).focus()
+  }, 100)
+}
+// 保存排序
+function handleChangeSort(info) {
+  editIndex.value = -1
+  proxy
+    .${confirm}confirm('是否保存数据?')
+    .then(function () {
+      return changeSort({ value: info.${item.CsharpFieldFl}, id: info.${replaceDto.FistLowerPk} })
+    })
+    .then(() => {
+      handleQuery()
+      proxy.${modal}modal.msgSuccess('修改成功')
+    })
+}
+// ******************自定义编辑 end **********************
+
+$end
+$end
+
+$set(index = 0)
+var dictParams = [
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
+  { dictType: "${item.DictType}" },
+$set(index = index + 1)
+$end
+$end
+]
+
+$if(index > 0)
+proxy.getDicts(dictParams).then((response) => {
+  response.data.forEach((element) => {
+    proxy[element.dictType] = element.list
+  })
+})
+$end
+
+function getList(){
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "datetime" && item.IsQuery == true)
+  proxy.addDateRange(queryParams, proxy.dateRange${item.CsharpField}, '${item.CsharpField}');
+$end
+$end
+  loading.value = true
+  treelist${genTable.BusinessName}(queryParams).then(res => {
+    if (res.code == 200) {
+      //dataList.value = res.data.result
+      //total.value = res.data.totalNum
+      dataList.value = res.data
+      loading.value = false
+    }
+  })
+}
+
+// 关闭dialog
+function cancel(){
+  open.value = false
+  reset()
+}
+
+// 重置表单
+function reset() {
+  proxy.resetForm("formRef")
+}
+
+// 查询
+function handleQuery() {
+  queryParams.pageNum = 1
+  getList()
+}
+
+// 添加
+function handleAdd() {
+  reset();
+  open.value = true
+  title.value = '添加'
+  opertype.value = 1
+}
+
+// 删除按钮操作
+function handleDelete(row) {
+  const Ids = row.${replaceDto.FistLowerPk} || ids.value
+
+  proxy.${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
+  .then(function () {
+      return del${genTable.BusinessName}(Ids)
+  })
+  .then(() => {
+      handleQuery()
+      proxy.${modal}modal.msgSuccess("删除成功")
+  })
+  .catch(() => {})
+}
+
+// 修改按钮操作
+function handleUpdate(row) {
+  reset()
+  const id = row.${replaceDto.FistLowerPk} || ids.value
+  get${genTable.BusinessName}(id).then((res) => {
+    const { code, data } = res
+    if (code == 200) {
+      open.value = true
+      title.value = "修改数据"
+      opertype.value = 2
+
+      form.value = {
+      ...data,
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+          ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
+$end
+$end
+      }
+    }
+  })
+}
+
+// 表单提交
+function submitForm() {
+  proxy.${refs}refs["formRef"].validate((valid) => {
+    if (valid) {
+      if (form.value.${replaceDto.FistLowerPk} != undefined && opertype.value === 2) {
+        update${genTable.BusinessName}(form.value).then((res) => {
+          proxy.${modal}modal.msgSuccess("修改成功")
+          open.value = false
+          getList()
+        })
+        .catch(() => {})
+      } else {
+        add${genTable.BusinessName}(form.value).then((res) => {
+            proxy.${modal}modal.msgSuccess("新增成功")
+            open.value = false
+            getList()
+          })
+          .catch((err) => {
+            //TODO 错误逻辑
+          })
+      }
+    }
+  })
+}
+
+// 重置查询操作
+function resetQuery(){
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "datetime" && item.IsQuery == true)
+  // ${item.ColumnComment}时间范围
+  dateRange${item.CsharpField}.value = []
+$end
+$end
+  proxy.resetForm("queryRef")
+  handleQuery()
+}
+$if(replaceDto.ShowBtnExport)
+// 导出按钮操作
+function handleExport() {
+  proxy
+    .${confirm}confirm("是否确认导出所有${genTable.functionName}数据项?", "警告", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    })
+    .then(function () {
+      return export${genTable.BusinessName}(queryParams)
+    })
+    .then((response) => {
+      proxy.download(response.data.path)
+    })
+}
+$end
+
+// 多选框选中数据
+function handleSelectionChange(selection) {
+  ids.value = selection.map((item) => item.${replaceDto.FistLowerPk});
+  single.value = selection.length != 1
+  multiple.value = !selection.length;
+}
+
+// 自定义排序
+function sortChange(column) {
+  if (column.prop == null || column.order == null) {
+    queryParams.sort = undefined
+    queryParams.sortType = undefined
+  } else {
+    queryParams.sort = column.prop
+    queryParams.sortType = column.order
+  }
+
+  handleQuery()
+}
+
+handleQuery()
+</script>
