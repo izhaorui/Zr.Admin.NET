@@ -172,13 +172,19 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 保存排序
         /// </summary>
-        /// <param name="MenuDto"></param>
+        /// <param name="id"></param>
+        /// <param name="value"></param>
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "system:menu:update")]
-        [HttpPost("ChangeSort")]
+        [HttpGet("ChangeSort")]
         [Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
-        public IActionResult ChangeSort([FromBody] MenuDto MenuDto)
+        public IActionResult ChangeSort(int id = 0, int value = 0)
         {
+            MenuDto MenuDto = new()
+            {
+                MenuId = id,
+                orderNum = value
+            };
             if (MenuDto == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
             int result = sysMenuService.ChangeSortMenu(MenuDto);

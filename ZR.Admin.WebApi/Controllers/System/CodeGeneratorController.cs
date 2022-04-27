@@ -221,13 +221,15 @@ namespace ZR.Admin.WebApi.Controllers
         /// 预览代码
         /// </summary>
         /// <param name="tableId"></param>
+        /// <param name="VueVersion"></param>
         /// <returns></returns>
         [HttpPost("preview/{tableId}")]
         [ActionPermissionFilter(Permission = "tool:gen:preview")]
-        public IActionResult Preview(long tableId = 0)
+        public IActionResult Preview(long tableId = 0, int VueVersion = 0)
         {
             GenerateDto dto = new();
             dto.TableId = tableId;
+            dto.VueVersion = VueVersion;
             if (dto == null || dto.TableId <= 0)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");

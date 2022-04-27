@@ -1,4 +1,12 @@
-﻿<template>
+﻿<!--
+ * @Descripttion: (${genTable.functionName}/${genTable.remark})
+ * @version: (1.0)
+ * @Author: (${replaceDto.Author})
+ * @Date: (${replaceDto.AddTime})
+ * @LastEditors: (最后更新作者)
+ * @LastEditTime: (最后更新时间)
+-->
+<template>
   <div class="app-container">
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" size="small" label-position="right" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" 

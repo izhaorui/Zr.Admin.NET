@@ -63,8 +63,8 @@ export function delMenu(menuId) {
 export function changeMenuSort(data) {
   return request({
     url: '/system/Menu/ChangeSort',
-    method: 'post',
-    data: data
+    method: 'get',
+    params: data
   })
 }
 

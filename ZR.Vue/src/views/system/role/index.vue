@@ -155,7 +155,6 @@ import {
   changeRoleStatus
 } from '@/api/system/role'
 import {
-  treeselect as menuTreeselect,
   roleMenuTreeselect
 } from '@/api/system/menu'
 import {
@@ -276,12 +275,6 @@ export default {
           this.loading = false
         }
       )
-    },
-    /** 查询菜单树结构 */
-    getMenuTreeselect() {
-      menuTreeselect().then((response) => {
-        this.menuOptions = response.data
-      })
     },
     /** 查询部门树结构 */
     getDeptTreeselect() {

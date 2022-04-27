@@ -425,7 +425,7 @@ export default {
      */
     handleChangeSort(item) {
       this.editIndex = -1;
-      changeMenuSort({ orderNum: item.orderNum, menuId: item.menuId }).then(
+      changeMenuSort({ value: item.orderNum, id: item.menuId }).then(
         (response) => {
           this.msgSuccess("修改成功");
           this.getList();

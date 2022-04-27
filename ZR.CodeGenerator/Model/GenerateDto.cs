@@ -5,6 +5,10 @@ namespace ZR.CodeGenerator.Model
 {
     public class GenerateDto
     {
+        /// <summary>
+        /// vue版本
+        /// </summary>
+        public int VueVersion { get; set; }
         public long TableId { get; set; }
         /// <summary>
         /// 是否预览代码
@@ -28,7 +32,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 代码生成路径
         /// </summary>
-        public string GenCodePath { get; set; }
+        public string GenCodePath { get; set; } = string.Empty;
         /// <summary>
         /// 代码生成压缩包路径
         /// </summary>
@@ -42,6 +46,10 @@ namespace ZR.CodeGenerator.Model
         /// </summary>
         public string GenType { get; set; }
         public string GenPath { get; set; } = "";
+        /// <summary>
+        /// vue代码路径
+        /// </summary>
+        public string VueParentPath { get; set; }
         #endregion
     }
 

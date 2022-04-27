@@ -63,7 +63,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysUser SelectUserById(long userId)
         {
-            return Context.Queryable<SysUser>().Where(f => f.UserId == userId).First();
+            return Context.Queryable<SysUser>().Filter(null, true).Where(f => f.UserId == userId).First();
         }
 
         /// <summary>

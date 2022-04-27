@@ -248,7 +248,6 @@ INSERT INTO sys_menu VALUES (2, '系统监控', 0, 2, 'monitor', NULL, 0, 0, 'M'
 INSERT INTO sys_menu VALUES (3, '系统工具', 0, 3, 'tool', NULL, 0, 0, 'M', '0', '0', '', 'tool', '', SYSDATE(), '', NULL, '系统工具目录');
 INSERT INTO sys_menu VALUES (5, '外部打开', 0, 5, 'http://www.izhaorui.cn', NULL, 1, 0, 'M', '0', '0', '', 'link', '', SYSDATE(), '', NULL, 'Zr官网地址');
 INSERT INTO sys_menu VALUES (6, '控制台',   0, 0, 'dashboard', 'index_v1', 0, 0, 'C', '0', '0', '', 'dashboard', '', SYSDATE(), '', NULL, '');
-INSERT INTO sys_menu VALUES (7, '图标icon', 0, 6, 'icon', 'components/icons/index', 0, 0, 'C', '0', '0', NULL, 'icon1', '', SYSDATE(), '', NULL, NULL);
 
 -- 二级菜单
 INSERT INTO sys_menu VALUES (100, '用户管理', 1, 1, 'user', 'system/user/index', 0, 0, 'C', '0', '0', 'system:user:list', 'user', '', SYSDATE(), '', NULL, '用户管理菜单');

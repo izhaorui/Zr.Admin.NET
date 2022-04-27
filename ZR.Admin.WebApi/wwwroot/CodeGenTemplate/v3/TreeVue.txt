@@ -44,7 +44,6 @@ $else
 $end
 $end
 $end
-
       <el-form-item>
         <el-button icon="search" type="primary" @click="handleQuery">搜索</el-button>
         <el-button icon="refresh" @click="resetQuery">重置</el-button>
@@ -57,11 +56,9 @@ $if(replaceDto.ShowBtnAdd)
         <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="plus" @click="handleAdd">新增</el-button>
       </el-col>
 $end
-$if(replaceDto.ShowBtnEdit)
-      <el-col :span="1.5">
-        <el-button type="success" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" plain icon="edit" @click="handleUpdate">修改</el-button>
+       <el-col :span="1.5">
+        <el-button type="info" plain icon="sort" @click="toggleExpandAll">展开/折叠</el-button>
       </el-col>
-$end
 $if(replaceDto.ShowBtnDelete)
       <el-col :span="1.5">
         <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="delete" @click="handleDelete">删除</el-button>
@@ -76,9 +73,19 @@ $end
     </el-row>
 
     <!-- 数据区域 -->
-    <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @sort-change="sortChange" @selection-change="handleSelectionChange">
+    <el-table
+      v-if="refreshTable"
+      :data="dataList"
+      v-loading="loading"
+      ref="tableRef"
+      border
+      highlight-current-row
+      @selection-change="handleSelectionChange"
+      :default-expand-all="isExpandAll"
+      row-key="${tool.FirstLowerCase(genTable.TreeCode)}"
+      :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+    >
       <el-table-column type="selection" width="50" align="center"/>
-
 $foreach(column in genTable.Columns)
 $set(labelName = "")
 $set(checkboxHtml = "")
@@ -134,10 +141,9 @@ $if(replaceDto.ShowBtnDelete)
           <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="delete" title="删除" 
             @click="handleDelete(scope.row)"></el-button>
 $end
-        </template>
+        </template>      
       </el-table-column>
     </el-table>
-    <pagination class="mt10" background :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改${genTable.functionName}对话框 -->
     <el-dialog :title="title" :lock-scroll="false" v-model="open" >
@@ -163,6 +169,24 @@ $end
 $if(column.IsInsert == false && column.IsEdit == false)
           <el-col :lg="12" v-if="opertype == 2">
             <el-form-item label="${labelName}">{{form.${columnName}}}</el-form-item>
+          </el-col>
+$elseif(tool.CheckTree(genTable ,column.CsharpField))
+          <el-col :lg="24">
+            <el-form-item label="父级id" prop="${columnName}">
+              <el-cascader
+                class="w100"
+                :options="dataList"
+                :props="{ checkStrictly: true, value: '${treeCode}', label: '${treeName}', emitPath: false }"
+                placeholder="请选择上级菜单"
+                clearable
+                v-model="form.${columnName}"
+              >
+                <template #default="{ node, data }">
+                  <span>{{ data.${treeName} }}</span>
+                  <span v-if="!node.isLeaf"> ({{ data.children.length }}) </span>
+                </template>
+              </el-cascader>
+            </el-form-item>
           </el-col>
 $elseif(column.IsPK || column.IsIncrement)
           <el-col :lg="12">
@@ -256,13 +280,23 @@ $end
 
   </div>
 </template>
-
-
 <script setup name="${genTable.BusinessName.ToLower()}">
-import { list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName},
+import { treelist${genTable.BusinessName}, list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName},
 $if(replaceDto.ShowBtnExport) export${genTable.BusinessName}, $end $if(showCustomInput) changeSort $end } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
 const { proxy } = getCurrentInstance()
+// 是否展开，默认全部折叠
+const isExpandAll = ref(false)
+const refreshTable = ref(true)
+//展开/折叠操作
+function toggleExpandAll() {
+  refreshTable.value = false
+  isExpandAll.value = !isExpandAll.value
+  nextTick(() => {
+    refreshTable.value = true
+  })
+}
+
 // 选中${replaceDto.FistLowerPk}数组数组
 const ids = ref([])
 // 非单选禁用
@@ -374,10 +408,11 @@ $if(item.HtmlType == "datetime" && item.IsQuery == true)
 $end
 $end
   loading.value = true
-  list${genTable.BusinessName}(queryParams).then(res => {
+  treelist${genTable.BusinessName}(queryParams).then(res => {
     if (res.code == 200) {
-      dataList.value = res.data.result
-      total.value = res.data.totalNum
+      //dataList.value = res.data.result
+      //total.value = res.data.totalNum
+      dataList.value = res.data
       loading.value = false
     }
   })

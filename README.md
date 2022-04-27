@@ -11,7 +11,7 @@
 * 本项目适合有一定NetCore和 vue基础的开发人员
 * 基于.NET5/.NET6实现的通用权限管理平台（RBAC模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
 * 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让web开发更快速、简单高效（从此告别996），解决70%的重复工作，专注您的业务，轻松开发从现在开始！
-* 前端采用vue2.x/vue3.x、Element UI/Element-UI plus、vite。
+* 前端采用vue2.x/vue3.x、Element UI、vite。
 * 后端采用Net5/Net6、Sqlsugar、MySQL等，可以自动分库分表。
 * 权限认证使用Jwt，支持多终端认证系统。
 * 支持加载动态权限菜单，多方式轻松权限控制
@@ -41,10 +41,10 @@
 - [【Gitee】vue3地址](https://gitee.com/izory/ZRAdmin-vue)
 
 ## 🍁前端技术
-Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios 和 element-ui/element-ui-plus，前端采用vscode工具开发
+Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios 和 element-ui/element plus，前端采用vscode工具开发
 
 ## 🍀后端技术
-核心框架：.Net5.0/.Net6 + Web API + sqlsugar + swagger + signalR + IpRateLimit
+核心框架：.Net5.0/.Net6.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit
 
 定时计划任务：Quartz.Net组件，支持执行程序集或者http网络请求
 
@@ -52,7 +52,15 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 
 日志管理：NLog、登录日志、操作日志、定时任务日志
 
-工具类：验证码、丰富公共功能、代码生成
+工具类：验证码、丰富公共功能
+
+接口限流：支持接口限流，避免恶意请求导致服务层压力过大
+
+代码生成：高效率开发，代码生成器可以一键生成所有代码
+
+数据字典：支持数据字典，可以方便对一些状态进行管理
+
+
 
 ## 🍖内置功能
 
