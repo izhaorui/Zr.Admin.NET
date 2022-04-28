@@ -452,7 +452,7 @@ namespace ZR.CodeGenerator
                 TableId = genTable.TableId,
                 TableName = genTable.TableName,
                 CsharpType = GetCSharpDatatype(column.DataType),
-                CsharpField = column.DbColumnName.UnderScoreToCamelCase().FirstUpperCase(),
+                CsharpField = column.DbColumnName.ConvertToPascal("_"),
                 IsRequired = !column.IsNullable,
                 IsIncrement = column.IsIdentity,
                 Create_by = genTable.Create_by,

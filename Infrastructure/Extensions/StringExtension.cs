@@ -144,5 +144,89 @@ namespace Infrastructure.Extensions
             }
             return result;
         }
+
+        /// <summary>
+        /// 转换为Pascal风格-每一个单词的首字母大写
+        /// </summary>
+        /// <param name="fieldName">字段名</param>
+        /// <param name="fieldDelimiter">分隔符</param>
+        /// <returns></returns>
+        public static string ConvertToPascal(this string fieldName, string fieldDelimiter)
+        {
+            string result = string.Empty;
+            if (fieldName.Contains(fieldDelimiter))
+            {
+                //全部小写
+                string[] array = fieldName.ToLower().Split(fieldDelimiter.ToCharArray());
+                foreach (var t in array)
+                {
+                    //首字母大写
+                    result += t.Substring(0, 1).ToUpper() + t[1..];
+                }
+            }
+            else if (string.IsNullOrWhiteSpace(fieldName))
+            {
+                result = fieldName;
+            }
+            else if (fieldName.Length == 1)
+            {
+                result = fieldName.ToUpper();
+            }
+            else if (fieldName.Length == CountUpper(fieldName))
+            {
+                result = fieldName.Substring(0, 1).ToUpper() + fieldName[1..].ToLower();
+            }
+            else
+            {
+                result = fieldName.Substring(0, 1).ToUpper() + fieldName[1..];
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 大写字母个数
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static int CountUpper(this string str)
+        {
+            int count1 = 0;
+            char[] chars = str.ToCharArray();
+            foreach (char num in chars)
+            {
+                if (num >= 'A' && num <= 'Z')
+                {
+                    count1++;
+                }
+                //else if (num >= 'a' && num <= 'z')
+                //{
+                //    count2++;
+                //}
+            }
+            return count1;
+        }
+
+        /// <summary>
+        /// 转换为Camel风格-第一个单词小写，其后每个单词首字母大写
+        /// </summary>
+        /// <param name="fieldName">字段名</param>
+        /// <param name="fieldDelimiter">分隔符</param>
+        /// <returns></returns>
+        public static string ConvertToCamel(this string fieldName, string fieldDelimiter)
+        {
+            //先Pascal
+            string result = ConvertToPascal(fieldName, fieldDelimiter);
+            //然后首字母小写
+            if (result.Length == 1)
+            {
+                result = result.ToLower();
+            }
+            else
+            {
+                result = result.Substring(0, 1).ToLower() + result[1..];
+            }
+
+            return result;
+        }
     }
 }
