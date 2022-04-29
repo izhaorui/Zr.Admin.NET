@@ -9,27 +9,35 @@
 <template>
   <div class="app-container">
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
-    <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" 
-      @submit.prevent>
+    <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" @submit.prevent>
 $foreach(column in genTable.Columns)
 $set(labelName = "")
 $set(columnName = "")
 $set(numLabel = "")
 $if(column.IsQuery == true)
-    $set(columnName = column.CsharpFieldFl)
-	$if(column.ColumnComment != "")
-		$set(labelName = column.ColumnComment)
-	$else
-		$set(labelName = column.CsharpFieldFl)
-	$end
-    $if(column.CsharpType == "int" || column.CsharpType == "long")
-        $set(numLabel = ".number")
-    $end
-
+$set(columnName = column.CsharpFieldFl)
+$if(column.ColumnComment != "")
+	$set(labelName = column.ColumnComment)
+$else
+	$set(labelName = column.CsharpFieldFl)
+$end
+$if(column.CsharpType == "int" || column.CsharpType == "long")
+    $set(numLabel = ".number")
+$end
 $if(column.HtmlType == "datetime")
       <el-form-item label="$labelName">
-        <el-date-picker v-model="dateRange${column.CsharpField}" style="width: 240px" type="daterange" range-separator="-"
-          start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择$labelName" :picker-options="{ firstDayOfWeek: 1}"></el-date-picker>
+        <el-date-picker 
+          v-model="dateRange${column.CsharpField}" 
+          style="width: 240px" 
+          type="daterange" 
+          range-separator="-"
+          start-placeholder="开始日期" 
+          end-placeholder="结束日期" 
+          placeholder="请选择$labelName"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          :shortcuts="dateOptions"
+        >
+        </el-date-picker>
       </el-form-item>
 $elseif(column.HtmlType == "select" || column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
