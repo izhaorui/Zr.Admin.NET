@@ -26,7 +26,7 @@
 
 ## 🍿在线体验
 - 官方文档：http://www.izhaorui.cn/doc
-- vue3.x版本体验：http://www.izhaorui.cn/vue3
+- vue3.x版本体验：http://www.izhaorui.cn/vue-next-admin
 - vue2.x版本体验：http://www.izhaorui.cn/admin
 - 账号密码：admin/123456
 
@@ -44,21 +44,21 @@
 Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios 和 element-ui/element plus，前端采用vscode工具开发
 
 ## 🍀后端技术
-核心框架：.Net5.0/.Net6.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit
+- 核心框架：.Net5.0/.Net6.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit
 
-定时计划任务：Quartz.Net组件，支持执行程序集或者http网络请求
+- 定时计划任务：Quartz.Net组件，支持执行程序集或者http网络请求
 
-安全支持：过滤器(数据权限过滤)、Sql注入、请求伪造
+- 安全支持：过滤器(数据权限过滤)、Sql注入、请求伪造
 
-日志管理：NLog、登录日志、操作日志、定时任务日志
+- 日志管理：NLog、登录日志、操作日志、定时任务日志
 
-工具类：验证码、丰富公共功能
+- 工具类：验证码、丰富公共功能
 
-接口限流：支持接口限流，避免恶意请求导致服务层压力过大
+- 接口限流：支持接口限流，避免恶意请求导致服务层压力过大
 
-代码生成：高效率开发，代码生成器可以一键生成所有代码
+- 代码生成：高效率开发，代码生成器可以一键生成所有代码
 
-数据字典：支持数据字典，可以方便对一些状态进行管理
+- 数据字典：支持数据字典，可以方便对一些状态进行管理
 
 
 
