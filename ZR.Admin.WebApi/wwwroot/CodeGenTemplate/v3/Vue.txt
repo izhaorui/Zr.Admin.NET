@@ -9,32 +9,40 @@
 <template>
   <div class="app-container">
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
-    <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" 
-      @submit.prevent>
+    <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" @submit.prevent>
 $foreach(column in genTable.Columns)
 $set(labelName = "")
 $set(columnName = "")
 $set(numLabel = "")
 $if(column.IsQuery == true)
-    $set(columnName = column.CsharpFieldFl)
-	$if(column.ColumnComment != "")
-		$set(labelName = column.ColumnComment)
-	$else
-		$set(labelName = column.CsharpFieldFl)
-	$end
-    $if(column.CsharpType == "int" || column.CsharpType == "long")
-        $set(numLabel = ".number")
-    $end
-
+$set(columnName = column.CsharpFieldFl)
+$if(column.ColumnComment != "")
+	$set(labelName = column.ColumnComment)
+$else
+	$set(labelName = column.CsharpFieldFl)
+$end
+$if(column.CsharpType == "int" || column.CsharpType == "long")
+    $set(numLabel = ".number")
+$end
 $if(column.HtmlType == "datetime")
       <el-form-item label="$labelName">
-        <el-date-picker v-model="dateRange${column.CsharpField}" style="width: 240px" type="daterange" range-separator="-"
-          start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择$labelName" :picker-options="{ firstDayOfWeek: 1}"></el-date-picker>
+        <el-date-picker 
+          v-model="dateRange${column.CsharpField}" 
+          style="width: 240px" 
+          type="daterange" 
+          range-separator="-"
+          start-placeholder="开始日期" 
+          end-placeholder="结束日期" 
+          placeholder="请选择$labelName"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          :shortcuts="dateOptions"
+        >
+        </el-date-picker>
       </el-form-item>
 $elseif(column.HtmlType == "select" || column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
-          <el-option v-for="item in ${column.DictType}" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
+          <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
         </el-select>
       </el-form-item>
 $else
@@ -112,9 +120,9 @@ $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.H
       <el-table-column prop="${columnName}" label="${labelName}" align="center">
         <template #default="scope">
 $if(column.HtmlType == "checkbox")
-          <dict-tag :options="${column.DictType}" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
+          <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
 $else
-          <dict-tag :options="${column.DictType}" :value="scope.row.${columnName}" />
+          <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
 $end
         </template>
       </el-table-column>
@@ -203,7 +211,7 @@ $elseif(column.HtmlType == "radio")
           <el-col :lg="12">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}">
-                <el-radio v-for="item in ${column.DictType}" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
+                <el-radio v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -223,7 +231,7 @@ $elseif(column.HtmlType == "select")
           <el-col :lg="12">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-select v-model="form.${columnName}" placeholder="请选择${labelName}">
-                <el-option v-for="item in ${column.DictType}" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
+                <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -231,7 +239,7 @@ $elseif(column.HtmlType == "checkbox")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-checkbox-group v-model="form.${columnName}Checked">
-                <el-checkbox v-for="item in ${column.DictType}" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
+                <el-checkbox v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-col>
@@ -295,12 +303,10 @@ const open = ref(false)
 const state = reactive({
   form: {},
   rules: {
-    $foreach(column in genTable.Columns)
+$foreach(column in genTable.Columns)
 $if(column.IsRequired && column.IsIncrement == false)
-    ${column.CsharpFieldFl}: [
-        { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
-$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }
-    ],
+    ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
+$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }],
 $end
 $end
   }
@@ -315,7 +321,7 @@ const formRef = ref()
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
 // ${item.ColumnComment}选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
-const ${item.DictType} = ref([])
+const $if(item.DictType != "")${item.DictType}$else${item.CsharpFieldFl}Options$end = ref([])
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
 // ${item.ColumnComment}时间范围
 const dateRange${item.CsharpField} = ref([])

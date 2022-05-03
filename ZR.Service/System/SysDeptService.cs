@@ -71,12 +71,15 @@ namespace ZR.Service.System
         {
             SysDept info = DeptRepository.GetFirst(it => it.DeptId == dept.ParentId);
             //如果父节点不为正常状态,则不允许新增子节点
-            if (!UserConstants.DEPT_NORMAL.Equals(info.Status))
+            if (info != null && !UserConstants.DEPT_NORMAL.Equals(info?.Status))
             {
                 throw new CustomException("部门停用，不允许新增");
             }
-
-            dept.Ancestors = info.Ancestors + "," + dept.ParentId;
+            dept.Ancestors = "";
+            if (info != null)
+            {
+                dept.Ancestors = info.Ancestors + "," + dept.ParentId;
+            }
             return DeptRepository.Add(dept);
         }
 
