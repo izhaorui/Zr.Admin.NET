@@ -238,7 +238,7 @@ namespace ZR.CodeGenerator
             }
             else
             {
-                fileName = generateDto.GenTable.BusinessName.FirstUpperCase() + ".js";
+                fileName = generateDto.GenTable.BusinessName.FirstLowerCase() + ".js";
             }
             string fullPath = Path.Combine(generateDto.VueParentPath, "src", "api", generateDto.GenTable.ModuleName.FirstLowerCase(), fileName);
 
