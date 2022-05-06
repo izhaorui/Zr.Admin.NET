@@ -273,7 +273,7 @@ namespace ZR.Service
                     Name = GetRouteName(menu),
                     Path = GetRoutePath(menu),
                     Component = GetComponent(menu),
-                    Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache))
+                    Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache), menu.MenuNameKey)
                 };
 
                 List<SysMenu> cMenus = menu.children;
@@ -292,7 +292,7 @@ namespace ZR.Service
                         Path = menu.path,
                         Component = menu.component,
                         Name = string.IsNullOrEmpty(menu.path) ? "" : menu.path.ToLower(),
-                        Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache))
+                        Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache), menu.MenuNameKey)
                     };
                     childrenList.Add(children);
                     router.Children = childrenList;

@@ -39,12 +39,20 @@ namespace ZR.Model.System.Vo
         /// 设置为true，则不会被 <keep-alive>缓存
         /// </summary>
         public bool NoCache { get; set; }
+        public string TitleKey { get; set; } = string.Empty;
 
         public Meta(string title, string icon, bool noCache)
         {
             Title = title;
             Icon = icon;
             NoCache = noCache;
+        }
+        public Meta(string title, string icon, bool noCache, string titleKey)
+        {
+            Title = title;
+            Icon = icon;
+            NoCache = noCache;
+            TitleKey = string.IsNullOrEmpty(titleKey) ? title : titleKey;
         }
     }
 }
