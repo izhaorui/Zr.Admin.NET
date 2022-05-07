@@ -149,7 +149,14 @@ namespace ZR.Repository
                 throw;
             }
         }
-
+        public IStorageable<T> Storageable(T t)
+        {
+            return Context.Storageable<T>(t);
+        }
+        public IStorageable<T> Storageable(List<T> t)
+        {
+            return Context.Storageable(t);
+        }
         /// <summary>
         /// 
         /// </summary>
