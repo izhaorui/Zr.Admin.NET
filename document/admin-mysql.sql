@@ -157,9 +157,9 @@ INSERT INTO `sys_dict_data` VALUES (28, 2, '失败', '1', 'sys_common_status', '
 INSERT INTO `sys_dict_data` VALUES (29, 1, '发布', '1', 'sys_article_status', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:34:56', '', NULL, NULL);
 INSERT INTO `sys_dict_data` VALUES (30, 2, '草稿', '2', 'sys_article_status', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
 
-INSERT INTO `sys_dict_data` VALUES (31, 1, '中文', 'zh-cn', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
-INSERT INTO `sys_dict_data` VALUES (32, 2, '英文', 'en', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
-INSERT INTO `sys_dict_data` VALUES (33, 3, '繁体', 'zh-tw', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (32, 1, '中文', 'zh-cn', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (33, 2, '英文', 'en', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (34, 3, '繁体', 'zh-tw', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
 
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -386,7 +386,7 @@ VALUES ('导出', @fileMenuId, 5, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:exp
 
 -- 多语言配置菜单
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time, menuName_key) 
-VALUES ('多语言配置', 1, 20, 'CommonLang', 'system/CommonLang', 0, 0, 'C', '0', '0', 'system:lang:list', 'language', 'system', sysdate(), 'menu.systemLang');
+VALUES ('多语言配置', 1, 20, 'CommonLang', 'system/commonLang/index', 0, 0, 'C', '0', '0', 'system:lang:list', 'language', 'system', sysdate(), 'menu.systemLang');
 
 SELECT @langMenuId := LAST_INSERT_ID();
 
