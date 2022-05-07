@@ -17,7 +17,6 @@ namespace ZR.Model.System.Vo
         public bool Hidden { get; set; }
         public string Name { get; set; }
         public string Path { get; set; }
-        //[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string Redirect { get; set; }
         public Meta Meta { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -52,7 +51,7 @@ namespace ZR.Model.System.Vo
             Title = title;
             Icon = icon;
             NoCache = noCache;
-            TitleKey = string.IsNullOrEmpty(titleKey) ? title : titleKey;
+            TitleKey = titleKey;
         }
     }
 }
