@@ -184,22 +184,16 @@ namespace ZR.Admin.WebApi.Controllers
             var modal = parm.Adapt<CommonLang>().ToUpdate(HttpContext);
             var list = _CommonLangService.GetList(f => f.LangKey == modal.LangKey);
 
-            _CommonLangService.Update(w => w.LangKey == modal.LangKey && w.LangCode == "zh-cn", it => new CommonLang()
-            {
-                LangName = modal.LangName,
-            });
+            List<CommonLang> langs = new();
+            langs.Add(new CommonLang() { Addtime = DateTime.Now, LangCode = "zh-cn", LangKey = modal.LangKey, LangName = parm.LangName });
+            langs.Add(new CommonLang() { Addtime = DateTime.Now, LangCode = "zh-tw", LangKey = modal.LangKey, LangName = parm.LangNameTw });
+            langs.Add(new CommonLang() { Addtime = DateTime.Now, LangCode = "en", LangKey = modal.LangKey, LangName = parm.LangNameEn });
+            var storage = _CommonLangService.Storageable(langs).WhereColumns(it => new { it.LangKey, it.LangCode }).ToStorage();
 
-            _CommonLangService.Update(w => w.LangKey == modal.LangKey && w.LangCode == "zh-tw", it => new CommonLang()
-            {
-                LangName = parm.LangNameTw,
-            });
+            long r = storage.AsInsertable.ExecuteReturnSnowflakeId();//执行插入
+            storage.AsUpdateable.UpdateColumns(it => new { it.LangName }).ExecuteCommand();//执行修改
 
-            _CommonLangService.Update(w => w.LangKey == modal.LangKey && w.LangCode == "en", it => new CommonLang()
-            {
-                LangName = parm.LangNameEn,
-            });
-
-            return ToResponse(1);
+            return ToResponse(r);
         }
 
         /// <summary>
