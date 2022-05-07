@@ -10,7 +10,7 @@ namespace ZR.Model.System
     ///<summary>
     ///计划任务
     ///</summary>
-    [SugarTable("Sys_TasksQz")]
+    [SugarTable("sys_tasksQz")]
     [Tenant("0")]
     public class SysTasksQz
     {
