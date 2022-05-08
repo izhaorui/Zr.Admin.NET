@@ -103,6 +103,12 @@ namespace ZR.Model.System.Generate
         /// </summary>
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public int[] CheckedBtn { get; set; } = new int[] { 1, 2, 3 };
+
+        /// <summary>
+        /// 字表信息
+        /// </summary>
+        [SqlSugar.SugarColumn(IsIgnore = true)]
+        public GenTable SubTable { get; set; }
         #endregion
     }
 }
