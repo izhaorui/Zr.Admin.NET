@@ -1,10 +1,10 @@
 ﻿<!--
- * @Descripttion: (${genTable.functionName}/${genTable.remark})
+ * @Descripttion: (${genTable.functionName}/${genTable.tableName})
  * @version: (1.0)
  * @Author: (${replaceDto.Author})
  * @Date: (${replaceDto.AddTime})
- * @LastEditors: (最后更新作者)
- * @LastEditTime: (最后更新时间)
+ * @LastEditors: (${replaceDto.Author})
+ * @LastEditTime: (${replaceDto.AddTime})
 -->
 <template>
   <div class="app-container">
@@ -52,32 +52,39 @@ $else
 $end
 $end
 $end
-
       <el-form-item>
-        <el-button icon="search" type="primary" @click="handleQuery">搜索</el-button>
-        <el-button icon="refresh" @click="resetQuery">重置</el-button>
+        <el-button icon="search" type="primary" @click="handleQuery">{{ ${t}t('btn.search') }}</el-button>
+        <el-button icon="refresh" @click="resetQuery">{{ ${t}t('btn.reset') }}</el-button>
       </el-form-item>
     </el-form>
     <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
 $if(replaceDto.ShowBtnAdd)
       <el-col :span="1.5">
-        <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="plus" @click="handleAdd">新增</el-button>
+        <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="plus" @click="handleAdd">
+          {{ ${t}t('btn.add') }}
+        </el-button>
       </el-col>
 $end
 $if(replaceDto.ShowBtnEdit)
       <el-col :span="1.5">
-        <el-button type="success" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" plain icon="edit" @click="handleUpdate">修改</el-button>
+        <el-button type="success" :disabled="single" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" plain icon="edit" @click="handleUpdate">
+          {{ ${t}t('btn.edit') }}
+        </el-button>
       </el-col>
 $end
 $if(replaceDto.ShowBtnDelete)
       <el-col :span="1.5">
-        <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="delete" @click="handleDelete">删除</el-button>
+        <el-button type="danger" :disabled="multiple" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="delete" @click="handleDelete">
+          {{ ${t}t('btn.delete') }}
+        </el-button>
       </el-col>
 $end
 $if(replaceDto.ShowBtnExport)
       <el-col :span="1.5">
-        <el-button type="warning" plain icon="download" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
+        <el-button type="warning" plain icon="download" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">
+          {{ ${t}t('btn.export') }}
+        </el-button>
       </el-col>
 $end
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
@@ -256,8 +263,8 @@ $end
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="text" @click="cancel">取 消</el-button>
-          <el-button type="primary" @click="submitForm">确 定</el-button>
+          <el-button type="text" @click="cancel">{{ ${t}t('btn.cancel') }}</el-button>
+          <el-button type="primary" @click="submitForm">{{ ${t}t('btn.submit') }}</el-button>
         </div>
       </template>
     </el-dialog>
