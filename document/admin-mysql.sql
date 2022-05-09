@@ -3,11 +3,11 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
--- Table structure for Sys_TasksQz
+-- Table structure for sys_tasks
 -- ----------------------------
-DROP TABLE IF EXISTS `sys_tasksQz`;
-CREATE TABLE `sys_tasksQz`  (
-  `ID` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'UID',
+DROP TABLE IF EXISTS `sys_tasks`;
+CREATE TABLE `sys_tasks`  (
+  `Id` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'UID',
   `Name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务名称',
   `JobGroup` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务分组',
   `Cron` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '运行时间表达式',
@@ -32,7 +32,7 @@ CREATE TABLE `sys_tasksQz`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '计划任务' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for sys_Tasks_log
+-- Table structure for sys_tasks_log
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_tasks_log`;
 CREATE TABLE `sys_tasks_log`  (
@@ -94,11 +94,13 @@ CREATE TABLE `sys_dept`  (
 -- ----------------------------
 -- Records of sys_dept
 -- ----------------------------
-INSERT INTO `sys_dept` VALUES (100, 0,   '0',      'XXX公司', 0, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
+INSERT INTO `sys_dept` VALUES (100, 0,   '0',      'A公司', 0, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
 INSERT INTO `sys_dept` VALUES (101, 100, '0,100', '研发部门', 1, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
 INSERT INTO `sys_dept` VALUES (102, 100, '0,100', '市场部门', 2, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
 INSERT INTO `sys_dept` VALUES (103, 100, '0,100', '测试部门', 3, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
 INSERT INTO `sys_dept` VALUES (104, 100, '0,100', '财务部门', 4, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
+
+INSERT INTO `sys_dept` VALUES (200, 0,   '0',      'B公司', 0, 'zr', '', '', '0', '0', 'admin', NULL, '', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_dict_data
@@ -143,23 +145,23 @@ INSERT INTO `sys_dict_data` VALUES (15, 2, '公告', '2', 'sys_notice_type', '',
 INSERT INTO `sys_dict_data` VALUES (16, 1, '正常', '0', 'sys_notice_status', '', 'primary', 'Y', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '正常状态');
 INSERT INTO `sys_dict_data` VALUES (17, 2, '关闭', '1', 'sys_notice_status', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '关闭状态');
 INSERT INTO `sys_dict_data` VALUES (18, 0, '其他', '0', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '其他操作');
-INSERT INTO `sys_dict_data` VALUES (31, 1, '新增', '1', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '新增操作');
-INSERT INTO `sys_dict_data` VALUES (19, 2, '修改', '2', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '修改操作');
-INSERT INTO `sys_dict_data` VALUES (20, 3, '删除', '3', 'sys_oper_type', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '删除操作');
-INSERT INTO `sys_dict_data` VALUES (21, 4, '授权', '4', 'sys_oper_type', '', 'primary', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '授权操作');
-INSERT INTO `sys_dict_data` VALUES (22, 5, '导出', '5', 'sys_oper_type', '', 'warning', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '导出操作');
-INSERT INTO `sys_dict_data` VALUES (23, 6, '导入', '6', 'sys_oper_type', '', 'warning', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '导入操作');
-INSERT INTO `sys_dict_data` VALUES (24, 7, '强退', '7', 'sys_oper_type', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '强退操作');
-INSERT INTO `sys_dict_data` VALUES (25, 8, '生成代码', '8', 'sys_oper_type', '', 'warning', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '生成操作');
-INSERT INTO `sys_dict_data` VALUES (26, 9, '清空数据', '9', 'sys_oper_type', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '清空操作');
-INSERT INTO `sys_dict_data` VALUES (27, 1, '成功', '0', 'sys_common_status', '', 'primary', 'N', '0', 'admin', '2021-02-24 10:56:23', '', NULL, '正常状态');
-INSERT INTO `sys_dict_data` VALUES (28, 2, '失败', '1', 'sys_common_status', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:23', '', NULL, '停用状态');
-INSERT INTO `sys_dict_data` VALUES (29, 1, '发布', '1', 'sys_article_status', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:34:56', '', NULL, NULL);
-INSERT INTO `sys_dict_data` VALUES (30, 2, '草稿', '2', 'sys_article_status', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (19, 1, '新增', '1', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '新增操作');
+INSERT INTO `sys_dict_data` VALUES (20, 2, '修改', '2', 'sys_oper_type', '', 'info', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '修改操作');
+INSERT INTO `sys_dict_data` VALUES (21, 3, '删除', '3', 'sys_oper_type', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '删除操作');
+INSERT INTO `sys_dict_data` VALUES (22, 4, '授权', '4', 'sys_oper_type', '', 'primary', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '授权操作');
+INSERT INTO `sys_dict_data` VALUES (23, 5, '导出', '5', 'sys_oper_type', '', 'warning', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '导出操作');
+INSERT INTO `sys_dict_data` VALUES (24, 6, '导入', '6', 'sys_oper_type', '', 'warning', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '导入操作');
+INSERT INTO `sys_dict_data` VALUES (25, 7, '强退', '7', 'sys_oper_type', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '强退操作');
+INSERT INTO `sys_dict_data` VALUES (26, 8, '生成代码', '8', 'sys_oper_type', '', 'warning', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '生成操作');
+INSERT INTO `sys_dict_data` VALUES (27, 9, '清空数据', '9', 'sys_oper_type', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:22', '', NULL, '清空操作');
+INSERT INTO `sys_dict_data` VALUES (28, 1, '成功', '0', 'sys_common_status', '', 'primary', 'N', '0', 'admin', '2021-02-24 10:56:23', '', NULL, '正常状态');
+INSERT INTO `sys_dict_data` VALUES (29, 2, '失败', '1', 'sys_common_status', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:23', '', NULL, '停用状态');
+INSERT INTO `sys_dict_data` VALUES (30, 1, '发布', '1', 'sys_article_status', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:34:56', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (31, 2, '草稿', '2', 'sys_article_status', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
 
-INSERT INTO `sys_dict_data` VALUES (32, 1, '中文', 'zh-cn', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
-INSERT INTO `sys_dict_data` VALUES (33, 2, '英文', 'en', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
-INSERT INTO `sys_dict_data` VALUES (34, 3, '繁体', 'zh-tw', 'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (32, 1, '中文', 'zh-cn',  'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (33, 2, '英文', 'en',     'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (34, 3, '繁体', 'zh-tw',  'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
 
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -253,7 +255,7 @@ CREATE TABLE `sys_menu`  (
 INSERT INTO sys_menu VALUES (1, '系统管理', 0, 1, 'system', NULL, 0, 0, 'M', '0', '0', '', 'system', '', SYSDATE(), '', NULL, '系统管理目录', 'menu.system');
 INSERT INTO sys_menu VALUES (2, '系统监控', 0, 2, 'monitor', NULL, 0, 0, 'M', '0', '0', '', 'monitor', '', SYSDATE(), '', NULL, '系统监控目录', 'menu.monitoring');
 INSERT INTO sys_menu VALUES (3, '系统工具', 0, 3, 'tool', NULL, 0, 0, 'M', '0', '0', '', 'tool', '', SYSDATE(), '', NULL, '系统工具目录', 'menu.systemTools');
-INSERT INTO sys_menu VALUES (5, '官网地址', 0, 5, 'http://www.izhaorui.cn/doc', NULL, 1, 0, 'M', '0', '0', '', 'link', '', SYSDATE(), '', NULL, 'Zr官网地址', 'menu.officialWebsite');
+INSERT INTO sys_menu VALUES (5, '官网地址', 0, 5, 'http://www.izhaorui.cn', NULL, 1, 0, 'M', '0', '0', '', 'link', '', SYSDATE(), '', NULL, 'Zr官网地址', 'menu.officialWebsite');
 INSERT INTO sys_menu VALUES (6, '控制台',   0, 0, 'dashboard', 'index_v1', 0, 0, 'C', '0', '0', '', 'dashboard', '', SYSDATE(), '', NULL, '', 'menu.dashboard');
 
 -- 二级菜单
@@ -588,9 +590,10 @@ CREATE TABLE `sys_user`  (
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 0, 'admin', '管理员', '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '127.0.0.1', '2021-08-23 14:03:17', 'admin', '2020-11-26 11:52:59', 'admin', '2021-08-03 10:11:24', '管理员');
-INSERT INTO `sys_user` VALUES (2, 0, 'zr', 'zr', '0', NULL, NULL, '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', '0001-01-01 00:00:00', 'admin', '2021-07-05 17:29:13', 'admin', '2021-08-02 16:53:04', '普通用户2');
-INSERT INTO `sys_user` VALUES (3, 100, 'editor', '编辑人员', '0', NULL, NULL, '2', '', 'E10ADC3949BA59ABBE56E057F20F883E', '0', '0', '127.0.0.1', '2021-08-19 09:27:46', 'admin', '2021-08-18 18:24:53', '', NULL, NULL);
+INSERT INTO `sys_user`(`userId`, `deptId`, `userName`, `nickName`, `userType`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `delFlag`, `loginIP`, `loginDate`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (1, 0, 'admin', '管理员', '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '127.0.0.1', '2021-08-23 14:03:17', 'admin', '2020-11-26 11:52:59', 'admin', '2021-08-03 10:11:24', '管理员');
+INSERT INTO `sys_user`(`userId`, `deptId`, `userName`, `nickName`, `userType`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `delFlag`, `loginIP`, `loginDate`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2, 0, 'zr', 'zr', '0', NULL, NULL, '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', '0001-01-01 00:00:00', 'admin', '2021-07-05 17:29:13', 'admin', '2021-08-02 16:53:04', '普通用户');
+INSERT INTO `sys_user`(`userId`, `deptId`, `userName`, `nickName`, `userType`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `delFlag`, `loginIP`, `loginDate`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (3, 100, 'editor', '编辑人员', '0', NULL, NULL, '2', '', 'E10ADC3949BA59ABBE56E057F20F883E', '0', '0', '127.0.0.1', '2021-08-19 09:27:46', 'admin', '2021-08-18 18:24:53', '', NULL, NULL);
+
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -698,13 +701,20 @@ create table sys_config (
   primary key (configId)
 ) engine=innodb auto_increment=100 comment = '参数配置表';
 
-insert into sys_config values(1, '主框架页-默认皮肤样式名称',     'sys.index.skinName',            'skin-blue',     'Y', 'admin', sysdate(), '', null, '蓝色 skin-blue、绿色 skin-green、紫色 skin-purple、红色 skin-red、黄色 skin-yellow' );
-insert into sys_config values(2, '用户管理-账号初始密码',         'sys.user.initPassword',         '123456',        'Y', 'admin', sysdate(), '', null, '初始化密码 123456' );
-insert into sys_config values(3, '主框架页-侧边栏主题',           'sys.index.sideTheme',           'theme-dark',    'Y', 'admin', sysdate(), '', null, '深色主题theme-dark，浅色主题theme-light' );
-insert into sys_config values(4, '账号自助-验证码开关',           'sys.account.captchaOnOff',      'true',          'Y', 'admin', sysdate(), '', null, '是否开启验证码功能（off、关闭，1、动态验证码 2、动态gif泡泡 3、泡泡 4、静态验证码）');
-INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (5, '本地文件上传访问域名', 'sys.file.uploadurl', 'http://localhost:8888', 'Y', '', sysdate(), '', NULL, NULL);
-INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (6, '开启注册功能', 'sys.account.register', 'true', 'Y', 'admin', sysdate(), 'admin', NULL, NULL);
-INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (7, '文章预览地址', 'sys.article.preview.url', 'http://www.izhaorui.cn/article/details/', 'Y', 'admin', sysdate(), '', NULL, '格式：http://www.izhaorui.cn/article/details/{aid}，其中{aid}为文章的id');
+INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
+VALUES (1, '主框架页-默认皮肤样式名称', 'sys.index.skinName', 'skin-blue', 'Y', 'admin', '2021-12-26 13:14:57', '', NULL, '蓝色 skin-blue、绿色 skin-green、紫色 skin-purple、红色 skin-red、黄色 skin-yellow');
+INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
+VALUES (2, '用户管理-账号初始密码', 'sys.user.initPassword', '123456', 'Y', 'admin', '2021-12-26 13:14:57', '', NULL, '初始化密码 123456');
+INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
+VALUES (3, '主框架页-侧边栏主题', 'sys.index.sideTheme', 'theme-dark', 'Y', 'admin', '2021-12-26 13:14:57', '', NULL, '深色主题theme-dark，浅色主题theme-light');
+INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
+VALUES (4, '账号自助-验证码开关', 'sys.account.captchaOnOff', '1', 'Y', 'admin', '2021-12-26 13:14:57', 'admin', '2022-03-30 12:43:48', '是否开启验证码功能（off、关闭，1、动态验证码 2、动态gif泡泡 3、泡泡 4、静态验证码）');
+INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
+VALUES (5, '本地文件上传访问域名', 'sys.file.uploadurl', 'http://localhost:8888', 'Y', '', sysdate(), '', NULL, NULL);
+INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
+VALUES (6, '开启注册功能', 'sys.account.register', 'true', 'Y', 'admin', sysdate(), 'admin', NULL, NULL);
+INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
+VALUES (7, '文章预览地址', 'sys.article.preview.url', 'http://www.izhaorui.cn/article/details/', 'Y', 'admin', sysdate(), '', NULL, '格式：http://www.izhaorui.cn/article/details/{aid}，其中{aid}为文章的id');
 
 -- ----------------------------
 -- 18、代码生成业务表
@@ -714,11 +724,11 @@ create table gen_table (
   tableId          bigint(20)      not null auto_increment    comment '编号',
   tableName        varchar(200)    default ''                 comment '表名称',
   tableComment     varchar(500)    default ''                 comment '表描述',
-  subTableName    varchar(64)     default null               comment '关联子表的表名',
-  subTableFkName varchar(64)     default null               comment '子表关联的外键名',
+  subTableName    varchar(64)     default null                comment '关联子表的表名',
+  subTableFkName varchar(64)     default null                 comment '子表关联的外键名',
   className        varchar(100)    default ''                 comment '实体类名称',
   tplCategory      varchar(200)    default 'crud'             comment '使用的模板（crud单表操作 tree树表操作）',
-  baseNameSpace      varchar(100)                               comment '生成命名空间前缀',
+  baseNameSpace      varchar(100)                             comment '生成命名空间前缀',
   moduleName       varchar(30)                                comment '生成模块名',
   businessName     varchar(30)                                comment '生成业务名',
   functionName     varchar(50)                                comment '生成功能名',
