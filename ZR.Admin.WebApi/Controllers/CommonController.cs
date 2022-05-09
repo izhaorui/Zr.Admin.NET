@@ -94,7 +94,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost()]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public async Task<IActionResult> UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "uploads", StoreType storeType = StoreType.LOCAL)
+        public async Task<IActionResult> UploadFile([FromForm(Name = "file")] IFormFile formFile, string? fileName = "", string? fileDir = "uploads", StoreType storeType = StoreType.LOCAL)
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             SysFile file = new();
