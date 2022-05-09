@@ -53,13 +53,13 @@ $elseif(column.HtmlType == "datetime")
 $elseif(column.HtmlType == "imageUpload")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <UploadImage v-model="form.${columnName}" column="${columnName}" @success="handleUploadSuccess" />
+              <UploadImage v-model="form.${columnName}" column="${columnName}" @input="handleUploadSuccess" />
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "fileUpload")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <UploadFile v-model="form.${columnName}" column="${columnName}" @success="handleUploadSuccess" />
+              <UploadFile v-model="form.${columnName}" column="${columnName}" @input="handleUploadSuccess" />
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "radio")
