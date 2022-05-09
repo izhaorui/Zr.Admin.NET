@@ -9,7 +9,7 @@ using ${options.ModelsNamespace}.Models;
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
 using ${options.ApiControllerNamespace}.Extensions;
 using ${options.ApiControllerNamespace}.Filters;
-using ${options.BaseNamespace}.Common;
+using ${options.BaseNamespace}Common;
 
 namespace ${options.ApiControllerNamespace}.Controllers
 {

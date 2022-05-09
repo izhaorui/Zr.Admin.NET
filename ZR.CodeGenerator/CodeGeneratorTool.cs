@@ -460,7 +460,7 @@ namespace ZR.CodeGenerator
                 IsInsert = !column.IsIdentity || GenConstants.inputDtoNoField.Any(f => f.Contains(column.DbColumnName, StringComparison.OrdinalIgnoreCase)),//非自增字段都需要插入
                 IsEdit = true,
                 IsQuery = false,
-                HtmlType = GenConstants.HTML_INPUT
+                HtmlType = GenConstants.HTML_INPUT,
             };
 
             if (GenConstants.imageFiled.Any(f => column.DbColumnName.ToLower().Contains(f.ToLower())))
