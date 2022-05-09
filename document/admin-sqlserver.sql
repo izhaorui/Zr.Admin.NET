@@ -242,7 +242,7 @@ INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFr
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (103, '部门管理', 1, 4, 'dept',		'system/dept/index', 0, 0, 'C', '0', '0', 'system:dept:list', 'tree', '', GETDATE(), 'menu.systemDept');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (104, '岗位管理', 1, 5, 'post',		'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', GETDATE(), 'menu.systemPost');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (105, '字典管理', 1, 6, 'dict',		'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', GETDATE(), 'menu.systemDic');
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (106, '角色分配', 1, 2, 'roleusers','system/roleusers/index', 0, 0, 'C', '1', '0', 'system:roleusers:list', 'people', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (106, '角色分配', 1, 2, 'roleusers','system/roleusers/index', 0, 0, 'C', '1', '0', 'system:roleusers:list', 'people', '', GETDATE(), '');
 INSERT into sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (107, '参数设置', 1, 8, 'config',	'system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit','', GETDATE(), 'menu.systemParam');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (108, '日志管理', 1, 10, 'log', '', 0, 0, 'M', '0', '0', '', 'log', '', GETDATE(), 'menu.systemLog');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (109, '通知公告', 1, 9, 'notice', 'system/notice/index', 0, 0, 'C', '0', '0', 'system:notice:list', 'message', '', GETDATE(), 'menu.systemNotice');
@@ -339,10 +339,35 @@ INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFr
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1064, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:code', '', '', GETDATE(), '', NULL, NULL);
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1065, '预览代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:preview', '', '', GETDATE(), '', NULL, NULL);
 
+SET IDENTITY_INSERT sys_menu OFF
+
+GO
+-- 文件存储菜单
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time, remark, menuName_key) 
+VALUES ('文件存储', 3, 17, 'file', 'tool/file/index', 0, 0, 'C', '0', '0', 'tool:file:list', 'upload', '', '', '文件存储菜单', 'menu.fileStorage');
+
+-- 按钮父菜单id
+DECLARE @fileMenuId INT = SCOPE_IDENTITY();
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('查询', @fileMenuId, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:query', '', '');
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('新增', @fileMenuId, 2, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:add', '',  '');
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('删除', @fileMenuId, 3, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:delete', '', '');
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('修改', @fileMenuId, 4, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:update', '', '');
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_time) 
+VALUES ('导出', @fileMenuId, 5, '#', NULL, 0, 0, 'F', '0', '0', 'tool:file:export', '', '');
+GO
 
 -- 多语言配置菜单
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time, menuName_key) 
-VALUES ('多语言配置', 1, 999, 'CommonLang', 'system/commonLang/index', 0, 0, 'C', '0', '0', 'system:lang:list', '', 'system', GETDATE(), 'menu.systemLang');
+VALUES ('多语言配置', 1, 999, 'CommonLang', 'system/commonLang/index', 0, 0, 'C', '0', '0', 'system:lang:list', 'language', 'system', GETDATE(), 'menu.systemLang');
 
 -- 按钮父菜单id
 DECLARE @menuId INT = @@identity
@@ -362,10 +387,7 @@ VALUES ('修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:edit'
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
 VALUES ('导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:export', '', 'system', GETDATE());
 
-
-SET IDENTITY_INSERT sys_menu OFF
 GO
-
 -- ---------------------------- 
 -- = '操作日志记录' 
 -- Table structure for sys_oper_log
@@ -781,6 +803,8 @@ CREATE TABLE [dbo].[sys_file](
 	[create_time] [DATETIME] NULL,
 	[storeType] [INT] NULL
 )
+GO
+IF OBJECT_ID(N'sys_common_lang',N'U') is not NULL DROP TABLE sys_common_lang
 GO
 CREATE TABLE sys_common_lang
 (

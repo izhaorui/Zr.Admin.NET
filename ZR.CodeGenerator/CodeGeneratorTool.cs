@@ -460,7 +460,7 @@ namespace ZR.CodeGenerator
                 IsInsert = !column.IsIdentity || GenConstants.inputDtoNoField.Any(f => f.Contains(column.DbColumnName, StringComparison.OrdinalIgnoreCase)),//非自增字段都需要插入
                 IsEdit = true,
                 IsQuery = false,
-                HtmlType = GenConstants.HTML_INPUT
+                HtmlType = GenConstants.HTML_INPUT,
             };
 
             if (GenConstants.imageFiled.Any(f => column.DbColumnName.ToLower().Contains(f.ToLower())))
@@ -513,7 +513,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
-            //Engine.Current.Clean();
+            Engine.Current.Clean();
             dto.GenTable.Columns = dto.GenTable.Columns.OrderBy(x => x.Sort).ToList();
             bool showCustomInput = dto.GenTable.Columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_CUSTOM_INPUT, StringComparison.OrdinalIgnoreCase));
             //jnt模板引擎全局变量
