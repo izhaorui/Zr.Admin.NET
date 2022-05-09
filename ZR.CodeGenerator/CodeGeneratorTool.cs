@@ -178,6 +178,12 @@ namespace ZR.CodeGenerator
                 case "crud":
                     fileName = "TplVue.txt";
                     break;
+                case "subNav":
+                    fileName = "TplVue.txt";
+                    break;
+                case "subNavMore":
+                    fileName = "TplVue.txt";
+                    break;
                 case "select":
                     fileName = "TplVueSelect.txt";
                     break;
@@ -194,6 +200,7 @@ namespace ZR.CodeGenerator
 
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, result));
         }
+
         /// <summary>
         /// vue3
         /// </summary>
