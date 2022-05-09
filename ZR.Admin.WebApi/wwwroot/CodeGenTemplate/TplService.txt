@@ -53,7 +53,7 @@ $end
 $end
             var response = _${replaceDto.ModelTypeName}Repository
                 .Queryable()
-$if(genTable.SubTableName != "" && genTable.SubTableName != null)
+$if(null != genTable.SubTableName && "" != genTable.SubTableName)
                 .Includes(it => it.Sub.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
 $end
 $if(genTable.SortField != "" && genTable.SortField != null)

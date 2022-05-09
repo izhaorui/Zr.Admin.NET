@@ -60,7 +60,10 @@ namespace ZR.Service.System
             if (info != null && !info.SubTableName.IsEmpty())
             {
                 info.SubTable = GenTableRepository.Queryable().Where(f => f.SubTableName == info.TableName).First();
-                SetTableFromOptions(info?.SubTable);
+                if (info?.SubTable != null)
+                {
+                    SetTableFromOptions(info?.SubTable);
+                }
             }
             return info;
         }
