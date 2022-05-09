@@ -17,7 +17,6 @@ namespace ZR.Model.System.Vo
         public bool Hidden { get; set; }
         public string Name { get; set; }
         public string Path { get; set; }
-        //[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string Redirect { get; set; }
         public Meta Meta { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -39,12 +38,20 @@ namespace ZR.Model.System.Vo
         /// 设置为true，则不会被 <keep-alive>缓存
         /// </summary>
         public bool NoCache { get; set; }
+        public string TitleKey { get; set; } = string.Empty;
 
         public Meta(string title, string icon, bool noCache)
         {
             Title = title;
             Icon = icon;
             NoCache = noCache;
+        }
+        public Meta(string title, string icon, bool noCache, string titleKey)
+        {
+            Title = title;
+            Icon = icon;
+            NoCache = noCache;
+            TitleKey = titleKey;
         }
     }
 }

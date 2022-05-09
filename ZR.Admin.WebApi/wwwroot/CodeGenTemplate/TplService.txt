@@ -1,13 +1,13 @@
-﻿using Infrastructure;
+﻿using System;
+using SqlSugar;
+using System.Collections.Generic;
+using Infrastructure;
 using Infrastructure.Attribute;
 using ${options.ModelsNamespace};
 using ${options.ModelsNamespace}.Dto;
 using ${options.ModelsNamespace}.Models;
 using ${options.IRepositoriesNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
-using System;
-using SqlSugar;
-using System.Collections.Generic;
 
 namespace ${options.ServicesNamespace}.${options.SubNamespace}
 {
@@ -20,10 +20,10 @@ namespace ${options.ServicesNamespace}.${options.SubNamespace}
     [AppService(ServiceType = typeof(I${replaceDto.ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
     public class ${replaceDto.ModelTypeName}Service : BaseService<${replaceDto.ModelTypeName}>, I${replaceDto.ModelTypeName}Service
     {
-        private readonly ${replaceDto.ModelTypeName}Repository _${replaceDto.ModelTypeName}repository;
+        private readonly ${replaceDto.ModelTypeName}Repository _${replaceDto.ModelTypeName}Repository;
         public ${replaceDto.ModelTypeName}Service(${replaceDto.ModelTypeName}Repository repository)
         {
-            _${replaceDto.ModelTypeName}repository = repository;
+            _${replaceDto.ModelTypeName}Repository = repository;
         }
 
         #region 业务逻辑代码
@@ -51,15 +51,17 @@ $elseif(column.CsharpType == "int" || column.CsharpType == "long")
 $end
 $end
 $end
-$if(genTable.SortField != "" && genTable.SortField != null)
-            var response = _${replaceDto.ModelTypeName}repository
-                .GetPages(predicate.ToExpression(), parm, it => it.${genTable.SortField}, "${genTable.SortType}");
-$else
-            var response = _${replaceDto.ModelTypeName}repository
+            var response = _${replaceDto.ModelTypeName}Repository
                 .Queryable()
+$if(genTable.SubTableName != "" && genTable.SubTableName != null)
+                .Includes(it => it.Sub.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
+$end
+$if(genTable.SortField != "" && genTable.SortField != null)
+                .OrderBy("${genTable.SortField} ${genTable.SortType}")
+$end
                 .Where(predicate.ToExpression())
                 .ToPage(parm);
-$end
+
             return response;
         }
 
@@ -85,12 +87,29 @@ $end
 $end
 $end
 
-            var response = _${replaceDto.ModelTypeName}repository.Queryable().Where(predicate.ToExpression())
+            var response = _${replaceDto.ModelTypeName}Repository.Queryable().Where(predicate.ToExpression())
                 .ToTree(it => it.Children, it => it.${genTable.TreeParentCode}, 0);
 
             return response;
         }
 $end
+        /// <summary>
+        /// 添加${genTable.FunctionName}
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public int Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm)
+        {
+            var response = _${replaceDto.ModelTypeName}Repository.Insert(parm, it => new
+            {
+${foreach(item in genTable.Columns)}
+$if((item.IsInsert))
+                it.$item.CsharpField,
+$end
+${end}
+            });
+            return response;
+        }
         #endregion
     }
 }

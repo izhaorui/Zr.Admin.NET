@@ -68,5 +68,9 @@ namespace ZR.Model.System.Dto
         /// 菜单图标
         /// </summary>
         public string icon { get; set; } = string.Empty;
+        /// <summary>
+        /// 翻译key
+        /// </summary>
+        public string MenuNameKey { get; set; }
     }
 }

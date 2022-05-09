@@ -80,7 +80,11 @@ namespace ZR.Model.System
         /// 菜单图标
         /// </summary>
         public string icon { get; set; } = string.Empty;
-
+        /// <summary>
+        /// 菜单名key
+        /// </summary>
+        [SugarColumn(ColumnName = "menuName_key")]
+        public string MenuNameKey { get; set; }
         /// <summary>
         /// 子菜单
         /// </summary>

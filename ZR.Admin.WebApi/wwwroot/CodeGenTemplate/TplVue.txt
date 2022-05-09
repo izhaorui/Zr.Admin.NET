@@ -1,10 +1,10 @@
 ﻿<!--
- * @Descripttion: (${genTable.functionName}/${genTable.remark})
+ * @Descripttion: (${genTable.functionName}/${genTable.tableName})
  * @version: (1.0)
  * @Author: (${replaceDto.Author})
  * @Date: (${replaceDto.AddTime})
- * @LastEditors: (最后更新作者)
- * @LastEditTime: (最后更新时间)
+ * @LastEditors: (${replaceDto.Author})
+ * @LastEditTime: (${replaceDto.AddTime})
 -->
 <template>
   <div class="app-container">

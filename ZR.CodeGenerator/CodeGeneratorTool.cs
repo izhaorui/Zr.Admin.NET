@@ -513,7 +513,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
-            Engine.Current.Clean();
+            //Engine.Current.Clean();
             dto.GenTable.Columns = dto.GenTable.Columns.OrderBy(x => x.Sort).ToList();
             bool showCustomInput = dto.GenTable.Columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_CUSTOM_INPUT, StringComparison.OrdinalIgnoreCase));
             //jnt模板引擎全局变量
@@ -525,6 +525,7 @@ namespace ZR.CodeGenerator
                 options.OutMode = OutMode.Auto;
                 //options.DisableeLogogram = true;//禁用简写
                 options.Data.Set("refs", "$");//特殊标签替换
+                options.Data.Set("t", "$");//特殊标签替换
                 options.Data.Set("modal", "$");//特殊标签替换
                 options.Data.Set("index", "$");//特殊标签替换
                 options.Data.Set("confirm", "$");//特殊标签替换

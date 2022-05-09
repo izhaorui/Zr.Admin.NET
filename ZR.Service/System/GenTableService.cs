@@ -57,7 +57,11 @@ namespace ZR.Service.System
         {
             var info = GenTableRepository.GetId(tableId);
             SetTableFromOptions(info);
-
+            if (info != null && !info.SubTableName.IsEmpty())
+            {
+                info.SubTable = GenTableRepository.Queryable().Where(f => f.SubTableName == info.TableName).First();
+                SetTableFromOptions(info?.SubTable);
+            }
             return info;
         }
 

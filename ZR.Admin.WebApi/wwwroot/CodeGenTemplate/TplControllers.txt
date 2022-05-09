@@ -1,26 +1,22 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Infrastructure;
+﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using ${options.ModelsNamespace}.Dto;
 using ${options.ModelsNamespace}.Models;
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
 using ${options.ApiControllerNamespace}.Extensions;
 using ${options.ApiControllerNamespace}.Filters;
-using ZR.Common;
-using Infrastructure.Extensions;
-using System.Linq;
+using ${options.BaseNamespace}.Common;
 
 namespace ${options.ApiControllerNamespace}.Controllers
 {
     /// <summary>
     /// ${genTable.functionName}Controller
-    ///
+    /// 
+    /// @tableName ${genTable.TableName}
     /// @author ${replaceDto.Author}
     /// @date ${replaceDto.AddTime}
     /// </summary>
@@ -97,14 +93,8 @@ $if(replaceDto.ShowBtnAdd)
             //从 Dto 映射到 实体
             var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToCreate(HttpContext);
 
-            var response = _${replaceDto.ModelTypeName}Service.Insert(modal, it => new
-            {
-$foreach(item in genTable.Columns)
-$if((item.IsInsert))
-                it.$item.CsharpField,
-$end
-${end}
-            });
+            var response = _${replaceDto.ModelTypeName}Service.Add${replaceDto.ModelTypeName}(modal);
+
             return ToResponse(response);
         }
 $end

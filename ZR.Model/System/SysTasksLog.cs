@@ -9,7 +9,7 @@ namespace ZR.Model.System
     /// <summary>
     /// 任务日志
     /// </summary>
-    [SugarTable("sys_Tasks_log")]
+    [SugarTable("sys_tasks_log")]
     [Tenant("0")]
     public class SysTasksLog
     {
