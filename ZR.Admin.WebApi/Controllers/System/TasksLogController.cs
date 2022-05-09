@@ -34,8 +34,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult GetList([FromQuery] PagerInfo pager, [FromQuery] TasksLogQueryDto queryDto)
         {
             //开始拼装查询条件
-            queryDto.BeginTime = DateTimeHelper.GetBeginTime(queryDto.BeginTime, -1);
-            queryDto.EndTime = DateTimeHelper.GetBeginTime(queryDto.EndTime, 1);
+            queryDto.BeginTime = DateTimeHelper.GetBeginTime(queryDto.BeginTime, -7);
+            queryDto.EndTime = DateTimeHelper.GetBeginTime(queryDto.EndTime, 7);
 
             var predicate = Expressionable.Create<SysTasksLog>().And(it => it.CreateTime >= queryDto.BeginTime && it.CreateTime <= queryDto.EndTime);
             predicate = predicate.AndIF(queryDto.JobName.IfNotEmpty(), m => m.JobName.Contains(queryDto.JobName));
