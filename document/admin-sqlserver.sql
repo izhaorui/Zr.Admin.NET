@@ -2,9 +2,9 @@
 GO
 USE ZrAdmin
 GO
-if OBJECT_ID(N'sys_tasksQz',N'U') is not NULL DROP TABLE sys_tasksQz
+if OBJECT_ID(N'sys_tasks',N'U') is not NULL DROP TABLE sys_tasks
 GO
-CREATE TABLE sys_tasksQz
+CREATE TABLE sys_tasks
 (
 	id VARCHAR(100) NOT NULL PRIMARY KEY,	--任务ID
 	name VARCHAR(50) NOT NULL,				--任务名
@@ -29,7 +29,7 @@ CREATE TABLE sys_tasksQz
 	apiUrl	varchar(200)					--网络请求地址
 )
 GO
-INSERT INTO sys_tasksQz VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL, 1, '');
+INSERT INTO sys_tasks VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL, 1, '');
 GO
 if OBJECT_ID(N'sys_Tasks_log',N'U') is not NULL DROP TABLE sys_Tasks_log
 GO
@@ -126,6 +126,8 @@ INSERT INTO sys_dict_type VALUES ('通知状态', 'sys_notice_status', '0', 'Y',
 INSERT INTO sys_dict_type VALUES ('操作类型', 'sys_oper_type', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '操作类型列表');
 INSERT INTO sys_dict_type VALUES ('系统状态', 'sys_common_status', '0', 'Y', 'admin', '2021-02-24 10:55:27', '', NULL, '登录状态列表');
 INSERT INTO sys_dict_type VALUES ('文章状态', 'sys_article_status', '0', 'Y', 'admin', '2021-08-19 10:34:33', '', NULL, NULL);
+INSERT INTO sys_dict_type VALUES ('多语言类型', 'sys_lang_type', '0', 'Y', 'admin', '2021-08-19 10:34:33', '', NULL, '多语言字典类型');
+
 GO
 if OBJECT_ID(N'sys_dict_data',N'U') is not NULL DROP TABLE sys_dict_data
 GO
@@ -179,6 +181,11 @@ INSERT INTO sys_dict_data VALUES ( 1, '成功', '0', 'sys_common_status', '', 'p
 INSERT INTO sys_dict_data VALUES ( 2, '失败', '1', 'sys_common_status', '', 'danger', 'N', '0', 'admin', '2021-02-24 10:56:23', '', NULL, '停用状态');
 INSERT INTO sys_dict_data VALUES ( 1, '发布', '1', 'sys_article_status', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:34:56', '', NULL, NULL);
 INSERT INTO sys_dict_data VALUES ( 2, '草稿', '2', 'sys_article_status', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+
+INSERT INTO sys_dict_data VALUES (1, '中文', 'zh-cn',  'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO sys_dict_data VALUES (2, '英文', 'en',     'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+INSERT INTO sys_dict_data VALUES (3, '繁体', 'zh-tw',  'sys_lang_type', NULL, NULL, NULL, '0', 'admin', '2021-08-19 10:35:06', '', NULL, NULL);
+
 GO
 
 if OBJECT_ID(N'sys_logininfor',N'U') is not NULL DROP TABLE sys_logininfor
@@ -216,43 +223,44 @@ CREATE TABLE sys_menu  (
   update_by varchar(64)  NULL DEFAULT '' ,-- '更新者',
   update_time datetime NULL DEFAULT NULL ,-- '更新时间',
   remark varchar(500)  NULL DEFAULT '' ,-- '备注',
+  menuName_key VARCHAR(50) NULL DEFAULT('') --翻译key
 ) 
 GO
 
 SET IDENTITY_INSERT sys_menu ON
 -- 一级菜单
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (1, '系统管理', 0, 1, 'system', NULL, 0, 0, 'M', '0', '0', '', 'system', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (2, '系统监控', 0, 2, 'monitor', NULL, 0, 0, 'M', '0', '0', '', 'monitor', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (3, '系统工具', 0, 3, 'tool', NULL, 0, 0, 'M', '0', '0', '', 'tool', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (5, '外部打开', 0, 5, 'http://www.izhaorui.cn', NULL, 1, 0, 'M', '0', '0', '', 'link', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (6, '控制台',   0, 0, 'dashboard', 'index_v1', 0, 0, 'C', '0', '0', '', 'dashboard', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (1, '系统管理', 0, 1, 'system', NULL, 0, 0, 'M', '0', '0', '', 'system', '', GETDATE(), 'menu.system');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (2, '系统监控', 0, 2, 'monitor', NULL, 0, 0, 'M', '0', '0', '', 'monitor', '', GETDATE(), 'menu.monitoring');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (3, '系统工具', 0, 3, 'tool', NULL, 0, 0, 'M', '0', '0', '', 'tool', '', GETDATE(), 'menu.systemTools');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (5, '外部打开', 0, 5, 'http://www.izhaorui.cn', NULL, 1, 0, 'M', '0', '0', '', 'link', '', GETDATE(), 'menu.officialWebsite');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (6, '控制台',   0, 0, 'dashboard', 'index_v1', 0, 0, 'C', '0', '0', '', 'dashboard', '', GETDATE(), 'menu.dashboard');
 
 -- 二级菜单
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (100, '用户管理', 1, 1, 'user',		'system/user/index', 0, 0, 'C', '0', '0', 'system:user:list', 'user', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (101, '角色管理', 1, 2, 'role',		'system/role/index', 0, 0, 'C', '0', '0', 'system:role:list', 'peoples', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (102, '菜单管理', 1, 3, 'menu',		'system/menu/index', 0, 0, 'C', '0', '0', 'system:menu:list', 'tree-table', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (103, '部门管理', 1, 4, 'dept',		'system/dept/index', 0, 0, 'C', '0', '0', 'system:dept:list', 'tree', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (104, '岗位管理', 1, 5, 'post',		'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (105, '字典管理', 1, 6, 'dict',		'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (106, '角色分配', 1, 2, 'roleusers','system/roleusers/index', 0, 0, 'C', '1', '0', 'system:roleusers:list', 'people', '', GETDATE());
-INSERT into sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (107, '参数设置', 1, 8, 'config',	'system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit','', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (108, '日志管理', 1, 10, 'log', '', 0, 0, 'M', '0', '0', '', 'log', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (109, '通知公告', 1, 9, 'notice', 'system/notice/index', 0, 0, 'C', '0', '0', 'system:notice:list', 'message', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (110, '定时任务', 2, 1, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (112, '服务监控', 2, 4, 'server', 'monitor/server/index', 0, 0, 'C', '0', '0', 'monitor:server:list', 'server', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (113, '缓存监控', 2, 5, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (114, '表单构建', 3, 1, 'build', 'tool/build/index', 0, 0, 'C', '0', '0', 'tool:build:list', 'build', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (115, '代码生成', 3, 2, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (116, '系统接口', 3, 3, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (117, '发送邮件', 3, 4, 'sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'email', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (118, '文章管理', 3, 18, 'article', NULL, 0, 0, 'M', '0', '0', NULL, 'documentation', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (100, '用户管理', 1, 1, 'user',		'system/user/index', 0, 0, 'C', '0', '0', 'system:user:list', 'user', '', GETDATE(), 'menu.systemUser');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (101, '角色管理', 1, 2, 'role',		'system/role/index', 0, 0, 'C', '0', '0', 'system:role:list', 'peoples', '', GETDATE(), 'menu.systemRole');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (102, '菜单管理', 1, 3, 'menu',		'system/menu/index', 0, 0, 'C', '0', '0', 'system:menu:list', 'tree-table', '', GETDATE(), 'menu.systemMenu');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (103, '部门管理', 1, 4, 'dept',		'system/dept/index', 0, 0, 'C', '0', '0', 'system:dept:list', 'tree', '', GETDATE(), 'menu.systemDept');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (104, '岗位管理', 1, 5, 'post',		'system/post/index', 0, 0, 'C', '0', '0', 'system:post:list', 'post', '', GETDATE(), 'menu.systemPost');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (105, '字典管理', 1, 6, 'dict',		'system/dict/index', 0, 0, 'C', '0', '0', 'system:dict:list', 'dict', '', GETDATE(), 'menu.systemDic');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (106, '角色分配', 1, 2, 'roleusers','system/roleusers/index', 0, 0, 'C', '1', '0', 'system:roleusers:list', 'people', '', GETDATE());
+INSERT into sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (107, '参数设置', 1, 8, 'config',	'system/config/index', 0, 0, 'C', '0', '0', 'system:config:list','edit','', GETDATE(), 'menu.systemParam');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (108, '日志管理', 1, 10, 'log', '', 0, 0, 'M', '0', '0', '', 'log', '', GETDATE(), 'menu.systemLog');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (109, '通知公告', 1, 9, 'notice', 'system/notice/index', 0, 0, 'C', '0', '0', 'system:notice:list', 'message', '', GETDATE(), 'menu.systemNotice');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (110, '定时任务', 2, 1, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', GETDATE(), 'menu.timedTask');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (112, '服务监控', 2, 4, 'server', 'monitor/server/index', 0, 0, 'C', '0', '0', 'monitor:server:list', 'server', '', GETDATE(), 'menu.serviceMonitor');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (113, '缓存监控', 2, 5, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', GETDATE(), 'menu.cacheMonitor');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (114, '表单构建', 3, 1, 'build', 'tool/build/index', 0, 0, 'C', '0', '0', 'tool:build:list', 'build', '', GETDATE(), 'menu.formBuild');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (115, '代码生成', 3, 2, 'gen', 'tool/gen/index', 0, 0, 'C', '0', '0', 'tool:gen:list', 'code', '', GETDATE(), 'menu.codeGeneration');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (116, '系统接口', 3, 3, 'swagger', 'tool/swagger/index', 0, 0, 'C', '0', '0', 'tool:swagger:list', 'swagger', '', GETDATE(), 'menu.systemInterface');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (117, '发送邮件', 3, 4, 'sendEmail', 'tool/email/sendEmail', 0, 0, 'C', '0', '0', 'tool:email:send', 'email', '', GETDATE(), 'menu.sendEmail');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (118, '文章管理', 3, 18, 'article', NULL, 0, 0, 'M', '0', '0', NULL, 'documentation', '', GETDATE(), 'menu.systemArticle');
 
 
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (1047, '发布文章', 3  , 2, '/article/publish', 'system/article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (119, '文章列表', 118, 1, 'index', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'list', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (1047, '发布文章', 3  , 2, '/article/publish', 'system/article/publish', 0, 0, 'C', '1', '0', 'system:article:publish', 'log', '', GETDATE(), '');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (119, '文章列表', 118, 1, 'index', 'system/article/manager', 0, 0, 'C', '0', '0', 'system:article:list', 'list', '', GETDATE(), 'menu.articleList');
 -- 三级菜单日志管理
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (500, '操作日志', 108, 1, 'operlog', 'monitor/operlog/index', 0, 0, 'C', '0', '0', 'monitor:operlog:list', 'form', '', GETDATE());
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) VALUES (501, '登录日志', 108, 2, 'logininfor', 'monitor/logininfor/index', 0, 0, 'C', '0', '0', 'monitor:logininfor:list', 'logininfor', '', GETDATE());
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (500, '操作日志', 108, 1, 'operlog', 'monitor/operlog/index', 0, 0, 'C', '0', '0', 'monitor:operlog:list', 'form', '', GETDATE(), 'menu.operLog');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, menuName_key) VALUES (501, '登录日志', 108, 2, 'logininfor', 'monitor/logininfor/index', 0, 0, 'C', '0', '0', 'monitor:logininfor:list', 'logininfor', '', GETDATE(), 'menu.loginLog');
 
 
 -- 用户管理 按钮
@@ -330,6 +338,30 @@ INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFr
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1063, '导入代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:import', '', '', GETDATE(), '', NULL, NULL);
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1064, '生成代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:code', '', '', GETDATE(), '', NULL, NULL);
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1065, '预览代码', 115, 1, '#', NULL, 0, 0, 'F', '0', '0', 'tool:gen:preview', '', '', GETDATE(), '', NULL, NULL);
+
+
+-- 多语言配置菜单
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time, menuName_key) 
+VALUES ('多语言配置', 1, 999, 'CommonLang', 'system/commonLang/index', 0, 0, 'C', '0', '0', 'system:lang:list', '', 'system', GETDATE(), 'menu.systemLang');
+
+-- 按钮父菜单id
+DECLARE @menuId INT = @@identity
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('查询', @menuId, 1, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:query', '', 'system', GETDATE());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('新增', @menuId, 2, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:add', '', 'system', GETDATE());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('删除', @menuId, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:delete', '', 'system', GETDATE());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:edit', '', 'system', GETDATE());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:export', '', 'system', GETDATE());
+
 
 SET IDENTITY_INSERT sys_menu OFF
 GO
@@ -748,6 +780,15 @@ CREATE TABLE [dbo].[sys_file](
 	[create_by] [VARCHAR](50) NULL,
 	[create_time] [DATETIME] NULL,
 	[storeType] [INT] NULL
+)
+GO
+CREATE TABLE sys_common_lang
+(
+	id BIGINT NOT NULL,
+	lang_code VARCHAR(10) NOT NULL,				--语言code eg：zh-cn
+	lang_key NVARCHAR(100) NULL,				--语言翻译key
+	lang_name NVARCHAR(2000) NOT NULL,			--
+	addtime DATETIME
 )
 GO
 SELECT * FROM dbo.sys_user
