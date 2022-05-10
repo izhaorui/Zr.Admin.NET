@@ -111,7 +111,7 @@ namespace ZR.Admin.WebApi.Controllers
             if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
             {
                 tasksQz.AssemblyName = "ZR.Tasks";
-                tasksQz.ClassName = "TaskScheduler.HttpResultfulJob";
+                tasksQz.ClassName = "TaskScheduler.Job_HttpRequest";
             }
             return SUCCESS(_tasksQzService.Add(tasksQz));
         }
@@ -146,7 +146,7 @@ namespace ZR.Admin.WebApi.Controllers
             if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
             {
                 parm.AssemblyName = "ZR.Tasks";
-                parm.ClassName = "TaskScheduler.HttpResultfulJob";
+                parm.ClassName = "TaskScheduler.Job_HttpRequest";
             }
             if (tasksQz.IsStart)
             {
