@@ -93,6 +93,7 @@ namespace ZR.Admin.WebApi.Middleware
                 operLocation = ip_info.Province + " " + ip_info.City,
                 operTime = DateTime.Now
             };
+            HttpContextExtension.GetRequestValue(context, sysOperLog);
             var endpoint = GetEndpoint(context);
             if (endpoint != null)
             {
@@ -105,7 +106,6 @@ namespace ZR.Admin.WebApi.Middleware
                     sysOperLog.jsonResult = logAttribute.IsSaveResponseData ? sysOperLog.jsonResult : "";
                 }
             }
-            HttpContextExtension.GetRequestValue(context, sysOperLog);
             LogEventInfo ei = new(logLevel, "GlobalExceptionMiddleware", error);
 
             ei.Exception = ex;

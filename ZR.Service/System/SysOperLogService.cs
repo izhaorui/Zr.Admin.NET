@@ -27,6 +27,10 @@ namespace ZR.Service.System
         /// <param name="operLog">日志对象</param>
         public void InsertOperlog(SysOperLog operLog)
         {
+            if (operLog.operParam.Length >= 1000)
+            {
+                operLog.operParam = operLog.operParam.Substring(0, 1000);
+            }
             sysOperLogRepository.AddSysOperLog(operLog);
         }
 
