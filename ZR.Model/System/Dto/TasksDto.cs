@@ -53,7 +53,7 @@ namespace ZR.Model.System.Dto
         /// 默认 : 
         /// </summary>
         [Display(Name = "程序集名称")]
-        [Required(ErrorMessage = "程序集名称不能为空")]
+        //[Required(ErrorMessage = "程序集名称不能为空")]
         public string AssemblyName { get; set; }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace ZR.Model.System.Dto
         /// 默认 : 
         /// </summary>
         [Display(Name = "任务所在类")]
-        [Required(ErrorMessage = "任务所在类不能为空")]
+        //[Required(ErrorMessage = "任务所在类不能为空")]
         public string ClassName { get; set; }
 
         /// <summary>
