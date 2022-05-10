@@ -3,11 +3,15 @@ using Infrastructure.Attribute;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Triggers;
+using System;
 using System.Threading.Tasks;
 using ZR.Service.System.IService;
 
 namespace ZR.Tasks.TaskScheduler
 {
+    /// <summary>
+    /// 定时任务http请求
+    /// </summary>
     [AppService(ServiceType = typeof(Job_HttpRequest), ServiceLifetime = LifeTime.Scoped)]
     internal class Job_HttpRequest : JobBase, IJob
     {
@@ -25,9 +29,11 @@ namespace ZR.Tasks.TaskScheduler
         {
             AbstractTrigger trigger = (context as JobExecutionContextImpl).Trigger as AbstractTrigger;
             var info = await tasksQzService.GetByIdAsync(trigger.Name);
-
-            var result = await HttpHelper.HttpPostAsync("http://" + info.ApiUrl, info.JobParams);
-            //Console.WriteLine(result);
+            if (info != null)
+            {
+                var result = await HttpHelper.HttpGetAsync("http://" + info.ApiUrl);
+                Console.WriteLine(result);
+            }
         }
     }
 }

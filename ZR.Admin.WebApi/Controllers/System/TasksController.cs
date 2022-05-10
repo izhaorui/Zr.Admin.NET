@@ -95,6 +95,10 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"地址不能为空");
             }
+            if (parm.TaskType == 1 && (parm.AssemblyName.IsEmpty() || parm.ClassName.IsEmpty()))
+            {
+                throw new CustomException($"程序集或者类名不能为空");
+            }
             //从 Dto 映射到 实体
             var tasksQz = parm.Adapt<SysTasksQz>().ToCreate();
             var worker = new IdWorker(1, 1);
@@ -107,7 +111,7 @@ namespace ZR.Admin.WebApi.Controllers
             if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
             {
                 tasksQz.AssemblyName = "ZR.Tasks";
-                tasksQz.ClassName = "TaskScheduler.HttpResultfulJob";
+                tasksQz.ClassName = "TaskScheduler.Job_HttpRequest";
             }
             return SUCCESS(_tasksQzService.Add(tasksQz));
         }
@@ -142,7 +146,7 @@ namespace ZR.Admin.WebApi.Controllers
             if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
             {
                 parm.AssemblyName = "ZR.Tasks";
-                parm.ClassName = "TaskScheduler.HttpResultfulJob";
+                parm.ClassName = "TaskScheduler.Job_HttpRequest";
             }
             if (tasksQz.IsStart)
             {
