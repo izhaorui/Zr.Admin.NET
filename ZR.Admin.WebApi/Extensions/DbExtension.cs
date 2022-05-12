@@ -26,43 +26,43 @@ namespace ZR.Admin.WebApi.Extensions
 
         public static void AddDb(IConfiguration Configuration)
         {
-            string connStr = Configuration.GetConnectionString(OptionsSetting.ConnAdmin);
-            string connStrBus = Configuration.GetConnectionString(OptionsSetting.ConnBus);
-
-            int dbType = Convert.ToInt32(Configuration[OptionsSetting.ConnDbType]);
-            int dbType_bus = Convert.ToInt32(Configuration[OptionsSetting.ConnBusDbType]);
+            string connStr = Configuration.GetConnectionString("conn_db");
+            int dbType = Convert.ToInt32(Configuration["conn_db_dbtype"]);
 
             SugarIocServices.AddSqlSugar(new List<IocConfig>() {
                    new IocConfig() {
-                    ConfigId = "0",
+                    ConfigId = "0",//默认db
                     ConnectionString = connStr,
                     DbType = (IocDbType)dbType,
                     IsAutoCloseConnection = true
-                }, new IocConfig() {
+                },
+                   new IocConfig() {
                     ConfigId = "1",
-                    ConnectionString = connStrBus,
-                    DbType = (IocDbType)dbType_bus,
+                    ConnectionString = "替换成你的字符串",
+                    DbType = IocDbType.MySql,
                     IsAutoCloseConnection = true
                 }
+                   //...增加其他数据库
                 });
             SugarIocServices.ConfigurationSugar(db =>
             {
+                //db0数据过滤
                 FilterData(0);
-                //FilterData(1);
+                
                 #region db0
-                db.GetConnection(0).Aop.OnLogExecuting = (sql, pars) =>
+                db.GetConnectionScope(0).Aop.OnLogExecuting = (sql, pars) =>
                 {
-                    var param = db.GetConnection(0).Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
+                    var param = db.GetConnectionScope(0).Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
 
                     logger.Info($"【sql语句】{sql}，{param}\n");
                 };
 
-                db.GetConnection(0).Aop.OnError = (e) =>
+                db.GetConnectionScope(0).Aop.OnError = (e) =>
                 {
                     logger.Error(e, $"执行SQL出错：{e.Message}");
                 };
                 //SQL执行完
-                db.GetConnection(0).Aop.OnLogExecuted = (sql, pars) =>
+                db.GetConnectionScope(0).Aop.OnLogExecuted = (sql, pars) =>
                 {
                     //执行完了可以输出SQL执行时间 (OnLogExecutedDelegate) 
                 };
@@ -86,7 +86,7 @@ namespace ZR.Admin.WebApi.Extensions
         }
 
         /// <summary>
-        /// 分页获取count 不会追加sql
+        /// 数据过滤
         /// </summary>
         /// <param name="configId">多库id</param>
         private static void FilterData(int configId)
@@ -98,7 +98,7 @@ namespace ZR.Admin.WebApi.Extensions
             if (user == null) return;
             //管理员不过滤
             if (user.RoleIds.Any(f => f.Equals("admin"))) return;
-            var db = DbScoped.SugarScope.GetConnection(configId);
+            var db = DbScoped.SugarScope.GetConnectionScope(configId);
             foreach (var role in user.Roles.OrderBy(f => f.DataScope))
             {
                 string dataScope = role.DataScope;
