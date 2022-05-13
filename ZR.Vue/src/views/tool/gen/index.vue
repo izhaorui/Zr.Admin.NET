@@ -1,6 +1,5 @@
 <template>
   <div class="app-container">
-
     <el-form ref="codeform" :inline="true" :rules="rules" :model="queryParams" size="small">
       <el-form-item label="表名" prop="tableName">
         <el-input v-model="queryParams.tableName" clearable placeholder="输入要查询的表名" />
@@ -16,33 +15,48 @@
         <el-button type="info" plain icon="el-icon-upload" size="mini" @click="openImportTable" v-hasPermi="['tool:gen:import']">导入</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" :disabled="multiple" plain icon="el-icon-delete" @click="handleDelete" size="mini" v-hasPermi="['tool:gen:remove']">
-          删除</el-button>
+        <el-button
+          type="danger"
+          :disabled="multiple"
+          plain
+          icon="el-icon-delete"
+          @click="handleDelete"
+          size="mini"
+          v-hasPermi="['tool:gen:remove']"
+        >
+          删除
+        </el-button>
       </el-col>
     </el-row>
-    <el-table ref="gridtable" v-loading="tableloading" :data="tableData" border @selection-change="handleSelectionChange" highlight-current-row
-      height="480px">
+    <el-table
+      ref="gridtable"
+      v-loading="tableloading"
+      :data="tableData"
+      border
+      @selection-change="handleSelectionChange"
+      highlight-current-row
+      height="480px"
+    >
       <el-table-column type="selection" align="center" width="55"></el-table-column>
       <el-table-column label="序号" type="index" width="50" align="center">
         <template slot-scope="scope">
-          <span>{{(queryParams.pageNum - 1) * queryParams.pageSize + scope.$index + 1}}</span>
+          <span>{{ (queryParams.pageNum - 1) * queryParams.pageSize + scope.$index + 1 }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="dbName" label="数据库名" width="90" />
+      <el-table-column prop="dbName" label="数据库名" width="90" :show-overflow-tooltip="true" />
       <el-table-column prop="tableId" label="表id" width="70" sortable="" />
       <el-table-column prop="tableName" label="表名" width="110" :show-overflow-tooltip="true" />
       <el-table-column prop="tableComment" label="表描述" :show-overflow-tooltip="true" width="120" />
       <el-table-column prop="className" label="实体" :show-overflow-tooltip="true" />
       <el-table-column prop="createTime" label="创建时间" />
-      <el-table-column prop="updateTime" label="更新时间" />
+      <el-table-column prop="updateTime" label="更新时间" sortable />
       <el-table-column label="操作" align="center" width="320">
         <template slot-scope="scope">
           <el-button type="text" icon="el-icon-view" @click="handlePreview(scope.row)" v-hasPermi="['tool:gen:preview']">预览</el-button>
           <el-button type="text" icon="el-icon-edit" @click="handleEditTable(scope.row)" v-hasPermi="['tool:gen:edit']">编辑</el-button>
           <el-button type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tool:gen:remove']">删除</el-button>
           <el-button type="text" icon="el-icon-refresh" @click="handleSynchDb(scope.row)" v-hasPermi="['tool:gen:edit']">同步</el-button>
-          <el-button type="text" icon="el-icon-download" @click="handleGenTable(scope.row)" v-hasPermi="['tool:gen:code']">生成代码
-          </el-button>
+          <el-button type="text" icon="el-icon-download" @click="handleGenTable(scope.row)" v-hasPermi="['tool:gen:code']">生成代码 </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -52,8 +66,15 @@
     <el-dialog :title="preview.title" :visible.sync="preview.open" width="80%" top="5vh" append-to-body>
       <el-tabs v-model="preview.activeName">
         <el-tab-pane v-for="(item, key) in preview.data" :label="item.title" :name="key.toString()" :key="key">
-          <el-link :underline="false" icon="el-icon-document-copy" v-clipboard:copy="item.content" v-clipboard:success="clipboardSuccess"
-            style="float:right">复制</el-link>
+          <el-link
+            :underline="false"
+            icon="el-icon-document-copy"
+            v-clipboard:copy="item.content"
+            v-clipboard:success="clipboardSuccess"
+            style="float: right"
+          >
+            复制
+          </el-link>
           <pre><code class="hljs" v-html="highlightedCode(item.content, item.title)"></code></pre>
         </el-tab-pane>
       </el-tabs>
@@ -63,13 +84,7 @@
 </template>
 
 <script>
-import {
-  codeGenerator,
-  listTable,
-  delTable,
-  previewTable,
-  synchDb
-} from '@/api/tool/gen'
+import { codeGenerator, listTable, delTable, previewTable, synchDb } from '@/api/tool/gen'
 import importTable from './importTable'
 import { Loading } from 'element-ui'
 import hljs from 'highlight.js'
@@ -83,14 +98,14 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 20,
-        tableName: ''
+        tableName: '',
       },
       // 预览参数
       preview: {
         open: false,
         title: '代码预览',
         data: {},
-        activeName: '0'
+        activeName: '0',
       },
       showGenerate: false,
       rules: {},
@@ -108,7 +123,7 @@ export default {
       // 选中的表
       tableIds: [],
       // 非多个禁用
-      multiple: true
+      multiple: true,
     }
   },
   created() {
@@ -136,7 +151,7 @@ export default {
 
       this.$router.push({
         path: '/gen/editTable',
-        query: { tableId: row.tableId }
+        query: { tableId: row.tableId },
       })
     },
     // 代码预览
@@ -172,13 +187,13 @@ export default {
             lock: true,
             text: '正在生成代码...',
             spinner: 'el-icon-loading',
-            background: 'rgba(0, 0, 0, 0.7)'
+            background: 'rgba(0, 0, 0, 0.7)',
           }
           const pageLoading = Loading.service(loadop)
 
           var seachdata = {
             tableId: this.currentSelected.tableId,
-            tableName: this.currentSelected.name
+            tableName: this.currentSelected.name,
             // queryColumn: this.checkedQueryColumn,
           }
 
@@ -220,7 +235,7 @@ export default {
       this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning'
+        type: 'warning',
       })
         .then(() => {
           delTable(tableIds.toString()).then((res) => {
@@ -234,7 +249,7 @@ export default {
         .catch(() => {
           this.$message({
             type: 'info',
-            message: '已取消删除'
+            message: '已取消删除',
           })
         })
     },
@@ -258,14 +273,14 @@ export default {
     handleSynchDb(row) {
       const tableName = row.tableName
       this.$confirm('确认要强制同步"' + tableName + '"表结构吗？')
-        .then(function() {
+        .then(function () {
           return synchDb(row.tableId, { tableName, dbName: row.dbName })
         })
         .then(() => {
           this.msgSuccess('同步成功')
         })
         .catch(() => {})
-    }
-  }
+    },
+  },
 }
 </script>

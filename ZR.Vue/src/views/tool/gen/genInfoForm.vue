@@ -8,7 +8,8 @@
             <el-option label="单表（增删改查）" value="crud" />
             <el-option label="单表查询" value="select" />
             <el-option label="树表（增删改查）" value="tree" />
-            <!-- <el-option label="导航查询" value="subNav"></el-option> -->
+            <el-option label="导航查询(1对1)" value="subNav"></el-option>
+            <el-option label="导航查询(1对多)" value="subNavMore"></el-option>
             <!-- <el-option label="主子表（增删改查）" value="sub" /> -->
           </el-select>
         </el-form-item>
@@ -70,15 +71,20 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <treeselect :append-to-body="true" v-model="info.parentMenuId" :options="menus" :normalizer="normalizer" :show-count="true"
-            placeholder="请选择系统菜单" />
+          <treeselect
+            :append-to-body="true"
+            v-model="info.parentMenuId"
+            :options="menus"
+            :normalizer="normalizer"
+            :show-count="true"
+            placeholder="请选择系统菜单"
+          />
         </el-form-item>
       </el-col>
       <el-col :lg="12">
         <el-form-item label="查询排序字段">
           <el-select v-model="info.sortField" placeholder="请选择字段" class="mr10" clearable="">
-            <el-option v-for="item in columns" :key="item.columnId" :label="item.csharpField" :value="item.csharpField">
-            </el-option>
+            <el-option v-for="item in columns" :key="item.columnId" :label="item.csharpField" :value="item.csharpField"> </el-option>
           </el-select>
 
           <el-radio v-model="info.sortType" label="asc">正序</el-radio>
@@ -162,8 +168,12 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.treeCode" placeholder="请选择">
-            <el-option v-for="(column, index) in columns" :key="index" :label="column.csharpField + '：' + column.columnComment"
-              :value="column.csharpField"></el-option>
+            <el-option
+              v-for="(column, index) in columns"
+              :key="index"
+              :label="column.csharpField + '：' + column.columnComment"
+              :value="column.csharpField"
+            ></el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -176,8 +186,12 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.treeParentCode" placeholder="请选择">
-            <el-option v-for="(column, index) in columns" :key="index" :label="column.csharpField + '：' + column.columnComment"
-              :value="column.csharpField"></el-option>
+            <el-option
+              v-for="(column, index) in columns"
+              :key="index"
+              :label="column.csharpField + '：' + column.columnComment"
+              :value="column.csharpField"
+            ></el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -190,13 +204,17 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.treeName" placeholder="请选择">
-            <el-option v-for="(column, index) in columns" :key="index" :label="column.csharpField + '：' + column.columnComment"
-              :value="column.csharpField"></el-option>
+            <el-option
+              v-for="(column, index) in columns"
+              :key="index"
+              :label="column.csharpField + '：' + column.columnComment"
+              :value="column.csharpField"
+            ></el-option>
           </el-select>
         </el-form-item>
       </el-col>
     </el-row>
-    <el-row v-show="info.tplCategory == 'sub'">
+    <el-row v-show="info.tplCategory == 'sub' || info.tplCategory == 'subNav' || info.tplCategory == 'subNavMore'">
       <h4 class="form-header">关联信息</h4>
       <el-col :lg="12">
         <el-form-item>
@@ -221,8 +239,10 @@
             </el-tooltip>
           </span>
           <el-select v-model="info.subTableFkName" placeholder="请选择">
-            <el-option v-for="(column, index) in subColumns" :key="index" :label="column.columnName + '：' + column.columnComment"
-              :value="column.columnName"></el-option>
+            <el-option v-for="(column, index) in subColumns" :key="index" :label="column.csharpField" :value="column.csharpField">
+              <span style="float: left">{{ column.csharpField }}</span>
+              <span style="float: right">{{ column.columnComment }}</span>
+            </el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -240,66 +260,61 @@ export default {
   props: {
     info: {
       type: Object,
-      default: null
+      default: null,
     },
     // 子表
     tables: {
       type: Array,
-      default: null
+      default: null,
     },
     menus: {
       type: Array,
-      default: []
+      default: [],
     },
     // 列
     columns: {
       type: Array,
-      default: []
-    }
+      default: [],
+    },
   },
   data() {
     return {
       checkedBtn: [],
       subColumns: [],
       rules: {
-        tplCategory: [
-          { required: true, message: '请选择生成模板', trigger: 'blur' }
-        ],
+        tplCategory: [{ required: true, message: '请选择生成模板', trigger: 'blur' }],
         moduleName: [
           {
             required: true,
             message: '请输入生成模块名',
             trigger: 'blur',
-            pattern: /^[A-Za-z]+$/
-          }
+            pattern: /^[A-Za-z]+$/,
+          },
         ],
         businessName: [
           {
             required: true,
             message: '请输入生成业务名',
             trigger: 'blur',
-            pattern: /^[A-Za-z]+$/
-          }
+            pattern: /^[A-Za-z]+$/,
+          },
         ],
-        functionName: [
-          { required: true, message: '请输入生成功能名', trigger: 'blur' }
-        ],
+        functionName: [{ required: true, message: '请输入生成功能名', trigger: 'blur' }],
         permissionPrefix: {
           required: true,
           message: '请输入权限前缀',
-          trigger: 'blur'
-        }
-      }
+          trigger: 'blur',
+        },
+      },
     }
   },
   watch: {
-    'info.subTableName': function(val) {
+    'info.subTableName': function (val) {
       this.setSubTableColumns(val)
     },
-    'info.checkedBtn': function(val) {
-      console.log(val + ',checkedBtn')
+    'info.checkedBtn': function (val) {
       this.checkedBtn = val
-    }
+    },
   },
   methods: {
     /** 转换菜单数据结构 */
@@ -310,7 +325,7 @@ export default {
       return {
         id: node.menuId,
         label: node.menuName,
-        children: node.children
+        children: node.children,
       }
     },
     /** 选择子表名触发 */
@@ -343,7 +358,7 @@ export default {
           break
         }
       }
-    }
-  }
+    },
+  },
 }
 </script>
