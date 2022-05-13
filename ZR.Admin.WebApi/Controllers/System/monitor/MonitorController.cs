@@ -11,7 +11,9 @@ using System.Runtime.InteropServices;
 
 namespace ZR.Admin.WebApi.Controllers.monitor
 {
-    //[Verify]
+    /// <summary>
+    /// 系统监控
+    /// </summary>
     public class MonitorController : BaseController
     {
         private OptionsSetting Options;

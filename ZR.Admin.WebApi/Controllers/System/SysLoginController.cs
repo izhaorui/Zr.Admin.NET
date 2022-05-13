@@ -1,26 +1,23 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using Hei.Captcha;
+using Infrastructure;
+using Infrastructure.Attribute;
+using Infrastructure.Model;
+using IPTools.Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using UAParser;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Framework;
-using Infrastructure.Model;
-using Infrastructure;
-using Infrastructure.Attribute;
+using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Service.System.IService;
-using Hei.Captcha;
-using ZR.Common;
 using ZR.Service.System;
-using Microsoft.Extensions.Options;
-using UAParser;
-using IPTools.Core;
-using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Authorization;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {

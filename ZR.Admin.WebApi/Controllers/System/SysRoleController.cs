@@ -19,8 +19,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Route("system/role")]
     public class SysRoleController : BaseController
     {
-        readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
         private readonly ISysRoleService sysRoleService;
 
         public SysRoleController(
@@ -56,7 +54,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 添加角色 √
+        /// 添加角色
         /// </summary>
         /// <param name="sysRoleDto"></param>
         /// <returns></returns>

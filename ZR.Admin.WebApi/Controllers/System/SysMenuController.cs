@@ -2,17 +2,19 @@
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model.System.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
-using ZR.Model;
-using Mapster;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
+    /// <summary>
+    /// 系统菜单
+    /// </summary>
     [Verify]
     [Route("/system/menu")]
     public class SysMenuController : BaseController
@@ -29,7 +31,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 获取菜单列表 √
+        /// 获取菜单列表
         /// </summary>
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "system:menu:list")]
@@ -41,7 +43,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 根据菜单编号获取详细信息 √
+        /// 根据菜单编号获取详细信息
         /// </summary>
         /// <param name="menuId"></param>
         /// <returns></returns>
@@ -86,7 +88,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 修改菜单 √
+        /// 修改菜单
         /// </summary>
         /// <param name="menuDto"></param>
         /// <returns></returns>
@@ -121,7 +123,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 添加菜单 √
+        /// 添加菜单
         /// </summary>
         /// <param name="MenuDto"></param>
         /// <returns></returns>
@@ -147,7 +149,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 菜单删除 √
+        /// 菜单删除
         /// </summary>
         /// <param name="menuId"></param>
         /// <returns></returns>

@@ -20,9 +20,6 @@ namespace ZR.Admin.WebApi.Controllers
 {
     /// <summary>
     /// 多语言配置Controller
-    ///
-    /// @author zr
-    /// @date 2022-05-06
     /// </summary>
     [Verify]
     [Route("system/CommonLang")]

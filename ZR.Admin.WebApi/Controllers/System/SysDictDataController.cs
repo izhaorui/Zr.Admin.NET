@@ -12,7 +12,6 @@ namespace ZR.Admin.WebApi.Controllers.System
 {
     /// <summary>
     /// 数据字典信息
-    /// @author zr
     /// </summary>
     [Verify]
     [Route("system/dict/data")]

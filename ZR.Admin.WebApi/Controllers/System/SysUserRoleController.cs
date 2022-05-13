@@ -7,6 +7,9 @@ using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
+    /// <summary>
+    /// 用户角色管理
+    /// </summary>
     [Verify]
     [Route("system/userRole")]
     public class SysUserRoleController : BaseController

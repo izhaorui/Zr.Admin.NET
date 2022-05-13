@@ -12,6 +12,9 @@ using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.monitor
 {
+    /// <summary>
+    /// 操作日志记录
+    /// </summary>
     [Verify]
     [Route("/monitor/operlog")]
     public class SysOperlogController : BaseController

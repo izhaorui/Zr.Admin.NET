@@ -17,6 +17,7 @@
 * 支持加载动态权限菜单，多方式轻松权限控制
 * 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
 * 七牛云通用云产品优惠券：[点我进入](https://s.qiniu.com/FzEfay)。
+* 阿里云优惠券：[点我领取](https://www.aliyun.com/minisite/goods?userCode=uotn5vt1&share_source=copy_link)。
 * 腾讯云秒杀场：[点我进入](https://curl.qcloud.com/4yEoRquq)。
 * 腾讯云优惠券：[点我领取](https://curl.qcloud.com/5J4nag8D)。
 
