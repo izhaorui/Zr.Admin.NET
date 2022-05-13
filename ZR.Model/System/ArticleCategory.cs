@@ -13,9 +13,15 @@ namespace ZR.Model.System
     [Tenant("0")]
     public class ArticleCategory
     {
-        public int Category_Id { get; set; }
+        /// <summary>
+        /// 目录id
+        /// </summary>
+        [SugarColumn(IsPrimaryKey = true, ColumnName = "Category_id")]
+        public int CategoryId { get; set; }
         public string Name { get; set; }
         public int ParentId { get; set; }
+        [SugarColumn(ColumnName = "create_time")]
+        public DateTime CreateTime { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         [SugarColumn(IsIgnore = true)]

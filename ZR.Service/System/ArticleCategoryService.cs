@@ -3,72 +3,78 @@ using SqlSugar;
 using SqlSugar.IOC;
 using System.Collections.Generic;
 using System.Linq;
+using ZR.Model;
+using ZR.Model.Dto;
 using ZR.Model.System;
+using ZR.Repository;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
     /// <summary>
-    /// 文章目录
+    /// 文章目录Service业务层处理
     /// </summary>
     [AppService(ServiceType = typeof(IArticleCategoryService), ServiceLifetime = LifeTime.Transient)]
     public class ArticleCategoryService : BaseService<ArticleCategory>, IArticleCategoryService
     {
-        /// <summary>
-        /// 构建前端所需要树结构
-        /// </summary>
-        /// <param name="categories">目录列表</param>
-        /// <returns></returns>
-        public List<ArticleCategory> BuildCategoryTree(List<ArticleCategory> categories)
+        private readonly ArticleCategoryRepository _ArticleCategoryRepository;
+        public ArticleCategoryService(ArticleCategoryRepository repository)
         {
-            List<ArticleCategory> returnList = new List<ArticleCategory>();
-            List<int> tempList = categories.Select(f => f.Category_Id).ToList();
-            foreach (var dept in categories)
-            {
-                // 如果是顶级节点, 遍历该父节点的所有子节点
-                if (!tempList.Contains(dept.ParentId))
-                {
-                    RecursionFn(categories, dept);
-                    returnList.Add(dept);
-                }
-            }
-
-            if (!returnList.Any())
-            {
-                returnList = categories;
-            }
-            return returnList;
+            _ArticleCategoryRepository = repository;
         }
 
         /// <summary>
-        /// 递归列表
+        /// 查询文章目录列表
         /// </summary>
-        /// <param name="list"></param>
-        /// <param name="t"></param>
-        private void RecursionFn(List<ArticleCategory> list, ArticleCategory t)
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public PagedInfo<ArticleCategory> GetList(ArticleCategoryQueryDto parm)
         {
-            //得到子节点列表
-            List<ArticleCategory> childList = GetChildList(list, t);
-            t.Children = childList;
-            foreach (var item in childList)
-            {
-                if (GetChildList(list, item).Count() > 0)
-                {
-                    RecursionFn(list, item);
-                }
-            }
+            //开始拼装查询条件
+            var predicate = Expressionable.Create<ArticleCategory>();
+
+            //搜索条件查询语法参考Sqlsugar
+            var response = _ArticleCategoryRepository
+                .Queryable()
+                .Where(predicate.ToExpression())
+                .ToPage(parm);
+
+            return response;
         }
 
         /// <summary>
-        /// 递归获取子菜单
+        /// 查询文章目录树列表
         /// </summary>
-        /// <param name="list">所有菜单</param>
-        /// <param name="dept"></param>
+        /// <param name="parm"></param>
         /// <returns></returns>
-        private List<ArticleCategory> GetChildList(List<ArticleCategory> list, ArticleCategory t)
+        public List<ArticleCategory> GetTreeList(ArticleCategoryQueryDto parm)
         {
-            return list.Where(p => p.ParentId == t.Category_Id).ToList();
+            //开始拼装查询条件
+            var predicate = Expressionable.Create<ArticleCategory>();
+
+            //搜索条件查询语法参考Sqlsugar
+
+            var response = _ArticleCategoryRepository.Queryable().Where(predicate.ToExpression())
+                .ToTree(it => it.Children, it => it.ParentId, 0);
+
+            return response;
+        }
+
+        /// <summary>
+        /// 添加文章目录
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public int AddArticleCategory(ArticleCategory parm)
+        {
+            var response = _ArticleCategoryRepository.Insert(parm, it => new
+            {
+                it.Name,
+                it.CreateTime,
+                it.ParentId,
+            });
+            return response;
         }
     }
 }
