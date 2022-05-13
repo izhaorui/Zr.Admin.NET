@@ -18,6 +18,9 @@ using Infrastructure.Constant;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
+    /// <summary>
+    /// 系统通知
+    /// </summary>
     [Verify]
     [Route("system/notice")]
     public class SysNoticeController : BaseController

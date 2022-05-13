@@ -3,11 +3,9 @@ using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model.System;
-using ZR.Service;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System

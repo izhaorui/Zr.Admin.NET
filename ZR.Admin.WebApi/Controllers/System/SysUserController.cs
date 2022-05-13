@@ -2,12 +2,10 @@ using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
@@ -17,6 +15,9 @@ using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
+    /// <summary>
+    /// 用户管理
+    /// </summary>
     [Verify]
     [Route("system/user")]
     public class SysUserController : BaseController

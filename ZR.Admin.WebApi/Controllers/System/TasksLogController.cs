@@ -13,6 +13,9 @@ using Infrastructure;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
+    /// <summary>
+    /// 任务日志
+    /// </summary>
     [Verify]
     [Route("/monitor/jobLog")]
     public class TasksLogController : BaseController

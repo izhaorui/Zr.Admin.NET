@@ -7,30 +7,27 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System;
-using System.IO;
+using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
-using ZR.Common;
-using ZR.Model.System.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
-using Infrastructure.Extensions;
-using System.Threading.Tasks;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
+    /// <summary>
+    /// 个人中心
+    /// </summary>
     [Verify]
     [Route("system/user/profile")]
     public class SysProfileController : BaseController
     {
-        private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly ISysUserService UserService;
         private readonly ISysRoleService RoleService;
         private readonly ISysUserPostService UserPostService;
         private readonly ISysDeptService DeptService;
         private readonly ISysFileService FileService;
-        private OptionsSetting OptionsSetting;
         private IWebHostEnvironment hostEnvironment;
 
         public SysProfileController(
@@ -39,7 +36,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysUserPostService postService,
             ISysDeptService deptService,
             ISysFileService sysFileService,
-            IOptions<OptionsSetting> options,
             IWebHostEnvironment hostEnvironment)
         {
             UserService = userService;
@@ -47,7 +43,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             UserPostService = postService;
             DeptService = deptService;
             FileService = sysFileService;
-            OptionsSetting = options.Value;
             this.hostEnvironment = hostEnvironment;
         }
 

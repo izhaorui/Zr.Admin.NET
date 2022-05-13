@@ -15,10 +15,6 @@ namespace ZR.Admin.WebApi.Controllers
 {
     /// <summary>
     /// 文章目录Controller
-    /// 
-    /// @tableName articleCategory
-    /// @author zr
-    /// @date 2022-05-13
     /// </summary>
     [Verify]
     [Route("article/ArticleCategory")]

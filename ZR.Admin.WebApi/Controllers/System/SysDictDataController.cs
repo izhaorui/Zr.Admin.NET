@@ -6,18 +6,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ZR.Admin.WebApi.Filters;
-using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Model.Vo;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
     /// <summary>
     /// 数据字典信息
-    /// @author zr
     /// </summary>
     [Verify]
     [Route("system/dict/data")]

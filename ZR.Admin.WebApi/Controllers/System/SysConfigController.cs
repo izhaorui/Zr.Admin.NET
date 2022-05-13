@@ -1,29 +1,23 @@
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using SqlSugar;
 using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
+using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Mapster;
-using ZR.Model.Dto;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SqlSugar;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
-using ZR.Service.System;
+using ZR.Model.Dto;
 using ZR.Model.System;
-using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Authorization;
+using ZR.Service.System;
 
 namespace ZR.Admin.WebApi.Controllers
 {
     /// <summary>
     /// 参数配置Controller
-    ///
-    /// @author zhaorui
-    /// @date 2021-09-29
     /// </summary>
     [Verify]
     [Route("system/config")]
