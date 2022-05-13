@@ -6,13 +6,6 @@ namespace Infrastructure
     /// </summary>
     public class OptionsSetting
     {
-        public static string ConnAdmin = "conn_zrAdmin";
-        public static string ConnDbType = "conn_zrAdmin_type";
-        public static string ConnBus = "conn_bus";
-        public static string ConnBusDbType = "conn_bus_type";
-
-        public string Redis { get; set; }
-        public string Database { get; set; }
         /// <summary>
         /// 是否演示模式
         /// </summary>
@@ -37,7 +30,6 @@ namespace Infrastructure
     /// </summary>
     public class Upload
     {
-        public string UploadDirectory { get; set; }
         public string UploadUrl { get; set; }
     }
     /// <summary>

@@ -10,10 +10,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="8.0.25" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
+    <PackageReference Include="MySql.Data" Version="8.0.29" />
     <PackageReference Include="NETCore.Encrypt" Version="2.1.0" />
     <PackageReference Include="SqlSugar.IOC" Version="1.8.0" />
-    <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.7.8" />
+    <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.8" />
   </ItemGroup>
 
   <ItemGroup>

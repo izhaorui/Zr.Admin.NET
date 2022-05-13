@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
+using System.Reflection;
 using ZR.Model;
 
 namespace ZR.Repository
@@ -18,22 +19,17 @@ namespace ZR.Repository
         public BaseRepository(ISqlSugarClient context = null) : base(context)
         {
             //通过特性拿到ConfigId
-            //var configId = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
-            //if (configId != null)
-            //{
-            //    itenant = DbScoped.SugarScope;//设置租户接口
-            //    Context = DbScoped.SugarScope.GetConnection(configId);
-            //}
-            //else
-            //{
-            //    Context = context ?? DbScoped.SugarScope.GetConnection(1);//根据类传入的ConfigId自动选择
-            //}
-            Context = DbScoped.SugarScope.GetConnectionWithAttr<T>();
-            itenant = DbScoped.SugarScope;//设置租户接口
-            if (Context == null)
+            var configId = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
+            if (configId != null)
             {
-                Context = DbScoped.SugarScope.GetConnection(1);//根据类传入的ConfigId自动选择
+                Context = DbScoped.SugarScope.GetConnectionScope(configId);//根据类传入的ConfigId自动选择
             }
+            else
+            {
+                Context = context ?? DbScoped.SugarScope.GetConnectionScope(0);//没有默认db0
+            }
+            //Context = DbScoped.SugarScope.GetConnectionScopeWithAttr<T>();
+            itenant = DbScoped.SugarScope;//设置租户接口
         }
 
         #region add
