@@ -1,17 +1,15 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
+using Infrastructure.Enums;
+using Infrastructure.Model;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
+using SqlSugar;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
-using ZR.Service.System.IService;
-using Infrastructure.Model;
-using SqlSugar;
-using Mapster;
 using ZR.Model.System.Dto;
-using Infrastructure.Enums;
-using Infrastructure;
-using ZR.Admin.WebApi.Extensions;
-using System.Reflection;
-using System;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -76,28 +74,6 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 获取文章目录,前端没用到
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("CategoryList")]
-        public IActionResult CategoryList()
-        {
-            var response = _ArticleCategoryService.GetAll();
-            return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 获取文章目录树
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("CategoryTreeList")]
-        public IActionResult CategoryTreeList()
-        {
-            var response = _ArticleCategoryService.BuildCategoryTree(_ArticleCategoryService.GetAll());
-            return SUCCESS(response);
-        }
-
-        /// <summary>
         /// 查询文章详情
         /// </summary>
         /// <param name="id"></param>
@@ -125,7 +101,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
             //从 Dto 映射到 实体
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
-            addModel.AuthorName = User.Identity.Name;
+            addModel.AuthorName = HttpContext.GetName();
 
             return SUCCESS(_ArticleService.Add(addModel));
         }

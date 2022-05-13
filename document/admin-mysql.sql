@@ -404,6 +404,25 @@ VALUES ('删除', @langMenuId, 3, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:d
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time) 
 VALUES ('修改', @langMenuId, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:edit', '', 'system', sysdate());
 
+
+-- 文章目录菜单
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time) 
+VALUES ('文章目录', 118, 999, 'ArticleCategory', 'system/article/articleCategory', 0, 0, 'C', '0', '0', 'articlecategory:list', 'tree-table', 'system', sysdate());
+-- 按钮父菜单id
+SELECT @cmenuId := LAST_INSERT_ID();
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time) 
+VALUES ('查询', @cmenuId, 1, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:query', '', 'system', sysdate());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time) 
+VALUES ('新增', @cmenuId, 2, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:add', '', 'system',  sysdate());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time) 
+VALUES ('删除', @cmenuId, 3, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:delete', '', 'system', sysdate());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time) 
+VALUES ('修改', @cmenuId, 4, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:edit', '', 'system', sysdate());
+
 -- ----------------------------
 -- Table structure for sys_oper_log
 -- ----------------------------

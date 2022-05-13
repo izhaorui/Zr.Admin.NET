@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using ZR.Model;
+using ZR.Model.Dto;
 using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
     public interface IArticleCategoryService : IBaseService<ArticleCategory>
     {
-        List<ArticleCategory> BuildCategoryTree(List<ArticleCategory> categories);
+        PagedInfo<ArticleCategory> GetList(ArticleCategoryQueryDto parm);
+        List<ArticleCategory> GetTreeList(ArticleCategoryQueryDto parm);
+        int AddArticleCategory(ArticleCategory parm);
     }
 }

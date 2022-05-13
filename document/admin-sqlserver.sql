@@ -386,8 +386,29 @@ VALUES ('修改', @menuId, 4, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:edit'
 
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
 VALUES ('导出', @menuId, 5, '#', NULL, 0, 0, 'F', '0', '0', 'system:lang:export', '', 'system', GETDATE());
-
 GO
+
+-- 文章目录菜单
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time) 
+VALUES ('文章目录', 118, 999, 'ArticleCategory', 'system/article/articleCategory', 0, 0, 'C', '0', '0', 'articlecategory:list', 'tree-table', 'system', GETDATE());
+-- 按钮父菜单id
+DECLARE @cmenuId int = @@identity
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('查询', @cmenuId, 1, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:query', '', 'system', GETDATE());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('新增', @cmenuId, 2, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:add', '', 'system', GETDATE());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('删除', @cmenuId, 3, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:delete', '', 'system', GETDATE());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('修改', @cmenuId, 4, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:edit', '', 'system', GETDATE());
+
+INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time) 
+VALUES ('导出', @cmenuId, 5, '#', NULL, 0, 0, 'F', '0', '0', 'articlecategory:export', '', 'system', GETDATE());
+GO
+
 -- ---------------------------- 
 -- = '操作日志记录' 
 -- Table structure for sys_oper_log
@@ -653,7 +674,7 @@ CREATE TABLE articleCategory  (
   create_time datetime NULL DEFAULT NULL ,  -- '创建时间',
   parentId int NULL DEFAULT 0 ,  -- '父级ID',
 )
-
+GO
 -- ----------------------------
 -- Records of articleCategory
 -- ----------------------------
