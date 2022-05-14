@@ -9,16 +9,14 @@ namespace ZR.Model.Dto
     /// </summary>
     public class CommonLangDto
     {
-        [Required(ErrorMessage = "id不能为空")]
+        //[Required(ErrorMessage = "id不能为空")]
         public long Id { get; set; }
         //[Required(ErrorMessage = "语言code不能为空")]
         public string LangCode { get; set; }
         public string LangKey { get; set; }
-        [Required(ErrorMessage = "名称不能为空")]
+        //[Required(ErrorMessage = "名称不能为空")]
         public string LangName { get; set; }
-        public string LangNameEn { get; set; }
-        public string LangNameTw { get; set; }
-        //public List<CommonLangDto> Langs { get; set; }
+        public List<CommonLangDto> LangList { get; set; }
     }
 
     /// <summary>
