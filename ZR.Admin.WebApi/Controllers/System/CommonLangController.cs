@@ -1,14 +1,13 @@
 using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
+using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
@@ -101,14 +100,10 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult GetCommonLang(long Id)
         {
             var response = _CommonLangService.GetFirst(x => x.Id == Id);
-            var modal = response.Adapt<CommonLangDto>();
-            if (modal != null)
-            {
-                var list = _CommonLangService.GetList(f => f.LangKey == modal.LangKey);
-                modal.LangName = list.Find(f => f.LangCode == "zh-cn")?.LangName;
-                modal.LangNameEn = list.Find(f => f.LangCode == "en")?.LangName;
-                modal.LangNameTw = list.Find(f => f.LangCode == "zh-tw")?.LangName;
-            }
+
+            var list = _CommonLangService.GetList(x => x.LangKey == response.LangKey);
+            var vo = list.Adapt<List<CommonLangDto>>();
+            var modal = new CommonLangDto() { LangKey = response.LangKey, LangList = vo };
             return SUCCESS(modal);
         }
 
@@ -121,47 +116,11 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "system:lang:query")]
         public IActionResult GetCommonLangByKey(string langKey)
         {
-            var response = _CommonLangService.GetList(x => x.LangKey == langKey);
+            var list = _CommonLangService.GetList(x => x.LangKey == langKey);
+            var vo = list.Adapt<List<CommonLangDto>>();
+            var modal = new CommonLangDto() { LangKey = langKey, LangList = vo };
 
-            return SUCCESS(response);
-        }
-        /// <summary>
-        /// 添加多语言配置
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost]
-        [ActionPermissionFilter(Permission = "system:lang:add")]
-        [Log(Title = "多语言配置", BusinessType = BusinessType.INSERT)]
-        public IActionResult AddCommonLang([FromBody] CommonLangDto parm)
-        {
-            if (parm == null)
-            {
-                throw new CustomException("请求参数错误");
-            }
-
-            //从 Dto 映射到 实体
-            var modal = parm.Adapt<CommonLang>().ToCreate(HttpContext);
-            var list = _CommonLangService.GetList(f => f.LangKey == modal.LangKey);
-            modal.Addtime = DateTime.Now;
-            modal.LangCode = "zh-cn";
-            modal.LangName = parm.LangName;
-            if (!list.Any(f => f.LangCode == modal.LangCode))
-            {
-                _CommonLangService.InsertReturnSnowflakeId(modal);
-            }
-            modal.LangCode = "zh-tw";
-            modal.LangName = parm.LangNameTw;
-            if (!list.Any(f => f.LangCode == modal.LangCode))
-            {
-                _CommonLangService.InsertReturnSnowflakeId(modal);
-            }
-            modal.LangCode = "en";
-            modal.LangName = parm.LangNameEn;
-            if (!list.Any(f => f.LangCode == modal.LangCode))
-            {
-                _CommonLangService.InsertReturnSnowflakeId(modal);
-            }
-            return ToResponse(1);
+            return SUCCESS(modal);
         }
 
         /// <summary>
@@ -173,18 +132,16 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "多语言配置", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdateCommonLang([FromBody] CommonLangDto parm)
         {
-            if (parm == null)
+            if (parm == null || parm.LangKey.IsEmpty())
             {
                 throw new CustomException("请求实体不能为空");
             }
-            //从 Dto 映射到 实体
-            var modal = parm.Adapt<CommonLang>().ToUpdate(HttpContext);
-            var list = _CommonLangService.GetList(f => f.LangKey == modal.LangKey);
 
             List<CommonLang> langs = new();
-            langs.Add(new CommonLang() { Addtime = DateTime.Now, LangCode = "zh-cn", LangKey = modal.LangKey, LangName = parm.LangName });
-            langs.Add(new CommonLang() { Addtime = DateTime.Now, LangCode = "zh-tw", LangKey = modal.LangKey, LangName = parm.LangNameTw });
-            langs.Add(new CommonLang() { Addtime = DateTime.Now, LangCode = "en", LangKey = modal.LangKey, LangName = parm.LangNameEn });
+            foreach (var item in parm.LangList)
+            {
+                langs.Add(new CommonLang() { Addtime = DateTime.Now, LangKey = parm.LangKey, LangCode = item.LangCode, LangName = item.LangName });
+            }
             var storage = _CommonLangService.Storageable(langs).WhereColumns(it => new { it.LangKey, it.LangCode }).ToStorage();
 
             long r = storage.AsInsertable.ExecuteReturnSnowflakeId();//执行插入
