@@ -12,5 +12,6 @@ namespace Infrastructure.Constant
         public static string ReceiveNotice = V;
         public static string OnlineNum = "onlineNum";
         public static string MoreNotice = "moreNotice";
+        public static string OnlineUser = "onlineUser";
     }
 }

@@ -13,15 +13,16 @@ namespace ZR.Model
         /// <summary>
         /// 用户id
         /// </summary>
-        public int Userid { get; set; }
+        public long? Userid { get; set; }
         public string Name { get; set; }
         public DateTime LoginTime { get; set; }
         
-        public OnlineUsers(string clientid, string name)
+        public OnlineUsers(string clientid, string name, long? userid)
         {
             ConnnectionId = clientid;
             Name = name;
             LoginTime = DateTime.Now;
+            Userid = userid;
         }
     }
 }
