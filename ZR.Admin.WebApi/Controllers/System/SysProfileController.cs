@@ -1,4 +1,4 @@
-﻿using Infrastructure;
+using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
@@ -98,15 +98,15 @@ namespace ZR.Admin.WebApi.Controllers.System
             SysUser user = UserService.SelectUserById(loginUser.UserId);
             string oldMd5 = NETCore.Encrypt.EncryptProvider.Md5(oldPassword);
             string newMd5 = NETCore.Encrypt.EncryptProvider.Md5(newPassword);
-            if (user.Password != oldMd5)
+            if (user.Password != oldMd5.ToLower())
             {
                 return ToResponse(ApiResult.Error("修改密码失败，旧密码错误"));
             }
-            if (user.Password == newMd5)
+            if (user.Password == newMd5.ToLower())
             {
                 return ToResponse(ApiResult.Error("新密码不能和旧密码相同"));
             }
-            if (UserService.ResetPwd(loginUser.UserId, newMd5) > 0)
+            if (UserService.ResetPwd(loginUser.UserId, newMd5.ToLower()) > 0)
             {
                 //TODO 更新缓存
 
