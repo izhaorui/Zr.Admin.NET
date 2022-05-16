@@ -670,6 +670,7 @@ CREATE TABLE `article`  (
   `createTime` datetime(6) NULL DEFAULT NULL COMMENT '创建时间',
   `updateTime` datetime(6) NULL DEFAULT NULL COMMENT '修改时间',
   `authorName` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '作者名',
+  `coverUrl` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '封面',
   PRIMARY KEY (`cid`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 28 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 

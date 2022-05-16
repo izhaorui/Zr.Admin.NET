@@ -45,5 +45,9 @@ namespace ZR.Model.System
         public string Tags { get; set; }
         public int Hits { get; set; }
         public int Category_Id { get; set; }
+        /// <summary>
+        /// 封面地址
+        /// </summary>
+        public string CoverUrl { get; set; }
     }
 }

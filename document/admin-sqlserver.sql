@@ -31,7 +31,7 @@ CREATE TABLE sys_tasks
 GO
 INSERT INTO sys_tasks VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL, 1, '');
 GO
-if OBJECT_ID(N'sys_Tasks_log',N'U') is not NULL DROP TABLE sys_Tasks_log
+if OBJECT_ID(N'sys_tasks_log',N'U') is not NULL DROP TABLE sys_tasks_log
 GO
 /**定时任务调度日志表*/
 CREATE TABLE sys_tasks_log  (
@@ -46,9 +46,6 @@ CREATE TABLE sys_tasks_log  (
   invokeTarget varchar(200)  NULL ,		-- '调用目标',
   elapsed DECIMAL(10, 4) NULL,			-- '作业用时',
 )
-GO
-INSERT INTO sys_Tasks_log VALUES ('1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, '2021-08-02 15:10:00', 'ZRTasks.Job_SyncTest', 18);
-INSERT INTO sys_Tasks_log VALUES ('1410905433996136448', '测试任务', 'SYSTEM', 'Succeed', '0', NULL, '2021-08-02 15:20:00', 'ZRTasks.Job_SyncTest', 14);
 GO
 
 /*公告表*/
@@ -661,6 +658,7 @@ CREATE TABLE article  (
   createTime datetime NULL DEFAULT NULL ,  -- '创建时间',
   updateTime datetime NULL DEFAULT NULL ,  -- '修改时间',
   authorName varchar(20) DEFAULT NULL ,  -- '作者名',
+  coverUrl varchar(300) NULL, 			--文章封面
 )
 GO
 -- ----------------------------
