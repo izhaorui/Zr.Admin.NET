@@ -1,6 +1,11 @@
-﻿using Infrastructure.Constant;
+﻿using Infrastructure;
+using Infrastructure.Constant;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.SignalR;
+using ZR.Admin.WebApi.Extensions;
+using ZR.Admin.WebApi.Framework;
+using ZR.Model;
+using ZR.Model.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Hubs
@@ -11,7 +16,7 @@ namespace ZR.Admin.WebApi.Hubs
         private static readonly List<OnlineUsers> clientUsers = new();
         private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private ISysNoticeService SysNoticeService;
-
+        
         public MessageHub(ISysNoticeService noticeService)
         {
             SysNoticeService = noticeService;
@@ -32,19 +37,20 @@ namespace ZR.Admin.WebApi.Hubs
         /// <returns></returns>
         public override Task OnConnectedAsync()
         {
-            var name = Context.User?.Identity?.Name;
-
+            var name = Context.User.Identity.Name;
+            LoginUser loginUser = JwtUtil.GetLoginUser(App.HttpContext);
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
             //判断用户是否存在，否则添加集合
             if (!user && Context.User.Identity.IsAuthenticated)
             {
-                clientUsers.Add(new OnlineUsers(Context.ConnectionId, name));
+                clientUsers.Add(new OnlineUsers(Context.ConnectionId, name, loginUser?.UserId));
                 Console.WriteLine($"{DateTime.Now}：{name},{Context.ConnectionId}连接服务端success，当前已连接{clientUsers.Count}个");
                 //Clients.All.SendAsync("welcome", $"欢迎您：{name},当前时间：{DateTime.Now}");
                 Clients.All.SendAsync(HubsConstant.MoreNotice, SendNotice());
             }
             
             Clients.All.SendAsync(HubsConstant.OnlineNum, clientUsers.Count);
+            Clients.All.SendAsync(HubsConstant.OnlineUser, clientUsers);
             return base.OnConnectedAsync();
         }
 
@@ -61,6 +67,7 @@ namespace ZR.Admin.WebApi.Hubs
                 Console.WriteLine($"用户{user?.Name}离开了，当前已连接{clientUsers.Count}个");
                 clientUsers.Remove(user);
                 Clients.All.SendAsync(HubsConstant.OnlineNum, clientUsers.Count);
+                Clients.All.SendAsync(HubsConstant.OnlineUser, clientUsers);
             }
             return base.OnDisconnectedAsync(exception);
         }
