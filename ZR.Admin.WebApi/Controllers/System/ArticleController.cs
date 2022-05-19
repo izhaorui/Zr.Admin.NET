@@ -115,20 +115,23 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "文章修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] Article parm)
         {
-            //从 Dto 映射到 实体
-            var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
-            addModel.AuthorName = HttpContext.GetName();
+            if (parm == null)
+            {
+                throw new CustomException("请求参数错误");
+            }
+            parm.AuthorName = HttpContext.GetName();
 
-            var response = _ArticleService.Update(it => it.Cid == addModel.Cid,
+            var response = _ArticleService.Update(it => it.Cid == parm.Cid,
                 f => new Article
                 {
-                    Title = addModel.Title,
-                    Content = addModel.Content,
-                    Tags = addModel.Tags,
-                    Category_Id = addModel.Category_Id,
-                    UpdateTime = addModel.UpdateTime,
-                    Status = addModel.Status
-                }).ToCreate();
+                    Title = parm.Title,
+                    Content = parm.Content,
+                    Tags = parm.Tags,
+                    Category_Id = parm.Category_Id,
+                    UpdateTime = parm.UpdateTime,
+                    Status = parm.Status,
+                    CoverUrl = parm.CoverUrl
+                });
 
             return SUCCESS(response);
         }
