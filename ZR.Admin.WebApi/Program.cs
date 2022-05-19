@@ -82,11 +82,8 @@ builder.Services.AddSwaggerConfig();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+
 //使可以多次多去body内容
 app.Use((context, next) =>
 {
