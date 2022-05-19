@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System;
 using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
@@ -98,11 +99,11 @@ namespace ZR.Admin.WebApi.Controllers.System
             SysUser user = UserService.SelectUserById(loginUser.UserId);
             string oldMd5 = NETCore.Encrypt.EncryptProvider.Md5(oldPassword);
             string newMd5 = NETCore.Encrypt.EncryptProvider.Md5(newPassword);
-            if (user.Password != oldMd5)
+            if (!user.Password.Equals(oldMd5, StringComparison.OrdinalIgnoreCase))
             {
                 return ToResponse(ApiResult.Error("修改密码失败，旧密码错误"));
             }
-            if (user.Password == newMd5)
+            if (user.Password.Equals(newMd5, StringComparison.OrdinalIgnoreCase))
             {
                 return ToResponse(ApiResult.Error("新密码不能和旧密码相同"));
             }
