@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ZR.Model.System.Generate;
+﻿using System.Collections.Generic;
 
 namespace ZR.Model.System.Dto
 {
@@ -73,6 +70,10 @@ namespace ZR.Model.System.Dto
         /// 字典类型
         /// </summary>
         public string DictType { get; set; }
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remark { get; set; }
     }
 
 }

@@ -2,7 +2,7 @@
 
 -- ${genTable.functionName}菜单
 INSERT INTO sys_menu(menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by, create_time) 
-VALUES ('${genTable.functionName}', ${parentId}, 999, '${genTable.BusinessName}', '${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName}', 0, 0, 'C', '0', '0', '${replaceDto.PermissionPrefix}:list', '', 'system', GETDATE());
+VALUES ('${genTable.functionName}', ${parentId}, 999, '${genTable.BusinessName}', '${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName}', 0, 0, 'C', '0', '0', '${replaceDto.PermissionPrefix}:list', 'icon1', 'system', GETDATE());
 
 -- 按钮父菜单id
 declare @menuId int = @@identity
