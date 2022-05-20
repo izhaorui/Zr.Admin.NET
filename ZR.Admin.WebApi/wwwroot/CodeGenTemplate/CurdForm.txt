@@ -3,7 +3,6 @@ $set(labelName = "")
 $set(labelDisabled = "")
 $set(columnName = column.CsharpFieldFl)
 $set(value = "item.dictValue")
-
 $if(column.ColumnComment != "")
 $set(labelName = column.ColumnComment)
 $else

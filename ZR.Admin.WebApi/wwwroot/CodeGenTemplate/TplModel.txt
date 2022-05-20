@@ -16,7 +16,7 @@ namespace ${options.ModelsNamespace}.Models
     {
 $foreach(item in genTable.Columns)
         /// <summary>
-        /// 描述 : ${item.ColumnComment}
+        /// 描述 :${item.ColumnComment}
         /// 空值 :$if(item.IsRequired == "True") false $else true $end 
         /// </summary>
 $if(replaceDto.ShowBtnExport)
