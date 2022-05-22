@@ -42,12 +42,13 @@ namespace ZR.Admin.WebApi.Hubs
         public override Task OnConnectedAsync()
         {
             var name = Context.User.Identity.Name;
+            var ip = HttpContextExtension.GetClientUserIp(App.HttpContext);
             LoginUser loginUser = JwtUtil.GetLoginUser(App.HttpContext);
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
             //判断用户是否存在，否则添加集合
             if (!user && Context.User.Identity.IsAuthenticated)
             {
-                clientUsers.Add(new OnlineUsers(Context.ConnectionId, name, loginUser?.UserId));
+                clientUsers.Add(new OnlineUsers(Context.ConnectionId, name, loginUser?.UserId, ip));
                 Console.WriteLine($"{DateTime.Now}：{name},{Context.ConnectionId}连接服务端success，当前已连接{clientUsers.Count}个");
                 //Clients.All.SendAsync("welcome", $"欢迎您：{name},当前时间：{DateTime.Now}");
                 Clients.All.SendAsync(HubsConstant.MoreNotice, SendNotice());
