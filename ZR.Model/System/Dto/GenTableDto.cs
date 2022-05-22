@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using ZR.Model.System.Generate;
 
 namespace ZR.Model.System.Dto
 {
@@ -18,7 +19,7 @@ namespace ZR.Model.System.Dto
         public string FunctionAuthor { get; set; }
         public string GenType { get; set; }
         public string GenPath { get; set; }
-        public string PermissionPrefix { get; set; }
+        //public string PermissionPrefix { get; set; }
         public string Remark { get; set; }
         /// <summary>
         /// 额外参数
@@ -31,19 +32,19 @@ namespace ZR.Model.System.Dto
     /// 额外参数
     /// ****注意里面参数统一首字母小写*****
     /// </summary>
-    public class Options
+    public class Params
     {
-        public string treeCode { get; set; }
-        public string treeName { get; set; }
-        public string treeParentCode { get; set; }
-        public int? parentMenuId { get; set; }
-        public string sortField { get; set; }
-        public string sortType { get; set; }
+        public string TreeCode { get; set; }
+        public string TreeName { get; set; }
+        public string TreeParentCode { get; set; }
+        public int? ParentMenuId { get; set; }
+        public string SortField { get; set; }
+        public string SortType { get; set; }
         /// <summary>
         /// 额外参数字符串
         /// </summary>
-        public string checkedBtn { get; set; }
-        public string permissionPrefix { get; set; }
+        public string CheckedBtn { get; set; }
+        public string PermissionPrefix { get; set; }
     }
     public class GenTableColumnDto
     {
@@ -56,6 +57,7 @@ namespace ZR.Model.System.Dto
         public bool IsEdit { get; set; }
         public bool IsList { get; set; }
         public bool IsQuery { get; set; }
+        public bool IsSort { get; set; }
         public bool IsRequired { get; set; }
         /// <summary>
         /// 显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）

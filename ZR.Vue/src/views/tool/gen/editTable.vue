@@ -171,7 +171,7 @@ export default {
         getGenTable(tableId).then((res) => {
           this.loading = false
           this.columns = res.data.info.columns
-          this.info = res.data.info
+          this.info = { ...res.data.info, ...res.data.info.options }
           this.tables = res.data.tables // 子表
         })
         /** 查询字典下拉列表 */
@@ -201,7 +201,7 @@ export default {
             parentMenuId: genTable.parentMenuId,
             sortField: genTable.sortField,
             sortType: genTable.sortType,
-            checkedBtn: genTable.checkedBtn.toString(),
+            checkedBtn: genTable.checkedBtn,
             permissionPrefix: genTable.permissionPrefix,
           }
           console.log('genForm', genTable)

@@ -82,7 +82,8 @@ namespace ZR.Repository.System
                     it.Update_time,
                     it.DictType,
                     it.Update_by,
-                    it.Remark
+                    it.Remark,
+                    it.IsSort
                 })
                 .ExecuteCommand();
         }

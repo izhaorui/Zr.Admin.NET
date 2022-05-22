@@ -88,7 +88,7 @@ $end
       highlight-current-row
       @selection-change="handleSelectionChange"
       :default-expand-all="isExpandAll"
-      row-key="${tool.FirstLowerCase(genTable.TreeCode)}"
+      row-key="${tool.FirstLowerCase(genTable.Options.TreeCode)}"
       :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
     >
       <el-table-column type="selection" width="50" align="center"/>

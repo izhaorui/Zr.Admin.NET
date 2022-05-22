@@ -72,37 +72,38 @@ namespace ZR.Model.System.Generate
         /// <summary>
         /// 其他生成选项
         /// </summary>
-        public string Options { get; set; }
-
+        [SqlSugar.SugarColumn(IsJson = true)]
+        public Options Options { get; set; }
+        
         #region 表额外字段
         /** 表列信息 */
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public List<GenTableColumn> Columns { get; set; }
 
         //以下 Options扩展字段
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public object ParentMenuId { get; set; }
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public object SortType { get; set; } = "asc";
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public object ParentMenuId { get; set; }
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public object SortType { get; set; } = "asc";
 
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public object SortField { get; set; } = string.Empty;
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public object SortField { get; set; } = string.Empty;
 
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public object TreeCode { get; set; } = string.Empty;
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public object TreeCode { get; set; } = string.Empty;
 
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public object TreeName { get; set; } = string.Empty;
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public object TreeName { get; set; } = string.Empty;
 
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public object TreeParentCode { get; set; }
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public string PermissionPrefix { get; set; }
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public object TreeParentCode { get; set; }
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public string PermissionPrefix { get; set; }
         /// <summary>
         /// 生成的按钮功能
         /// </summary>
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public int[] CheckedBtn { get; set; } = new int[] { 1, 2, 3 };
+        //[SqlSugar.SugarColumn(IsIgnore = true)]
+        //public int[] CheckedBtn { get; set; } = new int[] { 1, 2, 3 };
 
         /// <summary>
         /// 字表信息
@@ -110,5 +111,20 @@ namespace ZR.Model.System.Generate
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public GenTable SubTable { get; set; }
         #endregion
+    }
+
+    public class Options 
+    {
+        public long ParentMenuId { get; set; } = 0;
+        public string SortType { get; set; } = "asc";
+        public string SortField { get; set; } = string.Empty;
+        public string TreeCode { get; set; } = string.Empty;
+        public string TreeName { get; set; } = string.Empty;
+        public string TreeParentCode { get; set; } = string.Empty;
+        public string PermissionPrefix { get; set; }= string.Empty;
+        /// <summary>
+        /// 额外参数字符串
+        /// </summary>
+        public int[] CheckedBtn { get; set; } = new int[] { 1, 2, 3 };
     }
 }

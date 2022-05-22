@@ -124,7 +124,7 @@ $elseif(column.HtmlType == "imageUpload")
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio")
-      <el-table-column prop="${columnName}" label="${labelName}" align="center">
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr}>
         <template #default="scope">
 $if(column.HtmlType == "checkbox")
           <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
@@ -134,7 +134,7 @@ $end
         </template>
       </el-table-column>
 $else
-      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml} />
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml}${column.sortStr} />
 $end
 $end
 $end

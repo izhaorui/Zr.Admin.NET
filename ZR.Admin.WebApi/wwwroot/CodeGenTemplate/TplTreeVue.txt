@@ -38,7 +38,7 @@ $end
 
     <!-- 数据区域 -->
     <el-table v-if="refreshTable" :data="dataList" v-loading="loading" ref="table" border highlight-current-row @selection-change="handleSelectionChange"
-      :default-expand-all="isExpandAll" row-key="${tool.FirstLowerCase(genTable.TreeCode)}" :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+      :default-expand-all="isExpandAll" row-key="${tool.FirstLowerCase(genTable.Options.TreeCode)}" :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column type="selection" width="50" align="center"/>
 ${VueViewListContent}
       <el-table-column label="操作" align="center" width="140">
@@ -204,8 +204,8 @@ $end
         delete node.children;
       }
       return {
-        id: node.${tool.FirstLowerCase(genTable.TreeCode)},
-        label: node.${tool.FirstLowerCase(genTable.TreeName)},
+        id: node.${tool.FirstLowerCase(genTable.Options.TreeCode)},
+        label: node.${tool.FirstLowerCase(genTable.Options.TreeName)},
         children: node.children,
       };
     },

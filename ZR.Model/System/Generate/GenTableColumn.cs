@@ -71,6 +71,10 @@ namespace ZR.Model.System.Generate
         /// </summary>
         public bool IsQuery { get; set; }
         /// <summary>
+        /// 是否排序（1是）
+        /// </summary>
+        public bool IsSort { get; set; }
+        /// <summary>
         /// 显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）
         /// </summary>
         public string HtmlType { get; set; }
@@ -95,15 +99,22 @@ namespace ZR.Model.System.Generate
             }
         }
         /// <summary>
+        /// 前端排序字符串
+        /// </summary>
+        [SugarColumn(IsIgnore = true)]
+        public string SortStr
+        {
+            get
+            {
+                return IsSort ? " sortable" : "";
+            }
+        }
+        /// <summary>
         /// C# 字段名 首字母小写，用于前端
         /// </summary>
         [SugarColumn(IsIgnore = true)]
         public string CsharpFieldFl { get; set; }
-        /// <summary>
-        /// 字典集合
-        /// </summary>
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public List<SysDictData> DictDatas { get; set; }
+
         #endregion
     }
 }

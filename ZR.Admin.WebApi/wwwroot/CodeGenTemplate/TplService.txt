@@ -56,8 +56,8 @@ $end
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
                 .Includes(it => it.Sub.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
 $end
-$if(genTable.SortField != "" && genTable.SortField != null)
-                .OrderBy("${genTable.SortField} ${genTable.SortType}")
+$if(genTable.Options.SortField != "" && genTable.Options.SortField != null)
+                .OrderBy("${genTable.Options.SortField} ${genTable.Options.SortType}")
 $end
                 .Where(predicate.ToExpression())
                 .ToPage(parm);
@@ -88,7 +88,7 @@ $end
 $end
 
             var response = _${replaceDto.ModelTypeName}Repository.Queryable().Where(predicate.ToExpression())
-                .ToTree(it => it.Children, it => it.${genTable.TreeParentCode}, 0);
+                .ToTree(it => it.Children, it => it.${genTable.Options.TreeParentCode}, 0);
 
             return response;
         }

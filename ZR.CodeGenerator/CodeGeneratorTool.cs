@@ -46,12 +46,12 @@ namespace ZR.CodeGenerator
             string PKType = "int";
             ReplaceDto replaceDto = new();
             replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
-            replaceDto.PermissionPrefix = dto.GenTable.PermissionPrefix;
+            replaceDto.PermissionPrefix = dto.GenTable?.Options?.PermissionPrefix;
             replaceDto.Author = dto.GenTable.FunctionAuthor;
-            replaceDto.ShowBtnAdd = dto.GenTable.CheckedBtn.Any(f => f == 1);
-            replaceDto.ShowBtnEdit = dto.GenTable.CheckedBtn.Any(f => f == 2);
-            replaceDto.ShowBtnDelete = dto.GenTable.CheckedBtn.Any(f => f == 3);
-            replaceDto.ShowBtnExport = dto.GenTable.CheckedBtn.Any(f => f == 4);
+            replaceDto.ShowBtnAdd = dto.GenTable.Options.CheckedBtn.Any(f => f == 1);
+            replaceDto.ShowBtnEdit = dto.GenTable.Options.CheckedBtn.Any(f => f == 2);
+            replaceDto.ShowBtnDelete = dto.GenTable.Options.CheckedBtn.Any(f => f == 3);
+            replaceDto.ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4);
 
 
             //循环表字段信息
@@ -219,9 +219,9 @@ namespace ZR.CodeGenerator
             };
             fileName = Path.Combine("v3", fileName);
             var tpl = FileHelper.ReadJtTemplate(fileName);
-            tpl.Set("treeCode", generateDto.GenTable?.TreeCode?.ToString()?.FirstLowerCase());
-            tpl.Set("treeName", generateDto.GenTable.TreeName?.ToString()?.FirstLowerCase());
-            tpl.Set("treeParentCode", generateDto.GenTable.TreeParentCode?.ToString()?.FirstLowerCase());
+            tpl.Set("treeCode", generateDto.GenTable?.Options?.TreeCode?.FirstLowerCase());
+            tpl.Set("treeName", generateDto.GenTable?.Options?.TreeName?.FirstLowerCase());
+            tpl.Set("treeParentCode", generateDto.GenTable?.Options?.TreeParentCode?.FirstLowerCase());
 
             var result = tpl.Render();
             var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
@@ -273,7 +273,7 @@ namespace ZR.CodeGenerator
                     break;
             }
             var tpl = FileHelper.ReadJtTemplate($"{tempName}.txt");
-            tpl.Set("parentId", generateDto.GenTable.ParentMenuId ?? 0);
+            tpl.Set("parentId", generateDto.GenTable?.Options?.ParentMenuId ?? 0);
             var result = tpl.Render();
             string fullPath = Path.Combine(generateDto.GenCodePath, "sql", generateDto.GenTable.BusinessName + ".sql");
 
@@ -423,7 +423,14 @@ namespace ZR.CodeGenerator
                 TableComment = desc,
                 FunctionName = desc,
                 Create_by = userName,
+                Options = new Options()
+                {
+                    SortType = "asc",
+                    CheckedBtn = new int[] { 1, 2, 3 }
+                }
             };
+            genTable.Options.PermissionPrefix = $"{genTable.ModuleName.ToLower()}:{genTable.ClassName.ToLower()}";//权限
+
             return genTable;
         }
 
@@ -561,7 +568,7 @@ namespace ZR.CodeGenerator
         }
         public static bool CheckTree(GenTable genTable, string csharpField)
         {
-            return (genTable.TplCategory.Equals("tree", StringComparison.OrdinalIgnoreCase) && genTable.TreeParentCode != null && csharpField.Equals(genTable.TreeParentCode));
+            return (genTable.TplCategory.Equals("tree", StringComparison.OrdinalIgnoreCase) && genTable?.Options?.TreeParentCode != null && csharpField.Equals(genTable?.Options?.TreeParentCode));
         }
         #endregion
     }

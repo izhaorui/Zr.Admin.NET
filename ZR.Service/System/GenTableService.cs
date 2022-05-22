@@ -56,14 +56,9 @@ namespace ZR.Service.System
         public GenTable GetGenTableInfo(long tableId)
         {
             var info = GenTableRepository.GetId(tableId);
-            SetTableFromOptions(info);
             if (info != null && !info.SubTableName.IsEmpty())
             {
                 info.SubTable = GenTableRepository.Queryable().Where(f => f.SubTableName == info.TableName).First();
-                if (info?.SubTable != null)
-                {
-                    SetTableFromOptions(info?.SubTable);
-                }
             }
             return info;
         }
@@ -84,31 +79,31 @@ namespace ZR.Service.System
         private void SetTableFromOptions(GenTable genTable)
         {
             //附加参数，key，value格式
-            if (!string.IsNullOrEmpty(genTable?.Options))
-            {
-                Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTable.Options);
-                if (options == null) return;
+            //if (!string.IsNullOrEmpty(genTable?.Options))
+            //{
+            //    Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTable.Options);
+            //    if (options == null) return;
 
-                genTable.ParentMenuId = options.GetValueOrDefault("parentMenuId") ?? null;
+            //    genTable.ParentMenuId = options.GetValueOrDefault("parentMenuId") ?? null;
 
-                genTable.SortType = options.GetValueOrDefault("sortType") ?? "asc";
-                genTable.SortField = options.GetValueOrDefault("sortField") ?? "";
+            //    genTable.SortType = options.GetValueOrDefault("sortType") ?? "asc";
+            //    genTable.SortField = options.GetValueOrDefault("sortField") ?? "";
 
-                genTable.TreeParentCode = options.GetValueOrDefault("treeParentCode") ?? "";
-                genTable.TreeName = options.GetValueOrDefault("treeName") ?? "";
-                genTable.TreeCode = options.GetValueOrDefault("treeCode") ?? "";
+            //    genTable.TreeParentCode = options.GetValueOrDefault("treeParentCode") ?? "";
+            //    genTable.TreeName = options.GetValueOrDefault("treeName") ?? "";
+            //    genTable.TreeCode = options.GetValueOrDefault("treeCode") ?? "";
 
-                var checkdBtn = options.GetValueOrDefault("checkedBtn") ?? "";
-                genTable.CheckedBtn = Tools.SpitIntArrary(checkdBtn.ToString());
+            //    var checkdBtn = options.GetValueOrDefault("checkedBtn") ?? "";
+            //    genTable.CheckedBtn = Tools.SpitIntArrary(checkdBtn.ToString());
 
-                var permPrefix = options.GetValueOrDefault("permissionPrefix", "");
+            //    var permPrefix = options.GetValueOrDefault("permissionPrefix", "");
 
-                genTable.PermissionPrefix = permPrefix?.ToString();
-            }
-            if (genTable.PermissionPrefix.IsEmpty())
-            {
-                genTable.PermissionPrefix = $"{genTable.ModuleName.ToLower()}:{genTable.ClassName.ToLower()}";//权限
-            }
+            //    genTable.PermissionPrefix = permPrefix?.ToString();
+            //}
+            //if (genTable?.Options?.PermissionPrefix.IsEmpty())
+            //{
+            //    genTable?.Options?.PermissionPrefix = $"{genTable.ModuleName.ToLower()}:{genTable.ClassName.ToLower()}";//权限
+            //}
         }
 
         /// <summary>
