@@ -114,6 +114,17 @@ namespace ZR.Model.System.Generate
         /// </summary>
         [SugarColumn(IsIgnore = true)]
         public string CsharpFieldFl { get; set; }
+        /// <summary>
+        /// 前端 只读字段
+        /// </summary>
+        [SugarColumn(IsIgnore = true)]
+        public string DisabledStr
+        {
+            get
+            {
+                return (((!IsInsert && !IsEdit) || IsPk) && !IsRequired) ? " :disabled=\"true\"" : "";
+            }
+        }
 
         #endregion
     }

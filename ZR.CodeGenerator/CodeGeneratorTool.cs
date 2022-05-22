@@ -222,6 +222,7 @@ namespace ZR.CodeGenerator
             tpl.Set("treeCode", generateDto.GenTable?.Options?.TreeCode?.FirstLowerCase());
             tpl.Set("treeName", generateDto.GenTable?.Options?.TreeName?.FirstLowerCase());
             tpl.Set("treeParentCode", generateDto.GenTable?.Options?.TreeParentCode?.FirstLowerCase());
+            tpl.Set("options", generateDto.GenTable?.Options);
 
             var result = tpl.Render();
             var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");

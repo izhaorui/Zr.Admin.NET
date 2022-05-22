@@ -80,31 +80,6 @@ namespace ZR.Model.System.Generate
         [SqlSugar.SugarColumn(IsIgnore = true)]
         public List<GenTableColumn> Columns { get; set; }
 
-        //以下 Options扩展字段
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public object ParentMenuId { get; set; }
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public object SortType { get; set; } = "asc";
-
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public object SortField { get; set; } = string.Empty;
-
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public object TreeCode { get; set; } = string.Empty;
-
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public object TreeName { get; set; } = string.Empty;
-
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public object TreeParentCode { get; set; }
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public string PermissionPrefix { get; set; }
-        /// <summary>
-        /// 生成的按钮功能
-        /// </summary>
-        //[SqlSugar.SugarColumn(IsIgnore = true)]
-        //public int[] CheckedBtn { get; set; } = new int[] { 1, 2, 3 };
-
         /// <summary>
         /// 字表信息
         /// </summary>
@@ -126,5 +101,9 @@ namespace ZR.Model.System.Generate
         /// 额外参数字符串
         /// </summary>
         public int[] CheckedBtn { get; set; } = new int[] { 1, 2, 3 };
+        /// <summary>
+        /// 列大小 12,24
+        /// </summary>
+        public int ColNum { get; set; } = 12;
     }
 }
