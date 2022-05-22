@@ -83,6 +83,7 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 16. 参数管理：对系统动态配置常用参数。
 17. 发送邮件：可以对多个用户进行发送邮件
 18. 账号注册：可以注册账号登录系统。
+19. 国际化：支持静态、后端动态配置国际化。目前只支持中、英、繁体
 
 ## 🍻项目结构
 
@@ -138,6 +139,9 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 	<tr>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/19.jpeg"/></td>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/20.jpeg"/></td>
+	</tr>
+	<tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/22.png"/></td>
 	</tr>
 </table>
 
