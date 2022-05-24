@@ -14,6 +14,7 @@ namespace ZR.Service.System.IService
         List<SysMenu> SelectTreeMenuList(MenuQueryDto menu, long userId);
 
         SysMenu GetMenuByMenuId(int menuId);
+        List<SysMenu> GetMenusByMenuId(int menuId);
         int AddMenu(SysMenu menu);
 
         int EditMenu(SysMenu menu);

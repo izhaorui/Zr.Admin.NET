@@ -18,7 +18,7 @@ namespace ZR.Model
         public DateTime LoginTime { get; set; }
         public string UserIP { get; set; }
 
-        public OnlineUsers(string clientid, string name, long? userid, string? userip)
+        public OnlineUsers(string clientid, string name, long? userid, string userip)
         {
             ConnnectionId = clientid;
             Name = name;

@@ -80,6 +80,7 @@ namespace ZR.Model.System.Dto
         public string Visible { get; set; }
         public string Status { get; set; }
         public string MenuTypeIds { get; set; } = string.Empty;
+        public int? ParentId { get; set; }
         public string[] MenuTypeIdArr
         {
             get

@@ -22,12 +22,6 @@ namespace ZR.Model.System
         public string MenuName { get; set; }
 
         /// <summary>
-        /// 父菜单名称
-        /// </summary>
-        [SqlSugar.SugarColumn(IsIgnore = true)]
-        public string parentName { get; set; }
-
-        /// <summary>
         /// 父菜单ID
         /// </summary>
         public long parentId { get; set; }
@@ -90,5 +84,21 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(IsIgnore = true)]
         public List<SysMenu> children { get; set; } = new List<SysMenu>();
+        /// <summary>
+        /// 子菜单个数
+        /// </summary>
+        [SugarColumn(IsIgnore = true)]
+        public int SubNum { get; set; }
+        /// <summary>
+        /// 是否包含子节点，前端用
+        /// </summary>
+        [SugarColumn(IsIgnore = true)]
+        public bool HasChildren
+        {
+            get
+            {
+                return SubNum > 0 || children.Count > 0;
+            }
+        }
     }
 }
