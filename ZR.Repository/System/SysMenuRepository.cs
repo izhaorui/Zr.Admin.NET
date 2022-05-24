@@ -18,12 +18,13 @@ namespace ZR.Repository.System
         /// 获取所有菜单（菜单管理）
         /// </summary>
         /// <returns></returns>
-        public List<SysMenu> SelectTreeMenuList(SysMenu menu)
+        public List<SysMenu> SelectTreeMenuList(MenuQueryDto menu)
         {
             return Context.Queryable<SysMenu>()
                 .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(menu.visible), it => it.visible == menu.visible)
-                .WhereIF(!string.IsNullOrEmpty(menu.status), it => it.status == menu.status)
+                .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.visible == menu.Visible)
+                .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.status == menu.Status)
+
                 .OrderBy(it => new { it.parentId, it.orderNum })
                 .ToTree(it => it.children, it => it.parentId, 0);
         }
@@ -34,7 +35,7 @@ namespace ZR.Repository.System
         /// <param name="sysMenu"></param>
         /// <param name="roles">用户角色集合</param>
         /// <returns></returns>
-        public List<SysMenu> SelectTreeMenuListByUserId(SysMenu sysMenu, List<long> roles)
+        public List<SysMenu> SelectTreeMenuListByUserId(MenuQueryDto sysMenu, List<long> roles)
         {
             var roleMenus = Context.Queryable<SysRoleMenu>()
                 .Where(r => roles.Contains(r.Role_id));
@@ -42,8 +43,8 @@ namespace ZR.Repository.System
             return Context.Queryable<SysMenu>()
                 .InnerJoin(roleMenus, (c, j) => c.MenuId == j.Menu_id)
                 .WhereIF(!string.IsNullOrEmpty(sysMenu.MenuName), (c, j) => c.MenuName.Contains(sysMenu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.visible), (c, j) => c.visible == sysMenu.visible)
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.status), (c, j) => c.status == sysMenu.status)
+                .WhereIF(!string.IsNullOrEmpty(sysMenu.Visible), (c, j) => c.visible == sysMenu.Visible)
+                .WhereIF(!string.IsNullOrEmpty(sysMenu.Status), (c, j) => c.status == sysMenu.Status)
                 .OrderBy((c, j) => new { c.parentId, c.orderNum })
                 .Select(c => c)
                 .ToTree(it => it.children, it => it.parentId, 0);
@@ -53,12 +54,12 @@ namespace ZR.Repository.System
         /// 获取所有菜单
         /// </summary>
         /// <returns></returns>
-        public List<SysMenu> SelectMenuList(SysMenu menu)
+        public List<SysMenu> SelectMenuList(MenuQueryDto menu)
         {
             return Context.Queryable<SysMenu>()
                 .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(menu.visible), it => it.visible == menu.visible)
-                .WhereIF(!string.IsNullOrEmpty(menu.status), it => it.status == menu.status)
+                .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.visible == menu.Visible)
+                .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.status == menu.Status)
                 .OrderBy(it => new { it.parentId, it.orderNum })
                 .ToList();
         }
@@ -69,7 +70,7 @@ namespace ZR.Repository.System
         /// <param name="sysMenu"></param>
         /// <param name="roles">用户角色集合</param>
         /// <returns></returns>
-        public List<SysMenu> SelectMenuListByRoles(SysMenu sysMenu, List<long> roles)
+        public List<SysMenu> SelectMenuListByRoles(MenuQueryDto sysMenu, List<long> roles)
         {
             var roleMenus = Context.Queryable<SysRoleMenu>()
                 .Where(r => roles.Contains(r.Role_id));
@@ -78,7 +79,7 @@ namespace ZR.Repository.System
                 .InnerJoin(roleMenus, (c, j) => c.MenuId == j.Menu_id)
                 .Where((c, j) => c.status == "0")
                 .WhereIF(!string.IsNullOrEmpty(sysMenu.MenuName), (c, j) => c.MenuName.Contains(sysMenu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.visible), (c, j) => c.visible == sysMenu.visible)
+                .WhereIF(!string.IsNullOrEmpty(sysMenu.Visible), (c, j) => c.visible == sysMenu.Visible)
                 .OrderBy((c, j) => new { c.parentId, c.orderNum })
                 .Select(c => c)
                 .ToList();
@@ -111,7 +112,7 @@ namespace ZR.Repository.System
                 .Where((menu) =>
                 menuTypes.Contains(menu.menuType)
                     && menu.status == "0"
-                    && SqlFunc.Subqueryable<SysRoleMenu>().Where( s => roleIds.Contains(s.Role_id) && s.Menu_id == menu.MenuId).Any())
+                    && SqlFunc.Subqueryable<SysRoleMenu>().Where(s => roleIds.Contains(s.Role_id) && s.Menu_id == menu.MenuId).Any())
                 .OrderBy((menu) => new { menu.parentId, menu.orderNum })
                 .Select((menu) => menu).ToList();
         }

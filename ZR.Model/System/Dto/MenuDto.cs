@@ -73,4 +73,19 @@ namespace ZR.Model.System.Dto
         /// </summary>
         public string MenuNameKey { get; set; }
     }
+
+    public class MenuQueryDto
+    {
+        public string MenuName { get; set; }
+        public string Visible { get; set; }
+        public string Status { get; set; }
+        public string MenuTypeIds { get; set; } = string.Empty;
+        public string[] MenuTypeIdArr
+        {
+            get
+            {
+                return MenuTypeIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            }
+        }
+    }
 }

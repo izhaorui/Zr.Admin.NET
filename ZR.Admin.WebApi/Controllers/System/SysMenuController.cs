@@ -36,7 +36,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "system:menu:list")]
         [HttpGet("list")]
-        public IActionResult TreeMenuList([FromQuery] SysMenu menu)
+        public IActionResult TreeMenuList([FromQuery] MenuQueryDto menu)
         {
             long userId = HttpContext.GetUId();
             return SUCCESS(sysMenuService.SelectTreeMenuList(menu, userId), "yyyy-MM-dd HH:mm:ss");
@@ -62,7 +62,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult TreeSelect()
         {
             long userId = HttpContext.GetUId();
-            var list = sysMenuService.SelectMenuList(new SysMenu(), userId).FindAll(f => f.visible == "0");
+            var list = sysMenuService.SelectMenuList(new MenuQueryDto(), userId).FindAll(f => f.visible == "0");
             var treeMenus = sysMenuService.BuildMenuTreeSelect(list);
 
             return SUCCESS(treeMenus);
@@ -78,7 +78,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult RoleMenuTreeselect(int roleId)
         {
             long userId = HttpContext.GetUId();
-            var menus = sysMenuService.SelectMenuList(new SysMenu(), userId);
+            var menus = sysMenuService.SelectMenuList(new MenuQueryDto(), userId);
             var checkedKeys = sysRoleService.SelectUserRoleMenus(roleId);
             return SUCCESS(new
             {
