@@ -31,7 +31,7 @@ namespace ZR.Service
         /// 获取所有菜单数（菜单管理）
         /// </summary>
         /// <returns></returns>
-        public List<SysMenu> SelectTreeMenuList(SysMenu menu, long userId)
+        public List<SysMenu> SelectTreeMenuList(MenuQueryDto menu, long userId)
         {
             List<SysMenu> menuList;
             if (SysRoleService.IsAdmin(userId))
@@ -50,7 +50,7 @@ namespace ZR.Service
         /// 获取所有菜单列表
         /// </summary>
         /// <returns></returns>
-        public List<SysMenu> SelectMenuList(SysMenu menu, long userId)
+        public List<SysMenu> SelectMenuList(MenuQueryDto menu, long userId)
         {
             List<SysMenu> menuList;
             if (SysRoleService.IsAdmin(userId))

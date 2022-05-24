@@ -9,8 +9,8 @@ namespace ZR.Service.System.IService
     {
         //List<SysMenu> SelectMenuList(long userId);
 
-        List<SysMenu> SelectMenuList(SysMenu menu, long userId);
-        List<SysMenu> SelectTreeMenuList(SysMenu menu, long userId);
+        List<SysMenu> SelectMenuList(MenuQueryDto menu, long userId);
+        List<SysMenu> SelectTreeMenuList(MenuQueryDto menu, long userId);
 
         SysMenu GetMenuByMenuId(int menuId);
         int AddMenu(SysMenu menu);
