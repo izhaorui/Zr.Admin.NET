@@ -16,13 +16,15 @@ namespace ZR.Admin.WebApi.Hubs
         public long? Userid { get; set; }
         public string Name { get; set; }
         public DateTime LoginTime { get; set; }
-        
-        public OnlineUsers(string clientid, string name, long? userid)
+        public string UserIP { get; set; }
+
+        public OnlineUsers(string clientid, string name, long? userid, string? userip)
         {
             ConnnectionId = clientid;
             Name = name;
             LoginTime = DateTime.Now;
             Userid = userid;
+            UserIP = userip;
         }
     }
 }

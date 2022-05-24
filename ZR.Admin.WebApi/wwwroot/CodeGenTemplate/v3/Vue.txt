@@ -124,7 +124,7 @@ $elseif(column.HtmlType == "imageUpload")
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio")
-      <el-table-column prop="${columnName}" label="${labelName}" align="center">
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr}>
         <template #default="scope">
 $if(column.HtmlType == "checkbox")
           <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
@@ -134,11 +134,10 @@ $end
         </template>
       </el-table-column>
 $else
-      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml} />
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml}${column.sortStr} />
 $end
 $end
 $end
-
       <el-table-column label="操作" align="center" width="140">
         <template #default="scope">
 $if(replaceDto.ShowBtnEdit)
@@ -160,7 +159,6 @@ $end
         <el-row :gutter="20">
 $foreach(column in genTable.Columns)
 $set(labelName = "")
-$set(labelDisabled = "")
 $set(columnName = column.CsharpFieldFl)
 $set(value = "item.dictValue")
 $if(column.ColumnComment != "")
@@ -168,19 +166,12 @@ $set(labelName = column.ColumnComment)
 $else
 $set(labelName = column.CsharpFieldFl)
 $end
-$if(column.IsPk == true)
-$set(labelDisabled = ":disabled=true")
-$end
 $if(column.CsharpType == "int" || column.CsharpType == "long")
     $set(value = "parseInt(item.dictValue)")
 $end
 
-$if(column.IsInsert == false && column.IsEdit == false)
-          <el-col :lg="12" v-if="opertype == 2">
-            <el-form-item label="${labelName}">{{form.${columnName}}}</el-form-item>
-          </el-col>
-$elseif(column.IsPK || column.IsIncrement)
-          <el-col :lg="12">
+$if(column.IsPK || column.IsIncrement)
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
 $if(column.IsIncrement == false)
               <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" :disabled="title=='修改数据'"/>
@@ -191,15 +182,15 @@ $end
           </el-col>
 $else
 $if(column.HtmlType == "inputNumber")
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" ${labelDisabled}/>
+              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" ${column.DisabledStr}/>
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "datetime")
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-date-picker v-model="form.${columnName}" type="datetime" placeholder="选择日期时间"></el-date-picker>
+              <el-date-picker v-model="form.${columnName}" type="datetime" placeholder="选择日期时间"${column.DisabledStr}></el-date-picker>
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "imageUpload")
@@ -215,9 +206,9 @@ $elseif(column.HtmlType == "fileUpload")
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "radio")
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-radio-group v-model="form.${columnName}">
+              <el-radio-group v-model="form.${columnName}"${column.DisabledStr}>
                 <el-radio v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
               </el-radio-group>
             </el-form-item>
@@ -225,7 +216,7 @@ $elseif(column.HtmlType == "radio")
 $elseif(column.HtmlType == "textarea")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-input type="textarea" v-model="form.${columnName}" placeholder="请输入${labelName}"/>
+              <el-input type="textarea" v-model="form.${columnName}" placeholder="请输入${labelName}"${column.DisabledStr}/>
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "editor")
@@ -235,9 +226,9 @@ $elseif(column.HtmlType == "editor")
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "select")
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-select v-model="form.${columnName}" placeholder="请选择${labelName}">
+              <el-select v-model="form.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
                 <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
               </el-select>
             </el-form-item>
@@ -245,15 +236,15 @@ $elseif(column.HtmlType == "select")
 $elseif(column.HtmlType == "checkbox")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-checkbox-group v-model="form.${columnName}Checked">
+              <el-checkbox-group v-model="form.${columnName}Checked"${column.DisabledStr}>
                 <el-checkbox v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-col>
 $else
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-input v-model="form.${columnName}" placeholder="请输入${labelName}" ${labelDisabled}/>
+              <el-input v-model="form.${columnName}" placeholder="请输入${labelName}" ${column.DisabledStr}/>
             </el-form-item>
           </el-col>
 $end
@@ -262,10 +253,8 @@ $end
         </el-row>
       </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button type="text" @click="cancel">{{ ${t}t('btn.cancel') }}</el-button>
-          <el-button type="primary" @click="submitForm">{{ ${t}t('btn.submit') }}</el-button>
-        </div>
+        <el-button text @click="cancel">{{ ${t}t('btn.cancel') }}</el-button>
+        <el-button type="primary" @click="submitForm">{{ ${t}t('btn.submit') }}</el-button>
       </template>
     </el-dialog>
 

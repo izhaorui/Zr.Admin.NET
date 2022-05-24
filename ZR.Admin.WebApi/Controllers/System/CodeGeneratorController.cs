@@ -204,7 +204,7 @@ namespace ZR.Admin.WebApi.Controllers
             var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
 
             //将前端额外参数转成字符串存入Options中
-            genTable.Options = JsonConvert.SerializeObject(genTableDto.Params);
+            genTable.Options = genTableDto.Params.Adapt<Options>();
             DbResult<bool> result = GenTableService.UseTran(() =>
             {
                 int rows = GenTableService.UpdateGenTable(genTable);

@@ -9,9 +9,9 @@
       </el-tab-pane>
       <el-tab-pane label="字段信息" name="cloum">
         <el-table ref="dragTable" v-loading="loading" :data="columns" row-key="columnId" min-height="150px" :max-height="tableHeight">
-          <el-table-column label="序号" type="index" class-name="allowDrag" />
-          <el-table-column label="字段列名" prop="columnName" :show-overflow-tooltip="true" />
-          <el-table-column label="字段描述">
+          <el-table-column label="序号" type="index" class-name="allowDrag" fixed />
+          <el-table-column label="字段列名" prop="columnName" :show-overflow-tooltip="true" fixed />
+          <el-table-column label="字段描述" fixed>
             <template slot-scope="scope">
               <el-input v-model="scope.row.columnComment" :ref="scope.row.columnId" @keydown.native="nextFocus(scope.row, scope.$index, $event)">
               </el-input>
@@ -76,7 +76,7 @@
               <el-checkbox v-model="scope.row.isRequired"></el-checkbox>
             </template>
           </el-table-column>
-          <el-table-column label="表单显示类型">
+          <el-table-column label="表单显示类型" width="120">
             <template slot-scope="scope">
               <el-select v-model="scope.row.htmlType">
                 <el-option label="文本框" value="input" />
@@ -93,7 +93,7 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="字典类型">
+          <el-table-column label="字典类型" min-width="100">
             <template slot-scope="scope">
               <el-select
                 v-model="scope.row.dictType"
@@ -107,6 +107,11 @@
                   <span style="float: right; color: #8492a6; font-size: 13px">{{ dict.dictType }}</span>
                 </el-option>
               </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="备注" align="center" width="200">
+            <template slot-scope="scope">
+              <el-input v-model="scope.row.remark"> </el-input>
             </template>
           </el-table-column>
         </el-table>
@@ -166,7 +171,7 @@ export default {
         getGenTable(tableId).then((res) => {
           this.loading = false
           this.columns = res.data.info.columns
-          this.info = res.data.info
+          this.info = { ...res.data.info, ...res.data.info.options }
           this.tables = res.data.tables // 子表
         })
         /** 查询字典下拉列表 */
@@ -196,7 +201,7 @@ export default {
             parentMenuId: genTable.parentMenuId,
             sortField: genTable.sortField,
             sortType: genTable.sortType,
-            checkedBtn: genTable.checkedBtn.toString(),
+            checkedBtn: genTable.checkedBtn,
             permissionPrefix: genTable.permissionPrefix,
           }
           console.log('genForm', genTable)

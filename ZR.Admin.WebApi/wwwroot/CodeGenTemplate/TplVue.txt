@@ -156,8 +156,7 @@ $end
 $foreach(column in genTable.Columns)
 $if(column.IsRequired && column.IsIncrement == false)
         ${column.CsharpFieldFl}: [
-          { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
-$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }
+          { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end }
         ],
 $end
 $end
