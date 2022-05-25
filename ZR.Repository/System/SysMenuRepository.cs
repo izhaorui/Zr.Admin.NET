@@ -24,7 +24,7 @@ namespace ZR.Repository.System
                 .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
                 .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.visible == menu.Visible)
                 .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.status == menu.Status)
-
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuTypeIds), it => menu.MenuTypeIdArr.Contains(it.menuType))
                 .OrderBy(it => new { it.parentId, it.orderNum })
                 .ToTree(it => it.children, it => it.parentId, 0);
         }
@@ -32,19 +32,20 @@ namespace ZR.Repository.System
         /// <summary>
         /// 根据用户查询系统菜单列表（菜单管理）
         /// </summary>
-        /// <param name="sysMenu"></param>
+        /// <param name="menu"></param>
         /// <param name="roles">用户角色集合</param>
         /// <returns></returns>
-        public List<SysMenu> SelectTreeMenuListByUserId(MenuQueryDto sysMenu, List<long> roles)
+        public List<SysMenu> SelectTreeMenuListByRoles(MenuQueryDto menu, List<long> roles)
         {
             var roleMenus = Context.Queryable<SysRoleMenu>()
                 .Where(r => roles.Contains(r.Role_id));
 
             return Context.Queryable<SysMenu>()
                 .InnerJoin(roleMenus, (c, j) => c.MenuId == j.Menu_id)
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.MenuName), (c, j) => c.MenuName.Contains(sysMenu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.Visible), (c, j) => c.visible == sysMenu.Visible)
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.Status), (c, j) => c.status == sysMenu.Status)
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuName), (c, j) => c.MenuName.Contains(menu.MenuName))
+                .WhereIF(!string.IsNullOrEmpty(menu.Visible), (c, j) => c.visible == menu.Visible)
+                .WhereIF(!string.IsNullOrEmpty(menu.Status), (c, j) => c.status == menu.Status)
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuTypeIds), c => menu.MenuTypeIdArr.Contains(c.menuType))
                 .OrderBy((c, j) => new { c.parentId, c.orderNum })
                 .Select(c => c)
                 .ToTree(it => it.children, it => it.parentId, 0);
@@ -60,6 +61,7 @@ namespace ZR.Repository.System
                 .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
                 .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.visible == menu.Visible)
                 .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.status == menu.Status)
+                .WhereIF(menu.ParentId != null, it => it.parentId == menu.ParentId)
                 .OrderBy(it => new { it.parentId, it.orderNum })
                 .ToList();
         }
@@ -87,35 +89,22 @@ namespace ZR.Repository.System
 
         #region 左侧菜单树
 
-        /// <summary>
-        /// 管理员获取左侧菜单树
-        /// </summary>
-        /// <returns></returns>
-        public List<SysMenu> SelectMenuTreeAll()
-        {
-            var menuTypes = new string[] { "M", "C" };
-
-            return Context.Queryable<SysMenu>()
-                .Where(f => f.status == "0" && menuTypes.Contains(f.menuType))
-                .OrderBy(it => new { it.parentId, it.orderNum }).ToList();
-        }
-
-        /// <summary>
-        /// 根据用户角色获取左侧菜单树
-        /// </summary>
-        /// <param name="roleIds"></param>
-        /// <returns></returns>
-        public List<SysMenu> SelectMenuTreeByRoleIds(List<long> roleIds)
-        {
-            var menuTypes = new string[] { "M", "C" };
-            return Context.Queryable<SysMenu>()
-                .Where((menu) =>
-                menuTypes.Contains(menu.menuType)
-                    && menu.status == "0"
-                    && SqlFunc.Subqueryable<SysRoleMenu>().Where(s => roleIds.Contains(s.Role_id) && s.Menu_id == menu.MenuId).Any())
-                .OrderBy((menu) => new { menu.parentId, menu.orderNum })
-                .Select((menu) => menu).ToList();
-        }
+        ///// <summary>
+        ///// 根据用户角色获取左侧菜单树
+        ///// </summary>
+        ///// <param name="roleIds"></param>
+        ///// <returns></returns>
+        //public List<SysMenu> SelectMenuTreeByRoleIds(List<long> roleIds)
+        //{
+        //    var menuTypes = new string[] { "M", "C" };
+        //    return Context.Queryable<SysMenu>()
+        //        .Where((menu) =>
+        //        menuTypes.Contains(menu.menuType)
+        //            && menu.status == "0"
+        //            && SqlFunc.Subqueryable<SysRoleMenu>().Where(s => roleIds.Contains(s.Role_id) && s.Menu_id == menu.MenuId).Any())
+        //        .OrderBy((menu) => new { menu.parentId, menu.orderNum })
+        //        .Select((menu) => menu).ToList();
+        //}
 
         #endregion
 

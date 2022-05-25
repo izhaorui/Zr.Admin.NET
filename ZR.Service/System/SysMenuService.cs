@@ -41,7 +41,7 @@ namespace ZR.Service
             else
             {
                 var userRoles = SysRoleService.SelectUserRoles(userId);
-                menuList = MenuRepository.SelectTreeMenuListByUserId(menu, userRoles);
+                menuList = MenuRepository.SelectTreeMenuListByRoles(menu, userRoles);
             }
             return menuList;
         }
@@ -73,6 +73,21 @@ namespace ZR.Service
         public SysMenu GetMenuByMenuId(int menuId)
         {
             return MenuRepository.SelectMenuById(menuId);
+        }
+
+        /// <summary>
+        /// 根据菜单id获取菜单列表
+        /// </summary>
+        /// <param name="menuId"></param>
+        /// <returns></returns>
+        public List<SysMenu> GetMenusByMenuId(int menuId)
+        {
+            var list = MenuRepository.GetList(f => f.parentId == menuId).OrderBy(f => f.orderNum).ToList();
+            Context.ThenMapper(list, item =>
+            {
+                item.SubNum = Context.Queryable<SysMenu>().SetContext(x => x.parentId, () => item.MenuId, item).Count();
+            });
+            return list;
         }
 
         /// <summary>
@@ -154,17 +169,19 @@ namespace ZR.Service
         /// <returns></returns>
         public List<SysMenu> SelectMenuTreeByUserId(long userId)
         {
-            List<SysMenu> menus;
+            MenuQueryDto dto = new() { Status = "0", MenuTypeIds = "M,C" };
+            //List<SysMenu> menus;
             if (SysRoleService.IsAdmin(userId))
             {
-                menus = MenuRepository.SelectMenuTreeAll();
+                return MenuRepository.SelectTreeMenuList(dto);
             }
             else
             {
                 List<long> roleIds = SysRoleService.SelectUserRoles(userId);
-                menus = MenuRepository.SelectMenuTreeByRoleIds(roleIds);
+                //menus = MenuRepository.SelectMenuTreeByRoleIds(roleIds);
+                return MenuRepository.SelectTreeMenuListByRoles(dto, roleIds);
             }
-            return GetChildPerms(menus, 0);
+            //return GetChildPerms(menus, 0);
         }
 
         /// <summary>
@@ -205,25 +222,25 @@ namespace ZR.Service
 
         #region 方法
 
-        /// <summary>
-        /// 根据父节点的ID获取所有子节点
-        /// </summary>
-        /// <param name="list">分类表</param>
-        /// <param name="parentId">传入的父节点ID</param>
-        /// <returns></returns>
-        public List<SysMenu> GetChildPerms(List<SysMenu> list, int parentId)
-        {
-            List<SysMenu> returnList = new List<SysMenu>();
-            var data = list.FindAll(f => f.parentId == parentId);
+        ///// <summary>
+        ///// 根据父节点的ID获取所有子节点
+        ///// </summary>
+        ///// <param name="list">分类表</param>
+        ///// <param name="parentId">传入的父节点ID</param>
+        ///// <returns></returns>
+        //public List<SysMenu> GetChildPerms(List<SysMenu> list, int parentId)
+        //{
+        //    List<SysMenu> returnList = new List<SysMenu>();
+        //    var data = list.FindAll(f => f.parentId == parentId);
 
-            foreach (var item in data)
-            {
-                RecursionFn(list, item);
+        //    foreach (var item in data)
+        //    {
+        //        RecursionFn(list, item);
 
-                returnList.Add(item);
-            }
-            return returnList;
-        }
+        //        returnList.Add(item);
+        //    }
+        //    return returnList;
+        //}
 
         /// <summary>
         /// 递归列表
