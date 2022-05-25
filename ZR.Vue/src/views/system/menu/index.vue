@@ -25,7 +25,11 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-if="refreshTable" v-loading="loading" :data="menuList" :default-expand-all="isExpandAll" row-key="menuId" border
+    <el-table v-if="refreshTable" v-loading="loading" :data="menuList" :default-expand-all="isExpandAll"
+      row-key="menuId"
+      border
+      lazy
+      :load="loadMenu"
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column prop="menuName" label="菜单名称" :show-overflow-tooltip="true" width="160"></el-table-column>
       <el-table-column prop="icon" label="图标" align="center" width="80">
@@ -217,6 +221,7 @@ import {
   addMenu,
   changeMenuSort,
   updateMenu,
+  listMenuById
 } from "@/api/system/menu";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
@@ -228,7 +233,7 @@ export default {
   data() {
     return {
       // 遮罩层
-      loading: true,
+      loading: false,
       // 显示搜索条件
       showSearch: true,
       // 菜单表格树数据
@@ -274,13 +279,16 @@ export default {
     };
   },
   created() {
-    this.getList();
+    // this.getList();
     this.getDicts("sys_show_hide").then((response) => {
       this.visibleOptions = response.data;
     });
     this.getDicts("sys_normal_disable").then((response) => {
       this.statusOptions = response.data;
     });
+    listMenuById(0).then((response) => {
+      this.menuList = response.data
+    })
   },
   methods: {
     // 选择图标
@@ -309,7 +317,7 @@ export default {
     },
     /** 查询菜单下拉树结构 */
     getTreeselect() {
-      listMenu().then((response) => {
+      listMenu({ menuTypeIds: 'M,C,F' }).then((response) => {
         this.menuOptions = [];
         const menu = { menuId: 0, menuName: "根菜单", children: [] };
 				menu.children = response.data;
@@ -453,6 +461,11 @@ export default {
         this.refreshTable = true;
       });
     },
+    loadMenu (row, treeNode, resolve) {
+      listMenuById(row.menuId).then((res) => {
+        resolve(res.data)
+      })
+    }
   },
 };
 </script>
