@@ -77,16 +77,24 @@ namespace Infrastructure
                 var driv = DriveInfo.GetDrives();
                 foreach (var item in driv)
                 {
-                    var obj = new DiskInfo()
+                    try
                     {
-                        DiskName = item.Name,
-                        TypeName = item.DriveType.ToString(),
-                        TotalSize = item.TotalSize / 1024 / 1024 / 1024,
-                        AvailableFreeSpace = item.AvailableFreeSpace / 1024 / 1024 / 1024,
-                    };
-                    obj.Used = obj.TotalSize - obj.AvailableFreeSpace;
-                    obj.AvailablePercent = decimal.Ceiling(obj.Used / (decimal)obj.TotalSize * 100);
-                    diskInfos.Add(obj);
+                        var obj = new DiskInfo()
+                        {
+                            DiskName = item.Name,
+                            TypeName = item.DriveType.ToString(),
+                            TotalSize = item.TotalSize / 1024 / 1024 / 1024,
+                            AvailableFreeSpace = item.AvailableFreeSpace / 1024 / 1024 / 1024,
+                        };
+                        obj.Used = obj.TotalSize - obj.AvailableFreeSpace;
+                        obj.AvailablePercent = decimal.Ceiling(obj.Used / (decimal)obj.TotalSize * 100);
+                        diskInfos.Add(obj);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("获取磁盘信息出错了" + ex.Message);
+                        continue;
+                    }
                 }
             }
 

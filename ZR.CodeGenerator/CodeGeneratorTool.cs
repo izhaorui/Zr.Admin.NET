@@ -38,8 +38,12 @@ namespace ZR.CodeGenerator
             _option.ServicesNamespace = _option.BaseNamespace + "Service";
             _option.ApiControllerNamespace = _option.BaseNamespace + "Admin.WebApi";
 
+            var vuePath = AppSettings.GetConfig("gen:vuePath");
             dto.VueParentPath = dto.VueVersion == 3 ? "ZRAdmin-vue" : "ZR.Vue";
-
+            if (!vuePath.IsEmpty())
+            {
+                dto.VueParentPath = vuePath;
+            }
             dto.GenOptions = _option;
 
             string PKName = "Id";
@@ -52,6 +56,7 @@ namespace ZR.CodeGenerator
             replaceDto.ShowBtnEdit = dto.GenTable.Options.CheckedBtn.Any(f => f == 2);
             replaceDto.ShowBtnDelete = dto.GenTable.Options.CheckedBtn.Any(f => f == 3);
             replaceDto.ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4);
+            replaceDto.ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5);
 
 
             //循环表字段信息
