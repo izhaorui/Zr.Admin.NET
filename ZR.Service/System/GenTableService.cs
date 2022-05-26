@@ -73,40 +73,6 @@ namespace ZR.Service.System
         }
 
         /// <summary>
-        /// 设置代码生成其他参数
-        /// </summary>
-        /// <param name="genTable"></param>
-        private void SetTableFromOptions(GenTable genTable)
-        {
-            //附加参数，key，value格式
-            //if (!string.IsNullOrEmpty(genTable?.Options))
-            //{
-            //    Dictionary<string, object> options = JsonConvert.DeserializeObject<Dictionary<string, object>>(genTable.Options);
-            //    if (options == null) return;
-
-            //    genTable.ParentMenuId = options.GetValueOrDefault("parentMenuId") ?? null;
-
-            //    genTable.SortType = options.GetValueOrDefault("sortType") ?? "asc";
-            //    genTable.SortField = options.GetValueOrDefault("sortField") ?? "";
-
-            //    genTable.TreeParentCode = options.GetValueOrDefault("treeParentCode") ?? "";
-            //    genTable.TreeName = options.GetValueOrDefault("treeName") ?? "";
-            //    genTable.TreeCode = options.GetValueOrDefault("treeCode") ?? "";
-
-            //    var checkdBtn = options.GetValueOrDefault("checkedBtn") ?? "";
-            //    genTable.CheckedBtn = Tools.SpitIntArrary(checkdBtn.ToString());
-
-            //    var permPrefix = options.GetValueOrDefault("permissionPrefix", "");
-
-            //    genTable.PermissionPrefix = permPrefix?.ToString();
-            //}
-            //if (genTable?.Options?.PermissionPrefix.IsEmpty())
-            //{
-            //    genTable?.Options?.PermissionPrefix = $"{genTable.ModuleName.ToLower()}:{genTable.ClassName.ToLower()}";//权限
-            //}
-        }
-
-        /// <summary>
         /// 查询代码生成表信息
         /// </summary>
         /// <param name="genTable"></param>
