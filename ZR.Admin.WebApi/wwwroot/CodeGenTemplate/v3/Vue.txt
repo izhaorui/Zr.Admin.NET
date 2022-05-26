@@ -7,7 +7,7 @@
  * @LastEditTime: (${replaceDto.AddTime})
 -->
 <template>
-  <div class="app-container">
+  <div>
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" @submit.prevent>
 $foreach(column in genTable.Columns)
@@ -17,12 +17,12 @@ $set(numLabel = "")
 $if(column.IsQuery == true)
 $set(columnName = column.CsharpFieldFl)
 $if(column.ColumnComment != "")
-	$set(labelName = column.ColumnComment)
+$set(labelName = column.ColumnComment)
 $else
-	$set(labelName = column.CsharpFieldFl)
+$set(labelName = column.CsharpFieldFl)
 $end
 $if(column.CsharpType == "int" || column.CsharpType == "long")
-    $set(numLabel = ".number")
+$set(numLabel = ".number")
 $end
 $if(column.HtmlType == "datetime")
       <el-form-item label="$labelName">
@@ -35,15 +35,20 @@ $if(column.HtmlType == "datetime")
           end-placeholder="结束日期" 
           placeholder="请选择$labelName"
           value-format="YYYY-MM-DD HH:mm:ss"
-          :shortcuts="dateOptions"
-        >
+          :shortcuts="dateOptions">
         </el-date-picker>
       </el-form-item>
-$elseif(column.HtmlType == "select" || column.HtmlType == "radio")
+$elseif(column.HtmlType == "select")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
           <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
         </el-select>
+      </el-form-item>
+$elseif(column.HtmlType == "radio")
+      <el-form-item label="${labelName}" prop="${columnName}">
+        <el-radio-group v-model="queryParams.${columnName}">
+          <el-radio v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-radio>
+        </el-radio-group>
       </el-form-item>
 $else
       <el-form-item label="${labelName}" prop="${columnName}">
@@ -181,7 +186,7 @@ $end
             </el-form-item>
           </el-col>
 $else
-$if(column.HtmlType == "inputNumber")
+$if(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" ${column.DisabledStr}/>
@@ -393,6 +398,16 @@ function cancel(){
 
 // 重置表单
 function reset() {
+  form.value = {
+$foreach(item in genTable.Columns)
+$if((item.IsEdit || item.IsInsert))
+    $item.CsharpFieldFl: undefined,
+$end
+$if((item.HtmlType == "checkbox"))
+    ${item.CsharpFieldFl}Checked: [],
+$end
+$end
+  };
   proxy.resetForm("formRef")
 }
 
