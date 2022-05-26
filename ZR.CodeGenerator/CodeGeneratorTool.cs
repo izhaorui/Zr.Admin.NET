@@ -38,8 +38,12 @@ namespace ZR.CodeGenerator
             _option.ServicesNamespace = _option.BaseNamespace + "Service";
             _option.ApiControllerNamespace = _option.BaseNamespace + "Admin.WebApi";
 
+            var vuePath = AppSettings.GetConfig("gen:vuePath");
             dto.VueParentPath = dto.VueVersion == 3 ? "ZRAdmin-vue" : "ZR.Vue";
-
+            if (!vuePath.IsEmpty())
+            {
+                dto.VueParentPath = vuePath;
+            }
             dto.GenOptions = _option;
 
             string PKName = "Id";
