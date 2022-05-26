@@ -38,7 +38,7 @@ $if(column.HtmlType == "datetime")
           :shortcuts="dateOptions">
         </el-date-picker>
       </el-form-item>
-$elseif(column.HtmlType == "select")
+$elseif(column.HtmlType == "select" || column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
           <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
@@ -117,7 +117,11 @@ $if(column.HtmlType == "customInput" && column.IsPk == false)
       <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center">
         <template #default="scope">
           <span v-show="editIndex != scope.$${index}index" @click="editCurrRow(scope.$${index}index)">{{scope.row.${columnName}}}</span>
-          <el-input :id="scope.$${index}index" v-show="(editIndex == scope.$${index}index)" v-model="scope.row.${columnName}" @blur="handleChangeSort(scope.row)"></el-input>
+          <el-input
+            :ref="setColumnsRef"
+            v-show="(editIndex == scope.$${index}index)" 
+            v-model="scope.row.${columnName}" 
+            @blur="handleChangeSort(scope.row)"></el-input>
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "imageUpload")
@@ -143,15 +147,16 @@ $else
 $end
 $end
 $end
-      <el-table-column label="操作" align="center" width="140">
+      <el-table-column label="操作" align="center" width="160">
         <template #default="scope">
+$if(replaceDto.ShowBtnView)
+          <el-button type="primary" icon="view" @click="handlePreview(scope.row)"></el-button>
+$end
 $if(replaceDto.ShowBtnEdit)
-          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" type="success" icon="edit" title="编辑" 
-            @click="handleUpdate(scope.row)"></el-button>      
+          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" type="success" icon="edit" title="编辑" @click="handleUpdate(scope.row)"></el-button>
 $end
 $if(replaceDto.ShowBtnDelete)
-          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="delete" title="删除" 
-            @click="handleDelete(scope.row)"></el-button>
+          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="delete" title="删除" @click="handleDelete(scope.row)"></el-button>
 $end
         </template>
       </el-table-column>
@@ -257,7 +262,7 @@ $end
 $end
         </el-row>
       </el-form>
-      <template #footer>
+      <template #footer v-if="opertype != 3">
         <el-button text @click="cancel">{{ ${t}t('btn.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm">{{ ${t}t('btn.submit') }}</el-button>
       </template>
@@ -330,12 +335,19 @@ const dateRange${item.CsharpField} = ref([])
 $elseif(item.HtmlType == "customInput")
 // ******************自定义编辑 start **********************
 const editIndex = ref(-1)
+// 动态ref设置值
+const columnRefs = ref([])
+const setColumnsRef = (el) => {
+  if (el) {
+    columnRefs.value.push(el)
+  }
+}
 // 显示编辑排序
-function editCurrRow(rowId) {
-  editIndex.value = rowId
+function editCurrRow(index) {
+  editIndex.value = index
 
   setTimeout(() => {
-    document.getElementById(rowId).focus()
+    columnRefs.value[index].focus()
   }, 100)
 }
 // 保存排序
@@ -516,7 +528,18 @@ function handleExport() {
     })
 }
 $end
-
+$if(replaceDto.ShowBtnView)
+/**
+ * 预览
+ * @param {*} row
+ */
+function handlePreview(row) {
+  open.value = true
+  title.value = '预览'
+  opertype.value = 3
+  form.value = row
+}
+$end
 // 多选框选中数据
 function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.${replaceDto.FistLowerPk});

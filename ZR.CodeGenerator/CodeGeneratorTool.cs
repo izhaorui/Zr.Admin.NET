@@ -56,6 +56,7 @@ namespace ZR.CodeGenerator
             replaceDto.ShowBtnEdit = dto.GenTable.Options.CheckedBtn.Any(f => f == 2);
             replaceDto.ShowBtnDelete = dto.GenTable.Options.CheckedBtn.Any(f => f == 3);
             replaceDto.ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4);
+            replaceDto.ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5);
 
 
             //循环表字段信息
