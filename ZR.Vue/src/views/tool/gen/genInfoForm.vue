@@ -71,14 +71,19 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <treeselect
-            :append-to-body="true"
+          <el-cascader
+            class="w100"
+            :options="menuOptions"
+            :props="{ checkStrictly: true, value: 'menuId', label: 'menuName', emitPath: false }"
+            placeholder="请选择上级菜单"
+            clearable
             v-model="info.parentMenuId"
-            :options="menus"
-            :normalizer="normalizer"
-            :show-count="true"
-            placeholder="请选择系统菜单"
-          />
+          >
+            <template #default="{ node, data }">
+              <span>{{ data.menuName }}</span>
+              <span v-if="!node.isLeaf"> ({{ data.children.length }}) </span>
+            </template>
+          </el-cascader>
         </el-form-item>
       </el-col>
       <el-col :lg="12">
@@ -251,12 +256,10 @@
 </template>
 <script>
 import { queryColumnInfo } from '@/api/tool/gen'
-import Treeselect from '@riophae/vue-treeselect'
-import '@riophae/vue-treeselect/dist/vue-treeselect.css'
+import { listMenu } from '@/api/system/menu'
 
 export default {
   name: 'BasicInfoForm',
-  components: { Treeselect },
   props: {
     info: {
       type: Object,
@@ -279,6 +282,7 @@ export default {
   },
   data() {
     return {
+      menuOptions: [],
       checkedBtn: [],
       subColumns: [],
       rules: {
@@ -359,6 +363,16 @@ export default {
         }
       }
     },
+    /** 查询菜单下拉树结构 */
+    getMenuTreeselect() {
+      /** 查询菜单下拉列表 */
+      listMenu({ menuTypeIds: 'M,C' }).then((response) => {
+        this.menuOptions = response.data
+      })
+    },
+  },
+  mounted() {
+    this.getMenuTreeselect()
   },
 }
 </script>
