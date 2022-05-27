@@ -11,10 +11,6 @@
 * 本项目适合有一定NetCore和 vue基础的开发人员
 * 基于.NET5/.NET6实现的通用权限管理平台（RBAC模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
 * 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让web开发更快速、简单高效（从此告别996），解决70%的重复工作，专注您的业务，轻松开发从现在开始！
-* 前端采用vue2.x/vue3.x、Element UI、vite。
-* 后端采用Net5/Net6、Sqlsugar、MySQL等，可以自动分库分表。
-* 权限认证使用Jwt，支持多终端认证系统。
-* 支持加载动态权限菜单，多方式轻松权限控制
 * 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
 * 七牛云通用云产品优惠券：[点我进入](https://s.qiniu.com/FzEfay)。
 * 腾讯云秒杀场：[点我进入](https://curl.qcloud.com/4yEoRquq)。
@@ -26,7 +22,7 @@
 
 ## 🍿在线体验
 - 官方文档：http://www.izhaorui.cn/doc
-- vue3.x版本体验：http://www.izhaorui.cn/vue-next-admin
+- vue3.x版本体验：http://www.izhaorui.cn/Vue3
 - vue2.x版本体验：http://www.izhaorui.cn/admin
 - 账号密码：admin/123456
 
@@ -35,16 +31,17 @@
 由于是个人项目，资金有限，体验服是低配，请大家爱惜，轻戳，不胜感激！！！
 ```
 ## 💒代码仓库
-- [【Gitee】 vue2+后端代码](https://gitee.com/izory/ZrAdminNetCore/)
-- [【Github】vue2+后端代码](https://github.com/izhaorui/ZrAdmin.NET/)
-- [【NET6版本】](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/)
-- [【Gitee】vue3地址](https://gitee.com/izory/ZRAdmin-vue)
+| 仓库        | Github                                                           | Gitee                                                            |
+| ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Vue2 + Net5 | [克隆/下载](https://github.com/izhaorui/ZrAdmin.NET)             | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/)             |
+| Vue2 + Net6 | [克隆/下载](https://github.com/izhaorui/ZrAdmin.NET/tree/net6.0) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/) |
+| Vue3        | [克隆/下载](https://github.com/izhaorui/ZRAdminVue)              | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)   
 
 ## 🍁前端技术
-Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios 和 element-ui/element plus，前端采用vscode工具开发
+Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios、 element-ui、echats、i18n国际化等，前端采用vscode工具开发
 
 ## 🍀后端技术
-- 核心框架：.Net5.0/.Net6.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit
+- 核心框架：.Net5.0/.Net6.0 + Web API + sqlsugar orm + swagger + signalR + IpRateLimit + Quartz.net + Redis
 
 - 定时计划任务：Quartz.Net组件，支持执行程序集或者http网络请求
 
@@ -56,10 +53,13 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 
 - 接口限流：支持接口限流，避免恶意请求导致服务层压力过大
 
-- 代码生成：高效率开发，代码生成器可以一键生成所有代码
+- 代码生成：高效率开发，代码生成器可以一键生成所有前后端代码
 
 - 数据字典：支持数据字典，可以方便对一些状态进行管理
 
+- 分库分表：使用orm sqlsugar可以很轻松的实现分库分库性能优越
+
+- 多 租 户：支持多租户功能
 
 
 ## 🍖内置功能
@@ -88,13 +88,13 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 ## 🍻项目结构
 
 ```
-- ZR.Service[服务层类库]：提供WebApi接口调用；
-- ZR.Repository[仓库层类库]：方便提供有执行存储过程的操作；
-- ZR.Model[实体层类库]，提供项目中的数据库表、数据传输对象；
-- ZR.Admin.WebApi[webapi接口]：为Vue版或其他三方系统提供接口服务。
-- ZR.Vue[前端UI]：vue版本UI层。
-- ZR.Tasks[定时任务类库]：提供项目定时任务实现功能；
-- ZR.CodeGenerator[代码生成功能]，包含代码生成的模板、方法、代码生成的下载。
+├─ZR.Service             			->[服务层类库]：提供WebApi接口调用；
+├─ZR.Repository                     ->[仓库层类库]：方便提供有执行存储过程的操作；
+├─ZR.Model                			->[实体层类库]：提供项目中的数据库表、数据传输对象；
+├─ZR.Admin.WebApi               	->[webapi接口]：为Vue版或其他三方系统提供接口服务。
+├─ZR.Tasks               			->[定时任务类库]：提供项目定时任务实现功能；
+├─ZR.CodeGenerator               	->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
+├─ZR.Vue               				->[前端UI]：vue2.0版本UI层。
 ```
 
 ## 🍎演示图
@@ -159,10 +159,10 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 - 👉vue-element-admin：[vue-element-admin](https://github.com/PanJiaChen/vue-element-admin)
 
 ## 🎀捐赠
-如果这个项目对您有所帮助，请扫下方二维码就当打发要饭的吧。
+如果你觉得这个项目帮助到了你，你可以请作者喝杯咖啡表示鼓励 ☕️
 <img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/pay.jpg"/>
 
-## 使用说明
+## 🔧使用说明
 如果部署iis访问不了情况可以有以下两种办法：
 1. 直接打开ZR.Admin.WebApi.exe文件然后看控制台的错误日志
 2. web.config里面有个false 改为 true，iis重启项目后运行网站后，跟目录下面 有个文件夹 log 里面有错误日志文件
