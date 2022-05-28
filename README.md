@@ -22,7 +22,7 @@
 
 ## 🍿在线体验
 - 官方文档：http://www.izhaorui.cn/doc
-- vue3.x版本体验：http://www.izhaorui.cn/Vue3
+- vue3.x版本体验：http://www.izhaorui.cn/vue3
 - vue2.x版本体验：http://www.izhaorui.cn/admin
 - 账号密码：admin/123456
 
@@ -41,25 +41,17 @@
 Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios、 element-ui、echats、i18n国际化等，前端采用vscode工具开发
 
 ## 🍀后端技术
-- 核心框架：.Net5.0/.Net6.0 + Web API + sqlsugar orm + swagger + signalR + IpRateLimit + Quartz.net + Redis
-
+- 核心框架：.Net5.0/.Net6.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
 - 定时计划任务：Quartz.Net组件，支持执行程序集或者http网络请求
-
 - 安全支持：过滤器(数据权限过滤)、Sql注入、请求伪造
-
 - 日志管理：NLog、登录日志、操作日志、定时任务日志
-
 - 工具类：验证码、丰富公共功能
-
 - 接口限流：支持接口限流，避免恶意请求导致服务层压力过大
-
 - 代码生成：高效率开发，代码生成器可以一键生成所有前后端代码
-
 - 数据字典：支持数据字典，可以方便对一些状态进行管理
-
 - 分库分表：使用orm sqlsugar可以很轻松的实现分库分库性能优越
-
 - 多 租 户：支持多租户功能
+- 缓存数据：内置内存缓存和Redis
 
 
 ## 🍖内置功能
@@ -70,20 +62,20 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 4. 菜单管理：配置系统菜单，操作权限，按钮权限标识等。
 5. 角色管理：角色菜单权限分配。
 6. 字典管理：对系统中经常使用的一些较为固定的数据进行维护。
-6. 操作日志：系统正常操作日志记录和查询；系统异常信息日志记录和查询。
-7. 登录日志：系统登录日志记录查询包含登录异常。
-8. 系统接口：使用swagger生成相关api接口文档。
-9. 服务监控：监视当前系统CPU、内存、磁盘、堆栈等相关信息。
-10. 在线构建器：拖动表单元素生成相应的VUE代码。
-11. 任务系统：基于Quartz.NET，可以在线（添加、修改、删除、手动执行)任务调度包含执行结果日志。
-12. 文章管理：可以写文章记录。
-13. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、SQL文件等)，支持下载，自定义配置前端展示控件、让开发更快捷高效。
-14. 文件管理：可以进行上传文件管理，目前支持上传到本地、阿里云
-15. 通知管理：系统通知公告信息发布维护，使用signalr实现对用户实时通知。
-16. 参数管理：对系统动态配置常用参数。
-17. 发送邮件：可以对多个用户进行发送邮件
-18. 账号注册：可以注册账号登录系统。
-19. 国际化：支持静态、后端动态配置国际化。目前只支持中、英、繁体
+7. 操作日志：系统正常操作日志记录和查询；系统异常信息日志记录和查询。
+8. 登录日志：系统登录日志记录查询包含登录异常。
+9. 系统接口：使用 swagger 生成相关 api 接口文档。
+10. 服务监控：监视当前系统 CPU、内存、磁盘、堆栈等相关信息。
+11. 在线构建器：拖动表单元素生成相应的 VUE 代码。
+12. 任务系统：基于 Quartz.NET，可以在线（添加、修改、删除、手动执行)任务调度包含执行结果日志。
+13. 文章管理：可以写文章记录。
+14. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、sql等)支持下载，自定义配置前端展示控件、让开发更快捷高效。
+15. 参数管理：对系统动态配置常用参数。
+16. 发送邮件：可以对多个用户进行发送邮件。
+17. 文件管理：可以进行上传文件管理，目前支持上传到本地、阿里云。
+18. 通知管理：系统通知公告信息发布维护，使用 signalr 实现对用户实时通知。
+19. 账号注册：可以注册账号登录系统。
+20. 多语言管理：支持静态、后端动态配置国际化。目前只支持中、英、繁体
 
 ## 🍻项目结构
 
@@ -122,7 +114,7 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
     </tr>
 	<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/11.png"/></td>
-        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/12.jpeg"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/12.png"/></td>
     </tr>
 	<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/13.png"/></td>
@@ -133,15 +125,12 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/16.png"/></td>
     </tr>
 	<tr>
-        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/17.jpeg"/></td>
-				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/18.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/17.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/18.png"/></td>
     </tr>
 	<tr>
-		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/19.jpeg"/></td>
-		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/20.jpeg"/></td>
-	</tr>
-	<tr>
-		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/22.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/19.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/20.png"/></td>
 	</tr>
 </table>
 
