@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
+using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -94,7 +95,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost()]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public async Task<IActionResult> UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "uploads", StoreType storeType = StoreType.LOCAL)
+        public async Task<IActionResult> UploadFile([FromForm(Name = "file")] IFormFile formFile, string fileName = "", string fileDir = "", StoreType storeType = StoreType.LOCAL)
         {
             if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             SysFile file = new();
@@ -109,8 +110,12 @@ namespace ZR.Admin.WebApi.Controllers
             switch (storeType)
             {
                 case StoreType.LOCAL:
-                    file = await SysFileService.SaveFileToLocal(WebHostEnvironment.WebRootPath, fileName, fileDir, HttpContext.GetName(), formFile);
-
+                    string savePath = AppSettings.App(new string[] { "Upload", "localSavePath" });
+                    if (savePath.IsEmpty())
+                    {
+                        savePath = Path.Combine(WebHostEnvironment.WebRootPath, "uploads");
+                    }
+                    file = await SysFileService.SaveFileToLocal(savePath, fileName, fileDir, HttpContext.GetName(), formFile);
                     break;
                 case StoreType.ALIYUN:
                     if ((fileSize / 1024) > MaxContentLength)

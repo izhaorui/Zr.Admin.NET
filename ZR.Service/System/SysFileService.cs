@@ -34,12 +34,17 @@ namespace ZR.Service.System
         /// <summary>
         /// 存储本地
         /// </summary>
+        /// <param name="fileDir">存储文件夹</param>
+        /// <param name="rootPath">存储根目录</param>
+        /// <param name="fileName">自定文件名</param>
+        /// <param name="formFile">上传的文件流</param>
+        /// <param name="userName"></param>
         /// <returns></returns>
         public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
         {
             string fileExt = Path.GetExtension(formFile.FileName);
             fileName = (fileName.IsEmpty() ? HashFileName() : fileName) + fileExt;
-            fileDir = fileDir.IsEmpty() ? "uploads" : fileDir;
+            
             string filePath = GetdirPath(fileDir);
             string finalFilePath = Path.Combine(rootPath, filePath, fileName);
             double fileSize = Math.Round(formFile.Length / 1024.0, 2);
@@ -51,7 +56,7 @@ namespace ZR.Service.System
 
             using (var stream = new FileStream(finalFilePath, FileMode.Create))
             {
-                await formFile.CopyToAsync(stream);//await 不能少
+                await formFile.CopyToAsync(stream);
             }
             string uploadUrl = SysConfigService.GetSysConfigByKey("sys.file.uploadUrl")?.ConfigValue ?? OptionsSetting.Upload.UploadUrl;
             string accessPath = string.Concat(uploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
@@ -59,7 +64,7 @@ namespace ZR.Service.System
             {
                 StoreType = (int)Infrastructure.Enums.StoreType.LOCAL,
                 FileType = formFile.ContentType,
-                FileUrl = finalFilePath,
+                FileUrl = finalFilePath.Replace("\\", "/"),
                 AccessUrl = accessPath
             };
             file.Id = await InsertFile(file);
