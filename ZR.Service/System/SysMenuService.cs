@@ -171,7 +171,6 @@ namespace ZR.Service
         public List<SysMenu> SelectMenuTreeByUserId(long userId)
         {
             MenuQueryDto dto = new() { Status = "0", MenuTypeIds = "M,C" };
-            //List<SysMenu> menus;
             if (SysRoleService.IsAdmin(userId))
             {
                 return MenuRepository.SelectTreeMenuList(dto);
@@ -179,10 +178,8 @@ namespace ZR.Service
             else
             {
                 List<long> roleIds = SysRoleService.SelectUserRoles(userId);
-                //menus = MenuRepository.SelectMenuTreeByRoleIds(roleIds);
                 return MenuRepository.SelectTreeMenuListByRoles(dto, roleIds);
             }
-            //return GetChildPerms(menus, 0);
         }
 
         /// <summary>

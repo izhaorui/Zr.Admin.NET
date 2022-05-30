@@ -54,20 +54,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             return SUCCESS(sysMenuService.GetMenuByMenuId(menuId), "yyyy-MM-dd HH:mm:ss");
         }
 
-        ///// <summary>
-        ///// 获取菜单下拉树列表(分配角色所需菜单)
-        ///// </summary>
-        ///// <returns></returns>
-        //[HttpGet("treeSelect")]
-        //public IActionResult TreeSelect()
-        //{
-        //    long userId = HttpContext.GetUId();
-        //    var list = sysMenuService.SelectMenuList(new MenuQueryDto(), userId).FindAll(f => f.visible == "0");
-        //    var treeMenus = sysMenuService.BuildMenuTreeSelect(list);
-
-        //    return SUCCESS(treeMenus);
-        //}
-
         /// <summary>
         /// 根据菜单编号获取菜单列表，菜单管理首次进入
         /// </summary>
