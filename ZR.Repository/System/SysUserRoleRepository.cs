@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Extensions;
 using SqlSugar;
 using System.Collections.Generic;
 using ZR.Model;
@@ -102,12 +103,9 @@ namespace ZR.Repository.System
         {
             var query = Context.Queryable<SysUser>()
                 .Where(it => it.DelFlag == "0")
-                .Where(it => SqlFunc.Subqueryable<SysUserRole>()
-                .Where(s => s.UserId == it.UserId && s.RoleId == roleUserQueryDto.RoleId).NotAny());
-            if (!string.IsNullOrEmpty(roleUserQueryDto.UserName))
-            {
-                query = query.Where(x => x.UserName.Contains(roleUserQueryDto.UserName));
-            }
+                .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == it.UserId && s.RoleId == roleUserQueryDto.RoleId).NotAny())
+                .WhereIF(roleUserQueryDto.UserName.IsNotEmpty(), it => it.UserName.Contains(roleUserQueryDto.UserName));
+
             return query.ToPage(roleUserQueryDto);
         }
     }

@@ -1,9 +1,4 @@
 ﻿//using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Extensions
 {
@@ -20,7 +15,10 @@ namespace Infrastructure.Extensions
                 return true;
             }
         }
-
+        public static bool IsNotEmpty(this object value)
+        {
+            return !IsEmpty(value);
+        }
         public static bool IsNullOrZero(this object value)
         {
             if (value == null || value.ParseToString().Trim() == "0")
