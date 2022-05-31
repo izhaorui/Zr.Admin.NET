@@ -33,7 +33,7 @@
 ## 💒代码仓库
 | 仓库        | Github                                                           | Gitee                                                            |
 | ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Vue2 + Net5 | [克隆/下载](https://github.com/izhaorui/ZrAdmin.NET)             | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/)             |
+| Vue2 + Net5 |                                                                  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/)             |
 | Vue2 + Net6 | [克隆/下载](https://github.com/izhaorui/ZrAdmin.NET/tree/net6.0) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/) |
 | Vue3        | [克隆/下载](https://github.com/izhaorui/ZRAdminVue)              | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)   
 
