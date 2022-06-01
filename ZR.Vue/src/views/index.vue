@@ -36,7 +36,7 @@
         <p>
           <b>当前版本:</b> <span>v{{ version }}</span>
           <el-link class="ml10" type="primary" size="mini" icon="el-icon-document" plain
-            @click="goTarget('http://www.izhaorui.cn/doc/#/changelog?id=v' + version)">更新日志
+            @click="goTarget('http://www.izhaorui.cn/doc/changelog.html#' + version)">更新日志
           </el-link>
         </p>
         <p>
