@@ -27,7 +27,7 @@ namespace ZR.Admin.WebApi.Extensions
         public static void AddDb(IConfiguration Configuration)
         {
             string connStr = Configuration.GetConnectionString("conn_db");
-            int dbType = Convert.ToInt32(Configuration["conn_db_dbtype"]);
+            int dbType = Convert.ToInt32(Configuration.GetConnectionString("conn_db_type"));
 
             SugarIocServices.AddSqlSugar(new List<IocConfig>() {
                    new IocConfig() {

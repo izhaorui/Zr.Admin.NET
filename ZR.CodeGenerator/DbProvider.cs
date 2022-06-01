@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Extensions;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -28,8 +29,16 @@ namespace ZR.CodeGenerator
 
             if (!string.IsNullOrEmpty(dbName))
             {
-                string replaceStr = GetValue(connStr, "database=", ";");
-                connStr = connStr.Replace(replaceStr, dbName);
+                string replaceStr = GetValue(connStr, "Database=", ";");
+                string replaceStr2 = GetValue(connStr, "Initial Catalog=", ";");
+                if (replaceStr.IsNotEmpty())
+                {
+                    connStr = connStr.Replace(replaceStr, dbName, StringComparison.OrdinalIgnoreCase);
+                }
+                if (replaceStr2.IsNotEmpty())
+                {
+                    connStr = connStr.Replace(replaceStr2, dbName, StringComparison.OrdinalIgnoreCase);
+                }                
             }
             var db = new SqlSugarClient(new List<ConnectionConfig>()
             {
