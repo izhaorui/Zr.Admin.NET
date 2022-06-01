@@ -1,21 +1,21 @@
 FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS base
-#´´½¨ /appÎÄ¼ş¼Ğ
+#åˆ›å»º /appæ–‡ä»¶å¤¹
 WORKDIR /app
-#´´½¨¹ÒÔØÄ¿Â¼,ÓÃÓÚ½«³ÌĞò²¿ÊğÔÚ·şÎñÆ÷±¾µØ
+#åˆ›å»ºæŒ‚è½½ç›®å½•,ç”¨äºå°†ç¨‹åºéƒ¨ç½²åœ¨æœåŠ¡å™¨æœ¬åœ°
 #VOLUME /app
-#ÉèÖÃdockerÈİÆ÷¶ÔÍâ±©Â¶¶Ë¿Ú
+#è®¾ç½®dockerå®¹å™¨å¯¹å¤–æš´éœ²ç«¯å£
 EXPOSE 8888
 VOLUME /app/logs
 #COPY bin/Release/net5.0/publish/ app/
 COPY . app/
 
-#ÉèÖÃÈİÆ÷ÄÚµÄÊ±Çø£¬Èç¹û²»ÉèÖÃ£¬Ä¬ÈÏÊ±ÇøÊÇ±ê×¼Ê±¼ä±È±±¾©Ê±¼äÍí8¸öĞ¡Ê±
+#è®¾ç½®å®¹å™¨å†…çš„æ—¶åŒºï¼Œå¦‚æœä¸è®¾ç½®ï¼Œé»˜è®¤æ—¶åŒºæ˜¯æ ‡å‡†æ—¶é—´æ¯”åŒ—äº¬æ—¶é—´æ™š8ä¸ªå°æ—¶
 RUN echo "Asia/shanghai" > /etc/timezone
 RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
-# ¸´ÖÆ·¢²¼ÎÄ¼şµ½¹¤×÷Ä¿Â¼
+# å¤åˆ¶å‘å¸ƒæ–‡ä»¶åˆ°å·¥ä½œç›®å½•
 #COPY . app/
 WORKDIR /app
 
-#µÈ¼ÛÓÚ dotnet ZR.Admin.WebApi.dll£¬Èç¹û²»Ö¸¶¨Æô¶¯¶Ë¿ÚÄ¬ÈÏÔÚdockerÀïÃæÆô¶¯¶Ë¿ÚÊÇ80¶Ë¿Ú
+#ç­‰ä»·äº dotnet ZR.Admin.WebApi.dllï¼Œå¦‚æœä¸æŒ‡å®šå¯åŠ¨ç«¯å£é»˜è®¤åœ¨dockeré‡Œé¢å¯åŠ¨ç«¯å£æ˜¯80ç«¯å£
 ENTRYPOINT ["dotnet", "ZR.Admin.WebApi.dll", "--server.urls","http://*:8888"]

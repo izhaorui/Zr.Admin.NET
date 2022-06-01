@@ -33,39 +33,39 @@ namespace ZR.Admin.WebApi
         {
             string corsUrls = Configuration["corsUrls"];
 
-            //ÅäÖÃ¿çÓò
+            //é…ç½®è·¨åŸŸ
             services.AddCors(c =>
             {
                 c.AddPolicy("Policy", policy =>
                 {
                     policy.WithOrigins(corsUrls.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    .AllowAnyHeader()//ÔÊĞíÈÎÒâÍ·
-                    .AllowCredentials()//ÔÊĞícookie
-                    .AllowAnyMethod();//ÔÊĞíÈÎÒâ·½·¨
+                    .AllowAnyHeader()//å…è®¸ä»»æ„å¤´
+                    .AllowCredentials()//å…è®¸cookie
+                    .AllowAnyMethod();//å…è®¸ä»»æ„æ–¹æ³•
                 });
             });
-            //×¢ÈëSignalRÊµÊ±Í¨Ñ¶£¬Ä¬ÈÏÓÃjson´«Êä
+            //æ³¨å…¥SignalRå®æ—¶é€šè®¯ï¼Œé»˜è®¤ç”¨jsonä¼ è¾“
             services.AddSignalR(options =>
             {
-                //¿Í»§¶Ë·¢±£³ÖÁ¬½ÓÇëÇóµ½·şÎñ¶Ë×î³¤¼ä¸ô£¬Ä¬ÈÏ30Ãë£¬¸Ä³É4·ÖÖÓ£¬ÍøÒ³Ğè¸ú×ÅÉèÖÃconnection.keepAliveIntervalInMilliseconds = 12e4;¼´2·ÖÖÓ
+                //å®¢æˆ·ç«¯å‘ä¿æŒè¿æ¥è¯·æ±‚åˆ°æœåŠ¡ç«¯æœ€é•¿é—´éš”ï¼Œé»˜è®¤30ç§’ï¼Œæ”¹æˆ4åˆ†é’Ÿï¼Œç½‘é¡µéœ€è·Ÿç€è®¾ç½®connection.keepAliveIntervalInMilliseconds = 12e4;å³2åˆ†é’Ÿ
                 //options.ClientTimeoutInterval = TimeSpan.FromMinutes(4);
-                //·şÎñ¶Ë·¢±£³ÖÁ¬½ÓÇëÇóµ½¿Í»§¶Ë¼ä¸ô£¬Ä¬ÈÏ15Ãë£¬¸Ä³É2·ÖÖÓ£¬ÍøÒ³Ğè¸ú×ÅÉèÖÃconnection.serverTimeoutInMilliseconds = 24e4;¼´4·ÖÖÓ
+                //æœåŠ¡ç«¯å‘ä¿æŒè¿æ¥è¯·æ±‚åˆ°å®¢æˆ·ç«¯é—´éš”ï¼Œé»˜è®¤15ç§’ï¼Œæ”¹æˆ2åˆ†é’Ÿï¼Œç½‘é¡µéœ€è·Ÿç€è®¾ç½®connection.serverTimeoutInMilliseconds = 24e4;å³4åˆ†é’Ÿ
                 //options.KeepAliveInterval = TimeSpan.FromMinutes(2);
             });
-            //Ïû³ıError unprotecting the session cookie¾¯¸æ
+            //æ¶ˆé™¤Error unprotecting the session cookieè­¦å‘Š
             services.AddDataProtection()
                 .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
-            //ÆÕÍ¨ÑéÖ¤Âë
+            //æ™®é€šéªŒè¯ç 
             services.AddHeiCaptcha();
             services.AddIPRate(Configuration);
             services.AddSession();
             services.AddMemoryCache();
             services.AddHttpContextAccessor();
 
-            //°ó¶¨Õû¸ö¶ÔÏóµ½ModelÉÏ
+            //ç»‘å®šæ•´ä¸ªå¯¹è±¡åˆ°Modelä¸Š
             services.Configure<OptionsSetting>(Configuration);
 
-            //jwt ÈÏÖ¤
+            //jwt è®¤è¯
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -80,7 +80,7 @@ namespace ZR.Admin.WebApi
 
             services.AddMvc(options =>
             {
-                options.Filters.Add(typeof(GlobalActionMonitor));//È«¾Ö×¢²á
+                options.Filters.Add(typeof(GlobalActionMonitor));//å…¨å±€æ³¨å†Œ
             })
             .AddJsonOptions(options =>
             {
@@ -99,7 +99,7 @@ namespace ZR.Admin.WebApi
                 app.UseDeveloperExceptionPage();
             }
             app.UseSwagger();
-            //Ê¹¿ÉÒÔ¶à´Î¶àÈ¥bodyÄÚÈİ
+            //ä½¿å¯ä»¥å¤šæ¬¡å¤šå»bodyå†…å®¹
             app.Use((context, next) =>
             {
                 context.Request.EnableBuffering();
@@ -109,33 +109,33 @@ namespace ZR.Admin.WebApi
                 }
                 return next();
             });
-            //¿ªÆô·ÃÎÊ¾²Ì¬ÎÄ¼ş/wwwrootÄ¿Â¼ÎÄ¼ş£¬Òª·ÅÔÚUseRoutingÇ°Ãæ
+            //å¼€å¯è®¿é—®é™æ€æ–‡ä»¶/wwwrootç›®å½•æ–‡ä»¶ï¼Œè¦æ”¾åœ¨UseRoutingå‰é¢
             app.UseStaticFiles();
-            //¿ªÆôÂ·ÓÉ·ÃÎÊ
+            //å¼€å¯è·¯ç”±è®¿é—®
             app.UseRouting();
-            app.UseCors("Policy");//Òª·ÅÔÚapp.UseEndpointsÇ°¡£
+            app.UseCors("Policy");//è¦æ”¾åœ¨app.UseEndpointså‰ã€‚
 
-            //app.UseAuthentication»áÆôÓÃAuthenticationÖĞ¼ä¼ş£¬¸ÃÖĞ¼ä¼ş»á¸ù¾İµ±Ç°HttpÇëÇóÖĞµÄCookieĞÅÏ¢À´ÉèÖÃHttpContext.UserÊôĞÔ£¨ºóÃæ»áÓÃµ½£©£¬
-            //ËùÒÔÖ»ÓĞÔÚapp.UseAuthentication·½·¨Ö®ºó×¢²áµÄÖĞ¼ä¼ş²ÅÄÜ¹»´ÓHttpContext.UserÖĞ¶ÁÈ¡µ½Öµ£¬
-            //ÕâÒ²ÊÇÎªÊ²Ã´ÉÏÃæÇ¿µ÷app.UseAuthentication·½·¨Ò»¶¨Òª·ÅÔÚÏÂÃæµÄapp.UseMvc·½·¨Ç°Ãæ£¬ÒòÎªÖ»ÓĞÕâÑùASP.NET CoreµÄMVCÖĞ¼ä¼şÖĞ²ÅÄÜ¶ÁÈ¡µ½HttpContext.UserµÄÖµ¡£
-            //1.ÏÈ¿ªÆôÈÏÖ¤
+            //app.UseAuthenticationä¼šå¯ç”¨Authenticationä¸­é—´ä»¶ï¼Œè¯¥ä¸­é—´ä»¶ä¼šæ ¹æ®å½“å‰Httpè¯·æ±‚ä¸­çš„Cookieä¿¡æ¯æ¥è®¾ç½®HttpContext.Userå±æ€§ï¼ˆåé¢ä¼šç”¨åˆ°ï¼‰ï¼Œ
+            //æ‰€ä»¥åªæœ‰åœ¨app.UseAuthenticationæ–¹æ³•ä¹‹åæ³¨å†Œçš„ä¸­é—´ä»¶æ‰èƒ½å¤Ÿä»HttpContext.Userä¸­è¯»å–åˆ°å€¼ï¼Œ
+            //è¿™ä¹Ÿæ˜¯ä¸ºä»€ä¹ˆä¸Šé¢å¼ºè°ƒapp.UseAuthenticationæ–¹æ³•ä¸€å®šè¦æ”¾åœ¨ä¸‹é¢çš„app.UseMvcæ–¹æ³•å‰é¢ï¼Œå› ä¸ºåªæœ‰è¿™æ ·ASP.NET Coreçš„MVCä¸­é—´ä»¶ä¸­æ‰èƒ½è¯»å–åˆ°HttpContext.Userçš„å€¼ã€‚
+            //1.å…ˆå¼€å¯è®¤è¯
             app.UseAuthentication();
-            //2.ÔÙ¿ªÆôÊÚÈ¨
+            //2.å†å¼€å¯æˆæƒ
             app.UseAuthorization();
-            //¿ªÆôsession
+            //å¼€å¯session
             //app.UseSession();
-            //¿ªÆô»º´æ
+            //å¼€å¯ç¼“å­˜
             app.UseResponseCaching();
-            //»Ö¸´/Æô¶¯ÈÎÎñ
+            //æ¢å¤/å¯åŠ¨ä»»åŠ¡
             app.UseAddTaskSchedulers();
-            //Ê¹ÓÃÈ«¾ÖÒì³£ÖĞ¼ä¼ş
+            //ä½¿ç”¨å…¨å±€å¼‚å¸¸ä¸­é—´ä»¶
             app.UseMiddleware<GlobalExceptionMiddleware>();
-            //ÆôÓÃ¿Í»§¶ËIPÏŞÖÆËÙÂÊ
+            //å¯ç”¨å®¢æˆ·ç«¯IPé™åˆ¶é€Ÿç‡
             app.UseIpRateLimiting();
 
             app.UseEndpoints(endpoints =>
             {
-                //ÉèÖÃsocketÁ¬½Ó
+                //è®¾ç½®socketè¿æ¥
                 endpoints.MapHub<MessageHub>("/msgHub");
 
                 endpoints.MapControllerRoute(
@@ -145,7 +145,7 @@ namespace ZR.Admin.WebApi
         }
 
         /// <summary>
-        /// ×¢²áServices·şÎñ
+        /// æ³¨å†ŒServicesæœåŠ¡
         /// </summary>
         /// <param name="services"></param>
         /// <param name="configuration"></param>
@@ -153,12 +153,12 @@ namespace ZR.Admin.WebApi
         {
             services.AddAppService();
             services.AddSingleton(new AppSettings(configuration));
-            //¿ªÆô¼Æ»®ÈÎÎñ
+            //å¼€å¯è®¡åˆ’ä»»åŠ¡
             services.AddTaskSchedulers();
-            //³õÊ¼»¯db
+            //åˆå§‹åŒ–db
             DbExtension.AddDb(configuration);
             
-            //×¢²áREDIS ·şÎñ
+            //æ³¨å†ŒREDIS æœåŠ¡
             Task.Run(() =>
             {
                 //RedisServer.Initalize();
