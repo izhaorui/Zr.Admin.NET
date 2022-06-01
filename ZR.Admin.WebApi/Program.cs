@@ -17,34 +17,34 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-//×¢ÈëHttpContextAccessor
+//æ³¨å…¥HttpContextAccessor
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-//ÅäÖÃ¿çÓò
+//é…ç½®è·¨åŸŸ
 builder.Services.AddCors(c =>
 {
     c.AddPolicy("Policy", policy =>
     {
         policy.WithOrigins(builder.Configuration["corsUrls"].Split(',', StringSplitOptions.RemoveEmptyEntries))
-        .AllowAnyHeader()//ÔÊĞíÈÎÒâÍ·
-        .AllowCredentials()//ÔÊĞícookie
-        .AllowAnyMethod();//ÔÊĞíÈÎÒâ·½·¨
+        .AllowAnyHeader()//å…è®¸ä»»æ„å¤´
+        .AllowCredentials()//å…è®¸cookie
+        .AllowAnyMethod();//å…è®¸ä»»æ„æ–¹æ³•
     });
 });
 
-//×¢ÈëSignalRÊµÊ±Í¨Ñ¶£¬Ä¬ÈÏÓÃjson´«Êä
+//æ³¨å…¥SignalRå®æ—¶é€šè®¯ï¼Œé»˜è®¤ç”¨jsonä¼ è¾“
 builder.Services.AddSignalR();
-//Ïû³ıError unprotecting the session cookie¾¯¸æ
+//æ¶ˆé™¤Error unprotecting the session cookieè­¦å‘Š
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
-//ÆÕÍ¨ÑéÖ¤Âë
+//æ™®é€šéªŒè¯ç 
 builder.Services.AddHeiCaptcha();
 //builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
-//°ó¶¨Õû¸ö¶ÔÏóµ½ModelÉÏ
+//ç»‘å®šæ•´ä¸ªå¯¹è±¡åˆ°Modelä¸Š
 builder.Services.Configure<OptionsSetting>(builder.Configuration);
 
-//jwt ÈÏÖ¤
+//jwt è®¤è¯
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -58,19 +58,19 @@ builder.Services.AddAuthentication(options =>
 InternalApp.InternalServices = builder.Services;
 builder.Services.AddAppService();
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
-//¿ªÆô¼Æ»®ÈÎÎñ
+//å¼€å¯è®¡åˆ’ä»»åŠ¡
 builder.Services.AddTaskSchedulers();
-//³õÊ¼»¯db
+//åˆå§‹åŒ–db
 DbExtension.AddDb(builder.Configuration);
 
-//×¢²áREDIS ·şÎñ
+//æ³¨å†ŒREDIS æœåŠ¡
 Task.Run(() =>
 {
     //RedisServer.Initalize();
 });
 builder.Services.AddMvc(options =>
 {
-    options.Filters.Add(typeof(GlobalActionMonitor));//È«¾Ö×¢²á
+    options.Filters.Add(typeof(GlobalActionMonitor));//å…¨å±€æ³¨å†Œ
 })
 .AddJsonOptions(options =>
 {
@@ -84,7 +84,7 @@ var app = builder.Build();
 
 app.UseSwagger();
 
-//Ê¹¿ÉÒÔ¶à´Î¶àÈ¥bodyÄÚÈİ
+//ä½¿å¯ä»¥å¤šæ¬¡å¤šå»bodyå†…å®¹
 app.Use((context, next) =>
 {
     context.Request.EnableBuffering();
@@ -94,26 +94,26 @@ app.Use((context, next) =>
     }
     return next();
 });
-//¿ªÆô·ÃÎÊ¾²Ì¬ÎÄ¼ş/wwwrootÄ¿Â¼ÎÄ¼ş£¬Òª·ÅÔÚUseRoutingÇ°Ãæ
+//å¼€å¯è®¿é—®é™æ€æ–‡ä»¶/wwwrootç›®å½•æ–‡ä»¶ï¼Œè¦æ”¾åœ¨UseRoutingå‰é¢
 app.UseStaticFiles();
-//¿ªÆôÂ·ÓÉ·ÃÎÊ
+//å¼€å¯è·¯ç”±è®¿é—®
 app.UseRouting();
-app.UseCors("Policy");//Òª·ÅÔÚapp.UseEndpointsÇ°¡£
+app.UseCors("Policy");//è¦æ”¾åœ¨app.UseEndpointså‰ã€‚
 //app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-//¿ªÆô»º´æ
+//å¼€å¯ç¼“å­˜
 app.UseResponseCaching();
-//»Ö¸´/Æô¶¯ÈÎÎñ
+//æ¢å¤/å¯åŠ¨ä»»åŠ¡
 app.UseAddTaskSchedulers();
-//Ê¹ÓÃÈ«¾ÖÒì³£ÖĞ¼ä¼ş
+//ä½¿ç”¨å…¨å±€å¼‚å¸¸ä¸­é—´ä»¶
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseEndpoints(endpoints =>
 {
-    //ÉèÖÃsocketÁ¬½Ó
+    //è®¾ç½®socketè¿æ¥
     endpoints.MapHub<MessageHub>("/msgHub");
 
     endpoints.MapControllerRoute(
