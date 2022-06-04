@@ -86,7 +86,7 @@ namespace ZR.Service
             var list = MenuRepository.GetList(f => f.parentId == menuId).OrderBy(f => f.orderNum).ToList();
             Context.ThenMapper(list, item =>
             {
-                item.SubNum = Context.Queryable<SysMenu>().SetContext(x => x.parentId, () => item.MenuId, item).Count();
+                item.SubNum = Context.Queryable<SysMenu>().SetContext(x => x.parentId, () => item.MenuId, item).Count;
             });
             return list;
         }
