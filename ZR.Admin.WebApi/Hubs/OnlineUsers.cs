@@ -17,6 +17,7 @@ namespace ZR.Model
         public string Name { get; set; }
         public DateTime LoginTime { get; set; }
         public string UserIP { get; set; }
+        public string Location { get; set; }
 
         public OnlineUsers(string clientid, string name, long? userid, string userip)
         {
