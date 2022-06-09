@@ -200,7 +200,7 @@ $if(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
 $elseif(column.HtmlType == "datetime")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-date-picker v-model="form.${columnName}" type="datetime" placeholder="选择日期时间"${column.DisabledStr}></el-date-picker>
+              <el-date-picker v-model="form.${columnName}" type="datetime" :teleported="false" placeholder="选择日期时间"${column.DisabledStr}></el-date-picker>
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "imageUpload")

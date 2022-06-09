@@ -54,7 +54,7 @@ $end
             var response = _${replaceDto.ModelTypeName}Repository
                 .Queryable()
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
-                .Includes(it => it.Sub.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
+                .Includes(it => it.${genTable.SubTable.ClassName}.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
 $end
 $if(genTable.Options.SortField != "" && genTable.Options.SortField != null)
                 .OrderBy("${genTable.Options.SortField} ${genTable.Options.SortType}")

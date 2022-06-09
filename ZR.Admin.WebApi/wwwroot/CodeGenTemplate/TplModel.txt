@@ -38,12 +38,12 @@ $end
 
 $if(genTable.TplCategory == "subNav" && genTable.SubTable != null)
         [Navigate(NavigateType.Dynamic, null)] //自定义关系映射
-        public ${genTable.SubTable.ClassName} Sub { get; set; }
+        public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName} { get; set; }
 $end
 
 $if(genTable.TplCategory == "subNavMore" && genTable.SubTable != null)
         [Navigate(NavigateType.Dynamic, null)] //自定义关系映射
-        public List<${genTable.SubTable.ClassName}> Sub { get; set; }
+        public List<${genTable.SubTable.ClassName}> ${genTable.SubTable.ClassName} { get; set; }
 $end
     }
 }
