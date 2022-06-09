@@ -1,18 +1,17 @@
-﻿using Infrastructure.Attribute;
-using Microsoft.AspNetCore.Http;
-using System.IO;
-using ZR.Service.System.IService;
-using ZR.Common;
-using Infrastructure;
-using System;
-using System.Text;
-using System.Security.Cryptography;
-using System.Net;
-using ZR.Model.System;
-using ZR.Repository.System;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
 using Infrastructure.Extensions;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using System;
+using System.IO;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using ZR.Common;
+using ZR.Model.System;
+using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
@@ -44,7 +43,7 @@ namespace ZR.Service.System
         {
             string fileExt = Path.GetExtension(formFile.FileName);
             fileName = (fileName.IsEmpty() ? HashFileName() : fileName) + fileExt;
-            
+
             string filePath = GetdirPath(fileDir);
             string finalFilePath = Path.Combine(rootPath, filePath, fileName);
             double fileSize = Math.Round(formFile.Length / 1024.0, 2);
@@ -58,7 +57,7 @@ namespace ZR.Service.System
             {
                 await formFile.CopyToAsync(stream);
             }
-            string uploadUrl = SysConfigService.GetSysConfigByKey("sys.file.uploadUrl")?.ConfigValue ?? OptionsSetting.Upload.UploadUrl;
+            string uploadUrl = OptionsSetting.Upload.UploadUrl;
             string accessPath = string.Concat(uploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
             SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, userName)
             {

@@ -31,6 +31,7 @@ namespace Infrastructure
     public class Upload
     {
         public string UploadUrl { get; set; }
+        public string LocalSavePath { get; set; }
     }
     /// <summary>
     /// 阿里云存储

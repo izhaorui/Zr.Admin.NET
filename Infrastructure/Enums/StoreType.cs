@@ -29,6 +29,12 @@ namespace Infrastructure.Enums
         /// 七牛
         /// </summary>
         [Description("七牛云")]
-        QINIU = 4
+        QINIU = 4,
+
+        /// <summary>
+        /// 远程
+        /// </summary>
+        [Description("远程")]
+        REMOTE = 5
     }
 }
