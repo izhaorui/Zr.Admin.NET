@@ -110,6 +110,24 @@ ${end}
             });
             return response;
         }
+
+        /// <summary>
+        /// 修改${genTable.FunctionName}
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm)
+        {
+            var response = _${replaceDto.ModelTypeName}Repository.Update(w => w.${replaceDto.PKName} == parm.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
+            {
+$foreach(item in genTable.Columns)
+$if((item.IsEdit))
+                $item.CsharpField = parm.$item.CsharpField,
+$end
+${end}
+            });
+            return response;
+        }
         #endregion
     }
 }

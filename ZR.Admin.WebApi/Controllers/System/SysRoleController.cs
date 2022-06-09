@@ -71,7 +71,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ApiResult.Error((int)ResultCode.CUSTOM_ERROR, $"新增角色'{sysRoleDto.RoleName}'失败，角色权限已存在"));
             }
 
-            sysRoleDto.Create_by = User.Identity.Name;
+            sysRoleDto.Create_by = HttpContext.GetName();
             long roleId = sysRoleService.InsertRole(sysRoleDto);
 
             return ToResponse(ToJson(roleId));
@@ -101,7 +101,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                     return ToResponse(ApiResult.Error($"编辑角色'{sysRoleDto.RoleName}'失败，角色权限已存在"));
                 }
             }
-            sysRoleDto.Update_by = User.Identity.Name;
+            sysRoleDto.Update_by = HttpContext.GetName();
             int upResult = sysRoleService.UpdateRole(sysRoleDto);
             if (upResult > 0)
             {

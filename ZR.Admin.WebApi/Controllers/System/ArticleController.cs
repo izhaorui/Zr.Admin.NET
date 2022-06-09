@@ -40,10 +40,8 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "system:article:list")]
         public IActionResult Query([FromQuery] ArticleQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<Article>();
 
-            //搜索条件
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
 
@@ -59,10 +57,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpGet("newList")]
         public IActionResult QueryNew()
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<Article>();
-
-            //搜索条件
             predicate = predicate.And(m => m.Status == "1");
 
             var response = _ArticleService.Queryable()
@@ -99,7 +94,6 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("请求参数错误");
             }
-            //从 Dto 映射到 实体
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
             addModel.AuthorName = HttpContext.GetName();
 

@@ -41,10 +41,8 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "system:config:list")]
         public IActionResult QuerySysConfig([FromQuery] SysConfigQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<SysConfig>();
 
-            //TODO 搜索条件
             predicate = predicate.AndIF(!parm.ConfigType.IsEmpty(),m => m.ConfigType == parm.ConfigType);
             predicate = predicate.AndIF(!parm.ConfigName.IsEmpty(),m => m.ConfigName.Contains(parm.ConfigType));
             predicate = predicate.AndIF(!parm.ConfigKey.IsEmpty(),m => m.ConfigKey.Contains(parm.ConfigKey));
@@ -79,7 +77,6 @@ namespace ZR.Admin.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult GetConfigKey(string configKey)
         {
-            //TODO 增加缓存
             var response = _SysConfigService.Queryable().First(f=> f.ConfigKey == configKey);
 
             return SUCCESS(response?.ConfigValue);
@@ -98,7 +95,6 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("请求参数错误");
             }
-            //从 Dto 映射到 实体
             var model = parm.Adapt<SysConfig>().ToCreate(HttpContext);
 
             return SUCCESS(_SysConfigService.Insert(model, it => new
@@ -126,12 +122,10 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("请求实体不能为空");
             }
-            //从 Dto 映射到 实体
             var model = parm.Adapt<SysConfig>().ToUpdate(HttpContext);
 
             var response = _SysConfigService.Update(w => w.ConfigId == model.ConfigId, it => new SysConfig()
             {
-                //Update 字段映射
                 ConfigName = model.ConfigName,
                 ConfigKey = model.ConfigKey,
                 ConfigValue = model.ConfigValue,

@@ -29,7 +29,6 @@ namespace ZR.Admin.WebApi.Controllers.monitor
 
         /// <summary>
         /// 查询登录日志
-        /// /monitor/logininfor/list
         /// </summary>
         /// <param name="sysLogininfoDto"></param>
         /// <param name="pagerInfo"></param>
@@ -44,7 +43,6 @@ namespace ZR.Admin.WebApi.Controllers.monitor
 
         /// <summary>
         /// 清空登录日志
-        /// /monitor/logininfor/clean
         /// </summary>
         /// <returns></returns>
         [Log(Title = "清空登录日志", BusinessType= BusinessType.CLEAN)]
@@ -61,7 +59,6 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         }
 
         /// <summary>
-        /// /monitor/logininfor/1
         /// </summary>
         /// <param name="infoIds"></param>
         /// <returns></returns>

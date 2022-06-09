@@ -10,6 +10,7 @@ using Infrastructure.Enums;
 using Infrastructure;
 using ZR.Service.System.IService;
 using ZR.Common;
+using ZR.Admin.WebApi.Extensions;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -34,7 +35,6 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:post:list")]
         public IActionResult List([FromQuery] SysPost post, [FromQuery] PagerInfo pagerInfo)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<SysPost>();
             predicate = predicate.AndIF(post.Status.IfNotEmpty(), it => it.Status == post.Status);
             var list = PostService.GetPages(predicate.ToExpression(), pagerInfo, s => new { s.PostSort });
@@ -73,7 +73,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
 
-            post.Create_by = User.Identity.Name;
+            post.Create_by = HttpContext.GetName();
             return ToResponse(ToJson(PostService.Add(post)));
         }
 
@@ -95,7 +95,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
-            post.Update_by = User.Identity.Name;
+            post.Update_by = HttpContext.GetName();
             return ToResponse(PostService.Update(post));
         }
 

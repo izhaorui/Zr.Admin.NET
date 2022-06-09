@@ -104,12 +104,10 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("请求实体不能为空");
             }
-            //从 Dto 映射到 实体
             var modal = parm.Adapt<ArticleCategory>().ToUpdate(HttpContext);
 
             var response = _ArticleCategoryService.Update(w => w.CategoryId == modal.CategoryId, it => new ArticleCategory()
             {
-                //Update 字段映射
                 Name = modal.Name,
                 ParentId = modal.ParentId,
             });
