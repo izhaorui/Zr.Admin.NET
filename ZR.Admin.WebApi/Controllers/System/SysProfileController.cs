@@ -130,7 +130,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             LoginUser loginUser = Framework.JwtUtil.GetLoginUser(HttpContext);
             if (formFile == null) throw new CustomException("请选择文件");
 
-            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, "", "", HttpContext.GetName(), formFile);
+            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, "", "avatar", HttpContext.GetName(), formFile);
 
             UserService.UpdatePhoto(new SysUser() { Avatar = file.AccessUrl, UserId = loginUser.UserId });
             return SUCCESS(new { imgUrl = file.AccessUrl });
