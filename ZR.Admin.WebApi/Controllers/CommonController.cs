@@ -110,12 +110,14 @@ namespace ZR.Admin.WebApi.Controllers
             switch (storeType)
             {
                 case StoreType.LOCAL:
-                    string savePath = AppSettings.App(new string[] { "Upload", "localSavePath" });
-                    if (savePath.IsEmpty())
+                    string savePath = Path.Combine(WebHostEnvironment.WebRootPath);
+                    if (fileDir.IsEmpty())
                     {
-                        savePath = Path.Combine(WebHostEnvironment.WebRootPath, "uploads");
+                        fileDir = AppSettings.App(new string[] { "Upload", "localSavePath" });
                     }
                     file = await SysFileService.SaveFileToLocal(savePath, fileName, fileDir, HttpContext.GetName(), formFile);
+                    break;
+                case StoreType.REMOTE:
                     break;
                 case StoreType.ALIYUN:
                     if ((fileSize / 1024) > MaxContentLength)
