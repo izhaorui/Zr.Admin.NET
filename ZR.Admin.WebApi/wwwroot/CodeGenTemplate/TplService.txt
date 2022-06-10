@@ -54,7 +54,7 @@ $end
             var response = _${replaceDto.ModelTypeName}Repository
                 .Queryable()
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
-                .Includes(it => it.Sub.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
+                .Includes(it => it.${genTable.SubTable.ClassName}.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
 $end
 $if(genTable.Options.SortField != "" && genTable.Options.SortField != null)
                 .OrderBy("${genTable.Options.SortField} ${genTable.Options.SortType}")
@@ -105,6 +105,24 @@ $end
 ${foreach(item in genTable.Columns)}
 $if((item.IsInsert))
                 it.$item.CsharpField,
+$end
+${end}
+            });
+            return response;
+        }
+
+        /// <summary>
+        /// 修改${genTable.FunctionName}
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm)
+        {
+            var response = _${replaceDto.ModelTypeName}Repository.Update(w => w.${replaceDto.PKName} == parm.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
+            {
+$foreach(item in genTable.Columns)
+$if((item.IsEdit))
+                $item.CsharpField = parm.$item.CsharpField,
 $end
 ${end}
             });

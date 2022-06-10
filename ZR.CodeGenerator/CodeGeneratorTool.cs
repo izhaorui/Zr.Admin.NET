@@ -48,16 +48,17 @@ namespace ZR.CodeGenerator
 
             string PKName = "Id";
             string PKType = "int";
-            ReplaceDto replaceDto = new();
-            replaceDto.ModelTypeName = dto.GenTable.ClassName;//表名对应C# 实体类名
-            replaceDto.PermissionPrefix = dto.GenTable?.Options?.PermissionPrefix;
-            replaceDto.Author = dto.GenTable.FunctionAuthor;
-            replaceDto.ShowBtnAdd = dto.GenTable.Options.CheckedBtn.Any(f => f == 1);
-            replaceDto.ShowBtnEdit = dto.GenTable.Options.CheckedBtn.Any(f => f == 2);
-            replaceDto.ShowBtnDelete = dto.GenTable.Options.CheckedBtn.Any(f => f == 3);
-            replaceDto.ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4);
-            replaceDto.ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5);
-
+            ReplaceDto replaceDto = new()
+            {
+                ModelTypeName = dto.GenTable.ClassName,//表名对应C# 实体类名
+                PermissionPrefix = dto.GenTable?.Options?.PermissionPrefix,
+                Author = dto.GenTable.FunctionAuthor,
+                ShowBtnAdd = dto.GenTable.Options.CheckedBtn.Any(f => f == 1),
+                ShowBtnEdit = dto.GenTable.Options.CheckedBtn.Any(f => f == 2),
+                ShowBtnDelete = dto.GenTable.Options.CheckedBtn.Any(f => f == 3),
+                ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4),
+                ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5)
+            };
 
             //循环表字段信息
             foreach (GenTableColumn dbFieldInfo in dto.GenTable.Columns.OrderBy(x => x.Sort))

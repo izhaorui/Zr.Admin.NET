@@ -90,7 +90,6 @@ $if(replaceDto.ShowBtnAdd)
             {
                 throw new CustomException("请求参数错误");
             }
-            //从 Dto 映射到 实体
             var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToCreate(HttpContext);
 
             var response = _${replaceDto.ModelTypeName}Service.Add${replaceDto.ModelTypeName}(modal);
@@ -113,18 +112,9 @@ $if(replaceDto.ShowBtnEdit)
             {
                 throw new CustomException("请求实体不能为空");
             }
-            //从 Dto 映射到 实体
             var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToUpdate(HttpContext);
 
-            var response = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == modal.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
-            {
-                //Update 字段映射
-$foreach(item in genTable.Columns)
-$if((item.IsEdit))
-                $item.CsharpField = modal.$item.CsharpField,
-$end
-${end}
-            });
+            var response = _${replaceDto.ModelTypeName}Service.Update${replaceDto.ModelTypeName}(modal);
 
             return ToResponse(response);
         }
