@@ -36,7 +36,6 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult GetList([FromQuery] PagerInfo pager, [FromQuery] TasksLogQueryDto queryDto)
         {
-            //开始拼装查询条件
             queryDto.BeginTime = DateTimeHelper.GetBeginTime(queryDto.BeginTime, -7);
             queryDto.EndTime = DateTimeHelper.GetBeginTime(queryDto.EndTime, 7);
 

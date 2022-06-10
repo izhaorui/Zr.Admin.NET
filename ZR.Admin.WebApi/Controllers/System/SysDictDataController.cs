@@ -2,6 +2,7 @@
 using Infrastructure.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
@@ -51,6 +52,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             return SUCCESS(SysDictDataService.SelectDictDataByType(dictType));
         }
+
         /// <summary>
         /// 根据字典类型查询字典数据信息
         /// </summary>
@@ -98,7 +100,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPost()]
         public IActionResult Add([FromBody] SysDictData dict)
         {
-            dict.Create_by = User.Identity.Name;
+            dict.Create_by = HttpContext.GetName();
             dict.Create_time = DateTime.Now;
             return SUCCESS(SysDictDataService.InsertDictData(dict));
         }
@@ -113,7 +115,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPut()]
         public IActionResult Edit([FromBody] SysDictData dict)
         {
-            dict.Update_by = User.Identity.Name;
+            dict.Update_by = HttpContext.GetName();
             return SUCCESS(SysDictDataService.UpdateDictData(dict));
         }
 

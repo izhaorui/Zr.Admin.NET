@@ -43,10 +43,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("queryNotice")]
         public IActionResult QueryNotice([FromQuery] SysNoticeQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<SysNotice>();
 
-            //搜索条件查询语法参考Sqlsugar
             predicate = predicate.And(m => m.Status == "0");
             var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
             return SUCCESS(response);
@@ -60,10 +58,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:notice:list")]
         public IActionResult QuerySysNotice([FromQuery] SysNoticeQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<SysNotice>();
 
-            //搜索条件查询语法参考Sqlsugar
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeTitle), m => m.NoticeTitle.Contains(parm.NoticeTitle));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeType), m => m.NoticeType == parm.NoticeType);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.CreateBy), m => m.Create_by.Contains(parm.CreateBy) ||  m.Update_by.Contains(parm.CreateBy));
@@ -142,7 +138,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 NoticeContent = model.NoticeContent,
                 Status = model.Status,
                 Remark = model.Remark,
-                Update_by = User.Identity.Name,
+                Update_by = HttpContext.GetName(),
                 Update_time = DateTime.Now
             });
 
