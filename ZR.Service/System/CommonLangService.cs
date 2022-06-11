@@ -1,12 +1,13 @@
 using Infrastructure.Attribute;
 using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.Models;
 using ZR.Repository;
-using ZR.Service.System.ISystemService;
+using ZR.Service.System.IService;
 
 namespace ZR.Service.System
 {
@@ -40,7 +41,6 @@ namespace ZR.Service.System
             //搜索条件查询语法参考Sqlsugar
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
-            //predicate = predicate.AndIF(parm.BeginAddtime == null, it => it.Addtime >= DateTime.Now.AddDays(-1));
             predicate = predicate.AndIF(parm.BeginAddtime != null, it => it.Addtime >= parm.BeginAddtime && it.Addtime <= parm.EndAddtime);
             var response = _CommonLangrepository
                 .Queryable()
@@ -62,7 +62,6 @@ namespace ZR.Service.System
             //搜索条件查询语法参考Sqlsugar
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
-            //predicate = predicate.AndIF(parm.BeginAddtime == null, it => it.Addtime >= DateTime.Now.AddDays(-1));
             predicate = predicate.AndIF(parm.BeginAddtime != null, it => it.Addtime >= parm.BeginAddtime && it.Addtime <= parm.EndAddtime);
             var response = _CommonLangrepository
                 .Queryable()
@@ -79,13 +78,46 @@ namespace ZR.Service.System
             //搜索条件查询语法参考Sqlsugar
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             //predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
-            //predicate = predicate.AndIF(parm.BeginAddtime == null, it => it.Addtime >= DateTime.Now.AddDays(-1));
-            //predicate = predicate.AndIF(parm.BeginAddtime != null, it => it.Addtime >= parm.BeginAddtime && it.Addtime <= parm.EndAddtime);
             var response = _CommonLangrepository
                 .Queryable()
                 .Where(predicate.ToExpression())
                 .ToList();
             return response;
+        }
+
+        public void StorageCommonLang(CommonLangDto parm)
+        {
+            List<CommonLang> langs = new();
+            foreach (var item in parm.LangList)
+            {
+                langs.Add(new CommonLang()
+                {
+                    Addtime = DateTime.Now,
+                    LangKey = parm.LangKey,
+                    LangCode = item.LangCode,
+                    LangName = item.LangName,
+                });
+            }
+            var storage = _CommonLangrepository.Storageable(langs)
+                .WhereColumns(it => new { it.LangKey, it.LangCode })
+                .ToStorage();
+
+            storage.AsInsertable.ExecuteReturnSnowflakeIdList();//执行插入
+            storage.AsUpdateable.UpdateColumns(it => new { it.LangName }).ExecuteCommand();//执行修改
+        }
+
+        public Dictionary<string, object> SetLang(List<CommonLang> msgList)
+        {
+            Dictionary<string, object> dic = new();
+
+            foreach (var item in msgList)
+            {
+                if (!dic.ContainsKey(item.LangKey))
+                {
+                    dic.Add(item.LangKey, item.LangName);
+                }
+            }
+            return dic;
         }
         #endregion
     }
