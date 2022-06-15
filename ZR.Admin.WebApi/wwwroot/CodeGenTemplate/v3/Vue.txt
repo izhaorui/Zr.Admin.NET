@@ -1,4 +1,4 @@
-﻿<!--
+<!--
  * @Descripttion: (${genTable.functionName}/${genTable.tableName})
  * @version: (1.0)
  * @Author: (${replaceDto.Author})
@@ -534,6 +534,7 @@ $if(replaceDto.ShowBtnView)
  * @param {*} row
  */
 function handlePreview(row) {
+  reset()
   open.value = true
   title.value = '预览'
   opertype.value = 3
