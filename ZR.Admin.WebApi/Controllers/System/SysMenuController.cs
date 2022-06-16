@@ -123,25 +123,31 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 添加菜单
         /// </summary>
-        /// <param name="MenuDto"></param>
+        /// <param name="menuDto"></param>
         /// <returns></returns>
         [HttpPut("add")]
         [Log(Title = "菜单管理", BusinessType = BusinessType.INSERT)]
         [ActionPermissionFilter(Permission = "system:menu:add")]
-        public IActionResult MenuAdd([FromBody] SysMenu MenuDto)
+        public IActionResult MenuAdd([FromBody] MenuDto menuDto)
         {
-            if (MenuDto == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-            if (UserConstants.NOT_UNIQUE.Equals(sysMenuService.CheckMenuNameUnique(MenuDto)))
+            var config = new TypeAdapterConfig();
+            //映射规则
+            config.ForType<SysMenu, MenuDto>()
+                .NameMatchingStrategy(NameMatchingStrategy.IgnoreCase);
+            var menu = menuDto.Adapt<SysMenu>(config).ToCreate(HttpContext);
+
+            if (menu == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
+            if (UserConstants.NOT_UNIQUE.Equals(sysMenuService.CheckMenuNameUnique(menu)))
             {
-                return ToResponse(ApiResult.Error($"新增菜单'{MenuDto.MenuName}'失败，菜单名称已存在"));
+                return ToResponse(ApiResult.Error($"新增菜单'{menu.MenuName}'失败，菜单名称已存在"));
             }
-            if (UserConstants.YES_FRAME.Equals(MenuDto.isFrame) && !MenuDto.path.StartsWith("http"))
+            if (UserConstants.YES_FRAME.Equals(menu.isFrame) && !menu.path.StartsWith("http"))
             {
-                return ToResponse(ApiResult.Error($"新增菜单'{MenuDto.MenuName}'失败，地址必须以http(s)://开头"));
+                return ToResponse(ApiResult.Error($"新增菜单'{menu.MenuName}'失败，地址必须以http(s)://开头"));
             }
 
-            MenuDto.Create_by = User.Identity.Name;
-            int result = sysMenuService.AddMenu(MenuDto);
+            menu.Create_by = HttpContext.GetName();
+            int result = sysMenuService.AddMenu(menu);
 
             return ToResponse(result);
         }
