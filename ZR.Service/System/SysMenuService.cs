@@ -8,6 +8,7 @@ using ZR.Model.Vo.System;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
 using ZR.Common;
+using Infrastructure.Extensions;
 
 namespace ZR.Service
 {
@@ -281,13 +282,13 @@ namespace ZR.Service
 
             foreach (var menu in menus)
             {
-                RouterVo router = new RouterVo
+                RouterVo router = new()
                 {
                     Hidden = "1".Equals(menu.visible),
                     Name = GetRouteName(menu),
                     Path = GetRoutePath(menu),
                     Component = GetComponent(menu),
-                    Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache), menu.MenuNameKey)
+                    Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache), menu.MenuNameKey, menu.path)
                 };
 
                 List<SysMenu> cMenus = menu.children;
@@ -300,14 +301,29 @@ namespace ZR.Service
                 }
                 else if (IsMeunFrame(menu))
                 {
-                    List<RouterVo> childrenList = new List<RouterVo>();
-                    RouterVo children = new RouterVo
+                    router.Meta = null;
+                    List<RouterVo> childrenList = new();
+                    RouterVo children = new()
                     {
                         Path = menu.path,
                         Component = menu.component,
                         Name = string.IsNullOrEmpty(menu.path) ? "" : menu.path.ToLower(),
-                        Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache), menu.MenuNameKey)
+                        Meta = new Meta(menu.MenuName, menu.icon, "1".Equals(menu.isCache), menu.MenuNameKey, menu.path)
                     };
+                    childrenList.Add(children);
+                    router.Children = childrenList;
+                }
+                else if (menu.parentId == 0 && IsInnerLink(menu))
+                {
+                    router.Meta = new Meta(menu.MenuName, menu.icon);
+                    router.Path = "/";
+                    List<RouterVo> childrenList = new();
+                    RouterVo children = new();
+                    string routerPath = InnerLinkReplaceEach(menu.path);
+                    children.Path = routerPath;
+                    children.Component = UserConstants.INNER_LINK;
+                    children.Name = routerPath.ToLower();
+                    children.Meta = new Meta(menu.MenuName, menu.icon, menu.path);
                     childrenList.Add(children);
                     router.Children = childrenList;
                 }
@@ -384,10 +400,10 @@ namespace ZR.Service
         {
             string routerPath = menu.path;
             // 内链打开外网方式
-            //if (menu.parentId != 0 && IsInnerLink(menu))
-            //{
-            //    routerPath = innerLinkReplaceEach(routerPath);
-            //}
+            if (menu.parentId != 0 && IsInnerLink(menu))
+            {
+                routerPath = InnerLinkReplaceEach(routerPath);
+            }
             // 非外链并且是一级目录（类型为目录）
             if (0 == menu.parentId && UserConstants.TYPE_DIR.Equals(menu.menuType)
                 && UserConstants.NO_FRAME.Equals(menu.isFrame))
@@ -412,6 +428,10 @@ namespace ZR.Service
             if (!string.IsNullOrEmpty(menu.component) && !IsMeunFrame(menu))
             {
                 component = menu.component;
+            }
+            else if (menu.component.IsEmpty() && menu.parentId != 0 && IsInnerLink(menu))
+            {
+                component = UserConstants.INNER_LINK;
             }
             else if (string.IsNullOrEmpty(menu.component) && IsParentView(menu))
             {
@@ -451,16 +471,16 @@ namespace ZR.Service
         {
             return menu.parentId != 0 && UserConstants.TYPE_DIR.Equals(menu.menuType);
         }
+
         /// <summary>
         /// 内链域名特殊字符替换
         /// </summary>
         /// <param name = "path" ></ param >
         /// < returns ></ returns >
-        //public string innerLinkReplaceEach(string path)
-        //{
-        //    return stringUtils.replaceEach(path, new String[] { Constants.HTTP, Constants.HTTPS },
-        //            new String[] { "", "" });
-        //}
+        public string InnerLinkReplaceEach(string path)
+        {
+            return path.IsNotEmpty() ? path.Replace(UserConstants.HTTP, "").Replace(UserConstants.HTTPS, "") : path;
+        }
         #endregion
 
     }

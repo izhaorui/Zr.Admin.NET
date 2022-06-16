@@ -56,7 +56,8 @@ namespace ZR.Model.System
         public static string LAYOUT = "Layout";
         /** ParentView组件标识 */
         public static string PARENT_VIEW = "ParentView";
-
+        /** InnerLink组件标识 */
+        public static string INNER_LINK = "InnerLink";
         /** 校验返回结果码 */
         public static string UNIQUE = "0";
         public static string NOT_UNIQUE = "1";

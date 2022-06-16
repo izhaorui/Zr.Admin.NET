@@ -39,19 +39,32 @@ namespace ZR.Model.System.Vo
         /// </summary>
         public bool NoCache { get; set; }
         public string TitleKey { get; set; } = string.Empty;
+        public string Link { get; set; } = string.Empty;
 
+        public Meta(string title, string icon)
+        {
+            Title = title;
+            Icon = icon;
+        }
+        public Meta(string title, string icon, string path)
+        {
+            Title = title;
+            Icon = icon;
+            Link = path;
+        }
         public Meta(string title, string icon, bool noCache)
         {
             Title = title;
             Icon = icon;
             NoCache = noCache;
         }
-        public Meta(string title, string icon, bool noCache, string titleKey)
+        public Meta(string title, string icon, bool noCache, string titleKey, string path)
         {
             Title = title;
             Icon = icon;
             NoCache = noCache;
             TitleKey = titleKey;
+            Link = path;
         }
     }
 }
