@@ -8,7 +8,6 @@
 -->
 <template>
   <div>
-    <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" @submit.prevent>
 $foreach(column in genTable.Columns)
 $set(labelName = "")
@@ -41,13 +40,13 @@ $if(column.HtmlType == "datetime")
 $elseif(column.HtmlType == "select" || column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
-          <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
+          <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
         </el-select>
       </el-form-item>
 $elseif(column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-radio-group v-model="queryParams.${columnName}">
-          <el-radio v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-radio>
+          <el-radio v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-radio>
         </el-radio-group>
       </el-form-item>
 $else
@@ -136,9 +135,9 @@ $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.H
       <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr}>
         <template #default="scope">
 $if(column.HtmlType == "checkbox")
-          <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
 $else
-          <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
 $end
         </template>
       </el-table-column>
@@ -219,7 +218,7 @@ $elseif(column.HtmlType == "radio")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}"${column.DisabledStr}>
-                <el-radio v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
+                <el-radio v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -239,7 +238,7 @@ $elseif(column.HtmlType == "select")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-select v-model="form.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
-                <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
+                <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -247,7 +246,7 @@ $elseif(column.HtmlType == "checkbox")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-checkbox-group v-model="form.${columnName}Checked"${column.DisabledStr}>
-                <el-checkbox v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
+                <el-checkbox v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-col>
@@ -273,8 +272,7 @@ $end
 
 
 <script setup name="${genTable.BusinessName.ToLower()}">
-import { list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName},
-$if(replaceDto.ShowBtnExport) export${genTable.BusinessName}, $end $if(showCustomInput) changeSort $end } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+import { list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName},$if(replaceDto.ShowBtnExport) export${genTable.BusinessName}, $end $if(showCustomInput) changeSort $end } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
 const { proxy } = getCurrentInstance()
 // 选中${replaceDto.FistLowerPk}数组数组
@@ -283,11 +281,8 @@ const ids = ref([])
 const single = ref(true)
 // 非多个禁用
 const multiple = ref(true)
-// 遮罩层
 const loading = ref(false)
-// 显示搜索条件
 const showSearch = ref(true)
-// 查询参数
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
@@ -299,13 +294,11 @@ $if(item.IsQuery == true)
 $end
 $end
 })
-// 弹出层标题
+
 const title = ref("")
-// 操作类型 1、add 2、edit
+// 操作类型 1、add 2、edit 3、view
 const opertype = ref(0)
-// 是否显示弹出层
 const open = ref(false)
-// 表单参数
 const state = reactive({
   form: {},
   rules: {
@@ -315,27 +308,30 @@ $if(column.IsRequired && column.IsIncrement == false)
 $if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }],
 $end
 $end
+  },
+  options: {
+$foreach(column in genTable.Columns)
+$if((column.HtmlType == "radio" || column.HtmlType == "select" || column.HtmlType == "checkbox"))
+    // $if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
+    $if(column.DictType != "")${column.DictType}$else${column.CsharpFieldFl}Options$end: [],
+$end
+$end
   }
 })
 
-const { form, rules } = toRefs(state)
-// 总记录数
+const { form, rules, options } = toRefs(state)
 const total = ref(0)
 const dataList = ref([])
 const queryRef = ref()
 const formRef = ref()
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
-// ${item.ColumnComment}选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
-const $if(item.DictType != "")${item.DictType}$else${item.CsharpFieldFl}Options$end = ref([])
-$elseif(item.HtmlType == "datetime" && item.IsQuery == true)
+$if(item.HtmlType == "datetime" && item.IsQuery == true)
 // ${item.ColumnComment}时间范围
 const dateRange${item.CsharpField} = ref([])
 
 $elseif(item.HtmlType == "customInput")
 // ******************自定义编辑 start **********************
 const editIndex = ref(-1)
-// 动态ref设置值
 const columnRefs = ref([])
 const setColumnsRef = (el) => {
   if (el) {
@@ -381,7 +377,7 @@ $end
 $if(index > 0)
 proxy.getDicts(dictParams).then((response) => {
   response.data.forEach((element) => {
-    proxy[element.dictType] = element.list
+    state.options[element.dictType] = element.list
   })
 })
 $end
