@@ -7,7 +7,7 @@
   <ItemGroup>
     <PackageReference Include="EPPlus" Version="6.0.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.8.6" />
+    <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.9" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
 
