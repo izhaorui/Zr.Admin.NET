@@ -17,7 +17,7 @@ namespace ZR.Admin.WebApi.Hubs
         private static readonly List<OnlineUsers> clientUsers = new();
         private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly ISysNoticeService SysNoticeService;
-        
+
         public MessageHub(ISysNoticeService noticeService)
         {
             SysNoticeService = noticeService;
@@ -41,7 +41,7 @@ namespace ZR.Admin.WebApi.Hubs
             var name = Context.User.Identity.Name;
             var ip = HttpContextExtension.GetClientUserIp(App.HttpContext);
             var ip_info = IpTool.Search(ip);
-            
+
             LoginUser loginUser = JwtUtil.GetLoginUser(App.HttpContext);
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
             //判断用户是否存在，否则添加集合
@@ -56,7 +56,7 @@ namespace ZR.Admin.WebApi.Hubs
                 //Clients.All.SendAsync("welcome", $"欢迎您：{name},当前时间：{DateTime.Now}");
                 Clients.All.SendAsync(HubsConstant.MoreNotice, SendNotice());
             }
-            
+
             Clients.All.SendAsync(HubsConstant.OnlineNum, clientUsers.Count);
             Clients.All.SendAsync(HubsConstant.OnlineUser, clientUsers);
             return base.OnConnectedAsync();
@@ -81,5 +81,25 @@ namespace ZR.Admin.WebApi.Hubs
         }
 
         #endregion
+
+        /// <summary>
+        /// 注册信息
+        /// </summary>
+        /// <param name="connectId"></param>
+        /// <param name="userName"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        [HubMethodName("SendMessage")]
+        public async Task SendMessage(string connectId, string userName, string message)
+        {
+            Console.WriteLine($"{connectId},message={message}");
+            bool isDemoMode = AppSettings.GetAppConfig("DemoMode", true);
+            if (isDemoMode)
+            {
+                await Clients.Caller.SendAsync("receiveChat", new { userName, message = "当前环境为演示环境，消息不会发送给对方" });
+                return;
+            }
+            await Clients.Client(connectId).SendAsync("receiveChat", new { userName, message });
+        }
     }
 }
