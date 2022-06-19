@@ -6,14 +6,13 @@ using Infrastructure.Model;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.Models;
-using ZR.Service.System.ISystemService;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -45,8 +44,10 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (parm.ShowMode == 2)
             {
-                PagedInfo<dynamic> pagedInfo = new();
-                pagedInfo.Result = _CommonLangService.GetListToPivot(parm);
+                PagedInfo<dynamic> pagedInfo = new()
+                {
+                    Result = _CommonLangService.GetListToPivot(parm)
+                };
 
                 return SUCCESS(pagedInfo);
             }
@@ -60,34 +61,11 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpGet("list/{lang}")]
         [AllowAnonymous]
-        public IActionResult QueryCommonLangs()
+        public IActionResult QueryCommonLangs(string lang)
         {
-            var msgList = _CommonLangService.GetLangList(new CommonLangQueryDto() { LangCode = "zh-cn" });
-            var msgListEn = _CommonLangService.GetLangList(new CommonLangQueryDto() { LangCode = "en" });
-            var msgListTw = _CommonLangService.GetLangList(new CommonLangQueryDto() { LangCode = "zh-tw" });
-            Dictionary<string, object> dic = new();
-            Dictionary<string, object> dicEn = new();
-            Dictionary<string, object> dicTw = new();
-            SetLang(msgList, dic);
-            SetLang(msgListEn, dicEn);
-            SetLang(msgListTw, dicTw);
-            return SUCCESS(new
-            {
-                en = dicEn,
-                cn = dic,
-                tw = dicTw
-            });
-        }
+            var msgList = _CommonLangService.GetLangList(new CommonLangQueryDto() { LangCode = lang });
 
-        private static void SetLang(List<CommonLang> msgList, Dictionary<string, object> dic)
-        {
-            foreach (var item in msgList)
-            {
-                if (!dic.ContainsKey(item.LangKey))
-                {
-                    dic.Add(item.LangKey, item.LangName);
-                }
-            }
+            return SUCCESS(_CommonLangService.SetLang(msgList));
         }
 
         /// <summary>
@@ -137,17 +115,9 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("请求实体不能为空");
             }
 
-            List<CommonLang> langs = new();
-            foreach (var item in parm.LangList)
-            {
-                langs.Add(new CommonLang() { Addtime = DateTime.Now, LangKey = parm.LangKey, LangCode = item.LangCode, LangName = item.LangName });
-            }
-            var storage = _CommonLangService.Storageable(langs).WhereColumns(it => new { it.LangKey, it.LangCode }).ToStorage();
+            _CommonLangService.StorageCommonLang(parm);
 
-            long r = storage.AsInsertable.ExecuteReturnSnowflakeId();//执行插入
-            storage.AsUpdateable.UpdateColumns(it => new { it.LangName }).ExecuteCommand();//执行修改
-
-            return ToResponse(r);
+            return ToResponse(1);
         }
 
         /// <summary>

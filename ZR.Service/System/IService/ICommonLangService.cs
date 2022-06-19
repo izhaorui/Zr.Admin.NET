@@ -4,7 +4,7 @@ using ZR.Model.Dto;
 using ZR.Model.Models;
 using System.Collections.Generic;
 
-namespace ZR.Service.System.ISystemService
+namespace ZR.Service.System.IService
 {
     /// <summary>
     /// 多语言配置service接口
@@ -17,5 +17,7 @@ namespace ZR.Service.System.ISystemService
         PagedInfo<CommonLang> GetList(CommonLangQueryDto parm);
         List<CommonLang> GetLangList(CommonLangQueryDto parm);
         dynamic GetListToPivot(CommonLangQueryDto parm);
+        void StorageCommonLang(CommonLangDto parm);
+        Dictionary<string, object> SetLang(List<CommonLang> msgList);
     }
 }
