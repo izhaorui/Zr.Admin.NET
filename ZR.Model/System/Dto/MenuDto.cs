@@ -14,7 +14,7 @@ namespace ZR.Model.System.Dto
         /// <summary>
         /// 父菜单ID
         /// </summary>
-        public long parentId { get; set; }
+        public long? parentId { get; set; }
 
         /// <summary>
         /// 显示顺序
