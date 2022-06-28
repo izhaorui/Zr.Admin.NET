@@ -106,16 +106,18 @@ namespace ZR.Admin.WebApi.Middleware
                     sysOperLog.jsonResult = logAttribute.IsSaveResponseData ? sysOperLog.jsonResult : "";
                 }
             }
-            LogEventInfo ei = new(logLevel, "GlobalExceptionMiddleware", error);
-
-            ei.Exception = ex;
-            ei.Message = error;
+            LogEventInfo ei = new(logLevel, "GlobalExceptionMiddleware", error)
+            {
+                Exception = ex,
+                Message = error
+            };
             ei.Properties["status"] = 1;//走正常返回都是通过走GlobalExceptionFilter不通过
             ei.Properties["jsonResult"] = responseResult;
             ei.Properties["requestParam"] = sysOperLog.operParam;
             ei.Properties["user"] = HttpContextExtension.GetName(context);
 
             Logger.Log(ei);
+            context.Response.ContentType = "text/json;charset=utf-8";
             await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
 
             SysOperLogService.InsertOperlog(sysOperLog);
