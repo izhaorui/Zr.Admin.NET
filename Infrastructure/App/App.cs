@@ -10,7 +10,7 @@ namespace Infrastructure
         /// <summary>
         /// 服务提供器
         /// </summary>
-        public static IServiceProvider ServiceProvider => HttpContext?.RequestServices ?? InternalApp.InternalServices.BuildServiceProvider();
+        public static IServiceProvider ServiceProvider => HttpContext?.RequestServices ?? InternalApp.ServiceProvider;
         /// <summary>
         /// 获取请求上下文
         /// </summary>

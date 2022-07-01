@@ -1,10 +1,12 @@
 ﻿using Infrastructure;
+using Infrastructure.Helper;
 using Microsoft.Extensions.Configuration;
 using SqlSugar;
 using SqlSugar.IOC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using ZR.Admin.WebApi.Framework;
 using ZR.Model.System;
 
@@ -23,6 +25,9 @@ namespace ZR.Admin.WebApi.Extensions
         public static string DATA_SCOPE_DEPT_AND_CHILD = "4";
         //仅本人数据权限
         public static string DATA_SCOPE_SELF = "5";
+
+       
+
 
         public static void AddDb(IConfiguration Configuration)
         {
@@ -83,6 +88,18 @@ namespace ZR.Admin.WebApi.Extensions
                 };
                 #endregion
             });
+            
+        }
+
+        public static void InitDb(this IServiceProvider service)
+        {
+            var db = DbScoped.SugarScope;
+            db.DbMaintenance.CreateDatabase();
+            //db.CodeFirst.
+            var baseType = typeof(SysBase);
+
+            var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && /*p.IsAssignableTo(baseType) && */p.GetCustomAttribute<SugarTable>()!=null).ToArray();
+            db.CodeFirst.SetStringDefaultLength(512).InitTables(entityes);
         }
 
         /// <summary>

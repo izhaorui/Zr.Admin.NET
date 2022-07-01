@@ -35,7 +35,7 @@ namespace ZR.Admin.WebApi.Extensions
         {
             //var _tasksQzService = (ISysTasksQzService)App.GetRequiredService(typeof(ISysTasksQzService));
 
-            ITaskSchedulerServer _schedulerServer = App.GetRequiredService<ITaskSchedulerServer>();
+            ITaskSchedulerServer _schedulerServer = app.ApplicationServices.GetRequiredService<ITaskSchedulerServer>();
 
             //var tasks = _tasksQzService.GetList(m => m.IsStart);
             var tasks = SqlSugar.IOC.DbScoped.SugarScope.Queryable<Model.System.SysTasksQz>().Where(m => m.IsStart).ToList();
