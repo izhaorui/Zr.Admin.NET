@@ -27,10 +27,13 @@ namespace ZR.Common
         /// </summary>
         public int Port { get; set; } = 587;
         /// <summary>
+        /// 邮件签名
+        /// </summary>
+        public string Signature { get; set; }
+        /// <summary>
         /// 是否使用SSL协议
         /// </summary>
         public bool UseSsl { get; set; } = false;
-        public string mailSign = @"邮件来自C# 程序发送";
         private readonly MailOptions mailOptions = new();
 
         public MailHelper()
@@ -56,7 +59,7 @@ namespace ZR.Common
         }
 
         /// <summary>
-        /// 发送一个人
+        /// 发送一个
         /// </summary>
         /// <param name="toAddress"></param>
         /// <param name="subject"></param>
@@ -105,8 +108,8 @@ namespace ZR.Common
             //收件人
             message.To.AddRange(toAddress);
             message.Subject = subject;
-            //message.Date = DateTime.Now;
-
+            message.Date = DateTime.Now;
+            
             //创建附件Multipart
             Multipart multipart = new Multipart("mixed");
             var alternative = new MultipartAlternative();
@@ -120,14 +123,14 @@ namespace ZR.Common
                 alternative.Add(Html);
             }
             //文本内容
-            if (!string.IsNullOrEmpty(text))
+            //if (!string.IsNullOrEmpty(text))
+            //{
+            var plain = new TextPart(TextFormat.Plain)
             {
-                var plain = new TextPart(TextFormat.Plain)
-                {
-                    Text = text + "\r\n\n\n" + mailSign
-                };
-                alternative.Add(plain);
-            }
+                Text = text + "\r\n\n\n" + mailOptions.Signature
+            };
+            alternative.Add(plain);
+            //}
 
             //附件
             if (!string.IsNullOrEmpty(path))
