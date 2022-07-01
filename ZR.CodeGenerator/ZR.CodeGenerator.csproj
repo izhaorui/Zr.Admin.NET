@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
-    <ProjectReference Include="..\ZR.Common\ZR.Common.csproj" />
-    <ProjectReference Include="..\ZR.Model\ZR.Model.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+		<ProjectReference Include="..\ZR.Common\ZR.Common.csproj" />
+		<ProjectReference Include="..\ZR.Model\ZR.Model.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="JinianNet.JNTemplate" Version="2.3.0" />
-    <PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.9" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="JinianNet.JNTemplate" Version="2.3.0" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.0.9.1" />
+	</ItemGroup>
 </Project>

@@ -16,6 +16,7 @@ namespace ZR.Tasks.TaskScheduler
     internal class Job_HttpRequest : JobBase, IJob
     {
         private readonly ISysTasksQzService tasksQzService;
+        private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         public Job_HttpRequest(ISysTasksQzService tasksQzService)
         {
@@ -32,7 +33,11 @@ namespace ZR.Tasks.TaskScheduler
             if (info != null)
             {
                 var result = await HttpHelper.HttpGetAsync("http://" + info.ApiUrl);
-                Console.WriteLine(result);
+                logger.Info($"任务【{info.Name}】网络请求执行结果=" + result);
+            }
+            else
+            {
+                throw new CustomException("任务网络请求执行失败，任务不存在");
             }
         }
     }
