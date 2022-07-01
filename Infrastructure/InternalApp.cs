@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 
 namespace Infrastructure
 {
@@ -9,12 +10,12 @@ namespace Infrastructure
         /// <summary>
         /// 应用服务
         /// </summary>
-        public static IServiceCollection InternalServices;
+        public static IServiceProvider ServiceProvider;
 
         /// <summary>
         /// 全局配置构建器
         /// </summary>
-        public static IConfigurationBuilder ConfigurationBuilder;
+        //public static IConfigurationBuilder ConfigurationBuilder;
 
         /// <summary>
         /// 获取Web主机环境
@@ -24,6 +25,6 @@ namespace Infrastructure
         /// <summary>
         /// 获取泛型主机环境
         /// </summary>
-        public static IHostEnvironment HostEnvironment;
+        //public static IHostEnvironment HostEnvironment;
     }
 }

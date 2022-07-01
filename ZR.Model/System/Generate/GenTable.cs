@@ -72,7 +72,7 @@ namespace ZR.Model.System.Generate
         /// <summary>
         /// 其他生成选项
         /// </summary>
-        [SqlSugar.SugarColumn(IsJson = true)]
+        [SqlSugar.SugarColumn(IsJson = true, ColumnDataType = "nvarchar(4000)")]
         public Options Options { get; set; }
         
         #region 表额外字段

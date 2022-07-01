@@ -4,13 +4,13 @@
 		<TargetFramework>net6.0</TargetFramework>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
-		<PackageReference Include="CSRedisCore" Version="3.6.9" />
-		<PackageReference Include="EPPlus" Version="6.0.4" />
-		<PackageReference Include="MailKit" Version="3.3.0" />
-		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
+    <PackageReference Include="CSRedisCore" Version="3.8.3" />
+    <PackageReference Include="EPPlus" Version="6.0.5" />
+    <PackageReference Include="MailKit" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
+  </ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />

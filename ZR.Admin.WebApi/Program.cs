@@ -55,7 +55,7 @@ builder.Services.AddAuthentication(options =>
     o.TokenValidationParameters = JwtUtil.ValidParameters();
 });
 
-InternalApp.InternalServices = builder.Services;
+//InternalApp.InternalServices = builder.Services;
 builder.Services.AddAppService();
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 //开启计划任务
@@ -81,7 +81,8 @@ builder.Services.AddMvc(options =>
 builder.Services.AddSwaggerConfig();
 
 var app = builder.Build();
-
+//InternalApp.ServiceProvider = app.Services;
+//app.Services.InitDb();
 app.UseSwagger();
 
 //使可以多次多去body内容
