@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ZR.CodeGenerator.Model;
+using ZR.Common;
 using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator
@@ -17,6 +18,7 @@ namespace ZR.CodeGenerator
     /// </summary>
     public class CodeGeneratorTool
     {
+        private static readonly string CodeTemplateDir = "CodeGenTemplate";
         /// <summary>
         /// 代码生成器配置
         /// </summary>
@@ -104,7 +106,7 @@ namespace ZR.CodeGenerator
             foreach (var item in dto.GenCodes)
             {
                 item.Path = Path.Combine(dto.GenCodePath, item.Path);
-                FileHelper.WriteAndSave(item.Path, item.Content);
+                FileUtil.WriteAndSave(item.Path, item.Content);
             }
         }
 
@@ -117,8 +119,8 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = FileHelper.ReadJtTemplate("TplModel.txt");
-            var tplDto = FileHelper.ReadJtTemplate("TplDto.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplModel.txt");
+            var tplDto = JnHelper.ReadTemplate(CodeTemplateDir, "TplDto.txt");
 
             string fullPath = Path.Combine(_option.ModelsNamespace, "Models", _option.SubNamespace, replaceDto.ModelTypeName + ".cs");
             string fullPathDto = Path.Combine(_option.ModelsNamespace, "Dto", _option.SubNamespace, $"{replaceDto.ModelTypeName}Dto.cs");
@@ -134,7 +136,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = FileHelper.ReadJtTemplate("TplRepository.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplRepository.txt");
             var result = tpl.Render();
             var fullPath = Path.Combine(_option.RepositoriesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Repository.cs");
 
@@ -146,16 +148,14 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = FileHelper.ReadJtTemplate("TplService.txt");
-            var tpl2 = FileHelper.ReadJtTemplate("TplIService.txt");
-            var result = tpl.Render();
-            var result2 = tpl2.Render();
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplService.txt");
+            var tpl2 = JnHelper.ReadTemplate(CodeTemplateDir, "TplIService.txt");
 
             var fullPath = Path.Combine(_option.ServicesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Service.cs");
             var fullPath2 = Path.Combine(_option.IServicsNamespace, _option.SubNamespace, $"I{_option.SubNamespace}Service", $"I{replaceDto.ModelTypeName}Service.cs");
 
-            generateDto.GenCodes.Add(new GenCode(4, "Service.cs", fullPath, result));
-            generateDto.GenCodes.Add(new GenCode(4, "IService.cs", fullPath2, result2));
+            generateDto.GenCodes.Add(new GenCode(4, "Service.cs", fullPath, tpl.Render()));
+            generateDto.GenCodes.Add(new GenCode(4, "IService.cs", fullPath2, tpl2.Render()));
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = FileHelper.ReadJtTemplate("TplControllers.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplControllers.txt");
             tpl.Set("QueryCondition", replaceDto.QueryCondition);
             var result = tpl.Render();
 
@@ -196,7 +196,7 @@ namespace ZR.CodeGenerator
                 default:
                     break;
             }
-            var tpl = FileHelper.ReadJtTemplate(fileName);
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
             tpl.Set("vueQueryFormHtml", replaceDto.VueQueryFormHtml);
             tpl.Set("VueViewFormContent", replaceDto.VueViewFormHtml);//添加、修改表单
             tpl.Set("VueViewListContent", replaceDto.VueViewListHtml);//查询 table列
@@ -224,7 +224,7 @@ namespace ZR.CodeGenerator
                 _ => "Vue.txt",
             };
             fileName = Path.Combine("v3", fileName);
-            var tpl = FileHelper.ReadJtTemplate(fileName);
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
             tpl.Set("treeCode", generateDto.GenTable?.Options?.TreeCode?.FirstLowerCase());
             tpl.Set("treeName", generateDto.GenTable?.Options?.TreeName?.FirstLowerCase());
             tpl.Set("treeParentCode", generateDto.GenTable?.Options?.TreeParentCode?.FirstLowerCase());
@@ -242,7 +242,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static void GenerateVueJs(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = FileHelper.ReadJtTemplate("TplVueApi.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplVueApi.txt");
             var result = tpl.Render();
 
             string fileName;
@@ -279,7 +279,7 @@ namespace ZR.CodeGenerator
                 default:
                     break;
             }
-            var tpl = FileHelper.ReadJtTemplate($"{tempName}.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, $"{tempName}.txt");
             tpl.Set("parentId", generateDto.GenTable?.Options?.ParentMenuId ?? 0);
             var result = tpl.Render();
             string fullPath = Path.Combine(generateDto.GenCodePath, "sql", generateDto.GenTable.BusinessName + ".sql");
@@ -293,30 +293,25 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string GenerateVueQueryForm()
         {
-            var tpl = FileHelper.ReadJtTemplate("QueryForm.txt");
-            var result = tpl.Render();
-            return result;
+            return JnHelper.ReadTemplate(CodeTemplateDir, "QueryForm.txt").Render();
         }
+
         /// <summary>
         /// 生成vue页面table
         /// </summary>
         /// <returns></returns>
         public static string GenerateVueTableList()
         {
-            var tpl = FileHelper.ReadJtTemplate("TableList.txt");
-            var result = tpl.Render();
-
-            return result;
+           return JnHelper.ReadTemplate(CodeTemplateDir, "TableList.txt").Render();
         }
+
         /// <summary>
         /// 生成vue表单
         /// </summary>
         /// <returns></returns>
         public static string GenerateCurdForm()
         {
-            var tpl = FileHelper.ReadJtTemplate("CurdForm.txt");
-            var result = tpl.Render();
-            return result;
+            return JnHelper.ReadTemplate(CodeTemplateDir, "CurdForm.txt").Render();
         }
         #endregion
 
@@ -534,7 +529,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
-            Engine.Current.Clean();
+            //Engine.Current.Clean();
             dto.GenTable.Columns = dto.GenTable.Columns.OrderBy(x => x.Sort).ToList();
             bool showCustomInput = dto.GenTable.Columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_CUSTOM_INPUT, StringComparison.OrdinalIgnoreCase));
             //jnt模板引擎全局变量
@@ -554,7 +549,6 @@ namespace ZR.CodeGenerator
                 options.Data.Set("replaceDto", replaceDto);
                 options.Data.Set("options", dto.GenOptions);
                 options.Data.Set("genTable", dto.GenTable);
-                //options.Data.Set("btns", dto.CheckedBtn);
                 options.Data.Set("showCustomInput", showCustomInput);
                 options.Data.Set("tool", new CodeGeneratorTool());
                 options.Data.Set("codeTool", new CodeGenerateTemplate());

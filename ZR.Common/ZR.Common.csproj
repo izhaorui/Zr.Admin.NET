@@ -8,6 +8,7 @@
     <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
     <PackageReference Include="CSRedisCore" Version="3.8.2" />
     <PackageReference Include="EPPlus" Version="6.0.4" />
+    <PackageReference Include="JinianNet.JNTemplate" Version="2.3.0" />
     <PackageReference Include="MailKit" Version="3.3.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
   </ItemGroup>
