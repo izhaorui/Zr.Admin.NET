@@ -284,7 +284,7 @@ namespace ZR.Admin.WebApi.Controllers
             //生成代码到指定文件夹
             CodeGeneratorTool.Generate(dto);
             //下载文件
-            FileHelper.ZipGenCode(dto.ZipPath, dto.GenCodePath, zipReturnFileName);
+            FileUtil.ZipGenCode(dto.ZipPath, dto.GenCodePath, zipReturnFileName);
 
             return SUCCESS(new { path = "/Generatecode/" + zipReturnFileName, fileName = dto.ZipFileName });
         }
