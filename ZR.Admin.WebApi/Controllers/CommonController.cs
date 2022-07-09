@@ -46,7 +46,8 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            return Content("Hello看到这里页面说明你已经成功启动了本项目，加油吧 少年。");
+            return Ok("看到这里页面说明你已经成功启动了本项目:)\n\n" +
+                "如果觉得项目有用，打赏作者喝杯咖啡作为奖励\n☛☛http://www.izhaorui.cn/doc\n");
         }
 
         /// <summary>
