@@ -81,9 +81,9 @@ builder.Services.AddMvc(options =>
 builder.Services.AddSwaggerConfig();
 
 var app = builder.Build();
+InternalApp.ServiceProvider = app.Services;
 if (builder.Configuration["InitDb"].ParseToBool() == true)
 {
-    InternalApp.ServiceProvider = app.Services;
     app.Services.InitDb();
 }
 
