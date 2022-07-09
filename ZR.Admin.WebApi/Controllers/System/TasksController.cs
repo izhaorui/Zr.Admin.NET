@@ -102,18 +102,10 @@ namespace ZR.Admin.WebApi.Controllers
             //从 Dto 映射到 实体
             var tasksQz = parm.Adapt<SysTasksQz>().ToCreate();
             var worker = new IdWorker(1, 1);
-
-            tasksQz.ID = worker.NextId().ToString();
-            tasksQz.IsStart = false;
             tasksQz.Create_by = HttpContext.GetName();
-            tasksQz.TaskType = parm.TaskType;
-            tasksQz.ApiUrl = parm.ApiUrl;
-            if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
-            {
-                tasksQz.AssemblyName = "ZR.Tasks";
-                tasksQz.ClassName = "TaskScheduler.Job_HttpRequest";
-            }
-            return SUCCESS(_tasksQzService.Add(tasksQz));
+            tasksQz.ID = worker.NextId().ToString();
+
+            return SUCCESS(_tasksQzService.AddTasks(tasksQz));
         }
 
         /// <summary>
@@ -152,28 +144,11 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"该任务正在运行中，请先停止在更新");
             }
-
-            var response = _tasksQzService.Update(m => m.ID == parm.ID, m => new SysTasksQz
-            {
-                Name = parm.Name,
-                JobGroup = parm.JobGroup,
-                Cron = parm.Cron,
-                AssemblyName = parm.AssemblyName,
-                ClassName = parm.ClassName,
-                Remark = parm.Remark,
-                TriggerType = parm.TriggerType,
-                IntervalSecond = parm.IntervalSecond,
-                JobParams = parm.JobParams,
-                Update_by = HttpContextExtension.GetName(HttpContext),
-                Update_time = DateTime.Now,
-                BeginTime = parm.BeginTime,
-                EndTime = parm.EndTime,
-                TaskType = parm.TaskType,
-                ApiUrl = parm.ApiUrl,
-            });
+            var model = parm.Adapt<SysTasksQz>();
+            model.Update_by = HttpContextExtension.GetName(HttpContext);
+            int response = _tasksQzService.UpdateTasks(model);
             if (response > 0)
             {
-                //先暂停原先的任务
                 var respon = await _schedulerServer.UpdateTaskScheduleAsync(tasksQz);
             }
 

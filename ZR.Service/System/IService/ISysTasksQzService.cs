@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ZR.Model.System;
+﻿using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Service.System.IService
 {
     public interface ISysTasksQzService : IBaseService<SysTasksQz>
     {
         //SysTasksQz GetId(object id);
+        int AddTasks(SysTasksQz parm);
+        int UpdateTasks(SysTasksQz parm);
     }
 }

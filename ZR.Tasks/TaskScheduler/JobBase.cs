@@ -46,7 +46,7 @@ namespace ZR.Tasks
                     RefireImmediately = true
                 };
                 status = 1;
-                logMsg = $"Fail，Exception：{ex.Message}";
+                logMsg = $"Job Run Fail，Exception：{ex.Message}";
             }
 
             var logModel = new SysTasksLog()
