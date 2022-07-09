@@ -29,7 +29,7 @@ namespace ZR.Tasks.TaskScheduler
         public async Task Run(IJobExecutionContext context)
         {
             AbstractTrigger trigger = (context as JobExecutionContextImpl).Trigger as AbstractTrigger;
-            var info = await tasksQzService.GetByIdAsync(trigger.Name);
+            var info = await tasksQzService.GetByIdAsync(trigger.JobName);
             if (info != null)
             {
                 var result = await HttpHelper.HttpGetAsync("http://" + info.ApiUrl);
@@ -37,7 +37,7 @@ namespace ZR.Tasks.TaskScheduler
             }
             else
             {
-                throw new CustomException("任务网络请求执行失败，任务不存在");
+                throw new CustomException($"任务{trigger?.JobName}网络请求执行失败，任务不存在");
             }
         }
     }
