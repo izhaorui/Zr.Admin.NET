@@ -10,6 +10,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
+using ZR.Common;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 
@@ -119,7 +120,7 @@ namespace ZR.Admin.WebApi.Middleware
             Logger.Log(ei);
             context.Response.ContentType = "text/json;charset=utf-8";
             await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
-
+            WxNoticeHelper.SendMsg("系统出错", sysOperLog.errorMsg);
             SysOperLogService.InsertOperlog(sysOperLog);
         }
 

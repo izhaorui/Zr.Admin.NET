@@ -4,6 +4,7 @@ using Quartz;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using ZR.Common;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 
@@ -47,6 +48,7 @@ namespace ZR.Tasks
                 };
                 status = 1;
                 logMsg = $"Job Run Fail，Exception：{ex.Message}";
+                WxNoticeHelper.SendMsg("任务执行出错", logMsg);
             }
 
             var logModel = new SysTasksLog()
