@@ -12,7 +12,7 @@ namespace Infrastructure
         public bool DemoMode { get; set; }
         public MailOptions MailOptions { get; set; }
         public Upload Upload { get; set; }
-        public ALYUN_OCS ALYUN_OCS { get; set; }
+        public ALIYUN_OSS ALIYUN_OSS { get; set; }
         public JwtSettings JwtSettings { get; set; }
     }
     /// <summary>
@@ -33,15 +33,20 @@ namespace Infrastructure
     {
         public string UploadUrl { get; set; }
         public string LocalSavePath { get; set; }
+        public int MaxSize { get; set; }
+        public string[] NotAllowedExt { get; set; } = new string[0];
     }
     /// <summary>
     /// 阿里云存储
     /// </summary>
-    public class ALYUN_OCS
+    public class ALIYUN_OSS
     {
         public string REGIONID { get; set; }
         public string KEY { get; set; }
         public string SECRET { get; set; }
+        public string BucketName { get; set; }
+        public string DomainUrl { get; set; }
+        public int MaxSize { get; set; } = 100;
     }
 
     /// <summary>
