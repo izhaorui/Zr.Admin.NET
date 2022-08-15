@@ -256,7 +256,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:gen:code")]
         public IActionResult CodeGenerate([FromBody] GenerateDto dto)
         {
-            if (dto?.TableId <= 0)
+            if (dto == null || dto.TableId <= 0)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }

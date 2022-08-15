@@ -70,7 +70,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 return SUCCESS(_tasksQzService.GetId(id));
             }
-            return SUCCESS(null);
+            return SUCCESS(0);
         }
 
         /// <summary>
