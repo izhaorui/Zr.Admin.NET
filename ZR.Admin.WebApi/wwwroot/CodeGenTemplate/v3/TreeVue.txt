@@ -410,7 +410,7 @@ $end
 function getList(){
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "datetime" && item.IsQuery == true)
-  proxy.addDateRange(queryParams, proxy.dateRange${item.CsharpField}, '${item.CsharpField}');
+  proxy.addDateRange(queryParams, dateRange${item.CsharpField}.value, '${item.CsharpField}');
 $end
 $end
   loading.value = true
