@@ -24,56 +24,56 @@ namespace ZR.Model.System
         /// <summary>
         /// 父菜单ID
         /// </summary>
-        public long parentId { get; set; }
+        public long ParentId { get; set; }
 
         /// <summary>
         /// 显示顺序
         /// </summary>
-        public int orderNum { get; set; }
+        public int OrderNum { get; set; }
 
         /// <summary>
         /// 路由地址
         /// </summary>
-        public string path { get; set; } = "#";
+        public string Path { get; set; } = "#";
 
         /// <summary>
         /// 组件路径
         /// </summary>
-        public string component { get; set; }
+        public string Component { get; set; }
 
         /// <summary>
         /// 是否缓存（1缓存 0不缓存）
         /// </summary>
-        public string isCache { get; set; }
+        public string IsCache { get; set; }
         /// <summary>
         /// 是否外链 1、是 0、否
         /// </summary>
-        public string isFrame { get; set; }
+        public string IsFrame { get; set; }
 
         /// <summary>
         /// 类型（M目录 C菜单 F按钮 L链接）
         /// </summary>
-        public string menuType { get; set; }
+        public string MenuType { get; set; }
 
         /// <summary>
         /// 显示状态（0显示 1隐藏）
         /// </summary>
-        public string visible { get; set; }
+        public string Visible { get; set; }
 
         /// <summary>
         /// 菜单状态（0正常 1停用）
         /// </summary>
-        public string status { get; set; }
+        public string Status { get; set; }
 
         /// <summary>
         /// 权限字符串
         /// </summary>
-        public string perms { get; set; }
+        public string Perms { get; set; }
 
         /// <summary>
         /// 菜单图标
         /// </summary>
-        public string icon { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
         /// <summary>
         /// 菜单名key
         /// </summary>
@@ -83,7 +83,7 @@ namespace ZR.Model.System
         /// 子菜单
         /// </summary>
         [SugarColumn(IsIgnore = true)]
-        public List<SysMenu> children { get; set; } = new List<SysMenu>();
+        public List<SysMenu> Children { get; set; } = new List<SysMenu>();
         /// <summary>
         /// 子菜单个数
         /// </summary>
@@ -97,7 +97,7 @@ namespace ZR.Model.System
         {
             get
             {
-                return SubNum > 0 || children.Count > 0;
+                return SubNum > 0 || Children.Count > 0;
             }
         }
     }

@@ -106,11 +106,11 @@ namespace ZR.Admin.WebApi.Controllers.System
                 .NameMatchingStrategy(NameMatchingStrategy.IgnoreCase);//忽略字段名称的大小写;//忽略除以上配置的所有字段
 
             var modal = menuDto.Adapt<SysMenu>(config).ToUpdate(HttpContext);
-            if (UserConstants.YES_FRAME.Equals(modal.isFrame) && !modal.path.StartsWith("http"))
+            if (UserConstants.YES_FRAME.Equals(modal.IsFrame) && !modal.Path.StartsWith("http"))
             {
                 return ToResponse(ApiResult.Error($"修改菜单'{modal.MenuName}'失败，地址必须以http(s)://开头"));
             }
-            if (modal.MenuId.Equals(modal.parentId))
+            if (modal.MenuId.Equals(modal.ParentId))
             {
                 return ToResponse(ApiResult.Error($"修改菜单'{modal.MenuName}'失败，上级菜单不能选择自己"));
             }
@@ -141,7 +141,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ApiResult.Error($"新增菜单'{menu.MenuName}'失败，菜单名称已存在"));
             }
-            if (UserConstants.YES_FRAME.Equals(menu.isFrame) && !menu.path.StartsWith("http"))
+            if (UserConstants.YES_FRAME.Equals(menu.IsFrame) && !menu.Path.StartsWith("http"))
             {
                 return ToResponse(ApiResult.Error($"新增菜单'{menu.MenuName}'失败，地址必须以http(s)://开头"));
             }
@@ -189,7 +189,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             MenuDto MenuDto = new()
             {
                 MenuId = id,
-                orderNum = value
+                OrderNum = value
             };
             if (MenuDto == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 

@@ -87,7 +87,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
             logininfoDto.BeginTime = DateTimeHelper.GetBeginTime(logininfoDto.BeginTime, -1);
             logininfoDto.EndTime = DateTimeHelper.GetBeginTime(logininfoDto.EndTime, 1);
             var exp = Expressionable.Create<SysLogininfor>()
-                .And(it => it.loginTime >= logininfoDto.BeginTime && it.loginTime <= logininfoDto.EndTime);
+                .And(it => it.LoginTime >= logininfoDto.BeginTime && it.LoginTime <= logininfoDto.EndTime);
 
             var list = sysLoginService.Queryable().Where(exp.ToExpression())
                 .ToList();

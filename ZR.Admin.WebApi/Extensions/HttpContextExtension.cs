@@ -134,7 +134,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// <param name="context"></param>
         public static void GetRequestValue(this HttpContext context, SysOperLog operLog)
         {
-            string reqMethod = operLog.requestMethod;
+            string reqMethod = operLog.RequestMethod;
             string param;
 
             if (HttpMethods.IsPost(reqMethod) || HttpMethods.IsPut(reqMethod))
@@ -148,7 +148,7 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 param = context.Request.QueryString.Value.ToString();
             }
-            operLog.operParam = param;
+            operLog.OperParam = param;
         }
 
     }

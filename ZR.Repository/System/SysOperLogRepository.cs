@@ -21,11 +21,11 @@ namespace ZR.Repository.System
         public PagedInfo<SysOperLog> GetSysOperLog(SysOperLogDto sysOper, PagerInfo pagerInfo)
         {
             var exp = Expressionable.Create<SysOperLog>();
-            exp.And(it => it.operTime >= sysOper.BeginTime && it.operTime <= sysOper.EndTime);
-            exp.AndIF(sysOper.Title.IfNotEmpty(), it => it.title.Contains(sysOper.Title));
-            exp.AndIF(sysOper.operName.IfNotEmpty(), it => it.operName.Contains(sysOper.operName));
-            exp.AndIF(sysOper.BusinessType != -1, it => it.businessType == sysOper.BusinessType);
-            exp.AndIF(sysOper.Status != -1, it => it.status == sysOper.Status);
+            exp.And(it => it.OperTime >= sysOper.BeginTime && it.OperTime <= sysOper.EndTime);
+            exp.AndIF(sysOper.Title.IfNotEmpty(), it => it.Title.Contains(sysOper.Title));
+            exp.AndIF(sysOper.operName.IfNotEmpty(), it => it.OperName.Contains(sysOper.operName));
+            exp.AndIF(sysOper.BusinessType != -1, it => it.BusinessType == sysOper.BusinessType);
+            exp.AndIF(sysOper.Status != -1, it => it.Status == sysOper.Status);
 
             return GetPages(exp.ToExpression(), pagerInfo, x => x.OperId, OrderByType.Desc);
         }

@@ -95,31 +95,31 @@ namespace ZR.Admin.WebApi.Filters
 
                 SysOperLog sysOperLog = new()
                 {
-                    status = 0,
-                    operName = userName,
-                    operIp = ip,
-                    operUrl = HttpContextExtension.GetRequestUrl(context.HttpContext),
-                    requestMethod = method,
-                    jsonResult = jsonResult,
-                    operLocation = ip_info.Province + " " + ip_info.City,
-                    method = controller + "." + action + "()",
+                    Status = 0,
+                    OperName = userName,
+                    OperIp = ip,
+                    OperUrl = HttpContextExtension.GetRequestUrl(context.HttpContext),
+                    RequestMethod = method,
+                    JsonResult = jsonResult,
+                    OperLocation = ip_info.Province + " " + ip_info.City,
+                    Method = controller + "." + action + "()",
                     //Elapsed = _stopwatch.ElapsedMilliseconds,
-                    operTime = DateTime.Now
+                    OperTime = DateTime.Now
                 };
                 HttpContextExtension.GetRequestValue(context.HttpContext, sysOperLog);
 
                 if (logAttribute != null)
                 {
-                    sysOperLog.title = logAttribute?.Title;
-                    sysOperLog.businessType = (int)logAttribute?.BusinessType;
-                    sysOperLog.operParam = logAttribute.IsSaveRequestData ? sysOperLog.operParam : "";
-                    sysOperLog.jsonResult = logAttribute.IsSaveResponseData ? sysOperLog.jsonResult : "";
+                    sysOperLog.Title = logAttribute?.Title;
+                    sysOperLog.BusinessType = (int)logAttribute?.BusinessType;
+                    sysOperLog.OperParam = logAttribute.IsSaveRequestData ? sysOperLog.OperParam : "";
+                    sysOperLog.JsonResult = logAttribute.IsSaveResponseData ? sysOperLog.JsonResult : "";
                 }
 
                 LogEventInfo ei = new(NLog.LogLevel.Info, "GlobalActionMonitor", "");
                 
                 ei.Properties["jsonResult"] = !HttpMethods.IsGet(method) ? jsonResult : "";
-                ei.Properties["requestParam"] = sysOperLog.operParam;
+                ei.Properties["requestParam"] = sysOperLog.OperParam;
                 ei.Properties["user"] = userName;
                 logger.Log(ei);
 

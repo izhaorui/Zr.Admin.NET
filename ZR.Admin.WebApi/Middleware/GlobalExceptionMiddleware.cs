@@ -84,15 +84,15 @@ namespace ZR.Admin.WebApi.Middleware
 
             SysOperLog sysOperLog = new()
             {
-                status = 1,
-                operIp = ip,
-                operUrl = HttpContextExtension.GetRequestUrl(context),
-                requestMethod = context.Request.Method,
-                jsonResult = responseResult,
-                errorMsg = string.IsNullOrEmpty(error) ? msg : error,
-                operName = HttpContextExtension.GetName(context) ,
-                operLocation = ip_info.Province + " " + ip_info.City,
-                operTime = DateTime.Now
+                Status = 1,
+                OperIp = ip,
+                OperUrl = HttpContextExtension.GetRequestUrl(context),
+                RequestMethod = context.Request.Method,
+                JsonResult = responseResult,
+                ErrorMsg = string.IsNullOrEmpty(error) ? msg : error,
+                OperName = context.User.Identity.Name,
+                OperLocation = ip_info.Province + " " + ip_info.City,
+                OperTime = DateTime.Now
             };
             HttpContextExtension.GetRequestValue(context, sysOperLog);
             var endpoint = GetEndpoint(context);
@@ -101,10 +101,10 @@ namespace ZR.Admin.WebApi.Middleware
                 var logAttribute = endpoint.Metadata.GetMetadata<LogAttribute>();
                 if (logAttribute != null)
                 {
-                    sysOperLog.businessType = (int)logAttribute?.BusinessType;
-                    sysOperLog.title = logAttribute?.Title;
-                    sysOperLog.operParam = logAttribute.IsSaveRequestData ? sysOperLog.operParam : "";
-                    sysOperLog.jsonResult = logAttribute.IsSaveResponseData ? sysOperLog.jsonResult : "";
+                    sysOperLog.BusinessType = (int)logAttribute?.BusinessType;
+                    sysOperLog.Title = logAttribute?.Title;
+                    sysOperLog.OperParam = logAttribute.IsSaveRequestData ? sysOperLog.OperParam : "";
+                    sysOperLog.JsonResult = logAttribute.IsSaveResponseData ? sysOperLog.JsonResult : "";
                 }
             }
             LogEventInfo ei = new(logLevel, "GlobalExceptionMiddleware", error)
@@ -114,13 +114,13 @@ namespace ZR.Admin.WebApi.Middleware
             };
             ei.Properties["status"] = 1;//走正常返回都是通过走GlobalExceptionFilter不通过
             ei.Properties["jsonResult"] = responseResult;
-            ei.Properties["requestParam"] = sysOperLog.operParam;
+            ei.Properties["requestParam"] = sysOperLog.OperParam;
             ei.Properties["user"] = HttpContextExtension.GetName(context);
 
             Logger.Log(ei);
             context.Response.ContentType = "text/json;charset=utf-8";
             await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
-            WxNoticeHelper.SendMsg("系统出错", sysOperLog.errorMsg);
+            WxNoticeHelper.SendMsg("系统出错", sysOperLog.ErrorMsg);
             SysOperLogService.InsertOperlog(sysOperLog);
         }
 

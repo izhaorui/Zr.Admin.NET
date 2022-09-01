@@ -29,7 +29,7 @@ namespace ZR.Model.System.Vo
 
             //menu.getChildren().stream().map(TreeSelect::new).collect(Collectors.toList()); java写法
             List<TreeSelectVo> child = new List<TreeSelectVo>();
-            foreach (var item in menu.children)
+            foreach (var item in menu.Children)
             {
                 child.Add(new TreeSelectVo(item));
             }

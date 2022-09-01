@@ -35,25 +35,25 @@ namespace ZR.Service.System
             loginBody.Password = NETCore.Encrypt.EncryptProvider.Md5(loginBody.Password);
 
             SysUser user = SysLogininfoRepository.Login(loginBody);
-            logininfor.userName = loginBody.Username;
-            logininfor.status = "1";
-            logininfor.loginTime = DateTime.Now;
+            logininfor.UserName = loginBody.Username;
+            logininfor.Status = "1";
+            logininfor.LoginTime = DateTime.Now;
 
             if (user == null || user.UserId <= 0)
             {
-                logininfor.msg = "用户名或密码错误";
+                logininfor.Msg = "用户名或密码错误";
                 AddLoginInfo(logininfor);
-                throw new CustomException(ResultCode.LOGIN_ERROR ,logininfor.msg);
+                throw new CustomException(ResultCode.LOGIN_ERROR ,logininfor.Msg);
             }
             if (user.Status == "1")
             {
-                logininfor.msg = "该用户已禁用";
+                logininfor.Msg = "该用户已禁用";
                 AddLoginInfo(logininfor);
-                throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.msg);
+                throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg);
             }
 
-            logininfor.status = "0";
-            logininfor.msg = "登录成功";
+            logininfor.Status = "0";
+            logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor);
             SysLogininfoRepository.UpdateLoginInfo(loginBody, user.UserId);
             return user;

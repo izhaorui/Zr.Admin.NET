@@ -20,13 +20,13 @@ namespace ZR.Repository.System
         public PagedInfo<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager)
         {
             var exp = Expressionable.Create<SysLogininfor>();
-            exp.And(it => it.loginTime >= logininfoDto.BeginTime && it.loginTime <= logininfoDto.EndTime);
-            exp.AndIF(logininfoDto.ipaddr.IfNotEmpty(), f => f.ipaddr == logininfoDto.ipaddr);
-            exp.AndIF(logininfoDto.userName.IfNotEmpty(), f => f.userName.Contains(logininfoDto.userName));
-            exp.AndIF(logininfoDto.status.IfNotEmpty(), f => f.status == logininfoDto.status);
+            exp.And(it => it.LoginTime >= logininfoDto.BeginTime && it.LoginTime <= logininfoDto.EndTime);
+            exp.AndIF(logininfoDto.Ipaddr.IfNotEmpty(), f => f.Ipaddr == logininfoDto.Ipaddr);
+            exp.AndIF(logininfoDto.UserName.IfNotEmpty(), f => f.UserName.Contains(logininfoDto.UserName));
+            exp.AndIF(logininfoDto.Status.IfNotEmpty(), f => f.Status == logininfoDto.Status);
             var query = Context.Queryable<SysLogininfor>()
                 .Where(exp.ToExpression())
-                .OrderBy(it => it.infoId, OrderByType.Desc);
+                .OrderBy(it => it.InfoId, OrderByType.Desc);
 
             return query.ToPage(pager);
         }

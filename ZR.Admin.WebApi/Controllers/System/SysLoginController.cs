@@ -192,11 +192,11 @@ namespace ZR.Admin.WebApi.Controllers.System
             ClientInfo clientInfo = context.GetClientInfo();
             SysLogininfor sysLogininfor = new()
             {
-                browser = clientInfo.Device.Family,
-                os = clientInfo.OS.ToString(),
-                ipaddr = ipAddr,
-                userName = context.GetName(),
-                loginLocation = ip_info.Province + "-" + ip_info.City
+                Browser = clientInfo.Device.Family,
+                Os = clientInfo.OS.ToString(),
+                Ipaddr = ipAddr,
+                UserName = context.GetName(),
+                LoginLocation = ip_info?.Province + "-" + ip_info?.City
             };
 
             return sysLogininfor;

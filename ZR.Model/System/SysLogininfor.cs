@@ -14,47 +14,47 @@ namespace ZR.Model.System
     {
         //[Key]
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
-        public long infoId { get; set; }
+        public long InfoId { get; set; }
 
         /// <summary>
         /// 用户账号
         /// </summary>
-        public string userName { get; set; }
+        public string UserName { get; set; }
 
         /// <summary>
         /// 登录状态 0成功 1失败
         /// </summary>
-        public string status { get; set; }
+        public string Status { get; set; }
 
         /// <summary>
         /// 登录IP地址
         /// </summary>
-        public string ipaddr { get; set; }
+        public string Ipaddr { get; set; }
 
         /// <summary>
         /// 登录地点
         /// </summary>
-        public string loginLocation { get; set; }
+        public string LoginLocation { get; set; }
 
         /// <summary>
         /// 浏览器类型
         /// </summary>
-        public string browser { get; set; }
+        public string Browser { get; set; }
 
         /** 操作系统 */
         //@Excel(name = "操作系统")
-        public string os { get; set; }
+        public string Os { get; set; }
 
         /// <summary>
         /// 提示消息
         /// </summary>
-        public string msg { get; set; }
+        public string Msg { get; set; }
 
         /// <summary>
         /// 访问时间
         /// </summary>
         [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
-        public DateTime loginTime { get; set; } = DateTime.Now;
+        public DateTime LoginTime { get; set; } = DateTime.Now;
         [SugarColumn(IsIgnore = true)]
         public DateTime? BeginTime { get; set; }
         [SugarColumn(IsIgnore = true)]
