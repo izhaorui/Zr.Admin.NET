@@ -227,9 +227,11 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:gen:preview")]
         public IActionResult Preview(long tableId = 0, int VueVersion = 0)
         {
-            GenerateDto dto = new();
-            dto.TableId = tableId;
-            dto.VueVersion = VueVersion;
+            GenerateDto dto = new()
+            {
+                TableId = tableId,
+                VueVersion = VueVersion
+            };
             if (dto == null || dto.TableId <= 0)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");

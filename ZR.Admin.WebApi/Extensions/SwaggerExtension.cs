@@ -21,8 +21,7 @@ namespace ZR.Admin.WebApi.Extensions
                     var url = $"{httpReq.Scheme}://{httpReq.Host.Value}";
                     var referer = httpReq.Headers["Referer"].ToString();
                     if (referer.Contains(GlobalConstant.DevApiProxy))
-                        url = referer.Substring(0,
-                            referer.IndexOf(GlobalConstant.DevApiProxy, StringComparison.InvariantCulture) + GlobalConstant.DevApiProxy.Length - 1);
+                        url = referer[..(referer.IndexOf(GlobalConstant.DevApiProxy, StringComparison.InvariantCulture) + GlobalConstant.DevApiProxy.Length - 1)];
                     swaggerDoc.Servers =
                         new List<OpenApiServer>
                         {

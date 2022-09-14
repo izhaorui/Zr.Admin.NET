@@ -48,7 +48,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Index()
         {
             return Ok("看到这里页面说明你已经成功启动了本项目:)\n\n" +
-                "如果觉得项目有用，打赏作者喝杯咖啡作为奖励\n☛☛http://www.izhaorui.cn/doc\n");
+                "如果觉得项目有用，打赏作者喝杯咖啡作为奖励\n☛☛http://www.izhaorui.cn/doc/support.html\n");
         }
 
         /// <summary>
