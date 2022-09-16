@@ -1,19 +1,9 @@
-﻿using OfficeOpenXml.Attributes;
-using SqlSugar;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace ZR.Model.System
+namespace ZR.Model.System.Dto
 {
-    /// <summary>
-    /// 字典类型表
-    /// </summary>
-    [SugarTable("sys_dict_type")]
-    [Tenant("0")]
-    public class SysDictType : SysBase
+    public class SysDictTypeDto
     {
-        /// <summary>
-        /// 字典主键
-        /// </summary>
-        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long DictId { get; set; }
         /// <summary>
         /// 字典名称
@@ -22,11 +12,9 @@ namespace ZR.Model.System
         /// <summary>
         /// 字典类型
         /// </summary>
+        [Required(ErrorMessage = "字典类型不能为空")]
+        [RegularExpression(pattern: "^[a-z][a-z0-9_]*$", ErrorMessage = "字典类型必须以字母开头,且字典类型只能由小写字母或加下划线还有数字组成")]
         public string DictType { get; set; }
-        /// <summary>
-        /// 状态 0、正常 1、停用
-        /// </summary>
-        [EpplusIgnore]
         public string Status { get; set; }
         /// <summary>
         /// 系统内置 Y是 N否

@@ -110,5 +110,15 @@ namespace ZR.Repository.System
                 .Where(f => f.DictType == old_dictType)
                 .ExecuteCommand();
         }
+
+        /// <summary>
+        /// 根据字典类型查询自定义sql
+        /// </summary>
+        /// <param name="dictType"></param>
+        /// <returns></returns>
+        public List<SysDictData> SelectDictDataByCustomSql(SysDictType sysDictType)
+        {
+            return Context.Ado.SqlQuery<SysDictData>(sysDictType?.CustomSql).ToList();
+        }
     }
 }

@@ -73,6 +73,10 @@ namespace ZR.Admin.WebApi.Controllers.System
                     ColumnName = dic.ColumnName,
                     List = list.FindAll(f => f.DictType == dic.DictType)
                 };
+                if (dic.DictType.StartsWith("cus_"))
+                {
+                    vo.List = SysDictService.SelectDictDataByCustomSql(dic.DictType);
+                }
                 dataVos.Add(vo);
             }
             return SUCCESS(dataVos);

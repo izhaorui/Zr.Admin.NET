@@ -1,8 +1,4 @@
-﻿//using Dapper.Contrib.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using SqlSugar;
+﻿using SqlSugar;
 
 namespace ZR.Model.System
 {
@@ -13,11 +9,10 @@ namespace ZR.Model.System
     [SugarTable("sys_dict_data")]
     public class SysDictData: SysBase
     {
-        //[Key]
         /// <summary>
         /// 字典主键
         /// </summary>
-        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]//主键并且自增 （string不能设置自增）
+        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long DictCode{ get; set; }
         public int DictSort { get; set; }
         public string DictLabel { get; set; }

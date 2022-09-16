@@ -107,6 +107,7 @@ CREATE TABLE sys_dict_type  (
   update_by varchar(64)  NULL DEFAULT '' ,-- '更新者',
   update_time datetime NULL DEFAULT NULL ,-- '更新时间',
   remark varchar(500)  NULL DEFAULT NULL ,-- '备注',
+  customSql varchar(500)  NULL DEFAULT NULL ,-- '自定义sql',
 )
 GO
 CREATE UNIQUE INDEX dictType ON dbo.sys_dict_type(dictType)

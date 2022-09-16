@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using ZR.Model;
@@ -110,6 +111,22 @@ namespace ZR.Service.System
         public SysDictType GetInfo(long dictId)
         {
             return DictRepository.GetFirst(f => f.DictId == dictId);
+        }
+
+        /// <summary>
+        /// 根据字典类型查询自定义sql
+        /// </summary>
+        /// <param name="dictType"></param>
+        /// <returns></returns>
+        public List<SysDictData> SelectDictDataByCustomSql(string dictType)
+        {
+            var dictInfo = DictRepository.Queryable()
+                .Where(f => f.DictType == dictType).First();
+            if (dictInfo == null || !dictInfo.CustomSql.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+            return DictDataRepository.SelectDictDataByCustomSql(dictInfo);
         }
     }
 }

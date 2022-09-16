@@ -47,5 +47,7 @@ namespace ZR.Service.System.IService
         /// <param name="dictId"></param>
         /// <returns></returns>
         SysDictType GetInfo(long dictId);
+
+        List<SysDictData> SelectDictDataByCustomSql(string dictType);
     }
 }
