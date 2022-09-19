@@ -189,18 +189,18 @@ CREATE TABLE `sys_dict_type`  (
 -- ----------------------------
 -- Records of sys_dict_type
 -- ----------------------------
-INSERT INTO `sys_dict_type` VALUES (1, '用户性别', 'sys_user_sex', '0', 'Y', 'admin', SYSDATE(), '', NULL, '用户性别列表');
-INSERT INTO `sys_dict_type` VALUES (2, '菜单状态', 'sys_show_hide', '0', 'Y', 'admin', SYSDATE(), '', NULL, '菜单状态列表');
-INSERT INTO `sys_dict_type` VALUES (3, '系统开关', 'sys_normal_disable', '0', 'Y', 'admin', SYSDATE(), '', NULL, '系统开关列表');
-INSERT INTO `sys_dict_type` VALUES (4, '任务状态', 'sys_job_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '任务状态列表');
-INSERT INTO `sys_dict_type` VALUES (5, '任务分组', 'sys_job_group', '0', 'Y', 'admin', SYSDATE(), '', NULL, '任务分组列表');
-INSERT INTO `sys_dict_type` VALUES (6, '系统是否', 'sys_yes_no', '0', 'Y', 'admin', SYSDATE(), '', NULL, '系统是否列表');
-INSERT INTO `sys_dict_type` VALUES (7, '通知类型', 'sys_notice_type', '0', 'Y', 'admin', SYSDATE(), '', NULL, '通知类型列表');
-INSERT INTO `sys_dict_type` VALUES (8, '通知状态', 'sys_notice_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '通知状态列表');
-INSERT INTO `sys_dict_type` VALUES (9, '操作类型', 'sys_oper_type', '0', 'Y', 'admin', SYSDATE(), '', NULL, '操作类型列表');
-INSERT INTO `sys_dict_type` VALUES (10, '系统状态', 'sys_common_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '登录状态列表');
-INSERT INTO `sys_dict_type` VALUES (11, '文章状态', 'sys_article_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, NULL);
-INSERT INTO `sys_dict_type` VALUES (12, '多语言类型', 'sys_lang_type', '0', 'Y', 'admin', SYSDATE(), '', NULL, '多语言字典类型');
+INSERT INTO `sys_dict_type` VALUES (1, '用户性别', 'sys_user_sex', '0', 'Y', 'admin', SYSDATE(), '', NULL, '用户性别列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (2, '菜单状态', 'sys_show_hide', '0', 'Y', 'admin', SYSDATE(), '', NULL, '菜单状态列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (3, '系统开关', 'sys_normal_disable', '0', 'Y', 'admin', SYSDATE(), '', NULL, '系统开关列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (4, '任务状态', 'sys_job_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '任务状态列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (5, '任务分组', 'sys_job_group', '0', 'Y', 'admin', SYSDATE(), '', NULL, '任务分组列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (6, '系统是否', 'sys_yes_no', '0', 'Y', 'admin', SYSDATE(), '', NULL, '系统是否列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (7, '通知类型', 'sys_notice_type', '0', 'Y', 'admin', SYSDATE(), '', NULL, '通知类型列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (8, '通知状态', 'sys_notice_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '通知状态列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (9, '操作类型', 'sys_oper_type', '0', 'Y', 'admin', SYSDATE(), '', NULL, '操作类型列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (10, '系统状态', 'sys_common_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, '登录状态列表',NULL);
+INSERT INTO `sys_dict_type` VALUES (11, '文章状态', 'sys_article_status', '0', 'Y', 'admin', SYSDATE(), '', NULL, NULL,NULL);
+INSERT INTO `sys_dict_type` VALUES (12, '多语言类型', 'sys_lang_type', '0', 'Y', 'admin', SYSDATE(), '', NULL, '多语言字典类型',NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
 
