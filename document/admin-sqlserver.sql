@@ -113,18 +113,18 @@ GO
 CREATE UNIQUE INDEX dictType ON dbo.sys_dict_type(dictType)
 GO
 
-INSERT INTO sys_dict_type VALUES ('用户性别', 'sys_user_sex', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '用户性别列表');
-INSERT INTO sys_dict_type VALUES ('菜单状态', 'sys_show_hide', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '菜单状态列表');
-INSERT INTO sys_dict_type VALUES ('系统开关', 'sys_normal_disable', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '系统开关列表');
-INSERT INTO sys_dict_type VALUES ('任务状态', 'sys_job_status', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '任务状态列表');
-INSERT INTO sys_dict_type VALUES ('任务分组', 'sys_job_group', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '任务分组列表');
-INSERT INTO sys_dict_type VALUES ('系统是否', 'sys_yes_no', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '系统是否列表');
-INSERT INTO sys_dict_type VALUES ('通知类型', 'sys_notice_type', 'Y', '0', 'admin', '2021-02-24 10:55:26', '', NULL, '通知类型列表');
-INSERT INTO sys_dict_type VALUES ('通知状态', 'sys_notice_status', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '通知状态列表');
-INSERT INTO sys_dict_type VALUES ('操作类型', 'sys_oper_type', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '操作类型列表');
-INSERT INTO sys_dict_type VALUES ('系统状态', 'sys_common_status', '0', 'Y', 'admin', '2021-02-24 10:55:27', '', NULL, '登录状态列表');
-INSERT INTO sys_dict_type VALUES ('文章状态', 'sys_article_status', '0', 'Y', 'admin', '2021-08-19 10:34:33', '', NULL, NULL);
-INSERT INTO sys_dict_type VALUES ('多语言类型', 'sys_lang_type', '0', 'Y', 'admin', '2021-08-19 10:34:33', '', NULL, '多语言字典类型');
+INSERT INTO sys_dict_type VALUES ('用户性别', 'sys_user_sex', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '用户性别列表', NULL);
+INSERT INTO sys_dict_type VALUES ('菜单状态', 'sys_show_hide', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '菜单状态列表', NULL);
+INSERT INTO sys_dict_type VALUES ('系统开关', 'sys_normal_disable', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '系统开关列表', NULL);
+INSERT INTO sys_dict_type VALUES ('任务状态', 'sys_job_status', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '任务状态列表', NULL);
+INSERT INTO sys_dict_type VALUES ('任务分组', 'sys_job_group', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '任务分组列表', NULL);
+INSERT INTO sys_dict_type VALUES ('系统是否', 'sys_yes_no', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '系统是否列表', NULL);
+INSERT INTO sys_dict_type VALUES ('通知类型', 'sys_notice_type', 'Y', '0', 'admin', '2021-02-24 10:55:26', '', NULL, '通知类型列表', NULL);
+INSERT INTO sys_dict_type VALUES ('通知状态', 'sys_notice_status', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '通知状态列表', NULL);
+INSERT INTO sys_dict_type VALUES ('操作类型', 'sys_oper_type', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '操作类型列表', NULL);
+INSERT INTO sys_dict_type VALUES ('系统状态', 'sys_common_status', '0', 'Y', 'admin', '2021-02-24 10:55:27', '', NULL, '登录状态列表', NULL);
+INSERT INTO sys_dict_type VALUES ('文章状态', 'sys_article_status', '0', 'Y', 'admin', '2021-08-19 10:34:33', '', NULL, NULL, NULL);
+INSERT INTO sys_dict_type VALUES ('多语言类型', 'sys_lang_type', '0', 'Y', 'admin', '2021-08-19 10:34:33', '', NULL, '多语言字典类型', NULL);
 
 GO
 if OBJECT_ID(N'sys_dict_data',N'U') is not NULL DROP TABLE sys_dict_data
