@@ -475,6 +475,11 @@ $end
 function submitForm() {
   proxy.${refs}refs["formRef"].validate((valid) => {
     if (valid) {
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+      form.value.${item.CsharpFieldFl} = form.value.${item.CsharpFieldFl}Checked.toString();
+$end
+$end
       if (form.value.${replaceDto.FistLowerPk} != undefined && opertype.value === 2) {
         update${genTable.BusinessName}(form.value).then((res) => {
           proxy.${modal}modal.msgSuccess("修改成功")
