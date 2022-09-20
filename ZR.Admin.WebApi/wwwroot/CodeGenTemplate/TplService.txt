@@ -1,7 +1,4 @@
-﻿using System;
-using SqlSugar;
-using System.Collections.Generic;
-using Infrastructure;
+﻿using SqlSugar;
 using Infrastructure.Attribute;
 using ${options.ModelsNamespace};
 using ${options.ModelsNamespace}.Dto;
@@ -20,12 +17,6 @@ namespace ${options.ServicesNamespace}.${options.SubNamespace}
     [AppService(ServiceType = typeof(I${replaceDto.ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
     public class ${replaceDto.ModelTypeName}Service : BaseService<${replaceDto.ModelTypeName}>, I${replaceDto.ModelTypeName}Service
     {
-        private readonly ${replaceDto.ModelTypeName}Repository _${replaceDto.ModelTypeName}Repository;
-        public ${replaceDto.ModelTypeName}Service(${replaceDto.ModelTypeName}Repository repository)
-        {
-            _${replaceDto.ModelTypeName}Repository = repository;
-        }
-
         #region 业务逻辑代码
 
         /// <summary>
@@ -51,8 +42,7 @@ $elseif(column.CsharpType == "int" || column.CsharpType == "long")
 $end
 $end
 $end
-            var response = _${replaceDto.ModelTypeName}Repository
-                .Queryable()
+            var response = Queryable()
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
                 .Includes(it => it.${genTable.SubTable.ClassName}.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
 $end
@@ -87,7 +77,7 @@ $end
 $end
 $end
 
-            var response = _${replaceDto.ModelTypeName}Repository.Queryable().Where(predicate.ToExpression())
+            var response = Queryable().Where(predicate.ToExpression())
                 .ToTree(it => it.Children, it => it.${genTable.Options.TreeParentCode}, 0);
 
             return response;
@@ -100,7 +90,7 @@ $end
         /// <returns></returns>
         public int Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm)
         {
-            var response = _${replaceDto.ModelTypeName}Repository.Insert(parm, it => new
+            var response = Insert(parm, it => new
             {
 ${foreach(item in genTable.Columns)}
 $if((item.IsInsert))
@@ -118,7 +108,7 @@ ${end}
         /// <returns></returns>
         public int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm)
         {
-            var response = _${replaceDto.ModelTypeName}Repository.Update(w => w.${replaceDto.PKName} == parm.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
+            var response = Update(w => w.${replaceDto.PKName} == parm.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
             {
 $foreach(item in genTable.Columns)
 $if((item.IsEdit))

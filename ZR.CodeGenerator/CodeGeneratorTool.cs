@@ -83,7 +83,6 @@ namespace ZR.CodeGenerator
             InitJntTemplate(dto, replaceDto);
 
             GenerateModels(replaceDto, dto);
-            GenerateRepository(replaceDto, dto);
             GenerateService(replaceDto, dto);
             GenerateControllers(replaceDto, dto);
             if (dto.VueVersion == 3)
@@ -97,6 +96,10 @@ namespace ZR.CodeGenerator
                 replaceDto.VueViewFormHtml = GenerateCurdForm();
 
                 GenerateVueViews(replaceDto, dto);
+            }
+            if (dto.GenTable.Options.GenerateRepo == 1)
+            {
+                GenerateRepository(replaceDto, dto);
             }
             GenerateVueJs(replaceDto, dto);
             GenerateSql(replaceDto, dto);

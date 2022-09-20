@@ -74,7 +74,7 @@ namespace ZR.Model.System.Generate
         /// </summary>
         [SqlSugar.SugarColumn(IsJson = true, ColumnDataType = "nvarchar(4000)")]
         public Options Options { get; set; }
-        
+
         #region 表额外字段
         /** 表列信息 */
         [SqlSugar.SugarColumn(IsIgnore = true)]
@@ -88,7 +88,7 @@ namespace ZR.Model.System.Generate
         #endregion
     }
 
-    public class Options 
+    public class Options
     {
         public long ParentMenuId { get; set; } = 0;
         public string SortType { get; set; } = "asc";
@@ -96,7 +96,7 @@ namespace ZR.Model.System.Generate
         public string TreeCode { get; set; } = string.Empty;
         public string TreeName { get; set; } = string.Empty;
         public string TreeParentCode { get; set; } = string.Empty;
-        public string PermissionPrefix { get; set; }= string.Empty;
+        public string PermissionPrefix { get; set; } = string.Empty;
         /// <summary>
         /// 额外参数字符串
         /// </summary>
@@ -105,5 +105,9 @@ namespace ZR.Model.System.Generate
         /// 列大小 12,24
         /// </summary>
         public int ColNum { get; set; } = 12;
+        /// <summary>
+        /// 是否生成仓储层
+        /// </summary>
+        public int GenerateRepo { get; set; }
     }
 }
