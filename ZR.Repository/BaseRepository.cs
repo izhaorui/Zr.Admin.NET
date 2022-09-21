@@ -203,7 +203,10 @@ namespace ZR.Repository
         {
             return Context.Deleteable<T>().ExecuteCommand();
         }
-
+        public bool Truncate()
+        {
+            return Context.DbMaintenance.TruncateTable<T>();
+        }
         #endregion delete
 
         #region query

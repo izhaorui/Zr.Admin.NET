@@ -1,11 +1,12 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Extensions;
+using SqlSugar;
 using System;
-using System.Collections.Generic;
-using ZR.Common;
 using ZR.Model;
-using ZR.Model.System.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
+using ZR.Repository;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
 
@@ -17,11 +18,11 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysLoginService), ServiceLifetime = LifeTime.Transient)]
     public class SysLoginService: BaseService<SysLogininfor>, ISysLoginService
     {
-        private SysLogininfoRepository SysLogininfoRepository;
+        private readonly SysUserRepository SysUserRepository;
 
-        public SysLoginService(SysLogininfoRepository sysLogininfo)
+        public SysLoginService(SysUserRepository sysUserRepository)
         {
-            SysLogininfoRepository = sysLogininfo;
+            SysUserRepository = sysUserRepository;
         }
 
         /// <summary>
@@ -34,7 +35,7 @@ namespace ZR.Service.System
             //密码md5
             loginBody.Password = NETCore.Encrypt.EncryptProvider.Md5(loginBody.Password);
 
-            SysUser user = SysLogininfoRepository.Login(loginBody);
+            SysUser user = SysUserRepository.Login(loginBody);
             logininfor.UserName = loginBody.Username;
             logininfor.Status = "1";
             logininfor.LoginTime = DateTime.Now;
@@ -55,10 +56,9 @@ namespace ZR.Service.System
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor);
-            SysLogininfoRepository.UpdateLoginInfo(loginBody, user.UserId);
+            SysUserRepository.UpdateLoginInfo(loginBody, user.UserId);
             return user;
         }
-
 
         /// <summary>
         /// 查询操作日志
@@ -71,8 +71,15 @@ namespace ZR.Service.System
             logininfoDto.BeginTime = DateTimeHelper.GetBeginTime(logininfoDto.BeginTime, -1);
             logininfoDto.EndTime = DateTimeHelper.GetBeginTime(logininfoDto.EndTime, 1);
 
-            var list = SysLogininfoRepository.GetLoginLog(logininfoDto, pager);
-            return list;
+            var exp = Expressionable.Create<SysLogininfor>();
+            exp.And(it => it.LoginTime >= logininfoDto.BeginTime && it.LoginTime <= logininfoDto.EndTime);
+            exp.AndIF(logininfoDto.Ipaddr.IfNotEmpty(), f => f.Ipaddr == logininfoDto.Ipaddr);
+            exp.AndIF(logininfoDto.UserName.IfNotEmpty(), f => f.UserName.Contains(logininfoDto.UserName));
+            exp.AndIF(logininfoDto.Status.IfNotEmpty(), f => f.Status == logininfoDto.Status);
+            var query = Queryable().Where(exp.ToExpression())
+                .OrderBy(it => it.InfoId, OrderByType.Desc);
+
+            return query.ToPage(pager);
         }
 
         /// <summary>
@@ -82,7 +89,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public void AddLoginInfo(SysLogininfor sysLogininfor)
         {
-            SysLogininfoRepository.AddLoginInfo(sysLogininfor);
+            Insert(sysLogininfor);
         }
 
         /// <summary>
@@ -90,7 +97,7 @@ namespace ZR.Service.System
         /// </summary>
         public void TruncateLogininfo()
         {
-            SysLogininfoRepository.TruncateLogininfo();
+            Truncate();
         }
 
         /// <summary>
@@ -100,7 +107,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteLogininforByIds(long[] ids)
         {
-            return SysLogininfoRepository.DeleteLogininforByIds(ids);
+            return Delete(ids);
         }
     }
 }

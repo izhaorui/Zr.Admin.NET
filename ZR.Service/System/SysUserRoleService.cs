@@ -1,10 +1,8 @@
 ﻿using Infrastructure.Attribute;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using ZR.Model;
-using ZR.Model.System.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Repository.System;
 using ZR.Service.System.IService;
 
@@ -14,7 +12,7 @@ namespace ZR.Service.System
     /// 用户角色
     /// </summary>
     [AppService(ServiceType = typeof(ISysUserRoleService), ServiceLifetime = LifeTime.Transient)]
-    public class SysUserRoleService : ISysUserRoleService
+    public class SysUserRoleService : BaseService<SysUserRole>, ISysUserRoleService
     {
         public SysUserRoleRepository SysUserRoleRepository;
 
@@ -23,7 +21,6 @@ namespace ZR.Service.System
             SysUserRoleRepository = sysUserRoleRepository;
         }
 
-
         /// <summary>
         /// 通过角色ID查询角色使用数量
         /// </summary>
@@ -31,7 +28,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int CountUserRoleByRoleId(long roleId)
         {
-            return SysUserRoleRepository.CountUserRoleByRoleId(roleId);
+            return Count(it => it.RoleId == roleId);
         }
 
         /// <summary>
@@ -41,7 +38,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteUserRoleByUserId(int userId)
         {
-            return SysUserRoleRepository.DeleteUserRoleByUserId(userId);
+            return Deleteable().Where(it => it.UserId == userId).ExecuteCommand();
         }
 
         /// <summary>
@@ -58,11 +55,11 @@ namespace ZR.Service.System
         /// <summary>
         /// 添加用户角色
         /// </summary>
-        /// <param name="sysRoleMenus"></param>
+        /// <param name="sysUserRoles"></param>
         /// <returns></returns>
-        public int AddUserRole(List<SysUserRole> sysUsers)
+        public int AddUserRole(List<SysUserRole> sysUserRoles)
         {
-            return SysUserRoleRepository.AddUserRole(sysUsers);
+            return Insert(sysUserRoles);
         }
 
         /// <summary>
@@ -102,7 +99,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int InsertUserRole(SysUser user)
         {
-            List<SysUserRole> userRoles = new List<SysUserRole>();
+            List<SysUserRole> userRoles = new();
             foreach (var item in user.RoleIds)
             {
                 userRoles.Add(new SysUserRole() { RoleId = item, UserId = user.UserId });
@@ -114,8 +111,7 @@ namespace ZR.Service.System
         /// <summary>
         /// 新增加角色用户
         /// </summary>
-        /// <param name="roleId">角色id</param>
-        /// <param name="userids">用户ids</param>
+        /// <param name="roleUsersCreateDto"></param>
         /// <returns></returns>
         public int InsertRoleUser(RoleUsersCreateDto roleUsersCreateDto)
         {

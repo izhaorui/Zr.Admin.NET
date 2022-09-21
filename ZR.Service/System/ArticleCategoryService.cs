@@ -1,13 +1,10 @@
 ﻿using Infrastructure.Attribute;
 using SqlSugar;
-using SqlSugar.IOC;
 using System.Collections.Generic;
-using System.Linq;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.System;
 using ZR.Repository;
-using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -18,12 +15,6 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(IArticleCategoryService), ServiceLifetime = LifeTime.Transient)]
     public class ArticleCategoryService : BaseService<ArticleCategory>, IArticleCategoryService
     {
-        private readonly ArticleCategoryRepository _ArticleCategoryRepository;
-        public ArticleCategoryService(ArticleCategoryRepository repository)
-        {
-            _ArticleCategoryRepository = repository;
-        }
-
         /// <summary>
         /// 查询文章目录列表
         /// </summary>
@@ -35,8 +26,7 @@ namespace ZR.Service.System
             var predicate = Expressionable.Create<ArticleCategory>();
 
             //搜索条件查询语法参考Sqlsugar
-            var response = _ArticleCategoryRepository
-                .Queryable()
+            var response = Queryable()
                 .Where(predicate.ToExpression())
                 .ToPage(parm);
 
@@ -55,7 +45,7 @@ namespace ZR.Service.System
 
             //搜索条件查询语法参考Sqlsugar
 
-            var response = _ArticleCategoryRepository.Queryable().Where(predicate.ToExpression())
+            var response = Queryable().Where(predicate.ToExpression())
                 .ToTree(it => it.Children, it => it.ParentId, 0);
 
             return response;
@@ -68,7 +58,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int AddArticleCategory(ArticleCategory parm)
         {
-            var response = _ArticleCategoryRepository.Insert(parm, it => new
+            var response = Insert(parm, it => new
             {
                 it.Name,
                 it.CreateTime,

@@ -2,11 +2,11 @@
 using Infrastructure.Extensions;
 using SqlSugar;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Repository.System
 {
@@ -160,6 +160,30 @@ namespace ZR.Repository.System
                     Avatar = user.Avatar
                 })
                 .Where(f => f.UserId == user.UserId).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 登录
+        /// </summary>
+        /// <param name="user">登录实体</param>
+        /// <returns></returns>
+        public SysUser Login(LoginBodyDto user)
+        {
+            return GetFirst(it => it.UserName == user.Username && it.Password == user.Password);
+        }
+
+        /// <summary>
+        /// 修改登录信息
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public void UpdateLoginInfo(LoginBodyDto user, long userId)
+        {
+            var db = Context;
+            db.Updateable(new SysUser() { LoginIP = user.LoginIP, LoginDate = db.GetDate(), UserId = userId })
+                .UpdateColumns(it => new { it.LoginIP, it.LoginDate })
+                .ExecuteCommand();
         }
     }
 }

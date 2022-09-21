@@ -1,9 +1,10 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Extensions;
+using SqlSugar;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -14,13 +15,6 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysOperLogService), ServiceLifetime = LifeTime.Transient)]
     public class SysOperLogService : BaseService<SysOperLog>, ISysOperLogService
     {
-        public SysOperLogRepository sysOperLogRepository;
-
-        public SysOperLogService(SysOperLogRepository sysOperLog)
-        {
-            sysOperLogRepository = sysOperLog;
-        }
-
         /// <summary>
         /// 新增操作日志操作
         /// </summary>
@@ -31,28 +25,34 @@ namespace ZR.Service.System
             {
                 operLog.OperParam = operLog.OperParam[..1000];
             }
-            sysOperLogRepository.AddSysOperLog(operLog);
+            //sysOperLogRepository.AddSysOperLog(operLog);
+            Insert(operLog);
         }
 
         /// <summary>
         /// 查询系统操作日志集合
         /// </summary>
-        /// <param name="operLog">操作日志对象</param>
+        /// <param name="sysOper">操作日志对象</param>
         /// <param name="pager"></param>
         /// <returns>操作日志集合</returns>
-        public PagedInfo<SysOperLog> SelectOperLogList(SysOperLogDto operLog, PagerInfo pager)
+        public PagedInfo<SysOperLog> SelectOperLogList(SysOperLogDto sysOper, PagerInfo pager)
         {
-            operLog.BeginTime = DateTimeHelper.GetBeginTime(operLog.BeginTime, -1);
-            operLog.EndTime = DateTimeHelper.GetBeginTime(operLog.EndTime, 1);
+            sysOper.BeginTime = DateTimeHelper.GetBeginTime(sysOper.BeginTime, -1);
+            sysOper.EndTime = DateTimeHelper.GetBeginTime(sysOper.EndTime, 1);
 
             bool isDemoMode = AppSettings.GetAppConfig("DemoMode", false);
             if (isDemoMode)
             {
                 return new PagedInfo<SysOperLog>();
             }
-            var list = sysOperLogRepository.GetSysOperLog(operLog, pager);
+            var exp = Expressionable.Create<SysOperLog>();
+            exp.And(it => it.OperTime >= sysOper.BeginTime && it.OperTime <= sysOper.EndTime);
+            exp.AndIF(sysOper.Title.IfNotEmpty(), it => it.Title.Contains(sysOper.Title));
+            exp.AndIF(sysOper.operName.IfNotEmpty(), it => it.OperName.Contains(sysOper.operName));
+            exp.AndIF(sysOper.BusinessType != -1, it => it.BusinessType == sysOper.BusinessType);
+            exp.AndIF(sysOper.Status != -1, it => it.Status == sysOper.Status);
 
-            return list;
+            return GetPages(exp.ToExpression(), pager, x => x.OperId, OrderByType.Desc);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace ZR.Service.System
         /// </summary>
         public void CleanOperLog()
         {
-            sysOperLogRepository.ClearOperLog();
+            Truncate();
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace ZR.Service.System
         /// <returns>结果</returns>
         public int DeleteOperLogByIds(long[] operIds)
         {
-            return sysOperLogRepository.DeleteOperLogByIds(operIds);
+            return Context.Deleteable<SysOperLog>().In(operIds).ExecuteCommand();
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace ZR.Service.System
         /// <returns>操作日志对象</returns>
         public SysOperLog SelectOperLogById(long operId)
         {
-            return sysOperLogRepository.SelectOperLogById(operId);
+            return GetById(operId);
         }
     }
 }

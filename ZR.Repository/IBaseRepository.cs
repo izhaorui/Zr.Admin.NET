@@ -50,6 +50,7 @@ namespace ZR.Repository
         int Delete(object[] obj);
         int Delete(object id);
         int DeleteTable();
+        bool Truncate();
 
         #endregion delete
 

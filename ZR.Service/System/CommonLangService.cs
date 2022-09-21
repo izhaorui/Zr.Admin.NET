@@ -20,12 +20,6 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ICommonLangService), ServiceLifetime = LifeTime.Transient)]
     public class CommonLangService : BaseService<CommonLang>, ICommonLangService
     {
-        private readonly CommonLangRepository _CommonLangrepository;
-        public CommonLangService(CommonLangRepository repository)
-        {
-            _CommonLangrepository = repository;
-        }
-
         #region 业务逻辑代码
 
         /// <summary>
@@ -42,8 +36,7 @@ namespace ZR.Service.System
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
             predicate = predicate.AndIF(parm.BeginAddtime != null, it => it.Addtime >= parm.BeginAddtime && it.Addtime <= parm.EndAddtime);
-            var response = _CommonLangrepository
-                .Queryable()
+            var response = Queryable()
                 .Where(predicate.ToExpression())
                 .ToPage(parm);
             return response;
@@ -63,8 +56,7 @@ namespace ZR.Service.System
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
             predicate = predicate.AndIF(parm.BeginAddtime != null, it => it.Addtime >= parm.BeginAddtime && it.Addtime <= parm.EndAddtime);
-            var response = _CommonLangrepository
-                .Queryable()
+            var response = Queryable()
                 .Where(predicate.ToExpression())
                 .ToPivotList(it => it.LangCode, it => it.LangKey, it => it.Max(f => f.LangName));
             return response;
@@ -78,8 +70,7 @@ namespace ZR.Service.System
             //搜索条件查询语法参考Sqlsugar
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             //predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
-            var response = _CommonLangrepository
-                .Queryable()
+            var response = Queryable()
                 .Where(predicate.ToExpression())
                 .ToList();
             return response;
@@ -98,7 +89,7 @@ namespace ZR.Service.System
                     LangName = item.LangName,
                 });
             }
-            var storage = _CommonLangrepository.Storageable(langs)
+            var storage = Storageable(langs)
                 .WhereColumns(it => new { it.LangKey, it.LangCode })
                 .ToStorage();
 

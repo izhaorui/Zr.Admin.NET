@@ -1,12 +1,11 @@
 ﻿using Infrastructure.Attribute;
-using Infrastructure.Model;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
-using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -17,21 +16,20 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysDictDataService), ServiceLifetime = LifeTime.Transient)]
     public class SysDictDataService : BaseService<SysDictData>, ISysDictDataService
     {
-
-        private readonly SysDictDataRepository SysDictDataRepository;
-        public SysDictDataService(SysDictDataRepository sysDictDataRepository)
-        {
-            SysDictDataRepository = sysDictDataRepository;
-        }
-
         /// <summary>
         /// 查询字典数据
         /// </summary>
         /// <param name="dictData"></param>
+        /// <param name="pagerInfo"></param>
         /// <returns></returns>
         public PagedInfo<SysDictData> SelectDictDataList(SysDictData dictData, PagerInfo pagerInfo)
         {
-            return SysDictDataRepository.SelectDictDataList(dictData, pagerInfo);
+            //return SysDictDataRepository.SelectDictDataList(dictData, pagerInfo);
+            var exp = Expressionable.Create<SysDictData>();
+            exp.AndIF(!string.IsNullOrEmpty(dictData.DictLabel), it => it.DictLabel.Contains(dictData.DictLabel));
+            exp.AndIF(!string.IsNullOrEmpty(dictData.Status), it => it.Status == dictData.Status);
+            exp.AndIF(!string.IsNullOrEmpty(dictData.DictType), it => it.DictType == dictData.DictType);
+            return GetPages(exp.ToExpression(), pagerInfo);
         }
 
         /// <summary>
@@ -44,7 +42,9 @@ namespace ZR.Service.System
             string CK = $"SelectDictDataByType_{dictType}";
             if (CacheHelper.GetCache(CK) is not List<SysDictData> list)
             {
-                list = SysDictDataRepository.SelectDictDataByType(dictType);
+                list = Queryable().Where(f => f.Status == "0" && f.DictType == dictType)
+                .OrderBy(it => it.DictSort)
+                .ToList();
                 CacheHelper.SetCache(CK, list, 30);
             }
             return list;
@@ -54,7 +54,9 @@ namespace ZR.Service.System
             string CK = $"SelectDictDataByTypes_{dictTypes}";
             if (CacheHelper.GetCache(CK) is not List<SysDictData> list)
             {
-                list = SysDictDataRepository.SelectDictDataByTypes(dictTypes);
+                list = Queryable().Where(f => f.Status == "0" && dictTypes.Contains(f.DictType))
+                .OrderBy(it => it.DictSort)
+                .ToList();
                 //CacheHelper.SetCache(CK, list, 30);
             }
             return list;
@@ -69,7 +71,7 @@ namespace ZR.Service.System
             string CK = $"SelectDictDataByCode_{dictCode}";
             if (CacheHelper.GetCache(CK) is not SysDictData list)
             {
-                list = SysDictDataRepository.GetFirst(f => f.DictCode == dictCode);
+                list = GetFirst(f => f.DictCode == dictCode);
                 CacheHelper.SetCache(CK, list, 5);
             }
             return list;
@@ -82,7 +84,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public long InsertDictData(SysDictData dict)
         {
-            return SysDictDataRepository.InsertDictData(dict);
+            return Insertable(dict).ExecuteReturnBigIdentity();
         }
 
         /// <summary>
@@ -92,7 +94,19 @@ namespace ZR.Service.System
         /// <returns></returns>
         public long UpdateDictData(SysDictData dict)
         {
-            var result = SysDictDataRepository.UpdateDictData(dict);
+            var result = Updateable(dict)
+                .SetColumns(t => new SysDictData()
+                {
+                    Remark = dict.Remark,
+                    Update_time = DateTime.Now,
+                    DictSort = dict.DictSort,
+                    DictLabel = dict.DictLabel,
+                    DictValue = dict.DictValue,
+                    Status = dict.Status,
+                    CssClass = dict.CssClass,
+                    ListClass = dict.ListClass
+                })
+                .Where(f => f.DictCode == dict.DictCode).ExecuteCommand();
             CacheHelper.Remove($"SelectDictDataByCode_{dict.DictCode}");
             return result;
         }
@@ -104,7 +118,32 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteDictDataByIds(long[] dictCodes)
         {
-            return SysDictDataRepository.DeleteDictDataByIds(dictCodes);
+            return Delete(dictCodes);
+        }
+
+        /// <summary>
+        /// 同步修改字典类型
+        /// </summary>
+        /// <param name="old_dictType">旧字典类型</param>
+        /// <param name="new_dictType">新字典类型</param>
+        /// <returns></returns>
+        public int UpdateDictDataType(string old_dictType, string new_dictType)
+        {
+            //只更新DictType字段根据where条件
+            return Context.Updateable<SysDictData>()
+                .SetColumns(t => new SysDictData() { DictType = new_dictType })
+                .Where(f => f.DictType == old_dictType)
+                .ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 根据字典类型查询自定义sql
+        /// </summary>
+        /// <param name="sysDictType"></param>
+        /// <returns></returns>
+        public List<SysDictData> SelectDictDataByCustomSql(SysDictType sysDictType)
+        {
+            return Context.Ado.SqlQuery<SysDictData>(sysDictType?.CustomSql).ToList();
         }
     }
 }

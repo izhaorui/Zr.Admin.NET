@@ -4,10 +4,25 @@
 		<TargetFramework>net6.0</TargetFramework>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
-		<ProjectReference Include="..\ZR.Model\ZR.Model.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <Compile Remove="System\CommonLangRepository.cs" />
+    <Compile Remove="System\GenTableRepository.cs" />
+    <Compile Remove="System\SysConfigRepository.cs" />
+    <Compile Remove="System\SysDeptRepository.cs" />
+    <Compile Remove="System\SysDictDataRepository.cs" />
+    <Compile Remove="System\SysDictRepository.cs" />
+    <Compile Remove="System\SysLogininfoRepository.cs" />
+    <Compile Remove="System\SysNoticeRepository.cs" />
+    <Compile Remove="System\SysOperLogRepository.cs" />
+    <Compile Remove="System\SysPostRepository.cs" />
+    <Compile Remove="System\SysTasksQzRepository.cs" />
+    <Compile Remove="System\SysUserPostRepository.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\ZR.Model\ZR.Model.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />

@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using ZR.Model.System;
 using ZR.Model.System.Vo;
+using ZR.Repository;
 
 namespace ZR.Service.System.IService
 {
@@ -21,5 +20,10 @@ namespace ZR.Service.System.IService
         List<long> SelectRoleDepts(long roleId);
         bool DeleteRoleDeptByRoleId(long roleId);
         int InsertRoleDepts(SysRole role);
+    }
+
+    public interface ISysRoleDeptService : IBaseService<SysRoleDept>
+    {
+        List<SysRoleDept> SelectRoleDeptByRoleId(long roleId);
     }
 }

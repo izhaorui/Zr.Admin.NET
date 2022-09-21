@@ -1,14 +1,11 @@
 ﻿using Infrastructure.Attribute;
 using Infrastructure.Extensions;
-using Newtonsoft.Json;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ZR.Common;
 using ZR.Model;
 using ZR.Model.System.Generate;
-using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -19,12 +16,10 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(IGenTableService), ServiceLifetime = LifeTime.Transient)]
     public class GenTableService : BaseService<GenTable>, IGenTableService
     {
-        private GenTableRepository GenTableRepository;
         private IGenTableColumnService GenTableColumnService;
-        public GenTableService(IGenTableColumnService genTableColumnService, GenTableRepository genTableRepository)
+        public GenTableService(IGenTableColumnService genTableColumnService)
         {
             GenTableColumnService = genTableColumnService;
-            GenTableRepository = genTableRepository;
         }
 
         /// <summary>
@@ -34,7 +29,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableByIds(long[] tableIds)
         {
-            GenTableRepository.Delete(f => tableIds.Contains(f.TableId));
+            Delete(f => tableIds.Contains(f.TableId));
             return GenTableColumnService.DeleteGenTableColumn(tableIds);
         }
 
@@ -45,7 +40,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableByTbName(string tableName)
         {
-            return GenTableRepository.Delete(f => f.TableName == tableName) ? 1 : 0;
+            return Delete(f => f.TableName == tableName) ? 1 : 0;
         }
 
         /// <summary>
@@ -55,10 +50,10 @@ namespace ZR.Service.System
         /// <returns></returns>
         public GenTable GetGenTableInfo(long tableId)
         {
-            var info = GenTableRepository.GetId(tableId);
+            var info = GetId(tableId);
             if (info != null && !info.SubTableName.IsEmpty())
             {
-                info.SubTable = GenTableRepository.Queryable().Where(f => f.TableName == info.SubTableName).First();
+                info.SubTable = Queryable().Where(f => f.TableName == info.SubTableName).First();
             }
             return info;
         }
@@ -69,7 +64,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public List<GenTable> GetGenTableAll()
         {
-            return GenTableRepository.GetAll();
+            return GetAll();
         }
 
         /// <summary>
@@ -83,7 +78,7 @@ namespace ZR.Service.System
             var predicate = Expressionable.Create<GenTable>();
             predicate = predicate.AndIF(genTable.TableName.IfNotEmpty(), it => it.TableName.Contains(genTable.TableName));
 
-            return GenTableRepository.GetPages(predicate.ToExpression(), pagerInfo, x => x.TableId, OrderByType.Desc);
+            return GetPages(predicate.ToExpression(), pagerInfo, x => x.TableId, OrderByType.Desc);
         }
 
         /// <summary>
@@ -98,7 +93,7 @@ namespace ZR.Service.System
             //DeleteGenTableByIds(new long[] { table.TableId });
             DeleteGenTableByTbName(table.TableName);
 
-            return GenTableRepository.Context.Insertable(table).IgnoreColumns(ignoreNullColumn: true).ExecuteReturnIdentity();
+            return Insertable(table).IgnoreColumns(ignoreNullColumn: true).ExecuteReturnIdentity();
         }
 
         /// <summary>
@@ -113,7 +108,7 @@ namespace ZR.Service.System
 
         public int UpdateGenTable(GenTable genTable)
         {
-            var db = GenTableRepository.Context;
+            var db = Context;
             genTable.Update_time = db.GetDate();
             return db.Updateable(genTable).IgnoreColumns(ignoreAllNullColumns: true).ExecuteCommand();
         }
@@ -154,12 +149,6 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(IGenTableColumnService), ServiceLifetime = LifeTime.Transient)]
     public class GenTableColumnService : BaseService<GenTableColumn>, IGenTableColumnService
     {
-
-        private GenTableColumnRepository GetTableColumnRepository;
-        public GenTableColumnService(GenTableColumnRepository genTableColumnRepository)
-        {
-            GetTableColumnRepository = genTableColumnRepository;
-        }
         /// <summary>
         /// 删除表字段
         /// </summary>
@@ -167,8 +156,9 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableColumn(long tableId)
         {
-            return GetTableColumnRepository.DeleteGenTableColumn(new long[] { tableId });
+            return Deleteable().Where(f => new long[] { tableId }.Contains(f.TableId)).ExecuteCommand();
         }
+
         /// <summary>
         /// 根据表id批量删除表字段
         /// </summary>
@@ -176,7 +166,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableColumn(long[] tableId)
         {
-            return GetTableColumnRepository.DeleteGenTableColumn(tableId);
+            return Deleteable().Where(f => tableId.Contains(f.TableId)).ExecuteCommand();
         }
 
         /// <summary>
@@ -186,7 +176,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteGenTableColumnByTableName(string tableName)
         {
-            return GetTableColumnRepository.DeleteGenTableColumnByTableName(tableName);
+            return Deleteable().Where(f => f.TableName == tableName).ExecuteCommand();
         }
 
         /// <summary>
@@ -196,7 +186,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public List<GenTableColumn> GenTableColumns(long tableId)
         {
-            return GetTableColumnRepository.GenTableColumns(tableId);
+            return Queryable().Where(f => f.TableId == tableId).OrderBy(x => x.Sort).ToList();
         }
 
         /// <summary>
@@ -206,7 +196,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int InsertGenTableColumn(List<GenTableColumn> tableColumn)
         {
-            return GetTableColumnRepository.InsertGenTableColumn(tableColumn);
+            return Context.Insertable(tableColumn).IgnoreColumns(x => new { x.Remark }).ExecuteCommand();
         }
 
         /// <summary>
@@ -216,7 +206,28 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int UpdateGenTableColumn(List<GenTableColumn> tableColumn)
         {
-            return GetTableColumnRepository.UpdateGenTableColumn(tableColumn);
+            return Context.Updateable(tableColumn)
+                .WhereColumns(it => new { it.ColumnId, it.TableId })
+                .UpdateColumns(it => new
+                {
+                    it.ColumnComment,
+                    it.CsharpField,
+                    it.CsharpType,
+                    it.IsQuery,
+                    it.IsEdit,
+                    it.IsInsert,
+                    it.IsList,
+                    it.QueryType,
+                    it.HtmlType,
+                    it.IsRequired,
+                    it.Sort,
+                    it.Update_time,
+                    it.DictType,
+                    it.Update_by,
+                    it.Remark,
+                    it.IsSort
+                })
+                .ExecuteCommand();
         }
     }
 }

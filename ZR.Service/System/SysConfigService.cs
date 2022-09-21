@@ -1,6 +1,5 @@
 using Infrastructure.Attribute;
 using ZR.Model.System;
-using ZR.Repository;
 
 namespace ZR.Service.System
 {
@@ -10,17 +9,11 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysConfigService), ServiceLifetime = LifeTime.Transient)]
     public class SysConfigService : BaseService<SysConfig>, ISysConfigService
     {
-        private readonly SysConfigRepository _SysConfigrepository;
-        public SysConfigService(SysConfigRepository repository)
-        {
-            _SysConfigrepository = repository;
-        }
-
         #region 业务逻辑代码
 
         public SysConfig GetSysConfigByKey(string key)
         {
-            return _SysConfigrepository.Queryable().First(f => f.ConfigKey == key);
+            return Queryable().First(f => f.ConfigKey == key);
         }
 
         #endregion

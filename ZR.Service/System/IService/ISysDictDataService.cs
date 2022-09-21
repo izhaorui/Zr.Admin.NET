@@ -1,13 +1,10 @@
-﻿using Infrastructure.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.System;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysDictDataService
+    public interface ISysDictDataService : IBaseService<SysDictData>
     {
         public PagedInfo<SysDictData> SelectDictDataList(SysDictData dictData, PagerInfo pagerInfo);
         public List<SysDictData> SelectDictDataByType(string dictType);
@@ -16,5 +13,7 @@ namespace ZR.Service.System.IService
         public long InsertDictData(SysDictData dict);
         public long UpdateDictData(SysDictData dict);
         public int DeleteDictDataByIds(long[] dictCodes);
+        int UpdateDictDataType(string old_dictType, string new_dictType);
+        List<SysDictData> SelectDictDataByCustomSql(SysDictType sysDictType);
     }
 }

@@ -1,10 +1,8 @@
 ﻿using Infrastructure.Attribute;
-using System;
+using SqlSugar;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ZR.Model.System;
-using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -13,14 +11,8 @@ namespace ZR.Service.System
     /// 用户岗位
     /// </summary>
     [AppService(ServiceType = typeof(ISysUserPostService), ServiceLifetime = LifeTime.Transient)]
-    public class SysUserPostService : ISysUserPostService
+    public class SysUserPostService : BaseService<SysUserPost>, ISysUserPostService
     {
-        private SysUserPostRepository UserPostRepository;
-        public SysUserPostService(SysUserPostRepository userPostRepository)
-        {
-            UserPostRepository = userPostRepository;
-        }
-
         /// <summary>
         /// 新增用户岗位信息
         /// </summary>
@@ -33,7 +25,7 @@ namespace ZR.Service.System
             {
                 list.Add(new SysUserPost() { PostId = item, UserId = user.UserId });
             }
-            UserPostRepository.Insert(list);
+            Insert(list);
         }
 
 
@@ -44,7 +36,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public List<long> GetUserPostsByUserId(long userId)
         {
-            var list = UserPostRepository.GetList(f => f.UserId == userId);
+            var list = GetList(f => f.UserId == userId);
             return list.Select(x => x.PostId).ToList();
         }
 
@@ -55,13 +47,26 @@ namespace ZR.Service.System
         /// <returns></returns>
         public string GetPostsStrByUserId(long userId)
         {
-            var list = UserPostRepository.SelectPostsByUserId(userId);
+            var list = SelectPostsByUserId(userId);
             return string.Join(',', list.Select(x => x.PostName));
         }
 
         public bool Delete(long userId)
         {
-            return UserPostRepository.Delete(x => x.UserId == userId);
+            return Delete(x => x.UserId == userId);
+        }
+
+        /// <summary>
+        /// 获取用户岗位
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public List<SysPost> SelectPostsByUserId(long userId)
+        {
+            return Context.Queryable<SysPost, SysUserPost>((p, up) => new JoinQueryInfos(
+                JoinType.Left, up.PostId == p.PostId
+                )).Where((p, up) => up.UserId == userId)
+                .Select<SysPost>().ToList();
         }
     }
 }

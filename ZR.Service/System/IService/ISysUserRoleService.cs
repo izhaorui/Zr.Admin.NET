@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using ZR.Model;
-using ZR.Model.System.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysUserRoleService
+    public interface ISysUserRoleService : IBaseService<SysUserRole>
     {
         public int CountUserRoleByRoleId(long roleId);
 
@@ -31,7 +27,7 @@ namespace ZR.Service.System.IService
         /// <summary>
         /// 添加用户角色
         /// </summary>
-        /// <param name="sysRoleMenus"></param>
+        /// <param name="sysUsers"></param>
         /// <returns></returns>
         public int AddUserRole(List<SysUserRole> sysUsers);
 

@@ -47,7 +47,6 @@ namespace ZR.Service
         /// <summary>
         /// 查询所有角色
         /// </summary>
-        /// <param name="role"></param>
         /// <returns></returns>
         public List<SysRole> SelectRoleAll()
         {

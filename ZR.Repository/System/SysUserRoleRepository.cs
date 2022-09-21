@@ -12,16 +12,6 @@ namespace ZR.Repository.System
     public class SysUserRoleRepository : BaseRepository<SysUserRole>
     {
         /// <summary>
-        /// 删除用户角色
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        public int DeleteUserRoleByUserId(int userId)
-        {
-            return Context.Deleteable<SysUserRole>().Where(it => it.UserId == userId).ExecuteCommand();
-        }
-
-        /// <summary>
         /// 批量删除角色对应用户
         /// </summary>
         /// <param name="roleId">角色id</param>
@@ -31,36 +21,6 @@ namespace ZR.Repository.System
         {
             return Context.Deleteable<SysUserRole>().Where(it => it.RoleId == roleId && userIds.Contains(it.UserId))
                 .ExecuteCommand();
-        }
-
-        /// <summary>
-        /// 添加用户角色
-        /// </summary>
-        /// <param name="sysUsers"></param>
-        /// <returns></returns>
-        public int AddUserRole(List<SysUserRole> sysUsers)
-        {
-            return Context.Insertable(sysUsers).ExecuteCommand();
-        }
-
-        /// <summary>
-        /// 删除角色关联的用户
-        /// </summary>
-        /// <param name="roleId"></param>
-        /// <returns></returns>
-        public int DeleteUserRoleByRoleId(int roleId)
-        {
-            return Context.Deleteable<SysUserRole>().In(roleId).ExecuteCommand();
-        }
-
-        /// <summary>
-        /// 获取角色分配个数
-        /// </summary>
-        /// <param name="roleId"></param>
-        /// <returns></returns>
-        public int CountUserRoleByRoleId(long roleId)
-        {
-            return Context.Queryable<SysUserRole>().Where(it => it.RoleId == roleId).Count();
         }
 
         /// <summary>
