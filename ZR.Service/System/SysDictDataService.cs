@@ -94,19 +94,18 @@ namespace ZR.Service.System
         /// <returns></returns>
         public long UpdateDictData(SysDictData dict)
         {
-            var result = Updateable(dict)
-                .SetColumns(t => new SysDictData()
-                {
-                    Remark = dict.Remark,
-                    Update_time = DateTime.Now,
-                    DictSort = dict.DictSort,
-                    DictLabel = dict.DictLabel,
-                    DictValue = dict.DictValue,
-                    Status = dict.Status,
-                    CssClass = dict.CssClass,
-                    ListClass = dict.ListClass
-                })
-                .Where(f => f.DictCode == dict.DictCode).ExecuteCommand();
+            var result = Update(w => w.DictCode == dict.DictCode, it => new SysDictData()
+            {
+                Remark = dict.Remark,
+                Update_time = DateTime.Now,
+                DictSort = dict.DictSort,
+                DictLabel = dict.DictLabel,
+                DictValue = dict.DictValue,
+                Status = dict.Status,
+                CssClass = dict.CssClass,
+                ListClass = dict.ListClass
+            });
+
             CacheHelper.Remove($"SelectDictDataByCode_{dict.DictCode}");
             return result;
         }
