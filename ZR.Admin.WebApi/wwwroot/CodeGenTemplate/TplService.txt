@@ -1,4 +1,5 @@
-﻿using SqlSugar;
+﻿using System;
+using SqlSugar;
 using Infrastructure.Attribute;
 using ${options.ModelsNamespace};
 using ${options.ModelsNamespace}.Dto;
