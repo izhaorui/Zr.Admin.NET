@@ -72,6 +72,14 @@ export function del${genTable.BusinessName}(pid) {
   })
 }
 
+// 清空${genTable.functionName}
+export function clear${genTable.BusinessName}() {
+  return request({
+    url: '${genTable.ModuleName}/${genTable.BusinessName}/clean',
+    method: 'delete'
+  })
+}
+
 // 导出${genTable.functionName}
 export function export${genTable.BusinessName}(query) {
   return request({

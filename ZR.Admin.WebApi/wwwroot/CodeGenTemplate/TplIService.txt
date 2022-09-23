@@ -22,5 +22,7 @@ $end
         int Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm);
 
         int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm);
+        
+        void Truncate${replaceDto.ModelTypeName}();
     }
 }

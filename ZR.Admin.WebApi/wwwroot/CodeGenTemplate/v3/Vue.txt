@@ -84,6 +84,13 @@ $if(replaceDto.ShowBtnDelete)
         </el-button>
       </el-col>
 $end
+$if(replaceDto.ShowBtnTruncate)
+      <el-col :span="1.5">
+        <el-button type="danger" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="delete" @click="handleClear">
+          清空
+        </el-button>
+      </el-col>
+$end
 $if(replaceDto.ShowBtnExport)
       <el-col :span="1.5">
         <el-button type="warning" plain icon="download" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">
@@ -270,9 +277,12 @@ $end
   </div>
 </template>
 
-
 <script setup name="${genTable.BusinessName.ToLower()}">
-import { list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName},$if(replaceDto.ShowBtnExport) export${genTable.BusinessName}, $end $if(showCustomInput) changeSort $end } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+import { list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName}, 
+$if(replaceDto.ShowBtnExport) export${genTable.BusinessName}, $end
+$if(replaceDto.ShowBtnTruncate) clear${genTable.BusinessName}, $end 
+$if(showCustomInput) changeSort $end } 
+from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
 const { proxy } = getCurrentInstance()
 // 选中${replaceDto.FistLowerPk}数组数组
@@ -540,6 +550,26 @@ function handlePreview(row) {
   title.value = '预览'
   opertype.value = 3
   form.value = row
+}
+$end
+$if(replaceDto.ShowBtnTruncate)
+/**
+ * 清空
+ */
+function handleClear() {
+  proxy
+    .${confirm}confirm("是否确认清空所有数据项?", "警告", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    })
+    .then(function () {
+      return clear${genTable.BusinessName}()
+    })
+    .then(() => {
+      handleQuery()
+      proxy.${modal}modal.msgSuccess('清空成功')
+    })
 }
 $end
 // 多选框选中数据

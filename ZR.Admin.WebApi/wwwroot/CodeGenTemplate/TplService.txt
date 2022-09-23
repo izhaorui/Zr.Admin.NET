@@ -119,6 +119,15 @@ ${end}
             });
             return response;
         }
+
+        /// <summary>
+        /// 清空${genTable.FunctionName}
+        /// </summary>
+        /// <returns></returns>
+        public void Truncate${replaceDto.ModelTypeName}()
+        {
+            Truncate();
+        }
         #endregion
     }
 }

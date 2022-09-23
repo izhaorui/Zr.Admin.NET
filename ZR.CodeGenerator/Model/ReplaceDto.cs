@@ -48,6 +48,7 @@ namespace ZR.CodeGenerator.Model
         public bool ShowBtnEdit { get; set; }
         public bool ShowBtnDelete { get; set; }
         public bool ShowBtnView { get; set; }
+        public bool ShowBtnTruncate { get; set; }
         /// <summary>
         /// 上传URL data
         /// </summary>

@@ -59,7 +59,8 @@ namespace ZR.CodeGenerator
                 ShowBtnEdit = dto.GenTable.Options.CheckedBtn.Any(f => f == 2),
                 ShowBtnDelete = dto.GenTable.Options.CheckedBtn.Any(f => f == 3),
                 ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4),
-                ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5)
+                ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5),
+                ShowBtnTruncate = dto.GenTable.Options.CheckedBtn.Any(f => f == 6),
             };
 
             //循环表字段信息

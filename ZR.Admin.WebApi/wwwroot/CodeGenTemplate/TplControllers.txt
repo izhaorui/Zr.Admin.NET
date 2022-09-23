@@ -157,6 +157,26 @@ $if(replaceDto.ShowBtnExport)
         }
 $end
 
+$if(replaceDto.ShowBtnTruncate)
+        /// <summary>
+        /// 清空${genTable.FunctionName}
+        /// </summary>
+        /// <returns></returns>
+        [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.CLEAN)]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:delete")]
+        [HttpDelete("clean")]
+        public ApiResult Clear()
+        {
+            if (!HttpContextExtension.IsAdmin(HttpContext))
+            {
+                return ApiResult.Error("操作失败");
+            }
+            _${replaceDto.ModelTypeName}Service.Truncate${replaceDto.ModelTypeName}();
+
+            return ToJson(1);
+        }
+$end
+
 $if(showCustomInput)
         /// <summary>
         /// 保存排序
