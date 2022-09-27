@@ -98,13 +98,12 @@ $if(replaceDto.ShowBtnExport)
         </el-button>
       </el-col>
 $end
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
     <!-- 数据区域 -->
     <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @sort-change="sortChange" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center"/>
-
 $foreach(column in genTable.Columns)
 $set(labelName = "")
 $set(checkboxHtml = "")
@@ -120,7 +119,7 @@ $set(labelName = column.CsharpFieldFl)
 $end
 $if(column.IsList == true)
 $if(column.HtmlType == "customInput" && column.IsPk == false)
-      <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center">
+      <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center" v-if="columns.showColumn('${columnName}')">
         <template #default="scope">
           <span v-show="editIndex != scope.$${index}index" @click="editCurrRow(scope.$${index}index)">{{scope.row.${columnName}}}</span>
           <el-input
@@ -131,7 +130,7 @@ $if(column.HtmlType == "customInput" && column.IsPk == false)
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "imageUpload")
-      <el-table-column prop="${columnName}" label="${labelName}" align="center">
+      <el-table-column prop="${columnName}" label="${labelName}" align="center" v-if="columns.showColumn('${columnName}')">
         <template #default="scope">
           <el-image preview-teleported :hide-on-click-modal="true" lazy class="table-td-thumb" fit="contain" :src="scope.row.${columnName}" :preview-src-list="[scope.row.${columnName}]">
             <div><el-icon :size="15"><document /></el-icon></div>
@@ -139,7 +138,7 @@ $elseif(column.HtmlType == "imageUpload")
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio")
-      <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr}>
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr} v-if="columns.showColumn('${columnName}')">
         <template #default="scope">
 $if(column.HtmlType == "checkbox")
           <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
@@ -149,7 +148,7 @@ $end
         </template>
       </el-table-column>
 $else
-      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml}${column.sortStr} />
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml}${column.sortStr} v-if="columns.showColumn('${columnName}')"/>
 $end
 $end
 $end
@@ -304,7 +303,15 @@ $if(item.IsQuery == true)
 $end
 $end
 })
-
+const columns = ref([
+$set(index = 0)
+$foreach(column in genTable.Columns)
+$set(index = index + 1)
+$if(index > 6 && column.IsList)
+  { visible: ${if(index < 9)}true${else}false${end}, prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' },
+$end
+$end
+])
 const title = ref("")
 // 操作类型 1、add 2、edit 3、view
 const opertype = ref(0)
