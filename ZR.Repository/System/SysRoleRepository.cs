@@ -1,6 +1,7 @@
 ﻿using Infrastructure.Attribute;
 using Infrastructure.Model;
 using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ZR.Model;
@@ -72,7 +73,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysRole SelectRoleById(long roleId)
         {
-            return Context.Queryable<SysRole>().InSingle(roleId);
+            return GetId(roleId);
         }
 
         /// <summary>
@@ -82,7 +83,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public int DeleteRoleByRoleIds(long[] roleId)
         {
-            return Context.Deleteable<SysRole>().In(roleId).ExecuteCommand();
+            return Delete(roleId);
         }
 
         /// <summary>
@@ -149,8 +150,8 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public long InsertRole(SysRole sysRole)
         {
-            sysRole.Create_time = Context.GetDate();
-            return Context.Insertable(sysRole).ExecuteReturnBigIdentity();
+            sysRole.Create_time = DateTime.Now;
+            return InsertReturnBigIdentity(sysRole);
         }
 
         /// <summary>
@@ -180,8 +181,7 @@ namespace ZR.Repository.System
         /// <summary>
         /// 更改角色权限状态
         /// </summary>
-        /// <param name="roleId"></param>
-        /// <param name="status"></param>
+        /// <param name="role"></param>
         /// <returns></returns>
         public int UpdateRoleStatus(SysRole role)
         {
@@ -195,7 +195,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysRole CheckRoleKeyUnique(string roleKey)
         {
-            return Context.Queryable<SysRole>().Where(it => it.RoleKey == roleKey).Single();
+            return GetFirst(it => it.RoleKey == roleKey);
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace ZR.Repository.System
         /// <returns></returns>
         public SysRole CheckRoleNameUnique(string roleName)
         {
-            return Context.Queryable<SysRole>().Where(it => it.RoleName == roleName).Single();
+            return GetFirst(it => it.RoleName == roleName);
         }
     }
 }

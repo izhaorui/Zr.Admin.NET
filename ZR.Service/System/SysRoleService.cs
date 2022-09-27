@@ -137,8 +137,11 @@ namespace ZR.Service
         /// <returns></returns>
         public long InsertRole(SysRole sysRole)
         {
-            return SysRoleRepository.InsertRole(sysRole);
-            //return InsertRoleMenu(sysRole);
+            sysRole.RoleId = SysRoleRepository.InsertRole(sysRole);
+            //插入角色部门数据
+            DeptService.InsertRoleDepts(sysRole);
+
+            return sysRole.RoleId;
         }
 
         /// <summary>
