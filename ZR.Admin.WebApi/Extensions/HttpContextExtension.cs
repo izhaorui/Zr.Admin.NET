@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using System;
@@ -63,19 +64,35 @@ namespace ZR.Admin.WebApi.Extensions
             return Regex.IsMatch(ip, @"^((2[0-4]\d|25[0-5]|[01]?\d\d?)\.){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)$");
         }
 
+        /// <summary>
+        /// 获取登录用户id
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public static long GetUId(this HttpContext context)
         {
             var uid = context.User.FindFirstValue(ClaimTypes.PrimarySid);
 
             return !string.IsNullOrEmpty(uid) ? long.Parse(uid) : 0;
         }
-        public static string? GetName(this HttpContext context)
+
+        /// <summary>
+        /// 获取登录用户名
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static string GetName(this HttpContext context)
         {
             var uid = context.User?.Identity?.Name;
 
             return uid;
         }
 
+        /// <summary>
+        /// 判断是否是管理员
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public static bool IsAdmin(this HttpContext context)
         {
             long id = GetUId(context);
@@ -126,7 +143,10 @@ namespace ZR.Admin.WebApi.Extensions
         {
             return context != null ? context.Request.Path.Value : "";
         }
-
+        public static string GetQueryString(this HttpContext context)
+        {
+            return context != null ? context.Request.QueryString.Value : "";
+        }
         /// <summary>
         /// 设置请求参数
         /// </summary>
@@ -137,16 +157,20 @@ namespace ZR.Admin.WebApi.Extensions
             string reqMethod = operLog.RequestMethod;
             string param;
 
-            if (HttpMethods.IsPost(reqMethod) || HttpMethods.IsPut(reqMethod))
+            if (HttpMethods.IsPost(reqMethod) || HttpMethods.IsPut(reqMethod) || HttpMethods.IsDelete(reqMethod))
             {
                 context.Request.Body.Seek(0, SeekOrigin.Begin);
                 using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
                 //需要使用异步方式才能获取
                 param = reader.ReadToEndAsync().Result;
+                if (param.IsEmpty())
+                {
+                    param = GetQueryString(context);
+                }
             }
             else
             {
-                param = context.Request.QueryString.Value.ToString();
+                param = GetQueryString(context);
             }
             operLog.OperParam = param;
         }
