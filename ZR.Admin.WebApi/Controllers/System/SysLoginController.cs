@@ -155,7 +155,24 @@ namespace ZR.Admin.WebApi.Controllers.System
             SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
             var captchaOff = sysConfig?.ConfigValue ?? "0";
 
-            var code = SecurityCodeHelper.GetRandomEnDigitalText(4);
+            var length = AppSettings.GetAppConfig<int>("CaptchaOptions:length", 4);
+            var code = SecurityCodeHelper.GetRandomEnDigitalText(length);
+            byte[] imgByte = GenerateCaptcha(captchaOff, code);
+            string base64Str = Convert.ToBase64String(imgByte);
+            CacheHelper.SetCache(uuid, code);
+            var obj = new { uuid, img = base64Str };// File(stream, "image/png")
+
+            return ToJson(1, obj);
+        }
+
+        /// <summary>
+        /// 生成图片验证码
+        /// </summary>
+        /// <param name="captchaOff"></param>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        private byte[] GenerateCaptcha(string captchaOff, string code)
+        {
             byte[] imgByte;
             if (captchaOff == "1")
             {
@@ -173,11 +190,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 imgByte = SecurityCodeHelper.GetEnDigitalCodeByte(code);//英文字母加数字
             }
-            string base64Str = Convert.ToBase64String(imgByte);
-            CacheHelper.SetCache(uuid, code);
-            var obj = new { uuid, img = base64Str };// File(stream, "image/png")
 
-            return ToJson(1, obj);
+            return imgByte;
         }
 
         /// <summary>
