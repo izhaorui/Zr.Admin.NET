@@ -307,7 +307,7 @@ const columns = ref([
 $set(index = 0)
 $foreach(column in genTable.Columns)
 $set(index = index + 1)
-$if(index > 6 && column.IsList)
+$if(column.IsList)
   { visible: ${if(index < 9)}true${else}false${end}, prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' },
 $end
 $end
