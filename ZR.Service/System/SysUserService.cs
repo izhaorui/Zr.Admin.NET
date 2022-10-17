@@ -1,5 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections;
@@ -220,6 +221,49 @@ namespace ZR.Service
                 
                 //TODO 判断用户是否有数据权限
             }
+        }
+
+        /// <summary>
+        /// 导入数据
+        /// </summary>
+        /// <param name="users"></param>
+        /// <returns></returns>
+        public string ImportUsers(List<SysUser> users)
+        {
+            users.ForEach(x =>
+            {
+                x.Create_time = DateTime.Now;
+                x.Status = "0";
+                x.DelFlag = "0";
+                x.Password = "E10ADC3949BA59ABBE56E057F20F883E";
+                x.Remark = "数据导入";
+            });
+            var x = Context.Storageable(users)
+                .SplitInsert(it => !it.Any())
+                .SplitIgnore(it => it.Item.UserName == GlobalConstant.AdminRole)
+                .SplitError(x => x.Item.UserName.IsEmpty(), "用户名不能为空")
+                .SplitError(x => !Tools.CheckUserName(x.Item.UserName), "用户名不符合规范")
+                .WhereColumns(it => it.UserName)//如果不是主键可以这样实现（多字段it=>new{it.x1,it.x2}）
+                .ToStorage();
+            var result = x.AsInsertable.ExecuteCommand();//插入可插入部分;
+
+            string msg = string.Format(" 插入{0} 更新{1} 错误数据{2} 不计算数据{3} 删除数据{4},总共{5}",
+                               x.InsertList.Count,
+                               x.UpdateList.Count,
+                               x.ErrorList.Count,
+                               x.IgnoreList.Count,
+                               x.DeleteList.Count,
+                               x.TotalList.Count);
+            //输出统计                      
+            Console.WriteLine(msg);
+
+            //输出错误信息               
+            foreach (var item in x.ErrorList)
+            {
+                Console.WriteLine("userName为" + item.Item.UserName + " : " + item.StorageMessage);
+            }
+
+            return msg;
         }
     }
 }

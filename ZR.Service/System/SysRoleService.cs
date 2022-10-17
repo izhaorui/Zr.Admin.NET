@@ -222,7 +222,7 @@ namespace ZR.Service
         {
             var roleInfo = GetFirst(x => x.RoleId == roleid);
 
-            return roleInfo.RoleKey == "admin";
+            return roleInfo.RoleKey == GlobalConstant.AdminRole;
         }
 
         /// <summary>

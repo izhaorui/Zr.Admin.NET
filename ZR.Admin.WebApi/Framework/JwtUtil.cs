@@ -128,7 +128,7 @@ namespace ZR.Admin.WebApi.Framework
                 var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData).Value;
                 var loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
                 var permissions = CacheService.GetUserPerms(GlobalConstant.UserPermKEY + loginUser?.UserId);
-                if (loginUser?.UserName == "admin")
+                if (loginUser?.UserName == GlobalConstant.AdminRole)
                 {
                     permissions = new List<string>() { GlobalConstant.AdminPerm };
                 }
