@@ -75,6 +75,10 @@ namespace ZR.CodeGenerator
                 {
                     replaceDto.UploadFile = 1;
                 }
+                if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_SELECT_MULTI))
+                {
+                    replaceDto.SelectMulti = 1;
+                }
                 dbFieldInfo.CsharpFieldFl = dbFieldInfo.CsharpField.FirstLowerCase();
             }
 
@@ -238,6 +242,7 @@ namespace ZR.CodeGenerator
             var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
             generateDto.GenCodes.Add(new GenCode(16, "index.vue", fullPath, result));
         }
+
         /// <summary>
         /// 生成vue页面api
         /// </summary>
@@ -261,7 +266,6 @@ namespace ZR.CodeGenerator
             string fullPath = Path.Combine(generateDto.VueParentPath, "src", "api", generateDto.GenTable.ModuleName.FirstLowerCase(), fileName);
 
             generateDto.GenCodes.Add(new GenCode(7, "api.js", fullPath, result));
-
         }
 
         /// <summary>
@@ -534,7 +538,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
-            //Engine.Current.Clean();
+            Engine.Current.Clean();
             dto.GenTable.Columns = dto.GenTable.Columns.OrderBy(x => x.Sort).ToList();
             bool showCustomInput = dto.GenTable.Columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_CUSTOM_INPUT, StringComparison.OrdinalIgnoreCase));
             //jnt模板引擎全局变量

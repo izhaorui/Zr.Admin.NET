@@ -91,6 +91,10 @@ namespace ZR.CodeGenerator
 
         /** 下拉框 */
         public static string HTML_SELECT = "select";
+        /// <summary>
+        /// 下拉多选
+        /// </summary>
+        public static string HTML_SELECT_MULTI = "selectMulti";
 
         /** 单选框 */
         public static string HTML_RADIO = "radio";

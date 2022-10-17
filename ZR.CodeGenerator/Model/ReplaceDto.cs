@@ -54,6 +54,10 @@ namespace ZR.CodeGenerator.Model
         /// </summary>
         //public string VueUploadUrl { get; set; }
         public int UploadFile { get; set; } = 0;
+        /// <summary>
+        /// 是否有下拉多选框
+        /// </summary>
+        public int SelectMulti { get; set; }
         public string Author { get; set; }
         public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
     }

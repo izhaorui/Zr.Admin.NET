@@ -99,7 +99,7 @@ namespace ZR.Model.System.Generate
             get
             {
                 string[] arr = new string[] { "int", "long" };
-                return (!IsRequired && (arr.Any(f => f.Contains(CsharpType))) || typeof(DateTime).Name == CsharpType) ? "?" : "";
+                return (!IsRequired && HtmlType != "selectMulti" && (arr.Any(f => f.Contains(CsharpType))) || typeof(DateTime).Name == CsharpType) ? "?" : "";
             }
         }
         /// <summary>
