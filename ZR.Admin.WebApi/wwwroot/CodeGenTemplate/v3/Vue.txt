@@ -39,8 +39,11 @@ $if(column.HtmlType == "datetime")
       </el-form-item>
 $elseif(column.HtmlType == "select" || column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
-        <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
-          <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
+        <el-select clearable $if(column.HtmlType == "selectMulti")multiple$end v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
+          <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue">
+            <span class="fl">{{ item.dictLabel }}</span>
+            <span class="fr" style="color: var(--el-text-color-secondary);">{{ item.dictValue }}</span>          
+          </el-option>
         </el-select>
       </el-form-item>
 $elseif(column.HtmlType == "radio")
