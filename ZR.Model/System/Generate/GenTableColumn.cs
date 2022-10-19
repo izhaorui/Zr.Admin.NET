@@ -75,6 +75,10 @@ namespace ZR.Model.System.Generate
         /// </summary>
         public bool IsSort { get; set; }
         /// <summary>
+        /// 是否导出（1是）
+        /// </summary>
+        public bool IsExport { get; set; }
+        /// <summary>
         /// 显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）
         /// </summary>
         public string HtmlType { get; set; }

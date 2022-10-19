@@ -59,6 +59,7 @@ namespace ZR.Model.System.Dto
         public bool IsQuery { get; set; }
         public bool IsSort { get; set; }
         public bool IsRequired { get; set; }
+        public bool IsExport { get; set; }
         /// <summary>
         /// 显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）
         /// </summary>
@@ -77,5 +78,4 @@ namespace ZR.Model.System.Dto
         /// </summary>
         public string Remark { get; set; }
     }
-
 }

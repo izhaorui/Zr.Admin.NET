@@ -738,6 +738,7 @@ create table gen_table_column (
   isList           TINYINT                                    , --'是否列表字段（1是）',
   isSort           TINYINT                                    , --'是否排序字段（1是）',
   isQuery          TINYINT                                    ,-- '是否查询字段（1是）',
+  isExport         TINYINT                                    ,-- '是否导出字段（1是）',
   queryType        varchar(200)    default 'EQ'               , --'查询方式（等于、不等于、大于、小于、范围）',
   htmlType         varchar(200)                               , --'显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）',
   dictType         varchar(200)    default ''                 , --'字典类型',

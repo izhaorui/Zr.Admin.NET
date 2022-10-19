@@ -225,7 +225,8 @@ namespace ZR.Service.System
                     it.DictType,
                     it.Update_by,
                     it.Remark,
-                    it.IsSort
+                    it.IsSort,
+                    it.IsExport
                 })
                 .ExecuteCommand();
         }

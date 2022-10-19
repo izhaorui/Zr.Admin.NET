@@ -788,6 +788,7 @@ CREATE TABLE `gen_table_column`  (
   `isList` tinyint(1) NULL DEFAULT NULL COMMENT '是否列表字段（1是）',
   `isQuery` tinyint(4) NULL DEFAULT NULL COMMENT '是否查询字段（1是）',
   `isSort` tinyint(4) NULL DEFAULT NULL COMMENT '是否排序字段（1是）',
+  `isExport` tinyint(4) NULL DEFAULT NULL COMMENT '是否导出字段（1是）',
   `queryType` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT 'EQ' COMMENT '查询方式（等于、不等于、大于、小于、范围）',
   `htmlType` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）',
   `dictType` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '字典类型',
