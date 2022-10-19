@@ -114,7 +114,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        public async Task<ApiResult> AddTaskScheduleAsync(SysTasksQz tasksQz)
+        public async Task<ApiResult> AddTaskScheduleAsync(SysTasks tasksQz)
         {
             try
             {
@@ -190,7 +190,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        public async Task<ApiResult> PauseTaskScheduleAsync(SysTasksQz tasksQz)
+        public async Task<ApiResult> PauseTaskScheduleAsync(SysTasks tasksQz)
         {
             try
             {
@@ -214,7 +214,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        public async Task<ApiResult> ResumeTaskScheduleAsync(SysTasksQz tasksQz)
+        public async Task<ApiResult> ResumeTaskScheduleAsync(SysTasks tasksQz)
         {
             try
             {
@@ -237,7 +237,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        public async Task<ApiResult> DeleteTaskScheduleAsync(SysTasksQz tasksQz)
+        public async Task<ApiResult> DeleteTaskScheduleAsync(SysTasks tasksQz)
         {
             try
             {
@@ -260,7 +260,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        public async Task<ApiResult> RunTaskScheduleAsync(SysTasksQz tasksQz)
+        public async Task<ApiResult> RunTaskScheduleAsync(SysTasks tasksQz)
         {
             try
             {
@@ -291,7 +291,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        public async Task<ApiResult> UpdateTaskScheduleAsync(SysTasksQz tasksQz)
+        public async Task<ApiResult> UpdateTaskScheduleAsync(SysTasks tasksQz)
         {
             try
             {
@@ -318,7 +318,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        private ITrigger CreateSimpleTrigger(SysTasksQz tasksQz)
+        private ITrigger CreateSimpleTrigger(SysTasks tasksQz)
         {
             if (tasksQz.RunTimes > 0)
             {
@@ -348,7 +348,7 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="tasksQz"></param>
         /// <returns></returns>
-        private ITrigger CreateCronTrigger(SysTasksQz tasksQz)
+        private ITrigger CreateCronTrigger(SysTasks tasksQz)
         {
             // 作业触发器
             return TriggerBuilder.Create()

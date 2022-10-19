@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz.Spi;
 using System;
-using System.Threading.Tasks;
-using ZR.Service.System.IService;
 using ZR.Tasks;
 
 namespace ZR.Admin.WebApi.Extensions
@@ -38,7 +36,7 @@ namespace ZR.Admin.WebApi.Extensions
             ITaskSchedulerServer _schedulerServer = app.ApplicationServices.GetRequiredService<ITaskSchedulerServer>();
 
             //var tasks = _tasksQzService.GetList(m => m.IsStart);
-            var tasks = SqlSugar.IOC.DbScoped.SugarScope.Queryable<Model.System.SysTasksQz>().Where(m => m.IsStart).ToList();
+            var tasks = SqlSugar.IOC.DbScoped.SugarScope.Queryable<Model.System.SysTasks>().Where(m => m.IsStart).ToList();
 
             //程序启动后注册所有定时任务
             foreach (var task in tasks)

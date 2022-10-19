@@ -80,7 +80,7 @@ namespace ZR.Tasks
             //成功后执行次数+1
             if (logModel.Status == "0")
             {
-                await taskQzService.UpdateAsync(f => new SysTasksQz()
+                await taskQzService.UpdateAsync(f => new SysTasks()
                 {
                     RunTimes = f.RunTimes + 1,
                     LastRunTime = DateTime.Now

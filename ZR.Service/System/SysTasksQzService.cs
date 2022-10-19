@@ -10,14 +10,14 @@ namespace ZR.Service.System
     /// 定时任务
     /// </summary>
     [AppService(ServiceType = typeof(ISysTasksQzService), ServiceLifetime = LifeTime.Transient)]
-    public class SysTasksQzService : BaseService<SysTasksQz>, ISysTasksQzService
+    public class SysTasksQzService : BaseService<SysTasks>, ISysTasksQzService
     {
         /// <summary>
         /// 添加任务
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
-        public int AddTasks(SysTasksQz parm)
+        public int AddTasks(SysTasks parm)
         {
             parm.IsStart = false;
 
@@ -34,9 +34,9 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
-        public int UpdateTasks(SysTasksQz parm)
+        public int UpdateTasks(SysTasks parm)
         {
-            return Update(f => f.ID == parm.ID, f => new SysTasksQz
+            return Update(f => f.ID == parm.ID, f => new SysTasks
             {
                 ID = parm.ID,
                 Name = parm.Name,

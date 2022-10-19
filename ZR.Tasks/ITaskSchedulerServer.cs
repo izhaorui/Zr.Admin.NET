@@ -13,16 +13,16 @@ namespace ZR.Tasks
 
 		Task<ApiResult> StopTaskScheduleAsync();
 
-		Task<ApiResult> AddTaskScheduleAsync(SysTasksQz tasksQz);
+		Task<ApiResult> AddTaskScheduleAsync(SysTasks tasksQz);
 
-		Task<ApiResult> PauseTaskScheduleAsync(SysTasksQz tasksQz);
+		Task<ApiResult> PauseTaskScheduleAsync(SysTasks tasksQz);
 
-		Task<ApiResult> ResumeTaskScheduleAsync(SysTasksQz tasksQz);
+		Task<ApiResult> ResumeTaskScheduleAsync(SysTasks tasksQz);
 
-		Task<ApiResult> DeleteTaskScheduleAsync(SysTasksQz tasksQz);
+		Task<ApiResult> DeleteTaskScheduleAsync(SysTasks tasksQz);
 
-		Task<ApiResult> RunTaskScheduleAsync(SysTasksQz tasksQz);
+		Task<ApiResult> RunTaskScheduleAsync(SysTasks tasksQz);
 
-		Task<ApiResult> UpdateTaskScheduleAsync(SysTasksQz tasksQz);
+		Task<ApiResult> UpdateTaskScheduleAsync(SysTasks tasksQz);
 	}
 }

@@ -125,12 +125,12 @@ namespace ZR.Model.System.Dto
     public class TasksUpdateDto
     {
         /// <summary>
-        /// 描述 : UID 
+        /// 描述 : 任务id 
         /// 空值 : False
         /// 默认 : 
         /// </summary>
-        [Display(Name = "UID")]
-        [Required(ErrorMessage = "UID不能为空")]
+        [Display(Name = "任务id")]
+        [Required(ErrorMessage = "任务不能为空")]
         public string ID { get; set; }
 
         /// <summary>

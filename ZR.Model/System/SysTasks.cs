@@ -10,18 +10,19 @@ namespace ZR.Model.System
     ///</summary>
     [SugarTable("sys_tasks")]
     [Tenant("0")]
-    public class SysTasksQz
+    public class SysTasks
     {
-        public SysTasksQz()
+        public SysTasks()
         {
         }
 
         /// <summary>
-        /// 描述 : UID 
+        /// 描述 : 任务id 
         /// 空值 : False
         /// 默认 : 
         /// </summary>
-        [Display(Name = "UID")]
+        [Display(Name = "任务id")]
+        //[JsonConverter(typeof(ValueToStringConverter))]
         [SugarColumn(IsPrimaryKey = true)]
         public string ID { get; set; }
 

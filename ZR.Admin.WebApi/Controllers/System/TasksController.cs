@@ -14,7 +14,6 @@ using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 using ZR.Tasks;
-using Snowflake.Core;
 using Infrastructure.Extensions;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -46,7 +45,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Query([FromQuery] TasksQueryDto parm, [FromQuery] PagerInfo pager)
         {
             //开始拼装查询条件
-            var predicate = Expressionable.Create<SysTasksQz>();
+            var predicate = Expressionable.Create<SysTasks>();
 
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.QueryText),
                 m => m.Name.Contains(parm.QueryText) ||
@@ -100,10 +99,9 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException($"程序集或者类名不能为空");
             }
             //从 Dto 映射到 实体
-            var tasksQz = parm.Adapt<SysTasksQz>().ToCreate();
-            var worker = new IdWorker(1, 1);
+            var tasksQz = parm.Adapt<SysTasks>().ToCreate();
             tasksQz.Create_by = HttpContext.GetName();
-            tasksQz.ID = worker.NextId().ToString();
+            tasksQz.ID = SnowFlakeSingle.Instance.NextId().ToString();
 
             return SUCCESS(_tasksQzService.AddTasks(tasksQz));
         }
@@ -144,7 +142,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"该任务正在运行中，请先停止在更新");
             }
-            var model = parm.Adapt<SysTasksQz>();
+            var model = parm.Adapt<SysTasks>();
             model.Update_by = HttpContextExtension.GetName(HttpContext);
             int response = _tasksQzService.UpdateTasks(model);
             if (response > 0)

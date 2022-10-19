@@ -32,7 +32,6 @@
 		<PackageReference Include="Mapster" Version="7.3.0" />
 		<PackageReference Include="EPPlus" Version="6.0.5" />
 		<PackageReference Include="Hei.Captcha" Version="0.3.0" />
-		<PackageReference Include="Snowflake.Core" Version="2.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
