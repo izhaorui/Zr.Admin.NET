@@ -1,14 +1,13 @@
 using Infrastructure;
 using Infrastructure.Attribute;
-using Infrastructure.Model;
+using SqlSugar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ZR.Model;
 using ZR.Model.System;
-using ZR.Repository.System;
+using ZR.Repository;
 using ZR.Service.System.IService;
 
 namespace ZR.Service
@@ -19,29 +18,43 @@ namespace ZR.Service
     [AppService(ServiceType = typeof(ISysRoleService), ServiceLifetime = LifeTime.Transient)]
     public class SysRoleService : BaseService<SysRole>, ISysRoleService
     {
-        private SysRoleRepository SysRoleRepository;
         private ISysUserRoleService SysUserRoleService;
         private ISysDeptService DeptService;
-
+        private ISysRoleMenuService RoleMenuService;
         public SysRoleService(
-            SysRoleRepository sysRoleRepository,
             ISysUserRoleService sysUserRoleService,
-            ISysDeptService deptService)
+            ISysDeptService deptService,
+            ISysRoleMenuService roleMenuService)
         {
-            SysRoleRepository = sysRoleRepository;
             SysUserRoleService = sysUserRoleService;
             DeptService = deptService;
+            RoleMenuService = roleMenuService;
         }
 
         /// <summary>
         /// 根据条件分页查询角色数据
         /// </summary>
-        /// <param name="role">角色信息</param>
+        /// <param name="sysRole">角色信息</param>
         /// <param name="pager">分页信息</param>
         /// <returns>角色数据集合信息</returns>
-        public PagedInfo<SysRole> SelectRoleList(SysRole role, PagerInfo pager)
+        public PagedInfo<SysRole> SelectRoleList(SysRole sysRole, PagerInfo pager)
         {
-            return SysRoleRepository.SelectRoleList(role, pager);
+            var exp = Expressionable.Create<SysRole>();
+            exp.And(role => role.DelFlag == "0");
+            exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleName), role => role.RoleName.Contains(sysRole.RoleName));
+            exp.AndIF(!string.IsNullOrEmpty(sysRole.Status), role => role.Status == sysRole.Status);
+            exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleKey), role => role.RoleKey == sysRole.RoleKey);
+
+            var query = Context.Queryable<SysRole>()
+                .Where(exp.ToExpression())
+                .OrderBy(x => x.RoleSort)
+                .Select((role) => new SysRole
+                {
+                    RoleId = role.RoleId.SelectAll(),
+                    UserNum = SqlFunc.Subqueryable<SysUserRole>().Where(f => f.RoleId == role.RoleId).Count()
+                });
+
+            return query.ToPage(pager);
         }
 
         /// <summary>
@@ -50,7 +63,10 @@ namespace ZR.Service
         /// <returns></returns>
         public List<SysRole> SelectRoleAll()
         {
-            return SysRoleRepository.SelectRoleList();
+            return Queryable()
+                .Where(role => role.DelFlag == "0")
+                .OrderBy(role => role.RoleSort)
+                .ToList();
         }
 
         /// <summary>
@@ -60,7 +76,11 @@ namespace ZR.Service
         /// <returns></returns>
         public List<SysRole> SelectRolePermissionByUserId(long userId)
         {
-            return SysRoleRepository.SelectRolePermissionByUserId(userId);
+            return Queryable()
+                .Where(role => role.DelFlag == "0")
+                .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == userId).Any())
+                .OrderBy(role => role.RoleSort)
+                .ToList();
         }
 
         /// <summary>
@@ -70,7 +90,7 @@ namespace ZR.Service
         /// <returns>角色对象信息</returns>
         public SysRole SelectRoleById(long roleId)
         {
-            return SysRoleRepository.SelectRoleById(roleId);
+            return GetId(roleId);
         }
 
         /// <summary>
@@ -89,17 +109,17 @@ namespace ZR.Service
                     throw new CustomException($"{role.RoleName}已分配,不能删除");
                 }
             }
-            return SysRoleRepository.DeleteRoleByRoleIds(roleIds);
+            return Delete(roleIds);
         }
 
         /// <summary>
         /// 更改角色权限状态
         /// </summary>
-        /// <param name="SysRoleDto"></param>
+        /// <param name="roleDto"></param>
         /// <returns></returns>
         public int UpdateRoleStatus(SysRole roleDto)
         {
-            return SysRoleRepository.UpdateRoleStatus(roleDto);
+            return Update(roleDto, it => new { it.Status }, f => f.RoleId == roleDto.RoleId);
         }
 
         /// <summary>
@@ -110,7 +130,7 @@ namespace ZR.Service
         public string CheckRoleKeyUnique(SysRole sysRole)
         {
             long roleId = 0 == sysRole.RoleId ? -1L : sysRole.RoleId;
-            SysRole info = SysRoleRepository.CheckRoleKeyUnique(sysRole.RoleKey);
+            SysRole info = GetFirst(it => it.RoleKey == sysRole.RoleKey);
             if (info != null && info.RoleId != roleId)
             {
                 return UserConstants.NOT_UNIQUE;
@@ -137,7 +157,8 @@ namespace ZR.Service
         /// <returns></returns>
         public long InsertRole(SysRole sysRole)
         {
-            sysRole.RoleId = SysRoleRepository.InsertRole(sysRole);
+            sysRole.Create_time = DateTime.Now;
+            sysRole.RoleId = InsertReturnBigIdentity(sysRole);
             //插入角色部门数据
             DeptService.InsertRoleDepts(sysRole);
 
@@ -151,7 +172,7 @@ namespace ZR.Service
         /// <returns></returns>
         public int DeleteRoleMenuByRoleId(long roleId)
         {
-            return SysRoleRepository.DeleteRoleMenuByRoleId(roleId);
+            return RoleMenuService.DeleteRoleMenuByRoleId(roleId);
         }
 
         /// <summary>
@@ -195,7 +216,7 @@ namespace ZR.Service
             //添加角色菜单
             if (sysRoleMenus.Count > 0)
             {
-                rows = SysRoleRepository.AddRoleMenu(sysRoleMenus);
+                rows = RoleMenuService.AddRoleMenu(sysRoleMenus);
             }
 
             return rows;
@@ -210,7 +231,7 @@ namespace ZR.Service
         {
             List<string> roles = SelectUserRoleKeys(userid);
 
-            return ((IList)roles).Contains("admin");
+            return ((IList)roles).Contains(GlobalConstant.AdminRole);
         }
 
         /// <summary>
@@ -232,7 +253,7 @@ namespace ZR.Service
         /// <returns></returns>
         public List<long> SelectUserRoleMenus(long roleId)
         {
-            var list = SysRoleRepository.SelectRoleMenuByRoleId(roleId);
+            var list = RoleMenuService.SelectRoleMenuByRoleId(roleId);
 
             return list.Select(x => x.Menu_id).Distinct().ToList();
         }
@@ -244,7 +265,7 @@ namespace ZR.Service
         /// <returns></returns>
         public List<long> SelectRoleMenuByRoleIds(long[] roleIds)
         {
-            return SysRoleRepository.SelectRoleMenuByRoleIds(roleIds)
+            return RoleMenuService.SelectRoleMenuByRoleIds(roleIds)
                 .Select(x => x.Menu_id)
                 .Distinct().ToList();
         }
@@ -256,7 +277,10 @@ namespace ZR.Service
         /// <returns></returns>
         public List<SysRole> SelectUserRoleListByUserId(long userId)
         {
-            return SysRoleRepository.SelectUserRoleListByUserId(userId);
+            return Context.Queryable<SysUserRole, SysRole>((ur, r) => new JoinQueryInfos(
+                    JoinType.Left, ur.RoleId == r.RoleId
+                )).Where((ur, r) => ur.UserId == userId)
+                .Select((ur, r) => r).ToList();
         }
 
         /// <summary>
@@ -304,7 +328,7 @@ namespace ZR.Service
             var result = UseTran(() =>
             {
                 //修改角色信息
-                SysRoleRepository.UpdateSysRole(sysRole);
+                UpdateSysRole(sysRole);
                 //删除角色与部门管理
                 DeptService.DeleteRoleDeptByRoleId(sysRole.RoleId);
                 //插入角色部门数据
@@ -312,6 +336,30 @@ namespace ZR.Service
             });
 
             return result.IsSuccess ? 1 : 0;
+        }
+
+        /// <summary>
+        /// 修改用户角色
+        /// </summary>
+        /// <param name="sysRole"></param>
+        /// <returns></returns>
+        public int UpdateSysRole(SysRole sysRole)
+        {
+            var db = Context;
+            sysRole.Update_time = db.GetDate();
+
+            return db.Updateable<SysRole>()
+            .SetColumns(it => it.Update_time == sysRole.Update_time)
+            .SetColumns(it => it.DataScope == sysRole.DataScope)
+            .SetColumns(it => it.Remark == sysRole.Remark)
+            .SetColumns(it => it.Update_by == sysRole.Update_by)
+            //.SetColumns(it => it.MenuCheckStrictly == sysRole.MenuCheckStrictly)
+            .SetColumns(it => it.DeptCheckStrictly == sysRole.DeptCheckStrictly)
+            .SetColumnsIF(!string.IsNullOrEmpty(sysRole.RoleName), it => it.RoleName == sysRole.RoleName)
+            .SetColumnsIF(!string.IsNullOrEmpty(sysRole.RoleKey), it => it.RoleKey == sysRole.RoleKey)
+            .SetColumnsIF(sysRole.RoleSort >= 0, it => it.RoleSort == sysRole.RoleSort)
+            .Where(it => it.RoleId == sysRole.RoleId)
+            .ExecuteCommand();
         }
     }
 }

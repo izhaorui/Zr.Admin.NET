@@ -63,18 +63,34 @@ namespace ZR.Repository
         {
             return Context.Updateable(entity);
         }
+
+        /// <summary>
+        /// 实体根据主键更新
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="ignoreNullColumns"></param>
+        /// <returns></returns>
         public int Update(T entity, bool ignoreNullColumns = false)
         {
             return Context.Updateable(entity).IgnoreColumns(ignoreNullColumns).ExecuteCommand();
         }
 
+        /// <summary>
+        /// 实体根据主键更新指定字段
+        /// return Update(user, t => new { t.NickName, }, true);
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="expression"></param>
+        /// <param name="ignoreAllNull"></param>
+        /// <returns></returns>
         public int Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false)
         {
             return Context.Updateable(entity).UpdateColumns(expression).IgnoreColumns(ignoreAllNull).ExecuteCommand();
         }
 
         /// <summary>
-        /// 根据实体类更新指定列 eg：Update(dept, it => new { it.Status }, f => depts.Contains(f.DeptId));只更新Status列，条件是包含
+        /// 根据指定条件更新指定列 eg：Update(new SysUser(){ }, it => new { it.Status }, f => f.Userid == 1));
+        /// 只更新Status列，条件是包含
         /// </summary>
         /// <param name="entity"></param>
         /// <param name="expression"></param>

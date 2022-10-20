@@ -1,17 +1,16 @@
 using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Http;
+using SqlSugar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Repository.System;
+using ZR.Repository;
 using ZR.Service.System.IService;
 
 namespace ZR.Service
@@ -22,18 +21,15 @@ namespace ZR.Service
     [AppService(ServiceType = typeof(ISysUserService), ServiceLifetime = LifeTime.Transient)]
     public class SysUserService : BaseService<SysUser>, ISysUserService
     {
-        private readonly SysUserRepository UserRepository;
         private readonly ISysRoleService RoleService;
         private readonly ISysUserRoleService UserRoleService;
         private readonly ISysUserPostService UserPostService;
 
         public SysUserService(
-            SysUserRepository userRepository,
             ISysRoleService sysRoleService,
             ISysUserRoleService userRoleService,
             ISysUserPostService userPostService)
         {
-            UserRepository = userRepository;
             RoleService = sysRoleService;
             UserRoleService = userRoleService;
             UserPostService = userPostService;
@@ -45,9 +41,36 @@ namespace ZR.Service
         /// <returns></returns>
         public PagedInfo<SysUser> SelectUserList(SysUser user, PagerInfo pager)
         {
-            var list = UserRepository.SelectUserList(user, pager);
+            var exp = Expressionable.Create<SysUser>();
+            exp.AndIF(!string.IsNullOrEmpty(user.UserName), u => u.UserName.Contains(user.UserName));
+            exp.AndIF(!string.IsNullOrEmpty(user.Status), u => u.Status == user.Status);
+            exp.AndIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, u => u.Create_time >= user.BeginTime);
+            exp.AndIF(user.EndTime != DateTime.MinValue && user.EndTime != null, u => u.Create_time <= user.EndTime);
+            exp.AndIF(!user.Phonenumber.IsEmpty(), u => u.Phonenumber == user.Phonenumber);
+            exp.And(u => u.DelFlag == "0");
 
-            return list;
+            if (user.DeptId != 0)
+            {
+                List<SysDept> depts = Context.Queryable<SysDept>().ToList();
+
+                var newDepts = depts.FindAll(delegate (SysDept dept)
+                {
+                    string[] parentDeptId = dept.Ancestors.Split(",", StringSplitOptions.RemoveEmptyEntries);
+                    return parentDeptId.Contains(user.DeptId.ToString());
+                });
+                string[] deptArr = newDepts.Select(x => x.DeptId.ToString()).ToArray();
+                exp.AndIF(user.DeptId != 0, u => u.DeptId == user.DeptId || deptArr.Contains(u.DeptId.ToString()));
+            }
+            var query = Queryable()
+                .LeftJoin<SysDept>((u, dept) => u.DeptId == dept.DeptId)
+                .Where(exp.ToExpression())
+                .Select((u, dept) => new SysUser
+                {
+                    UserId = u.UserId.SelectAll(),
+                    DeptName = dept.DeptName,
+                });
+
+            return query.ToPage(pager);
         }
 
         /// <summary>
@@ -57,7 +80,7 @@ namespace ZR.Service
         /// <returns></returns>
         public SysUser SelectUserById(long userId)
         {
-            var user = UserRepository.SelectUserById(userId);
+            var user = Queryable().Filter(null, true).Where(f => f.UserId == userId).First();
             if (user != null && user.UserId > 0)
             {
                 user.Roles = RoleService.SelectUserRoleListByUserId(userId);
@@ -73,7 +96,7 @@ namespace ZR.Service
         /// <returns></returns>
         public string CheckUserNameUnique(string userName)
         {
-            int count = UserRepository.CheckUserNameUnique(userName);
+            int count = Count(it => it.UserName == userName);
             if (count > 0)
             {
                 return UserConstants.NOT_UNIQUE;
@@ -88,7 +111,8 @@ namespace ZR.Service
         /// <returns></returns>
         public long InsertUser(SysUser sysUser)
         {
-            long userId = UserRepository.AddUser(sysUser);
+            sysUser.Create_time = DateTime.Now;
+            long userId = Insertable(sysUser).ExecuteReturnIdentity();
             sysUser.UserId = userId;
             //新增用户角色信息
             UserRoleService.InsertUserRole(sysUser);
@@ -119,12 +143,25 @@ namespace ZR.Service
             UserPostService.Delete(user.UserId);
             // 新增用户与岗位管理
             UserPostService.InsertUserPost(user);
-            return UserRepository.UpdateUser(user);
+            return ChangeUser(user);
         }
 
         public int ChangeUser(SysUser user)
         {
-            return UserRepository.UpdateUser(user);
+            user.Update_time = DateTime.Now;
+            return Update(user, t => new
+            {
+                t.NickName,
+                t.Email,
+                t.Phonenumber,
+                t.DeptId,
+                t.Status,
+                t.Sex,
+                t.PostIds,
+                t.Remark,
+                t.Update_by,
+                t.Update_time
+            }, true);
         }
 
         /// <summary>
@@ -135,12 +172,17 @@ namespace ZR.Service
         /// <returns></returns>
         public int ResetPwd(long userid, string password)
         {
-            return UserRepository.ResetPwd(userid, password);
+            return Update(new SysUser() { UserId = userid, Password = password }, it => new { it.Password }, f => f.UserId == userid);
         }
 
+        /// <summary>
+        /// 修改用户状态
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
         public int ChangeUserStatus(SysUser user)
         {
-            return UserRepository.ChangeUserStatus(user);
+            return Update(user, it => new { it.Status }, f => f.UserId == user.UserId);
         }
 
         /// <summary>
@@ -155,7 +197,7 @@ namespace ZR.Service
             UserRoleService.DeleteUserRoleByUserId((int)userid);
             // 删除用户与岗位关联
             UserPostService.Delete(userid);
-            return UserRepository.DeleteUser(userid);
+            return Update(new SysUser() { UserId = userid, DelFlag = "2" }, it => new { it.DelFlag }, f => f.UserId == userid);
         }
 
         /// <summary>
@@ -165,7 +207,7 @@ namespace ZR.Service
         /// <returns></returns>
         public int UpdatePhoto(SysUser user)
         {
-            return UserRepository.UpdatePhoto(user);
+            return Update(user, it => new { it.Avatar }, f => f.UserId == user.UserId); ;
         }
 
         /// <summary>
@@ -192,7 +234,7 @@ namespace ZR.Service
                 Remark = "用户注册"
             };
 
-            user.UserId = UserRepository.AddUser(user);
+            user.UserId = Insertable(user).ExecuteReturnIdentity();
             return user;
         }
 
@@ -264,6 +306,27 @@ namespace ZR.Service
             }
 
             return msg;
+        }
+
+        /// <summary>
+        /// 登录
+        /// </summary>
+        /// <param name="user">登录实体</param>
+        /// <returns></returns>
+        public SysUser Login(LoginBodyDto user)
+        {
+            return GetFirst(it => it.UserName == user.Username && it.Password == user.Password);
+        }
+
+        /// <summary>
+        /// 修改登录信息
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public void UpdateLoginInfo(LoginBodyDto user, long userId)
+        {
+            Update(new SysUser() { LoginIP = user.LoginIP, LoginDate = DateTime.Now, UserId = userId },it => new { it.LoginIP, it.LoginDate });
         }
     }
 }

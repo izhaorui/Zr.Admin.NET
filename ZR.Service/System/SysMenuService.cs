@@ -1,13 +1,14 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Extensions;
+using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using ZR.Model.System.Dto;
-using ZR.Model.System;
-using ZR.Model.System.Vo;
-using ZR.Repository.System;
-using ZR.Service.System.IService;
 using ZR.Common;
-using Infrastructure.Extensions;
+using ZR.Model.System;
+using ZR.Model.System.Dto;
+using ZR.Model.System.Vo;
+using ZR.Service.System.IService;
 
 namespace ZR.Service
 {
@@ -17,14 +18,10 @@ namespace ZR.Service
     [AppService(ServiceType = typeof(ISysMenuService), ServiceLifetime = LifeTime.Transient)]
     public class SysMenuService : BaseService<SysMenu>, ISysMenuService
     {
-        public SysMenuRepository MenuRepository;
         public ISysRoleService SysRoleService;
 
-        public SysMenuService(
-            SysMenuRepository menuRepository,
-            ISysRoleService sysRoleService)
+        public SysMenuService(ISysRoleService sysRoleService)
         {
-            MenuRepository = menuRepository;
             SysRoleService = sysRoleService;
         }
 
@@ -37,12 +34,12 @@ namespace ZR.Service
             List<SysMenu> menuList;
             if (SysRoleService.IsAdmin(userId))
             {
-                menuList = MenuRepository.SelectTreeMenuList(menu);
+                menuList = SelectTreeMenuList(menu);
             }
             else
             {
                 var userRoles = SysRoleService.SelectUserRoles(userId);
-                menuList = MenuRepository.SelectTreeMenuListByRoles(menu, userRoles);
+                menuList = SelectTreeMenuListByRoles(menu, userRoles);
             }
             return menuList;
         }
@@ -56,12 +53,12 @@ namespace ZR.Service
             List<SysMenu> menuList;
             if (SysRoleService.IsAdmin(userId))
             {
-                menuList = MenuRepository.SelectMenuList(menu);
+                menuList = SelectAllMenuList(menu);
             }
             else
             {
                 var userRoles = SysRoleService.SelectUserRoles(userId);
-                menuList = MenuRepository.SelectMenuListByRoles(menu, userRoles);
+                menuList = SelectMenuListByRoles(menu, userRoles);
             }
             return menuList;
         }
@@ -73,17 +70,29 @@ namespace ZR.Service
         /// <returns></returns>
         public SysMenu GetMenuByMenuId(int menuId)
         {
-            return MenuRepository.SelectMenuById(menuId);
+            return GetFirst(it => it.MenuId == menuId);
         }
 
         /// <summary>
         /// 根据菜单id获取菜单列表
         /// </summary>
         /// <param name="menuId"></param>
+        /// <param name="userId"></param>
         /// <returns></returns>
-        public List<SysMenu> GetMenusByMenuId(int menuId)
+        public List<SysMenu> GetMenusByMenuId(int menuId, long userId)
         {
-            var list = MenuRepository.GetList(f => f.ParentId == menuId).OrderBy(f => f.OrderNum).ToList();
+            var menuExpression = Expressionable.Create<SysMenu>();
+            menuExpression.And(c => c.ParentId == menuId);
+            
+            if (!SysRoleService.IsAdmin(userId))
+            {
+                var userRoles = SysRoleService.SelectUserRoles(userId);
+                var roleMenus = Context.Queryable<SysRoleMenu>()
+                    .Where(r => userRoles.Contains(r.Role_id)).Select(s => s.Menu_id).ToList();
+
+                menuExpression.And(c => roleMenus.Contains(c.MenuId));
+            }
+            var list = GetList(menuExpression.ToExpression()).OrderBy(f => f.OrderNum).ToList();
             Context.ThenMapper(list, item =>
             {
                 item.SubNum = Context.Queryable<SysMenu>().SetContext(x => x.ParentId, () => item.MenuId, item).Count;
@@ -98,7 +107,8 @@ namespace ZR.Service
         /// <returns></returns>
         public int AddMenu(SysMenu menu)
         {
-            return MenuRepository.AddMenu(menu);
+            menu.Create_time = DateTime.Now;
+            return InsertReturnIdentity(menu);
         }
 
         /// <summary>
@@ -109,7 +119,7 @@ namespace ZR.Service
         public int EditMenu(SysMenu menu)
         {
             menu.Icon = string.IsNullOrEmpty(menu.Icon) ? "" : menu.Icon;
-            return MenuRepository.EditMenu(menu);
+            return Update(menu, false);
         }
 
         /// <summary>
@@ -119,7 +129,7 @@ namespace ZR.Service
         /// <returns></returns>
         public int DeleteMenuById(int menuId)
         {
-            return MenuRepository.DeleteMenuById(menuId);
+            return Delete(menuId);
         }
 
         /// <summary>
@@ -130,7 +140,7 @@ namespace ZR.Service
         public string CheckMenuNameUnique(SysMenu menu)
         {
             long menuId = menu.MenuId == 0 ? -1 : menu.MenuId;
-            SysMenu info = MenuRepository.CheckMenuNameUnique(menu);
+            SysMenu info = GetFirst(it => it.MenuName == menu.MenuName && it.ParentId == menu.ParentId);
 
             //if (info != null && menuId != info.menuId && menu.menuName.Equals(info.menuName))
             //{
@@ -146,11 +156,11 @@ namespace ZR.Service
         /// <summary>
         /// 菜单排序
         /// </summary>
-        /// <param name="menuId"></param>
+        /// <param name="menuDto"></param>
         /// <returns></returns>
         public int ChangeSortMenu(MenuDto menuDto)
         {
-            return MenuRepository.ChangeSortMenu(menuDto);
+            return Update(new SysMenu() { MenuId = menuDto.MenuId, OrderNum = menuDto.OrderNum }, it => new { it.OrderNum });
         }
 
         /// <summary>
@@ -160,7 +170,7 @@ namespace ZR.Service
         /// <returns></returns>
         public bool HasChildByMenuId(long menuId)
         {
-            return MenuRepository.HasChildByMenuId(menuId) > 0;
+            return Count(it => it.ParentId == menuId) > 0;
         }
 
         /// <summary>
@@ -173,23 +183,13 @@ namespace ZR.Service
             MenuQueryDto dto = new() { Status = "0", MenuTypeIds = "M,C" };
             if (SysRoleService.IsAdmin(userId))
             {
-                return MenuRepository.SelectTreeMenuList(dto);
+                return SelectTreeMenuList(dto);
             }
             else
             {
                 List<long> roleIds = SysRoleService.SelectUserRoles(userId);
-                return MenuRepository.SelectTreeMenuListByRoles(dto, roleIds);
+                return SelectTreeMenuListByRoles(dto, roleIds);
             }
-        }
-
-        /// <summary>
-        /// 查询菜单权限
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        public List<SysMenu> SelectMenuPermsListByUserId(long userId)
-        {
-            return MenuRepository.SelectMenuPermsByUserId(userId);
         }
 
         /// <summary>
@@ -199,25 +199,96 @@ namespace ZR.Service
         /// <returns></returns>
         public List<string> SelectMenuPermsByUserId(long userId)
         {
-            var menuList = SelectMenuPermsListByUserId(userId).Where(f => !string.IsNullOrEmpty(f.Perms));
+            var menus = Context.Queryable<SysMenu, SysRoleMenu, SysUserRole, SysRole>((m, rm, ur, r) => new JoinQueryInfos(
+                JoinType.Left, m.MenuId == rm.Menu_id,
+                JoinType.Left, rm.Role_id == ur.RoleId,
+                JoinType.Left, ur.RoleId == r.RoleId
+                ))
+                .Where((m, rm, ur, r) => m.Status == "0" && r.Status == "0" && ur.UserId == userId)
+                .Select((m, rm, ur, r) => m).ToList();
+            var menuList = menus.Where(f => !string.IsNullOrEmpty(f.Perms));
 
             return menuList.Select(x => x.Perms).Distinct().ToList();
         }
 
-        #region RoleMenu
-
         /// <summary>
-        /// 查询菜单使用数量
+        /// 根据用户查询系统菜单列表
         /// </summary>
-        /// <param name="menuId"></param>
+        /// <param name="menu"></param>
+        /// <param name="roles">用户角色集合</param>
         /// <returns></returns>
-        public bool CheckMenuExistRole(long menuId)
+        private List<SysMenu> SelectTreeMenuListByRoles(MenuQueryDto menu, List<long> roles)
         {
-            return MenuRepository.CheckMenuExistRole(menuId) > 0;
+            var roleMenus = Context.Queryable<SysRoleMenu>()
+                .Where(r => roles.Contains(r.Role_id))
+                .Select(f => f.Menu_id).Distinct().ToList();
+
+            return Queryable()
+                .Where(c => roleMenus.Contains(c.MenuId))
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuName), (c) => c.MenuName.Contains(menu.MenuName))
+                .WhereIF(!string.IsNullOrEmpty(menu.Visible), (c) => c.Visible == menu.Visible)
+                .WhereIF(!string.IsNullOrEmpty(menu.Status), (c) => c.Status == menu.Status)
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuTypeIds), c => menu.MenuTypeIdArr.Contains(c.MenuType))
+                .OrderBy((c) => new { c.ParentId, c.OrderNum })
+                .Select(c => c)
+                .ToTree(it => it.Children, it => it.ParentId, 0);
         }
 
-        #endregion
+        /// <summary>
+        /// 获取所有菜单
+        /// </summary>
+        /// <returns></returns>
+        private List<SysMenu> SelectAllMenuList(MenuQueryDto menu)
+        {
+            return Queryable()
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
+                .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible)
+                .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status)
+                .WhereIF(menu.ParentId != null, it => it.ParentId == menu.ParentId)
+                .OrderBy(it => new { it.ParentId, it.OrderNum })
+                .ToList();
+        }
 
+        /// <summary>
+        /// 根据用户查询系统菜单列表
+        /// </summary>
+        /// <param name="sysMenu"></param>
+        /// <param name="roles">用户角色集合</param>
+        /// <returns></returns>
+        private List<SysMenu> SelectMenuListByRoles(MenuQueryDto sysMenu, List<long> roles)
+        {
+            var roleMenus = Context.Queryable<SysRoleMenu>()
+                .Where(r => roles.Contains(r.Role_id));
+
+            return Queryable()
+                .InnerJoin(roleMenus, (c, j) => c.MenuId == j.Menu_id)
+                .Where((c, j) => c.Status == "0")
+                .WhereIF(!string.IsNullOrEmpty(sysMenu.MenuName), (c, j) => c.MenuName.Contains(sysMenu.MenuName))
+                .WhereIF(!string.IsNullOrEmpty(sysMenu.Visible), (c, j) => c.Visible == sysMenu.Visible)
+                .OrderBy((c, j) => new { c.ParentId, c.OrderNum })
+                .Select(c => c)
+                .ToList();
+        }
+
+        /// <summary>
+        /// 获取所有菜单（菜单管理）
+        /// </summary>
+        /// <returns></returns>
+        public List<SysMenu> SelectTreeMenuList(MenuQueryDto menu)
+        {
+            int parentId = menu.ParentId != null ? (int)menu.ParentId : 0;
+
+            var list = Queryable()
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
+                .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible)
+                .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status)
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuTypeIds), it => menu.MenuTypeIdArr.Contains(it.MenuType))
+                .WhereIF(menu.ParentId != null, it => it.ParentId == menu.ParentId)
+                .OrderBy(it => new { it.ParentId, it.OrderNum })
+                .ToTree(it => it.Children, it => it.ParentId, parentId);
+
+            return list;
+        }
         #region 方法
 
         ///// <summary>

@@ -21,13 +21,16 @@ namespace ZR.Admin.WebApi.Controllers.System
     {
         private readonly ISysRoleService sysRoleService;
         private readonly ISysMenuService sysMenuService;
+        private readonly ISysRoleMenuService sysRoleMenuService;
 
         public SysMenuController(
             ISysRoleService sysRoleService,
-            ISysMenuService sysMenuService)
+            ISysMenuService sysMenuService,
+            ISysRoleMenuService sysRoleMenuService)
         {
             this.sysRoleService = sysRoleService;
             this.sysMenuService = sysMenuService;
+            this.sysRoleMenuService = sysRoleMenuService;
         }
 
         /// <summary>
@@ -63,7 +66,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:menu:query")]
         public IActionResult GetMenuList(int menuId = 0)
         {
-            return SUCCESS(sysMenuService.GetMenusByMenuId(menuId), "yyyy-MM-dd HH:mm:ss");
+            long userId = HttpContext.GetUId();
+            return SUCCESS(sysMenuService.GetMenusByMenuId(menuId, userId), "yyyy-MM-dd HH:mm:ss");
         }
 
         /// <summary>
@@ -166,7 +170,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "存在子菜单,不允许删除");
             }
-            if (sysMenuService.CheckMenuExistRole(menuId))
+            if (sysRoleMenuService.CheckMenuExistRole(menuId))
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "菜单已分配,不允许删除");
             }

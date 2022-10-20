@@ -1,9 +1,11 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Extensions;
+using SqlSugar;
 using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Repository.System;
+using ZR.Repository;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -14,12 +16,12 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysUserRoleService), ServiceLifetime = LifeTime.Transient)]
     public class SysUserRoleService : BaseService<SysUserRole>, ISysUserRoleService
     {
-        public SysUserRoleRepository SysUserRoleRepository;
+        //public SysUserRoleRepository SysUserRoleRepository;
 
-        public SysUserRoleService(SysUserRoleRepository sysUserRoleRepository)
-        {
-            SysUserRoleRepository = sysUserRoleRepository;
-        }
+        //public SysUserRoleService(SysUserRoleRepository sysUserRoleRepository)
+        //{
+        //    SysUserRoleRepository = sysUserRoleRepository;
+        //}
 
         /// <summary>
         /// 通过角色ID查询角色使用数量
@@ -38,7 +40,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteUserRoleByUserId(int userId)
         {
-            return Deleteable().Where(it => it.UserId == userId).ExecuteCommand();
+            return Delete(it => it.UserId == userId) ? 1 : 0;
         }
 
         /// <summary>
@@ -49,7 +51,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteRoleUserByUserIds(long roleId, List<long> userIds)
         {
-            return SysUserRoleRepository.DeleteRoleUserByUserIds(roleId, userIds);
+            return Delete(it => it.RoleId == roleId && userIds.Contains(it.UserId)) ? 1 : 0;
         }
 
         /// <summary>
@@ -69,7 +71,11 @@ namespace ZR.Service.System
         /// <returns></returns>
         public List<SysUser> GetSysUsersByRoleId(long roleId)
         {
-            return SysUserRoleRepository.GetSysUsersByRoleId(roleId);
+            return Context.Queryable<SysUserRole, SysUser > ((t1, u) => new JoinQueryInfos(
+                   JoinType.Left, t1.UserId == u.UserId))
+                 .Where((t1, u) => t1.RoleId == roleId && u.DelFlag == "0")
+                 .Select((t1, u) => u)
+                 .ToList();
         }
 
         /// <summary>
@@ -79,7 +85,15 @@ namespace ZR.Service.System
         /// <returns></returns>
         public PagedInfo<SysUser> GetSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
         {
-            return SysUserRoleRepository.GetSysUsersByRoleId(roleUserQueryDto);
+            //return SysUserRoleRepository.GetSysUsersByRoleId(roleUserQueryDto);
+            var query = Context.Queryable<SysUserRole, SysUser>((t1, u) => new JoinQueryInfos(
+                JoinType.Left, t1.UserId == u.UserId))
+                .Where((t1, u) => t1.RoleId == roleUserQueryDto.RoleId && u.DelFlag == "0");
+            if (!string.IsNullOrEmpty(roleUserQueryDto.UserName))
+            {
+                query = query.Where((t1, u) => u.UserName.Contains(roleUserQueryDto.UserName));
+            }
+            return query.Select((t1, u) => u).ToPage(roleUserQueryDto);
         }
 
         /// <summary>
@@ -89,7 +103,12 @@ namespace ZR.Service.System
         /// <returns></returns>
         public PagedInfo<SysUser> GetExcludedSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
         {
-            return SysUserRoleRepository.GetExcludedSysUsersByRoleId(roleUserQueryDto);
+            var query = Context.Queryable<SysUser>()
+                .Where(it => it.DelFlag == "0")
+                .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == it.UserId && s.RoleId == roleUserQueryDto.RoleId).NotAny())
+                .WhereIF(roleUserQueryDto.UserName.IsNotEmpty(), it => it.UserName.Contains(roleUserQueryDto.UserName));
+
+            return query.ToPage(roleUserQueryDto);
         }
 
         /// <summary>
@@ -115,7 +134,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int InsertRoleUser(RoleUsersCreateDto roleUsersCreateDto)
         {
-            List<SysUserRole> userRoles = new List<SysUserRole>();
+            List<SysUserRole> userRoles = new();
             foreach (var item in roleUsersCreateDto.UserIds)
             {
                 userRoles.Add(new SysUserRole() { RoleId = roleUsersCreateDto.RoleId, UserId = item });

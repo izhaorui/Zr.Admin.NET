@@ -1,4 +1,5 @@
-﻿using ZR.Model;
+﻿using System.Collections.Generic;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
@@ -70,5 +71,16 @@ namespace ZR.Service.System.IService
         SysUser Register(RegisterDto dto);
         void CheckUserAllowed(SysUser user);
         void CheckUserDataScope(long userid, long loginUserId);
+
+        /// <summary>
+        /// 导入
+        /// </summary>
+        /// <param name="users"></param>
+        /// <returns></returns>
+        string ImportUsers(List<SysUser> users);
+
+        SysUser Login(LoginBodyDto user);
+
+        void UpdateLoginInfo(LoginBodyDto user, long userId);
     }
 }

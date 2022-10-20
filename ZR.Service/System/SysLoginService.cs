@@ -7,7 +7,6 @@ using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
-using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -18,11 +17,11 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysLoginService), ServiceLifetime = LifeTime.Transient)]
     public class SysLoginService: BaseService<SysLogininfor>, ISysLoginService
     {
-        private readonly SysUserRepository SysUserRepository;
+        private readonly ISysUserService SysUserService;
 
-        public SysLoginService(SysUserRepository sysUserRepository)
+        public SysLoginService(ISysUserService sysUserService)
         {
-            SysUserRepository = sysUserRepository;
+            SysUserService = sysUserService;
         }
 
         /// <summary>
@@ -35,7 +34,7 @@ namespace ZR.Service.System
             //密码md5
             loginBody.Password = NETCore.Encrypt.EncryptProvider.Md5(loginBody.Password);
 
-            SysUser user = SysUserRepository.Login(loginBody);
+            SysUser user = SysUserService.Login(loginBody);
             logininfor.UserName = loginBody.Username;
             logininfor.Status = "1";
             logininfor.LoginTime = DateTime.Now;
@@ -56,7 +55,7 @@ namespace ZR.Service.System
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor);
-            SysUserRepository.UpdateLoginInfo(loginBody, user.UserId);
+            SysUserService.UpdateLoginInfo(loginBody, user.UserId);
             return user;
         }
 

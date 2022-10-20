@@ -137,5 +137,7 @@ namespace ZR.Service.System.IService
         /// <param name="sysRole">角色信息</param>
         /// <returns></returns>
         public int UpdateRole(SysRole sysRole);
+
+        int UpdateSysRole(SysRole sysRole);
     }
 }
