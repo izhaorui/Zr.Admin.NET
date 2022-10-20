@@ -69,7 +69,7 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 11. 在线构建器：拖动表单元素生成相应的 VUE 代码(仅支持vue2)。
 12. 任务系统：基于 Quartz.NET，可以在线（添加、修改、删除、手动执行)任务调度包含执行结果日志。
 13. 文章管理：可以写文章记录。
-14. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、sql等)支持下载，自定义配置前端展示控件、让开发更快捷高效。
+14. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、.sql等)支持下载，自定义配置前端展示控件、让开发更快捷高效（史上最强）。
 15. 参数管理：对系统动态配置常用参数。
 16. 发送邮件：可以对多个用户进行发送邮件。
 17. 文件管理：可以进行上传文件管理，目前支持上传到本地、阿里云。
@@ -146,6 +146,7 @@ Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、a
 - 👉Ruoyi.vue：[Ruoyi](http://www.ruoyi.vip/)
 - 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
 - 👉vue-element-admin：[vue-element-admin](https://github.com/PanJiaChen/vue-element-admin)
+- 👉Meiam.System：[Meiam.System](https://github.com/91270/Meiam.System)
 
 ## 🎀捐赠
 如果你觉得这个项目帮助到了你，你可以请作者喝杯咖啡表示鼓励 ☕️
