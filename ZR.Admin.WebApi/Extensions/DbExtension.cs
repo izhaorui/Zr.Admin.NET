@@ -111,7 +111,7 @@ namespace ZR.Admin.WebApi.Extensions
             var user = JwtUtil.GetLoginUser(App.HttpContext);
             if (user == null) return;
             //管理员不过滤
-            if (user.RoleIds.Any(f => f.Equals("admin"))) return;
+            if (user.RoleIds.Any(f => f.Equals(GlobalConstant.AdminRole))) return;
             var db = DbScoped.SugarScope.GetConnectionScope(configId);
             foreach (var role in user.Roles.OrderBy(f => f.DataScope))
             {
