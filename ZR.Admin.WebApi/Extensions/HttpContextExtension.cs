@@ -1,4 +1,5 @@
-﻿using Infrastructure.Extensions;
+﻿using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
@@ -95,8 +96,8 @@ namespace ZR.Admin.WebApi.Extensions
         /// <returns></returns>
         public static bool IsAdmin(this HttpContext context)
         {
-            long id = GetUId(context);
-            return id == 1;
+            var userName = GetName(context);
+            return userName == GlobalConstant.AdminRole;
         }
 
         /// <summary>
