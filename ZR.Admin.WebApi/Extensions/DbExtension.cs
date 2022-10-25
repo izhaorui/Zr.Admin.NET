@@ -22,9 +22,6 @@ namespace ZR.Admin.WebApi.Extensions
         //仅本人数据权限
         public static string DATA_SCOPE_SELF = "5";
 
-       
-
-
         public static void AddDb(IConfiguration Configuration)
         {
             string connStr = Configuration.GetConnectionString("conn_db");
@@ -49,7 +46,7 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 //db0数据过滤
                 FilterData(0);
-                
+
                 #region db0
                 db.GetConnectionScope(0).Aop.OnLogExecuting = (sql, pars) =>
                 {
@@ -84,17 +81,21 @@ namespace ZR.Admin.WebApi.Extensions
                 };
                 #endregion
             });
-            
+
         }
 
+        /// <summary>
+        /// 初始化db
+        /// </summary>
+        /// <param name="service"></param>
         public static void InitDb(this IServiceProvider service)
         {
             var db = DbScoped.SugarScope;
             db.DbMaintenance.CreateDatabase();
             //db.CodeFirst.
-            
+
             var baseType = typeof(SysBase);
-            var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && /*p.IsAssignableTo(baseType) && */p.GetCustomAttribute<SugarTable>()!=null).ToArray();
+            var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && /*p.IsAssignableTo(baseType) && */p.GetCustomAttribute<SugarTable>() != null).ToArray();
             db.CodeFirst.SetStringDefaultLength(512).InitTables(entityes);
         }
 
