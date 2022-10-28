@@ -160,7 +160,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             byte[] imgByte = GenerateCaptcha(captchaOff, code);
             string base64Str = Convert.ToBase64String(imgByte);
             CacheHelper.SetCache(uuid, code);
-            var obj = new { uuid, img = base64Str };// File(stream, "image/png")
+            var obj = new { captchaOff, uuid, img = base64Str };// File(stream, "image/png")
 
             return ToJson(1, obj);
         }
