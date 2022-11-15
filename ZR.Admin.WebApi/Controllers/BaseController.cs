@@ -113,6 +113,13 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="fileName"></param>
         protected string ExportExcel<T>(List<T> list, string sheetName, string fileName)
         {
+            var fileInfo = ExportExcelNew(list, sheetName, fileName);
+
+            return fileInfo.Item1;
+        }
+
+        protected (string, string) ExportExcelNew<T>(List<T> list, string sheetName, string fileName)
+        {
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
             string sFileName = $"{fileName}{DateTime.Now:MMddHHmmss}.xlsx";
             string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
@@ -130,7 +137,7 @@ namespace ZR.Admin.WebApi.Controllers
                 package.Save();
             }
 
-            return sFileName;
+            return (sFileName, newFileName);
         }
 
         /// <summary>
