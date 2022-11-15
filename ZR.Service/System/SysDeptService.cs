@@ -9,7 +9,6 @@ using System.Text;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Vo;
-using ZR.Repository.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System

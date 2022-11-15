@@ -19,5 +19,6 @@
 
 	<ItemGroup>
 		<Folder Include="Business\" />
+		<Folder Include="System\" />
 	</ItemGroup>
 </Project>

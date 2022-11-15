@@ -20,12 +20,6 @@ namespace ZR.Service.Business
     [AppService(ServiceType = typeof(IGenDemoService), ServiceLifetime = LifeTime.Transient)]
     public class GenDemoService : BaseService<GenDemo>, IGenDemoService
     {
-        private readonly GenDemoRepository _GenDemorepository;
-        public GenDemoService(GenDemoRepository repository)
-        {
-            _GenDemorepository = repository;
-        }
-
         #region 业务逻辑代码
 
         /// <summary>
@@ -44,8 +38,7 @@ namespace ZR.Service.Business
             predicate = predicate.AndIF(parm.ShowStatus != null, it => it.ShowStatus == parm.ShowStatus);
             predicate = predicate.AndIF(parm.BeginAddTime == null, it => it.AddTime >= DateTime.Now.AddDays(-1));
             predicate = predicate.AndIF(parm.BeginAddTime != null, it => it.AddTime >= parm.BeginAddTime && it.AddTime <= parm.EndAddTime);
-            var response = _GenDemorepository
-                .Queryable()
+            var response = Queryable()
                 .Where(predicate.ToExpression())
                 .ToPage(parm);
             return response;
