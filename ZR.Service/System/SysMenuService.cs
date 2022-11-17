@@ -549,7 +549,11 @@ namespace ZR.Service
         /// < returns ></ returns >
         public string InnerLinkReplaceEach(string path)
         {
-            return path.IsNotEmpty() ? path.Replace(UserConstants.HTTP, "").Replace(UserConstants.HTTPS, "") : path;
+            return path.IsNotEmpty() ? path
+                .Replace(UserConstants.HTTP, "")
+                .Replace(UserConstants.HTTPS, "")
+                .Replace(UserConstants.WWW, "")
+                .Replace(".", "/") : path;
         }
         #endregion
 

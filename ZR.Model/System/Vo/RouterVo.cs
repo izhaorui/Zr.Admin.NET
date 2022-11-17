@@ -52,19 +52,16 @@ namespace ZR.Model.System.Vo
             Icon = icon;
             Link = path;
         }
-        public Meta(string title, string icon, bool noCache)
-        {
-            Title = title;
-            Icon = icon;
-            NoCache = noCache;
-        }
         public Meta(string title, string icon, bool noCache, string titleKey, string path)
         {
             Title = title;
             Icon = icon;
             NoCache = noCache;
             TitleKey = titleKey;
-            Link = path;
+            if (!string.IsNullOrEmpty(path) && (path.StartsWith(UserConstants.HTTP) || path.StartsWith(UserConstants.HTTPS)))
+            {
+                Link = path;
+            }
         }
     }
 }

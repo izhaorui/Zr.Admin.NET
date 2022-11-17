@@ -71,5 +71,9 @@ namespace ZR.Model.System
         /// https请求
         /// </summary>
         public static string HTTPS = "https://";
+        /// <summary>
+        /// www主域
+        /// </summary>
+        public static string WWW = "www.";
     }
 }
