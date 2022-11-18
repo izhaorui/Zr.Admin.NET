@@ -116,15 +116,14 @@ app.UseAddTaskSchedulers();
 //使用全局异常中间件
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-app.UseEndpoints(endpoints =>
-{
-    //设置socket连接
-    endpoints.MapHub<MessageHub>("/msgHub");
 
-    endpoints.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}");
-});
+//设置socket连接
+app.MapHub<MessageHub>("/msgHub");
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapControllers();
 
 app.Run();
