@@ -1,5 +1,5 @@
-<h2 align="center"> ZRAdmin.NET后台管理系统</h2>
-<h4 align="center">基于.NET5/.NET6 + vue2.x/vue3.x前后端分离的.net快速开发框架</h4>  
+<h2 align="center"> ZR.Admin.NET后台管理系统</h2>
+<h4 align="center">基于.NET5/.NET6/.Net7 + vue2.x/vue3.x前后端分离的.net快速开发框架</h4>  
 
 
 <p align="center">
@@ -35,13 +35,14 @@
 | ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
 | Vue2 + Net5 |                                                                  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/)             |
 | Vue2 + Net6 | [克隆/下载](https://github.com/izhaorui/ZrAdmin.NET/tree/net6.0) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/) |
-| Vue3        |                                                                  | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)   
+| Vue3        |                                                                  | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
+| Net7        |                                                                  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
 
 ## 🍁前端技术
 Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios、 element-ui、echats、i18n国际化等，前端采用vscode工具开发
 
 ## 🍀后端技术
-- 核心框架：.Net5.0/.Net6.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
+- 核心框架：.Net5.0/.Net6.0/.Net7.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
 - 定时计划任务：Quartz.Net组件，支持执行程序集或者http网络请求
 - 安全支持：过滤器(数据权限过滤)、Sql注入、请求伪造
 - 日志管理：NLog、登录日志、操作日志、定时任务日志
