@@ -38,7 +38,7 @@ namespace ZR.Admin.WebApi.Hubs
         /// <returns></returns>
         public override Task OnConnectedAsync()
         {
-            var name = Context.User.Identity.Name;
+            var name = HttpContextExtension.GetName(App.HttpContext);// Context.User.Identity.Name;
             var ip = HttpContextExtension.GetClientUserIp(App.HttpContext);
             var ip_info = IpTool.Search(ip);
 
@@ -66,7 +66,7 @@ namespace ZR.Admin.WebApi.Hubs
         /// 连接终止时调用。
         /// </summary>
         /// <returns></returns>
-        public override Task OnDisconnectedAsync(Exception exception)
+        public override Task OnDisconnectedAsync(Exception? exception)
         {
             var user = clientUsers.Where(p => p.ConnnectionId == Context.ConnectionId).FirstOrDefault();
             //判断用户是否存在，否则添加集合

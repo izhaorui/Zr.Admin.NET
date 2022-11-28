@@ -82,7 +82,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static string GetName(this HttpContext context)
+        public static string? GetName(this HttpContext context)
         {
             var uid = context.User?.Identity?.Name;
 

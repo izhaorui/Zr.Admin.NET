@@ -19,13 +19,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //注入HttpContextAccessor
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+var corsUrls = builder.Configuration["corsUrls"]?.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
 //配置跨域
 builder.Services.AddCors(c =>
 {
     c.AddPolicy("Policy", policy =>
     {
-        policy.WithOrigins(builder.Configuration["corsUrls"].Split(',', StringSplitOptions.RemoveEmptyEntries))
+        policy.WithOrigins(corsUrls == null ? Array.Empty<string>() : corsUrls)
         .AllowAnyHeader()//允许任意头
         .AllowCredentials()//允许cookie
         .AllowAnyMethod();//允许任意方法
