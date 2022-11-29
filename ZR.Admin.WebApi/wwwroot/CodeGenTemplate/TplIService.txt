@@ -14,7 +14,7 @@ namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNam
     /// </summary>
     public interface I${replaceDto.ModelTypeName}Service : IBaseService<${replaceDto.ModelTypeName}>
     {
-        PagedInfo<${replaceDto.ModelTypeName}> GetList(${replaceDto.ModelTypeName}QueryDto parm);
+        PagedInfo<${replaceDto.ModelTypeName}Dto> GetList(${replaceDto.ModelTypeName}QueryDto parm);
 
 $if(genTable.TplCategory == "tree")
         List<${replaceDto.ModelTypeName}> GetTreeList(${replaceDto.ModelTypeName}QueryDto parm);

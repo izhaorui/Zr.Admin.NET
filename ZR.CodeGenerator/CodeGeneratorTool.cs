@@ -252,7 +252,7 @@ namespace ZR.CodeGenerator
             string fileName;
             if (generateDto.VueVersion == 3)
             {
-                fileName = generateDto.GenTable.BusinessName.ToLower() + ".js";
+                fileName = generateDto.GenTable.BusinessName.ToLower() + ".js";//vue3 api引用目前只能小写
             }
             else
             {
@@ -306,7 +306,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public static string GenerateVueTableList()
         {
-           return JnHelper.ReadTemplate(CodeTemplateDir, "TableList.txt").Render();
+            return JnHelper.ReadTemplate(CodeTemplateDir, "TableList.txt").Render();
         }
 
         /// <summary>
@@ -366,7 +366,7 @@ namespace ZR.CodeGenerator
         {
             try
             {
-                return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToLower() + str[1..];
+                return string.IsNullOrEmpty(str) ? str : str[..1].ToLower() + str[1..];
             }
             catch (Exception ex)
             {

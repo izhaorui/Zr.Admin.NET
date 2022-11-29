@@ -149,9 +149,12 @@ $if(replaceDto.ShowBtnExport)
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:export")]
         public IActionResult Export([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
         {
-            parm.PageSize = 10000;
+            parm.PageSize = 100000;
             var list = _${replaceDto.ModelTypeName}Service.GetList(parm).Result;
-
+            if (list == null || list.Count <= 0)
+            {
+                return ToResponse(ResultCode.FAIL, "没有要导出的数据");
+            }
             string sFileName = ExportExcel(list, "${replaceDto.ModelTypeName}", "${genTable.FunctionName}");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }

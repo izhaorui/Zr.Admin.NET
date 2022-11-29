@@ -317,8 +317,8 @@ const showSearch = ref(true)
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
-  sort: undefined,
-  sortType: undefined,
+  sort: '${genTable.Options.SortField}',
+  sortType: '${genTable.Options.SortType}',
 $foreach(item in genTable.Columns)
 $if(item.IsQuery == true)
   ${item.CsharpFieldFl}: undefined,

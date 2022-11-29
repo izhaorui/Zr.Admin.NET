@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+	<PackageReference Include="Mapster" Version="7.3.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.0" />
     <PackageReference Include="MySql.Data" Version="8.0.31" />
     <PackageReference Include="NETCore.Encrypt" Version="2.1.0" />

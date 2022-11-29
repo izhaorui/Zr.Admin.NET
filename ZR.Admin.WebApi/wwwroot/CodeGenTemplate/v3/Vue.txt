@@ -27,13 +27,13 @@ $if(column.HtmlType == "datetime")
       <el-form-item label="$labelName">
         <el-date-picker 
           v-model="dateRange${column.CsharpField}" 
-          style="width: 240px" 
-          type="daterange" 
+          type="datetimerange" 
           range-separator="-"
           start-placeholder="开始日期" 
           end-placeholder="结束日期" 
           placeholder="请选择$labelName"
           value-format="YYYY-MM-DD HH:mm:ss"
+          :default-time="defaultTime"
           :shortcuts="dateOptions">
         </el-date-picker>
       </el-form-item>
@@ -289,17 +289,15 @@ from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.
 const { proxy } = getCurrentInstance()
 // 选中${replaceDto.FistLowerPk}数组数组
 const ids = ref([])
-// 非单选禁用
 const single = ref(true)
-// 非多个禁用
 const multiple = ref(true)
 const loading = ref(false)
 const showSearch = ref(true)
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
-  sort: undefined,
-  sortType: undefined,
+  sort: '${genTable.Options.SortField}',
+  sortType: '${genTable.Options.SortType}',
 $foreach(item in genTable.Columns)
 $if(item.IsQuery == true)
   ${item.CsharpFieldFl}: undefined,
@@ -315,35 +313,11 @@ $if(column.IsList)
 $end
 $end
 ])
-const title = ref("")
-// 操作类型 1、add 2、edit 3、view
-const opertype = ref(0)
-const open = ref(false)
-const state = reactive({
-  form: {},
-  rules: {
-$foreach(column in genTable.Columns)
-$if(column.IsRequired && column.IsIncrement == false)
-    ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
-$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }],
-$end
-$end
-  },
-  options: {
-$foreach(column in genTable.Columns)
-$if((column.HtmlType == "radio" || column.HtmlType == "select" || column.HtmlType == "checkbox"))
-    // $if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
-    $if(column.DictType != "")${column.DictType}$else${column.CsharpFieldFl}Options$end: [],
-$end
-$end
-  }
-})
-
-const { form, rules, options } = toRefs(state)
 const total = ref(0)
 const dataList = ref([])
 const queryRef = ref()
-const formRef = ref()
+const defaultTime = ref([new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)])
+
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "datetime" && item.IsQuery == true)
 // ${item.ColumnComment}时间范围
@@ -410,13 +384,81 @@ $end
 $end
   loading.value = true
   list${genTable.BusinessName}(queryParams).then(res => {
-    if (res.code == 200) {
-      dataList.value = res.data.result
-      total.value = res.data.totalNum
+    const { code, data } = res
+    if (code == 200) {
+      dataList.value = data.result
+      total.value = data.totalNum
       loading.value = false
     }
   })
 }
+
+// 查询
+function handleQuery() {
+  queryParams.pageNum = 1
+  getList()
+}
+
+// 重置查询操作
+function resetQuery(){
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "datetime" && item.IsQuery == true)
+  // ${item.ColumnComment}时间范围
+  dateRange${item.CsharpField}.value = []
+$end
+$end
+  proxy.resetForm("queryRef")
+  handleQuery()
+}
+
+// 多选框选中数据
+function handleSelectionChange(selection) {
+  ids.value = selection.map((item) => item.${replaceDto.FistLowerPk});
+  single.value = selection.length != 1
+  multiple.value = !selection.length;
+}
+
+// 自定义排序
+function sortChange(column) {
+  if (column.prop == null || column.order == null) {
+    queryParams.sort = undefined
+    queryParams.sortType = undefined
+  } else {
+    queryParams.sort = column.prop
+    queryParams.sortType = column.order
+  }
+
+  handleQuery()
+}
+
+
+/*************** form操作 ***************/
+const formRef = ref()
+const title = ref("")
+// 操作类型 1、add 2、edit 3、view
+const opertype = ref(0)
+const open = ref(false)
+const state = reactive({
+  form: {},
+  rules: {
+$foreach(column in genTable.Columns)
+$if(column.IsRequired && column.IsIncrement == false)
+    ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
+$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }],
+$end
+$end
+  },
+  options: {
+$foreach(column in genTable.Columns)
+$if(column.HtmlType == "radio" || column.HtmlType == "select" || column.HtmlType == "checkbox" || column.HtmlType == "selectMulti")
+    //$if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
+    $if(column.DictType != "")${column.DictType}$else${column.CsharpFieldFl}Options$end: [],
+$end
+$end
+  }
+})
+
+const { form, rules, options } = toRefs(state)
 
 // 关闭dialog
 function cancel(){
@@ -439,20 +481,6 @@ $end
   proxy.resetForm("formRef")
 }
 
-// 查询
-function handleQuery() {
-  queryParams.pageNum = 1
-  getList()
-}
-
-// 添加
-function handleAdd() {
-  reset();
-  open.value = true
-  title.value = '添加'
-  opertype.value = 1
-}
-
 // 删除按钮操作
 function handleDelete(row) {
   const Ids = row.${replaceDto.FistLowerPk} || ids.value
@@ -466,6 +494,14 @@ function handleDelete(row) {
       proxy.${modal}modal.msgSuccess("删除成功")
   })
   .catch(() => {})
+}
+
+// 添加按钮操作
+function handleAdd() {
+  reset();
+  open.value = true
+  title.value = '添加'
+  opertype.value = 1
 }
 
 // 修改按钮操作
@@ -491,7 +527,7 @@ $end
   })
 }
 
-// 表单提交
+// 添加&修改 表单提交
 function submitForm() {
   proxy.${refs}refs["formRef"].validate((valid) => {
     if (valid) {
@@ -521,17 +557,6 @@ $end
   })
 }
 
-// 重置查询操作
-function resetQuery(){
-$foreach(item in genTable.Columns)
-$if(item.HtmlType == "datetime" && item.IsQuery == true)
-  // ${item.ColumnComment}时间范围
-  dateRange${item.CsharpField}.value = []
-$end
-$end
-  proxy.resetForm("queryRef")
-  handleQuery()
-}
 $if(replaceDto.ShowBtnExport)
 // 导出按钮操作
 function handleExport() {
@@ -549,6 +574,7 @@ function handleExport() {
     })
 }
 $end
+
 $if(replaceDto.ShowBtnView)
 /**
  * 预览
@@ -562,6 +588,7 @@ function handlePreview(row) {
   form.value = row
 }
 $end
+
 $if(replaceDto.ShowBtnTruncate)
 /**
  * 清空
@@ -582,25 +609,6 @@ function handleClear() {
     })
 }
 $end
-// 多选框选中数据
-function handleSelectionChange(selection) {
-  ids.value = selection.map((item) => item.${replaceDto.FistLowerPk});
-  single.value = selection.length != 1
-  multiple.value = !selection.length;
-}
-
-// 自定义排序
-function sortChange(column) {
-  if (column.prop == null || column.order == null) {
-    queryParams.sort = undefined
-    queryParams.sortType = undefined
-  } else {
-    queryParams.sort = column.prop
-    queryParams.sortType = column.order
-  }
-
-  handleQuery()
-}
 
 handleQuery()
 </script>

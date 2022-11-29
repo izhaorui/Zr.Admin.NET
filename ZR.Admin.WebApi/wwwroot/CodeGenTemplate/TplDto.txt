@@ -1,38 +1,65 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ${options.ModelsNamespace}.Dto;
 using ${options.ModelsNamespace}.Models;
+$if(replaceDto.ShowBtnExport)
+using OfficeOpenXml.Attributes;
+$end
 
 namespace ${options.DtosNamespace}.Dto
 {
-    /// <summary>
-    /// ${genTable.FunctionName}输入对象
-    /// </summary>
-    public class ${replaceDto.ModelTypeName}Dto
-    {
-$foreach(item in genTable.Columns)
-$if((item.IsInsert || item.IsEdit || item.IsPk || item.IsIncrement))
-$if(item.IsRequired)
-        [Required(ErrorMessage = "${item.ColumnComment}不能为空")]
-$end
-        public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
-$end
-$end
-    }
-
     /// <summary>
     /// ${genTable.FunctionName}查询对象
     /// </summary>
     public class ${replaceDto.ModelTypeName}QueryDto : PagerInfo 
     {
 $foreach(item in genTable.Columns)
-$if(item.IsQuery && item.htmlType == "datetime")
+$if(item.IsQuery)
+$if(item.htmlType == "datetime")
         public DateTime? Begin$item.CsharpField { get; set; }
         public DateTime? End$item.CsharpField { get; set; }
-$elseif(item.IsQuery)
+$elseif(item.htmlType == "selectMulti")
+        public ${item.CsharpType}[] $item.CsharpField { get; set; }
+$else
         public $item.CsharpType$if(item.CsharpType != "string")?$end $item.CsharpField { get; set; }
 $end
+$end
+$end
+    }
+
+    /// <summary>
+    /// ${genTable.FunctionName}输入输出对象
+    /// </summary>
+    public class ${replaceDto.ModelTypeName}Dto
+    {
+$foreach(item in genTable.Columns)
+$if(item.IsRequired)
+        [Required(ErrorMessage = "${item.ColumnComment}不能为空")]
+$end
+$if(replaceDto.ShowBtnExport)
+$if(item.IsExport)
+        [EpplusTableColumn(Header = "$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}"$if(item.CsharpType == "DateTime"), NumberFormat = "yyyy-MM-dd HH:mm:ss"$end)]
+$else
+        [EpplusIgnore]
+$end
+$end
+        public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
+
+$end
+
+$if(genTable.TplCategory == "subNav" && genTable.SubTable != null)
+$if(replaceDto.ShowBtnExport)
+        [EpplusIgnore]
+$end
+        public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName} { get; set; }
+$end
+
+$if(genTable.TplCategory == "subNavMore" && genTable.SubTable != null)
+$if(replaceDto.ShowBtnExport)
+        [EpplusIgnore]
+$end
+        public List<${genTable.SubTable.ClassName}> ${genTable.SubTable.ClassName} { get; set; }
 $end
     }
 }
