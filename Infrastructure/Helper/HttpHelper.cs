@@ -109,7 +109,6 @@ namespace Infrastructure
         /// </summary>
         /// <param name="url"></param>
         /// <param name="headers"></param>
-        /// <param name="contentType"></param>
         /// <returns></returns>
         public static async Task<string> HttpGetAsync(string url, Dictionary<string, string> headers = null)
         {
