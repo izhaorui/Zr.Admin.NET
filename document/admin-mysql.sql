@@ -28,6 +28,7 @@ CREATE TABLE `sys_tasks`  (
   `lastRunTime` datetime(0) NULL DEFAULT NULL COMMENT '最后执行时间',
   `apiUrl` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT 'api执行地址',
   `taskType` int(4) NULL DEFAULT 1 COMMENT '任务类型1程序集任务 2网络请求',
+  `sqlText` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'SQL语句',
   PRIMARY KEY (`ID`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '计划任务' ROW_FORMAT = Dynamic;
 

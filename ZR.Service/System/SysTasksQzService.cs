@@ -53,6 +53,7 @@ namespace ZR.Service.System
                 EndTime = parm.EndTime,
                 TaskType = parm.TaskType,
                 ApiUrl = parm.ApiUrl,
+                SqlText = parm.SqlText,
             });
         }
     }

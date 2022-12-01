@@ -42,7 +42,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpGet("list")]
         [ActionPermissionFilter(Permission = "monitor:job:list")]
-        public IActionResult Query([FromQuery] TasksQueryDto parm, [FromQuery] PagerInfo pager)
+        public IActionResult ListTask([FromQuery] TasksQueryDto parm, [FromQuery] PagerInfo pager)
         {
             //开始拼装查询条件
             var predicate = Expressionable.Create<SysTasks>();
@@ -51,6 +51,7 @@ namespace ZR.Admin.WebApi.Controllers
                 m => m.Name.Contains(parm.QueryText) ||
                 m.JobGroup.Contains(parm.QueryText) ||
                 m.AssemblyName.Contains(parm.QueryText));
+            predicate.AndIF(parm.TaskType != null, m => m.TaskType == parm.TaskType);
 
             var response = _tasksQzService.GetPages(predicate.ToExpression(), pager, f => f.IsStart, OrderByType.Desc);
 
@@ -94,6 +95,15 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"地址不能为空");
             }
+            if (string.IsNullOrEmpty(parm.SqlText) && parm.TaskType == 3)
+            {
+                throw new CustomException($"sql语句不能为空");
+            }
+            if (parm.SqlText.IfNotEmpty() && parm.TaskType == 3)
+            {
+                parm.AssemblyName = "ZR.Tasks";
+                parm.ClassName = "TaskScheduler.Job_SqlExecute";
+            }
             if (parm.TaskType == 1 && (parm.AssemblyName.IsEmpty() || parm.ClassName.IsEmpty()))
             {
                 throw new CustomException($"程序集或者类名不能为空");
@@ -113,7 +123,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost("update")]
         [ActionPermissionFilter(Permission = "monitor:job:edit")]
         [Log(Title = "修改任务", BusinessType = BusinessType.UPDATE)]
-        public async Task<IActionResult> Update([FromBody] TasksUpdateDto parm)
+        public async Task<IActionResult> Update([FromBody] TasksCreateDto parm)
         {
             //判断是否已经存在
             if (_tasksQzService.Any(m => m.Name == parm.Name && m.ID != parm.ID))
@@ -137,6 +147,11 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 parm.AssemblyName = "ZR.Tasks";
                 parm.ClassName = "TaskScheduler.Job_HttpRequest";
+            }
+            if (parm.SqlText.IfNotEmpty() && parm.TaskType == 3)
+            {
+                parm.AssemblyName = "ZR.Tasks";
+                parm.ClassName = "TaskScheduler.Job_SqlExecute";
             }
             if (tasksQz.IsStart)
             {

@@ -161,8 +161,13 @@ namespace ZR.Model.System
         /// </summary>
         public string ApiUrl { get; set; }
         /// <summary>
-        /// 任务类型 1程序集2网络请求
+        /// 任务类型 1、程序集 2、网络请求 3、SQL语句
         /// </summary>
         public int TaskType { get; set; }
+
+        /// <summary>
+        /// SQL语句
+        /// </summary>
+        public string SqlText { get; set; }
     }
 }
