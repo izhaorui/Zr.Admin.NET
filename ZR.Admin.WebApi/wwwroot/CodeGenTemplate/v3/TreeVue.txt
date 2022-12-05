@@ -31,10 +31,13 @@ $if(column.HtmlType == "datetime")
         <el-date-picker v-model="dateRange${column.CsharpField}" style="width: 240px" type="daterange" range-separator="-"
           start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择$labelName" :picker-options="{ firstDayOfWeek: 1}"></el-date-picker>
       </el-form-item>
-$elseif(column.HtmlType == "select" || column.HtmlType == "radio")
+$elseif(column.HtmlType == "select" || column.HtmlType == "radio" || column.HtmlType == "selectMulti")
       <el-form-item label="${labelName}" prop="${columnName}">
-        <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
-          <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
+        <el-select clearable $if(column.HtmlType == "selectMulti")multiple$end v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
+          <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue">
+            <span class="fl">{{ item.dictLabel }}</span>
+            <span class="fr" style="color: var(--el-text-color-secondary);">{{ item.dictValue }}</span>          
+          </el-option>
         </el-select>
       </el-form-item>
 $else
@@ -125,9 +128,9 @@ $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.H
       <el-table-column prop="${columnName}" label="${labelName}" align="center">
         <template #default="scope">
 $if(column.HtmlType == "checkbox")
-          <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
 $else
-          <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
 $end
         </template>
       </el-table-column>
@@ -233,7 +236,7 @@ $elseif(column.HtmlType == "radio")
           <el-col :lg="12">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}">
-                <el-radio v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
+                <el-radio v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -249,11 +252,11 @@ $elseif(column.HtmlType == "editor")
               <editor v-model="form.${columnName}" :min-height="200" />
             </el-form-item>
           </el-col>
-$elseif(column.HtmlType == "select")
+$elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
           <el-col :lg="12">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-select v-model="form.${columnName}" placeholder="请选择${labelName}">
-                <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
+              <el-select v-model="form.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
+                <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -261,7 +264,7 @@ $elseif(column.HtmlType == "checkbox")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-checkbox-group v-model="form.${columnName}Checked">
-                <el-checkbox v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
+                <el-checkbox v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-col>
@@ -335,28 +338,31 @@ const open = ref(false)
 const state = reactive({
   form: {},
   rules: {
-    $foreach(column in genTable.Columns)
+$foreach(column in genTable.Columns)
 $if(column.IsRequired && column.IsIncrement == false)
-    ${column.CsharpFieldFl}: [
-        { required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
-$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }
-    ],
+    ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
+$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }],
+$end
+$end
+  },
+  options: {
+$foreach(column in genTable.Columns)
+$if(column.HtmlType == "radio" || column.HtmlType == "select" || column.HtmlType == "checkbox" || column.HtmlType == "selectMulti")
+    //$if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
+    $if(column.DictType != "")${column.DictType}$else${column.CsharpFieldFl}Options$end: [],
 $end
 $end
   }
 })
 
-const { form, rules } = toRefs(state)
+const { form, rules, options } = toRefs(state)
 // 总记录数
 const total = ref(0)
 const dataList = ref([])
 const queryRef = ref()
 const formRef = ref()
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
-// ${item.ColumnComment}选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
-const $if(item.DictType != "") ${item.DictType} $else ${item.CsharpFieldFl}Options$end = ref([])
-$elseif(item.HtmlType == "datetime" && item.IsQuery == true)
+$if(item.HtmlType == "datetime" && item.IsQuery == true)
 // ${item.ColumnComment}时间范围
 const dateRange${item.CsharpField} = ref([])
 
@@ -402,7 +408,7 @@ $end
 $if(index > 0)
 proxy.getDicts(dictParams).then((response) => {
   response.data.forEach((element) => {
-    proxy[element.dictType] = element.list
+    state.options[element.dictType] = element.list
   })
 })
 $end
@@ -532,11 +538,8 @@ function handleExport() {
       cancelButtonText: "取消",
       type: "warning",
     })
-    .then(function () {
-      return export${genTable.BusinessName}(queryParams)
-    })
-    .then((response) => {
-      proxy.download(response.data.path)
+    .then(async () => {
+      await export${genTable.BusinessName}(queryParams)
     })
 }
 $end
