@@ -7,17 +7,17 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_tasks`;
 CREATE TABLE `sys_tasks`  (
-  `Id` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'UID',
-  `Name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务名称',
-  `JobGroup` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务分组',
-  `Cron` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '运行时间表达式',
-  `AssemblyName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '程序集名称',
-  `ClassName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务所在类',
-  `Remark` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '任务描述',
-  `RunTimes` int(11) NOT NULL COMMENT '执行次数',
-  `BeginTime` datetime(0) NULL DEFAULT NULL COMMENT '开始时间',
-  `EndTime` datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
-  `TriggerType` int(11) NOT NULL COMMENT '触发器类型（0、simple 1、cron）',
+  `id` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'UID',
+  `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务名称',
+  `jobGroup` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务分组',
+  `cron` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '运行时间表达式',
+  `assemblyName` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '程序集名称',
+  `className` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '任务所在类',
+  `remark` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '任务描述',
+  `runTimes` int(11) NOT NULL COMMENT '执行次数',
+  `beginTime` datetime(0) NULL DEFAULT NULL COMMENT '开始时间',
+  `endTime` datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
+  `triggerType` int(11) NOT NULL COMMENT '触发器类型（0、simple 1、cron）',
   `IntervalSecond` int(11) NOT NULL COMMENT '执行间隔时间(单位:秒)',
   `IsStart` tinyint(4) NOT NULL COMMENT '是否启动',
   `JobParams` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '传入参数',
@@ -29,6 +29,7 @@ CREATE TABLE `sys_tasks`  (
   `apiUrl` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT 'api执行地址',
   `taskType` int(4) NULL DEFAULT 1 COMMENT '任务类型1程序集任务 2网络请求',
   `sqlText` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'SQL语句',
+  `requestMethod` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'http请求方法',
   PRIMARY KEY (`ID`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '计划任务' ROW_FORMAT = Dynamic;
 

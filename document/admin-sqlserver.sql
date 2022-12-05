@@ -27,10 +27,11 @@ CREATE TABLE sys_tasks
 	lastRunTime datetime					,  --最后执行时间
 	taskType int null						,  --任务类型 1程序集 2网络请求
 	apiUrl	varchar(200),					--网络请求地址
-	sqlText VARCHAR(1000)					--sql语句
+	sqlText VARCHAR(1000),					--sql语句
+	requestMethod VARCHAR(10)				--请求方法
 )
 GO
-INSERT INTO sys_tasks VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL, 1, '', '');
+INSERT INTO sys_tasks VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL, 1, '', '', '');
 GO
 if OBJECT_ID(N'sys_tasks_log',N'U') is not NULL DROP TABLE sys_tasks_log
 GO

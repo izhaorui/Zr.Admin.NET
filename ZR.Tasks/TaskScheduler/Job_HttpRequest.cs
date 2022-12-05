@@ -30,15 +30,30 @@ namespace ZR.Tasks.TaskScheduler
         {
             AbstractTrigger trigger = (context as JobExecutionContextImpl).Trigger as AbstractTrigger;
             var info = await tasksQzService.GetByIdAsync(trigger.JobName);
-            if (info != null)
-            {
-                var result = await HttpHelper.HttpGetAsync("http://" + info.ApiUrl);
-                logger.Info($"任务【{info.Name}】网络请求执行结果=" + result);
-            }
-            else
+            if (info == null)
             {
                 throw new CustomException($"任务{trigger?.JobName}网络请求执行失败，任务不存在");
             }
+            string result;
+            if (info.RequestMethod != null && info.RequestMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+            {
+                result = await HttpHelper.HttpPostAsync(info.ApiUrl, info.JobParams);
+            }
+            else
+            {
+                var url = info.ApiUrl;
+                if (url.IndexOf("?") > -1)
+                {
+                    url += "&" + info.JobParams;
+                }
+                else
+                {
+                    url += "?" + info.JobParams;
+                }
+                result = await HttpHelper.HttpGetAsync(url);
+            }
+
+            logger.Info($"任务【{info.Name}】网络请求执行结果=" + result);
         }
     }
 }

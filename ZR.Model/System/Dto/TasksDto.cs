@@ -129,5 +129,10 @@ namespace ZR.Model.System.Dto
         /// </summary>
         public int TaskType { get; set; }
         public string SqlText { get; set; }
+
+        /// <summary>
+        /// 网络请求方式
+        /// </summary>
+        public string RequestMethod { get; set; }
     }
 }

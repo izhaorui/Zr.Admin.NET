@@ -169,5 +169,9 @@ namespace ZR.Model.System
         /// SQL语句
         /// </summary>
         public string SqlText { get; set; }
+        /// <summary>
+        /// 网络请求方式
+        /// </summary>
+        public string RequestMethod { get; set; }
     }
 }
