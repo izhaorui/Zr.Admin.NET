@@ -8,6 +8,8 @@ using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Web;
+using ff = System.IO;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -53,6 +55,21 @@ namespace ZR.Admin.WebApi.Controllers
             return ToResponse(GetApiResult(resultCode, msg));
         }
 
+        /// <summary>
+        /// 导出Excel
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        protected IActionResult ExportExcel(string path, string fileName)
+        {
+            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+            string fileDir = Path.Combine(webHostEnvironment.WebRootPath, path, fileName);
+
+            var stream = ff.File.OpenRead(fileDir);  //创建文件流
+            return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
+        }
+        
         #region 方法
 
         /// <summary>

@@ -156,7 +156,7 @@ $if(replaceDto.ShowBtnExport)
                 return ToResponse(ResultCode.FAIL, "没有要导出的数据");
             }
             string sFileName = ExportExcel(list, "${replaceDto.ModelTypeName}", "${genTable.FunctionName}");
-            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+            return ExportExcel("export", sFileName);
         }
 $end
 

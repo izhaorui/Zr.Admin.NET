@@ -215,7 +215,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             //调试模式需要加上
             string sFileName = ExportExcel(list.Result, "user", "用户列表");
-            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+            return ExportExcel("export", sFileName);
         }
     }
 }

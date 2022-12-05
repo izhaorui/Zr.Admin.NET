@@ -566,11 +566,8 @@ function handleExport() {
       cancelButtonText: "取消",
       type: "warning",
     })
-    .then(function () {
-      return export${genTable.BusinessName}(queryParams)
-    })
-    .then((response) => {
-      proxy.download(response.data.path)
+    .then(async () => {
+      await export${genTable.BusinessName}(queryParams)
     })
 }
 $end
