@@ -281,7 +281,6 @@ $end
 
 <script setup name="${genTable.BusinessName.ToLower()}">
 import { list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName}, 
-$if(replaceDto.ShowBtnExport) export${genTable.BusinessName}, $end
 $if(replaceDto.ShowBtnTruncate) clear${genTable.BusinessName}, $end 
 $if(showCustomInput) changeSort $end } 
 from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
@@ -570,13 +569,13 @@ $if(replaceDto.ShowBtnExport)
 // 导出按钮操作
 function handleExport() {
   proxy
-    .${confirm}confirm("是否确认导出所有${genTable.functionName}数据项?", "警告", {
+    .${confirm}confirm("是否确认导出${genTable.functionName}数据项?", "警告", {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
     })
     .then(async () => {
-      await export${genTable.BusinessName}(queryParams)
+      await proxy.downFile('/${genTable.ModuleName}/${genTable.BusinessName}/export', { ...queryParams })
     })
 }
 $end
