@@ -34,7 +34,7 @@
 | 仓库        | Github                                                           | Gitee                                                            |
 | ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
 | Vue2 + Net5 |                                                                  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/)             |
-| Vue2 + Net6 | [克隆/下载](https://github.com/izhaorui/ZrAdmin.NET/tree/net6.0) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/) |
+| Vue2 + Net6(停更) | [克隆/下载](https://github.com/izhaorui/ZrAdmin.NET/tree/net6.0) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net6.0/) |
 | Vue3        |                                                                  | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
 | Net7        |                                                                  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
 
