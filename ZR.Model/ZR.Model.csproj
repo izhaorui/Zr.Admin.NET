@@ -11,10 +11,4 @@
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="Dto\" />
-		<Folder Include="Enum\" />
-		<Folder Include="Vo\" />
-	</ItemGroup>
-
 </Project>
