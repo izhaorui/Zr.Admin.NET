@@ -4,6 +4,12 @@
 		<TargetFramework>net7.0</TargetFramework>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <Compile Remove="Business\**" />
+	  <EmbeddedResource Remove="Business\**" />
+	  <None Remove="Business\**" />
+	</ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\ZR.Model\ZR.Model.csproj" />
@@ -17,8 +23,4 @@
     <PackageReference Include="SqlSugar.IOC" Version="1.9.0" />
     <PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.3.33" />
   </ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="Business\" />
-	</ItemGroup>
 </Project>

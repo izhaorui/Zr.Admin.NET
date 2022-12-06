@@ -44,11 +44,11 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var predicate = Expressionable.Create<SysConfig>();
 
-            predicate = predicate.AndIF(!parm.ConfigType.IsEmpty(),m => m.ConfigType == parm.ConfigType);
-            predicate = predicate.AndIF(!parm.ConfigName.IsEmpty(),m => m.ConfigName.Contains(parm.ConfigType));
-            predicate = predicate.AndIF(!parm.ConfigKey.IsEmpty(),m => m.ConfigKey.Contains(parm.ConfigKey));
-            predicate = predicate.AndIF(!parm.BeginTime.IsEmpty(),m => m.Create_time >= parm.BeginTime );
-            predicate = predicate.AndIF(!parm.BeginTime.IsEmpty(),m => m.Create_time <= parm.EndTime);
+            predicate = predicate.AndIF(!parm.ConfigType.IsEmpty(), m => m.ConfigType == parm.ConfigType);
+            predicate = predicate.AndIF(!parm.ConfigName.IsEmpty(), m => m.ConfigName.Contains(parm.ConfigType));
+            predicate = predicate.AndIF(!parm.ConfigKey.IsEmpty(), m => m.ConfigKey.Contains(parm.ConfigKey));
+            predicate = predicate.AndIF(!parm.BeginTime.IsEmpty(), m => m.Create_time >= parm.BeginTime);
+            predicate = predicate.AndIF(!parm.BeginTime.IsEmpty(), m => m.Create_time <= parm.EndTime);
 
             var response = _SysConfigService.GetPages(predicate.ToExpression(), parm);
 
@@ -78,11 +78,11 @@ namespace ZR.Admin.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult GetConfigKey(string configKey)
         {
-            var response = _SysConfigService.Queryable().First(f=> f.ConfigKey == configKey);
+            var response = _SysConfigService.Queryable().First(f => f.ConfigKey == configKey);
 
             return SUCCESS(response?.ConfigValue);
         }
-        
+
         /// <summary>
         /// 添加参数配置
         /// </summary>

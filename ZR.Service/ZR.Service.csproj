@@ -9,9 +9,4 @@
 		<ProjectReference Include="..\ZR.Repository\ZR.Repository.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="Business\" />
-		<Folder Include="Business\IBusinessService\" />
-	</ItemGroup>
-
 </Project>

@@ -1,12 +1,15 @@
 ﻿using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
@@ -55,13 +58,14 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 添加字典类型
         /// </summary>
-        /// <param name="dict"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "system:dict:add")]
         [Log(Title = "字典操作", BusinessType = BusinessType.INSERT)]
         [HttpPost("edit")]
-        public IActionResult Add([FromBody] SysDictType dict)
+        public IActionResult Add([FromBody] SysDictTypeDto dto)
         {
+            SysDictType dict = dto.Adapt<SysDictType>();
             if (UserConstants.NOT_UNIQUE.Equals(SysDictService.CheckDictTypeUnique(dict)))
             {
                 return ToResponse(ApiResult.Error($"新增字典'{dict.DictName}'失败，字典类型已存在"));
@@ -74,14 +78,15 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 修改字典类型
         /// </summary>
-        /// <param name="dict"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "system:dict:edit")]
         [Log(Title = "字典操作", BusinessType = BusinessType.UPDATE)]
         [Route("edit")]
         [HttpPut]
-        public IActionResult Edit([FromBody] SysDictType dict)
+        public IActionResult Edit([FromBody] SysDictTypeDto dto)
         {
+            SysDictType dict = dto.Adapt<SysDictType>();
             if (UserConstants.NOT_UNIQUE.Equals(SysDictService.CheckDictTypeUnique(dict)))
             {
                 return ToResponse(ApiResult.Error($"修改字典'{dict.DictName}'失败，字典类型已存在"));

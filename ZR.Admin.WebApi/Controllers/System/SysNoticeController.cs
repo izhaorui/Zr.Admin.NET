@@ -62,7 +62,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeTitle), m => m.NoticeTitle.Contains(parm.NoticeTitle));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeType), m => m.NoticeType == parm.NoticeType);
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.CreateBy), m => m.Create_by.Contains(parm.CreateBy) ||  m.Update_by.Contains(parm.CreateBy));
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.CreateBy), m => m.Create_by.Contains(parm.CreateBy) || m.Update_by.Contains(parm.CreateBy));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
             var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
             return SUCCESS(response);
@@ -110,7 +110,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 it.Create_by,
                 it.Create_time
             });
-            
+
             return SUCCESS(result);
         }
 

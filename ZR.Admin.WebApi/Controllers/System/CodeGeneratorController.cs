@@ -269,9 +269,9 @@ namespace ZR.Admin.WebApi.Controllers
             dto.GenTable = genTableInfo;
             //自定义路径
             if (genTableInfo.GenType == "1")
-            {
+            {                
                 string tempPath = WebHostEnvironment.ContentRootPath;
-                var parentPath = Directory.GetParent(tempPath)?.Parent?.FullName;
+                var parentPath = tempPath[..tempPath.LastIndexOf(@"\")];
                 //代码生成文件夹路径
                 dto.GenCodePath = genTableInfo.GenPath.IsEmpty() ? parentPath : genTableInfo.GenPath;
             }
