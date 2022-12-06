@@ -21,12 +21,24 @@ namespace ZR.Service.System
         {
             parm.IsStart = false;
 
+            SetAssembleName(parm);
+
+            return Add(parm);
+        }
+
+        private void SetAssembleName(SysTasks parm)
+        {
             if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
             {
                 parm.AssemblyName = "ZR.Tasks";
                 parm.ClassName = "TaskScheduler.Job_HttpRequest";
             }
-            return Add(parm);
+
+            if (parm.SqlText.IfNotEmpty() && parm.TaskType == 3)
+            {
+                parm.AssemblyName = "ZR.Tasks";
+                parm.ClassName = "TaskScheduler.Job_SqlExecute";
+            }
         }
 
         /// <summary>
@@ -36,6 +48,8 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int UpdateTasks(SysTasks parm)
         {
+            SetAssembleName(parm);
+
             return Update(f => f.ID == parm.ID, f => new SysTasks
             {
                 ID = parm.ID,
@@ -54,6 +68,7 @@ namespace ZR.Service.System
                 TaskType = parm.TaskType,
                 ApiUrl = parm.ApiUrl,
                 SqlText = parm.SqlText,
+                RequestMethod = parm.RequestMethod,
             });
         }
     }

@@ -53,7 +53,7 @@ namespace ZR.Admin.WebApi.Controllers
                 m.AssemblyName.Contains(parm.QueryText));
             predicate.AndIF(parm.TaskType != null, m => m.TaskType == parm.TaskType);
 
-            var response = _tasksQzService.GetPages(predicate.ToExpression(), pager, f => f.IsStart, OrderByType.Desc);
+            var response = _tasksQzService.GetPages(predicate.ToExpression(), pager);
 
             return SUCCESS(response, TIME_FORMAT_FULL);
         }
@@ -99,11 +99,6 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"sql语句不能为空");
             }
-            if (parm.SqlText.IfNotEmpty() && parm.TaskType == 3)
-            {
-                parm.AssemblyName = "ZR.Tasks";
-                parm.ClassName = "TaskScheduler.Job_SqlExecute";
-            }
             if (parm.TaskType == 1 && (parm.AssemblyName.IsEmpty() || parm.ClassName.IsEmpty()))
             {
                 throw new CustomException($"程序集或者类名不能为空");
@@ -143,16 +138,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"api地址不能为空");
             }
-            if (parm.ApiUrl.IfNotEmpty() && parm.TaskType == 2)
-            {
-                parm.AssemblyName = "ZR.Tasks";
-                parm.ClassName = "TaskScheduler.Job_HttpRequest";
-            }
-            if (parm.SqlText.IfNotEmpty() && parm.TaskType == 3)
-            {
-                parm.AssemblyName = "ZR.Tasks";
-                parm.ClassName = "TaskScheduler.Job_SqlExecute";
-            }
+
             if (tasksQz.IsStart)
             {
                 throw new CustomException($"该任务正在运行中，请先停止在更新");
