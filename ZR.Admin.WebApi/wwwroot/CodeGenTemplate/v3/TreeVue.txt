@@ -553,14 +553,23 @@ function handleSelectionChange(selection) {
 
 // 自定义排序
 function sortChange(column) {
-  if (column.prop == null || column.order == null) {
-    queryParams.sort = undefined
-    queryParams.sortType = undefined
-  } else {
-    queryParams.sort = column.prop
-    queryParams.sortType = column.order
-  }
+  var sort = undefined
+  var sortType = undefined
 
+  if (column.prop != null && column.order != null) {
+    sort = column.prop
+    sortType = column.order
+
+$foreach(item in genTable.Columns)
+$if(item.IsSort && item.CsharpField.ToLower() != item.ColumnName.ToLower())
+    if (column.prop == '${item.CsharpFieldFl}') {
+      sort = '${item.ColumnName}'
+    }
+$end
+${end}
+  }
+  queryParams.sort = sort
+  queryParams.sortType = sortType
   handleQuery()
 }
 
