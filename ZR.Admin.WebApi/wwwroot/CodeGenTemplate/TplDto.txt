@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using ${options.ModelsNamespace}.Dto;
 using ${options.ModelsNamespace}.Models;
 $if(replaceDto.ShowBtnExport)
-using OfficeOpenXml.Attributes;
+using MiniExcelLibs.Attributes;
 $end
 
 namespace ${options.DtosNamespace}.Dto
@@ -39,9 +39,9 @@ $if(item.IsRequired)
 $end
 $if(replaceDto.ShowBtnExport)
 $if(item.IsExport)
-        [EpplusTableColumn(Header = "$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}"$if(item.CsharpType == "DateTime"), NumberFormat = "yyyy-MM-dd HH:mm:ss"$end)]
+        [ExcelColumn(Name = "$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}"$if(item.CsharpType == "DateTime"), Format = "yyyy-MM-dd HH:mm:ss"$end)]
 $else
-        [EpplusIgnore]
+        [ExcelIgnore]
 $end
 $end
         public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
@@ -50,14 +50,14 @@ $end
 
 $if(genTable.TplCategory == "subNav" && genTable.SubTable != null)
 $if(replaceDto.ShowBtnExport)
-        [EpplusIgnore]
+        [ExcelIgnore]
 $end
         public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName} { get; set; }
 $end
 
 $if(genTable.TplCategory == "subNavMore" && genTable.SubTable != null)
 $if(replaceDto.ShowBtnExport)
-        [EpplusIgnore]
+        [ExcelIgnore]
 $end
         public List<${genTable.SubTable.ClassName}> ${genTable.SubTable.ClassName} { get; set; }
 $end

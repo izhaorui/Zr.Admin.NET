@@ -1,5 +1,4 @@
-﻿using OfficeOpenXml.Attributes;
-using SqlSugar;
+﻿using SqlSugar;
 using System;
 
 namespace ZR.Model.System
@@ -52,7 +51,6 @@ namespace ZR.Model.System
         /// <summary>
         /// 访问时间
         /// </summary>
-        [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
         public DateTime LoginTime { get; set; } = DateTime.Now;
         [SugarColumn(IsIgnore = true)]
         public DateTime? BeginTime { get; set; }

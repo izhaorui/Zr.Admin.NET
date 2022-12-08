@@ -1,5 +1,4 @@
-﻿using OfficeOpenXml.Attributes;
-using SqlSugar;
+﻿using SqlSugar;
 using System;
 
 namespace ZR.Model.System
@@ -39,7 +38,9 @@ namespace ZR.Model.System
         /// </summary>
         public string InvokeTarget { get; set; }
 
-        [EpplusTableColumn(NumberFormat = "yyyy-MM-dd HH:mm:ss")]
+        /// <summary>
+        /// 创建时间
+        /// </summary>
         public DateTime CreateTime { get; set; }
         /// <summary>
         /// 执行用时，毫秒

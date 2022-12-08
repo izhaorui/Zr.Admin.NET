@@ -155,8 +155,8 @@ $if(replaceDto.ShowBtnExport)
             {
                 return ToResponse(ResultCode.FAIL, "没有要导出的数据");
             }
-            string sFileName = ExportExcel(list, "${genTable.FunctionName}", "${genTable.FunctionName}");
-            return ExportExcel("export", sFileName);
+            var result = ExportExcelMini(list, "${genTable.FunctionName}", "${genTable.FunctionName}");
+            return ExportExcel(result.Item2, result.Item1);
         }
 $end
 

@@ -2,13 +2,11 @@ using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.IO;
+using MiniExcelLibs;
+using SqlSugar;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
-using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Service.System.IService;
@@ -179,7 +177,14 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:import")]
         public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
         {
-            IEnumerable<SysUser> users = ExcelHelper<SysUser>.ImportData(formFile.OpenReadStream());
+            //List<SysUser> users = (List<SysUser>)ExcelHelper<SysUser>.ImportData(formFile.OpenReadStream());
+            List<SysUser> users = new();
+            using (var stream = formFile.OpenReadStream())
+            {
+                users = stream.Query<SysUser>().ToList();
+            }
+
+            string msg = UserService.ImportUsers(users);
 
             //TODO 业务逻辑,自行插入数据到db
             return SUCCESS(users);
@@ -213,9 +218,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var list = UserService.SelectUserList(user, new PagerInfo(1, 10000));
 
-            //调试模式需要加上
-            string sFileName = ExportExcel(list.Result, "user", "用户列表");
-            return ExportExcel("export", sFileName);
+            var result = ExportExcelMini(list.Result, "user", "用户列表");
+            return ExportExcel(result.Item2, result.Item1);
         }
     }
 }

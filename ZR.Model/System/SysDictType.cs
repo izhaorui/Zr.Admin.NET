@@ -1,5 +1,4 @@
-﻿using OfficeOpenXml.Attributes;
-using SqlSugar;
+﻿using SqlSugar;
 
 namespace ZR.Model.System
 {
@@ -26,7 +25,6 @@ namespace ZR.Model.System
         /// <summary>
         /// 状态 0、正常 1、停用
         /// </summary>
-        [EpplusIgnore]
         public string Status { get; set; }
         /// <summary>
         /// 系统内置 Y是 N否

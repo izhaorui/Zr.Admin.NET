@@ -1,8 +1,7 @@
-using System;
-using System.Collections.Generic;
-using SqlSugar;
-using OfficeOpenXml.Attributes;
 using Newtonsoft.Json;
+using SqlSugar;
+using System;
+using System.ComponentModel;
 
 namespace ZR.Model.Models
 {
@@ -21,7 +20,6 @@ namespace ZR.Model.Models
         /// 空值 : false  
         /// </summary>
         [JsonConverter(typeof(ValueToStringConverter))]
-        [EpplusTableColumn(Header = "id")]
         [SugarColumn(IsPrimaryKey = true)]
         public long Id { get; set; }
 
@@ -29,7 +27,7 @@ namespace ZR.Model.Models
         /// 描述 : 语言code
         /// 空值 : false  
         /// </summary>
-        [EpplusTableColumn(Header = "语言code")]
+        [DisplayName("语言code")]
         [SugarColumn(ColumnName = "lang_code")]
         public string LangCode { get; set; }
 
@@ -37,7 +35,7 @@ namespace ZR.Model.Models
         /// 描述 : 语言key
         /// 空值 : true  
         /// </summary>
-        [EpplusTableColumn(Header = "语言key")]
+        [DisplayName("语言key")]
         [SugarColumn(ColumnName = "lang_key")]
         public string LangKey { get; set; }
 
@@ -45,7 +43,7 @@ namespace ZR.Model.Models
         /// 描述 : 名称
         /// 空值 : false  
         /// </summary>
-        [EpplusTableColumn(Header = "名称")]
+        [DisplayName("名称")]
         [SugarColumn(ColumnName = "lang_name")]
         public string LangName { get; set; }
 
@@ -53,7 +51,7 @@ namespace ZR.Model.Models
         /// 描述 : 添加时间
         /// 空值 : true  
         /// </summary>
-        [EpplusTableColumn(Header = "添加时间", NumberFormat = "yyyy-MM-dd HH:mm:ss")]
+        [DisplayName("添加时间")]
         public DateTime? Addtime { get; set; }
     }
 }

@@ -2,9 +2,9 @@
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using MiniExcelLibs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -58,15 +58,15 @@ namespace ZR.Admin.WebApi.Controllers
         /// <summary>
         /// 导出Excel
         /// </summary>
-        /// <param name="path"></param>
-        /// <param name="fileName"></param>
+        /// <param name="path">完整文件路径</param>
+        /// <param name="fileName">带扩展文件名</param>
         /// <returns></returns>
         protected IActionResult ExportExcel(string path, string fileName)
         {
-            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
-            string fileDir = Path.Combine(webHostEnvironment.WebRootPath, path, fileName);
+            //IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+            //string fileDir = Path.Combine(webHostEnvironment.WebRootPath, path, fileName);
 
-            var stream = ff.File.OpenRead(fileDir);  //创建文件流
+            var stream = ff.File.OpenRead(path);  //创建文件流
             return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
         }
         
@@ -130,31 +130,19 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="fileName"></param>
         protected string ExportExcel<T>(List<T> list, string sheetName, string fileName)
         {
-            var fileInfo = ExportExcelNew(list, sheetName, fileName);
-
-            return fileInfo.Item1;
+            return ExportExcelMini(list, sheetName, fileName).Item1;
         }
 
-        protected (string, string) ExportExcelNew<T>(List<T> list, string sheetName, string fileName)
+        protected (string, string) ExportExcelMini<T>(List<T> list, string sheetName, string fileName)
         {
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
-            string sFileName = $"{fileName}{DateTime.Now:MMddHHmmss}.xlsx";
-            string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
-            //调试模式需要加上
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            Directory.CreateDirectory(Path.GetDirectoryName(newFileName));
-            using (ExcelPackage package = new(new FileInfo(newFileName)))
-            {
-                // 添加worksheet
-                ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(sheetName);
-                //单元格自动适应大小
-                worksheet.Cells.Style.ShrinkToFit = true;
-                //全部字段导出
-                worksheet.Cells.LoadFromCollection(list, true, OfficeOpenXml.Table.TableStyles.Light13);
-                package.Save();
-            }
+            string sFileName = $"{fileName}{DateTime.Now:MM-dd-HHmmss}.xlsx";
+            string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
+            
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
 
-            return (sFileName, newFileName);
+            MiniExcel.SaveAs(fullPath, list, sheetName: sheetName);
+            return (sFileName, fullPath);
         }
 
         /// <summary>
@@ -170,23 +158,12 @@ namespace ZR.Admin.WebApi.Controllers
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
             string sFileName = $"{fileName}模板.xlsx";
             string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "importTemplate", sFileName);
-            //调试模式需要加上
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            
             if (!Directory.Exists(newFileName))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(newFileName));
             }
-            using (ExcelPackage package = new(new FileInfo(newFileName)))
-            {
-                // 添加worksheet
-                ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(fileName);
-                //单元格自动适应大小
-                worksheet.Cells.Style.ShrinkToFit = true;
-                //全部字段导出
-                worksheet.Cells.LoadFromCollection(list, true, OfficeOpenXml.Table.TableStyles.Light13);
-                package.SaveAs(stream);
-            }
-
+            MiniExcel.SaveAs(newFileName, list);
             return sFileName;
         }
     }

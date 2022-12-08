@@ -30,7 +30,6 @@
 		<PackageReference Include="NLog" Version="5.0.4" />
 		<PackageReference Include="NLog.Web.AspNetCore" Version="5.1.4" />
 		<PackageReference Include="Mapster" Version="7.3.0" />
-		<PackageReference Include="EPPlus" Version="6.0.5" />
 		<PackageReference Include="Hei.Captcha" Version="0.3.0" />
 	</ItemGroup>
 

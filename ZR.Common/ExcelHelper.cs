@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using OfficeOpenXml;
+
 namespace ZR.Common
 {
     public class ExcelHelper<T> where T : new()
@@ -13,84 +13,84 @@ namespace ZR.Common
         /// </summary>
         /// <param name="stream"></param>
         /// <returns></returns>
-        public static IEnumerable<T> ImportData(Stream stream)
-        {
-            using ExcelPackage package = new(stream);
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            ExcelWorksheet worksheet = package.Workbook.Worksheets[0];//读取第1个sheet
-            //获取表格的列数和行数
+        //public static IEnumerable<T> ImportData(Stream stream)
+        //{
+        //    using ExcelPackage package = new(stream);
+        //    //ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        //    ExcelWorksheet worksheet = package.Workbook.Worksheets[0];//读取第1个sheet
+        //    //获取表格的列数和行数
 
-            int colStart = worksheet.Dimension.Start.Column;
-            int colEnd = worksheet.Dimension.End.Column;
-            int rowStart = worksheet.Dimension.Start.Row;
-            int rowEnd = worksheet.Dimension.End.Row;
-            //int rowCount = worksheet.Dimension.Rows;
-            //int ColCount = worksheet.Dimension.Columns;
+        //    int colStart = worksheet.Dimension.Start.Column;
+        //    int colEnd = worksheet.Dimension.End.Column;
+        //    int rowStart = worksheet.Dimension.Start.Row;
+        //    int rowEnd = worksheet.Dimension.End.Row;
+        //    //int rowCount = worksheet.Dimension.Rows;
+        //    //int ColCount = worksheet.Dimension.Columns;
 
-            List<T> resultList = new();
-            List<PropertyInfo> propertyInfos = new();// new(typeof(T).GetProperties());
-            Dictionary<string, int> dictHeader = new();
-            for (int i = colStart; i < colEnd; i++)
-            {
-                var name = worksheet.Cells[rowStart, i].Value.ToString();
-                dictHeader[name] = i;
+        //    List<T> resultList = new();
+        //    List<PropertyInfo> propertyInfos = new();// new(typeof(T).GetProperties());
+        //    Dictionary<string, int> dictHeader = new();
+        //    for (int i = colStart; i < colEnd; i++)
+        //    {
+        //        var name = worksheet.Cells[rowStart, i].Value?.ToString();
+        //        dictHeader[name] = i;
 
-                PropertyInfo propertyInfo = MapPropertyInfo(name);
-                if (propertyInfo != null)
-                {
-                    propertyInfos.Add(propertyInfo);
-                }
-            }
-            for (int row = rowStart + 1; row <= rowEnd; row++)
-            {
-                T result = new();
+        //        PropertyInfo propertyInfo = MapPropertyInfo(name);
+        //        if (propertyInfo != null)
+        //        {
+        //            propertyInfos.Add(propertyInfo);
+        //        }
+        //    }
+        //    for (int row = rowStart + 1; row <= rowEnd; row++)
+        //    {
+        //        T result = new();
 
-                foreach (PropertyInfo p in propertyInfos)
-                {
-                    try
-                    {
-                        ExcelRange cell = worksheet.Cells[row, dictHeader[p.Name]];
-                        if (cell.Value == null)
-                        {
-                            continue;
-                        }
-                        switch (p.PropertyType.Name.ToLower())
-                        {
-                            case "string":
-                                p.SetValue(result, cell.GetValue<string>());
-                                break;
-                            case "int16":
-                                p.SetValue(result, cell.GetValue<short>()); break;
-                            case "int32":
-                                p.SetValue(result, cell.GetValue<int>()); break;
-                            case "int64":
-                                p.SetValue(result, cell.GetValue<long>()); break;
-                            case "decimal":
-                                p.SetValue(result, cell.GetValue<decimal>());
-                                break;
-                            case "double":
-                                p.SetValue(result, cell.GetValue<double>()); break;
-                            case "datetime":
-                                p.SetValue(result, cell.GetValue<DateTime>()); break;
-                            case "boolean":
-                                p.SetValue(result, cell.GetValue<bool>()); break;
-                            case "char":
-                                p.SetValue(result, cell.GetValue<string>()); break;
-                            default:
-                                break;
-                        }
-                    }
-                    catch (KeyNotFoundException ex)
-                    {
-                        Console.WriteLine("未找到该列将继续循环，" + ex.Message);
-                        continue;
-                    }
-                }
-                resultList.Add(result);
-            }
+        //        foreach (PropertyInfo p in propertyInfos)
+        //        {
+        //            try
+        //            {
+        //                ExcelRange cell = worksheet.Cells[row, dictHeader[p.Name]];
+        //                if (cell.Value == null)
+        //                {
+        //                    continue;
+        //                }
+        //                switch (p.PropertyType.Name.ToLower())
+        //                {
+        //                    case "string":
+        //                        p.SetValue(result, cell.GetValue<string>());
+        //                        break;
+        //                    case "int16":
+        //                        p.SetValue(result, cell.GetValue<short>()); break;
+        //                    case "int32":
+        //                        p.SetValue(result, cell.GetValue<int>()); break;
+        //                    case "int64":
+        //                        p.SetValue(result, cell.GetValue<long>()); break;
+        //                    case "decimal":
+        //                        p.SetValue(result, cell.GetValue<decimal>());
+        //                        break;
+        //                    case "double":
+        //                        p.SetValue(result, cell.GetValue<double>()); break;
+        //                    case "datetime":
+        //                        p.SetValue(result, cell.GetValue<DateTime>()); break;
+        //                    case "boolean":
+        //                        p.SetValue(result, cell.GetValue<bool>()); break;
+        //                    case "char":
+        //                        p.SetValue(result, cell.GetValue<string>()); break;
+        //                    default:
+        //                        break;
+        //                }
+        //            }
+        //            catch (KeyNotFoundException ex)
+        //            {
+        //                Console.WriteLine("未找到该列将继续循环，" + ex.Message);
+        //                continue;
+        //            }
+        //        }
+        //        resultList.Add(result);
+        //    }
 
-            return resultList;
-        }
+        //    return resultList;
+        //}
 
         /// <summary>
         /// 查找Excel列名对应的实体属性

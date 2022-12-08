@@ -1,5 +1,4 @@
-﻿using OfficeOpenXml.Attributes;
-using SqlSugar;
+﻿using SqlSugar;
 
 namespace ZR.Model.System
 {
@@ -14,9 +13,7 @@ namespace ZR.Model.System
         public long PostId { get; set; }
         public string PostCode { get; set; }
         public string PostName { get; set; }
-        [EpplusIgnore]
         public int PostSort { get; set; }
-        [EpplusIgnore]
         public string Status { get; set; }
     }
 }
