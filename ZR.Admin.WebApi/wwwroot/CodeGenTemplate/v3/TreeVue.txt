@@ -7,29 +7,35 @@
  * @LastEditTime: (${replaceDto.AddTime})
 -->
 <template>
-  <div class="app-container">
-    <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
-    <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" 
-      @submit.prevent>
+  <div>
+    <el-form :model="queryParams" label-position="right" inline ref="queryRef" v-show="showSearch" @submit.prevent>
 $foreach(column in genTable.Columns)
 $set(labelName = "")
 $set(columnName = "")
 $set(numLabel = "")
-$if(column.IsQuery == true)
-    $set(columnName = column.CsharpFieldFl)
-	$if(column.ColumnComment != "")
-		$set(labelName = column.ColumnComment)
-	$else
-		$set(labelName = column.CsharpFieldFl)
-	$end
-    $if(column.CsharpType == "int" || column.CsharpType == "long")
-        $set(numLabel = ".number")
-    $end
+$set(columnName = column.CsharpFieldFl)
+$if(column.ColumnComment != "")
+$set(labelName = column.ColumnComment)
+$else
+$set(labelName = column.CsharpFieldFl)
+$end
+$if(column.CsharpType == "int" || column.CsharpType == "long")
+$set(numLabel = ".number")
+$end
 
 $if(column.HtmlType == "datetime")
       <el-form-item label="$labelName">
-        <el-date-picker v-model="dateRange${column.CsharpField}" style="width: 240px" type="daterange" range-separator="-"
-          start-placeholder="开始日期" end-placeholder="结束日期" placeholder="请选择$labelName" :picker-options="{ firstDayOfWeek: 1}"></el-date-picker>
+        <el-date-picker 
+          v-model="dateRange${column.CsharpField}" 
+          type="datetimerange" 
+          range-separator="-"
+          start-placeholder="开始日期" 
+          end-placeholder="结束日期" 
+          placeholder="请选择$labelName"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          :default-time="defaultTime"
+          :shortcuts="dateOptions">
+        </el-date-picker>
       </el-form-item>
 $elseif(column.HtmlType == "select" || column.HtmlType == "radio" || column.HtmlType == "selectMulti")
       <el-form-item label="${labelName}" prop="${columnName}">
@@ -92,8 +98,7 @@ $end
       @selection-change="handleSelectionChange"
       :default-expand-all="isExpandAll"
       row-key="${tool.FirstLowerCase(genTable.Options.TreeCode)}"
-      :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-    >
+      :tree-props="{ children: 'children', hasChildren: 'hasChildren' }">
       <el-table-column type="selection" width="50" align="center"/>
 $foreach(column in genTable.Columns)
 $set(labelName = "")
@@ -291,7 +296,7 @@ $end
 </template>
 <script setup name="${genTable.BusinessName.ToLower()}">
 import { treelist${genTable.BusinessName}, list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName},
-$if(replaceDto.ShowBtnExport) export${genTable.BusinessName}, $end $if(showCustomInput) changeSort $end } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+$if(showCustomInput) changeSort $end } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
 const { proxy } = getCurrentInstance()
 // 是否展开，默认全部折叠
@@ -308,15 +313,10 @@ function toggleExpandAll() {
 
 // 选中${replaceDto.FistLowerPk}数组数组
 const ids = ref([])
-// 非单选禁用
 const single = ref(true)
-// 非多个禁用
 const multiple = ref(true)
-// 遮罩层
 const loading = ref(false)
-// 显示搜索条件
 const showSearch = ref(true)
-// 查询参数
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
@@ -328,39 +328,11 @@ $if(item.IsQuery == true)
 $end
 $end
 })
-// 弹出层标题
-const title = ref("")
-// 操作类型 1、add 2、edit
-const opertype = ref(0)
-// 是否显示弹出层
-const open = ref(false)
-// 表单参数
-const state = reactive({
-  form: {},
-  rules: {
-$foreach(column in genTable.Columns)
-$if(column.IsRequired && column.IsIncrement == false)
-    ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
-$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }],
-$end
-$end
-  },
-  options: {
-$foreach(column in genTable.Columns)
-$if(column.HtmlType == "radio" || column.HtmlType == "select" || column.HtmlType == "checkbox" || column.HtmlType == "selectMulti")
-    //$if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
-    $if(column.DictType != "")${column.DictType}$else${column.CsharpFieldFl}Options$end: [],
-$end
-$end
-  }
-})
-
-const { form, rules, options } = toRefs(state)
-// 总记录数
 const total = ref(0)
 const dataList = ref([])
 const queryRef = ref()
-const formRef = ref()
+const defaultTime = ref([new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)])
+
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "datetime" && item.IsQuery == true)
 // ${item.ColumnComment}时间范围
@@ -391,7 +363,6 @@ function handleChangeSort(info) {
     })
 }
 // ******************自定义编辑 end **********************
-
 $end
 $end
 
@@ -421,7 +392,8 @@ $end
 $end
   loading.value = true
   treelist${genTable.BusinessName}(queryParams).then(res => {
-    if (res.code == 200) {
+    const { code, data } = res
+    if (code == 200) {
       //dataList.value = res.data.result
       //total.value = res.data.totalNum
       dataList.value = res.data
@@ -430,92 +402,10 @@ $end
   })
 }
 
-// 关闭dialog
-function cancel(){
-  open.value = false
-  reset()
-}
-
-// 重置表单
-function reset() {
-  proxy.resetForm("formRef")
-}
-
 // 查询
 function handleQuery() {
   queryParams.pageNum = 1
   getList()
-}
-
-// 添加
-function handleAdd() {
-  reset();
-  open.value = true
-  title.value = '添加'
-  opertype.value = 1
-}
-
-// 删除按钮操作
-function handleDelete(row) {
-  const Ids = row.${replaceDto.FistLowerPk} || ids.value
-
-  proxy.${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
-  .then(function () {
-      return del${genTable.BusinessName}(Ids)
-  })
-  .then(() => {
-      handleQuery()
-      proxy.${modal}modal.msgSuccess("删除成功")
-  })
-  .catch(() => {})
-}
-
-// 修改按钮操作
-function handleUpdate(row) {
-  reset()
-  const id = row.${replaceDto.FistLowerPk} || ids.value
-  get${genTable.BusinessName}(id).then((res) => {
-    const { code, data } = res
-    if (code == 200) {
-      open.value = true
-      title.value = "修改数据"
-      opertype.value = 2
-
-      form.value = {
-      ...data,
-$foreach(item in genTable.Columns)
-$if(item.HtmlType == "checkbox")
-          ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
-$end
-$end
-      }
-    }
-  })
-}
-
-// 表单提交
-function submitForm() {
-  proxy.${refs}refs["formRef"].validate((valid) => {
-    if (valid) {
-      if (form.value.${replaceDto.FistLowerPk} != undefined && opertype.value === 2) {
-        update${genTable.BusinessName}(form.value).then((res) => {
-          proxy.${modal}modal.msgSuccess("修改成功")
-          open.value = false
-          getList()
-        })
-        .catch(() => {})
-      } else {
-        add${genTable.BusinessName}(form.value).then((res) => {
-            proxy.${modal}modal.msgSuccess("新增成功")
-            open.value = false
-            getList()
-          })
-          .catch((err) => {
-            //TODO 错误逻辑
-          })
-      }
-    }
-  })
 }
 
 // 重置查询操作
@@ -529,20 +419,6 @@ $end
   proxy.resetForm("queryRef")
   handleQuery()
 }
-$if(replaceDto.ShowBtnExport)
-// 导出按钮操作
-function handleExport() {
-  proxy
-    .${confirm}confirm("是否确认导出所有${genTable.functionName}数据项?", "警告", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
-    })
-    .then(async () => {
-      await export${genTable.BusinessName}(queryParams)
-    })
-}
-$end
 
 // 多选框选中数据
 function handleSelectionChange(selection) {
@@ -572,6 +448,129 @@ ${end}
   queryParams.sortType = sortType
   handleQuery()
 }
+
+/*************** form操作 ***************/
+const formRef = ref()
+const title = ref("")
+// 操作类型 1、add 2、edit
+const opertype = ref(0)
+const open = ref(false)
+const state = reactive({
+  form: {},
+  rules: {
+$foreach(column in genTable.Columns)
+$if(column.IsRequired && column.IsIncrement == false)
+    ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
+$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }],
+$end
+$end
+  },
+  options: {
+$foreach(column in genTable.Columns)
+$if(column.HtmlType == "radio" || column.HtmlType == "select" || column.HtmlType == "checkbox" || column.HtmlType == "selectMulti")
+    //$if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
+    $if(column.DictType != "")${column.DictType}$else${column.CsharpFieldFl}Options$end: [],
+$end
+$end
+  }
+})
+
+const { form, rules, options } = toRefs(state)
+
+// 关闭dialog
+function cancel(){
+  open.value = false
+  reset()
+}
+
+// 重置表单
+function reset() {
+  proxy.resetForm("formRef")
+}
+
+// 添加按钮操作
+function handleAdd() {
+  reset();
+  open.value = true
+  title.value = '添加'
+  opertype.value = 1
+}
+
+// 修改按钮操作
+function handleUpdate(row) {
+  reset()
+  const id = row.${replaceDto.FistLowerPk} || ids.value
+  get${genTable.BusinessName}(id).then((res) => {
+    const { code, data } = res
+    if (code == 200) {
+      open.value = true
+      title.value = "修改数据"
+      opertype.value = 2
+
+      form.value = {
+      ...data,
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+          ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
+$end
+$end
+      }
+    }
+  })
+}
+
+// 添加&修改 表单提交
+function submitForm() {
+  proxy.${refs}refs["formRef"].validate((valid) => {
+    if (valid) {
+      if (form.value.${replaceDto.FistLowerPk} != undefined && opertype.value === 2) {
+        update${genTable.BusinessName}(form.value).then((res) => {
+          proxy.${modal}modal.msgSuccess("修改成功")
+          open.value = false
+          getList()
+        })
+        .catch(() => {})
+      } else {
+        add${genTable.BusinessName}(form.value).then((res) => {
+            proxy.${modal}modal.msgSuccess("新增成功")
+            open.value = false
+            getList()
+          })
+          .catch(() => {})
+      }
+    }
+  })
+}
+
+// 删除按钮操作
+function handleDelete(row) {
+  const Ids = row.${replaceDto.FistLowerPk} || ids.value
+
+  proxy.${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
+  .then(function () {
+      return del${genTable.BusinessName}(Ids)
+  })
+  .then(() => {
+      getList()
+      proxy.${modal}modal.msgSuccess("删除成功")
+  })
+  .catch(() => {})
+}
+
+$if(replaceDto.ShowBtnExport)
+// 导出按钮操作
+function handleExport() {
+  proxy
+    .${confirm}confirm("是否确认导出${genTable.functionName}数据项?", "警告", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    })
+    .then(async () => {
+      await proxy.downFile('/${genTable.ModuleName}/${genTable.BusinessName}/export', { ...queryParams })
+    })
+}
+$end
 
 handleQuery()
 </script>

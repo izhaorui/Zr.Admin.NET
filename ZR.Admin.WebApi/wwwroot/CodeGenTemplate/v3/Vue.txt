@@ -202,7 +202,7 @@ $else
 $if(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" ${column.DisabledStr}/>
+              <el-input-number v-model.number="form.${columnName}" :controls="true" controls-position="right" placeholder="请输入${labelName}" ${column.DisabledStr}/>
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "datetime")
@@ -439,7 +439,6 @@ ${end}
   handleQuery()
 }
 
-
 /*************** form操作 ***************/
 const formRef = ref()
 const title = ref("")
@@ -487,21 +486,6 @@ $end
 $end
   };
   proxy.resetForm("formRef")
-}
-
-// 删除按钮操作
-function handleDelete(row) {
-  const Ids = row.${replaceDto.FistLowerPk} || ids.value
-
-  proxy.${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
-  .then(function () {
-      return del${genTable.BusinessName}(Ids)
-  })
-  .then(() => {
-      handleQuery()
-      proxy.${modal}modal.msgSuccess("删除成功")
-  })
-  .catch(() => {})
 }
 
 // 添加按钮操作
@@ -557,47 +541,29 @@ $end
             open.value = false
             getList()
           })
-          .catch((err) => {
-            //TODO 错误逻辑
-          })
+          .catch(() => {})
       }
     }
   })
 }
 
-$if(replaceDto.ShowBtnExport)
-// 导出按钮操作
-function handleExport() {
-  proxy
-    .${confirm}confirm("是否确认导出${genTable.functionName}数据项?", "警告", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
-    })
-    .then(async () => {
-      await proxy.downFile('/${genTable.ModuleName}/${genTable.BusinessName}/export', { ...queryParams })
-    })
-}
-$end
+// 删除按钮操作
+function handleDelete(row) {
+  const Ids = row.${replaceDto.FistLowerPk} || ids.value
 
-$if(replaceDto.ShowBtnView)
-/**
- * 预览
- * @param {*} row
- */
-function handlePreview(row) {
-  reset()
-  open.value = true
-  title.value = '预览'
-  opertype.value = 3
-  form.value = row
+  proxy.${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
+  .then(function () {
+      return del${genTable.BusinessName}(Ids)
+  })
+  .then(() => {
+      getList()
+      proxy.${modal}modal.msgSuccess("删除成功")
+  })
+  .catch(() => {})
 }
-$end
 
 $if(replaceDto.ShowBtnTruncate)
-/**
- * 清空
- */
+// 清空
 function handleClear() {
   proxy
     .${confirm}confirm("是否确认清空所有数据项?", "警告", {
@@ -611,6 +577,35 @@ function handleClear() {
     .then(() => {
       handleQuery()
       proxy.${modal}modal.msgSuccess('清空成功')
+    })
+}
+$end
+
+$if(replaceDto.ShowBtnView)
+/**
+ * 查看
+ * @param {*} row
+ */
+function handlePreview(row) {
+  reset()
+  open.value = true
+  title.value = '查看'
+  opertype.value = 3
+  form.value = row
+}
+$end
+
+$if(replaceDto.ShowBtnExport)
+// 导出按钮操作
+function handleExport() {
+  proxy
+    .${confirm}confirm("是否确认导出${genTable.functionName}数据项?", "警告", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    })
+    .then(async () => {
+      await proxy.downFile('/${genTable.ModuleName}/${genTable.BusinessName}/export', { ...queryParams })
     })
 }
 $end
