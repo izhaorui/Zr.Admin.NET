@@ -40,11 +40,6 @@ namespace ZR.Service.System
             sysOper.BeginTime = DateTimeHelper.GetBeginTime(sysOper.BeginTime, -1);
             sysOper.EndTime = DateTimeHelper.GetBeginTime(sysOper.EndTime, 1);
 
-            bool isDemoMode = AppSettings.GetAppConfig("DemoMode", false);
-            if (isDemoMode)
-            {
-                return new PagedInfo<SysOperLog>();
-            }
             var exp = Expressionable.Create<SysOperLog>();
             exp.And(it => it.OperTime >= sysOper.BeginTime && it.OperTime <= sysOper.EndTime);
             exp.AndIF(sysOper.Title.IfNotEmpty(), it => it.Title.Contains(sysOper.Title));

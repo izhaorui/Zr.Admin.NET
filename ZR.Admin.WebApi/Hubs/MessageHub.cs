@@ -93,12 +93,7 @@ namespace ZR.Admin.WebApi.Hubs
         public async Task SendMessage(string connectId, string userName, string message)
         {
             Console.WriteLine($"{connectId},message={message}");
-            bool isDemoMode = AppSettings.GetAppConfig("DemoMode", true);
-            if (isDemoMode)
-            {
-                await Clients.Caller.SendAsync("receiveChat", new { userName, message = "当前环境为演示环境，消息不会发送给对方" });
-                return;
-            }
+            
             await Clients.Client(connectId).SendAsync("receiveChat", new { userName, message });
         }
     }
