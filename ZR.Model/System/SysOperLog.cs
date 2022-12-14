@@ -43,8 +43,8 @@ namespace ZR.Model.System
         public string OperName { get; set; }
 
         /** 部门名称 */
-        [DisplayName("部门名称")]
-        public string DeptName { get; set; }
+        //[DisplayName("部门名称")]
+        //public string DeptName { get; set; }
 
         /** 请求url */
         [DisplayName("请求地址")]

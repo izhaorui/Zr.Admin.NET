@@ -36,9 +36,9 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [HttpGet("list")]
         public IActionResult OperList([FromQuery] SysOperLogDto sysOperLog)
         {
-            PagerInfo pagerInfo = new(sysOperLog.pageNum, sysOperLog.PageSize);
+            PagerInfo pagerInfo = new(sysOperLog.PageNum, sysOperLog.PageSize);
 
-            sysOperLog.operName = !HttpContextExtension.IsAdmin(HttpContext) ? HttpContextExtension.GetName(HttpContext) : sysOperLog.operName;
+            sysOperLog.OperName = !HttpContextExtension.IsAdmin(HttpContext) ? HttpContextExtension.GetName(HttpContext) : sysOperLog.OperName;
             var list = sysOperLogService.SelectOperLogList(sysOperLog, pagerInfo);
 
             return SUCCESS(list, "MM/dd HH:mm");
@@ -90,8 +90,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         public IActionResult Export([FromQuery] SysOperLogDto sysOperLog)
         {
             var list = sysOperLogService.SelectOperLogList(sysOperLog, new PagerInfo(1, 10000));
-            string sFileName = ExportExcel(list.Result, "operlog", "操作日志");
-            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+            var result = ExportExcelMini(list.Result, "操作日志", "操作日志");
+            return ExportExcel(result.Item2, result.Item1);
         }
 
     }
