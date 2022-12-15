@@ -146,6 +146,24 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 导出多个工作表(Sheet)
+        /// </summary>
+        /// <param name="sheets"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        protected (string, string) ExportExcelMini(Dictionary<string, object> sheets, string fileName)
+        {
+            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+            string sFileName = $"{fileName}{DateTime.Now:MM-dd-HHmmss}.xlsx";
+            string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+
+            MiniExcel.SaveAs(fullPath, sheets);
+            return (sFileName, fullPath);
+        }
+
+        /// <summary>
         /// 下载导入模板
         /// </summary>
         /// <typeparam name="T"></typeparam>
