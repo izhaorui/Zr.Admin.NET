@@ -67,7 +67,7 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true)]
         [ExcelColumn(Name = "登录日期", Format = "yyyy-MM-dd HH:mm:ss")]
-        public DateTime LoginDate { get; set; }
+        public DateTime? LoginDate { get; set; }
 
         /// <summary>
         /// 部门Id
