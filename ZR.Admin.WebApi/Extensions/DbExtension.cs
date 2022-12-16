@@ -27,7 +27,7 @@ namespace ZR.Admin.WebApi.Extensions
             string connStr = Configuration.GetConnectionString("conn_db");
             int dbType = Convert.ToInt32(Configuration.GetConnectionString("conn_db_type"));
 
-            SugarIocServices.AddSqlSugar(new List<IocConfig>() {
+            var iocList = new List<IocConfig>() {
                    new IocConfig() {
                     ConfigId = "0",//默认db
                     ConnectionString = connStr,
@@ -36,52 +36,46 @@ namespace ZR.Admin.WebApi.Extensions
                 },
                    new IocConfig() {
                     ConfigId = "1",
-                    ConnectionString = "替换成你的字符串",
-                    DbType = IocDbType.MySql,
+                    ConnectionString = connStr,
+                    DbType = (IocDbType)dbType,
                     IsAutoCloseConnection = true
                 }
                    //...增加其他数据库
-                });
+                };
+            SugarIocServices.AddSqlSugar(iocList);
             SugarIocServices.ConfigurationSugar(db =>
             {
                 //db0数据过滤
                 FilterData(0);
 
-                #region db0
-                db.GetConnectionScope(0).Aop.OnLogExecuting = (sql, pars) =>
+                iocList.ForEach(iocConfig =>
                 {
-                    var param = db.GetConnectionScope(0).Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
-
-                    logger.Info($"【sql语句】{sql}，{param}\n");
-                };
-
-                db.GetConnectionScope(0).Aop.OnError = (e) =>
-                {
-                    logger.Error(e, $"执行SQL出错：{e.Message}");
-                };
-                //SQL执行完
-                db.GetConnectionScope(0).Aop.OnLogExecuted = (sql, pars) =>
-                {
-                    //执行完了可以输出SQL执行时间 (OnLogExecutedDelegate) 
-                };
-                #endregion
-
-                #region db1
-                //Db1
-                db.GetConnection(1).Aop.OnLogExecuting = (sql, pars) =>
-                {
-                    var param = db.GetConnection(1).Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value));
-
-                    logger.Info($"【sql语句】{sql}, {param}");
-                };
-                //Db1错误日志
-                db.GetConnection(1).Aop.OnError = (e) =>
-                {
-                    logger.Error($"执行Sql语句失败：{e.Sql}，原因：{e.Message}");
-                };
-                #endregion
+                   SetSugarAop(db, iocConfig);
+                });
             });
+        }
 
+        private static void SetSugarAop(SqlSugarClient db, IocConfig iocConfig)
+        {
+            var config = db.GetConnection(iocConfig.ConfigId).CurrentConnectionConfig;
+            
+            string configId = config.ConfigId;
+            db.GetConnectionScope(configId).Aop.OnLogExecuting = (sql, pars) =>
+            {
+                string log = $"【sql语句】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
+                if (sql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+                    logger.Info(log);
+                if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
+                    logger.Warn(log);
+                if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("TRUNCATE", StringComparison.OrdinalIgnoreCase))
+                    logger.Error(log);
+            };
+
+            db.GetConnectionScope(configId).Aop.OnError = (e) =>
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                logger.Error(e, $"执行SQL出错：{e.Message}");
+            };
         }
 
         /// <summary>
