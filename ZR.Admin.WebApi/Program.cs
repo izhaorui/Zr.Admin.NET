@@ -80,6 +80,8 @@ builder.Services.AddMvc(options =>
 });
 
 builder.Services.AddSwaggerConfig();
+// 显示logo
+builder.Services.AddLogo();
 
 var app = builder.Build();
 InternalApp.ServiceProvider = app.Services;
