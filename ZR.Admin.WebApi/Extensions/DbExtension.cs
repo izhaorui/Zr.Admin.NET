@@ -62,7 +62,7 @@ namespace ZR.Admin.WebApi.Extensions
             string configId = config.ConfigId;
             db.GetConnectionScope(configId).Aop.OnLogExecuting = (sql, pars) =>
             {
-                string log = $"【sql语句】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
+                string log = $"【db{configId} SQL语句】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
                 if (sql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
                     logger.Info(log);
                 if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))

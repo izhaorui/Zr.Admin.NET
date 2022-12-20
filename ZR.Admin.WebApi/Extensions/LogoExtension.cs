@@ -11,10 +11,10 @@ namespace ZR.Admin.WebApi.Extensions
         {
             Console.ForegroundColor = ConsoleColor.Blue;
             var contentTpl = JnHelper.ReadTemplate("", "logo.txt");
-            var content = contentTpl.Render();
+            var content = contentTpl?.Render();
 
             Console.WriteLine(content);
-            Console.ForegroundColor = ConsoleColor.Red;
+            Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("源码地址: https://gitee.com/izory/ZrAdminNetCore");
             Console.WriteLine("官方文档：http://www.izhaorui.cn/doc");
             Console.WriteLine("打赏作者：http://www.izhaorui.cn/doc/support.html");

@@ -20,6 +20,8 @@ namespace ZR.Common
             {
                 return Engine.LoadTemplate(fullName);
             }
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"未找到路径{fullName}");
             return null;
         }
     }
