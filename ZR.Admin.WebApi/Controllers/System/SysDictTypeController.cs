@@ -3,6 +3,7 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Crypto;
 using System;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;

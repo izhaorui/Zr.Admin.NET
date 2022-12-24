@@ -8,7 +8,7 @@ namespace ZR.Service.System.IService
     /// <summary>
     /// 
     /// </summary>
-    public interface ISysDictService
+    public interface ISysDictService: IBaseService<SysDictType>
     {
         public List<SysDictType> GetAll();
         public PagedInfo<SysDictType> SelectDictTypeList(SysDictType dictType, Model.PagerInfo pager);

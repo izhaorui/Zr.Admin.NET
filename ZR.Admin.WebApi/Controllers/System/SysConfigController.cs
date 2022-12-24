@@ -150,7 +150,8 @@ namespace ZR.Admin.WebApi.Controllers
         {
             int[] idsArr = Tools.SpitIntArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
-
+            int sysCount = _SysConfigService.Count(s => s.ConfigType == "Y" && idsArr.Contains(s.ConfigId));
+            if (sysCount > 0) { return ToResponse(ApiResult.Error($"删除失败Id： 系统内置参数不能删除！")); }
             var response = _SysConfigService.Delete(idsArr);
 
             return SUCCESS(response);
