@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Service.System.IService;
@@ -65,6 +66,8 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int DeleteDictTypeByIds(long[] dictIds)
         {
+            int sysCount = Count(s => s.Type == "Y" && dictIds.Contains(s.DictId));
+            if (sysCount > 0) { throw new CustomException($"删除失败Id： 系统内置参数不能删除！"); }
             foreach (var dictId in dictIds)
             {
                 SysDictType dictType = GetFirst(x => x.DictId == dictId);
