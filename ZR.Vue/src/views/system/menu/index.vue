@@ -27,6 +27,7 @@
 
     <el-table v-if="refreshTable" v-loading="loading" :data="menuList" :default-expand-all="isExpandAll"
       row-key="menuId"
+      node-key="menuId"
       border
       lazy
       :load="loadMenu"
@@ -276,6 +277,8 @@ export default {
           { required: true, message: "路由地址不能为空", trigger: "blur" },
         ],
       },
+      // table树节点
+      tableTreeNodeMap: new Map(),
     };
   },
   created() {
@@ -397,13 +400,21 @@ export default {
             updateMenu(this.form).then((response) => {
               this.msgSuccess("修改成功");
               this.open = false;
-              this.getList();
+              if (this.form.parentId === 0) {
+                this.getList();
+              } else {
+                this.refreshTableTree(this.form.parentId);
+              }
             });
           } else {
             addMenu(this.form).then((response) => {
               this.msgSuccess("新增成功");
               this.open = false;
-              this.getList();
+              if (this.form.parentId === 0) {
+                this.getList();
+              } else {
+                this.refreshTableTree(this.form.parentId);
+              }
             });
           }
         }
@@ -424,7 +435,11 @@ export default {
           return delMenu(row.menuId);
         })
         .then(() => {
-          this.getList();
+          if (row.parentId === 0) {
+            this.getList();
+          } else {
+            this.refreshTableTree(row.parentId);
+          }
           this.msgSuccess("删除成功");
         });
     },
@@ -462,10 +477,20 @@ export default {
       });
     },
     loadMenu (row, treeNode, resolve) {
+      this.tableTreeNodeMap.set(row.menuId, { row, treeNode, resolve });
       listMenuById(row.menuId).then((res) => {
         resolve(res.data)
       })
-    }
+    },
+    //新增/修改/删除子节点时刷新子节点
+    refreshTableTree(key) {
+      const node = this.tableTreeNodeMap.get(key);
+      if (!node) {
+        return;
+      }
+      const { row, treeNode, resolve } = node;
+      this.loadMenu(row, treeNode, resolve);
+    },
   },
 };
 </script>
