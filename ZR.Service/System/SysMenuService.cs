@@ -1,4 +1,4 @@
-﻿using Infrastructure.Attribute;
+using Infrastructure.Attribute;
 using Infrastructure.Extensions;
 using SqlSugar;
 using System;
@@ -41,7 +41,7 @@ namespace ZR.Service
                 var userRoles = SysRoleService.SelectUserRoles(userId);
                 menuList = SelectTreeMenuListByRoles(menu, userRoles);
             }
-            return menuList;
+            return menuList ?? new List<SysMenu>();
         }
 
         /// <summary>
