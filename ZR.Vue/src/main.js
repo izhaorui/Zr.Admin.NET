@@ -13,6 +13,7 @@ import router from './router'
 import permission from './directive/permission'
 import plugins from './plugins' // plugins
 import signalR from '@/utils/signalR'
+import { downFile } from '@/utils/request'
 
 import './assets/icons' // icon
 import './permission' // permission control
@@ -43,6 +44,7 @@ Vue.prototype.selectDictLabels = selectDictLabels
 Vue.prototype.download = download
 Vue.prototype.handleTree = handleTree
 Vue.prototype.handleDict = handleDict
+Vue.prototype.downFile = downFile
 
 Vue.prototype.msgSuccess = function (msg) {
   this.$message({ showClose: true, message: msg, type: "success" });

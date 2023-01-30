@@ -1,12 +1,13 @@
 import request from '@/utils/request'
-import { praseStrZero } from "@/utils/ruoyi";
+import { praseStrZero } from '@/utils/ruoyi'
+import { downFile } from '@/utils/request'
 
 // 查询用户列表
 export function listUser(query) {
   return request({
     url: '/system/user/list',
     method: 'get',
-    params: query
+    params: query,
   })
 }
 
@@ -14,7 +15,7 @@ export function listUser(query) {
 export function getUser(userId) {
   return request({
     url: '/system/user/' + praseStrZero(userId),
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -23,7 +24,7 @@ export function addUser(data) {
   return request({
     url: '/system/user/edit',
     method: 'post',
-    data: data
+    data: data,
   })
 }
 
@@ -32,7 +33,7 @@ export function updateUser(data) {
   return request({
     url: '/system/user/edit',
     method: 'put',
-    data: data
+    data: data,
   })
 }
 
@@ -40,29 +41,30 @@ export function updateUser(data) {
 export function delUser(userId) {
   return request({
     url: '/system/user/' + userId,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
 // 导出用户
-export function exportUser(query) {
-  return request({
-    url: '/system/User/export',
-    method: 'get',
-    params: query
-  })
+export async function exportUser(query) {
+  // return request({
+  //   url: '/system/User/export',
+  //   method: 'get',
+  //   params: query
+  // })
+  await downFile('/system/user/export', { ...query })
 }
 
 // 用户密码重置
 export function resetUserPwd(userId, password) {
   const data = {
     userId,
-    password
+    password,
   }
   return request({
     url: '/system/user/resetPwd',
     method: 'put',
-    data: data
+    data: data,
   })
 }
 
@@ -70,12 +72,12 @@ export function resetUserPwd(userId, password) {
 export function changeUserStatus(userId, status) {
   const data = {
     userId,
-    status
+    status,
   }
   return request({
     url: '/system/user/changeStatus',
     method: 'put',
-    data: data
+    data: data,
   })
 }
 
@@ -83,7 +85,7 @@ export function changeUserStatus(userId, status) {
 export function getUserProfile() {
   return request({
     url: '/system/user/Profile',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -92,7 +94,7 @@ export function updateUserProfile(data) {
   return request({
     url: '/system/user/profile',
     method: 'put',
-    data: data
+    data: data,
   })
 }
 
@@ -100,12 +102,12 @@ export function updateUserProfile(data) {
 export function updateUserPwd(oldPassword, newPassword) {
   const data = {
     oldPassword,
-    newPassword
+    newPassword,
   }
   return request({
     url: '/system/user/profile/updatePwd',
     method: 'put',
-    params: data
+    params: data,
   })
 }
 
@@ -114,7 +116,7 @@ export function uploadAvatar(data) {
   return request({
     url: '/system/user/profile/avatar',
     method: 'post',
-    data: data
+    data: data,
   })
 }
 
@@ -123,6 +125,6 @@ export function importTemplate() {
   return request({
     url: '/system/user/importTemplate',
     method: 'get',
-    responseType: 'blob'//1.首先设置responseType对象格式为 blob:
+    responseType: 'blob', //1.首先设置responseType对象格式为 blob:
   })
 }
