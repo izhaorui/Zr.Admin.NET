@@ -134,8 +134,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var list = PostService.GetAll();
 
-            string sFileName = ExportExcel(list, "syspost", "岗位");
-            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+            var result = ExportExcelMini(list, "post", "岗位列表");
+            return ExportExcel(result.Item2, result.Item1);
         }
     }
 }

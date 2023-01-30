@@ -249,13 +249,9 @@ $if(replaceDto.ShowBtnExport)
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
+      }).then(async () => {
+          await export${genTable.BusinessName}(queryParams);
       })
-        .then(function () {
-          return export${genTable.BusinessName}(queryParams);
-        })
-        .then((response) => {
-          this.download(response.data.path);
-        });
     },
 $end
   },
