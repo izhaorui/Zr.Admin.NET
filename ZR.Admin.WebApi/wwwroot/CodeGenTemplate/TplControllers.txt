@@ -1,4 +1,4 @@
-﻿using Infrastructure;
+using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
@@ -149,6 +149,7 @@ $if(replaceDto.ShowBtnExport)
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:export")]
         public IActionResult Export([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
         {
+            parm.PageNum = 1;
             parm.PageSize = 100000;
             var list = _${replaceDto.ModelTypeName}Service.GetList(parm).Result;
             if (list == null || list.Count <= 0)
