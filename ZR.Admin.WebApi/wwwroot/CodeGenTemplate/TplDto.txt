@@ -1,6 +1,7 @@
-﻿﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 using ${options.ModelsNamespace}.Dto;
 using ${options.ModelsNamespace}.Models;
 $if(replaceDto.ShowBtnExport)
@@ -43,6 +44,9 @@ $if(item.IsExport)
 $else
         [ExcelIgnore]
 $end
+$end
+$if(item.CsharpType == "long")
+        [JsonConverter(typeof(ValueToStringConverter))]
 $end
         public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
 
