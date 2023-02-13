@@ -50,10 +50,11 @@ namespace ZR.Service.System
         /// <returns></returns>
         public GenTable GetGenTableInfo(long tableId)
         {
-            var info = GetId(tableId);
+            GenTable info = GetId(tableId);
             if (info != null && !info.SubTableName.IsEmpty())
             {
                 info.SubTable = Queryable().Where(f => f.TableName == info.SubTableName).First();
+                info.SubTable.Columns = GenTableColumnService.GenTableColumns(info.SubTable.TableId);
             }
             return info;
         }
