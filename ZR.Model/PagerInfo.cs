@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace ZR.Model
@@ -10,6 +11,9 @@ namespace ZR.Model
         /// 当前页码
         /// </summary>
         public int PageNum { get; set; }
+        /// <summary>
+        /// 每页显示多少条
+        /// </summary>
         public int PageSize { get; set; }
         /// <summary>
         /// 总记录数

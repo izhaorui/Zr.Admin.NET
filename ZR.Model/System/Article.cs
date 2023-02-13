@@ -27,9 +27,9 @@ namespace ZR.Model.System
         /// </summary>
         public string AuthorName { get; set; }
         public long UserId { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
+        ///// <summary>
+        ///// 
+        ///// </summary>
         //public string Type { get; set; }
         /// <summary>
         /// 文章状态 1、发布 2、草稿
