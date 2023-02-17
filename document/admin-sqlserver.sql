@@ -749,7 +749,8 @@ create table gen_table_column (
   create_time 	    datetime                                   , --'创建时间',
   update_by         varchar(64)     default ''                 , --'更新者',
   update_time       datetime                                   , --'更新时间',
-  remark			VARCHAR(200)
+  remark			VARCHAR(200)								,--
+  autoFillType		INT											--自动填充类型 1、添加 2、编辑 3、添加编辑
 )
 GO
 -- ----------------------------

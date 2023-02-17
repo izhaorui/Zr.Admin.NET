@@ -91,6 +91,10 @@ namespace ZR.Model.System.Generate
         /// 字典类型
         /// </summary>
         public string DictType { get; set; } = "";
+        /// <summary>
+        /// 自动填充类型 1、添加 2、编辑 3、添加编辑
+        /// </summary>
+        public int AutoFillType { get; set; }
 
         #region 额外字段
         [SugarColumn(IsIgnore = true)]
@@ -126,7 +130,7 @@ namespace ZR.Model.System.Generate
         {
             get
             {
-                return (((!IsInsert && !IsEdit) || IsPk) && !IsRequired) ? " :disabled=\"true\"" : "";
+                return ((IsPk) && !IsRequired) ? " :disabled=\"true\"" : "";
             }
         }
 

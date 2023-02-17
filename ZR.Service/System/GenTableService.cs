@@ -134,13 +134,16 @@ namespace ZR.Service.System
                     insertColumns.Add(column);
                 }
             }
-            GenTableColumnService.Insert(insertColumns);
-
-            List<GenTableColumn> delColumns = tableColumns.FindAll(column => !dbTableColumneNames.Contains(column.ColumnName));
-            if (delColumns != null && delColumns.Count > 0)
+            bool result = UseTran2(() =>
             {
-                GenTableColumnService.Delete(delColumns.Select(f => f.ColumnId).ToList());
-            }
+                GenTableColumnService.Insert(insertColumns);
+
+                List<GenTableColumn> delColumns = tableColumns.FindAll(column => !dbTableColumneNames.Contains(column.ColumnName));
+                if (delColumns != null && delColumns.Count > 0)
+                {
+                    GenTableColumnService.Delete(delColumns.Select(f => f.ColumnId).ToList());
+                }
+            });
         }
     }
 
@@ -227,7 +230,8 @@ namespace ZR.Service.System
                     it.Update_by,
                     it.Remark,
                     it.IsSort,
-                    it.IsExport
+                    it.IsExport,
+                    it.AutoFillType
                 })
                 .ExecuteCommand();
         }

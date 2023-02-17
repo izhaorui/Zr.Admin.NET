@@ -79,6 +79,10 @@ namespace ZR.CodeGenerator
                 {
                     replaceDto.SelectMulti = 1;
                 }
+                if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_EDITOR))
+                {
+                    replaceDto.ShowEditor = 1;
+                }
                 dbFieldInfo.CsharpFieldFl = dbFieldInfo.CsharpField.FirstLowerCase();
             }
 

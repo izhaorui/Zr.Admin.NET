@@ -77,5 +77,9 @@ namespace ZR.Model.System.Dto
         /// 备注
         /// </summary>
         public string Remark { get; set; }
+        /// <summary>
+        /// 自动填充类型
+        /// </summary>
+        public int? AutoFillType { get; set; }
     }
 }

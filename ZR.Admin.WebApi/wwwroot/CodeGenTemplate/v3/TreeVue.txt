@@ -13,6 +13,7 @@ $foreach(column in genTable.Columns)
 $set(labelName = "")
 $set(columnName = "")
 $set(numLabel = "")
+$if(column.IsQuery == true)
 $set(columnName = column.CsharpFieldFl)
 $if(column.ColumnComment != "")
 $set(labelName = column.ColumnComment)
@@ -22,7 +23,6 @@ $end
 $if(column.CsharpType == "int" || column.CsharpType == "long")
 $set(numLabel = ".number")
 $end
-
 $if(column.HtmlType == "datetime")
       <el-form-item label="$labelName">
         <el-date-picker 
@@ -294,15 +294,19 @@ $end
 
   </div>
 </template>
+
 <script setup name="${genTable.BusinessName.ToLower()}">
 import { treelist${genTable.BusinessName}, list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName},
 $if(showCustomInput) changeSort $end } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+$if(replaceDto.ShowEditor == 1)
+import Editor from '@/components/Editor'
+$end
 
 const { proxy } = getCurrentInstance()
 // 是否展开，默认全部折叠
 const isExpandAll = ref(false)
 const refreshTable = ref(true)
-//展开/折叠操作
+// 展开/折叠操作
 function toggleExpandAll() {
   refreshTable.value = false
   isExpandAll.value = !isExpandAll.value
@@ -399,6 +403,9 @@ $end
       dataList.value = res.data
       loading.value = false
     }
+    .catch(() => {
+      loading.value = false
+    })
   })
 }
 

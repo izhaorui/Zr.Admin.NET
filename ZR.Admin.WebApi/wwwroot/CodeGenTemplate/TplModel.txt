@@ -13,30 +13,34 @@ namespace ${options.ModelsNamespace}.Models
     [SugarTable("${genTable.TableName}")]
     public class ${replaceDto.ModelTypeName}
     {
-$foreach(item in genTable.Columns)
+${foreach(item in genTable.Columns)}
         /// <summary>
-        /// 描述 :${item.ColumnComment} ${item.Remark}
-        /// 空值 :$if(item.IsRequired == "True")false${else}true${end} 
+        /// ${item.ColumnComment} ${item.Remark}
         /// </summary>
 $if(item.IsPk || item.IsIncrement)
         [SugarColumn(IsPrimaryKey = ${item.IsPk.ToString().ToLower()}, IsIdentity = ${item.IsIncrement.ToString().ToLower()}$if(item.CsharpField.ToLower() != item.ColumnName.ToLower()), ColumnName = "$item.ColumnName"$end)]
 $elseif(item.CsharpField.ToLower() != item.ColumnName.ToLower())
         [SugarColumn(ColumnName = "$item.ColumnName")]
+$elseif(item.AutoFillType == 1 && item.CsharpType == "DateTime")
+        [SugarColumn(InsertServerTime = true, IsOnlyIgnoreUpdate = true)]
+$elseif(item.AutoFillType == 2 && item.CsharpType == "DateTime")
+        [SugarColumn(UpdateServerTime = true, IsOnlyIgnoreInsert = true)]
+$elseif(item.AutoFillType == 3 && item.CsharpType == "DateTime")
+        [SugarColumn(InsertServerTime = true, UpdateServerTime = true)]
+$elseif(item.AutoFillType == 1)
+        [SugarColumn(IsOnlyIgnoreUpdate = true)]
 $end
         public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
 
 ${end}
-
 $if(genTable.TplCategory == "tree")
         [SugarColumn(IsIgnore = true)]
         public List<${replaceDto.ModelTypeName}> Children { get; set; }
 $end
-
 $if(genTable.TplCategory == "subNav" && genTable.SubTable != null)
         [Navigate(NavigateType.Dynamic, null)] //自定义关系映射
         public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName} { get; set; }
 $end
-
 $if(genTable.TplCategory == "subNavMore" && genTable.SubTable != null)
         [Navigate(NavigateType.Dynamic, null)] //自定义关系映射
         public List<${genTable.SubTable.ClassName}> ${genTable.SubTable.ClassName} { get; set; }

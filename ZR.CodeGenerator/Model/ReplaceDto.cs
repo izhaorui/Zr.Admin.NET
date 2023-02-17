@@ -60,5 +60,9 @@ namespace ZR.CodeGenerator.Model
         public int SelectMulti { get; set; }
         public string Author { get; set; }
         public string AddTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
+        /// <summary>
+        /// 是否有编辑器
+        /// </summary>
+        public int ShowEditor { get; set; }
     }
 }

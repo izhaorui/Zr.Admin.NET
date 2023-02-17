@@ -95,37 +95,30 @@ $end
         /// <summary>
         /// 添加${genTable.FunctionName}
         /// </summary>
-        /// <param name="parm"></param>
+        /// <param name="model"></param>
         /// <returns></returns>
-        public int Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm)
+        public int Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} model)
         {
-            var response = Insert(parm, it => new
-            {
-${foreach(item in genTable.Columns)}
-$if((item.IsInsert))
-                it.$item.CsharpField,
-$end
-${end}
-            });
-            return response;
+            return Add(model, true);
         }
 
         /// <summary>
         /// 修改${genTable.FunctionName}
         /// </summary>
-        /// <param name="parm"></param>
+        /// <param name="model"></param>
         /// <returns></returns>
-        public int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm)
+        public int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} model)
         {
-            var response = Update(w => w.${replaceDto.PKName} == parm.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
-            {
+            //var response = Update(w => w.${replaceDto.PKName} == model.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
+            //{
 $foreach(item in genTable.Columns)
 $if((item.IsEdit))
-                $item.CsharpField = parm.$item.CsharpField,
+            //    $item.CsharpField = model.$item.CsharpField,
 $end
 ${end}
-            });
-            return response;
+            //});
+            //return response;
+            return Update(model, true);
         }
 
         /// <summary>

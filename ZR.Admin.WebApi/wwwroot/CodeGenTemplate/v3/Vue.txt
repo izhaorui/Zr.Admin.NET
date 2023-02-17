@@ -37,7 +37,7 @@ $if(column.HtmlType == "datetime")
           :shortcuts="dateOptions">
         </el-date-picker>
       </el-form-item>
-$elseif(column.HtmlType == "select" || column.HtmlType == "radio" || column.HtmlType == "selectMulti")
+$elseif(column.HtmlType.Contains("select") || column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-select clearable $if(column.HtmlType == "selectMulti")multiple$end v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
           <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue">
@@ -105,7 +105,14 @@ $end
     </el-row>
 
     <!-- 数据区域 -->
-    <el-table :data="dataList" v-loading="loading" ref="table" border highlight-current-row @sort-change="sortChange" @selection-change="handleSelectionChange">
+    <el-table 
+      :data="dataList" 
+      v-loading="loading" 
+      ref="table" 
+      border 
+      highlight-current-row 
+      @sort-change="sortChange" 
+      @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center"/>
 $foreach(column in genTable.Columns)
 $set(labelName = "")
@@ -135,12 +142,21 @@ $if(column.HtmlType == "customInput" && column.IsPk == false)
 $elseif(column.HtmlType == "imageUpload")
       <el-table-column prop="${columnName}" label="${labelName}" align="center" v-if="columns.showColumn('${columnName}')">
         <template #default="scope">
-          <el-image preview-teleported :hide-on-click-modal="true" lazy class="table-td-thumb" fit="contain" :src="scope.row.${columnName}" :preview-src-list="[scope.row.${columnName}]">
-            <div><el-icon :size="15"><document /></el-icon></div>
+          <el-image 
+            preview-teleported 
+            :hide-on-click-modal="true" 
+            lazy 
+            class="table-td-thumb" 
+            fit="contain" 
+            :src="scope.row.${columnName}" 
+            :preview-src-list="[scope.row.${columnName}]">
+            <div>
+              <el-icon :size="15"><document /></el-icon>
+            </div>
           </el-image>
         </template>
       </el-table-column>
-$elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio" || column.HtmlType == "selectMulti")
+$elseif(column.HtmlType == "checkbox" || column.HtmlType.Contains("select") || column.HtmlType == "radio")
       <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr} v-if="columns.showColumn('${columnName}')">
         <template #default="scope">
 $if(column.HtmlType == "checkbox")
@@ -189,15 +205,19 @@ $if(column.CsharpType == "int" || column.CsharpType == "long")
 $end
 
 $if(column.IsPK || column.IsIncrement)
+$if(column.IsPK && column.IsIncrement == false)
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-$if(column.IsIncrement == false)
-              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" :disabled="title=='修改数据'"/>
-$else
-              <span v-html="form.${columnName}"/>
-$end
+              <el-input v-model="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"/>
             </el-form-item>
           </el-col>
+$else
+          <el-col :lg="${options.ColNum}" v-if="opertype != 1">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" :disabled="true"/>
+            </el-form-item>
+          </el-col>
+$end
 $else
 $if(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
           <el-col :lg="${options.ColNum}">
@@ -223,7 +243,7 @@ $elseif(column.HtmlType == "fileUpload")
               <UploadFile v-model="form.${columnName}" :data="{ uploadType: 1 }" />
             </el-form-item>
           </el-col>
-$elseif(column.HtmlType == "radio")
+$elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}"${column.DisabledStr}>
@@ -247,7 +267,10 @@ $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-select v-model="form.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
-                <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
+                <el-option 
+                  v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" 
+                  :key="item.dictValue" :label="item.dictLabel" 
+                  :value="${value}"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -257,6 +280,12 @@ $elseif(column.HtmlType == "checkbox")
               <el-checkbox-group v-model="form.${columnName}Checked"${column.DisabledStr}>
                 <el-checkbox v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
               </el-checkbox-group>
+            </el-form-item>
+          </el-col>
+$elseif(column.HtmlType == "colorPicker")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-color-picker v-model="form.${columnName}" />
             </el-form-item>
           </el-col>
 $else
@@ -284,6 +313,9 @@ import { list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTabl
 $if(replaceDto.ShowBtnTruncate) clear${genTable.BusinessName}, $end 
 $if(showCustomInput) changeSort $end } 
 from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+$if(replaceDto.ShowEditor == 1)
+import Editor from '@/components/Editor'
+$end
 
 const { proxy } = getCurrentInstance()
 // 选中${replaceDto.FistLowerPk}数组数组
@@ -323,7 +355,7 @@ $if(item.HtmlType == "datetime" && item.IsQuery == true)
 const dateRange${item.CsharpField} = ref([])
 
 $elseif(item.HtmlType == "customInput")
-// ******************自定义编辑 start **********************
+/******************自定义编辑 start **********************/
 const editIndex = ref(-1)
 const columnRefs = ref([])
 const setColumnsRef = (el) => {
@@ -352,7 +384,7 @@ function handleChangeSort(info) {
       proxy.${modal}modal.msgSuccess('修改成功')
     })
 }
-// ******************自定义编辑 end **********************
+/******************自定义编辑 end **********************/
 
 $end
 $end
@@ -360,7 +392,7 @@ $end
 $set(index = 0)
 var dictParams = [
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "selectMulti" || item.HtmlType == "checkbox") && item.DictType != "")
+$if((item.HtmlType == "radio" || item.HtmlType.Contains("select") || item.HtmlType == "checkbox") && item.DictType != "")
   { dictType: "${item.DictType}" },
 $set(index = index + 1)
 $end
@@ -457,7 +489,7 @@ $end
   },
   options: {
 $foreach(column in genTable.Columns)
-$if(column.HtmlType == "radio" || column.HtmlType == "select" || column.HtmlType == "checkbox" || column.HtmlType == "selectMulti")
+$if(column.HtmlType == "radio" || column.HtmlType.Contains("select") || column.HtmlType == "checkbox")
     //$if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
     $if(column.DictType != "")${column.DictType}$else${column.CsharpFieldFl}Options$end: [],
 $end
@@ -477,11 +509,10 @@ function cancel(){
 function reset() {
   form.value = {
 $foreach(item in genTable.Columns)
-$if((item.IsEdit || item.IsInsert))
-    $item.CsharpFieldFl: undefined,
-$end
 $if((item.HtmlType == "checkbox"))
     ${item.CsharpFieldFl}Checked: [],
+$else
+    $item.CsharpFieldFl: undefined,
 $end
 $end
   };
@@ -508,10 +539,10 @@ function handleUpdate(row) {
       opertype.value = 2
 
       form.value = {
-      ...data,
+        ...data,
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "checkbox")
-          ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
+        ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
 $end
 $end
       }
@@ -551,15 +582,16 @@ $end
 function handleDelete(row) {
   const Ids = row.${replaceDto.FistLowerPk} || ids.value
 
-  proxy.${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
-  .then(function () {
+  proxy
+    .${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
+    .then(function () {
       return del${genTable.BusinessName}(Ids)
-  })
-  .then(() => {
+    })
+    .then(() => {
       getList()
       proxy.${modal}modal.msgSuccess("删除成功")
-  })
-  .catch(() => {})
+    })
+    .catch(() => {})
 }
 
 $if(replaceDto.ShowBtnTruncate)

@@ -218,11 +218,10 @@ $end
     reset() {
       this.form = {
 $foreach(item in genTable.Columns)
-$if((item.IsEdit || item.IsInsert))
-        $item.CsharpFieldFl: undefined,
-$end
 $if((item.HtmlType == "checkbox"))
         ${item.CsharpFieldFl}Checked: [],
+$else
+        $item.CsharpFieldFl: undefined,
 $end
 $end
       };

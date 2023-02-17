@@ -14,7 +14,5 @@ namespace ${options.RepositoriesNamespace}
     [AppService(ServiceLifetime = LifeTime.Transient)]
     public class ${replaceDto.ModelTypeName}Repository : BaseRepository<${replaceDto.ModelTypeName}>
     {
-        #region 业务逻辑代码
-        #endregion
     }
 }
