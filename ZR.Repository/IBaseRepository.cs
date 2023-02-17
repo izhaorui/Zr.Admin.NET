@@ -10,7 +10,7 @@ namespace ZR.Repository
     public interface IBaseRepository<T> : ISimpleClient<T> where T : class, new()
     {
         #region add
-        int Add(T t);
+        int Add(T t, bool ignoreNull = true);
 
         int Insert(List<T> t);
         int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true);

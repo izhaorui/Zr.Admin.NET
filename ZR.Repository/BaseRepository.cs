@@ -41,9 +41,9 @@ namespace ZR.Repository
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        public int Add(T t)
+        public int Add(T t, bool ignoreNull = true)
         {
-            return Context.Insertable(t).IgnoreColumns(true).ExecuteCommand();
+            return Context.Insertable(t).IgnoreColumns(ignoreNullColumn: ignoreNull).ExecuteCommand();
         }
 
         public int Insert(List<T> t)
