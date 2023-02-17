@@ -48,5 +48,5 @@ module.exports = {
    * If you want to also use it in dev, you can pass ['production', 'development']
    */
   errorLog: 'production',
-  copyRight: 'Copyright ©2022 izhaorui.cn All Rights Reserved.'
+  copyRight: 'Copyright ©2023 www.izhaorui.cn All Rights Reserved.'
 }
