@@ -6,59 +6,99 @@ namespace ZR.Model.System
 {
     public class UserConstants
     {
-        /**
-    * 平台内系统用户的唯一标志
-    */
+        /// <summary>
+        /// 平台内系统用户的唯一标志
+        /// </summary>
         public static string SYS_USER = "SYS_USER";
 
-        /** 正常状态 */
+        /// <summary>
+        /// 正常状态
+        /// </summary>
         public static string NORMAL = "0";
 
-        /** 异常状态 */
+        /// <summary>
+        /// 异常状态
+        /// </summary>
         public static string EXCEPTION = "1";
 
-        /** 用户封禁状态 */
+        /// <summary>
+        /// 用户封禁状态
+        /// </summary>
         public static string USER_DISABLE = "1";
 
-        /** 角色封禁状态 */
+        /// <summary>
+        /// 角色封禁状态
+        /// </summary>
         public static string ROLE_DISABLE = "1";
 
-        /** 部门正常状态 */
+        /// <summary>
+        /// 部门正常状态
+        /// </summary>
         public static string DEPT_NORMAL = "0";
 
-        /** 部门停用状态 */
+        /// <summary>
+        /// 部门停用状态
+        /// </summary>
         public static string DEPT_DISABLE = "1";
 
-        /** 字典正常状态 */
+        /// <summary>
+        /// 字典正常状态
+        /// </summary>
         public static string DICT_NORMAL = "0";
 
-        /** 是否为系统默认（是） */
+        /// <summary>
+        /// 是否为系统默认（是）
+        /// </summary>
         public static string YES = "Y";
 
-        /** 是否菜单外链（是） */
+        /// <summary>
+        /// 是否菜单外链（是）
+        /// </summary>
         public static string YES_FRAME = "1";
 
-        /** 是否菜单外链（否） */
+        /// <summary>
+        /// 是否菜单外链（否）
+        /// </summary>
         public static string NO_FRAME = "0";
 
-        /** 菜单类型（目录） */
+        /// <summary>
+        /// 菜单类型（目录）
+        /// </summary>
         public static string TYPE_DIR = "M";
 
-        /** 菜单类型（菜单） */
+        /// <summary>
+        /// 菜单类型（菜单）
+        /// </summary>
         public static string TYPE_MENU = "C";
 
-        /** 菜单类型（按钮） */
+        /// <summary>
+        /// 菜单类型（按钮）
+        /// </summary>
         public static string TYPE_BUTTON = "F";
-        /** 菜单类型（链接） */
+
+        ///// <summary>
+        ///// 菜单类型（链接）
+        ///// </summary>
         //public static string TYPE_LINK = "L";
 
-        /** Layout组件标识 */
+        /// <summary>
+        /// Layout组件标识
+        /// </summary>
         public static string LAYOUT = "Layout";
-        /** ParentView组件标识 */
+
+        /// <summary>
+        /// ParentView组件标识
+        /// </summary>
         public static string PARENT_VIEW = "ParentView";
-        /** InnerLink组件标识 */
+
+        /// <summary>
+        /// InnerLink组件标识
+        /// </summary>
         public static string INNER_LINK = "InnerLink";
-        /** 校验返回结果码 */
+
+        /// <summary>
+        /// 校验返回结果码
+        /// </summary>
         public static string UNIQUE = "0";
         public static string NOT_UNIQUE = "1";
 

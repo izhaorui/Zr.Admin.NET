@@ -11,25 +11,34 @@ namespace ZR.Model.System
     {
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long OperId { get; set; }
-        /** 操作模块 */
+        /// <summary>
+        /// 操作模块
+        /// </summary>
         [DisplayName("操作模块")]
         public string Title { get; set; }
 
-        /** 业务类型（0其它 1新增 2修改 3删除） */
-        //@Excel(name = "业务类型", readConverterExp = "0=其它,1=新增,2=修改,3=删除,4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据")
+        /// <summary>
+        /// 业务类型（0其它 1新增 2修改 3删除 4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据）
+        /// </summary>
         [DisplayName("业务类型")]
         public int BusinessType { get; set; }
 
-        /** 业务类型数组 */
+        /// <summary>
+        /// 业务类型数组
+        /// </summary>
         [SugarColumn(IsIgnore = true)]
         [ExcelIgnore]
         public int[] BusinessTypes { get; set; }
 
-        /** 请求方法 */
+        /// <summary>
+        /// 请求方法
+        /// </summary>
         [DisplayName("请求方法")]
         public string Method { get; set; }
 
-        /** 请求方式 */
+        /// <summary>
+        /// 请求方式
+        /// </summary>
         [DisplayName("请求方式")]
         public string RequestMethod { get; set; }
 

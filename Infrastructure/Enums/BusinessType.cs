@@ -1,64 +1,58 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Infrastructure.Enums
+﻿namespace Infrastructure.Enums
 {
-    /**
-     * 业务操作类型
-     * 0=其它,1=新增,2=修改,3=删除,4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据
-     * @author zrry
-     */
+    /// <summary>
+    /// 业务操作类型 0=其它,1=新增,2=修改,3=删除,4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据
+    /// </summary>
     public enum BusinessType
     {
-        /**
-     * 其它
-     */
+        /// <summary>
+        /// 其它
+        /// </summary>
         OTHER = 0,
 
-        /**
-         * 新增
-         */
+        /// <summary>
+        /// 新增
+        /// </summary>
         INSERT = 1,
 
-        /**
-         * 修改
-         */
+        /// <summary>
+        /// 修改
+        /// </summary>
         UPDATE = 2,
 
-        /**
-         * 删除
-         */
+        /// <summary>
+        /// 删除
+        /// </summary>
         DELETE = 3,
 
-        /**
-         * 授权
-         */
+        /// <summary>
+        /// 授权
+        /// </summary>
         GRANT = 4,
 
-        /**
-         * 导出
-         */
+        /// <summary>
+        /// 导出
+        /// </summary>
         EXPORT = 5,
 
-        /**
-         * 导入
-         */
+        /// <summary>
+        /// 导入
+        /// </summary>
         IMPORT = 6,
 
-        /**
-         * 强退
-         */
+        /// <summary>
+        /// 强退
+        /// </summary>
         FORCE = 7,
 
-        /**
-         * 生成代码
-         */
+        /// <summary>
+        /// 生成代码
+        /// </summary>
         GENCODE = 8,
 
-        /**
-         * 清空数据
-         */
+        /// <summary>
+        /// 清空数据
+        /// </summary>
         CLEAN = 9,
     }
 }

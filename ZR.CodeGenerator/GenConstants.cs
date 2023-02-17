@@ -31,28 +31,44 @@ namespace ZR.CodeGenerator
         public static readonly string[] radioFiled = new string[] { "status", "state", "is"};
 
 
-        /** 单表（增删改查） */
+        /// <summary>
+        /// 单表（增删改查）
+        /// </summary>
         public static string TPL_CRUD = "crud";
 
-        /** 树表（增删改查） */
+        /// <summary>
+        /// 树表（增删改查）
+        /// </summary>
         public static string TPL_TREE = "tree";
 
-        /** 主子表（增删改查） */
+        /// <summary>
+        /// 主子表（增删改查）
+        /// </summary>
         public static string TPL_SUB = "sub";
 
-        /** 树编码字段 */
+        /// <summary>
+        /// 树编码字段
+        /// </summary>
         public static string TREE_CODE = "treeCode";
 
-        /** 树父编码字段 */
+        /// <summary>
+        /// 树父编码字段
+        /// </summary>
         public static string TREE_PARENT_CODE = "treeParentCode";
 
-        /** 树名称字段 */
+        /// <summary>
+        /// 树名称字段
+        /// </summary>
         public static string TREE_NAME = "treeName";
 
-        /** 上级菜单ID字段 */
+        /// <summary>
+        /// 上级菜单ID字段
+        /// </summary>
         public static string PARENT_MENU_ID = "parentMenuId";
 
-        /** 上级菜单名称字段 */
+        /// <summary>
+        /// 上级菜单名称字段
+        /// </summary>
         public static string PARENT_MENU_NAME = "parentMenuName";
 
         /** 数据库字符串类型 */

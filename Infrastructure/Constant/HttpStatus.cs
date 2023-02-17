@@ -40,9 +40,9 @@ namespace Infrastructure.Constant
         /// </summary>
         public static readonly int NOT_MODIFIED = 304;
 
-        /**
-         * 参数列表错误（缺少，格式不匹配）
-         */
+        /// <summary>
+        /// 参数列表错误（缺少，格式不匹配）
+        /// </summary>
         public static readonly int BAD_REQUEST = 400;
 
         /// <summary>
@@ -50,39 +50,39 @@ namespace Infrastructure.Constant
         /// </summary>
         public static readonly int UNAUTHORIZED = 401;
 
-        /**
-         * 访问受限，授权过期
-         */
+        /// <summary>
+        /// 访问受限，授权过期
+        /// </summary>
         public static readonly int FORBIDDEN = 403;
 
-        /**
-         * 资源，服务未找到
-         */
+        /// <summary>
+        /// 资源，服务未找到
+        /// </summary>
         public static readonly int NOT_FOUND = 404;
 
-        /**
-         * 不允许的http方法
-         */
+        /// <summary>
+        /// 不允许的http方法
+        /// </summary>
         public static readonly int BAD_METHOD = 405;
 
-        /**
-         * 资源冲突，或者资源被锁
-         */
+        /// <summary>
+        /// 资源冲突，或者资源被锁
+        /// </summary>
         public static readonly int CONFLICT = 409;
 
-        /**
-         * 不支持的数据，媒体类型
-         */
+        /// <summary>
+        /// 不支持的数据，媒体类型
+        /// </summary>
         public static readonly int UNSUPPORTED_TYPE = 415;
 
-        /**
-         * 系统内部错误
-         */
+        /// <summary>
+        /// 系统内部错误
+        /// </summary>
         public static readonly int ERROR = 500;
 
-        /**
-         * 接口未实现
-         */
+        /// <summary>
+        /// 接口未实现
+        /// </summary>
         public static readonly int NOT_IMPLEMENTED = 501;
     }
 }
