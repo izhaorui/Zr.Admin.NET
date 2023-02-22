@@ -9,11 +9,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AspectCore.Abstractions" Version="2.2.0" />
+    <PackageReference Include="AspectCore.Abstractions" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
     <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
 </Project>

@@ -22,9 +22,9 @@
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="AspNetCoreRateLimit" Version="4.0.2" />
+		<PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.6" />
 		<PackageReference Include="UAParser" Version="3.1.47" />
 		<PackageReference Include="IPTools.China" Version="1.6.0" />
