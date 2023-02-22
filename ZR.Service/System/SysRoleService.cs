@@ -45,14 +45,13 @@ namespace ZR.Service
             exp.AndIF(!string.IsNullOrEmpty(sysRole.Status), role => role.Status == sysRole.Status);
             exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleKey), role => role.RoleKey == sysRole.RoleKey);
 
-            var query = Context.Queryable<SysRole>()
+            var query = Queryable()
                 .Where(exp.ToExpression())
                 .OrderBy(x => x.RoleSort)
                 .Select((role) => new SysRole
                 {
-                    RoleId = role.RoleId.SelectAll(),
                     UserNum = SqlFunc.Subqueryable<SysUserRole>().Where(f => f.RoleId == role.RoleId).Count()
-                });
+                }, true);
 
             return query.ToPage(pager);
         }
