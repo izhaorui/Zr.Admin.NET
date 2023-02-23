@@ -18,7 +18,7 @@ namespace ZR.Admin.WebApi.Middleware
 {
     /// <summary>
     /// 全局异常处理中间件
-    /// 调用 app.UseMiddleware<GlobalExceptionMiddleware>();
+    /// 调用 app.UseMiddlewareGlobalExceptionMiddleware>();
     /// </summary>
     public class GlobalExceptionMiddleware
     {
