@@ -5,17 +5,10 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>1701;1702;1591</NoWarn>
+	</PropertyGroup>
 
-	<ItemGroup>
-		<Compile Remove="Middleware\**" />
-		<Content Remove="Middleware\**" />
-		<EmbeddedResource Remove="Middleware\**" />
-		<None Remove="Middleware\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Compile Include="Middleware\GlobalExceptionMiddleware.cs" />
-	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\ZR.CodeGenerator\ZR.CodeGenerator.csproj" />
 		<ProjectReference Include="..\ZR.Service\ZR.Service.csproj" />
@@ -39,8 +32,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="ip2region.db">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
+		<None Update="ip2region.db">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 </Project>
