@@ -1,4 +1,5 @@
-﻿using SqlSugar;
+﻿using Infrastructure;
+using SqlSugar;
 using System.Collections.Generic;
 using System.Linq;
 using ZR.Model;
@@ -14,6 +15,13 @@ namespace ZR.CodeGenerator.Service
         public List<string> GetAllDataBases()
         {
             var db = GetSugarDbContext();
+            //Oracle库特殊处理
+            var dbType = AppSettings.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
+            if (dbType == 3)
+            {
+                var defaultDb = AppSettings.GetAppConfig(GenConstants.Gen_oracle_db, string.Empty);
+                return new List<string>() { defaultDb };
+            }
             var templist = db.DbMaintenance.GetDataBaseList(db);
 
             return templist;

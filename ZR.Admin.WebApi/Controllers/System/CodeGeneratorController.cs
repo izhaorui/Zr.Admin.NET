@@ -54,7 +54,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult GetListDataBase()
         {
             var dbList = _CodeGeneraterService.GetAllDataBases();
-            var defaultDb = dbList.Count > 0 ? dbList[0] : null;
+            var defaultDb = dbList?[0];
             return SUCCESS(new { dbList, defaultDb });
         }
 
