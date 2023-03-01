@@ -35,7 +35,7 @@
 | ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
 | Vue2 + Net5 |                                                                  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/)             |
 | Vue3        |                                                                  | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
-| Net7        |                                                                  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
+| Vue2 + Net7 |                                                                  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
 
 ## 🍁前端技术
 Vue版前端技术栈 ：基于vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios、 element-ui、echats、i18n国际化等，前端采用vscode工具开发
