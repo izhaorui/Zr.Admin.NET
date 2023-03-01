@@ -63,12 +63,12 @@ namespace ZR.Admin.WebApi.Extensions
             db.GetConnectionScope(configId).Aop.OnLogExecuting = (sql, pars) =>
             {
                 string log = $"【db{configId} SQL语句】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
-                if (sql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                    logger.Info(log);
                 if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
                     logger.Warn(log);
-                if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("TRUNCATE", StringComparison.OrdinalIgnoreCase))
+                else if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("TRUNCATE", StringComparison.OrdinalIgnoreCase))
                     logger.Error(log);
+                else
+                    logger.Info(log);
             };
 
             db.GetConnectionScope(configId).Aop.OnError = (e) =>
@@ -138,8 +138,9 @@ namespace ZR.Admin.WebApi.Extensions
                 }
                 else if (DATA_SCOPE_SELF.Equals(dataScope))//仅本人数据
                 {
-                    var filter1 = new TableFilterItem<SysUser>(it => it.UserId == user.UserId, true);
-                    db.QueryFilter.Add(filter1);
+                    //var filter1 = new TableFilterItem<SysUser>(it => it.UserId == user.UserId, true);
+                    //db.QueryFilter.Add(filter1);
+                    db.QueryFilter.AddTableFilter<SysUser>(it => it.UserId == user.UserId);
                 }
             }
         }
