@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Newtonsoft.Json;
-using ${options.ModelsNamespace}.Dto;
-using ${options.ModelsNamespace}.Models;
+//using ${options.ModelsNamespace}.${options.SubNamespace};
 $if(replaceDto.ShowBtnExport)
 using MiniExcelLibs.Attributes;
 $end
 
-namespace ${options.DtosNamespace}.Dto
+namespace ${options.DtosNamespace}
 {
     /// <summary>
     /// ${genTable.FunctionName}查询对象

@@ -18,10 +18,10 @@
         /// 输入输出数据实体名称空间
         /// </summary>
         public string DtosNamespace { get; set; }
-        /// <summary>
-        /// 仓储接口命名空间
-        /// </summary>
-        public string IRepositoriesNamespace { get; set; }
+        ///// <summary>
+        ///// 仓储接口命名空间
+        ///// </summary>
+        //public string IRepositoriesNamespace { get; set; }
         /// <summary>
         /// 仓储实现名称空间
         /// </summary>

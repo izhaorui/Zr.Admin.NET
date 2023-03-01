@@ -19,10 +19,6 @@ namespace ZR.CodeGenerator
     public class CodeGeneratorTool
     {
         private static readonly string CodeTemplateDir = "CodeGenTemplate";
-        /// <summary>
-        /// 代码生成器配置
-        /// </summary>
-        private static CodeGenerateOption _option = new CodeGenerateOption();
 
         /// <summary>
         /// 代码生成器入口方法
@@ -30,26 +26,14 @@ namespace ZR.CodeGenerator
         /// <param name="dto"></param>
         public static void Generate(GenerateDto dto)
         {
-            _option.BaseNamespace = dto.GenTable.BaseNameSpace;
-            _option.SubNamespace = dto.GenTable.ModuleName.FirstUpperCase();
-            _option.DtosNamespace = _option.BaseNamespace + "Model";
-            _option.ModelsNamespace = _option.BaseNamespace + "Model";
-            _option.RepositoriesNamespace = _option.BaseNamespace + "Repository";
-            _option.IRepositoriesNamespace = _option.BaseNamespace + "Repository";
-            _option.IServicsNamespace = _option.BaseNamespace + "Service";
-            _option.ServicesNamespace = _option.BaseNamespace + "Service";
-            _option.ApiControllerNamespace = _option.BaseNamespace + "Admin.WebApi";
-
             var vuePath = AppSettings.GetConfig("gen:vuePath");
             dto.VueParentPath = dto.VueVersion == 3 ? "ZRAdmin-vue" : "ZR.Vue";
             if (!vuePath.IsEmpty())
             {
                 dto.VueParentPath = vuePath;
             }
-            dto.GenOptions = _option;
+            dto.GenOptions = GenerateOption(dto.GenTable); ;
 
-            string PKName = "Id";
-            string PKType = "int";
             ReplaceDto replaceDto = new()
             {
                 ModelTypeName = dto.GenTable.ClassName,//表名对应C# 实体类名
@@ -61,6 +45,8 @@ namespace ZR.CodeGenerator
                 ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4),
                 ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5),
                 ShowBtnTruncate = dto.GenTable.Options.CheckedBtn.Any(f => f == 6),
+                PKName = "Id",
+                PKType = "int"
             };
 
             //循环表字段信息
@@ -68,8 +54,8 @@ namespace ZR.CodeGenerator
             {
                 if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
                 {
-                    PKName = dbFieldInfo.CsharpField;
-                    PKType = dbFieldInfo.CsharpType;
+                    replaceDto.PKName = dbFieldInfo.CsharpField;
+                    replaceDto.PKType = dbFieldInfo.CsharpType;
                 }
                 if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD) || dbFieldInfo.HtmlType.Equals(GenConstants.HTML_FILE_UPLOAD))
                 {
@@ -86,9 +72,7 @@ namespace ZR.CodeGenerator
                 dbFieldInfo.CsharpFieldFl = dbFieldInfo.CsharpField.FirstLowerCase();
             }
 
-            replaceDto.PKName = PKName;
-            replaceDto.PKType = PKType;
-            replaceDto.FistLowerPk = PKName.FirstLowerCase();
+            replaceDto.FistLowerPk = replaceDto.PKName.FirstLowerCase();
             InitJntTemplate(dto, replaceDto);
 
             GenerateModels(replaceDto, dto);
@@ -122,6 +106,23 @@ namespace ZR.CodeGenerator
             }
         }
 
+        private static CodeGenerateOption GenerateOption(GenTable genTable)
+        {
+            CodeGenerateOption _option = new()
+            {
+                BaseNamespace = genTable.BaseNameSpace,
+                SubNamespace = genTable.ModuleName.FirstUpperCase()
+            };
+            _option.DtosNamespace = _option.BaseNamespace + "Model.Dto";
+            _option.ModelsNamespace = _option.BaseNamespace + "Model";
+            _option.RepositoriesNamespace = _option.BaseNamespace + "Repository";
+            //_option.IRepositoriesNamespace = _option.BaseNamespace + "Repository";
+            _option.IServicsNamespace = _option.BaseNamespace + "Service";
+            _option.ServicesNamespace = _option.BaseNamespace + "Service";
+            _option.ApiControllerNamespace = _option.BaseNamespace + "Admin.WebApi";
+            return _option;
+        }
+
         #region 读取模板
 
         /// <summary>
@@ -134,8 +135,8 @@ namespace ZR.CodeGenerator
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplModel.txt");
             var tplDto = JnHelper.ReadTemplate(CodeTemplateDir, "TplDto.txt");
 
-            string fullPath = Path.Combine(_option.ModelsNamespace, "Models", _option.SubNamespace, replaceDto.ModelTypeName + ".cs");
-            string fullPathDto = Path.Combine(_option.ModelsNamespace, "Dto", _option.SubNamespace, $"{replaceDto.ModelTypeName}Dto.cs");
+            string fullPath = Path.Combine(generateDto.GenOptions.ModelsNamespace, "Models", generateDto.GenOptions.SubNamespace, replaceDto.ModelTypeName + ".cs");
+            string fullPathDto = Path.Combine(generateDto.GenOptions.ModelsNamespace, "Dto", generateDto.GenOptions.SubNamespace, replaceDto.ModelTypeName + "Dto.cs");
 
             generateDto.GenCodes.Add(new GenCode(1, "Model.cs", fullPath, tpl.Render()));
             generateDto.GenCodes.Add(new GenCode(2, "Dto.cs", fullPathDto, tplDto.Render()));
@@ -150,7 +151,7 @@ namespace ZR.CodeGenerator
         {
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplRepository.txt");
             var result = tpl.Render();
-            var fullPath = Path.Combine(_option.RepositoriesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Repository.cs");
+            var fullPath = Path.Combine(generateDto.GenOptions.RepositoriesNamespace, generateDto.GenOptions.SubNamespace, $"{replaceDto.ModelTypeName}Repository.cs");
 
             generateDto.GenCodes.Add(new GenCode(3, "Repository.cs", fullPath, result));
         }
@@ -163,8 +164,8 @@ namespace ZR.CodeGenerator
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplService.txt");
             var tpl2 = JnHelper.ReadTemplate(CodeTemplateDir, "TplIService.txt");
 
-            var fullPath = Path.Combine(_option.ServicesNamespace, _option.SubNamespace, $"{replaceDto.ModelTypeName}Service.cs");
-            var fullPath2 = Path.Combine(_option.IServicsNamespace, _option.SubNamespace, $"I{_option.SubNamespace}Service", $"I{replaceDto.ModelTypeName}Service.cs");
+            var fullPath = Path.Combine(generateDto.GenOptions.ServicesNamespace, generateDto.GenOptions.SubNamespace, $"{replaceDto.ModelTypeName}Service.cs");
+            var fullPath2 = Path.Combine(generateDto.GenOptions.IServicsNamespace, generateDto.GenOptions.SubNamespace, $"I{generateDto.GenOptions.SubNamespace}Service", $"I{replaceDto.ModelTypeName}Service.cs");
 
             generateDto.GenCodes.Add(new GenCode(4, "Service.cs", fullPath, tpl.Render()));
             generateDto.GenCodes.Add(new GenCode(4, "IService.cs", fullPath2, tpl2.Render()));
@@ -179,7 +180,7 @@ namespace ZR.CodeGenerator
             tpl.Set("QueryCondition", replaceDto.QueryCondition);
             var result = tpl.Render();
 
-            var fullPath = Path.Combine(_option.ApiControllerNamespace, "Controllers", _option.SubNamespace, $"{replaceDto.ModelTypeName}Controller.cs");
+            var fullPath = Path.Combine(generateDto.GenOptions.ApiControllerNamespace, "Controllers", generateDto.GenOptions.SubNamespace, $"{replaceDto.ModelTypeName}Controller.cs");
             generateDto.GenCodes.Add(new GenCode(5, "Controller.cs", fullPath, result));
         }
 
@@ -406,11 +407,6 @@ namespace ZR.CodeGenerator
             return sTempDatatype;
         }
 
-        public static bool IsNumber(string tableDataType)
-        {
-            string[] arr = new string[] { "int", "long" };
-            return arr.Any(f => f.Contains(GetCSharpDatatype(tableDataType)));
-        }
         #endregion
 
         #region 初始化信息

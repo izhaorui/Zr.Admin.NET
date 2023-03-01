@@ -2,7 +2,7 @@
 using SqlSugar;
 using System.Collections.Generic;
 
-namespace ${options.ModelsNamespace}.Models
+namespace ${options.ModelsNamespace}.${options.SubNamespace}
 {
     /// <summary>
     /// ${genTable.FunctionName}，数据实体对象

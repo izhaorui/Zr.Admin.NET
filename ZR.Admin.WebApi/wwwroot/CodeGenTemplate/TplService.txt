@@ -1,10 +1,10 @@
 ﻿using System;
 using SqlSugar;
 using Infrastructure.Attribute;
-using ${options.ModelsNamespace};
-using ${options.ModelsNamespace}.Dto;
-using ${options.ModelsNamespace}.Models;
-using ${options.IRepositoriesNamespace};
+using ${options.BaseNamespace}Model;
+using ${options.DtosNamespace};
+using ${options.ModelsNamespace}.${options.SubNamespace};
+using ${options.RepositoriesNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
 using System.Linq;
 $if(genTable.TplCategory == "tree")
@@ -120,7 +120,7 @@ ${end}
             //return response;
             return Update(model, true);
         }
-
+$if(replaceDto.ShowBtnTruncate)
         /// <summary>
         /// 清空${genTable.FunctionName}
         /// </summary>
@@ -129,6 +129,7 @@ ${end}
         {
             Truncate();
         }
+$end
         #endregion
     }
 }

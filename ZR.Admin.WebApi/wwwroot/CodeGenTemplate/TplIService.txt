@@ -1,7 +1,7 @@
 ﻿using System;
-using ${options.ModelsNamespace};
-using ${options.ModelsNamespace}.Dto;
-using ${options.ModelsNamespace}.Models;
+using ${options.BaseNamespace}Model;
+using ${options.DtosNamespace};
+using ${options.ModelsNamespace}.${options.SubNamespace};
 using System.Collections.Generic;
 
 namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service
@@ -22,7 +22,8 @@ $end
         int Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm);
 
         int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm);
-        
+$if(replaceDto.ShowBtnTruncate)        
         void Truncate${replaceDto.ModelTypeName}();
+$end
     }
 }
