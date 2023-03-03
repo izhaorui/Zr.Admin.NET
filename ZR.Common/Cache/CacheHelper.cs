@@ -106,6 +106,18 @@ namespace ZR.Common
         {
             Cache.Remove(key);
         }
+
+        /// <summary>
+        /// 验证缓存项是否存在
+        /// </summary>
+        /// <param name="key">缓存Key</param>
+        /// <returns></returns>
+        public static bool Exists(string key)
+        {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            return Cache.TryGetValue(key, out _);
+        }
     }
 }
 

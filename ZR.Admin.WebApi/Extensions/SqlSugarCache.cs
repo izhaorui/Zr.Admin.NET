@@ -1,4 +1,5 @@
-﻿using ZR.Common.Cache;
+﻿using ZR.Common;
+using ZR.Common.Cache;
 
 namespace ZR.Admin.WebApi.Extensions
 {
@@ -6,22 +7,26 @@ namespace ZR.Admin.WebApi.Extensions
     {
         public void Add<V>(string key, V value)
         {
-            RedisServer.Cache.Set(key, value, 3600 + RedisHelper.RandomExpired(5, 30));
+            //RedisServer.Cache.Set(key, value, 3600 + RedisHelper.RandomExpired(5, 30));
+            CacheHelper.SetCache(key, value);
         }
 
         public void Add<V>(string key, V value, int cacheDurationInSeconds)
         {
-            RedisServer.Cache.Set(key, value, cacheDurationInSeconds);
+            //RedisServer.Cache.Set(key, value, cacheDurationInSeconds);
+            CacheHelper.SetCaches(key, value, cacheDurationInSeconds);
         }
 
         public bool ContainsKey<V>(string key)
         {
-            return RedisServer.Cache.Exists(key);
+            //return RedisServer.Cache.Exists(key);
+            return CacheHelper.Exists(key);
         }
 
         public V Get<V>(string key)
         {
-            return RedisServer.Cache.Get<V>(key);
+            //return RedisServer.Cache.Get<V>(key);
+            return (V)CacheHelper.Get(key);
         }
 
         public IEnumerable<string> GetAllKey<V>()
