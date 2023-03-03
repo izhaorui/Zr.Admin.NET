@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using System;
+using System.Collections.Generic;
+using System.Collections;
+using System.Reflection;
 
 namespace ZR.Common
 {
@@ -105,6 +108,25 @@ namespace ZR.Common
         public static void Remove(string key)
         {
             Cache.Remove(key);
+        }
+
+
+        /// <summary>
+        /// 获取所有缓存键
+        /// </summary>
+        /// <returns></returns>
+        public static List<string> GetCacheKeys()
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var entries = Cache.GetType().GetField("_entries", flags).GetValue(Cache);
+            var keys = new List<string>();
+            if (entries is not IDictionary cacheItems) return keys;
+            foreach (DictionaryEntry cacheItem in cacheItems)
+            {
+                keys.Add(cacheItem.Key.ToString());
+                Console.WriteLine(cacheItem.Key);
+            }
+            return keys;
         }
     }
 }
