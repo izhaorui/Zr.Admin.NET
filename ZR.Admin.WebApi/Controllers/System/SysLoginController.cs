@@ -67,7 +67,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Route("login")]
         [HttpPost]
-        //[Log(Title = "登录")]
+        [Log(Title = "登录")]
         public IActionResult Login([FromBody] LoginBodyDto loginBody)
         {
             if (loginBody == null) { throw new CustomException("请求参数错误"); }
