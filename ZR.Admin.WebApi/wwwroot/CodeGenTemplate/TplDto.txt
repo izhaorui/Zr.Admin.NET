@@ -5,6 +5,9 @@ using System.ComponentModel.DataAnnotations;
 $if(replaceDto.ShowBtnExport)
 using MiniExcelLibs.Attributes;
 $end
+$if(null != genTable.SubTableName && "" != genTable.SubTableName)
+using ${subTableOptions.ModelsNamespace}.${subTableOptions.SubNamespace};
+$end
 
 namespace ${options.DtosNamespace}
 {
@@ -54,14 +57,14 @@ $if(genTable.TplCategory == "subNav" && genTable.SubTable != null)
 $if(replaceDto.ShowBtnExport)
         [ExcelIgnore]
 $end
-        public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName} { get; set; }
+        public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName}Nav { get; set; }
 $end
 
 $if(genTable.TplCategory == "subNavMore" && genTable.SubTable != null)
 $if(replaceDto.ShowBtnExport)
         [ExcelIgnore]
 $end
-        public List<${genTable.SubTable.ClassName}> ${genTable.SubTable.ClassName} { get; set; }
+        public List<${genTable.SubTable.ClassName}> ${genTable.SubTable.ClassName}Nav { get; set; }
 $end
     }
 }

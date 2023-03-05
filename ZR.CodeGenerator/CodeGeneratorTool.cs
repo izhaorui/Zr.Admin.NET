@@ -32,7 +32,11 @@ namespace ZR.CodeGenerator
             {
                 dto.VueParentPath = vuePath;
             }
-            dto.GenOptions = GenerateOption(dto.GenTable); ;
+            dto.GenOptions = GenerateOption(dto.GenTable);
+            if (dto.GenTable.SubTable != null)
+            {
+                dto.SubTableOptions = GenerateOption(dto.GenTable.SubTable);
+            }
 
             ReplaceDto replaceDto = new()
             {
@@ -45,33 +49,15 @@ namespace ZR.CodeGenerator
                 ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4),
                 ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5),
                 ShowBtnTruncate = dto.GenTable.Options.CheckedBtn.Any(f => f == 6),
-                PKName = "Id",
-                PKType = "int"
             };
+            var columns = dto.GenTable.Columns;
 
-            //循环表字段信息
-            foreach (GenTableColumn dbFieldInfo in dto.GenTable.Columns.OrderBy(x => x.Sort))
-            {
-                if (dbFieldInfo.IsPk || dbFieldInfo.IsIncrement)
-                {
-                    replaceDto.PKName = dbFieldInfo.CsharpField;
-                    replaceDto.PKType = dbFieldInfo.CsharpType;
-                }
-                if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD) || dbFieldInfo.HtmlType.Equals(GenConstants.HTML_FILE_UPLOAD))
-                {
-                    replaceDto.UploadFile = 1;
-                }
-                if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_SELECT_MULTI))
-                {
-                    replaceDto.SelectMulti = 1;
-                }
-                if (dbFieldInfo.HtmlType.Equals(GenConstants.HTML_EDITOR))
-                {
-                    replaceDto.ShowEditor = 1;
-                }
-                dbFieldInfo.CsharpFieldFl = dbFieldInfo.CsharpField.FirstLowerCase();
-            }
+            replaceDto.PKName = columns.Find(f => f.IsPk || f.IsIncrement).CsharpField ?? "Id"; 
+            replaceDto.PKType = columns.Find(f => f.IsPk || f.IsIncrement).CsharpType ?? "int";
 
+            replaceDto.UploadFile = columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD) || f.HtmlType.Equals(GenConstants.HTML_FILE_UPLOAD)) ? 1 : 0;
+            replaceDto.SelectMulti = columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_SELECT_MULTI)) ? 1 : 0;
+            replaceDto.ShowEditor = columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_EDITOR)) ? 1 : 0;
             replaceDto.FistLowerPk = replaceDto.PKName.FirstLowerCase();
             InitJntTemplate(dto, replaceDto);
 
@@ -188,27 +174,12 @@ namespace ZR.CodeGenerator
         /// 生成Vue页面
         private static void GenerateVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            string fileName = string.Empty;
-            switch (generateDto.GenTable.TplCategory)
+            string fileName = generateDto.GenTable.TplCategory switch
             {
-                case "tree":
-                    fileName = "TplTreeVue.txt";
-                    break;
-                case "crud":
-                    fileName = "TplVue.txt";
-                    break;
-                case "subNav":
-                    fileName = "TplVue.txt";
-                    break;
-                case "subNavMore":
-                    fileName = "TplVue.txt";
-                    break;
-                case "select":
-                    fileName = "TplVueSelect.txt";
-                    break;
-                default:
-                    break;
-            }
+                "tree" => "TplTreeVue.txt",
+                "select" => "TplVueSelect.txt",
+                _ => "TplVue.txt",
+            };
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
             tpl.Set("vueQueryFormHtml", replaceDto.VueQueryFormHtml);
             tpl.Set("VueViewFormContent", replaceDto.VueViewFormHtml);//添加、修改表单
@@ -230,10 +201,6 @@ namespace ZR.CodeGenerator
             string fileName = generateDto.GenTable.TplCategory switch
             {
                 "tree" => "TreeVue.txt",
-                "crud" => "Vue.txt",
-                //case "select":
-                //    fileName = "TplVueSelect.txt";
-                //    break;
                 _ => "Vue.txt",
             };
             fileName = Path.Combine("v3", fileName);
@@ -557,7 +524,9 @@ namespace ZR.CodeGenerator
                 options.Data.Set("nextTick", "$");
                 options.Data.Set("replaceDto", replaceDto);
                 options.Data.Set("options", dto.GenOptions);
+                options.Data.Set("subTableOptions", dto.SubTableOptions);
                 options.Data.Set("genTable", dto.GenTable);
+                options.Data.Set("genSubTable", dto.GenTable?.SubTable);
                 options.Data.Set("showCustomInput", showCustomInput);
                 options.Data.Set("tool", new CodeGeneratorTool());
                 options.Data.Set("codeTool", new CodeGenerateTemplate());

@@ -1,6 +1,9 @@
 ﻿using System;
 using SqlSugar;
 using System.Collections.Generic;
+$if(genTable.TplCategory.Contains("subNav") && genTable.SubTable != null)
+using ${subTableOptions.ModelsNamespace}.${subTableOptions.SubNamespace};
+$end
 
 namespace ${options.ModelsNamespace}.${options.SubNamespace}
 {
@@ -38,12 +41,12 @@ $if(genTable.TplCategory == "tree")
         public List<${replaceDto.ModelTypeName}> Children { get; set; }
 $end
 $if(genTable.TplCategory == "subNav" && genTable.SubTable != null)
-        [Navigate(NavigateType.Dynamic, null)] //自定义关系映射
-        public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName} { get; set; }
+        [Navigate(NavigateType.OneToOne, nameof(${replaceDto.PKName}))] //自定义关系映射
+        public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName}Nav { get; set; }
 $end
 $if(genTable.TplCategory == "subNavMore" && genTable.SubTable != null)
-        [Navigate(NavigateType.Dynamic, null)] //自定义关系映射
-        public List<${genTable.SubTable.ClassName}> ${genTable.SubTable.ClassName} { get; set; }
+        [Navigate(NavigateType.OneToMany, nameof(${genTable.SubTable.ClassName}.${genTable.SubTableFkName}), nameof(${replaceDto.PKName}))] //自定义关系映射
+        public List<${genTable.SubTable.ClassName}> ${genTable.SubTable.ClassName}Nav { get; set; }
 $end
     }
 }

@@ -23,7 +23,14 @@ namespace ZR.CodeGenerator.Model
         /// </summary>
         public int[] CheckedBtn { get; set; } = System.Array.Empty<int>();
         public GenTable GenTable { get; set; }
+        /// <summary>
+        /// 主表属性
+        /// </summary>
         public CodeGenerateOption GenOptions { get; set; }
+        /// <summary>
+        /// 子表属性
+        /// </summary>
+        public CodeGenerateOption SubTableOptions { get; set; }
         #region 存储路径
         /// <summary>
         /// 代码模板预览存储路径存放

@@ -114,18 +114,36 @@ $end
       @sort-change="sortChange" 
       @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center"/>
+$if(null != genTable.SubTableName && "" != genTable.SubTableName && genTable.TplCategory == "subNav")
+      <el-table-column type="expand">
+        <template #default="props">
+          <el-descriptions border>
+$foreach(subColumn in genSubTable.Columns)
+            <el-descriptions-item label="${subColumn.ColumnComment}">{{ props.row.$tool.FirstLowerCase(genTable.SubTable.ClassName)Nav.${subColumn.CsharpFieldFl} }}</el-descriptions-item>
+$end
+          </el-descriptions>
+        </template>
+      </el-table-column>
+$end
+$if(null != genTable.SubTableName && "" != genTable.SubTableName && genTable.TplCategory == "subNavMore")
+      <el-table-column type="expand">
+        <template #default="props">
+          <el-table :data="props.row.$tool.FirstLowerCase(genTable.SubTable.ClassName)Nav">
+$foreach(subColumn in genSubTable.Columns)
+$if(subColumn.IsList == true)
+            <el-table-column prop="${subColumn.CsharpFieldFl}" label="${subColumn.ColumnComment}" align="center"/>
+$end
+$end
+        </el-table>
+        </template>
+      </el-table-column>
+$end
 $foreach(column in genTable.Columns)
-$set(labelName = "")
-$set(checkboxHtml = "")
+$set(labelName = column.ColumnComment)
 $set(showToolTipHtml = "")
 $set(columnName = column.CsharpFieldFl)
 $if(column.CsharpType == "string" || column.HtmlType == "datetime")
 $set(showToolTipHtml = " :show-overflow-tooltip=\"true\"")
-$end
-$if(column.ColumnComment != "")
-$set(labelName = column.ColumnComment)
-$else
-$set(labelName = column.CsharpFieldFl)
 $end
 $if(column.IsList == true)
 $if(column.HtmlType == "customInput" && column.IsPk == false)
@@ -192,14 +210,9 @@ $end
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
 $foreach(column in genTable.Columns)
-$set(labelName = "")
 $set(columnName = column.CsharpFieldFl)
 $set(value = "item.dictValue")
-$if(column.ColumnComment != "")
 $set(labelName = column.ColumnComment)
-$else
-$set(labelName = column.CsharpFieldFl)
-$end
 $if(column.CsharpType == "int" || column.CsharpType == "long")
     $set(value = "parseInt(item.dictValue)")
 $end

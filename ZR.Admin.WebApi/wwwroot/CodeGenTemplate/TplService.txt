@@ -51,7 +51,7 @@ $end
 $end
             var response = Queryable()
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
-                .Includes(it => it.${genTable.SubTable.ClassName}.MappingField(z => z.${genTable.SubTableFkName}, () => it.${replaceDto.PKName}))
+                .Includes(x => x.${genTable.SubTable.ClassName}Nav) //填充子对象
 $end
 $if(genTable.Options.SortField != "" && genTable.Options.SortField != null)
                 //.OrderBy("${genTable.Options.SortField} ${genTable.Options.SortType}")

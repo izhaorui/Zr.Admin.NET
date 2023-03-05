@@ -102,7 +102,6 @@ $end
       <el-table-column type="selection" width="50" align="center"/>
 $foreach(column in genTable.Columns)
 $set(labelName = "")
-$set(checkboxHtml = "")
 $set(showToolTipHtml = "")
 $set(columnName = column.CsharpFieldFl)
 $if(column.CsharpType == "string" || column.HtmlType == "datetime")

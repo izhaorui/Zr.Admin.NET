@@ -25,7 +25,18 @@ namespace ZR.Model.System.Generate
         /// <summary>
         /// 列说明
         /// </summary>
-        public string ColumnComment { get; set; } = string.Empty;
+        private string columnComment;
+        public string ColumnComment
+        {
+            get
+            {
+                return string.IsNullOrEmpty(columnComment) ? CsharpField : columnComment;
+            }
+            set
+            {
+                columnComment = value;
+            }
+        }
         /// <summary>
         /// 数据库列类型
         /// </summary>
@@ -121,7 +132,13 @@ namespace ZR.Model.System.Generate
         /// C# 字段名 首字母小写，用于前端
         /// </summary>
         [SugarColumn(IsIgnore = true)]
-        public string CsharpFieldFl { get; set; }
+        public string CsharpFieldFl
+        {
+            get
+            {
+                return CsharpField[..1].ToLower() + CsharpField[1..];
+            }
+        }
         /// <summary>
         /// 前端 只读字段
         /// </summary>
