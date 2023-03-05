@@ -110,6 +110,18 @@ namespace ZR.Common
             Cache.Remove(key);
         }
 
+        /// <summary>
+        /// 验证缓存项是否存在
+        /// </summary>
+        /// <param name="key">缓存Key</param>
+        /// <returns></returns>
+        public static bool Exists(string key)
+        {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            return Cache.TryGetValue(key, out _);
+        }
+
 
         /// <summary>
         /// 获取所有缓存键
@@ -118,13 +130,18 @@ namespace ZR.Common
         public static List<string> GetCacheKeys()
         {
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-            var entries = Cache.GetType().GetField("_entries", flags).GetValue(Cache);
+            //var entries = Cache.GetType().GetField("_entries", flags).GetValue(Cache);
+
+            //.net7需要这样写 
+            var coherentState = Cache.GetType().GetField("_coherentState", flags).GetValue(Cache);
+            var entries = coherentState.GetType().GetField("_entries", flags).GetValue(coherentState);
+
             var keys = new List<string>();
             if (entries is not IDictionary cacheItems) return keys;
             foreach (DictionaryEntry cacheItem in cacheItems)
             {
                 keys.Add(cacheItem.Key.ToString());
-                Console.WriteLine(cacheItem.Key);
+                //Console.WriteLine("缓存key=" +cacheItem.Key);
             }
             return keys;
         }

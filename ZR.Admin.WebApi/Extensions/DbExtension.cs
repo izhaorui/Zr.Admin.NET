@@ -43,6 +43,7 @@ namespace ZR.Admin.WebApi.Extensions
                    //...增加其他数据库
                 };
             SugarIocServices.AddSqlSugar(iocList);
+            ICacheService cache = new SqlSugarCache();
             SugarIocServices.ConfigurationSugar(db =>
             {
                 //db0数据过滤
@@ -50,12 +51,12 @@ namespace ZR.Admin.WebApi.Extensions
 
                 iocList.ForEach(iocConfig =>
                 {
-                   SetSugarAop(db, iocConfig);
+                    SetSugarAop(db, iocConfig, cache);
                 });
             });
         }
 
-        private static void SetSugarAop(SqlSugarClient db, IocConfig iocConfig)
+        private static void SetSugarAop(SqlSugarClient db, IocConfig iocConfig, ICacheService cache)
         {
             var config = db.GetConnection(iocConfig.ConfigId).CurrentConnectionConfig;
             
@@ -75,6 +76,15 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 logger.Error(e, $"执行SQL出错：{e.Message}");
+            };
+
+            db.GetConnectionScope(configId).CurrentConnectionConfig.MoreSettings = new ConnMoreSettings()
+            {
+                IsAutoRemoveDataCache = true
+            };
+            db.GetConnectionScope(configId).CurrentConnectionConfig.ConfigureExternalServices = new ConfigureExternalServices()
+            {
+                DataInfoCacheService = cache
             };
         }
 

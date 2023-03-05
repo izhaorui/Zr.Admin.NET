@@ -40,25 +40,25 @@ namespace ZR.Service.System
         public List<SysDictData> SelectDictDataByType(string dictType)
         {
             string CK = $"SelectDictDataByType_{dictType}";
-            if (CacheHelper.GetCache(CK) is not List<SysDictData> list)
-            {
-                list = Queryable().Where(f => f.Status == "0" && f.DictType == dictType)
-                .OrderBy(it => it.DictSort)
-                .ToList();
-                CacheHelper.SetCache(CK, list, 30);
-            }
+
+            var list = Queryable()
+                .WithCache(CK, 60 * 10)
+                .Where(f => f.Status == "0" && f.DictType == dictType)
+            .OrderBy(it => it.DictSort)
+            .ToList();
+
             return list;
         }
         public List<SysDictData> SelectDictDataByTypes(string[] dictTypes)
         {
             string CK = $"SelectDictDataByTypes_{dictTypes}";
-            if (CacheHelper.GetCache(CK) is not List<SysDictData> list)
-            {
-                list = Queryable().Where(f => f.Status == "0" && dictTypes.Contains(f.DictType))
-                .OrderBy(it => it.DictSort)
-                .ToList();
-                //CacheHelper.SetCache(CK, list, 30);
-            }
+
+            var list = Queryable()
+            .WithCache(CK, 60 * 30)
+            .Where(f => f.Status == "0" && dictTypes.Contains(f.DictType))
+            .OrderBy(it => it.DictSort)
+            .ToList();
+
             return list;
         }
         /// <summary>
