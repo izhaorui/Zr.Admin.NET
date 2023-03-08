@@ -8,6 +8,7 @@ using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Middleware;
 using ZR.Admin.WebApi.Hubs;
+using ZR.Common.Cache;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,7 +33,8 @@ builder.Services.AddCors(c =>
         .AllowAnyMethod();//允许任意方法
     });
 });
-
+// 显示logo
+builder.Services.AddLogo();
 //注入SignalR实时通讯，默认用json传输
 builder.Services.AddSignalR();
 //消除Error unprotecting the session cookie警告
@@ -65,10 +67,12 @@ builder.Services.AddTaskSchedulers();
 DbExtension.AddDb(builder.Configuration);
 
 //注册REDIS 服务
-Task.Run(() =>
+var openRedis = builder.Configuration["RedisServer:open"];
+if (openRedis == "1")
 {
-    //RedisServer.Initalize();
-});
+    RedisServer.Initalize();
+}
+
 builder.Services.AddMvc(options =>
 {
     options.Filters.Add(typeof(GlobalActionMonitor));//全局注册
@@ -80,8 +84,6 @@ builder.Services.AddMvc(options =>
 });
 
 builder.Services.AddSwaggerConfig();
-// 显示logo
-builder.Services.AddLogo();
 
 var app = builder.Build();
 InternalApp.ServiceProvider = app.Services;
@@ -118,7 +120,6 @@ app.UseResponseCaching();
 app.UseAddTaskSchedulers();
 //使用全局异常中间件
 app.UseMiddleware<GlobalExceptionMiddleware>();
-
 
 //设置socket连接
 app.MapHub<MessageHub>("/msgHub");
