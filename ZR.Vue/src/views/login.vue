@@ -49,6 +49,7 @@
 import { getCodeImg } from '@/api/system/login'
 import Cookies from 'js-cookie'
 import defaultSettings from '@/settings'
+import { encrypt, decrypt } from '@/utils/jsencrypt'
 
 export default {
   name: 'Login',
@@ -111,7 +112,7 @@ export default {
 
       this.loginForm = {
         username: username === undefined ? this.loginForm.username : username,
-        password: password === undefined ? this.loginForm.password : password,
+        password: password === undefined ? this.loginForm.password : decrypt(password),
         rememberMe: rememberMe === undefined ? false : Boolean(rememberMe),
       }
     },
@@ -121,7 +122,7 @@ export default {
           this.loading = true
           if (this.loginForm.rememberMe) {
             Cookies.set('username', this.loginForm.username, { expires: 30 })
-            Cookies.set('password', this.loginForm.password, {
+            Cookies.set('password', encrypt(this.loginForm.password), {
               expires: 30,
             })
             Cookies.set('rememberMe', this.loginForm.rememberMe, {
