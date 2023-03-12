@@ -70,10 +70,6 @@ namespace ZR.CodeGenerator
             }
             else
             {
-                replaceDto.VueViewListHtml = GenerateVueTableList();
-                replaceDto.VueQueryFormHtml = GenerateVueQueryForm();
-                replaceDto.VueViewFormHtml = GenerateCurdForm();
-
                 GenerateVueViews(replaceDto, dto);
             }
             if (dto.GenTable.Options.GenerateRepo == 1)
@@ -180,15 +176,14 @@ namespace ZR.CodeGenerator
                 "select" => "TplVueSelect.txt",
                 _ => "TplVue.txt",
             };
-            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
-            tpl.Set("vueQueryFormHtml", replaceDto.VueQueryFormHtml);
-            tpl.Set("VueViewFormContent", replaceDto.VueViewFormHtml);//添加、修改表单
-            tpl.Set("VueViewListContent", replaceDto.VueViewListHtml);//查询 table列
+            replaceDto.VueViewListHtml = GenerateVueTableList();
+            replaceDto.VueQueryFormHtml = GenerateVueQueryForm();
+            replaceDto.VueViewFormHtml = GenerateCurdForm();
 
-            var result = tpl.Render();
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
             var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
 
-            generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, tpl.Render()));
         }
 
         /// <summary>

@@ -128,7 +128,7 @@ $end
 $if(null != genTable.SubTableName && "" != genTable.SubTableName && genTable.TplCategory == "subNavMore")
       <el-table-column type="expand">
         <template #default="props">
-          <el-table :data="props.row.$tool.FirstLowerCase(genTable.SubTable.ClassName)Nav">
+          <el-table :data="props.row.$tool.FirstLowerCase(genTable.SubTable.ClassName)Nav" header-row-class-name="text-navy">
 $foreach(subColumn in genSubTable.Columns)
 $if(subColumn.IsList == true)
             <el-table-column prop="${subColumn.CsharpFieldFl}" label="${subColumn.ColumnComment}" align="center"/>
