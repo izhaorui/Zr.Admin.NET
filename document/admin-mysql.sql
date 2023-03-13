@@ -294,7 +294,7 @@ INSERT INTO sys_menu VALUES (501, '登录日志', 108, 2, 'logininfor', 'monitor
 INSERT INTO sys_menu VALUES (1001, '用户查询', 100, 1, '', '', 0, 0, 'F', '0', '0', 'system:user:query', '', '', SYSDATE(), '', NULL, '', NULL);
 INSERT INTO sys_menu VALUES (1002, '用户添加', 100, 2, '', '', 0, 0, 'F', '0', '0', 'system:user:add', '', '', SYSDATE(), '', NULL, '', NULL);
 INSERT INTO sys_menu VALUES (1003, '用户修改', 100, 3, '', '', 0, 0, 'F', '0', '0', 'system:user:edit', '', '', SYSDATE(), '', NULL, NULL, NULL);
-INSERT INTO sys_menu VALUES (1004, '用户删除', 100, 4, '', '', 0, 0, 'F', '0', '0', 'system:user:delete', '', '', SYSDATE(), '', NULL, '', NULL);
+INSERT INTO sys_menu VALUES (1004, '用户删除', 100, 4, '', '', 0, 0, 'F', '0', '0', 'system:user:remove', '', '', SYSDATE(), '', NULL, '', NULL);
 INSERT INTO sys_menu VALUES (1005, '用户导出', 100, 5, '', '', 0, 0, 'F', '0', '0', 'system:user:export', '#', '', SYSDATE(), '', NULL, '', NULL);
 INSERT INTO sys_menu VALUES (1006, '用户导入', 100, 6, '', '', 0, 0, 'F', '0', '0', 'system:user:import', '#', '', SYSDATE(), '', NULL, '', NULL);
 INSERT INTO sys_menu VALUES (1007, '重置密码', 100, 7, '', '', 0, 0, 'F', '0', '0', 'system:user:resetPwd', '#', '', SYSDATE(), '', NULL, '', NULL);
@@ -325,6 +325,7 @@ INSERT INTO sys_menu VALUES (1024, '岗位删除', 104, 3, '', '', 0, 0, 'F', '0
 INSERT INTO sys_menu VALUES (1025, '岗位编辑', 104, 4, '', '', 0, 0, 'F', '0', '0', 'system:post:edit', '', '', SYSDATE(), '', NULL, NULL, NULL);
 INSERT INTO sys_menu VALUES (1070, '岗位导出', 104, 4, '', '', 0, 0, 'F', '0', '0', 'system:post:export', '', '', SYSDATE(), '', NULL, NULL, NULL);
 -- 字典管理 按钮
+INSERT INTO sys_menu VALUES (1031, '字典查询', 105, 1, '', '', 0, 0, 'F', '0', '0', 'system:dict:query', NULL, '', SYSDATE(), '', NULL, NULL, NULL);
 INSERT INTO sys_menu VALUES (1026, '字典新增', 105, 1, '', '', 0, 0, 'F', '0', '0', 'system:dict:add', NULL, '', SYSDATE(), '', NULL, NULL, NULL);
 INSERT INTO sys_menu VALUES (1027, '字典修改', 105, 2, '', '', 0, 0, 'F', '0', '0', 'system:dict:edit', NULL, '', SYSDATE(), '', NULL, NULL, NULL);
 INSERT INTO sys_menu VALUES (1028, '字典删除', 105, 3, '', '', 0, 0, 'F', '0', '0', 'system:dict:remove', NULL, '', SYSDATE(), '', NULL, NULL, NULL);

@@ -267,7 +267,7 @@ INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFr
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1001, '用户查询', 100, 1, '', '', 0, 0, 'F', '0', '0', 'system:user:query', '', '', GETDATE(), '', NULL, '');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1002, '用户添加', 100, 2, '', '', 0, 0, 'F', '0', '0', 'system:user:add', '', '', GETDATE(), '', NULL, '');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1003, '用户修改', 100, 3, '', '', 0, 0, 'F', '0', '0', 'system:user:edit', '', '', GETDATE(), '', NULL, NULL);
-INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1004, '用户删除', 100, 4, '', '', 0, 0, 'F', '0', '0', 'system:user:delete', '', '', GETDATE(), '', NULL, '');
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1004, '用户删除', 100, 4, '', '', 0, 0, 'F', '0', '0', 'system:user:remove', '', '', GETDATE(), '', NULL, '');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1005, '用户导出', 100, 5, '', '', 0, 0, 'F', '0', '0', 'system:user:export', '#', '', GETDATE(), '', NULL, '');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1006, '用户导入', 100, 6, '', '', 0, 0, 'F', '0', '0', 'system:user:import', '#', '', GETDATE(), '', NULL, '');
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1007, '重置密码', 100, 7, '', '', 0, 0, 'F', '0', '0', 'system:user:resetPwd', '#', '', GETDATE(), '', NULL, '');
@@ -298,6 +298,7 @@ INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFr
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1025, '岗位编辑', 104, 4, '', '', 0, 0, 'F', '0', '0', 'system:post:edit', '', '', GETDATE(), '', NULL, NULL);
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1070, '岗位导出', 104, 4, '', '', 0, 0, 'F', '0', '0', 'system:post:export', '', '', GETDATE(), '', NULL, NULL);
 -- 字典管理 按钮
+INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1031, '字典查询', 105, 1, '', '', 0, 0, 'F', '0', '0', 'system:dict:query', NULL, '', GETDATE(), '', NULL, NULL);
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1026, '字典新增', 105, 1, '', '', 0, 0, 'F', '0', '0', 'system:dict:add', NULL, '', GETDATE(), '', NULL, NULL);
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1027, '字典修改', 105, 2, '', '', 0, 0, 'F', '0', '0', 'system:dict:edit', NULL, '', GETDATE(), '', NULL, NULL);
 INSERT INTO sys_menu(menuId, menuName, parentId, orderNum, path, component, isFrame, isCache, menuType, visible, status, perms, icon, create_by,create_time, update_by, update_time, remark) VALUES (1028, '字典删除', 105, 3, '', '', 0, 0, 'F', '0', '0', 'system:dict:remove', NULL, '', GETDATE(), '', NULL, NULL);
@@ -552,8 +553,8 @@ GO
 -- Records of sys_role
 -- ----------------------------
 INSERT INTO sys_role VALUES ('超级管理员', 'admin', 1, '1', 1, 0, '0', '0', 'admin', GETDATE(), '', NULL, '超级管理员');
-INSERT INTO sys_role VALUES ('普通角色', 'common', 2, '2', 1, 0, '0', '0', 'admin', GETDATE(), '',  NULL, '普通角色');
-INSERT INTO sys_role VALUES ('编辑人员', 'editor', 2, '2', 1, 0, '0', '0', 'admin', GETDATE(), '',  NULL, '普通角色');
+INSERT INTO sys_role VALUES ('普通角色', 'common', 2, '5', 1, 0, '0', '0', 'admin', GETDATE(), '',  NULL, '普通角色');
+INSERT INTO sys_role VALUES ('编辑人员', 'editor', 3, '2', 1, 0, '0', '0', 'admin', GETDATE(), '',  NULL, '普通角色');
 
 GO
 -- ----------------------------

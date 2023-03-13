@@ -58,6 +58,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpGet("")]
         [HttpGet("{userId:int=0}")]
+        [ActionPermissionFilter(Permission = "system:user:query")]
         public IActionResult GetInfo(int userId)
         {
             Dictionary<string, object> dic = new();
@@ -157,7 +158,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPut("resetPwd")]
         [Log(Title = "重置密码", BusinessType = BusinessType.UPDATE)]
-        [ActionPermissionFilter(Permission = "system:user:update")]
+        [ActionPermissionFilter(Permission = "system:user:resetPwd")]
         public IActionResult ResetPwd([FromBody] SysUser sysUser)
         {
             //密码md5
