@@ -148,9 +148,9 @@ namespace ZR.Admin.WebApi.Extensions
                 }
                 else if (DATA_SCOPE_SELF.Equals(dataScope))//仅本人数据
                 {
-                    //var filter1 = new TableFilterItem<SysUser>(it => it.UserId == user.UserId, true);
-                    //db.QueryFilter.Add(filter1);
                     db.QueryFilter.AddTableFilter<SysUser>(it => it.UserId == user.UserId);
+                    db.QueryFilter.AddTableFilter<SysRole>(it => user.RoleIds.Contains(it.RoleKey));
+                    db.QueryFilter.AddTableFilter<SysLogininfor>(it => it.UserName == user.UserName);
                 }
             }
         }
