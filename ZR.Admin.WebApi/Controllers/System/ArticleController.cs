@@ -1,12 +1,16 @@
-﻿using Infrastructure;
+﻿using Aliyun.OSS;
+using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
+using System;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
+using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
@@ -40,12 +44,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "system:article:list")]
         public IActionResult Query([FromQuery] ArticleQueryDto parm)
         {
-            var predicate = Expressionable.Create<Article>();
-
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
-
-            var response = _ArticleService.GetPages(predicate.ToExpression(), parm, f => f.Cid, OrderByType.Desc);
+            var response = _ArticleService.GetList(parm);
 
             return SUCCESS(response);
         }
@@ -62,6 +61,7 @@ namespace ZR.Admin.WebApi.Controllers
 
             var response = _ArticleService.Queryable()
                 .Where(predicate.ToExpression())
+                .Includes(x => x.ArticleCategoryNav) //填充子对象
                 .Take(10)
                 .OrderBy(f => f.UpdateTime, OrderByType.Desc).ToList();
 
@@ -74,11 +74,17 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public IActionResult Get(int id)
         {
             var response = _ArticleService.GetId(id);
-
-            return SUCCESS(response);
+            var model = response.Adapt<ArticleDto>();
+            if (model != null)
+            {
+                model.ArticleCategoryNav = _ArticleCategoryService.GetById(model.CategoryId);
+                model.TagList = model.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            }
+            return SUCCESS(model);
         }
 
         /// <summary>
@@ -88,7 +94,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost("add")]
         [ActionPermissionFilter(Permission = "system:article:add")]
         [Log(Title = "文章添加", BusinessType = BusinessType.INSERT)]
-        public IActionResult Create([FromBody] Article parm)
+        public IActionResult Create([FromBody] ArticleDto parm)
         {
             if (parm == null)
             {
@@ -107,25 +113,16 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPut("edit")]
         [ActionPermissionFilter(Permission = "system:article:update")]
         [Log(Title = "文章修改", BusinessType = BusinessType.UPDATE)]
-        public IActionResult Update([FromBody] Article parm)
+        public IActionResult Update([FromBody] ArticleDto parm)
         {
             if (parm == null)
             {
                 throw new CustomException("请求参数错误");
             }
             parm.AuthorName = HttpContext.GetName();
+            var modal = parm.Adapt<Article>().ToUpdate(HttpContext);
 
-            var response = _ArticleService.Update(it => it.Cid == parm.Cid,
-                f => new Article
-                {
-                    Title = parm.Title,
-                    Content = parm.Content,
-                    Tags = parm.Tags,
-                    Category_Id = parm.Category_Id,
-                    UpdateTime = parm.UpdateTime,
-                    Status = parm.Status,
-                    CoverUrl = parm.CoverUrl
-                });
+            var response = _ArticleService.UpdateArticle(modal);
 
             return SUCCESS(response);
         }

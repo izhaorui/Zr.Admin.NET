@@ -17,7 +17,7 @@ namespace ZR.Model.System
         public string Title { get; set; }
         public DateTime? CreateTime { get; set; }
         [SugarColumn(IsOnlyIgnoreInsert = true)]
-        public DateTime UpdateTime { get; set; }
+        public DateTime? UpdateTime { get; set; }
         /// <summary>
         /// 文章内容
         /// </summary>
@@ -38,16 +38,21 @@ namespace ZR.Model.System
         /// <summary>
         /// 编辑器类型 markdown,html
         /// </summary>
-        public string Fmt_type { get; set; }
+        [SugarColumn(ColumnName = "fmt_type")]
+        public string FmtType { get; set; }
         /// <summary>
         /// 文章标签eg：Net5,java
         /// </summary>
         public string Tags { get; set; }
         public int Hits { get; set; }
-        public int Category_Id { get; set; }
+        [SugarColumn(ColumnName = "category_Id")]
+        public int CategoryId { get; set; }
         /// <summary>
         /// 封面地址
         /// </summary>
         public string CoverUrl { get; set; }
+
+        [Navigate(NavigateType.OneToOne, nameof(CategoryId), nameof(ArticleCategory.CategoryId))] //自定义关系映射
+        public ArticleCategory ArticleCategoryNav { get; set; }
     }
 }
