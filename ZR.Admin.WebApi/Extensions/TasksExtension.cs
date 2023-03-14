@@ -18,9 +18,6 @@ namespace ZR.Admin.WebApi.Extensions
 
             //添加Quartz服务
             services.AddSingleton<IJobFactory, JobFactory>();
-            //添加我们的服务
-            //services.AddTransient<Job_SyncTest>();
-
             services.AddTransient<ITaskSchedulerServer, TaskSchedulerServer>();
         }
 
