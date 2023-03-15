@@ -16,6 +16,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
+		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.2" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.6" />
@@ -24,11 +25,11 @@
 		<PackageReference Include="NLog" Version="5.0.4" />
 		<PackageReference Include="NLog.Web.AspNetCore" Version="5.1.4" />
 		<PackageReference Include="Mapster" Version="7.3.0" />
-		<PackageReference Include="Hei.Captcha" Version="0.3.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Folder Include="Controllers\" />
+		<Folder Include="Properties\PublishProfiles\" />
 	</ItemGroup>
 
 	<ItemGroup>

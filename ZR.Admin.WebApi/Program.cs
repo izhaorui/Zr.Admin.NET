@@ -2,7 +2,6 @@ using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using ZR.Admin.WebApi.Framework;
-using Hei.Captcha;
 using Infrastructure.Extensions;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
@@ -41,7 +40,7 @@ builder.Services.AddSignalR();
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
 //普通验证码
-builder.Services.AddHeiCaptcha();
+builder.Services.AddCaptcha(builder.Configuration);
 //builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
 //绑定整个对象到Model上
