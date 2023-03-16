@@ -507,7 +507,7 @@ GO
 -- Records of sys_user
 -- ----------------------------
 INSERT INTO sys_user VALUES (0,		'admin',	'管理员', '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', NULL, '', NULL, '', NULL, '管理员');
-INSERT INTO sys_user VALUES (0,		'zr',		'zr',	 '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', NULL, '', NULL, '', NULL, '普通用户');
+INSERT INTO sys_user VALUES (0,		'user',		'普通用户',	 '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', NULL, '', NULL, '', NULL, '普通用户');
 INSERT INTO sys_user VALUES (100,   'editor', '编辑人员', '0', '','',   '2', '', 'E10ADC3949BA59ABBE56E057F20F883E', '0', '0', '', NULL, '', NULL, '', NULL, '编辑人员');
 
 GO
