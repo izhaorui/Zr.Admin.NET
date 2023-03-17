@@ -1,7 +1,5 @@
 ﻿using Infrastructure;
 using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -10,7 +8,6 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using UAParser;
 using ZR.Model.System;
 
@@ -73,7 +70,10 @@ namespace ZR.Admin.WebApi.Extensions
         public static long GetUId(this HttpContext context)
         {
             var uid = context.User.FindFirstValue(ClaimTypes.PrimarySid);
-
+            if (uid.IsEmpty() || uid.IsNullOrZero())
+            {
+                throw new CustomException(ResultCode.DENY, "未登录");
+            }
             return !string.IsNullOrEmpty(uid) ? long.Parse(uid) : 0;
         }
 

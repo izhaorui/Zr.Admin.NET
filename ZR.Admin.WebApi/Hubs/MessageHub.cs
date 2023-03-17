@@ -2,6 +2,7 @@
 using Infrastructure.Constant;
 using Infrastructure.Model;
 using IPTools.Core;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Framework;
@@ -42,12 +43,12 @@ namespace ZR.Admin.WebApi.Hubs
             var ip = HttpContextExtension.GetClientUserIp(App.HttpContext);
             var ip_info = IpTool.Search(ip);
 
-            LoginUser loginUser = JwtUtil.GetLoginUser(App.HttpContext);
+            var userid = HttpContextExtension.GetUId(App.HttpContext);
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
             //判断用户是否存在，否则添加集合
             if (!user && Context.User.Identity.IsAuthenticated)
             {
-                OnlineUsers users = new(Context.ConnectionId, name, loginUser?.UserId, ip)
+                OnlineUsers users = new(Context.ConnectionId, name, userid, ip)
                 {
                     Location = ip_info.City
                 };

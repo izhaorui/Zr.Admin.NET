@@ -1,7 +1,7 @@
 using System;
 using ZR.Model.System;
 
-namespace ZR.Service.System
+namespace ZR.Service.System.IService
 {
     /// <summary>
     /// 参数配置service接口

@@ -11,18 +11,9 @@ namespace ZR.Admin.WebApi.Extensions
             var types = source?.GetType();
             if (types == null) return source;
 
-            if (types.GetProperty("CreateTime") != null)
-            {
-                types.GetProperty("CreateTime")?.SetValue(source, DateTime.Now, null);
-            }
-            if (types.GetProperty("AddTime") != null)
-            {
-                types.GetProperty("AddTime")?.SetValue(source, DateTime.Now, null);
-            }
-            if (types.GetProperty("UpdateTime") != null)
-            {
-                types.GetProperty("UpdateTime")?.SetValue(source, DateTime.Now, null);
-            }
+            types.GetProperty("CreateTime")?.SetValue(source, DateTime.Now, null);
+            types.GetProperty("AddTime")?.SetValue(source, DateTime.Now, null);
+            types.GetProperty("UpdateTime")?.SetValue(source, DateTime.Now, null);
             if (types.GetProperty("Create_by") != null && context != null)
             {
                 types.GetProperty("Create_by")?.SetValue(source, context.GetName(), null);
@@ -47,22 +38,12 @@ namespace ZR.Admin.WebApi.Extensions
             var types = source?.GetType();
             if (types == null) return source;
 
-            if (types.GetProperty("UpdateTime") != null)
-            {
-                types.GetProperty("UpdateTime")?.SetValue(source, DateTime.Now, null);
-            }
-            if (types.GetProperty("Update_time") != null)
-            {
-                types.GetProperty("Update_time")?.SetValue(source, DateTime.Now, null);
-            }
-            if (types.GetProperty("UpdateBy") != null)
-            {
-                types.GetProperty("UpdateBy")?.SetValue(source, context?.GetName(), null);
-            }
-            if (types.GetProperty("Update_by") != null)
-            {
-                types.GetProperty("Update_by")?.SetValue(source, context?.GetName(), null);
-            }
+            types.GetProperty("UpdateTime")?.SetValue(source, DateTime.Now, null);
+            types.GetProperty("Update_time")?.SetValue(source, DateTime.Now, null);
+
+            types.GetProperty("UpdateBy")?.SetValue(source,context.GetName(), null);
+            types.GetProperty("Update_by")?.SetValue(source, context.GetName(), null);
+
             return source;
         }
 

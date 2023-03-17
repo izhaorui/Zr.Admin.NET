@@ -1,11 +1,13 @@
 ﻿using Infrastructure.Attribute;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Linq;
 using System.Reflection;
 
-namespace Infrastructure.Extensions
+namespace ZR.Admin.WebApi.Extensions
 {
+    /// <summary>
+    /// App服务注册
+    /// </summary>
     public static class AppServiceExtensions
     {
         /// <summary>
@@ -14,18 +16,16 @@ namespace Infrastructure.Extensions
         /// <param name="services"></param>
         public static void AddAppService(this IServiceCollection services)
         {
-            //var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            string []cls = new string[] { "ZR.Repository", "ZR.Service", "ZR.Tasks" };
+            string[] cls = new string[] { "ZR.Repository", "ZR.Service", "ZR.Tasks" };
             foreach (var item in cls)
             {
-                Assembly assembly = Assembly.Load(item);
-                Register(services, assembly);
+                Register(services, item);
             }
         }
 
-        private static void Register(IServiceCollection services, Assembly assembly)
+        private static void Register(IServiceCollection services, string item)
         {
+            Assembly assembly = Assembly.Load(item);
             foreach (var type in assembly.GetTypes())
             {
                 var serviceAttribute = type.GetCustomAttribute<AppServiceAttribute>();
@@ -59,11 +59,7 @@ namespace Infrastructure.Extensions
                             services.AddTransient(serviceType, type);
                             break;
                     }
-                    //Console.WriteLine($"注册：{serviceType}");
-                }
-                else
-                {
-                    //Console.WriteLine($"注册：{serviceType}");
+                    //System.Console.WriteLine($"注册：{serviceType}");
                 }
             }
         }
