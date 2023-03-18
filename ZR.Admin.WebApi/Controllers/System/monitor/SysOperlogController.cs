@@ -41,7 +41,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
             sysOperLog.OperName = !HttpContextExtension.IsAdmin(HttpContext) ? HttpContextExtension.GetName(HttpContext) : sysOperLog.OperName;
             var list = sysOperLogService.SelectOperLogList(sysOperLog, pagerInfo);
 
-            return SUCCESS(list, "MM/dd HH:mm");
+            return SUCCESS(list);
         }
 
         /// <summary>
