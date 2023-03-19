@@ -70,10 +70,6 @@ namespace ZR.Admin.WebApi.Extensions
         public static long GetUId(this HttpContext context)
         {
             var uid = context.User.FindFirstValue(ClaimTypes.PrimarySid);
-            if (uid.IsEmpty() || uid.IsNullOrZero())
-            {
-                throw new CustomException(ResultCode.DENY, "未登录");
-            }
             return !string.IsNullOrEmpty(uid) ? long.Parse(uid) : 0;
         }
 
