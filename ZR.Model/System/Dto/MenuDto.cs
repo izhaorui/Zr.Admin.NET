@@ -83,7 +83,7 @@ namespace ZR.Model.System.Dto
         {
             get
             {
-                return MenuTypeIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                return MenuTypeIds?.Split(',', StringSplitOptions.RemoveEmptyEntries);
             }
         }
     }
