@@ -52,8 +52,8 @@ namespace ZR.CodeGenerator
             };
             var columns = dto.GenTable.Columns;
 
-            replaceDto.PKName = columns.Find(f => f.IsPk || f.IsIncrement).CsharpField ?? "Id"; 
-            replaceDto.PKType = columns.Find(f => f.IsPk || f.IsIncrement).CsharpType ?? "int";
+            replaceDto.PKName = columns.Find(f => f.IsPk || f.IsIncrement)?.CsharpField ?? "Id"; 
+            replaceDto.PKType = columns.Find(f => f.IsPk || f.IsIncrement)?.CsharpType ?? "int";
 
             replaceDto.UploadFile = columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD) || f.HtmlType.Equals(GenConstants.HTML_FILE_UPLOAD)) ? 1 : 0;
             replaceDto.SelectMulti = columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_SELECT_MULTI)) ? 1 : 0;
