@@ -3,10 +3,7 @@ using Infrastructure.Extensions;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace ZR.CodeGenerator
 {
@@ -24,27 +21,27 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public SqlSugarClient GetSugarDbContext(string dbName = "")
         {
-            string connStr = AppSettings.GetConfig(GenConstants.Gen_conn);
-            int dbType = AppSettings.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
-
+            Gen options = new();
+            AppSettings.Bind("gen", options);
+            string connStr = options.Conn;
             if (!string.IsNullOrEmpty(dbName))
             {
-                string replaceStr = GetValue(connStr, "Database=", ";");
-                string replaceStr2 = GetValue(connStr, "Initial Catalog=", ";");
+                string replaceStr = GetValue(options.Conn, "Database=", ";");
+                string replaceStr2 = GetValue(options.Conn, "Initial Catalog=", ";");
                 if (replaceStr.IsNotEmpty())
                 {
-                    connStr = connStr.Replace(replaceStr, dbName, StringComparison.OrdinalIgnoreCase);
+                    connStr = options.Conn.Replace(replaceStr, dbName, StringComparison.OrdinalIgnoreCase);
                 }
                 if (replaceStr2.IsNotEmpty())
                 {
-                    connStr = connStr.Replace(replaceStr2, dbName, StringComparison.OrdinalIgnoreCase);
-                }                
+                    connStr = options.Conn.Replace(replaceStr2, dbName, StringComparison.OrdinalIgnoreCase);
+                }
             }
             var db = new SqlSugarClient(new List<ConnectionConfig>()
             {
                 new ConnectionConfig(){
                     ConnectionString = connStr,
-                    DbType = (DbType)dbType,
+                    DbType = (DbType)options.DbType,
                     IsAutoCloseConnection = true,//开启自动释放模式和EF原理一样
                     InitKeyType = InitKeyType.Attribute,//从特性读取主键和自增列信息
                 },
@@ -63,7 +60,7 @@ namespace ZR.CodeGenerator
         /// <returns></returns> 
         public static string GetValue(string str, string s, string e)
         {
-            Regex rg = new Regex("(?<=(" + s + "))[.\\s\\S]*?(?=(" + e + "))", RegexOptions.Multiline | RegexOptions.Singleline);
+            Regex rg = new("(?<=(" + s + "))[.\\s\\S]*?(?=(" + e + "))", RegexOptions.Multiline | RegexOptions.Singleline);
             return rg.Match(str).Value;
         }
     }

@@ -14,6 +14,7 @@ namespace Infrastructure
         public Upload Upload { get; set; }
         public ALIYUN_OSS ALIYUN_OSS { get; set; }
         public JwtSettings JwtSettings { get; set; }
+        public Gen Gen { get; set; }
     }
     /// <summary>
     /// 发送邮件数据配置
@@ -71,4 +72,13 @@ namespace Infrastructure
         /// </summary>
         public int Expire { get; set; } = 1440;
     }
+
+    public class Gen
+    {
+        public string Conn { get; set; }
+        public int DbType { get; set; }
+        public string Database { get; set; }
+
+    }
+
 }
