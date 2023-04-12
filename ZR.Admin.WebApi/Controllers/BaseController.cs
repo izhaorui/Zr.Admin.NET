@@ -22,7 +22,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         protected IActionResult SUCCESS(object data, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
         {
-            string jsonStr = GetJsonStr(GetApiResult(data != null ? ResultCode.SUCCESS : ResultCode.FAIL, data), timeFormatStr);
+            string jsonStr = GetJsonStr(GetApiResult(data != null ? ResultCode.SUCCESS : ResultCode.NO_DATA, data), timeFormatStr);
             return Content(jsonStr, "application/json");
         }
 

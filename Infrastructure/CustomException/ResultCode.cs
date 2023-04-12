@@ -7,6 +7,9 @@ namespace Infrastructure
         [Description("success")]
         SUCCESS = 200,
 
+        [Description("no data")]
+        NO_DATA = 210,
+
         [Description("参数错误")]
         PARAM_ERROR = 101,
 
