@@ -276,10 +276,11 @@ namespace ZR.Service
         /// <returns></returns>
         public List<SysRole> SelectUserRoleListByUserId(long userId)
         {
-            return Context.Queryable<SysUserRole, SysRole>((ur, r) => new JoinQueryInfos(
-                    JoinType.Left, ur.RoleId == r.RoleId
-                )).Where((ur, r) => ur.UserId == userId)
-                .Select((ur, r) => r).ToList();
+            return Context.Queryable<SysUserRole>()
+                .LeftJoin<SysRole>((ur, r) => ur.RoleId == r.RoleId)
+                .Where((ur, r) => ur.UserId == userId && r.RoleId > 0)
+                .Select((ur, r) => r)
+                .ToList();
         }
 
         /// <summary>
