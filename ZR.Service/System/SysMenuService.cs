@@ -32,16 +32,17 @@ namespace ZR.Service
         public List<SysMenu> SelectTreeMenuList(MenuQueryDto menu, long userId)
         {
             List<SysMenu> menuList;
-            if (SysRoleService.IsAdmin(userId))
-            {
-                menuList = SelectTreeMenuList(menu);
-            }
-            else
-            {
-                var userRoles = SysRoleService.SelectUserRoles(userId);
-                menuList = SelectTreeMenuListByRoles(menu, userRoles);
-            }
-            return menuList ?? new List<SysMenu>();
+            //if (SysRoleService.IsAdmin(userId))
+            //{
+            //    menuList = SelectTreeMenuList(menu);
+            //}
+            //else
+            //{
+            //    var userRoles = SysRoleService.SelectUserRoles(userId);
+            //    menuList = SelectTreeMenuListByRoles(menu, userRoles);
+            //}
+            menuList = BuildMenuTree(SelectMenuList(menu, userId));
+            return menuList;
         }
 
         /// <summary>
@@ -53,7 +54,7 @@ namespace ZR.Service
             List<SysMenu> menuList;
             if (SysRoleService.IsAdmin(userId))
             {
-                menuList = SelectAllMenuList(menu);
+                menuList = SelectMenuList(menu);
             }
             else
             {
@@ -238,12 +239,13 @@ namespace ZR.Service
         /// 获取所有菜单
         /// </summary>
         /// <returns></returns>
-        private List<SysMenu> SelectAllMenuList(MenuQueryDto menu)
+        private List<SysMenu> SelectMenuList(MenuQueryDto menu)
         {
             return Queryable()
                 .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
                 .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible)
                 .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status)
+                .WhereIF(!string.IsNullOrEmpty(menu.MenuTypeIds), it => menu.MenuTypeIdArr.Contains(it.MenuType))
                 .WhereIF(menu.ParentId != null, it => it.ParentId == menu.ParentId)
                 .OrderBy(it => new { it.ParentId, it.OrderNum })
                 .ToList();
@@ -411,7 +413,7 @@ namespace ZR.Service
         /// <returns>下拉树结构列表</returns>
         public List<SysMenu> BuildMenuTree(List<SysMenu> menus)
         {
-            List<SysMenu> returnList = new List<SysMenu>();
+            List<SysMenu> returnList = new();
             List<long> tempList = menus.Select(f => f.MenuId).ToList();
 
             foreach (var menu in menus)
