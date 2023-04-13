@@ -1,20 +1,18 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
+using Infrastructure.Extensions;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Quartz;
 using SqlSugar;
-using System;
-using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
-using ZR.Model.System.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
 using ZR.Tasks;
-using Infrastructure.Extensions;
 
 namespace ZR.Admin.WebApi.Controllers
 {

@@ -3,20 +3,13 @@ using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Extensions;
 using Infrastructure.Model;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model.System;
-using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers

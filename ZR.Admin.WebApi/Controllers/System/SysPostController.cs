@@ -1,16 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using SqlSugar;
-using System.Collections.Generic;
-using ZR.Admin.WebApi.Filters;
-using ZR.Model;
-using ZR.Model.System;
-using Infrastructure.Extensions;
+﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
-using Infrastructure;
-using ZR.Service.System.IService;
-using ZR.Common;
+using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Mvc;
+using SqlSugar;
 using ZR.Admin.WebApi.Extensions;
+using ZR.Admin.WebApi.Filters;
+using ZR.Common;
+using ZR.Model;
+using ZR.Model.System;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
