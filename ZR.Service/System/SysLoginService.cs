@@ -60,7 +60,7 @@ namespace ZR.Service.System
         }
 
         /// <summary>
-        /// 查询操作日志
+        /// 查询登录日志
         /// </summary>
         /// <param name="logininfoDto"></param>
         /// <param name="pager">分页</param>
