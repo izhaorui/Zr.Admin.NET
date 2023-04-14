@@ -52,7 +52,7 @@ namespace ZR.CodeGenerator
             };
             var columns = dto.GenTable.Columns;
 
-            replaceDto.PKName = columns.Find(f => f.IsPk || f.IsIncrement)?.CsharpField ?? "Id"; 
+            replaceDto.PKName = columns.Find(f => f.IsPk || f.IsIncrement)?.CsharpField ?? "Id";
             replaceDto.PKType = columns.Find(f => f.IsPk || f.IsIncrement)?.CsharpType ?? "int";
 
             replaceDto.UploadFile = columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_IMAGE_UPLOAD) || f.HtmlType.Equals(GenConstants.HTML_FILE_UPLOAD)) ? 1 : 0;
@@ -66,7 +66,7 @@ namespace ZR.CodeGenerator
             GenerateControllers(replaceDto, dto);
             if (dto.VueVersion == 3)
             {
-                GenerateVue3Views(replaceDto, dto);
+                GenerateVue3Views(dto);
             }
             else
             {
@@ -76,8 +76,8 @@ namespace ZR.CodeGenerator
             {
                 GenerateRepository(replaceDto, dto);
             }
-            GenerateVueJs(replaceDto, dto);
-            GenerateSql(replaceDto, dto);
+            GenerateVueJs(dto);
+            GenerateSql(dto);
 
             if (dto.IsPreview) return;
 
@@ -189,9 +189,8 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// vue3
         /// </summary>
-        /// <param name="replaceDto"></param>
         /// <param name="generateDto"></param>
-        private static void GenerateVue3Views(ReplaceDto replaceDto, GenerateDto generateDto)
+        private static void GenerateVue3Views(GenerateDto generateDto)
         {
             string fileName = generateDto.GenTable.TplCategory switch
             {
@@ -213,10 +212,9 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 生成vue页面api
         /// </summary>
-        /// <param name="replaceDto"></param>
         /// <param name="generateDto"></param>
         /// <returns></returns>
-        public static void GenerateVueJs(ReplaceDto replaceDto, GenerateDto generateDto)
+        public static void GenerateVueJs(GenerateDto generateDto)
         {
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplVueApi.txt");
             var result = tpl.Render();
@@ -238,9 +236,8 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 生成SQL
         /// </summary>
-        /// <param name="replaceDto"></param>
         /// <param name="generateDto"></param>
-        public static void GenerateSql(ReplaceDto replaceDto, GenerateDto generateDto)
+        public static void GenerateSql(GenerateDto generateDto)
         {
             var tempName = "";
             switch (generateDto.DbType)
@@ -251,10 +248,13 @@ namespace ZR.CodeGenerator
                 case 1:
                     tempName = "SqlTemplate";
                     break;
+                case 4:
+                    tempName = "PgSql";
+                    break;
                 default:
                     break;
             }
-            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, $"{tempName}.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, Path.Combine("sql", $"{tempName}.txt"));
             tpl.Set("parentId", generateDto.GenTable?.Options?.ParentMenuId ?? 0);
             var result = tpl.Render();
             string fullPath = Path.Combine(generateDto.GenCodePath, "sql", generateDto.GenTable.BusinessName + ".sql");
