@@ -86,7 +86,7 @@ namespace Infrastructure.Extensions
                 return underscore;
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.Append(ss[0]);
             for (int i = 1; i < ss.Length; i++)
             {
@@ -103,7 +103,7 @@ namespace Infrastructure.Extensions
         /// <returns></returns>
         public static string FirstUpperCase(this string str)
         {
-            return string.IsNullOrEmpty(str) ? str : str.Substring(0, 1).ToUpper() + str[1..];
+            return string.IsNullOrEmpty(str) ? str : str[..1].ToUpper() + str[1..];
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace Infrastructure.Extensions
         /// <param name="startstr"></param>
         /// <param name="endstr"></param>
         /// <returns></returns>
-        public static string SubstringBetween(this string sourse, string startstr, string endstr)
+        public static string SubStringBetween(this string sourse, string startstr, string endstr)
         {
             string result = string.Empty;
             int startindex, endindex;
@@ -132,7 +132,7 @@ namespace Infrastructure.Extensions
                 startindex = sourse.IndexOf(startstr);
                 if (startindex == -1)
                     return result;
-                string tmpstr = sourse.Substring(startindex + startstr.Length);
+                string tmpstr = sourse[(startindex + startstr.Length)..];
                 endindex = tmpstr.IndexOf(endstr);
                 if (endindex == -1)
                     return result;
@@ -174,11 +174,11 @@ namespace Infrastructure.Extensions
             }
             else if (fieldName.Length == CountUpper(fieldName))
             {
-                result = fieldName.Substring(0, 1).ToUpper() + fieldName[1..].ToLower();
+                result = fieldName[..1].ToUpper() + fieldName[1..].ToLower();
             }
             else
             {
-                result = fieldName.Substring(0, 1).ToUpper() + fieldName[1..];
+                result = fieldName[..1].ToUpper() + fieldName[1..];
             }
             return result;
         }
@@ -223,7 +223,7 @@ namespace Infrastructure.Extensions
             }
             else
             {
-                result = result.Substring(0, 1).ToLower() + result[1..];
+                result = result[..1].ToLower() + result[1..];
             }
 
             return result;
