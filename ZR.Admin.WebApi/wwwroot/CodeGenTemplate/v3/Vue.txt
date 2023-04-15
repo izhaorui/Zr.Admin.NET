@@ -317,7 +317,6 @@ $end
         <el-button type="primary" @click="submitForm">{{ ${t}t('btn.submit') }}</el-button>
       </template>
     </el-dialog>
-
   </div>
 </template>
 
@@ -333,8 +332,6 @@ $end
 const { proxy } = getCurrentInstance()
 // 选中${replaceDto.FistLowerPk}数组数组
 const ids = ref([])
-const single = ref(true)
-const multiple = ref(true)
 const loading = ref(false)
 const showSearch = ref(true)
 const queryParams = reactive({
@@ -486,11 +483,13 @@ ${end}
 
 /*************** form操作 ***************/
 const formRef = ref()
-const title = ref("")
+const title = ref('')
 // 操作类型 1、add 2、edit 3、view
 const opertype = ref(0)
 const open = ref(false)
 const state = reactive({
+  single: true,
+  multiple: true,
   form: {},
   rules: {
 $foreach(column in genTable.Columns)
@@ -510,7 +509,7 @@ $end
   }
 })
 
-const { form, rules, options } = toRefs(state)
+const { form, rules, options, single, multiple } = toRefs(state)
 
 // 关闭dialog
 function cancel(){
