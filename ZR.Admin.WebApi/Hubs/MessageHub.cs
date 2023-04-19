@@ -2,16 +2,21 @@
 using Infrastructure.Constant;
 using Infrastructure.Model;
 using IPTools.Core;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using UAParser;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Admin.WebApi.Framework;
 using ZR.Model;
-using ZR.Model.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Hubs
 {
+    /// <summary>
+    /// msghub
+    /// </summary>
     public class MessageHub : Hub
     {
         //创建用户集合，用于存储所有链接的用户数据
@@ -43,14 +48,21 @@ namespace ZR.Admin.WebApi.Hubs
             var ip = HttpContextExtension.GetClientUserIp(App.HttpContext);
             var ip_info = IpTool.Search(ip);
 
+            ClientInfo clientInfo = HttpContextExtension.GetClientInfo(App.HttpContext);
+            string device = clientInfo.ToString();
+            
             var userid = HttpContextExtension.GetUId(App.HttpContext);
+            string uuid = device + userid + ip;
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
+            var user2 = clientUsers.Any(u => u.Uuid == uuid);
+            
             //判断用户是否存在，否则添加集合
-            if (!user && Context.User.Identity.IsAuthenticated)
+            if (!user2 && !user && Context.User.Identity.IsAuthenticated)
             {
                 OnlineUsers users = new(Context.ConnectionId, name, userid, ip)
                 {
-                    Location = ip_info.City
+                    Location = ip_info.City,
+                    Uuid = uuid
                 };
                 clientUsers.Add(users);
                 Console.WriteLine($"{DateTime.Now}：{name},{Context.ConnectionId}连接服务端success，当前已连接{clientUsers.Count}个");
@@ -94,7 +106,7 @@ namespace ZR.Admin.WebApi.Hubs
         public async Task SendMessage(string connectId, string userName, string message)
         {
             Console.WriteLine($"{connectId},message={message}");
-            
+
             await Clients.Client(connectId).SendAsync("receiveChat", new { userName, message });
         }
     }
