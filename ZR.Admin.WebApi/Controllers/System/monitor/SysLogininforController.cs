@@ -38,7 +38,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         {
             var list = sysLoginService.GetLoginLog(sysLogininfoDto, pagerInfo);
 
-            return SUCCESS(list, TIME_FORMAT_FULL_2);
+            return SUCCESS(list);
         }
 
         /// <summary>

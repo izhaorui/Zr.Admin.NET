@@ -12,8 +12,7 @@ namespace ZR.Admin.WebApi.Controllers
     public class BaseController : ControllerBase
     {
         public static string TIME_FORMAT_FULL = "yyyy-MM-dd HH:mm:ss";
-        public static string TIME_FORMAT_FULL_2 = "MM-dd HH:mm:ss";
-
+        
         /// <summary>
         /// 返回成功封装
         /// </summary>

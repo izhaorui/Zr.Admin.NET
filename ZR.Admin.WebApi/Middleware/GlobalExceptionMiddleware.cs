@@ -2,13 +2,10 @@
 using Infrastructure.Attribute;
 using Infrastructure.Model;
 using IPTools.Core;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using NLog;
-using System;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Threading.Tasks;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Common;
 using ZR.Model.System;
@@ -101,7 +98,7 @@ namespace ZR.Admin.WebApi.Middleware
                 var logAttribute = endpoint.Metadata.GetMetadata<LogAttribute>();
                 if (logAttribute != null)
                 {
-                    sysOperLog.BusinessType = (int)logAttribute?.BusinessType;
+                    sysOperLog.BusinessType = (int)logAttribute.BusinessType;
                     sysOperLog.Title = logAttribute?.Title;
                     sysOperLog.OperParam = logAttribute.IsSaveRequestData ? sysOperLog.OperParam : "";
                     sysOperLog.JsonResult = logAttribute.IsSaveResponseData ? sysOperLog.JsonResult : "";
