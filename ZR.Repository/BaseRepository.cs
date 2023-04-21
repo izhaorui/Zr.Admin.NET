@@ -1,4 +1,4 @@
-﻿using Infrastructure.Extensions;
+using Infrastructure.Extensions;
 using Mapster;
 using SqlSugar;
 using SqlSugar.IOC;
@@ -367,7 +367,7 @@ namespace ZR.Repository
             page.PageSize = parm.PageSize;
             page.PageIndex = parm.PageNum;
 
-            page.Result = source.OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(parm.SortType.Contains("desc") ? "desc" : "asc")}")
+            page.Result = source.OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(!string.IsNullOrWhiteSpace(parm.SortType) && parm.SortType.Contains("desc") ? "desc" : "asc")}")
                 .ToPageList(parm.PageNum, parm.PageSize, ref total);
             page.TotalNum = total;
             return page;
@@ -389,7 +389,7 @@ namespace ZR.Repository
             page.PageIndex = parm.PageNum;
 
             var result = source
-                .OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(parm.SortType.Contains("desc") ? "desc" : "asc")}")
+                .OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(!string.IsNullOrWhiteSpace(parm.SortType) && parm.SortType.Contains("desc") ? "desc" : "asc")}")
                 .ToPageList(parm.PageNum, parm.PageSize, ref total);
             
             page.TotalNum = total;
