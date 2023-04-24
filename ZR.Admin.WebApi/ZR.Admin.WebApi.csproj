@@ -6,6 +6,7 @@
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<DocumentationFile>ZRAdmin.xml</DocumentationFile>
 		<NoWarn>1701;1702;1591,8603,8602,8604,8600</NoWarn>
 	</PropertyGroup>
 
