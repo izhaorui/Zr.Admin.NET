@@ -62,7 +62,7 @@ namespace ZR.Admin.WebApi.Middleware
             }
             else
             {
-                msg = "服务器好像出了点问题......";
+                msg = "服务器好像出了点问题，请联系系统管理员...";
                 error = $"{ex.Message}";
                 logLevel = NLog.LogLevel.Error;
                 context.Response.StatusCode = 500;
