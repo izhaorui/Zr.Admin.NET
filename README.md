@@ -35,11 +35,10 @@
 
 ## 💒 代码仓库
 
-| 仓库        | Github | Gitee                                                            |
-| ----------- | ------ | ---------------------------------------------------------------- |
-| Vue2 + Net5 |        | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/)             |
-| Vue3        |        | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
-| Vue2 + Net7 |        | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
+| 仓库 | Github | Gitee                                                            |
+| ---- | ------ | ---------------------------------------------------------------- |
+| Net7 |        | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
+| Vue3 |        | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
 
 ## 🍁 前端技术
 
@@ -160,10 +159,3 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x、vuex、vue-router 、vue-cli �
 
 如果你觉得这个项目帮助到了你，你可以请作者喝杯咖啡表示鼓励 ☕️
 <img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/pay.jpg"/>
-
-## 🔧 使用说明
-
-如果部署 iis 访问不了情况可以有以下两种办法：
-
-1. 直接打开 ZR.Admin.WebApi.exe 文件然后看控制台的错误日志
-2. web.config 里面有个 false 改为 true，iis 重启项目后运行网站后，跟目录下面 有个文件夹 log 里面有错误日志文件
