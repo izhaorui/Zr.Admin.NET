@@ -36,7 +36,7 @@ export function treelist${genTable.BusinessName}(query) {
   })
 }
 $end
-
+$if(replaceDto.ShowBtnAdd)
 /**
 * 新增${genTable.functionName}
 * @param data
@@ -48,7 +48,8 @@ export function add${genTable.BusinessName}(data) {
     data: data,
   })
 }
-
+$end
+$if(replaceDto.ShowBtnEdit)
 /**
 * 修改${genTable.functionName}
 * @param data
@@ -60,7 +61,7 @@ export function update${genTable.BusinessName}(data) {
     data: data,
   })
 }
-
+$end
 /**
 * 获取${genTable.functionName}详情
 * @param {Id}
@@ -72,6 +73,7 @@ export function get${genTable.BusinessName}(id) {
   })
 }
 
+$if(replaceDto.ShowBtnDelete)
 /**
 * 删除${genTable.functionName}
 * @param {主键} pid
@@ -82,7 +84,8 @@ export function del${genTable.BusinessName}(pid) {
     method: 'delete'
   })
 }
-
+$end
+$if(replaceDto.ShowBtnTruncate)
 // 清空${genTable.functionName}
 export function clear${genTable.BusinessName}() {
   return request({
@@ -90,14 +93,14 @@ export function clear${genTable.BusinessName}() {
     method: 'delete'
   })
 }
-
+$end
+$if(replaceDto.ShowBtnExport)
 // 导出${genTable.functionName}
 export async function export${genTable.BusinessName}(query) {
   await downFile('${genTable.ModuleName}/${genTable.BusinessName}/export', { ...query })
 }
-
+$end
 $if(showCustomInput)
-//排序
 export function changeSort(data) {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}/ChangeSort',

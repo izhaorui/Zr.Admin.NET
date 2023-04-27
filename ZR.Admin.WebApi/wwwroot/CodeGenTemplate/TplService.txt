@@ -22,8 +22,6 @@ namespace ${options.ServicesNamespace}.${options.SubNamespace}
     [AppService(ServiceType = typeof(I${replaceDto.ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
     public class ${replaceDto.ModelTypeName}Service : BaseService<${replaceDto.ModelTypeName}>, I${replaceDto.ModelTypeName}Service
     {
-        #region 业务逻辑代码
-
         /// <summary>
         /// 查询${genTable.FunctionName}列表
         /// </summary>
@@ -31,10 +29,8 @@ namespace ${options.ServicesNamespace}.${options.SubNamespace}
         /// <returns></returns>
         public PagedInfo<${replaceDto.ModelTypeName}Dto> GetList(${replaceDto.ModelTypeName}QueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
 
-            //搜索条件查询语法参考Sqlsugar
 $foreach(column in genTable.Columns)
 $if(column.IsQuery)
 $if(column.HtmlType == "selectMulti")
@@ -70,10 +66,8 @@ $if(genTable.TplCategory == "tree")
         /// <returns></returns>
         public List<${replaceDto.ModelTypeName}> GetTreeList(${replaceDto.ModelTypeName}QueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
 
-            //搜索条件查询语法参考Sqlsugar
 $foreach(column in genTable.Columns)
 $if(column.IsQuery)
 $if(column.CsharpType == "string")
@@ -130,6 +124,5 @@ $if(replaceDto.ShowBtnTruncate)
             Truncate();
         }
 $end
-        #endregion
     }
 }

@@ -212,16 +212,18 @@ $end
 $foreach(column in genTable.Columns)
 $set(columnName = column.CsharpFieldFl)
 $set(value = "item.dictValue")
+$set(number = "")
 $set(labelName = column.ColumnComment)
 $if(column.CsharpType == "int" || column.CsharpType == "long")
     $set(value = "parseInt(item.dictValue)")
+    $set(number = ".number")
 $end
 
 $if(column.IsPK || column.IsIncrement)
 $if(column.IsPK && column.IsIncrement == false)
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-input v-model="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"/>
+              <el-input v-model${number}="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"/>
             </el-form-item>
           </el-col>
 $else
@@ -304,7 +306,7 @@ $elseif(column.HtmlType == "colorPicker")
 $else
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-input v-model="form.${columnName}" placeholder="请输入${labelName}" ${column.DisabledStr}/>
+              <el-input v-model${number}="form.${columnName}" placeholder="请输入${labelName}" ${column.DisabledStr}/>
             </el-form-item>
           </el-col>
 $end
