@@ -51,10 +51,14 @@ namespace ZR.Service.System
         public GenTable GetGenTableInfo(long tableId)
         {
             GenTable info = GetId(tableId);
-            if (info != null && !info.SubTableName.IsEmpty())
+            if (info != null)
             {
-                info.SubTable = Queryable().Where(f => f.TableName == info.SubTableName).First();
-                info.SubTable.Columns = GenTableColumnService.GenTableColumns(info.SubTable.TableId);
+                info.Columns = GenTableColumnService.GenTableColumns(tableId);
+                if (!info.SubTableName.IsEmpty())
+                {
+                    info.SubTable = Queryable().Where(f => f.TableName == info.SubTableName).First();
+                    info.SubTable.Columns = GenTableColumnService.GenTableColumns(info.SubTable.TableId);
+                }
             }
             return info;
         }
@@ -118,32 +122,62 @@ namespace ZR.Service.System
         /// 同步数据库
         /// </summary>
         /// <param name="tableId">表id</param>
-        /// <param name="dbTableColumns"></param>
         /// <param name="genTable"></param>
-        public void SynchDb(long tableId, GenTable genTable, List<GenTableColumn> dbTableColumns)
+        /// <param name="dbTableColumns">数据库表最新列初始化信息集合</param>
+        public bool SynchDb(long tableId, GenTable genTable, List<GenTableColumn> dbTableColumns)
         {
-            List<GenTableColumn> tableColumns = GenTableColumnService.GenTableColumns(tableId);
-            List<string> tableColumnNames = tableColumns.Select(f => f.ColumnName).ToList();
-            List<string> dbTableColumneNames = dbTableColumns.Select(f => f.ColumnName).ToList();
+            List<string> tableColumnNames = genTable.Columns.Select(f => f.ColumnName).ToList();//老列明
+            List<string> dbTableColumneNames = dbTableColumns.Select(f => f.ColumnName).ToList();//新列明
 
             List<GenTableColumn> insertColumns = new();
+            List<GenTableColumn> updateColumns = new();
             foreach (var column in dbTableColumns)
             {
                 if (!tableColumnNames.Contains(column.ColumnName))
                 {
                     insertColumns.Add(column);
                 }
+                else
+                {
+                    GenTableColumn prevColumn = genTable.Columns.Find(f => f.ColumnName == column.ColumnName);
+                    column.ColumnId = prevColumn.ColumnId;
+                    column.IsEdit = prevColumn.IsEdit;
+                    column.AutoFillType = prevColumn.AutoFillType;
+                    column.Sort = prevColumn.Sort;
+                    column.IsExport = prevColumn.IsExport;
+                    column.IsSort = prevColumn.IsSort;
+                    column.Update_time = DateTime.Now;
+                    column.Update_by = genTable.Update_by;
+                    if (column.IsList)
+                    {
+                        column.DictType = prevColumn.DictType;
+                        column.QueryType = prevColumn.QueryType;
+                    }
+                    if (column.ColumnComment.IsEmpty())
+                    {
+                        column.ColumnComment = prevColumn.ColumnComment;
+                    }
+                    updateColumns.Add(column);
+                }
             }
             bool result = UseTran2(() =>
             {
-                GenTableColumnService.Insert(insertColumns);
+                if (insertColumns.Count > 0)
+                {
+                    GenTableColumnService.Insert(insertColumns);
+                }
+                if (updateColumns.Count > 0)
+                {
+                    GenTableColumnService.UpdateGenTableColumn(updateColumns);
+                }
 
-                List<GenTableColumn> delColumns = tableColumns.FindAll(column => !dbTableColumneNames.Contains(column.ColumnName));
+                List<GenTableColumn> delColumns = genTable.Columns.FindAll(column => !dbTableColumneNames.Contains(column.ColumnName));
                 if (delColumns != null && delColumns.Count > 0)
                 {
                     GenTableColumnService.Delete(delColumns.Select(f => f.ColumnId).ToList());
                 }
             });
+            return result;
         }
     }
 
@@ -211,7 +245,7 @@ namespace ZR.Service.System
         public int UpdateGenTableColumn(List<GenTableColumn> tableColumn)
         {
             return Context.Updateable(tableColumn)
-                .WhereColumns(it => new { it.ColumnId, it.TableId })
+                .WhereColumns(it => new { it.ColumnId })
                 .UpdateColumns(it => new
                 {
                     it.ColumnComment,
@@ -229,9 +263,9 @@ namespace ZR.Service.System
                     it.DictType,
                     it.Update_by,
                     it.Remark,
-                    it.IsSort,
+                    it.IsSort,//
                     it.IsExport,
-                    it.AutoFillType
+                    it.AutoFillType,
                 })
                 .ExecuteCommand();
         }

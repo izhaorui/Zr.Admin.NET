@@ -103,10 +103,6 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var tableInfo = GenTableService.GetGenTableInfo(tableId);
             var tables = GenTableService.GetGenTableAll();
-            if (tableInfo != null)
-            {
-                tableInfo.Columns = GenTableColumnService.GenTableColumns(tableId);
-            }
             return SUCCESS(new { info = tableInfo, tables });
         }
 
@@ -232,7 +228,6 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
 
             dto.DbType = AppSettings.GetAppConfig("gen:dbType", 0);
             dto.GenTable = genTableInfo;
@@ -258,7 +253,6 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            genTableInfo.Columns = GenTableColumnService.GenTableColumns(dto.TableId);
 
             dto.DbType = AppSettings.GetAppConfig("gen:dbType", 0);
             dto.GenTable = genTableInfo;
@@ -299,13 +293,14 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (string.IsNullOrEmpty(tableName) || tableId <= 0) throw new CustomException("参数错误");
             GenTable table = GenTableService.GetGenTableInfo(tableId);
-            if (table == null) { throw new CustomException("原表不存在"); }
+            if (table == null) { throw new CustomException("同步数据失败，原表结构不存在"); }
+            table.Update_by = HttpContext.GetName();
 
             List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(table.DbName, tableName);
             List<GenTableColumn> dbTableColumns = CodeGeneratorTool.InitGenTableColumn(table, dbColumnInfos);
 
-            GenTableService.SynchDb(tableId, table, dbTableColumns);
-            return SUCCESS(true);
+            bool result = GenTableService.SynchDb(tableId, table, dbTableColumns);
+            return SUCCESS(result);
         }
     }
 }

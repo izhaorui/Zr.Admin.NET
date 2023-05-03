@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using SqlSugar;
+using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.System.Generate;
 
@@ -14,7 +15,7 @@ namespace ZR.Service.System.IService
         int DeleteGenTableByTbName(string tableName);
         PagedInfo<GenTable> GetGenTables(GenTable genTable, PagerInfo pagerInfo);
         GenTable GetGenTableInfo(long tableId);
-        void SynchDb(long tableId, GenTable genTable, List<GenTableColumn> dbTableColumns);
+        bool SynchDb(long tableId, GenTable genTable, List<GenTableColumn> genTableColumns);
         List<GenTable> GetGenTableAll();
         int UpdateGenTable(GenTable genTable);
     }
