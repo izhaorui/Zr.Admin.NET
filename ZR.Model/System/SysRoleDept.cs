@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     [SqlSugar.SugarTable("sys_role_dept")]
     [SqlSugar.Tenant(0)]

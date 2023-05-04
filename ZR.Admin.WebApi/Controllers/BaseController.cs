@@ -5,7 +5,7 @@ using MiniExcelLibs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Web;
-using ff = System.IO;
+using Io = System.IO;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -61,7 +61,7 @@ namespace ZR.Admin.WebApi.Controllers
             //IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
             //string fileDir = Path.Combine(webHostEnvironment.WebRootPath, path, fileName);
 
-            var stream = ff.File.OpenRead(path);  //创建文件流
+            var stream = Io.File.OpenRead(path);  //创建文件流
             return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
         }
         

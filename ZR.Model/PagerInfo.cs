@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
-
-namespace ZR.Model
+﻿namespace ZR.Model
 {
     public class PagerInfo
     {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     public class UserConstants
     {

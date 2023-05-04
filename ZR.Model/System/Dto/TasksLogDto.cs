@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ZR.Model.System.Dto
 {
     public class TasksLogQueryDto
     {
         /// <summary>
-        /// 描述 : 查询字符串 
-        /// 空值 : False
-        /// 默认 : 
+        /// 查询字符串
         /// </summary>
-        //[Display(Name = "查询字符串")]
         public string Name{ get; set; }
         public string JobName { get; set; }
         public string JobId { get; set; }

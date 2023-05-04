@@ -10,7 +10,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [HttpGet("list")]
         public IActionResult Index()
         {
-            return SUCCESS(null);
+            return SUCCESS(1);
         }
     }
 }

@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ZR.Model.System;
-
-namespace ZR.Model.System.Dto
+﻿namespace ZR.Model.System.Dto
 {
     public class SysLogininfoDto : SysBase
     {
-        public int pageNum { get; set; }
+        public int PageNum { get; set; }
         /// <summary>
         /// IP 地址
         /// </summary>

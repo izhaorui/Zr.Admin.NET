@@ -10,7 +10,6 @@ namespace ZR.Model.System
     [Tenant("0")]
     public class SysLogininfor
     {
-        //[Key]
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long InfoId { get; set; }
 
@@ -39,8 +38,9 @@ namespace ZR.Model.System
         /// </summary>
         public string Browser { get; set; }
 
-        /** 操作系统 */
-        //@Excel(name = "操作系统")
+        /// <summary>
+        /// 操作系统
+        /// </summary>
         public string Os { get; set; }
 
         /// <summary>

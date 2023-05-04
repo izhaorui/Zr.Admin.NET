@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ZR.Model.System;
+﻿using System.Collections.Generic;
 
 namespace ZR.Model.System.Dto
 {
-    public class SysRoleDto: SysBase
+    public class SysRoleDto : SysBase
     {
         public long RoleId { get; set; }
         /// <summary>

@@ -1,8 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
-using ZR.Model.System;
 
 namespace ZR.Model.System.Vo
 {

@@ -16,7 +16,7 @@ namespace ZR.Admin.WebApi.Filters
         /// <summary>
         /// 权限字符串，例如 system:user:view
         /// </summary>
-        public string Permission { get; set; }
+        public string Permission { get; set; } = string.Empty;
         private bool HasPermi { get; set; }
         private bool HasRole { get; set; }
         public ActionPermissionFilter() { }

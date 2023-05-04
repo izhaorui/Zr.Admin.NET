@@ -16,14 +16,14 @@ namespace ZR.Model.System.Dto
         [Required(ErrorMessage = "密码不能为空")]
         public string Password { get; set; }
 
-        /**
-         * 验证码
-         */
+        /// <summary>
+        /// 验证码
+        /// </summary>
         public string Code { get; set; }
 
-        /**
-         * 唯一标识
-         */
+        /// <summary>
+        /// 唯一标识
+        /// </summary>
         public string Uuid { get; set; } = "";
         public string LoginIP { get; set; }
     }

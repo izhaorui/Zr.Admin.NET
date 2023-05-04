@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ZR.Model.System;
-
-namespace ZR.Model.System.Dto
+﻿namespace ZR.Model.System.Dto
 {
     public class SysUserDto
     {
@@ -14,7 +9,7 @@ namespace ZR.Model.System.Dto
         public string Remark { get; set; }
         public string Phonenumber { get; set; }
         /// <summary>
-        /// '用户性别（0男 1女 2未知）',
+        /// 用户性别（0男 1女 2未知）
         /// </summary>
         public int Sex { get; set; }
     }

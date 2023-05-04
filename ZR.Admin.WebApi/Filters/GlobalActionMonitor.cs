@@ -111,7 +111,7 @@ namespace ZR.Admin.WebApi.Filters
                 if (logAttribute != null)
                 {
                     sysOperLog.Title = logAttribute?.Title;
-                    sysOperLog.BusinessType = (int)logAttribute?.BusinessType;
+                    sysOperLog.BusinessType = (int)logAttribute.BusinessType;
                     sysOperLog.OperParam = logAttribute.IsSaveRequestData ? sysOperLog.OperParam : "";
                     sysOperLog.JsonResult = logAttribute.IsSaveResponseData ? sysOperLog.JsonResult : "";
                 }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ZR.Admin.WebApi.Hubs
+﻿namespace ZR.Admin.WebApi.Hubs
 {
     public class OnlineUsers
     {
@@ -17,8 +13,8 @@ namespace ZR.Admin.WebApi.Hubs
         public string Name { get; set; }
         public DateTime LoginTime { get; set; }
         public string UserIP { get; set; }
-        public string Location { get; set; }
-        public string Uuid{ get; set; }
+        public string? Location { get; set; }
+        public string? Uuid{ get; set; }
 
         public OnlineUsers(string clientid, string name, long? userid, string userip)
         {

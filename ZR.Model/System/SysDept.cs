@@ -1,7 +1,5 @@
 ﻿using SqlSugar;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ZR.Model.System
 {
@@ -12,32 +10,50 @@ namespace ZR.Model.System
     [Tenant("0")]
     public class SysDept: SysBase
     {
-        /** 部门ID */
+        /// <summary>
+        /// 部门ID
+        /// </summary>
         [SqlSugar.SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public long DeptId { get; set; }
 
-        /** 父部门ID */
+        /// <summary>
+        /// 父部门ID
+        /// </summary>
         public long ParentId { get; set; }
 
-        /** 祖级列表 */
+        /// <summary>
+        /// 祖级列表
+        /// </summary>
         public string Ancestors { get; set; }
 
-        /** 部门名称 */
+        /// <summary>
+        /// 部门名称
+        /// </summary>
         public string DeptName { get; set; }
 
-        /** 显示顺序 */
+        /// <summary>
+        /// 显示顺序
+        /// </summary>
         public int OrderNum { get; set; }
 
-        /** 负责人 */
+        /// <summary>
+        /// 负责人
+        /// </summary>
         public string Leader { get; set; }
 
-        /** 联系电话 */
+        /// <summary>
+        /// 联系电话
+        /// </summary>
         public string Phone { get; set; }
 
-        /** 邮箱 */
+        /// <summary>
+        /// 邮箱
+        /// </summary>
         public string Email { get; set; }
 
-        /** 部门状态:0正常,1停用 */
+        /// <summary>
+        /// 部门状态:0正常,1停用
+        /// </summary>
         public string Status { get; set; }
 
         /// <summary>
@@ -45,10 +61,6 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true)]
         public string DelFlag { get; set; }
-
-        /** 父部门名称 */
-        //[SugarColumn(IsIgnore = true)]
-        //public string ParentName { get; set; }
 
         /// <summary>
         /// 子菜单

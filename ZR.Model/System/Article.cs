@@ -1,7 +1,5 @@
 ﻿using SqlSugar;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ZR.Model.System
 {
@@ -12,10 +10,22 @@ namespace ZR.Model.System
     [Tenant("0")]
     public class Article
     {
+        /// <summary>
+        /// 文章id
+        /// </summary>
         [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public int Cid { get; set; }
+        /// <summary>
+        /// 文章标题
+        /// </summary>
         public string Title { get; set; }
+        /// <summary>
+        /// 发布时间
+        /// </summary>
         public DateTime? CreateTime { get; set; }
+        /// <summary>
+        /// 更新时间
+        /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true)]
         public DateTime? UpdateTime { get; set; }
         /// <summary>
@@ -26,11 +36,10 @@ namespace ZR.Model.System
         /// 作者名
         /// </summary>
         public string AuthorName { get; set; }
+        /// <summary>
+        /// 发布者用户id
+        /// </summary>
         public long UserId { get; set; }
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        //public string Type { get; set; }
         /// <summary>
         /// 文章状态 1、发布 2、草稿
         /// </summary>

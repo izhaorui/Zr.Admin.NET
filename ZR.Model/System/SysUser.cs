@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ZR.Model.System
 {
@@ -19,16 +18,19 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public long UserId { get; set; }
-        //[Duplication]//校验模板类该列数据是否重复
+        /// <summary>
+        /// 登录用户名
+        /// </summary>
         public string UserName { get; set; }
+        /// <summary>
+        /// 用户昵称
+        /// </summary>
         public string NickName { get; set; }
         /// <summary>
-        /// '用户类型（00系统用户）',
+        /// 用户类型（00系统用户）
         /// </summary>
-        //[JsonProperty(propertyName: "userType")]
-        //public string User_type { get; set; } = "";
-        [SugarColumn(IsOnlyIgnoreInsert = true)]
-        [ExcelIgnore]
+        public string UserType { get; set; } = "";
+        //[SugarColumn(IsOnlyIgnoreInsert = true)]
         public string Avatar { get; set; }
         public string Email { get; set; }
 
