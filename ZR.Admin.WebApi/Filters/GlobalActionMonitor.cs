@@ -73,7 +73,7 @@ namespace ZR.Admin.WebApi.Filters
             {
                 string method = context.HttpContext.Request.Method.ToUpper();
                 // 获取当前的用户
-                string userName = context.HttpContext.GetName();
+                string userName = context.HttpContext.GetName() ?? context.HttpContext.Request.Headers["userName"];
                 string jsonResult = string.Empty;
                 if (context.Result is ContentResult result && result.ContentType == "application/json")
                 {
