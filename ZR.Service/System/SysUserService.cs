@@ -192,7 +192,7 @@ namespace ZR.Service
         /// <returns></returns>
         public int DeleteUser(long userid)
         {
-            CheckUserAllowed(new SysUser() { UserId = userid});
+            CheckUserAllowed(new SysUser() { UserId = userid });
             //删除用户与角色关联
             UserRoleService.DeleteUserRoleByUserId((int)userid);
             // 删除用户与岗位关联
@@ -259,8 +259,8 @@ namespace ZR.Service
         {
             if (!SysUser.IsAdmin(loginUserId))
             {
-                SysUser user = new SysUser() { UserId = userid};
-                
+                SysUser user = new SysUser() { UserId = userid };
+
                 //TODO 判断用户是否有数据权限
             }
         }
@@ -270,7 +270,7 @@ namespace ZR.Service
         /// </summary>
         /// <param name="users"></param>
         /// <returns></returns>
-        public string ImportUsers(List<SysUser> users)
+        public (string, object, object) ImportUsers(List<SysUser> users)
         {
             users.ForEach(x =>
             {
@@ -278,7 +278,7 @@ namespace ZR.Service
                 x.Status = "0";
                 x.DelFlag = "0";
                 x.Password = "E10ADC3949BA59ABBE56E057F20F883E";
-                x.Remark = "数据导入";
+                x.Remark = x.Remark.IsEmpty() ? "数据导入" : x.Remark;
             });
             var x = Context.Storageable(users)
                 .SplitInsert(it => !it.Any())
@@ -289,7 +289,7 @@ namespace ZR.Service
                 .ToStorage();
             var result = x.AsInsertable.ExecuteCommand();//插入可插入部分;
 
-            string msg = string.Format(" 插入{0} 更新{1} 错误数据{2} 不计算数据{3} 删除数据{4},总共{5}",
+            string msg = string.Format(" 插入{0} 更新{1} 错误数据{2} 不计算数据{3} 删除数据{4} 总共{5}",
                                x.InsertList.Count,
                                x.UpdateList.Count,
                                x.ErrorList.Count,
@@ -298,14 +298,18 @@ namespace ZR.Service
                                x.TotalList.Count);
             //输出统计                      
             Console.WriteLine(msg);
-
+            
             //输出错误信息               
             foreach (var item in x.ErrorList)
             {
                 Console.WriteLine("userName为" + item.Item.UserName + " : " + item.StorageMessage);
             }
-
-            return msg;
+            foreach (var item in x.IgnoreList)
+            {
+                Console.WriteLine("userName为" + item.Item.UserName + " : " + item.StorageMessage);
+            }
+            
+            return (msg, x.ErrorList, x.IgnoreList);
         }
 
         /// <summary>
@@ -326,7 +330,7 @@ namespace ZR.Service
         /// <returns></returns>
         public void UpdateLoginInfo(LoginBodyDto user, long userId)
         {
-            Update(new SysUser() { LoginIP = user.LoginIP, LoginDate = DateTime.Now, UserId = userId },it => new { it.LoginIP, it.LoginDate });
+            Update(new SysUser() { LoginIP = user.LoginIP, LoginDate = DateTime.Now, UserId = userId }, it => new { it.LoginIP, it.LoginDate });
         }
     }
 }

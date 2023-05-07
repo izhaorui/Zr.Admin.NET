@@ -77,7 +77,7 @@ namespace ZR.Service.System.IService
         /// </summary>
         /// <param name="users"></param>
         /// <returns></returns>
-        string ImportUsers(List<SysUser> users);
+        (string, object, object) ImportUsers(List<SysUser> users);
 
         SysUser Login(LoginBodyDto user);
 

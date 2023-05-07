@@ -170,7 +170,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
             string sFileName = $"{fileName}模板.xlsx";
-            string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "importTemplate", sFileName);
+            string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "ImportTemplate", sFileName);
             
             if (!Directory.Exists(newFileName))
             {
@@ -178,6 +178,20 @@ namespace ZR.Admin.WebApi.Controllers
             }
             MiniExcel.SaveAs(newFileName, list);
             return sFileName;
+        }
+
+        /// <summary>
+        /// 下载指定文件模板
+        /// </summary>
+        /// <param name="fileName">下载文件名</param>
+        /// <returns></returns>
+        protected (string, string) DownloadImportTemplate(string fileName)
+        {
+            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+            string sFileName = $"{fileName}.xlsx";
+            string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "ImportTemplate", sFileName);
+
+            return (sFileName, fullPath);
         }
     }
 }
