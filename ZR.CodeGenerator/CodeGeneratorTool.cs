@@ -49,6 +49,7 @@ namespace ZR.CodeGenerator
                 ShowBtnExport = dto.GenTable.Options.CheckedBtn.Any(f => f == 4),
                 ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5),
                 ShowBtnTruncate = dto.GenTable.Options.CheckedBtn.Any(f => f == 6),
+                ShowBtnMultiDel = dto.GenTable.Options.CheckedBtn.Any(f => f == 7),
             };
             var columns = dto.GenTable.Columns;
 
