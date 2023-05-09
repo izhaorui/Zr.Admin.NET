@@ -259,7 +259,7 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
-/ZR.Admin.WebApi/appsettings.Stage.json
+/ZR.Admin.WebApi/appsettings.Development.json
 /CodeGenerate
 /ZR.Admin.WebApi/appsettings.Production.json
 /ZR.Admin.WebApi/wwwroot/uploads
