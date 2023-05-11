@@ -12,9 +12,9 @@
 	<ItemGroup>
 		<PackageReference Include="Mapster" Version="7.3.0" />
 		<PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
-		<PackageReference Include="MySqlConnector" Version="2.2.5" />
+		<PackageReference Include="MySqlConnector" Version="2.2.6" />
 		<PackageReference Include="NETCore.Encrypt" Version="2.1.1" />
 		<PackageReference Include="SqlSugar.IOC" Version="2.0.0" />
-		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.66" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.72" />
 	</ItemGroup>
 </Project>

@@ -6,11 +6,11 @@
 
 	<ItemGroup>
 		<PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
-		<PackageReference Include="CSRedisCore" Version="3.8.669" />
+		<PackageReference Include="CSRedisCore" Version="3.8.670" />
 		<PackageReference Include="JinianNet.JNTemplate" Version="2.3.3" />
 		<PackageReference Include="MailKit" Version="4.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
-		<PackageReference Include="MiniExcel" Version="1.30.2" />
+		<PackageReference Include="MiniExcel" Version="1.30.3" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -23,8 +23,8 @@
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.6" />
 		<PackageReference Include="UAParser" Version="3.1.47" />
 		<PackageReference Include="IPTools.China" Version="1.6.0" />
-		<PackageReference Include="NLog" Version="5.0.4" />
-		<PackageReference Include="NLog.Web.AspNetCore" Version="5.1.4" />
+		<PackageReference Include="NLog" Version="5.1.4" />
+		<PackageReference Include="NLog.Web.AspNetCore" Version="5.2.3" />
 		<PackageReference Include="Mapster" Version="7.3.0" />
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.3" />
 	</ItemGroup>
