@@ -72,5 +72,13 @@ namespace ZR.Service.System.IService
         /// <param name="roleId"></param>
         /// <returns></returns>
         int DeleteRoleMenuByRoleId(long roleId);
+
+        /// <summary>
+        /// 删除角色指定菜单
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <param name="menuIds"></param>
+        /// <returns></returns>
+        bool DeleteRoleMenuByRoleIdMenuIds(long roleId, long[] menuIds);
     }
 }

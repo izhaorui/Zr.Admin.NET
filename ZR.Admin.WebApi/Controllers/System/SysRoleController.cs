@@ -9,6 +9,8 @@ using ZR.Model;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 using ZR.Admin.WebApi.Extensions;
+using ZR.Model.System.Dto;
+using Mapster;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -78,7 +80,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 修改角色 √
+        /// 修改角色
         /// </summary>
         /// <param name="sysRoleDto"></param>
         /// <returns></returns>
@@ -118,12 +120,12 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPut("dataScope")]
         [ActionPermissionFilter(Permission = "system:role:authorize")]
         [Log(Title = "角色管理", BusinessType = BusinessType.UPDATE)]
-        public IActionResult DataScope([FromBody] SysRole sysRoleDto)
+        public IActionResult DataScope([FromBody] SysRoleDto sysRoleDto)
         {
             if (sysRoleDto == null || sysRoleDto.RoleId <= 0) return ToResponse(ApiResult.Error(101, "请求参数错误"));
-
+            SysRole sysRole = sysRoleDto.Adapt<SysRole>();
             sysRoleDto.Create_by = HttpContext.GetName();
-            sysRoleService.CheckRoleAllowed(sysRoleDto);
+            sysRoleService.CheckRoleAllowed(sysRole);
 
             bool result = sysRoleService.AuthDataScope(sysRoleDto);
 

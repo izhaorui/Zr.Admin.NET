@@ -16,13 +16,6 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysUserRoleService), ServiceLifetime = LifeTime.Transient)]
     public class SysUserRoleService : BaseService<SysUserRole>, ISysUserRoleService
     {
-        //public SysUserRoleRepository SysUserRoleRepository;
-
-        //public SysUserRoleService(SysUserRoleRepository sysUserRoleRepository)
-        //{
-        //    SysUserRoleRepository = sysUserRoleRepository;
-        //}
-
         /// <summary>
         /// 通过角色ID查询角色使用数量
         /// </summary>
@@ -85,7 +78,6 @@ namespace ZR.Service.System
         /// <returns></returns>
         public PagedInfo<SysUser> GetSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
         {
-            //return SysUserRoleRepository.GetSysUsersByRoleId(roleUserQueryDto);
             var query = Context.Queryable<SysUserRole, SysUser>((t1, u) => new JoinQueryInfos(
                 JoinType.Left, t1.UserId == u.UserId))
                 .Where((t1, u) => t1.RoleId == roleUserQueryDto.RoleId && u.DelFlag == "0");

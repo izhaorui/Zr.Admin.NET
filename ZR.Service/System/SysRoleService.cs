@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Repository;
 using ZR.Service.System.IService;
 
@@ -179,15 +180,31 @@ namespace ZR.Service
         /// </summary>
         /// <param name="sysRoleDto"></param>
         /// <returns></returns>
-        public bool AuthDataScope(SysRole sysRoleDto)
+        public bool AuthDataScope(SysRoleDto sysRoleDto)
         {
             return UseTran2(() =>
             {
                 //删除角色菜单
-                DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
+                //DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
+                //InsertRoleMenu(sysRoleDto);
+                var oldMenus = SelectUserRoleMenus(sysRoleDto.RoleId);
+                var newMenus = sysRoleDto.MenuIds;
+
+                //并集菜单
+                var arr_c = oldMenus.Intersect(newMenus).ToArray();
+                //获取减量菜单
+                var delMenuIds = oldMenus.Where(c => !arr_c.Contains(c)).ToArray();
+                //获取增量
+                var addMenuIds = newMenus.Where(c => !arr_c.Contains(c)).ToArray();
+
+                RoleMenuService.DeleteRoleMenuByRoleIdMenuIds(sysRoleDto.RoleId, delMenuIds);
+                sysRoleDto.MenuIds = addMenuIds.ToList();
+                sysRoleDto.DelMenuIds= delMenuIds.ToList();
                 InsertRoleMenu(sysRoleDto);
+                Console.WriteLine($"减少了{delMenuIds.Length},增加了{addMenuIds.Length}菜单");
             });
         }
+
         #region Service
 
 
@@ -196,14 +213,14 @@ namespace ZR.Service
         /// </summary>
         /// <param name="sysRoleDto"></param>
         /// <returns></returns>
-        public int InsertRoleMenu(SysRole sysRoleDto)
+        public int InsertRoleMenu(SysRoleDto sysRoleDto)
         {
             int rows = 1;
             // 新增用户与角色管理
-            List<SysRoleMenu> sysRoleMenus = new List<SysRoleMenu>();
+            List<SysRoleMenu> sysRoleMenus = new();
             foreach (var item in sysRoleDto.MenuIds)
             {
-                SysRoleMenu rm = new SysRoleMenu
+                SysRoleMenu rm = new()
                 {
                     Menu_id = item,
                     Role_id = sysRoleDto.RoleId,

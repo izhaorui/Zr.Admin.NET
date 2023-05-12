@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Service.System.IService
 {
@@ -81,7 +82,7 @@ namespace ZR.Service.System.IService
         /// </summary>
         /// <param name="role"></param>
         /// <returns></returns>
-        bool AuthDataScope(SysRole role);
+        bool AuthDataScope(SysRoleDto role);
         #region Service
 
 
@@ -90,7 +91,7 @@ namespace ZR.Service.System.IService
         /// </summary>
         /// <param name="sysRoleDto"></param>
         /// <returns></returns>
-        public int InsertRoleMenu(SysRole sysRoleDto);
+        public int InsertRoleMenu(SysRoleDto sysRoleDto);
 
         /// <summary>
         /// 判断是否是管理员

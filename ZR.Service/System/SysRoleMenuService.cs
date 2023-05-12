@@ -26,7 +26,10 @@ namespace ZR.Service.System
         {
             return Delete(roleId);
         }
-
+        public bool DeleteRoleMenuByRoleIdMenuIds(long roleId, long[] menuIds)
+        {
+            return Delete(f => f.Role_id == roleId && menuIds.Contains(f.Menu_id));
+        }
         /// <summary>
         /// 根据角色获取菜单id
         /// </summary>
