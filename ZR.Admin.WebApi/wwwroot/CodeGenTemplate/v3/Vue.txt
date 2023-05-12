@@ -23,14 +23,23 @@ $end
 $if(column.CsharpType == "int" || column.CsharpType == "long")
 $set(numLabel = ".number")
 $end
-$if(column.HtmlType == "datetime")
+$if(column.HtmlType == "month")
+      <el-form-item label="$labelName" prop="${columnName}">
+        <el-date-picker
+          v-model="queryParams.${columnName}"
+          type="month"
+          value-format="YYYY-MM-DD"
+          placeholder="请选择$labelName">
+        </el-date-picker>
+      </el-form-item>
+$elseif(column.HtmlType == "datetime")
       <el-form-item label="$labelName">
-        <el-date-picker 
+        <el-date-picker
           v-model="dateRange${column.CsharpField}" 
-          type="datetimerange" 
+          type="datetimerange"
           range-separator="-"
-          start-placeholder="开始日期" 
-          end-placeholder="结束日期" 
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
           placeholder="请选择$labelName"
           value-format="YYYY-MM-DD HH:mm:ss"
           :default-time="defaultTime"
@@ -88,7 +97,7 @@ $end
 $if(replaceDto.ShowBtnTruncate)
       <el-col :span="1.5">
         <el-button type="danger" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" plain icon="delete" @click="handleClear">
-          清空
+          {{ ${t}t('btn.clean') }}
         </el-button>
       </el-col>
 $end
@@ -163,13 +172,13 @@ $if(column.HtmlType == "customInput" && column.IsPk == false)
 $elseif(column.HtmlType == "imageUpload")
       <el-table-column prop="${columnName}" label="${labelName}" align="center" v-if="columns.showColumn('${columnName}')">
         <template #default="scope">
-          <el-image 
-            preview-teleported 
-            :hide-on-click-modal="true" 
-            lazy 
-            class="table-td-thumb" 
-            fit="contain" 
-            :src="scope.row.${columnName}" 
+          <el-image
+            preview-teleported
+            :hide-on-click-modal="true"
+            lazy
+            class="table-td-thumb"
+            fit="contain"
+            :src="scope.row.${columnName}"
             :preview-src-list="[scope.row.${columnName}]">
             <div>
               <el-icon :size="15"><document /></el-icon>
@@ -187,6 +196,8 @@ $else
 $end
         </template>
       </el-table-column>
+$elseif(column.HtmlType == "datetime")
+      <el-table-column prop="${columnName}" label="${labelName}" :show-overflow-tooltip="true" ${column.sortStr} v-if="columns.showColumn('${columnName}')"/>
 $else
       <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml}${column.sortStr} v-if="columns.showColumn('${columnName}')"/>
 $end
@@ -243,7 +254,7 @@ $if(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
               <el-input-number v-model.number="form.${columnName}" :controls="true" controls-position="right" placeholder="请输入${labelName}" ${column.DisabledStr}/>
             </el-form-item>
           </el-col>
-$elseif(column.HtmlType == "datetime")
+$elseif(column.HtmlType == "datetime" || column.HtmlType == "month")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-date-picker v-model="form.${columnName}" type="datetime" :teleported="false" placeholder="选择日期时间"${column.DisabledStr}></el-date-picker>
@@ -265,7 +276,7 @@ $elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}"${column.DisabledStr}>
-                <el-radio v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
+                <el-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -286,8 +297,9 @@ $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-select v-model="form.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
                 <el-option 
-                  v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" 
-                  :key="item.dictValue" :label="item.dictLabel" 
+                  v-for="item in $if(column.DictType != "")options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" 
+                  :key="item.dictValue" 
+                  :label="item.dictLabel" 
                   :value="${value}"></el-option>
               </el-select>
             </el-form-item>
@@ -296,7 +308,9 @@ $elseif(column.HtmlType == "checkbox")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-checkbox-group v-model="form.${columnName}Checked"${column.DisabledStr}>
-                <el-checkbox v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
+                <el-checkbox v-for="item in $if(column.DictType != "")options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">
+                  {{item.dictLabel}}
+                </el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-col>
@@ -335,7 +349,7 @@ import Editor from '@/components/Editor'
 $end
 
 const { proxy } = getCurrentInstance()
-// 选中${replaceDto.FistLowerPk}数组数组
+// 选中${replaceDto.FistLowerPk}数组
 const ids = ref([])
 const loading = ref(false)
 const showSearch = ref(true)

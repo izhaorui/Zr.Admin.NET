@@ -153,10 +153,11 @@ namespace ZR.Service.System
                         column.DictType = prevColumn.DictType;
                         column.QueryType = prevColumn.QueryType;
                     }
-                    if (column.ColumnComment.IsEmpty())
-                    {
-                        column.ColumnComment = prevColumn.ColumnComment;
-                    }
+                    //不同步列说明
+                    //if (column.ColumnComment.IsEmpty())
+                    //{
+                    //    column.ColumnComment = prevColumn.ColumnComment;
+                    //}
                     updateColumns.Add(column);
                 }
             }

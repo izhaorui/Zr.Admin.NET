@@ -8,8 +8,7 @@ $end
 namespace ${options.ModelsNamespace}.${options.SubNamespace}
 {
     /// <summary>
-    /// ${genTable.FunctionName}，数据实体对象
-    ///
+    /// ${genTable.FunctionName}
     /// @author ${replaceDto.Author}
     /// @date ${replaceDto.AddTime}
     /// </summary>
