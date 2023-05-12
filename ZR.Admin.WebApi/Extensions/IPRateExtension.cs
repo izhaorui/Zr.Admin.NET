@@ -1,7 +1,4 @@
 ﻿using AspNetCoreRateLimit;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace ZR.Admin.WebApi.Extensions
 {

@@ -3,13 +3,8 @@ using Infrastructure.Constant;
 using Infrastructure.Model;
 using IPTools.Core;
 using Microsoft.AspNetCore.SignalR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using UAParser;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Model;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Hubs
@@ -20,7 +15,7 @@ namespace ZR.Admin.WebApi.Hubs
     public class MessageHub : Hub
     {
         //创建用户集合，用于存储所有链接的用户数据
-        private static readonly List<OnlineUsers> clientUsers = new();
+        public static readonly List<OnlineUsers> clientUsers = new();
         private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly ISysNoticeService SysNoticeService;
 
@@ -44,22 +39,22 @@ namespace ZR.Admin.WebApi.Hubs
         /// <returns></returns>
         public override Task OnConnectedAsync()
         {
-            var name = HttpContextExtension.GetName(App.HttpContext);// Context.User.Identity.Name;
+            var name = HttpContextExtension.GetName(App.HttpContext);
             var ip = HttpContextExtension.GetClientUserIp(App.HttpContext);
             var ip_info = IpTool.Search(ip);
 
             ClientInfo clientInfo = HttpContextExtension.GetClientInfo(App.HttpContext);
             string device = clientInfo.ToString();
-            
+
             var userid = HttpContextExtension.GetUId(App.HttpContext);
             string uuid = device + userid + ip;
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
             var user2 = clientUsers.Any(u => u.Uuid == uuid);
-            
-            //判断用户是否存在，否则添加集合
-            if (!user2 && !user && Context.User.Identity.IsAuthenticated)
+
+            //判断用户是否存在，否则添加集合!user2 && !user && 
+            if (Context.User.Identity.IsAuthenticated)
             {
-                OnlineUsers users = new(Context.ConnectionId, name, userid, ip)
+                OnlineUsers users = new(Context.ConnectionId, name, userid, ip, device)
                 {
                     Location = ip_info.City,
                     Uuid = uuid
@@ -71,7 +66,6 @@ namespace ZR.Admin.WebApi.Hubs
             }
 
             Clients.All.SendAsync(HubsConstant.OnlineNum, clientUsers.Count);
-            Clients.All.SendAsync(HubsConstant.OnlineUser, clientUsers);
             return base.OnConnectedAsync();
         }
 
@@ -87,7 +81,7 @@ namespace ZR.Admin.WebApi.Hubs
             {
                 clientUsers.Remove(user);
                 Clients.All.SendAsync(HubsConstant.OnlineNum, clientUsers.Count);
-                Clients.All.SendAsync(HubsConstant.OnlineUser, clientUsers);
+
                 Console.WriteLine($"用户{user?.Name}离开了，当前已连接{clientUsers.Count}个");
             }
             return base.OnDisconnectedAsync(exception);

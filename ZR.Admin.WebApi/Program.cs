@@ -8,6 +8,7 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Middleware;
 using ZR.Admin.WebApi.Hubs;
 using ZR.Common.Cache;
+using AspNetCoreRateLimit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +42,8 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
 //普通验证码
 builder.Services.AddCaptcha(builder.Configuration);
+//IPRatelimit
+builder.Services.AddIPRate(builder.Configuration);
 //builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
 //绑定整个对象到Model上
@@ -119,7 +122,9 @@ app.UseResponseCaching();
 app.UseAddTaskSchedulers();
 //使用全局异常中间件
 app.UseMiddleware<GlobalExceptionMiddleware>();
-
+//启用客户端IP限制速率
+app.UseIpRateLimiting();
+app.UseRateLimiter();
 //设置socket连接
 app.MapHub<MessageHub>("/msgHub");
 

@@ -13,16 +13,28 @@
         public string Name { get; set; }
         public DateTime LoginTime { get; set; }
         public string UserIP { get; set; }
+        /// <summary>
+        /// 登录地点
+        /// </summary>
         public string? Location { get; set; }
-        public string? Uuid{ get; set; }
 
-        public OnlineUsers(string clientid, string name, long? userid, string userip)
+        /// <summary>
+        /// 判断用户唯一
+        /// </summary>
+        public string? Uuid{ get; set; }
+        /// <summary>
+        /// 浏览器
+        /// </summary>
+        public string Browser { get; set; }
+
+        public OnlineUsers(string clientid, string name, long? userid, string userip, string browser)
         {
             ConnnectionId = clientid;
             Name = name;
             LoginTime = DateTime.Now;
             Userid = userid;
             UserIP = userip;
+            Browser = browser;
         }
     }
 }

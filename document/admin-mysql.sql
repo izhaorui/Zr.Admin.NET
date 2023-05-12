@@ -273,6 +273,7 @@ INSERT into sys_menu VALUES (107, '参数设置', 1, 8, 'config','system/config/
 INSERT INTO sys_menu VALUES (108, '日志管理', 1, 10, 'log', ''                     , 0, 0, 'M', '0', '0', '', 'log', '', SYSDATE(), '', NULL, '日志管理菜单', 'menu.systemLog');
 INSERT INTO sys_menu VALUES (109, '通知公告', 1, 9, 'notice', 'system/notice/index', 0, 0, 'C', '0', '0', 'system:notice:list', 'message', '', SYSDATE(), '', NULL, '通知公告菜单', 'menu.systemNotice');
 INSERT INTO sys_menu VALUES (110, '定时任务', 2, 10, 'job', 'monitor/job/index', 0, 0, 'C', '0', '0', '', 'job', '', SYSDATE(), '', NULL, '定时任务菜单', 'menu.timedTask');
+INSERT INTO sys_menu VALUES (111, '在线用户', 2, 10, 'onlineusers', 'monitor/onlineuser/index', 0, 0, 'C', '0', '0', '', 'online', '', SYSDATE(), '', NULL, '在线用户', 'layout.onlineUsers');
 INSERT INTO sys_menu VALUES (112, '服务监控', 2, 11, 'server', 'monitor/server/index', 0, 0, 'C', '0', '0', 'monitor:server:list', 'server', '', SYSDATE(), '', NULL, '服务监控菜单', 'menu.serviceMonitor');
 INSERT INTO sys_menu VALUES (113, '缓存监控', 2, 12, 'cache', 'monitor/cache/index', 0, 0, 'C', '1', '1', 'monitor:cache:list', 'redis', '', SYSDATE(), '', NULL, '缓存监控菜单', 'menu.cacheMonitor');
 
