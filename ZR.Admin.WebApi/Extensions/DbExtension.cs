@@ -60,7 +60,7 @@ namespace ZR.Admin.WebApi.Extensions
             var config = db.GetConnection(iocConfig.ConfigId).CurrentConnectionConfig;
 
             string configId = config.ConfigId;
-            db.GetConnectionScope(configId).Aop.OnLogExecuted = (sql, pars) =>
+            db.GetConnectionScope(configId).Aop.OnLogExecuting = (sql, pars) =>
             {
                 string log = $"【db{configId} SQL语句】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
                 if (sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
@@ -82,9 +82,12 @@ namespace ZR.Admin.WebApi.Extensions
                 }
             };
 
-            db.GetConnectionScope(configId).Aop.OnError = (e) =>
+            db.GetConnectionScope(configId).Aop.OnError = (ex) =>
             {
-                logger.Error(e, $"执行SQL出错：{e.Message}，{e.StackTrace}");
+                var pars = db.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
+
+                string sql = "【错误SQL】" + UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n";
+                logger.Error(ex, $"{sql}\r\n{ex.Message}\r\n{ex.StackTrace}");
             };
 
             db.GetConnectionScope(configId).CurrentConnectionConfig.MoreSettings = new ConnMoreSettings()
@@ -93,7 +96,14 @@ namespace ZR.Admin.WebApi.Extensions
             };
             db.GetConnectionScope(configId).CurrentConnectionConfig.ConfigureExternalServices = new ConfigureExternalServices()
             {
-                DataInfoCacheService = cache
+                DataInfoCacheService = cache,
+                EntityService = (c, p) =>
+                {
+                    if (db.GetConnectionScope(configId).CurrentConnectionConfig.DbType == DbType.PostgreSQL && p.DataType != null && p.DataType.Contains("nvarchar"))
+                    {
+                        p.DataType = "text";
+                    }
+                }
             };
         }
 
