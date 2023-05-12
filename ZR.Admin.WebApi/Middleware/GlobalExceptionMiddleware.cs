@@ -4,6 +4,7 @@ using Infrastructure.Model;
 using IPTools.Core;
 using Microsoft.AspNetCore.Http.Features;
 using NLog;
+using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using ZR.Admin.WebApi.Extensions;
@@ -117,7 +118,18 @@ namespace ZR.Admin.WebApi.Middleware
             Logger.Log(ei);
             context.Response.ContentType = "text/json;charset=utf-8";
             await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
-            WxNoticeHelper.SendMsg("系统出错", sysOperLog.ErrorMsg);
+
+            // 获取异常堆栈
+            var traceFrame = new StackTrace(true)?.GetFrame(0);
+            // 获取出错的文件名
+            var exceptionFileName = traceFrame?.GetFileName();
+            // 获取出错的行号
+            var exceptionFileLineNumber = traceFrame?.GetFileLineNumber();
+            string errorMsg = $"用户名：{sysOperLog.OperName}\n" +
+                $"错误信息：{sysOperLog.ErrorMsg}\n"+
+                $"错误行号：{exceptionFileLineNumber}\n" +
+                $"{traceFrame}#{exceptionFileName}";
+            WxNoticeHelper.SendMsg("系统出错", errorMsg);
             SysOperLogService.InsertOperlog(sysOperLog);
         }
 

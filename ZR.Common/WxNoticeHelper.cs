@@ -41,6 +41,7 @@ namespace ZR.Common
             }
             if (string.IsNullOrEmpty(CORPID))
             {
+                System.Console.WriteLine("请完成企业微信配置");
                 return (0, "请完成企业微信通知配置");
             }
             GetTokenResult tokenResult = GetAccessToken();
@@ -74,7 +75,7 @@ namespace ZR.Common
             //{"errcode":0,"errmsg":"ok","invaliduser":""}
             string msgResult = HttpHelper.HttpPost(msgUrl, postData, "contentType/json");
             GetTokenResult getTokenResult = JsonSerializer.Deserialize<GetTokenResult>(msgResult);
-
+            System.Console.WriteLine(msgResult);
             return (getTokenResult?.errcode == 0 ? 100 : 0, getTokenResult?.errmsg);
         }
         public static (int, string) SendMsg(string title, string content, string toUser)
@@ -92,7 +93,7 @@ namespace ZR.Common
         {
             string getTokenUrl = $"{GetTokenUrl}?corpid={CORPID}&corpsecret={CORPSECRET}";
             string getTokenResult = HttpHelper.HttpGet(getTokenUrl);
-
+            System.Console.WriteLine(getTokenResult);
             GetTokenResult tokenResult = JsonSerializer.Deserialize<GetTokenResult>(getTokenResult);
             return tokenResult;
         }
@@ -131,16 +132,18 @@ namespace ZR.Common
         {
             Dictionary<string, object> dic = new()
             {
-                    { "touser", toUser },
-                    { "msgtype", "markdown" },
-                    { "agentid", AGENTID },
-                    { "enable_duplicate_check",1}
-                };
-
-            dic.Add("markdown", new Dictionary<string, string>
+                { "touser", toUser },
+                { "msgtype", "markdown" },
+                { "agentid", AGENTID },
+                { "enable_duplicate_check", 1 },
+                {
+                    "markdown",
+                    new Dictionary<string, string>
                 {
                     { "content", $"**{title}**\n\n{content}" }
-                });
+                }
+                }
+            };
             return dic;
         }
 

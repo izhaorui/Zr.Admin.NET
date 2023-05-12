@@ -44,7 +44,7 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "ZrAdmin.NET Api - .NET6",
+                    Title = "ZrAdmin.NET Api",
                     Version = "v1",
                     Description = "",
                 });
