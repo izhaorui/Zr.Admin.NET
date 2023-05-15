@@ -205,7 +205,7 @@ namespace ZR.Service
                 JoinType.Left, rm.Role_id == ur.RoleId,
                 JoinType.Left, ur.RoleId == r.RoleId
                 ))
-                .Where((m, rm, ur, r) => m.Status == "0" && r.Status == "0" && ur.UserId == userId)
+                .Where((m, rm, ur, r) => m.Status == "0" && r.Status == 0 && ur.UserId == userId)
                 .Select((m, rm, ur, r) => m).ToList();
             var menuList = menus.Where(f => !string.IsNullOrEmpty(f.Perms));
 

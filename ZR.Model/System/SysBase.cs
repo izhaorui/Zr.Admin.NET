@@ -8,7 +8,7 @@ namespace ZR.Model.System
     //[EpplusTable(PrintHeaders = true, AutofitColumns = true, AutoCalculate = true, ShowTotal = true)]
     public class SysBase
     {
-        [SugarColumn(IsOnlyIgnoreUpdate = true)]
+        [SugarColumn(IsOnlyIgnoreUpdate = true, Length = 64)]
         [JsonProperty(propertyName: "CreateBy")]
         [ExcelIgnore]
         public string Create_by { get; set; }
@@ -20,7 +20,7 @@ namespace ZR.Model.System
 
         [JsonIgnore]
         [JsonProperty(propertyName: "UpdateBy")]
-        [SugarColumn(IsOnlyIgnoreInsert = true)]
+        [SugarColumn(IsOnlyIgnoreInsert = true, Length = 64)]
         [ExcelIgnore]
         public string Update_by { get; set; }
 

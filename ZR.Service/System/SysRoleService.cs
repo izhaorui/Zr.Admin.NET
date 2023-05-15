@@ -41,9 +41,9 @@ namespace ZR.Service
         public PagedInfo<SysRole> SelectRoleList(SysRole sysRole, PagerInfo pager)
         {
             var exp = Expressionable.Create<SysRole>();
-            exp.And(role => role.DelFlag == "0");
+            exp.And(role => role.DelFlag == 0);
             exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleName), role => role.RoleName.Contains(sysRole.RoleName));
-            exp.AndIF(!string.IsNullOrEmpty(sysRole.Status), role => role.Status == sysRole.Status);
+            exp.AndIF(sysRole.Status != -1, role => role.Status == sysRole.Status);
             exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleKey), role => role.RoleKey == sysRole.RoleKey);
 
             var query = Queryable()
@@ -64,7 +64,7 @@ namespace ZR.Service
         public List<SysRole> SelectRoleAll()
         {
             return Queryable()
-                .Where(role => role.DelFlag == "0")
+                .Where(role => role.DelFlag == 0)
                 .OrderBy(role => role.RoleSort)
                 .ToList();
         }
@@ -77,7 +77,7 @@ namespace ZR.Service
         public List<SysRole> SelectRolePermissionByUserId(long userId)
         {
             return Queryable()
-                .Where(role => role.DelFlag == "0")
+                .Where(role => role.DelFlag == 0)
                 .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == userId).Any())
                 .OrderBy(role => role.RoleSort)
                 .ToList();
@@ -307,7 +307,7 @@ namespace ZR.Service
         /// <returns></returns>
         public List<long> SelectUserRoles(long userId)
         {
-            var list = SelectUserRoleListByUserId(userId).Where(f => f.Status == "0");
+            var list = SelectUserRoleListByUserId(userId).Where(f => f.Status == 0);
 
             return list.Select(x => x.RoleId).ToList();
         }

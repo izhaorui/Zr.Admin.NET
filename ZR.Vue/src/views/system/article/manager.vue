@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-row :gutter="24">
       <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
-      <el-form :model="queryParams" label-position="left" inline ref="queryForm" label-width="100px" v-show="showSearch" @submit.native.prevent>
+      <el-form :model="queryParams" label-position="left" inline ref="queryForm" v-show="showSearch" @submit.native.prevent>
         <el-col :span="6">
           <el-form-item label="文章标题" prop="title">
             <el-input v-model="queryParams.title" placeholder="请输入文章标题" size="small" />
@@ -39,7 +39,8 @@
       <el-table-column prop="content" label="文章内容" :show-overflow-tooltip="true"> </el-table-column>
       <el-table-column sortable prop="status" align="center" label="状态" width="90">
         <template slot-scope="scope">
-          <el-tag size="mini" :type="scope.row.status == '2' ? 'danger' : 'success'" disable-transitions>{{ scope.row.status == '2' ? "草稿":"已发布" }}
+          <el-tag size="mini" :type="scope.row.status == '2' ? 'danger' : 'success'" disable-transitions
+            >{{ scope.row.status == '2' ? '草稿' : '已发布' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -48,16 +49,16 @@
       <el-table-column label="操作" align="center" width="190">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)">查看</el-button>
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:article:update']">编辑
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:article:update']"
+            >编辑
           </el-button>
-          <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left:10px">
+          <el-popconfirm title="确定删除吗？" @onConfirm="handleDelete(scope.row)" style="margin-left: 10px">
             <el-button slot="reference" size="mini" type="text" icon="el-icon-delete" v-hasPermi="['system:article:delete']">删除</el-button>
           </el-popconfirm>
         </template>
       </el-table-column>
     </el-table>
     <pagination :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
-
   </div>
 </template>
 <script>
@@ -87,8 +88,8 @@ export default {
       total: 0,
       // 提交按钮是否显示
       btnSubmitVisible: true,
-			// 文章预览地址
-			previewUrl: ''
+      // 文章预览地址
+      previewUrl: '',
     }
   },
   created() {
@@ -134,15 +135,15 @@ export default {
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.$router.push({ path: '/article/publish', query: { cid: row.cid }})
+      this.$router.push({ path: '/article/publish', query: { cid: row.cid } })
     },
     // 详情
     handleView(row) {
-			var link = `${this.previewUrl}${row.cid}`
-			window.open(link)
+      var link = `${this.previewUrl}${row.cid}`
+      window.open(link)
     },
     handleImport() {},
-    handleExport() {}
-  }
+    handleExport() {},
+  },
 }
 </script>

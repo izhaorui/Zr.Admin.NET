@@ -21,21 +21,26 @@ namespace ZR.Model.System
         /// <summary>
         /// 登录用户名
         /// </summary>
+        [SugarColumn(Length = 30, ColumnDescription = "用户账号", ColumnDataType = "varchar")]
         public string UserName { get; set; }
         /// <summary>
         /// 用户昵称
         /// </summary>
+        [SugarColumn(Length = 30, ColumnDescription = "用户昵称", ColumnDataType = "varchar")]
         public string NickName { get; set; }
         /// <summary>
         /// 用户类型（00系统用户）
         /// </summary>
-        public string UserType { get; set; } = "";
+        [SugarColumn(Length = 2, ColumnDescription = "用户类型（00系统用户）", ColumnDataType = "varchar", DefaultValue = "00")]
+        public string UserType { get; set; } = "00";
         //[SugarColumn(IsOnlyIgnoreInsert = true)]
         public string Avatar { get; set; }
+        [SugarColumn(Length = 50, ColumnDescription = "用户邮箱", ColumnDataType = "varchar")]
         public string Email { get; set; }
 
         [JsonIgnore]
         [ExcelIgnore]
+        [SugarColumn(Length = 100, ColumnDescription = "密码", ColumnDataType = "varchar")]
         public string Password { get; set; }
         /// <summary>
         /// 手机号
@@ -44,19 +49,19 @@ namespace ZR.Model.System
         /// <summary>
         /// 用户性别（0男 1女 2未知）
         /// </summary>
-        public string Sex { get; set; }
+        public int Sex { get; set; }
 
         /// <summary>
         /// 帐号状态（0正常 1停用）
         /// </summary>
         [ExcelIgnore]
-        public string Status { get; set; }
+        public int Status { get; set; }
 
         /// <summary>
         /// 删除标志（0代表存在 2代表删除）
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true)]
-        public string DelFlag { get; set; }
+        public int DelFlag { get; set; }
 
         /// <summary>
         /// 最后登录IP

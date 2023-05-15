@@ -66,7 +66,7 @@ namespace ZR.Service.System
         {
             return Context.Queryable<SysUserRole, SysUser > ((t1, u) => new JoinQueryInfos(
                    JoinType.Left, t1.UserId == u.UserId))
-                 .Where((t1, u) => t1.RoleId == roleId && u.DelFlag == "0")
+                 .Where((t1, u) => t1.RoleId == roleId && u.DelFlag == 0)
                  .Select((t1, u) => u)
                  .ToList();
         }
@@ -80,7 +80,7 @@ namespace ZR.Service.System
         {
             var query = Context.Queryable<SysUserRole, SysUser>((t1, u) => new JoinQueryInfos(
                 JoinType.Left, t1.UserId == u.UserId))
-                .Where((t1, u) => t1.RoleId == roleUserQueryDto.RoleId && u.DelFlag == "0");
+                .Where((t1, u) => t1.RoleId == roleUserQueryDto.RoleId && u.DelFlag == 0);
             if (!string.IsNullOrEmpty(roleUserQueryDto.UserName))
             {
                 query = query.Where((t1, u) => u.UserName.Contains(roleUserQueryDto.UserName));
@@ -96,7 +96,7 @@ namespace ZR.Service.System
         public PagedInfo<SysUser> GetExcludedSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
         {
             var query = Context.Queryable<SysUser>()
-                .Where(it => it.DelFlag == "0")
+                .Where(it => it.DelFlag == 0)
                 .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == it.UserId && s.RoleId == roleUserQueryDto.RoleId).NotAny())
                 .WhereIF(roleUserQueryDto.UserName.IsNotEmpty(), it => it.UserName.Contains(roleUserQueryDto.UserName));
 

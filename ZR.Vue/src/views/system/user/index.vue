@@ -50,7 +50,8 @@
           </el-form-item>
           <el-form-item label="状态" prop="status">
             <el-select v-model="queryParams.status" placeholder="用户状态" clearable size="small" style="width: 240px">
-              <el-option v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
+              <el-option label="全部" :value="-1" />
+							<el-option v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
             </el-select>
           </el-form-item>
           <el-form-item label="创建时间">
@@ -104,7 +105,7 @@
           <el-table-column label="手机号码" align="center" prop="phonenumber" width="120" />
           <el-table-column label="用户状态" align="center">
             <template slot-scope="scope">
-              <el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
+              <el-switch v-model="scope.row.status" :active-value="0" :inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
             </template>
           </el-table-column>
           <el-table-column label="创建时间" align="center" prop="createTime" width="160"></el-table-column>
@@ -179,14 +180,14 @@
           <el-col :lg="12">
             <el-form-item label="用户性别">
               <el-select v-model="form.sex" placeholder="请选择用户性别">
-                <el-option v-for="dict in sexOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue"></el-option>
+                <el-option v-for="dict in sexOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="parseInt(dict.dictValue)"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :lg="12">
             <el-form-item label="用户状态">
               <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictValue">{{ dict.dictLabel }}</el-radio>
+                <el-radio v-for="dict in statusOptions" :key="dict.dictValue" :label="parseInt(dict.dictValue)">{{ dict.dictLabel }}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -194,7 +195,7 @@
         <el-row>
           <el-col :lg="12">
             <el-form-item label="岗位">
-              <el-select v-model="form.postIds" multiple placeholder="请选择">
+              <el-select v-model="form.postIds" multiple placeholder="请选择岗位">
                 <el-option v-for="item in postOptions" :key="item.postId" :label="item.postName" :value="item.postId" :disabled="item.status == 1">
                 </el-option>
               </el-select>
@@ -202,7 +203,7 @@
           </el-col>
           <el-col :lg="12">
             <el-form-item label="角色">
-              <el-select v-model="form.roleIds" multiple placeholder="请选择" @change="selectRole($event)">
+              <el-select v-model="form.roleIds" multiple placeholder="请选择角色" @change="selectRole($event)">
                 <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName" :value="item.roleId" :disabled="item.status == 1">
                 </el-option>
               </el-select>
@@ -327,7 +328,7 @@ export default {
         pageSize: 10,
         userName: undefined,
         phonenumber: undefined,
-        status: undefined,
+        status: -1,
         deptId: undefined,
       },
       // 列信息
@@ -449,7 +450,7 @@ export default {
         phonenumber: undefined,
         email: undefined,
         sex: undefined,
-        status: '0',
+        status: 0,
         remark: undefined,
         postIds: [],
         roleIds: [],

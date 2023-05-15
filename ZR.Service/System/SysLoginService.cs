@@ -47,7 +47,7 @@ namespace ZR.Service.System
                 AddLoginInfo(logininfor);
                 throw new CustomException(ResultCode.LOGIN_ERROR ,logininfor.Msg);
             }
-            if (user.Status == "1")
+            if (user.Status == 1)
             {
                 logininfor.Msg = "该用户已禁用";
                 AddLoginInfo(logininfor);

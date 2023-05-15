@@ -114,12 +114,12 @@ namespace ZR.Admin.WebApi.Extensions
         public static void InitDb(this IServiceProvider service)
         {
             var db = DbScoped.SugarScope;
-            db.DbMaintenance.CreateDatabase();
-            //db.CodeFirst.
+            //建库：如果不存在创建数据库存在不会重复创建 
+            db.DbMaintenance.CreateDatabase();// 注意 ：Oracle和个别国产库需不支持该方法，需要手动建库 
 
             var baseType = typeof(SysBase);
             var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && /*p.IsAssignableTo(baseType) && */p.GetCustomAttribute<SugarTable>() != null).ToArray();
-            db.CodeFirst.SetStringDefaultLength(512).InitTables(entityes);
+            db.CodeFirst.SetStringDefaultLength(200).InitTables(entityes);
         }
 
         private static object GetParsValue(SugarParameter x)
@@ -147,7 +147,7 @@ namespace ZR.Admin.WebApi.Extensions
             var db = DbScoped.SugarScope.GetConnectionScope(configId);
             foreach (var role in user.Roles.OrderBy(f => f.DataScope))
             {
-                string dataScope = role.DataScope;
+                string dataScope = role.DataScope.ToString();
                 if (DATA_SCOPE_ALL.Equals(dataScope))//所有权限
                 {
                     break;
