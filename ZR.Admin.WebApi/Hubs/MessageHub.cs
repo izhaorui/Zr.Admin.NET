@@ -52,7 +52,7 @@ namespace ZR.Admin.WebApi.Hubs
             var user2 = clientUsers.Any(u => u.Uuid == uuid);
 
             //判断用户是否存在，否则添加集合!user2 && !user && 
-            if (Context.User.Identity.IsAuthenticated)
+            if (!user2 && !user && Context.User.Identity.IsAuthenticated)
             {
                 OnlineUsers users = new(Context.ConnectionId, name, userid, ip, device)
                 {
