@@ -5,11 +5,13 @@ using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using MiniExcelLibs;
 using Newtonsoft.Json;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
 using ZR.Model.System;
+using ZR.Service.System;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -25,7 +27,10 @@ namespace ZR.Admin.WebApi.Controllers
 
         private IWebHostEnvironment WebHostEnvironment;
         private ISysFileService SysFileService;
-        public CommonController(IOptions<OptionsSetting> options, IWebHostEnvironment webHostEnvironment, ISysFileService fileService)
+        public CommonController(
+            IOptions<OptionsSetting> options,
+            IWebHostEnvironment webHostEnvironment,
+            ISysFileService fileService)
         {
             WebHostEnvironment = webHostEnvironment;
             SysFileService = fileService;
@@ -155,6 +160,91 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         #endregion
+
+        /// <summary>
+        /// 初始化种子数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(BusinessType = BusinessType.INSERT, Title = "初始化数据")]
+        public IActionResult InitSeedData()
+        {
+            if (!WebHostEnvironment.IsDevelopment())
+            {
+                return ToResponse(ResultCode.FAIL, "导入数据失败");
+            }
+            var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
+            //var sheetNames = MiniExcel.GetSheetNames(path);
+            SeedDataService seedDataService = new();
+
+            var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
+            var result1 = seedDataService.InitUserData(sysUser);
+
+            var sysPost = MiniExcel.Query<SysPost>(path, sheetName: "post").ToList();
+            var result2 = seedDataService.InitPostData(sysPost);
+
+            var sysRole = MiniExcel.Query<SysRole>(path, sheetName: "role").ToList();
+            var result3 = seedDataService.InitRoleData(sysRole);
+
+            var sysUserRole = MiniExcel.Query<SysUserRole>(path, sheetName: "user_role").ToList();
+            var result4 = seedDataService.InitUserRoleData(sysUserRole);
+
+            var sysMenu = MiniExcel.Query<SysMenu>(path, sheetName: "menu").ToList();
+            var result5 = seedDataService.InitMenuData(sysMenu);
+
+            var sysConfig = MiniExcel.Query<SysConfig>(path, sheetName: "config").ToList();
+            var result6 = seedDataService.InitConfigData(sysConfig);
+
+            var sysRoleMenu = MiniExcel.Query<SysRoleMenu>(path, sheetName: "role_menu").ToList();
+            var result7 = seedDataService.InitRoleMenuData(sysRoleMenu);
+
+            var sysDict = MiniExcel.Query<SysDictType>(path, sheetName: "dict_type").ToList();
+            var result8 = seedDataService.InitDictType(sysDict);
+
+            var sysDictData = MiniExcel.Query<SysDictData>(path, sheetName: "dict_data").ToList();
+            var result9 = seedDataService.InitDictData(sysDictData);
+
+            var sysDept = MiniExcel.Query<SysDept>(path, sheetName: "dept").ToList();
+            var result10 = seedDataService.InitDeptData(sysDept);
+
+            var sysArticleCategory = MiniExcel.Query<ArticleCategory>(path, sheetName: "article_category").ToList();
+            var result11 = seedDataService.InitArticleCategoryData(sysArticleCategory);
+
+            var sysTask = MiniExcel.Query<SysTasks>(path, sheetName: "task").ToList();
+            var result12 = seedDataService.InitTaskData(sysTask);
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(result1.Item1);
+            Console.WriteLine(result2.Item1);
+            Console.WriteLine(result3.Item1);
+            Console.WriteLine(result4.Item1);
+            Console.WriteLine(result5.Item1);
+            Console.WriteLine(result6.Item1);
+            Console.WriteLine(result7.Item1);
+            Console.WriteLine(result8.Item1);
+            Console.WriteLine(result9.Item1);
+            Console.WriteLine(result10.Item1);
+            Console.WriteLine(result11.Item1);
+            Console.WriteLine(result12.Item1);
+
+            return SUCCESS(new
+            {
+                result1 = result1.Item1,
+                result2 = result2.Item1,
+                result3 = result3.Item1,
+                result4 = result4.Item1,
+                result5 = result5.Item1,
+                result6 = result6.Item1,
+                result7 = result7.Item1,
+                result8 = result8.Item1,
+                result9 = result9.Item1,
+                result10 = result10.Item1,
+                result11 = result11.Item1,
+                result12 = result12.Item1
+            });
+        }
     }
 
     public class UploadDto

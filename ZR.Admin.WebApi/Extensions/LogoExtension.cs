@@ -1,6 +1,4 @@
 ﻿using JinianNet.JNTemplate;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 using ZR.Common;
 
 namespace ZR.Admin.WebApi.Extensions
@@ -12,7 +10,7 @@ namespace ZR.Admin.WebApi.Extensions
             Console.ForegroundColor = ConsoleColor.Blue;
             var contentTpl = JnHelper.ReadTemplate("", "logo.txt");
             var content = contentTpl?.Render();
-
+            
             Console.WriteLine(content);
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("源码地址: https://gitee.com/izory/ZrAdminNetCore");

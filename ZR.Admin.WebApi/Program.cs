@@ -27,7 +27,7 @@ builder.Services.AddCors(c =>
 {
     c.AddPolicy("Policy", policy =>
     {
-        policy.WithOrigins(corsUrls == null ? Array.Empty<string>() : corsUrls)
+        policy.WithOrigins(corsUrls ?? Array.Empty<string>())
         .AllowAnyHeader()//允许任意头
         .AllowCredentials()//允许cookie
         .AllowAnyMethod();//允许任意方法
@@ -89,7 +89,7 @@ builder.Services.AddSwaggerConfig();
 
 var app = builder.Build();
 InternalApp.ServiceProvider = app.Services;
-if (builder.Configuration["InitDb"].ParseToBool() == true)
+if (builder.Configuration["InitDb"].ParseToBool() == true && app.Environment.IsDevelopment())
 {
     app.Services.InitDb();
 }
