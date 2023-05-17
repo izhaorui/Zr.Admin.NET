@@ -38,7 +38,6 @@ namespace ZR.Model.System
         /// <summary>
         /// 删除标志（0代表存在 2代表删除）
         /// </summary>
-        [SugarColumn(IsOnlyIgnoreInsert = true, IsOnlyIgnoreUpdate = true)]
         public int DelFlag { get; set; }
         /// <summary>
         /// 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限））

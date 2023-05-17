@@ -60,7 +60,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 删除标志（0代表存在 2代表删除）
         /// </summary>
-        [SugarColumn(IsOnlyIgnoreInsert = true)]
+        //[SugarColumn(IsOnlyIgnoreInsert = true)]
         public int DelFlag { get; set; }
 
         /// <summary>
