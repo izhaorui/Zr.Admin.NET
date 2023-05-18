@@ -183,6 +183,7 @@ namespace ZR.Service
         /// <returns></returns>
         public int ChangeUserStatus(SysUser user)
         {
+            CheckUserAllowed(user);
             return Update(user, it => new { it.Status }, f => f.UserId == user.UserId);
         }
 
