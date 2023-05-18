@@ -11,14 +11,11 @@ using ${options.ApiControllerNamespace}.Extensions;
 using ${options.ApiControllerNamespace}.Filters;
 using ${options.BaseNamespace}Common;
 
+//创建时间：${replaceDto.AddTime}
 namespace ${options.ApiControllerNamespace}.Controllers
 {
     /// <summary>
-    /// ${genTable.functionName}Controller
-    /// 
-    /// @tableName ${genTable.TableName}
-    /// @author ${replaceDto.Author}
-    /// @date ${replaceDto.AddTime}
+    /// ${genTable.functionName}
     /// </summary>
     [Verify]
     [Route("${genTable.ModuleName}/${genTable.BusinessName}")]
@@ -120,7 +117,7 @@ $if(replaceDto.ShowBtnEdit)
         }
 $end
 
-$if(replaceDto.ShowBtnDelete)
+$if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
         /// <summary>
         /// 删除${genTable.FunctionName}
         /// </summary>
@@ -169,15 +166,13 @@ $if(replaceDto.ShowBtnTruncate)
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.CLEAN)]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:delete")]
         [HttpDelete("clean")]
-        public ApiResult Clear()
+        public IActionResult Clear()
         {
             if (!HttpContextExtension.IsAdmin(HttpContext))
             {
-                return ApiResult.Error("操作失败");
+                return ToResponse(ResultCode.FAIL, "操作失败");
             }
-            _${replaceDto.ModelTypeName}Service.Truncate${replaceDto.ModelTypeName}();
-
-            return ToJson(1);
+            return SUCCESS(_${replaceDto.ModelTypeName}Service.Truncate${replaceDto.ModelTypeName}());
         }
 $end
 
@@ -196,7 +191,6 @@ $if(showCustomInput)
             if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
             var response = _${replaceDto.ModelTypeName}Service.Update(w => w.${replaceDto.PKName} == id, it => new ${replaceDto.ModelTypeName}()
             {
-                //Update 字段映射
 $foreach(item in genTable.Columns)
 $if((item.htmlType == "customInput"))
                 $item.CsharpField = value,

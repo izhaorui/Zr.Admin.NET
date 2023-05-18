@@ -1,10 +1,7 @@
 <!--
  * @Descripttion: (${genTable.functionName}/${genTable.tableName})
- * @version: (1.0)
  * @Author: (${replaceDto.Author})
  * @Date: (${replaceDto.AddTime})
- * @LastEditors: (${replaceDto.Author})
- * @LastEditTime: (${replaceDto.AddTime})
 -->
 <template>
   <div>
@@ -340,8 +337,12 @@ $end
 </template>
 
 <script setup name="${genTable.BusinessName.ToLower()}">
-import { list${genTable.BusinessName}, add${genTable.BusinessName}, del${genTable.BusinessName}, update${genTable.BusinessName}, get${genTable.BusinessName}, 
-$if(replaceDto.ShowBtnTruncate) clear${genTable.BusinessName}, $end 
+import { list${genTable.BusinessName},
+$if(replaceDto.ShowBtnAdd) add${genTable.BusinessName}, $end
+$if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)del${genTable.BusinessName},$end 
+$if(replaceDto.ShowBtnEdit) update${genTable.BusinessName},$end
+get${genTable.BusinessName}, 
+$if(replaceDto.ShowBtnTruncate) clear${genTable.BusinessName}, $end
 $if(showCustomInput) changeSort $end } 
 from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 $if(replaceDto.ShowEditor == 1)
@@ -349,7 +350,6 @@ import Editor from '@/components/Editor'
 $end
 
 const { proxy } = getCurrentInstance()
-// 选中${replaceDto.FistLowerPk}数组
 const ids = ref([])
 const loading = ref(false)
 const showSearch = ref(true)

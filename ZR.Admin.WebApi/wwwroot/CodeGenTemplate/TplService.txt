@@ -15,9 +15,6 @@ namespace ${options.ServicesNamespace}.${options.SubNamespace}
 {
     /// <summary>
     /// ${genTable.FunctionName}Service业务层处理
-    ///
-    /// @author ${replaceDto.Author}
-    /// @date ${replaceDto.AddTime}
     /// </summary>
     [AppService(ServiceType = typeof(I${replaceDto.ModelTypeName}Service), ServiceLifetime = LifeTime.Transient)]
     public class ${replaceDto.ModelTypeName}Service : BaseService<${replaceDto.ModelTypeName}>, I${replaceDto.ModelTypeName}Service
@@ -124,9 +121,15 @@ $if(replaceDto.ShowBtnTruncate)
         /// 清空${genTable.FunctionName}
         /// </summary>
         /// <returns></returns>
-        public void Truncate${replaceDto.ModelTypeName}()
+        public bool Truncate${replaceDto.ModelTypeName}()
         {
-            Truncate();
+            var newTableName = $"${genTable.TableName}_{DateTime.Now:yyyyMMdd}";
+            if (Queryable().Any() && !Context.DbMaintenance.IsAnyTable(newTableName))
+            {
+                Context.DbMaintenance.BackupTable("${genTable.TableName}", newTableName);
+            }
+            
+            return Truncate();
         }
 $end
     }

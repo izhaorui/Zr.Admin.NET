@@ -9,8 +9,6 @@ namespace ${options.ModelsNamespace}.${options.SubNamespace}
 {
     /// <summary>
     /// ${genTable.FunctionName}
-    /// @author ${replaceDto.Author}
-    /// @date ${replaceDto.AddTime}
     /// </summary>
     [SugarTable("${genTable.TableName}")]
     public class ${replaceDto.ModelTypeName}

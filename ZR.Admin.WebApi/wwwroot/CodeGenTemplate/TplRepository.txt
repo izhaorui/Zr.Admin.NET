@@ -5,9 +5,6 @@ namespace ${options.RepositoriesNamespace}
 {
     /// <summary>
     /// ${genTable.FunctionName}仓储
-    ///
-    /// @author ${replaceDto.Author}
-    /// @date ${replaceDto.AddTime}
     /// </summary>
     [AppService(ServiceLifetime = LifeTime.Transient)]
     public class ${replaceDto.ModelTypeName}Repository : BaseRepository<${replaceDto.ModelTypeName}>

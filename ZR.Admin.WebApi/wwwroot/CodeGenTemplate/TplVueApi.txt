@@ -73,7 +73,7 @@ export function get${genTable.BusinessName}(id) {
   })
 }
 
-$if(replaceDto.ShowBtnDelete)
+$if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
 /**
 * 删除${genTable.functionName}
 * @param {主键} pid
