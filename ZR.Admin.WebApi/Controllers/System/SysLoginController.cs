@@ -202,10 +202,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
-            if (UserConstants.NOT_UNIQUE.Equals(sysUserService.CheckUserNameUnique(dto.Username)))
-            {
-                return ToResponse(ResultCode.CUSTOM_ERROR, $"保存用户{dto.Username}失败，注册账号已存在");
-            }
+            
             SysUser user = sysUserService.Register(dto);
             if (user.UserId > 0)
             {

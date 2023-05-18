@@ -64,11 +64,12 @@ namespace ZR.Service.System
         /// <returns></returns>
         public List<SysUser> GetSysUsersByRoleId(long roleId)
         {
-            return Context.Queryable<SysUserRole, SysUser > ((t1, u) => new JoinQueryInfos(
+            return Context.Queryable<SysUserRole, SysUser>((t1, u) => new JoinQueryInfos(
                    JoinType.Left, t1.UserId == u.UserId))
-                 .Where((t1, u) => t1.RoleId == roleId && u.DelFlag == 0)
-                 .Select((t1, u) => u)
-                 .ToList();
+                .WithCache(60 * 10)
+                .Where((t1, u) => t1.RoleId == roleId && u.DelFlag == 0)
+                .Select((t1, u) => u)
+                .ToList();
         }
 
         /// <summary>

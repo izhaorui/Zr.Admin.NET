@@ -205,6 +205,7 @@ namespace ZR.Service
                 JoinType.Left, rm.Role_id == ur.RoleId,
                 JoinType.Left, ur.RoleId == r.RoleId
                 ))
+                .WithCache(60 * 10)
                 .Where((m, rm, ur, r) => m.Status == "0" && r.Status == 0 && ur.UserId == userId)
                 .Select((m, rm, ur, r) => m).ToList();
             var menuList = menus.Where(f => !string.IsNullOrEmpty(f.Perms));
@@ -281,6 +282,7 @@ namespace ZR.Service
             int parentId = menu.ParentId != null ? (int)menu.ParentId : 0;
 
             var list = Queryable()
+                .WithCache(60 * 10)
                 .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
                 .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible)
                 .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status)

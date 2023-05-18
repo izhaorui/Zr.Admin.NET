@@ -294,6 +294,7 @@ namespace ZR.Service
         public List<SysRole> SelectUserRoleListByUserId(long userId)
         {
             return Context.Queryable<SysUserRole>()
+                .WithCache(60 * 10)
                 .LeftJoin<SysRole>((ur, r) => ur.RoleId == r.RoleId)
                 .Where((ur, r) => ur.UserId == userId && r.RoleId > 0)
                 .Select((ur, r) => r)

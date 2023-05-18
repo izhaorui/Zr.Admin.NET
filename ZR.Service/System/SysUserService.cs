@@ -2,7 +2,6 @@ using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Extensions;
 using SqlSugar;
-using SqlSugar.IOC;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -81,7 +80,8 @@ namespace ZR.Service
         /// <returns></returns>
         public SysUser SelectUserById(long userId)
         {
-            var user = Queryable().Filter(null, true).Where(f => f.UserId == userId).First();
+            var user = Queryable().Filter(null, true).WithCache(60 * 5)
+                .Where(f => f.UserId == userId).First();
             if (user != null && user.UserId > 0)
             {
                 user.Roles = RoleService.SelectUserRoleListByUserId(userId);
@@ -219,12 +219,13 @@ namespace ZR.Service
         /// <returns></returns>
         public SysUser Register(RegisterDto dto)
         {
-            //密码md5
-            string password = NETCore.Encrypt.EncryptProvider.Md5(dto.Password);
             if (!Tools.PasswordStrength(dto.Password))
             {
                 throw new CustomException("密码强度不符合要求");
             }
+            //密码md5
+            string password = NETCore.Encrypt.EncryptProvider.Md5(dto.Password);
+
             SysUser user = new()
             {
                 Create_time = DateTime.Now,
@@ -235,7 +236,10 @@ namespace ZR.Service
                 DeptId = 0,
                 Remark = "用户注册"
             };
-
+            if (UserConstants.NOT_UNIQUE.Equals(CheckUserNameUnique(dto.Username)))
+            {
+                throw new CustomException($"保存用户{dto.Username}失败，注册账号已存在");
+            }
             user.UserId = Insertable(user).ExecuteReturnIdentity();
             return user;
         }
@@ -300,7 +304,7 @@ namespace ZR.Service
                                x.TotalList.Count);
             //输出统计                      
             Console.WriteLine(msg);
-            
+
             //输出错误信息               
             foreach (var item in x.ErrorList)
             {
@@ -310,7 +314,7 @@ namespace ZR.Service
             {
                 Console.WriteLine("userName为" + item.Item.UserName + " : " + item.StorageMessage);
             }
-            
+
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
