@@ -67,7 +67,6 @@ namespace ZR.Admin.WebApi.Controllers
             List<DbTableInfo> list = _CodeGeneraterService.GetAllTables(dbName, tableName, pager);
             var page = new PagedInfo<DbTableInfo>
             {
-                TotalPage = pager.TotalPage,
                 TotalNum = pager.TotalNum,
                 PageSize = pager.PageSize,
                 PageIndex = pager.PageNum,

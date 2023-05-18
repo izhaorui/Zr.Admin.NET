@@ -50,6 +50,22 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 企业消息测试
+        /// </summary>
+        /// <param name="msg">要发送的消息</param>
+        /// <param name="toUser">要发送的人@all所有，xxx单独发送对个人</param>
+        /// <returns></returns>
+        [Route("/sendMsg")]
+        [HttpGet]
+        [Log(Title = "企业消息测试")]
+        public IActionResult SendMsg(string msg, string toUser = "")
+        {
+            throw new Exception("ddddd");
+            WxNoticeHelper.SendMsg("消息测试", msg, toUser, WxNoticeHelper.MsgType.markdown);
+            return SUCCESS(msg);
+        }
+
+        /// <summary>
         /// 发送邮件
         /// </summary>
         /// <param name="sendEmailVo">请求参数接收实体</param>

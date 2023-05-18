@@ -15,20 +15,6 @@
         /// </summary>
         public int TotalNum { get; set; }
         /// <summary>
-        /// 总页码
-        /// </summary>
-        /// <summary>
-        /// 总页数
-        /// </summary>
-        public int TotalPage
-        {
-            get
-            {
-                return TotalNum > 0 ? TotalNum % PageSize == 0 ? TotalNum / PageSize : TotalNum / PageSize + 1 : 0;
-            }
-        }
-        
-        /// <summary>
         /// 排序字段
         /// </summary>
         public string Sort { get; set; } = string.Empty;
