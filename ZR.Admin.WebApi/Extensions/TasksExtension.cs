@@ -28,12 +28,10 @@ namespace ZR.Admin.WebApi.Extensions
         /// <returns></returns>
         public static IApplicationBuilder UseAddTaskSchedulers(this IApplicationBuilder app)
         {
-            //var _tasksQzService = (ISysTasksQzService)App.GetRequiredService(typeof(ISysTasksQzService));
-
             ITaskSchedulerServer _schedulerServer = app.ApplicationServices.GetRequiredService<ITaskSchedulerServer>();
 
-            //var tasks = _tasksQzService.GetList(m => m.IsStart);
-            var tasks = SqlSugar.IOC.DbScoped.SugarScope.Queryable<Model.System.SysTasks>().Where(m => m.IsStart).ToList();
+            var tasks = SqlSugar.IOC.DbScoped.SugarScope.Queryable<Model.System.SysTasks>()
+                .Where(m => m.IsStart == 1).ToList();
 
             //程序启动后注册所有定时任务
             foreach (var task in tasks)

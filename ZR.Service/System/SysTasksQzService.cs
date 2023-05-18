@@ -19,7 +19,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public int AddTasks(SysTasks parm)
         {
-            parm.IsStart = false;
+            parm.IsStart = 0;
 
             SetAssembleName(parm);
 

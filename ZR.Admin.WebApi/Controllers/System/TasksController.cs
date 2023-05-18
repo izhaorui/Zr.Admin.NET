@@ -137,7 +137,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException($"api地址不能为空");
             }
 
-            if (tasksQz.IsStart)
+            if (tasksQz.IsStart == 1)
             {
                 throw new CustomException($"该任务正在运行中，请先停止在更新");
             }
@@ -205,7 +205,7 @@ namespace ZR.Admin.WebApi.Controllers
 
             if (taskResult.Code == 200)
             {
-                tasksQz.IsStart = true;
+                tasksQz.IsStart = 1;
                 _tasksQzService.Update(tasksQz);
             }
 
@@ -236,7 +236,7 @@ namespace ZR.Admin.WebApi.Controllers
 
             if (taskResult.Code == 200)
             {
-                tasksQz.IsStart = false;
+                tasksQz.IsStart = 0;
                 _tasksQzService.Update(tasksQz);
             }
 

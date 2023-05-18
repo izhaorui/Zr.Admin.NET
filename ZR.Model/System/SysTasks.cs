@@ -97,7 +97,7 @@ namespace ZR.Model.System
         /// 默认 : 0
         /// </summary>
         [Display(Name = "是否启动")]
-        public bool IsStart { get; set; }
+        public int IsStart { get; set; }
 
         /// <summary>
         /// 传入参数
