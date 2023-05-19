@@ -1,4 +1,4 @@
-﻿using Infrastructure;
+using Infrastructure;
 using Infrastructure.Helper;
 using SqlSugar;
 using SqlSugar.IOC;
@@ -12,15 +12,15 @@ namespace ZR.Admin.WebApi.Extensions
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         //全部数据权限
-        public static string DATA_SCOPE_ALL = "1";
+        public static long DATA_SCOPE_ALL = 1;
         //自定数据权限
-        public static string DATA_SCOPE_CUSTOM = "2";
+        public static long DATA_SCOPE_CUSTOM = 2;
         //部门数据权限
-        public static string DATA_SCOPE_DEPT = "3";
+        public static long DATA_SCOPE_DEPT = 3;
         //部门及以下数据权限
-        public static string DATA_SCOPE_DEPT_AND_CHILD = "4";
+        public static long DATA_SCOPE_DEPT_AND_CHILD = 4;
         //仅本人数据权限
-        public static string DATA_SCOPE_SELF = "5";
+        public static long DATA_SCOPE_SELF = 5;
 
         public static void AddDb(IConfiguration Configuration)
         {
