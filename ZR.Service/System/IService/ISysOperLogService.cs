@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
-using ZR.Model;
-using ZR.Model.System.Dto;
+﻿using ZR.Model;
 using ZR.Model.System;
-using ZR.Service.System;
-using Infrastructure.Model;
+using ZR.Model.System.Dto;
 
 namespace ZR.Service.System.IService
 {
@@ -15,9 +12,8 @@ namespace ZR.Service.System.IService
         /// 查询系统操作日志集合
         /// </summary>
         /// <param name="operLog">操作日志对象</param>
-        /// <param name="pager"></param>
         /// <returns>操作日志集合</returns>
-        public PagedInfo<SysOperLog> SelectOperLogList(SysOperLogDto operLog, PagerInfo pager);
+        public PagedInfo<SysOperLog> SelectOperLogList(SysOperLogQueryDto operLog);
 
         /// <summary>
         /// 清空操作日志

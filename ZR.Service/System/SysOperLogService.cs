@@ -5,6 +5,7 @@ using SqlSugar;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Repository;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -35,7 +36,7 @@ namespace ZR.Service.System
         /// <param name="sysOper">操作日志对象</param>
         /// <param name="pager"></param>
         /// <returns>操作日志集合</returns>
-        public PagedInfo<SysOperLog> SelectOperLogList(SysOperLogDto sysOper, PagerInfo pager)
+        public PagedInfo<SysOperLog> SelectOperLogList(SysOperLogQueryDto sysOper)
         {
             sysOper.BeginTime = DateTimeHelper.GetBeginTime(sysOper.BeginTime, -1);
             sysOper.EndTime = DateTimeHelper.GetBeginTime(sysOper.EndTime, 1);
@@ -48,7 +49,10 @@ namespace ZR.Service.System
             exp.AndIF(sysOper.Status != -1, it => it.Status == sysOper.Status);
             exp.AndIF(sysOper.OperParam != null, it => it.OperParam.Contains(sysOper.OperParam));
 
-            return GetPages(exp.ToExpression(), pager, x => x.OperId, OrderByType.Desc);
+            return Queryable().Where(exp.ToExpression())
+                .OrderBy(x => x.OperId, OrderByType.Desc)
+                .ToPage(sysOper);
+            //return GetList(exp.ToExpression(), pager, x => x.OperId, OrderByType.Desc);
         }
 
         /// <summary>

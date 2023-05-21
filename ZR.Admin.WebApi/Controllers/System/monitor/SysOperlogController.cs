@@ -1,12 +1,10 @@
 ﻿using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Model;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
-using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
 
@@ -34,12 +32,10 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         /// <param name="sysOperLog"></param>
         /// <returns></returns>
         [HttpGet("list")]
-        public IActionResult OperList([FromQuery] SysOperLogDto sysOperLog)
+        public IActionResult OperList([FromQuery] SysOperLogQueryDto sysOperLog)
         {
-            PagerInfo pagerInfo = new(sysOperLog.PageNum, sysOperLog.PageSize);
-
             sysOperLog.OperName = !HttpContextExtension.IsAdmin(HttpContext) ? HttpContextExtension.GetName(HttpContext) : sysOperLog.OperName;
-            var list = sysOperLogService.SelectOperLogList(sysOperLog, pagerInfo);
+            var list = sysOperLogService.SelectOperLogList(sysOperLog);
 
             return SUCCESS(list);
         }
@@ -87,9 +83,10 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [Log(Title = "操作日志", BusinessType = BusinessType.EXPORT)]
         [ActionPermissionFilter(Permission = "monitor:operlog:export")]
         [HttpGet("export")]
-        public IActionResult Export([FromQuery] SysOperLogDto sysOperLog)
+        public IActionResult Export([FromQuery] SysOperLogQueryDto sysOperLog)
         {
-            var list = sysOperLogService.SelectOperLogList(sysOperLog, new PagerInfo(1, 10000));
+            sysOperLog.PageSize = 100000;
+            var list = sysOperLogService.SelectOperLogList(sysOperLog);
             var result = ExportExcelMini(list.Result, "操作日志", "操作日志");
             return ExportExcel(result.Item2, result.Item1);
         }
