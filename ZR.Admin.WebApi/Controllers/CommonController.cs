@@ -60,7 +60,6 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "企业消息测试")]
         public IActionResult SendMsg(string msg, string toUser = "")
         {
-            throw new Exception("ddddd");
             WxNoticeHelper.SendMsg("消息测试", msg, toUser, WxNoticeHelper.MsgType.markdown);
             return SUCCESS(msg);
         }

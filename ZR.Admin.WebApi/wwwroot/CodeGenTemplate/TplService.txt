@@ -39,8 +39,9 @@ $if(column.HtmlType == "month")
             DateTime monthEnd = Convert.ToDateTime(parm.${column.CsharpField}).AddMonths(1);
             predicate = predicate.AndIF(parm.${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.${column.CsharpField} && it.${column.CsharpField} < monthEnd);
 $else
-            predicate = predicate.AndIF(parm.Begin${column.CsharpField} == null, it => it.${column.CsharpField} >= DateTime.Now.AddDays(-1));
-            predicate = predicate.AndIF(parm.Begin${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.Begin${column.CsharpField} && it.${column.CsharpField} <= parm.End${column.CsharpField});
+            predicate = predicate.AndIF(parm.Begin${column.CsharpField} == null, it => it.${column.CsharpField} >= DateTime.Now.ToShortDateString().ParseToDateTime());
+            predicate = predicate.AndIF(parm.Begin${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.Begin${column.CsharpField});
+            predicate = predicate.AndIF(parm.End${column.CsharpField} != null, it => it.${column.CsharpField} <= parm.End${column.CsharpField});
 $end
 $elseif(column.CsharpType == "int" || column.CsharpType == "long")
             predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${codeTool.QueryExp(column.CsharpField, column.QueryType)};

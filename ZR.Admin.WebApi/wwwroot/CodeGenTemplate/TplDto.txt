@@ -18,7 +18,7 @@ namespace ${options.DtosNamespace}
     {
 $foreach(item in genTable.Columns)
 $if(item.IsQuery)
-$if(item.htmlType == "datetime")
+$if(item.htmlType.StartsWith("date"))
         public DateTime? Begin$item.CsharpField { get; set; }
         public DateTime? End$item.CsharpField { get; set; }
 $elseif(item.htmlType == "selectMulti")

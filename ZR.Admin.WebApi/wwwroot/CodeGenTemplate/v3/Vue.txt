@@ -34,13 +34,23 @@ $elseif(column.HtmlType == "datetime")
         <el-date-picker
           v-model="dateRange${column.CsharpField}" 
           type="datetimerange"
-          range-separator="-"
           start-placeholder="开始日期"
           end-placeholder="结束日期"
-          placeholder="请选择$labelName"
           value-format="YYYY-MM-DD HH:mm:ss"
           :default-time="defaultTime"
           :shortcuts="dateOptions">
+        </el-date-picker>
+      </el-form-item>
+$elseif(column.HtmlType == "datePicker")
+      <el-form-item label="$labelName">
+        <el-date-picker
+          style="width: 200px"
+          v-model="dateRange${column.CsharpField}" 
+          type="daterange"
+          start-placeholder="Start date"
+          end-placeholder="End date"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          :default-time="defaultTime">
         </el-date-picker>
       </el-form-item>
 $elseif(column.HtmlType.Contains("select") || column.HtmlType == "radio")
@@ -376,12 +386,12 @@ $end
 const total = ref(0)
 const dataList = ref([])
 const queryRef = ref()
-const defaultTime = ref([new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)])
 
 $foreach(item in genTable.Columns)
-$if(item.HtmlType == "datetime" && item.IsQuery == true)
+$if((item.HtmlType == "datetime" || item.HtmlType == "datePicker") && item.IsQuery == true)
 // ${item.ColumnComment}时间范围
 const dateRange${item.CsharpField} = ref([])
+const defaultTime = ref([new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)])
 
 $elseif(item.HtmlType == "customInput")
 /******************自定义编辑 start **********************/
@@ -438,7 +448,7 @@ $end
 
 function getList(){
 $foreach(item in genTable.Columns)
-$if(item.HtmlType == "datetime" && item.IsQuery == true)
+$if((item.HtmlType == "datetime" || item.HtmlType == "datePicker") && item.IsQuery == true)
   proxy.addDateRange(queryParams, dateRange${item.CsharpField}.value, '${item.CsharpField}');
 $end
 $end
@@ -462,7 +472,7 @@ function handleQuery() {
 // 重置查询操作
 function resetQuery(){
 $foreach(item in genTable.Columns)
-$if(item.HtmlType == "datetime" && item.IsQuery == true)
+$if((item.HtmlType == "datetime" || item.HtmlType == "datePicker") && item.IsQuery == true)
   // ${item.ColumnComment}时间范围
   dateRange${item.CsharpField}.value = []
 $end
