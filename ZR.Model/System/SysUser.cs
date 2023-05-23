@@ -21,26 +21,26 @@ namespace ZR.Model.System
         /// <summary>
         /// 登录用户名
         /// </summary>
-        [SugarColumn(Length = 30, ColumnDescription = "用户账号", ColumnDataType = "varchar")]
+        [SugarColumn(Length = 30, ColumnDescription = "用户账号", IsNullable = false)]
         public string UserName { get; set; }
         /// <summary>
         /// 用户昵称
         /// </summary>
-        [SugarColumn(Length = 30, ColumnDescription = "用户昵称", ColumnDataType = "varchar")]
+        [SugarColumn(Length = 30, ColumnDescription = "用户昵称", IsNullable = false)]
         public string NickName { get; set; }
         /// <summary>
         /// 用户类型（00系统用户）
         /// </summary>
-        [SugarColumn(Length = 2, ColumnDescription = "用户类型（00系统用户）", ColumnDataType = "varchar", DefaultValue = "00")]
+        [SugarColumn(Length = 2, ColumnDescription = "用户类型（00系统用户）", DefaultValue = "00")]
         public string UserType { get; set; } = "00";
         //[SugarColumn(IsOnlyIgnoreInsert = true)]
         public string Avatar { get; set; }
-        [SugarColumn(Length = 50, ColumnDescription = "用户邮箱", ColumnDataType = "varchar")]
+        [SugarColumn(Length = 50, ColumnDescription = "用户邮箱")]
         public string Email { get; set; }
 
         [JsonIgnore]
         [ExcelIgnore]
-        [SugarColumn(Length = 100, ColumnDescription = "密码", ColumnDataType = "varchar")]
+        [SugarColumn(Length = 100, ColumnDescription = "密码", IsNullable = false)]
         public string Password { get; set; }
         /// <summary>
         /// 手机号
@@ -55,12 +55,13 @@ namespace ZR.Model.System
         /// 帐号状态（0正常 1停用）
         /// </summary>
         [ExcelIgnore]
+        [SugarColumn(DefaultValue = "0")]
         public int Status { get; set; }
 
         /// <summary>
         /// 删除标志（0代表存在 2代表删除）
         /// </summary>
-        //[SugarColumn(IsOnlyIgnoreInsert = true)]
+        [SugarColumn(DefaultValue = "0")]
         public int DelFlag { get; set; }
 
         /// <summary>
@@ -79,6 +80,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 部门Id
         /// </summary>
+        [SugarColumn(DefaultValue = "0")]
         public long DeptId { get; set; }
 
         #region 表额外字段

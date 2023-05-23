@@ -19,8 +19,8 @@ namespace ZR.Model.System
         public int CategoryId { get; set; }
         public string Name { get; set; }
         public int ParentId { get; set; }
-        [SugarColumn(ColumnName = "create_time")]
-        public DateTime CreateTime { get; set; }
+        [SugarColumn(ColumnName = "create_time", IsNullable = true)]
+        public DateTime? CreateTime { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         [SugarColumn(IsIgnore = true)]

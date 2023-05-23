@@ -357,7 +357,7 @@ namespace ZR.CodeGenerator
             sDatatype = sDatatype.ToLower();
             string sTempDatatype = sDatatype switch
             {
-                "int" or "number" or "integer" or "smallint" => "int",
+                "int" or "number" or "integer" or "smallint" or "int4" or "int8" or "int2" => "int",
                 "bigint" => "long",
                 "tinyint" => "byte",
                 "numeric" or "real" or "float" => "float",

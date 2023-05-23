@@ -7,9 +7,6 @@ namespace ZR.Model.Models
 {
     /// <summary>
     /// 多语言配置，数据实体对象
-    ///
-    /// @author mr.zhao
-    /// @date 2022-05-06
     /// </summary>
     [Tenant("0")]
     [SugarTable("sys_common_lang")]
@@ -26,7 +23,7 @@ namespace ZR.Model.Models
         /// 语言code
         /// </summary>
         [DisplayName("语言code")]
-        [SugarColumn(ColumnName = "lang_code")]
+        [SugarColumn(ColumnName = "lang_code", IsNullable = false)]
         public string LangCode { get; set; }
 
         /// <summary>
@@ -40,7 +37,7 @@ namespace ZR.Model.Models
         /// 名称
         /// </summary>
         [DisplayName("名称")]
-        [SugarColumn(ColumnName = "lang_name")]
+        [SugarColumn(ColumnName = "lang_name", IsNullable = false)]
         public string LangName { get; set; }
 
         /// <summary>
