@@ -49,10 +49,14 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 result = context.Connection.RemoteIpAddress?.ToString();
             }
-            if (string.IsNullOrEmpty(result) || result.Contains("::1"))
+            if (string.IsNullOrEmpty(result))
+                throw new Exception("获取IP失败");
+
+            if (result.Contains("::1"))
                 result = "127.0.0.1";
 
             result = result.Replace("::ffff:", "127.0.0.1");
+            result = result.Split(':')?.FirstOrDefault() ?? "127.0.0.1";
             result = IsIP(result) ? result : "127.0.0.1";
             return result;
         }
