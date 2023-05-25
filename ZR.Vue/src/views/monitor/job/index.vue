@@ -300,8 +300,8 @@ export default {
         queryText: undefined,
         PageNum: 1,
         pageSize: 10,
-        orderby: 'createTime',
-        sort: 'descending'
+        sort: 'createTime',
+        sortType: 'desc'
       },
       // 计划任务列表
       dataTasks: [],
