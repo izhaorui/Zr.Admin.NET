@@ -15,8 +15,9 @@
 - 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让 web 开发更快速、简单高效（从此告别 996），解决 70%的重复工作，专注您的业务，轻松开发从现在开始！
 - 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
 - 七牛云通用云产品优惠券：[点我进入](https://s.qiniu.com/FzEfay)。
-- 腾讯云秒杀场：[点我进入](https://curl.qcloud.com/4yEoRquq)。
-- 腾讯云优惠券：[点我领取](https://curl.qcloud.com/5J4nag8D)。
+- 腾讯云秒杀场：[☛☛ 点我进入 ☚☚](https://curl.qcloud.com/4yEoRquq)。
+- 腾讯云优惠券：[☛☛ 点我领取 ☚☚](https://curl.qcloud.com/5J4nag8D)。
+- 阿里云特惠专区：[☛☛ 点我进入 ☚☚](https://www.aliyun.com/minisite/goods?userCode=uotn5vt1&share_source=copy_link)
 
 ```
 如果对您有帮助，您可以点右上角 “Star” 收藏一下 ，这样作者才有继续免费下去的动力，谢谢！~
@@ -25,9 +26,15 @@
 ## 🍿 在线体验
 
 - 官方文档：http://www.izhaorui.cn/doc
-- vue3.x 版本体验：http://www.izhaorui.cn/vue3
-- vue2.x 版本体验：http://www.izhaorui.cn/admin
+- 加入群聊：[立即加入](http://www.izhaorui.cn/doc/contact.html)
+- Vue3.x 版本体验：[http://www.izhaorui.cn/vue3](http://www.izhaorui.cn/vue3)
+- Vue2.x 版本体验：[http://www.izhaorui.cn/admin](http://www.izhaorui.cn/admin)
+- Uniapp 版本体验：[http://www.izhaorui.cn/h5](http://www.izhaorui.cn/h5)
 - 账号密码：admin/123456
+
+| H5                                                                                     | 微信小程序                                                                           |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/net7.0/document/images/qrcodeH5.png) | ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/net7.0/document/images/qrcode.jpg) |
 
 ```
 由于是个人项目，资金有限，体验服是低配，请大家爱惜，轻戳，不胜感激！！！
@@ -35,10 +42,10 @@
 
 ## 💒 代码仓库
 
-| 仓库 | Github | Gitee                                                            |
-| ---- | ------ | ---------------------------------------------------------------- |
-| Net7 |        | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
-| Vue3 |        | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
+| 仓库 | Github                                                 | Gitee                                                            |
+| ---- | ------------------------------------------------------ | ---------------------------------------------------------------- |
+| Net7 | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
+| Vue3 | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
 
 ## 🍁 前端技术
 
@@ -147,6 +154,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x、vuex、vue-router 、vue-cli �
 4. 全局异常统一处理
 5. 自定义的代码生成功能
 6. 依赖少，上手容易
+7. 文档全面
 
 ## 💐 特别鸣谢
 
