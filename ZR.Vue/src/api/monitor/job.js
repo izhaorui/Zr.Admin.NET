@@ -4,7 +4,7 @@ export function queryTasks(data) {
   return request({
     url: '/system/tasks/list',
     method: 'get',
-    data
+    params: data,
   })
 }
 
