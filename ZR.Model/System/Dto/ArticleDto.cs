@@ -19,9 +19,9 @@ namespace ZR.Model.System.Dto
     {
         [Required(ErrorMessage = "Cid不能为空")]
         public int Cid { get; set; }
-
+        [Required(ErrorMessage = "文章标题不能为空")]
         public string Title { get; set; }
-
+        [Required(ErrorMessage = "文章内容不能为空")]
         public string Content { get; set; }
 
         public long? UserId { get; set; }

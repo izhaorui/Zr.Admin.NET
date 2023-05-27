@@ -1,7 +1,5 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
+﻿using Infrastructure.Attribute;
 using Infrastructure.Enums;
-using Infrastructure.Model;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -79,7 +77,7 @@ namespace ZR.Admin.WebApi.Controllers
             if (model != null)
             {
                 model.ArticleCategoryNav = _ArticleCategoryService.GetById(model.CategoryId);
-                model.TagList = model.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                model.TagList = model.Tags?.Split(',', StringSplitOptions.RemoveEmptyEntries);
             }
             return SUCCESS(model);
         }
@@ -90,13 +88,9 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost("add")]
         [ActionPermissionFilter(Permission = "system:article:add")]
-        [Log(Title = "文章添加", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "添加文章", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] ArticleDto parm)
         {
-            if (parm == null)
-            {
-                throw new CustomException("请求参数错误");
-            }
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
             addModel.AuthorName = HttpContext.GetName();
 
@@ -112,13 +106,8 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "文章修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] ArticleDto parm)
         {
-            if (parm == null)
-            {
-                throw new CustomException("请求参数错误");
-            }
             parm.AuthorName = HttpContext.GetName();
             var modal = parm.Adapt<Article>().ToUpdate(HttpContext);
-
             var response = _ArticleService.UpdateArticle(modal);
 
             return SUCCESS(response);
@@ -133,16 +122,8 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "文章删除", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete(int id = 0)
         {
-            if (id <= 0)
-            {
-                return ToResponse(ApiResult.Error($"删除失败Id 不能为空"));
-            }
-
-            // 删除文章
             var response = _ArticleService.Delete(id);
-
             return SUCCESS(response);
         }
-
     }
 }
