@@ -83,10 +83,6 @@ $if(replaceDto.ShowBtnAdd)
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.INSERT)]
         public IActionResult Add${replaceDto.ModelTypeName}([FromBody] ${replaceDto.ModelTypeName}Dto parm)
         {
-            if (parm == null)
-            {
-                throw new CustomException("请求参数错误");
-            }
             var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToCreate(HttpContext);
 
             var response = _${replaceDto.ModelTypeName}Service.Add${replaceDto.ModelTypeName}(modal);
@@ -105,12 +101,7 @@ $if(replaceDto.ShowBtnEdit)
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update${replaceDto.ModelTypeName}([FromBody] ${replaceDto.ModelTypeName}Dto parm)
         {
-            if (parm == null)
-            {
-                throw new CustomException("请求实体不能为空");
-            }
             var modal = parm.Adapt<${replaceDto.ModelTypeName}>().ToUpdate(HttpContext);
-
             var response = _${replaceDto.ModelTypeName}Service.Update${replaceDto.ModelTypeName}(modal);
 
             return ToResponse(response);
