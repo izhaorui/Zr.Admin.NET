@@ -386,12 +386,12 @@ $end
 const total = ref(0)
 const dataList = ref([])
 const queryRef = ref()
+const defaultTime = ref([new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)])
 
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "datetime" || item.HtmlType == "datePicker") && item.IsQuery == true)
 // ${item.ColumnComment}时间范围
 const dateRange${item.CsharpField} = ref([])
-const defaultTime = ref([new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)])
 
 $elseif(item.HtmlType == "customInput")
 /******************自定义编辑 start **********************/
