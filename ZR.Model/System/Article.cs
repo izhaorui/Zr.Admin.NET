@@ -53,6 +53,9 @@ namespace ZR.Model.System
         /// 文章标签eg：Net5,java
         /// </summary>
         public string Tags { get; set; }
+        /// <summary>
+        /// 点击量
+        /// </summary>
         public int Hits { get; set; }
         [SugarColumn(ColumnName = "category_Id")]
         public int CategoryId { get; set; }
@@ -60,6 +63,10 @@ namespace ZR.Model.System
         /// 封面地址
         /// </summary>
         public string CoverUrl { get; set; }
+        /// <summary>
+        /// 是否公开 1、公开 0、不公开
+        /// </summary>
+        public int IsPublic { get; set; }
 
         [Navigate(NavigateType.OneToOne, nameof(CategoryId), nameof(ArticleCategory.CategoryId))] //自定义关系映射
         public ArticleCategory ArticleCategoryNav { get; set; }

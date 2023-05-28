@@ -217,7 +217,8 @@ CREATE TABLE "public"."article" (
   "createtime" timestamp(6),
   "updatetime" timestamp(6),
   "authorname" varchar(20) COLLATE "pg_catalog"."default",
-  "coverurl" varchar(255) COLLATE "pg_catalog"."default"
+  "coverurl" varchar(255) COLLATE "pg_catalog"."default",
+"isPublic" int4
 )
 ;
 COMMENT ON COLUMN "public"."article"."title" IS '文章标题';

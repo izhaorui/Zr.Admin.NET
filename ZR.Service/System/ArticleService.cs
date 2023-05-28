@@ -38,6 +38,29 @@ namespace ZR.Service.System
         }
 
         /// <summary>
+        /// 查询我的文章列表
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public PagedInfo<ArticleDto> GetMyList(ArticleQueryDto parm)
+        {
+            var predicate = Expressionable.Create<Article>();
+
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
+            predicate = predicate.AndIF(parm.BeginTime != null, m => m.CreateTime >= parm.BeginTime);
+            predicate = predicate.AndIF(parm.EndTime != null, m => m.CreateTime <= parm.EndTime);
+            predicate = predicate.And(m => m.UserId == parm.UserId);
+
+            var response = Queryable()
+                .Includes(x => x.ArticleCategoryNav)
+                .Where(predicate.ToExpression())
+                .ToPage<Article, ArticleDto>(parm);
+
+            return response;
+        }
+
+        /// <summary>
         /// 修改文章管理
         /// </summary>
         /// <param name="model"></param>
@@ -54,6 +77,7 @@ namespace ZR.Service.System
                 CoverUrl = model.CoverUrl,
                 CategoryId = model.CategoryId,
                 FmtType = model.FmtType,
+                IsPublic = model.IsPublic,
             });
             return response;
         }

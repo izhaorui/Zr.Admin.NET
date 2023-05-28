@@ -45,6 +45,19 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 查询我的文章列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("mylist")]
+        public IActionResult QueryMyList([FromQuery] ArticleQueryDto parm)
+        {
+            parm.UserId = HttpContext.GetUId();
+            var response = _ArticleService.GetMyList(parm);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
         /// 查询最新文章列表
         /// </summary>
         /// <returns></returns>
@@ -53,6 +66,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var predicate = Expressionable.Create<Article>();
             predicate = predicate.And(m => m.Status == "1");
+            predicate = predicate.And(m => m.IsPublic == 1);
 
             var response = _ArticleService.Queryable()
                 .Where(predicate.ToExpression())
@@ -72,8 +86,13 @@ namespace ZR.Admin.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult Get(int id)
         {
+            long userId = HttpContext.GetUId();
             var response = _ArticleService.GetId(id);
             var model = response.Adapt<ArticleDto>();
+            if (model.IsPublic == 0 && userId != model.UserId)
+            {
+                return ToResponse(Infrastructure.ResultCode.CUSTOM_ERROR, "访问失败");
+            }
             if (model != null)
             {
                 model.ArticleCategoryNav = _ArticleCategoryService.GetById(model.CategoryId);

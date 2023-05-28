@@ -333,6 +333,7 @@ CREATE TABLE `article`  (
   `updateTime` datetime(6) NULL DEFAULT NULL COMMENT '修改时间',
   `authorName` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '作者名',
   `coverUrl` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '封面',
+	`isPublic` int(4) NULL DEFAULT 0 COMMENT '是否公开',
   PRIMARY KEY (`cid`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 28 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
@@ -368,34 +369,43 @@ create table sys_config (
   primary key (configId)
 ) engine=innodb auto_increment=100 comment = '参数配置表';
 
+
 -- ----------------------------
 -- 18、代码生成业务表
 -- ----------------------------
-drop table if exists gen_table;
-create table gen_table (
-  tableId          bigint(20)      not null auto_increment    comment '编号',
-  tableName        varchar(200)    default ''                 comment '表名称',
-  tableComment     varchar(500)    default ''                 comment '表描述',
-  subTableName    varchar(64)     default null                comment '关联子表的表名',
-  subTableFkName varchar(64)     default null                 comment '子表关联的外键名',
-  className        varchar(100)    default ''                 comment '实体类名称',
-  tplCategory      varchar(200)    default 'crud'             comment '使用的模板（crud单表操作 tree树表操作）',
-  baseNameSpace      varchar(100)                             comment '生成命名空间前缀',
-  moduleName       varchar(30)                                comment '生成模块名',
-  businessName     varchar(30)                                comment '生成业务名',
-  functionName     varchar(50)                                comment '生成功能名',
-  functionAuthor   varchar(50)                                comment '生成功能作者',
-  genType          char(1)         default '0'                comment '生成代码方式（0zip压缩包 1自定义路径）',
-  genPath          varchar(200)    default '/'                comment '生成路径（不填默认项目路径）',
-  options           varchar(1000)                              comment '其它生成选项',
-  create_by         varchar(64)     default ''                 comment '创建者',
-  create_time 	    datetime                                   comment '创建时间',
-  update_by         varchar(64)     default ''                 comment '更新者',
-  update_time       datetime                                   comment '更新时间',
-  remark            varchar(500)    default null               comment '备注',
-  dbName			VARCHAR(100)							   comment '数据库名',
-  PRIMARY key (tableId)
-) engine=innodb auto_increment=1 comment = '代码生成业务表';
+DROP TABLE
+IF
+	EXISTS gen_table;
+CREATE TABLE gen_table (
+	tableId BIGINT ( 20 ) NOT NULL auto_increment COMMENT '编号',
+	tableName VARCHAR ( 200 ) DEFAULT '' COMMENT '表名称',
+	tableComment VARCHAR ( 500 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '表描述',
+	subTableName VARCHAR ( 64 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '关联子表的表名',
+	subTableFkName VARCHAR ( 64 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '子表关联的外键名',
+	className VARCHAR ( 100 ) DEFAULT '' COMMENT '实体类名称',
+	tplCategory VARCHAR ( 200 ) DEFAULT 'crud' COMMENT '使用的模板（crud单表操作 tree树表操作）',
+	baseNameSpace VARCHAR ( 100 ) COMMENT '生成命名空间前缀',
+	moduleName VARCHAR ( 30 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '生成模块名',
+	businessName VARCHAR ( 30 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '生成业务名',
+	functionName VARCHAR ( 50 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '生成功能名',
+	functionAuthor VARCHAR ( 50 ) COMMENT '生成功能作者',
+	genType CHAR ( 1 ) DEFAULT '0' COMMENT '生成代码方式（0zip压缩包 1自定义路径）',
+	genPath VARCHAR ( 200 ) DEFAULT '/' COMMENT '生成路径（不填默认项目路径）',
+	OPTIONS VARCHAR ( 1000 ) COMMENT '其它生成选项',
+	create_by VARCHAR ( 64 ) DEFAULT '' COMMENT '创建者',
+	create_time datetime COMMENT '创建时间',
+	update_by VARCHAR ( 64 ) DEFAULT '' COMMENT '更新者',
+	update_time datetime COMMENT '更新时间',
+	remark VARCHAR ( 500 ) DEFAULT NULL COMMENT '备注',
+	dbName VARCHAR ( 100 ) COMMENT '数据库名',
+PRIMARY KEY ( tableId ) 
+) ENGINE = INNODB auto_increment = 1 COMMENT = '代码生成业务表';
 
 
 -- ----------------------------

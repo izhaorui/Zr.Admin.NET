@@ -5,11 +5,11 @@ namespace ZR.Model.System.Dto
 {
     public class ArticleQueryDto : PagerInfo
     {
+        public long? UserId { get; set; }
         public string Status { get; set; }
         public string Title { get; set; }
-        public DateTime BeginTime { get; set; }
-        public DateTime EndTime { get; set; }
-
+        public DateTime? BeginTime { get; set; }
+        public DateTime? EndTime { get; set; }
     }
 
     /// <summary>
@@ -46,6 +46,6 @@ namespace ZR.Model.System.Dto
 
         public ArticleCategory ArticleCategoryNav { get; set; }
         public string[] TagList { get; set; }
-
+        public int IsPublic { get; set; }
     }
 }
