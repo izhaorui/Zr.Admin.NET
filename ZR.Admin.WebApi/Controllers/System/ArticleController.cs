@@ -107,13 +107,13 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost("add")]
         [ActionPermissionFilter(Permission = "system:article:add")]
-        [Log(Title = "添加文章", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "发布文章", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] ArticleDto parm)
         {
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
             addModel.AuthorName = HttpContext.GetName();
 
-            return SUCCESS(_ArticleService.Add(addModel));
+            return SUCCESS(_ArticleService.InsertReturnIdentity(addModel));
         }
 
         /// <summary>

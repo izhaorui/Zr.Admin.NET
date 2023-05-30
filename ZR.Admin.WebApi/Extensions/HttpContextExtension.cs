@@ -61,6 +61,11 @@ namespace ZR.Admin.WebApi.Extensions
             return result;
         }
 
+        /// <summary>
+        /// 判断是否IP
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <returns></returns>
         public static bool IsIP(string ip)
         {
             return Regex.IsMatch(ip, @"^((2[0-4]\d|25[0-5]|[01]?\d\d?)\.){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)$");
@@ -131,6 +136,11 @@ namespace ZR.Admin.WebApi.Extensions
             return context.Request.Headers["Authorization"];
         }
 
+        /// <summary>
+        /// 获取浏览器信息
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public static ClientInfo GetClientInfo(this HttpContext context)
         {
             var str = GetUserAgent(context);
@@ -140,10 +150,21 @@ namespace ZR.Admin.WebApi.Extensions
             return c;
         }
 
+        /// <summary>
+        /// 获取请求Url
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public static string? GetRequestUrl(this HttpContext context)
         {
             return context != null ? context.Request.Path.Value : "";
         }
+
+        /// <summary>
+        /// 获取请求参数
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public static string GetQueryString(this HttpContext context)
         {
             return context != null ? context.Request.QueryString.Value : "";
