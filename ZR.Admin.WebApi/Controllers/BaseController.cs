@@ -61,6 +61,7 @@ namespace ZR.Admin.WebApi.Controllers
             //IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
             //string fileDir = Path.Combine(webHostEnvironment.WebRootPath, path, fileName);
 
+            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
             var stream = Io.File.OpenRead(path);  //创建文件流
             return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
         }
