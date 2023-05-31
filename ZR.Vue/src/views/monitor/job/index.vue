@@ -4,8 +4,14 @@
       <el-col>
         <el-form :inline="true" @submit.native.prevent>
           <el-form-item>
-            <el-input v-model="queryParams.queryText" placeholder="请输入计划任务名称" clearable prefix-icon="el-icon-search" @keyup.enter.native="handleQuery"
-              @clear="handleQuery" />
+            <el-input
+              v-model="queryParams.queryText"
+              placeholder="请输入计划任务名称"
+              clearable
+              prefix-icon="el-icon-search"
+              @keyup.enter.native="handleQuery"
+              @clear="handleQuery"
+            />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
@@ -25,10 +31,13 @@
         <el-button v-hasPermi="['monitor:job:delete']" plain type="danger" icon="el-icon-remove" size="mini" @click="handleDelete(null)" :disabled="single">删除</el-button>
       </el-col>-->
       <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['monitor:job:export']">导出</el-button>
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['monitor:job:export']"
+          >导出</el-button
+        >
       </el-col>
       <el-col :span="1.5">
-        <el-button plain v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog()">日志
+        <el-button plain v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog()"
+          >日志
         </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="searchToggle" @queryTable="handleQuery"></right-toolbar>
@@ -45,29 +54,77 @@
         <el-table-column prop="cron" align="center" label="运行表达式" :show-overflow-tooltip="true" />
         <el-table-column sortable prop="isStart" align="center" label="任务状态" width="100">
           <template slot-scope="scope">
-            <el-tag size="mini" :type="scope.row.isStart ? 'success' : 'danger'">{{ scope.row.isStart ? "运行中":"已停止" }}</el-tag>
+            <el-tag size="mini" :type="scope.row.isStart ? 'success' : 'danger'">{{ scope.row.isStart ? '运行中' : '已停止' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="lastRunTime" align="center" label="最后运行时间" :show-overflow-tooltip="true" />
         <el-table-column prop="remark" align="center" label="备注" :show-overflow-tooltip="true" />
         <el-table-column label="操作" align="center" width="230" class-name="small-padding fixed-width">
           <template slot-scope="scope">
-            <el-button type="text" size="mini" icon="el-icon-view" v-hasPermi="['monitor:job:query']"
-              @click="handleJobLog(scope.row.id, scope.row.name)">
+            <el-button
+              type="text"
+              size="mini"
+              icon="el-icon-view"
+              v-hasPermi="['monitor:job:query']"
+              @click="handleJobLog(scope.row.id, scope.row.name)"
+            >
               日志
               <!-- <router-link :to="{path: 'job/log', query: {jobId: scope.row.id}}">日志</router-link> -->
             </el-button>
-            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:run']" size="mini" icon="el-icon-remove" title="运行"
-              @click="handleRun(scope.row)">运行</el-button>
-            <el-button type="text" v-if="scope.row.isStart" v-hasPermi="['monitor:job:stop']" size="mini" icon="el-icon-video-pause" style="color:red"
-              title="停止" @click="handleStop(scope.row)">停止</el-button>
+            <el-button
+              type="text"
+              v-if="scope.row.isStart"
+              v-hasPermi="['monitor:job:run']"
+              size="mini"
+              icon="el-icon-remove"
+              title="运行"
+              @click="handleRun(scope.row)"
+              >运行</el-button
+            >
+            <el-button
+              type="text"
+              v-if="scope.row.isStart"
+              v-hasPermi="['monitor:job:stop']"
+              size="mini"
+              icon="el-icon-video-pause"
+              style="color: red"
+              title="停止"
+              @click="handleStop(scope.row)"
+              >停止</el-button
+            >
 
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:start']" size="mini" icon="el-icon-video-play" title="启动"
-              @click="handleStart(scope.row)">启动</el-button>
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:edit']" size="mini" icon="el-icon-edit" style="color:gray"
-              title="编辑" @click="handleUpdate(scope.row)">编辑</el-button>
-            <el-button type="text" v-if="!scope.row.isStart" v-hasPermi="['monitor:job:delete']" size="mini" icon="el-icon-delete" style="color:red"
-              title="删除" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button
+              type="text"
+              v-if="!scope.row.isStart"
+              v-hasPermi="['monitor:job:start']"
+              size="mini"
+              icon="el-icon-video-play"
+              title="启动"
+              @click="handleStart(scope.row)"
+              >启动</el-button
+            >
+            <el-button
+              type="text"
+              v-if="!scope.row.isStart"
+              v-hasPermi="['monitor:job:edit']"
+              size="mini"
+              icon="el-icon-edit"
+              style="color: gray"
+              title="编辑"
+              @click="handleUpdate(scope.row)"
+              >编辑</el-button
+            >
+            <el-button
+              type="text"
+              v-if="!scope.row.isStart"
+              v-hasPermi="['monitor:job:delete']"
+              size="mini"
+              icon="el-icon-delete"
+              style="color: red"
+              title="删除"
+              @click="handleDelete(scope.row)"
+              >删除</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -79,7 +136,7 @@
         <el-row>
           <el-col :lg="24" v-if="this.form.id">
             <el-form-item label="任务ID">
-              <div>{{form.id}}</div>
+              <div>{{ form.id }}</div>
             </el-form-item>
           </el-col>
           <el-col :lg="12">
@@ -89,7 +146,7 @@
           </el-col>
           <el-col :lg="12">
             <el-form-item label="触发器类型" prop="triggerType">
-              <el-select v-model="form.triggerType" placeholder="请选择触发器类型" style="width:100%">
+              <el-select v-model="form.triggerType" placeholder="请选择触发器类型" style="width: 100%">
                 <el-option v-for="item in triggerTypeOptions" :key="item.value" :label="item.label" :value="parseInt(item.value)" />
               </el-select>
             </el-form-item>
@@ -164,12 +221,12 @@
                 </el-tooltip>
                 开始日期
               </span>
-              <el-date-picker v-model="form.beginTime" style="width:100%" type="date" :picker-options="pickerOptions" placeholder="选择开始日期" />
+              <el-date-picker v-model="form.beginTime" style="width: 100%" type="date" :picker-options="pickerOptions" placeholder="选择开始日期" />
             </el-form-item>
           </el-col>
           <el-col :lg="12">
             <el-form-item label="结束日期" prop="endTime">
-              <el-date-picker v-model="form.endTime" style="width:100%" type="date" placeholder="选择结束日期" />
+              <el-date-picker v-model="form.endTime" style="width: 100%" type="date" placeholder="选择结束日期" />
             </el-form-item>
           </el-col>
           <el-col :lg="24">
@@ -191,14 +248,14 @@
     </el-dialog>
 
     <el-dialog title="Cron表达式生成器" :visible.sync="openCron" append-to-body destroy-on-close class="scrollbar">
-      <crontab @hide="openCron=false" @fill="crontabFill" :expression="expression"></crontab>
+      <crontab @hide="openCron = false" @fill="crontabFill" :expression="expression"></crontab>
     </el-dialog>
 
     <el-drawer :title="logTitle" :visible.sync="drawer">
       <el-timeline>
         <el-timeline-item :timestamp="item.createTime" placement="top" v-for="(item, i) in jobLogList" :key="i">
-          <h4>{{item.jobMessage}}</h4>
-          <p>{{item.exception}}</p>
+          <h4>{{ item.jobMessage }}</h4>
+          <p>{{ item.exception }}</p>
         </el-timeline-item>
       </el-timeline>
       <el-empty v-if="jobLogList.length <= 0"></el-empty>
@@ -207,17 +264,7 @@
 </template>
 
 <script>
-import {
-  queryTasks,
-  getTasks,
-  createTasks,
-  updateTasks,
-  deleteTasks,
-  startTasks,
-  stopTasks,
-  runTasks,
-  exportTasks
-} from '@/api/monitor/job'
+import { queryTasks, getTasks, createTasks, updateTasks, deleteTasks, startTasks, stopTasks, runTasks, exportTasks } from '@/api/monitor/job'
 import { listJobLog } from '@/api/monitor/jobLog'
 import Crontab from '@/components/Crontab'
 
@@ -300,8 +347,8 @@ export default {
         queryText: undefined,
         PageNum: 1,
         pageSize: 10,
-        sort: 'createTime',
-        sortType: 'desc'
+        sort: '',
+        sortType: '',
       },
       // 计划任务列表
       dataTasks: [],
@@ -311,7 +358,7 @@ export default {
       // 任务状态字典
       isStartOptions: [
         { dictLabel: '运行中', dictValue: '1' },
-        { dictLabel: '已停止', dictValue: '0', listClass: 'danger' }
+        { dictLabel: '已停止', dictValue: '0', listClass: 'danger' },
       ],
       // 任务组名字典
       jobGroupOptions: [],
@@ -319,33 +366,21 @@ export default {
       triggerTypeOptions: [
         {
           label: '[普通]',
-          value: 0
+          value: 0,
         },
         {
           label: '[表达式]',
-          value: 1
-        }
+          value: 1,
+        },
       ],
       // 表单校验
       rules: {
-        name: [
-          { required: true, message: '任务名称不能为空', trigger: 'blur' }
-        ],
-        jobGroup: [
-          { required: true, message: '任务分组不能为空', trigger: 'blur' }
-        ],
-        assemblyName: [
-          { required: true, message: '程序集名称不能为空', trigger: 'blur' }
-        ],
-        className: [
-          { required: true, message: '任务类名不能为空', trigger: 'blur' }
-        ],
-        triggerType: [
-          { required: true, message: '请选择触发器类型', trigger: 'blur' }
-        ],
-        apiUrl: [
-          { required: true, message: '请输入apiUrl地址', trigger: 'blur' }
-        ],
+        name: [{ required: true, message: '任务名称不能为空', trigger: 'blur' }],
+        jobGroup: [{ required: true, message: '任务分组不能为空', trigger: 'blur' }],
+        assemblyName: [{ required: true, message: '程序集名称不能为空', trigger: 'blur' }],
+        className: [{ required: true, message: '任务类名不能为空', trigger: 'blur' }],
+        triggerType: [{ required: true, message: '请选择触发器类型', trigger: 'blur' }],
+        apiUrl: [{ required: true, message: '请输入apiUrl地址', trigger: 'blur' }],
         cron: [{ validator: cronValidate, trigger: 'blur' }],
         beginTime: [{ validator: beginTimeValidate, trigger: 'blur' }],
         endTime: [{ validator: endTimeValidate, trigger: 'blur' }],
@@ -353,16 +388,16 @@ export default {
           {
             validator: intervalSecondValidate,
             type: 'number',
-            trigger: 'blur'
-          }
-        ]
+            trigger: 'blur',
+          },
+        ],
       },
       // 时间的选择
       pickerOptions: {
         disabledDate(time) {
           return time.getTime() < Date.now() - 8.64e7
-        }
-      }
+        },
+      },
     }
   },
   created() {
@@ -380,8 +415,8 @@ export default {
         }
       },
       deep: true,
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   methods: {
     /** 查询计划任务列表 */
@@ -464,15 +499,11 @@ export default {
     handleDelete(row) {
       const jobInfo = row
 
-      this.$confirm(
-        '是否确认删除名称为"' + jobInfo.name + '"的计划任务?',
-        '警告',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      )
+      this.$confirm('是否确认删除名称为"' + jobInfo.name + '"的计划任务?', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      })
         .then(() => {
           deleteTasks(jobInfo.id).then((response) => {
             if (response.code === 200) {
@@ -481,7 +512,7 @@ export default {
             }
           })
         })
-        .catch(function() {})
+        .catch(function () {})
     },
     /* 立即执行一次 */
     handleRun(row) {
@@ -490,7 +521,7 @@ export default {
       this.$confirm('确认要立即执行一次"' + jobInfo.name + '"任务吗?', '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning'
+        type: 'warning',
       }).then((res) => {
         runTasks(jobInfo.id).then((res) => {
           if (res.code === 200) {
@@ -501,7 +532,7 @@ export default {
       })
     },
     /** 提交按钮 */
-    submitForm: function() {
+    submitForm: function () {
       this.$refs['form'].validate((valid) => {
         if (valid) {
           if (this.form.id !== undefined) {
@@ -544,15 +575,13 @@ export default {
         endTime: undefined,
         intervalSecond: 1,
         cron: undefined,
-        taskType: 1
+        taskType: 1,
       }
       this.resetForm('form')
     },
     // 自动计算分页 Id
     handleIndexCalc(index) {
-      return (
-        (this.queryParams.PageNum - 1) * this.queryParams.pageSize + index + 1
-      )
+      return (this.queryParams.PageNum - 1) * this.queryParams.pageSize + index + 1
     },
     // 取消按钮
     cancel() {
@@ -564,7 +593,7 @@ export default {
       this.$confirm('是否确认导出所有任务?', '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning'
+        type: 'warning',
       })
         .then(() => {
           return exportTasks()
@@ -572,7 +601,7 @@ export default {
         .then((response) => {
           this.download(response.data.path)
         })
-    }
-  }
+    },
+  },
 }
 </script>

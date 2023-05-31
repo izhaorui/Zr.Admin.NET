@@ -1,6 +1,7 @@
 ﻿using System;
 using SqlSugar;
 using Infrastructure.Attribute;
+using Infrastructure.Extensions;
 using ${options.BaseNamespace}Model;
 using ${options.DtosNamespace};
 using ${options.ModelsNamespace}.${options.SubNamespace};

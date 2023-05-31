@@ -70,7 +70,8 @@ $end
         {
             var response = _${replaceDto.ModelTypeName}Service.GetFirst(x => x.${replaceDto.PKName} == ${replaceDto.PKName});
             
-            return SUCCESS(response);
+            var info = response.Adapt<${replaceDto.ModelTypeName}>();
+            return SUCCESS(info);
         }
 
 $if(replaceDto.ShowBtnAdd)
