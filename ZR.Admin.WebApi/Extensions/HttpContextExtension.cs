@@ -1,10 +1,5 @@
 ﻿using Infrastructure;
 using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -16,7 +11,7 @@ namespace ZR.Admin.WebApi.Extensions
     /// <summary>
     /// HttpContext扩展类
     /// </summary>
-    public static class HttpContextExtension
+    public static partial class HttpContextExtension
     {
         /// <summary>
         /// 是否是ajax请求
@@ -33,7 +28,7 @@ namespace ZR.Admin.WebApi.Extensions
             //return request.Headers.ContainsKey("X-Requested-With") &&
             //       request.Headers["X-Requested-With"].Equals("XMLHttpRequest");
 
-            return request.Headers["X-Requested-With"] == "XMLHttpRequest" || (request.Headers != null && request.Headers["X-Requested-With"] == "XMLHttpRequest");
+            return request.Headers["X-Requested-With"] == "XMLHttpRequest" || request.Headers != null && request.Headers["X-Requested-With"] == "XMLHttpRequest";
         }
 
         /// <summary>
@@ -101,7 +96,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// <returns></returns>
         public static bool IsAdmin(this HttpContext context)
         {
-            var userName = GetName(context);
+            var userName = context.GetName();
             return userName == GlobalConstant.AdminRole;
         }
 
@@ -143,7 +138,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// <returns></returns>
         public static ClientInfo GetClientInfo(this HttpContext context)
         {
-            var str = GetUserAgent(context);
+            var str = context.GetUserAgent();
             var uaParser = Parser.GetDefault();
             ClientInfo c = uaParser.Parse(str);
 
@@ -187,16 +182,19 @@ namespace ZR.Admin.WebApi.Extensions
                 param = reader.ReadToEndAsync().Result;
                 if (param.IsEmpty())
                 {
-                    param = GetQueryString(context);
+                    param = context.GetQueryString();
                 }
+                param = PwdRep().Replace(param, "***");
             }
             else
             {
-                param = GetQueryString(context);
+                param = context.GetQueryString();
             }
             operLog.OperParam = param;
         }
 
+        [GeneratedRegex("(?<=\"password\":\")[^\",]*")]
+        private static partial Regex PwdRep();
     }
 
 }
