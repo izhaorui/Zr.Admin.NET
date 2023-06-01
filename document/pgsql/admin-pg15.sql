@@ -683,9 +683,9 @@ DROP TABLE IF EXISTS "public"."sys_notice";
 CREATE TABLE "public"."sys_notice" (
   "notice_id" int4 NOT NULL DEFAULT nextval('sys_noticeid_seq'::regclass),
   "notice_title" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-  "notice_type" char(1) COLLATE "pg_catalog"."default" NOT NULL,
+  "notice_type" int4 NOT NULL,
   "notice_content" varchar(500) COLLATE "pg_catalog"."default",
-  "status" char(1) COLLATE "pg_catalog"."default",
+  "status" int4,
   "create_by" varchar(64) COLLATE "pg_catalog"."default",
   "create_time" timestamp(6),
   "update_by" varchar(64) COLLATE "pg_catalog"."default",

@@ -26,7 +26,7 @@ namespace ZR.Model.System
         /// 公告类型 (1通知 2公告)
         /// </summary>
         [SugarColumn(ColumnName = "notice_type")]
-        public string NoticeType { get; set; }
+        public int NoticeType { get; set; }
         /// <summary>
         /// 公告内容
         /// </summary>
@@ -35,6 +35,6 @@ namespace ZR.Model.System
         /// <summary>
         /// 公告状态 (0正常 1关闭)
         /// </summary>
-        public string Status { get; set; }
+        public int Status { get; set; }
     }
 }

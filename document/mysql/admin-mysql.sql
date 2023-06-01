@@ -35,38 +35,52 @@ CREATE TABLE `sys_tasks`  (
 -- ----------------------------
 -- Table structure for sys_tasks_log
 -- ----------------------------
-DROP TABLE IF EXISTS `sys_tasks_log`;
-CREATE TABLE `sys_tasks_log`  (
-  `jobLogId` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '任务日志ID',
-  `jobId` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务id',
-  `jobName` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务名称',
-  `jobGroup` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务组名',
-  `jobMessage` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '日志信息',
-  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '0' COMMENT '执行状态（0正常 1失败）',
-  `exception` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '异常信息',
-  `createTime` datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
-  `invokeTarget` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '调用目标',
-  `elapsed` double(10, 0) NULL DEFAULT NULL COMMENT '作业用时',
-  PRIMARY KEY (`jobLogId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 198 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '定时任务调度日志表' ROW_FORMAT = Dynamic;
-
+DROP TABLE
+IF
+	EXISTS `sys_tasks_log`;
+CREATE TABLE `sys_tasks_log` (
+	`jobLogId` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '任务日志ID',
+	`jobId` VARCHAR ( 20 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务id',
+	`jobName` VARCHAR ( 64 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务名称',
+	`jobGroup` VARCHAR ( 64 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务组名',
+	`jobMessage` VARCHAR ( 500 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '日志信息',
+	`status` CHAR ( 1 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '0' COMMENT '执行状态（0正常 1失败）',
+	`exception` VARCHAR ( 2000 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '异常信息',
+	`createTime` DATETIME ( 0 ) NULL DEFAULT NULL COMMENT '创建时间',
+	`invokeTarget` VARCHAR ( 200 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '调用目标',
+	`elapsed` DOUBLE ( 10, 0 ) NULL DEFAULT NULL COMMENT '作业用时',
+	PRIMARY KEY ( `jobLogId` ) USING BTREE 
+) ENGINE = INNODB AUTO_INCREMENT = 198 CHARACTER 
+SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '定时任务调度日志表' ROW_FORMAT = Dynamic;
 -- ----------------------------
 -- 通知公告表
 -- ----------------------------
-drop table if exists sys_notice;
-create table sys_notice (
-  notice_id         int(4)          not null auto_increment    comment '公告ID',
-  notice_title      varchar(50)     not null                   comment '公告标题',
-  notice_type       char(1)         not null                   comment '公告类型（1通知 2公告）',
-  notice_content    varchar(500)    default null               comment '公告内容',
-  status            char(1)         default '0'                comment '公告状态（0正常 1关闭）',
-  create_by         varchar(64)     default ''                 comment '创建者',
-  create_time       datetime                                   comment '创建时间',
-  update_by         varchar(64)     default ''                 comment '更新者',
-  update_time       datetime                                   comment '更新时间',
-  remark            varchar(255)    default null               comment '备注',
-  primary key (notice_id)
-) engine=innodb auto_increment=10 comment = '通知公告表';
+DROP TABLE
+IF
+	EXISTS sys_notice;
+CREATE TABLE sys_notice (
+	notice_id INT ( 4 ) NOT NULL auto_increment COMMENT '公告ID',
+	notice_title VARCHAR ( 50 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '公告标题',
+	notice_type INT NOT NULL COMMENT '公告类型（1通知 2公告）',
+	notice_content TEXT CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '公告内容',
+	`status` INT DEFAULT 0 COMMENT '公告状态（0正常 1关闭）',
+	create_by VARCHAR ( 64 ) DEFAULT '' COMMENT '创建者',
+	create_time DATETIME COMMENT '创建时间',
+	update_by VARCHAR ( 64 ) DEFAULT '' COMMENT '更新者',
+	update_time DATETIME COMMENT '更新时间',
+	remark VARCHAR ( 255 ) CHARACTER 
+	SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
+	PRIMARY KEY ( notice_id ) 
+) ENGINE = INNODB auto_increment = 1 COMMENT = '通知公告表';
 
 
 -- ----------------------------

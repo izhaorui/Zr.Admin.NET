@@ -45,7 +45,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var predicate = Expressionable.Create<SysNotice>();
 
-            predicate = predicate.And(m => m.Status == "0");
+            predicate = predicate.And(m => m.Status == 0);
             var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
             return SUCCESS(response);
         }
@@ -61,9 +61,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             var predicate = Expressionable.Create<SysNotice>();
 
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeTitle), m => m.NoticeTitle.Contains(parm.NoticeTitle));
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeType), m => m.NoticeType == parm.NoticeType);
+            predicate = predicate.AndIF(parm.NoticeType != null, m => m.NoticeType == parm.NoticeType);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.CreateBy), m => m.Create_by.Contains(parm.CreateBy) || m.Update_by.Contains(parm.CreateBy));
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
+            predicate = predicate.AndIF(parm.Status != null, m => m.Status == parm.Status);
             var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
             return SUCCESS(response);
         }
@@ -88,14 +88,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "system:notice:add")]
-        [Log(Title = "通知公告表", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "发布通告", BusinessType = BusinessType.INSERT)]
         public IActionResult AddSysNotice([FromBody] SysNoticeDto parm)
         {
-            if (parm == null)
-            {
-                throw new CustomException("请求参数错误");
-            }
-            //从 Dto 映射到 实体
             var modal = parm.Adapt<SysNotice>().ToCreate(HttpContext);
             modal.Create_by = HttpContext.GetName();
             modal.Create_time = DateTime.Now;
@@ -120,19 +115,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [ActionPermissionFilter(Permission = "system:notice:update")]
-        [Log(Title = "通知公告表", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "修改公告", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdateSysNotice([FromBody] SysNoticeDto parm)
         {
-            if (parm == null)
-            {
-                throw new CustomException("请求实体不能为空");
-            }
-            //从 Dto 映射到 实体
             var model = parm.Adapt<SysNotice>().ToUpdate(HttpContext);
-
+            model.Update_by = HttpContext.GetName();
             var response = _SysNoticeService.Update(w => w.NoticeId == model.NoticeId, it => new SysNotice()
             {
-                //Update 字段映射
                 NoticeTitle = model.NoticeTitle,
                 NoticeType = model.NoticeType,
                 NoticeContent = model.NoticeContent,
@@ -150,7 +139,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPut("send/{NoticeId}")]
         [ActionPermissionFilter(Permission = "system:notice:update")]
-        [Log(Title = "通知公告表", BusinessType = BusinessType.OTHER)]
+        [Log(Title = "发送通知公告", BusinessType = BusinessType.OTHER)]
         public IActionResult SendNotice(int NoticeId = 0)
         {
             if (NoticeId <= 0)
@@ -158,7 +147,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException("请求实体不能为空");
             }
             var response = _SysNoticeService.GetFirst(x => x.NoticeId == NoticeId);
-            if (response != null && response.Status == "0")
+            if (response != null && response.Status == 0)
             {
                 _hubContext.Clients.All.SendAsync(HubsConstant.ReceiveNotice, response.NoticeTitle, response.NoticeContent);
             }
@@ -171,7 +160,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpDelete("{ids}")]
         [ActionPermissionFilter(Permission = "system:notice:delete")]
-        [Log(Title = "通知公告表", BusinessType = BusinessType.DELETE)]
+        [Log(Title = "通知公告", BusinessType = BusinessType.DELETE)]
         public IActionResult DeleteSysNotice(string ids)
         {
             int[] idsArr = Tools.SpitIntArrary(ids);
@@ -180,21 +169,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             var response = _SysNoticeService.Delete(idsArr);
 
             return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 通知公告表导出
-        /// </summary>
-        /// <returns></returns>
-        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "通知公告表")]
-        [HttpGet("export")]
-        [ActionPermissionFilter(Permission = "system:notice:export")]
-        public IActionResult Export()
-        {
-            var list = _SysNoticeService.GetAll();
-
-            string sFileName = ExportExcel(list, "SysNotice", "通知公告表");
-            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
         }
     }
 }

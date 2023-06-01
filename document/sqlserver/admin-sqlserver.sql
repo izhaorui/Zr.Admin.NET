@@ -31,7 +31,6 @@ CREATE TABLE sys_tasks
 	requestMethod VARCHAR(10)				--请求方法
 )
 GO
-GO
 if OBJECT_ID(N'sys_tasks_log',N'U') is not NULL DROP TABLE sys_tasks_log
 GO
 /**定时任务调度日志表*/
@@ -55,9 +54,9 @@ GO
 CREATE TABLE [dbo].[sys_notice](
 	[notice_id] [int] NOT NULL PRIMARY KEY IDENTITY(1,1),
 	[notice_title] [varchar](100) NULL,
-	[notice_type] [char](1) NULL,
+	[notice_type] int NULL,
 	[notice_content] [text] NULL,
-	[status] [char](1) NULL,
+	[status] int NULL,
 	[create_by] [varchar](64) NULL,
 	[create_time] [datetime] NULL,
 	[update_by] [varchar](64) NULL,

@@ -28,7 +28,7 @@ namespace ZR.Service.System
             var predicate = Expressionable.Create<SysNotice>();
 
             //搜索条件查询语法参考Sqlsugar
-            predicate = predicate.And(m => m.Status == "0");
+            predicate = predicate.And(m => m.Status == 0);
             return GetList(predicate.ToExpression());
         }
 

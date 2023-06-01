@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ZR.Model.System.Dto
 {
     /// <summary>
@@ -6,10 +8,11 @@ namespace ZR.Model.System.Dto
     public class SysNoticeDto
     {
         public int NoticeId { get; set; }
+        [Required]
         public string NoticeTitle { get; set; }
-        public string NoticeType { get; set; }
+        public int NoticeType { get; set; }
         public string NoticeContent { get; set; }
-        public string Status { get; set; }
+        public int Status { get; set; }
         public string Remark { get; set; }
     }
 
@@ -19,8 +22,8 @@ namespace ZR.Model.System.Dto
     public class SysNoticeQueryDto : PagerInfo
     {
         public string NoticeTitle { get; set; }
-        public string NoticeType { get; set; }
+        public int? NoticeType { get; set; }
         public string CreateBy { get; set; }
-        public string Status { get; set; }
+        public int? Status { get; set; }
     }
 }
