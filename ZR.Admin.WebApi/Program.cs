@@ -61,8 +61,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 //InternalApp.InternalServices = builder.Services;
-builder.Services.AddAppService();
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
+builder.Services.AddAppService();
 //开启计划任务
 builder.Services.AddTaskSchedulers();
 //初始化db

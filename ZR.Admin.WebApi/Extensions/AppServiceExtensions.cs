@@ -1,4 +1,5 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System.Reflection;
@@ -16,7 +17,11 @@ namespace ZR.Admin.WebApi.Extensions
         /// <param name="services"></param>
         public static void AddAppService(this IServiceCollection services)
         {
-            string[] cls = new string[] { "ZR.Repository", "ZR.Service", "ZR.Tasks" };
+            var cls = AppSettings.Get<string[]>("InjectClass");
+            if (cls == null || cls.Length <= 0)
+            {
+                throw new Exception("请更新appsettings类");
+            }
             foreach (var item in cls)
             {
                 Register(services, item);

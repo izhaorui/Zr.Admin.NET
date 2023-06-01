@@ -45,16 +45,25 @@ namespace Infrastructure
         public static List<T> App<T>(params string[] sections)
         {
             List<T> list = new();
-            // 引用 Microsoft.Extensions.Configuration.Binder 包
-            Configuration.Bind(string.Join(":", sections), list);
+            try
+            {
+                if (Configuration != null && sections.Any())
+                {
+                    Configuration.Bind(string.Join(":", sections), list);
+                }
+            }
+            catch
+            {
+                return list;
+            }
             return list;
         }
         public static T Bind<T>(string key, T t)
         {
             Configuration.Bind(key, t);
-
             return t;
         }
+
 
         public static T GetAppConfig<T>(string key, T defaultValue = default)
         {
@@ -73,6 +82,17 @@ namespace Infrastructure
         public static string GetConfig(string key)
         {
             return Configuration[key];
+        }
+
+        /// <summary>
+        /// 获取配置节点并转换成指定类型
+        /// </summary>
+        /// <typeparam name="T">节点类型</typeparam>
+        /// <param name="key">节点路径</param>
+        /// <returns>节点类型实例</returns>
+        public static T Get<T>(string key)
+        {
+            return Configuration.GetSection(key).Get<T>();
         }
     }
 }
