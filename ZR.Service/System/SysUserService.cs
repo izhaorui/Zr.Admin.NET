@@ -51,15 +51,9 @@ namespace ZR.Service
 
             if (user.DeptId != 0)
             {
-                List<SysDept> depts = Context.Queryable<SysDept>().ToList();
+                var allChildDepts = Context.Queryable<SysDept>().ToChildList(it => it.ParentId, user.DeptId);
 
-                var newDepts = depts.FindAll(delegate (SysDept dept)
-                {
-                    string[] parentDeptId = dept.Ancestors.Split(",", StringSplitOptions.RemoveEmptyEntries);
-                    return parentDeptId.Contains(user.DeptId.ToString());
-                });
-                string[] deptArr = newDepts.Select(x => x.DeptId.ToString()).ToArray();
-                exp.AndIF(user.DeptId != 0, u => u.DeptId == user.DeptId || deptArr.Contains(u.DeptId.ToString()));
+                exp.And(u => allChildDepts.Select(f => f.DeptId).ToList().Contains(u.DeptId));
             }
             var query = Queryable()
                 .LeftJoin<SysDept>((u, dept) => u.DeptId == dept.DeptId)
