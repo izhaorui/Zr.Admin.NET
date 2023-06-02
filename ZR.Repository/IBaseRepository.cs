@@ -71,12 +71,6 @@ namespace ZR.Repository
         ISugarQueryable<T> Queryable();
         List<T> GetAll(bool useCache = false, int cacheSecond = 3600);
 
-        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, int pageIndex = 0, int pageSize = 10);
-
-        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, string order, int pageIndex = 0, int pageSize = 10);
-
-        (List<T>, int) QueryableToPage(Expression<Func<T, bool>> expression, Expression<Func<T, object>> orderFiled, string orderBy, int pageIndex = 0, int pageSize = 10);
-
         List<T> SqlQueryToList(string sql, object obj = null);
 
         T GetId(object pkValue);
