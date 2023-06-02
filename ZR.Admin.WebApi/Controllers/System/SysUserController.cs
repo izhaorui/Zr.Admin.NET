@@ -76,7 +76,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 dic.Add("roleIds", sysUser.RoleIds);
             }
 
-            return ToResponse(ApiResult.Success(dic));
+            return SUCCESS(dic);
         }
 
         /// <summary>
@@ -132,7 +132,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (user == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
             int result = UserService.ChangeUserStatus(user);
-            return ToResponse(ToJson(result));
+            return ToResponse(result);
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (userid == 1) return ToResponse(Infrastructure.ResultCode.FAIL, "不能删除管理员账号");
             int result = UserService.DeleteUser(userid);
 
-            return ToResponse(ToJson(result));
+            return ToResponse(result);
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             sysUser.Password = NETCore.Encrypt.EncryptProvider.Md5(sysUser.Password);
 
             int result = UserService.ResetPwd(sysUser.UserId, sysUser.Password);
-            return ToResponse(ToJson(result));
+            return ToResponse(result);
         }
 
         /// <summary>

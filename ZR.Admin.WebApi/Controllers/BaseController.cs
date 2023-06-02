@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
@@ -12,7 +13,7 @@ namespace ZR.Admin.WebApi.Controllers
     public class BaseController : ControllerBase
     {
         public static string TIME_FORMAT_FULL = "yyyy-MM-dd HH:mm:ss";
-        
+
         /// <summary>
         /// 返回成功封装
         /// </summary>
@@ -29,11 +30,10 @@ namespace ZR.Admin.WebApi.Controllers
         /// json输出带时间格式的
         /// </summary>
         /// <param name="apiResult"></param>
-        /// <param name="timeFormatStr"></param>
         /// <returns></returns>
-        protected IActionResult ToResponse(ApiResult apiResult, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
+        protected IActionResult ToResponse(ApiResult apiResult)
         {
-            string jsonStr = GetJsonStr(apiResult, timeFormatStr);
+            string jsonStr = GetJsonStr(apiResult, TIME_FORMAT_FULL);
 
             return Content(jsonStr, "application/json");
         }
@@ -47,7 +47,7 @@ namespace ZR.Admin.WebApi.Controllers
 
         protected IActionResult ToResponse(ResultCode resultCode, string msg = "")
         {
-            return ToResponse(GetApiResult(resultCode, msg));
+            return ToResponse(new ApiResult((int)resultCode, msg));
         }
 
         /// <summary>
@@ -61,26 +61,25 @@ namespace ZR.Admin.WebApi.Controllers
             //IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
             //string fileDir = Path.Combine(webHostEnvironment.WebRootPath, path, fileName);
 
-            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
             var stream = Io.File.OpenRead(path);  //创建文件流
+
+            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
             return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
         }
-        
+
         #region 方法
 
         /// <summary>
         /// 响应返回结果
         /// </summary>
         /// <param name="rows">受影响行数</param>
+        /// <param name="data"></param>
         /// <returns></returns>
-        protected ApiResult ToJson(long rows)
+        protected ApiResult ToJson(long rows, object? data = null)
         {
-            return rows > 0 ? GetApiResult(ResultCode.SUCCESS) : GetApiResult(ResultCode.FAIL);
+            return rows > 0 ? ApiResult.Success("success", data) : GetApiResult(ResultCode.FAIL);
         }
-        protected ApiResult ToJson(long rows, object data)
-        {
-            return rows > 0 ? GetApiResult(ResultCode.SUCCESS, data) : GetApiResult(ResultCode.FAIL);
-        }
+
         /// <summary>
         /// 全局Code使用
         /// </summary>
@@ -89,17 +88,17 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         protected ApiResult GetApiResult(ResultCode resultCode, object? data = null)
         {
-            var apiResult = new ApiResult((int)resultCode, resultCode.ToString())
-            {
-                Data = data
-            };
+            var msg = resultCode.GetDescription();
 
-            return apiResult;
+            return new ApiResult((int)resultCode, msg, data);
         }
-        protected ApiResult GetApiResult(ResultCode resultCode, string msg)
-        {
-            return new ApiResult((int)resultCode, msg);
-        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="apiResult"></param>
+        /// <param name="timeFormatStr"></param>
+        /// <returns></returns>
         private static string GetJsonStr(ApiResult apiResult, string timeFormatStr)
         {
             if (string.IsNullOrEmpty(timeFormatStr))
@@ -129,12 +128,20 @@ namespace ZR.Admin.WebApi.Controllers
             return ExportExcelMini(list, sheetName, fileName).Item1;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="sheetName"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         protected (string, string) ExportExcelMini<T>(List<T> list, string sheetName, string fileName)
         {
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
             string sFileName = $"{fileName}{DateTime.Now:MM-dd-HHmmss}.xlsx";
             string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
-            
+
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
 
             MiniExcel.SaveAs(fullPath, list, sheetName: sheetName);
@@ -172,7 +179,7 @@ namespace ZR.Admin.WebApi.Controllers
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
             string sFileName = $"{fileName}模板.xlsx";
             string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "ImportTemplate", sFileName);
-            
+
             if (!Directory.Exists(newFileName))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(newFileName));

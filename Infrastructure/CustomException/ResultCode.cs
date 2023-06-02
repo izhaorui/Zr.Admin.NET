@@ -7,7 +7,7 @@ namespace Infrastructure
         [Description("success")]
         SUCCESS = 200,
 
-        [Description("no data")]
+        [Description("没有更多数据")]
         NO_DATA = 210,
 
         [Description("参数错误")]

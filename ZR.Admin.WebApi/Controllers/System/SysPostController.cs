@@ -73,7 +73,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             post.Create_by = HttpContext.GetName();
-            return ToResponse(ToJson(PostService.Add(post)));
+            return ToResponse(PostService.Add(post));
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Delete(string id)
         {
             int[] ids = Tools.SpitIntArrary(id);
-            return ToResponse(ToJson(PostService.Delete(ids)));
+            return ToResponse(PostService.Delete(ids));
         }
 
         /// <summary>

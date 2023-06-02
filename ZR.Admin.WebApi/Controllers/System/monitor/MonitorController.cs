@@ -30,9 +30,9 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         /// </summary>
         /// <returns></returns>
         [HttpGet("monitor/cache")]
-        public ApiResult GetCache()
+        public IActionResult GetCache()
         {
-            return ToJson(1);
+            return SUCCESS(1);
         }
 
         /// <summary>

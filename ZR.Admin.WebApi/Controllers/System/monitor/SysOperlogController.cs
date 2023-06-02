@@ -65,15 +65,15 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [Log(Title = "清空操作日志", BusinessType = BusinessType.CLEAN)]
         [ActionPermissionFilter(Permission = "monitor:operlog:delete")]
         [HttpDelete("clean")]
-        public ApiResult ClearOperLog()
+        public IActionResult ClearOperLog()
         {
             if (!HttpContextExtension.IsAdmin(HttpContext))
             {
-                return ApiResult.Error("操作失败");
+                return ToResponse(Infrastructure.ResultCode.CUSTOM_ERROR,"操作失败");
             }
             sysOperLogService.CleanOperLog();
 
-            return ToJson(1);
+            return SUCCESS(1);
         }
 
         /// <summary>

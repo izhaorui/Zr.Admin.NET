@@ -76,7 +76,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             sysRoleDto.Create_by = HttpContext.GetName();
             long roleId = sysRoleService.InsertRole(sysRoleDto);
 
-            return ToResponse(ToJson(roleId));
+            return ToResponse(roleId);
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             long[] roleIds = Tools.SpitLongArrary(roleId);
             int result = sysRoleService.DeleteRoleByRoleId(roleIds);
 
-            return ToResponse(ToJson(result));
+            return ToResponse(result);
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             sysRoleService.CheckRoleAllowed(roleDto);
             int result = sysRoleService.UpdateRoleStatus(roleDto);
 
-            return ToResponse(ToJson(result));
+            return ToResponse(result);
         }
 
         /// <summary>

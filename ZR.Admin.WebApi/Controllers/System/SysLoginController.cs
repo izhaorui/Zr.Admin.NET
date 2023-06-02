@@ -140,7 +140,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             long uid = HttpContext.GetUId();
             var menus = sysMenuService.SelectMenuTreeByUserId(uid);
 
-            return ToResponse(ToJson(1, sysMenuService.BuildMenus(menus)));
+            return SUCCESS(sysMenuService.BuildMenus(menus));
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpGet("captchaImage")]
-        public ApiResult CaptchaImage()
+        public IActionResult CaptchaImage()
         {
             string uuid = Guid.NewGuid().ToString().Replace("-", "");
 
@@ -157,7 +157,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             var info = SecurityCodeHelper.Generate(uuid, 60);
             var obj = new { captchaOff, uuid, img = info.Base64 };// File(stream, "image/png")
 
-            return ToJson(1, obj);
+            return SUCCESS(obj);
         }
 
         /// <summary>
