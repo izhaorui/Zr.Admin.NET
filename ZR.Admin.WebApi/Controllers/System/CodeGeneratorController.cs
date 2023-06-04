@@ -12,6 +12,7 @@ using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
 using ZR.Common;
 using ZR.Model;
+using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
 using ZR.Service.System.IService;
@@ -28,16 +29,18 @@ namespace ZR.Admin.WebApi.Controllers
         private readonly CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
         private readonly IGenTableService GenTableService;
         private readonly IGenTableColumnService GenTableColumnService;
-
+        private readonly ISysMenuService SysMenuService;
         private readonly IWebHostEnvironment WebHostEnvironment;
         public CodeGeneratorController(
             IGenTableService genTableService,
             IGenTableColumnService genTableColumnService,
-            IWebHostEnvironment webHostEnvironment)
+            IWebHostEnvironment webHostEnvironment,
+            ISysMenuService sysMenuService)
         {
             GenTableService = genTableService;
             GenTableColumnService = genTableColumnService;
             WebHostEnvironment = webHostEnvironment;
+            SysMenuService = sysMenuService;
         }
 
         /// <summary>
@@ -257,7 +260,7 @@ namespace ZR.Admin.WebApi.Controllers
             dto.GenTable = genTableInfo;
             //自定义路径
             if (genTableInfo.GenType == "1")
-            {                
+            {
                 string tempPath = WebHostEnvironment.ContentRootPath;
                 var parentPath = tempPath[..tempPath.LastIndexOf(@"\")];
                 //代码生成文件夹路径
@@ -275,7 +278,10 @@ namespace ZR.Admin.WebApi.Controllers
             CodeGeneratorTool.Generate(dto);
             //下载文件
             FileUtil.ZipGenCode(dto.ZipPath, dto.GenCodePath, zipReturnFileName);
-
+            if (genTableInfo.Options.GenerateMenu)
+            {
+                SysMenuService.AddSysMenu(genTableInfo, dto.ReplaceDto.PermissionPrefix, dto.ReplaceDto.ShowBtnEdit, dto.ReplaceDto.ShowBtnExport);
+            }
             return SUCCESS(new { path = "/Generatecode/" + zipReturnFileName, fileName = dto.ZipFileName });
         }
 

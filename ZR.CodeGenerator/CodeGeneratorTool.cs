@@ -79,7 +79,7 @@ namespace ZR.CodeGenerator
             }
             GenerateVueJs(dto);
             GenerateSql(dto);
-
+            dto.ReplaceDto = replaceDto;
             if (dto.IsPreview) return;
 
             foreach (var item in dto.GenCodes)

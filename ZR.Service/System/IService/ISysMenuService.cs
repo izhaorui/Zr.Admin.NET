@@ -2,6 +2,7 @@
 using ZR.Model.System.Dto;
 using ZR.Model.System;
 using ZR.Model.System.Vo;
+using ZR.Model.System.Generate;
 
 namespace ZR.Service.System.IService
 {
@@ -37,6 +38,8 @@ namespace ZR.Service.System.IService
         List<RouterVo> BuildMenus(List<SysMenu> menus);
 
         List<TreeSelectVo> BuildMenuTreeSelect(List<SysMenu> menus);
+
+        void AddSysMenu(GenTable genTableInfo, string permPrefix, bool showEdit, bool showExport);
     }
 
     /// <summary>

@@ -107,5 +107,9 @@ namespace ZR.Model.System.Generate
         /// 是否生成仓储层
         /// </summary>
         public int GenerateRepo { get; set; }
+        /// <summary>
+        /// 自动生成菜单
+        /// </summary>
+        public bool GenerateMenu { get; set; }
     }
 }

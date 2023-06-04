@@ -7,8 +7,10 @@ using System.Linq;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Generate;
 using ZR.Model.System.Vo;
 using ZR.Service.System.IService;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ZR.Service
 {
@@ -561,5 +563,114 @@ namespace ZR.Service
         }
         #endregion
 
+
+        public void AddSysMenu(GenTable genTableInfo, string permPrefix, bool showEdit, bool showExport)
+        {
+            var menu = GetFirst(f => f.MenuName == genTableInfo.FunctionName);
+            if (menu is null)
+            {
+                menu = new()
+                {
+                    MenuName = genTableInfo.FunctionName,
+                    ParentId = genTableInfo.Options.ParentMenuId,
+                    OrderNum = 0,
+                    Path = genTableInfo.BusinessName,
+                    Component = $"{genTableInfo.ModuleName.FirstLowerCase()}/{genTableInfo.BusinessName}",
+                    Perms = $"{permPrefix}:list",
+                    IsFrame = "0",
+                    IsCache = "1",
+                    MenuType = "C",
+                    Visible = "0",
+                    Status = "0",
+                    Icon = "icon1",
+                    Create_by = "system",
+                };
+                menu.MenuId = AddMenu(menu);
+            }
+
+            List<SysMenu> menuList = new();
+
+            SysMenu menuQuery = new()
+            {
+                MenuName = "查询",
+                ParentId = menu.MenuId,
+                OrderNum = 1,
+                Perms = $"{permPrefix}:query",
+                IsFrame = "0",
+                MenuType = "F",
+                Visible = "0",
+                Status = "0",
+                Icon = "",
+            };
+            SysMenu menuAdd = new()
+            {
+                MenuName = "新增",
+                ParentId = menu.MenuId,
+                OrderNum = 2,
+                Perms = $"{permPrefix}:add",
+                IsFrame = "0",
+                MenuType = "F",
+                Visible = "0",
+                Status = "0",
+                Icon = "",
+            };
+            SysMenu menuDel = new()
+            {
+                MenuName = "删除",
+                ParentId = menu.MenuId,
+                OrderNum = 3,
+                Perms = $"{permPrefix}:delete",
+                IsFrame = "0",
+                MenuType = "F",
+                Visible = "0",
+                Status = "0",
+                Icon = "",
+            };
+
+            SysMenu menuEdit = new()
+            {
+                MenuName = "修改",
+                ParentId = menu.MenuId,
+                OrderNum = 4,
+                Perms = $"{permPrefix}:edit",
+                IsFrame = "0",
+                MenuType = "F",
+                Visible = "0",
+                Status = "0",
+                Icon = "",
+            };
+
+            SysMenu menuExport = new()
+            {
+                MenuName = "导出",
+                ParentId = menu.MenuId,
+                OrderNum = 5,
+                Perms = $"{permPrefix}:export",
+                IsFrame = "0",
+                MenuType = "F",
+                Visible = "0",
+                Status = "0",
+                Icon = "",
+            };
+
+            menuList.Add(menuQuery);
+            menuList.Add(menuAdd);
+            menuList.Add(menuDel);
+            if (showEdit)
+            {
+                menuList.Add(menuEdit);
+            }
+            if (showExport)
+            {
+                menuList.Add(menuExport);
+            }
+            //Insert(menuList);
+
+            var x = Storageable(menuList)
+            .WhereColumns(it => new { it.MenuName, it.ParentId })
+            .ToStorage();
+            x.AsInsertable.ExecuteCommand();//插入可插入部分;
+            x.AsUpdateable.ExecuteCommand();
+        }
     }
 }

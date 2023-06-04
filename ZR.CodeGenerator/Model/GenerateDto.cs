@@ -58,6 +58,7 @@ namespace ZR.CodeGenerator.Model
         /// </summary>
         public string VueParentPath { get; set; }
         #endregion
+        public ReplaceDto ReplaceDto { get; set; }
     }
 
     public class GenCode
