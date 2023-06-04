@@ -22,31 +22,36 @@ namespace ZR.Admin.WebApi.Extensions
         //仅本人数据权限
         public static long DATA_SCOPE_SELF = 5;
 
+        /// <summary>
+        /// 初始化db
+        /// </summary>
+        /// <param name="Configuration"></param>
         public static void AddDb(IConfiguration Configuration)
         {
-            string connStr = Configuration.GetConnectionString("conn_db");
-            int dbType = Convert.ToInt32(Configuration.GetConnectionString("conn_db_type"));
+            List<DbConfigs> dbConfigs = Configuration.GetSection("DbConfigs").Get<List<DbConfigs>>();
 
-            var iocList = new List<IocConfig>() {
-                   new IocConfig() {
-                    ConfigId = "0",//默认db
-                    ConnectionString = connStr,
-                    DbType = (IocDbType)dbType,
-                    IsAutoCloseConnection = true
-                },
-                   new IocConfig() {
-                    ConfigId = "1",
-                    ConnectionString = connStr,
-                    DbType = (IocDbType)dbType,
-                    IsAutoCloseConnection = true
-                }
-                };
+            var iocList = new List<IocConfig>();
+            foreach (var item in dbConfigs)
+            {
+                iocList.Add(new IocConfig()
+                {
+                    ConfigId = item.ConfigId,
+                    ConnectionString = item.Conn,
+                    DbType = (IocDbType)item.DbType,
+                    IsAutoCloseConnection = item.IsAutoCloseConnection
+                });
+            }
             SugarIocServices.AddSqlSugar(iocList);
             ICacheService cache = new SqlSugarCache();
             SugarIocServices.ConfigurationSugar(db =>
             {
-                //db0数据过滤
-                FilterData(0);
+                var u = App.User;
+                if (u != null)
+                {
+                    FilterData(0);
+                    //ConfigId = 1的数据权限过滤
+                    //FilterData1(1);
+                }
 
                 iocList.ForEach(iocConfig =>
                 {
@@ -55,6 +60,12 @@ namespace ZR.Admin.WebApi.Extensions
             });
         }
 
+        /// <summary>
+        /// 数据库Aop设置
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="iocConfig"></param>
+        /// <param name="cache"></param>
         private static void SetSugarAop(SqlSugarClient db, IocConfig iocConfig, ICacheService cache)
         {
             var config = db.GetConnection(iocConfig.ConfigId).CurrentConnectionConfig;
@@ -108,7 +119,7 @@ namespace ZR.Admin.WebApi.Extensions
         }
 
         /// <summary>
-        /// 初始化db
+        /// 创建db、表
         /// </summary>
         /// <param name="service"></param>
         public static void InitDb(this IServiceProvider service)
@@ -137,8 +148,6 @@ namespace ZR.Admin.WebApi.Extensions
         /// <param name="configId">多库id</param>
         private static void FilterData(int configId)
         {
-            var u = App.User;
-            if (u == null) return;
             //获取当前用户的信息
             var user = JwtUtil.GetLoginUser(App.HttpContext);
             if (user == null) return;
@@ -159,7 +168,7 @@ namespace ZR.Admin.WebApi.Extensions
                 else if (DATA_SCOPE_CUSTOM.Equals(dataScope))//自定数据权限
                 {
                     //" OR {}.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = {} ) ", deptAlias, role.getRoleId()));
-                    
+
                     expUser.Or(it => SqlFunc.Subqueryable<SysRoleDept>().Where(f => f.DeptId == it.DeptId && f.RoleId == role.RoleId).Any());
                 }
                 else if (DATA_SCOPE_DEPT.Equals(dataScope))//本部门数据
@@ -182,6 +191,36 @@ namespace ZR.Admin.WebApi.Extensions
                 db.QueryFilter.AddTableFilter(expUser.ToExpression());
                 db.QueryFilter.AddTableFilter(expRole.ToExpression());
                 db.QueryFilter.AddTableFilter(expLoginlog.ToExpression());
+            }
+        }
+
+        private static void FilterData1(int configId)
+        {
+            //获取当前用户的信息
+            var user = JwtUtil.GetLoginUser(App.HttpContext);
+            if (user == null) return;
+            var db = DbScoped.SugarScope.GetConnectionScope(configId);
+
+            foreach (var role in user.Roles.OrderBy(f => f.DataScope))
+            {
+                long dataScope = role.DataScope;
+                if (DATA_SCOPE_ALL.Equals(dataScope))//所有权限
+                {
+                    break;
+                }
+                else if (DATA_SCOPE_CUSTOM.Equals(dataScope))//自定数据权限
+                {
+                }
+                else if (DATA_SCOPE_DEPT.Equals(dataScope))//本部门数据
+                {
+                }
+                else if (DATA_SCOPE_DEPT_AND_CHILD.Equals(dataScope))//本部门及以下数据
+                {
+
+                }
+                else if (DATA_SCOPE_SELF.Equals(dataScope))//仅本人数据
+                {
+                }
             }
         }
     }

@@ -1,4 +1,6 @@
 ﻿
+using System.Collections.Generic;
+
 namespace Infrastructure
 {
     /// <summary>
@@ -15,6 +17,7 @@ namespace Infrastructure
         public ALIYUN_OSS ALIYUN_OSS { get; set; }
         public JwtSettings JwtSettings { get; set; }
         public Gen Gen { get; set; }
+        public List<DbConfigs> DbConfigs { get; set; }
     }
     /// <summary>
     /// 发送邮件数据配置
@@ -81,4 +84,11 @@ namespace Infrastructure
 
     }
 
+    public class DbConfigs
+    {
+        public string Conn { get; set; }
+        public int DbType { get; set; }
+        public string ConfigId { get; set; }
+        public bool IsAutoCloseConnection { get; set; }
+    }
 }

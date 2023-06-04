@@ -168,6 +168,7 @@ namespace ZR.Repository
         {
             return Context.Storageable(t);
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -189,6 +190,11 @@ namespace ZR.Repository
             }
         }
 
+        /// <summary>
+        /// 使用事务
+        /// </summary>
+        /// <param name="action"></param>
+        /// <returns></returns>
         public bool UseTran2(Action action)
         {
             var result = Context.Ado.UseTran(() => action());

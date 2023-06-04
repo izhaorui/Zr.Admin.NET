@@ -217,6 +217,10 @@ namespace ZR.Service
             {
                 throw new CustomException("密码强度不符合要求");
             }
+            if (!Tools.CheckUserName(dto.Username))
+            {
+                throw new CustomException("用户名不符合要求");
+            }
             //密码md5
             string password = NETCore.Encrypt.EncryptProvider.Md5(dto.Password);
 

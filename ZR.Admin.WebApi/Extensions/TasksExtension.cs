@@ -1,8 +1,4 @@
-﻿using Infrastructure;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Quartz.Spi;
-using System;
+﻿using Quartz.Spi;
 using ZR.Tasks;
 
 namespace ZR.Admin.WebApi.Extensions
@@ -12,6 +8,11 @@ namespace ZR.Admin.WebApi.Extensions
     /// </summary>
     public static class TasksExtension
     {
+        /// <summary>
+        /// 注册任务
+        /// </summary>
+        /// <param name="services"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         public static void AddTaskSchedulers(this IServiceCollection services)
         {
             if (services == null) throw new ArgumentNullException(nameof(services));
