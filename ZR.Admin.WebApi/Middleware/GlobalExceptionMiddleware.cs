@@ -119,7 +119,8 @@ namespace ZR.Admin.WebApi.Middleware
             context.Response.ContentType = "text/json;charset=utf-8";
             await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
             
-            string errorMsg = $"> 操作人：{sysOperLog.OperName} {sysOperLog.OperLocation}" +
+            string errorMsg = $"> 操作人：{sysOperLog.OperName}" +
+                $"\n> 操作地区：{sysOperLog.OperIp}({sysOperLog.OperLocation})" +
                 $"\n> 操作模块：{sysOperLog.Title}" +
                 $"\n> 操作地址：{sysOperLog.OperUrl}" +
                 $"\n> 错误信息：{msg}\n\n> {error}";
