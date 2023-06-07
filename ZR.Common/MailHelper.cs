@@ -14,50 +14,18 @@ namespace ZR.Common
         /// 发送人邮箱
         /// </summary>
         public string FromEmail { get; set; } = "";
-        /// <summary>
-        /// 发送人密码
-        /// </summary>
-        public string FromPwd { get; set; } = "";
-        /// <summary>
-        /// 发送协议
-        /// </summary>
-        public string Smtp { get; set; } = "smtp.qq.com";
-        /// <summary>
-        /// 协议端口
-        /// </summary>
-        public int Port { get; set; } = 587;
-        /// <summary>
-        /// 邮件签名
-        /// </summary>
-        public string Signature { get; set; }
-        /// <summary>
-        /// 是否使用SSL协议
-        /// </summary>
-        public bool UseSsl { get; set; } = false;
         private readonly MailOptions mailOptions = new();
 
         public MailHelper()
         {
             AppSettings.Bind("MailOptions", mailOptions);
-            FromEmail = mailOptions.From;
-            Smtp = mailOptions.Smtp;
-            FromPwd = mailOptions.Password;
-            Port = mailOptions.Port;
+            FromEmail= mailOptions.FromEmail;
         }
-        public MailHelper(string fromEmail, string smtp, int port, string fromPwd)
+        public MailHelper(MailOptions _mailOptions)
         {
-            FromEmail = fromEmail;
-            Smtp = smtp;
-            FromPwd = fromPwd;
-            Port = port;
+            this.mailOptions = _mailOptions;
+            FromEmail = _mailOptions.FromEmail;
         }
-
-        public MailHelper(string fromEmail, string fromPwd)
-        {
-            FromEmail = fromEmail;
-            FromPwd = fromPwd;
-        }
-
         /// <summary>
         /// 发送一个
         /// </summary>
@@ -65,13 +33,13 @@ namespace ZR.Common
         /// <param name="subject"></param>
         /// <param name="text"></param>
         /// <param name="path"></param>
-        public void SendMail(string toAddress, string subject, string text, string path = "", string html = "")
+        public string SendMail(string toAddress, string subject, string text, string path = "", string html = "")
         {
             IEnumerable<MailboxAddress> mailboxes = new List<MailboxAddress>() {
                 new MailboxAddress(toAddress, toAddress)
             };
 
-            SendMail(mailboxes, subject, text, path, html);
+            return SendMail(mailboxes, subject, text, path, html);
         }
 
         /// <summary>
@@ -81,7 +49,7 @@ namespace ZR.Common
         /// <param name="subject"></param>
         /// <param name="text"></param>
         /// <param name="path"></param>
-        public void SendMail(string[] toAddress, string subject, string text, string path = "", string html = "")
+        public string SendMail(string[] toAddress, string subject, string text, string path = "", string html = "")
         {
             IList<MailboxAddress> mailboxes = new List<MailboxAddress>() { };
             foreach (var item in toAddress)
@@ -89,7 +57,7 @@ namespace ZR.Common
                 mailboxes.Add(new MailboxAddress(item, item));
             }
 
-            SendMail(mailboxes, subject, text, path, html);
+            return SendMail(mailboxes, subject, text, path, html);
         }
 
         /// <summary>
@@ -100,16 +68,16 @@ namespace ZR.Common
         /// <param name="text"></param>
         /// <param name="path">附件url地址</param>
         /// <param name="html">网页HTML内容</param>
-        private void SendMail(IEnumerable<MailboxAddress> toAddress, string subject, string text, string path = "", string html = "")
+        private string SendMail(IEnumerable<MailboxAddress> toAddress, string subject, string text, string path = "", string html = "")
         {
             MimeMessage message = new MimeMessage();
             //发件人
-            message.From.Add(new MailboxAddress(FromEmail, FromEmail));
+            message.From.Add(new MailboxAddress(mailOptions.FromName, mailOptions.FromEmail));
             //收件人
             message.To.AddRange(toAddress);
             message.Subject = subject;
             message.Date = DateTime.Now;
-            
+
             //创建附件Multipart
             Multipart multipart = new Multipart("mixed");
             var alternative = new MultipartAlternative();
@@ -157,18 +125,18 @@ namespace ZR.Common
             //开始发送
             using var client = new SmtpClient();
             client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+            //client.CheckCertificateRevocation = false;
+            client.Connect(mailOptions.Smtp, mailOptions.Port, mailOptions.UseSsl);
 
-            //Smtp服务器
-            //client.Connect("smtp.qq.com", 587, false);
-            client.Connect(Smtp, Port, true);
             //登录，发送
             //特别说明，对于服务器端的中文相应，Exception中有编码问题，显示乱码了
-            client.Authenticate(FromEmail, FromPwd);
+            client.Authenticate(System.Text.Encoding.UTF8, mailOptions.FromEmail, mailOptions.Password);
 
-            client.Send(message);
+            var result = client.Send(message);
             //断开
             client.Disconnect(true);
-            Console.WriteLine($"发送邮件成功{DateTime.Now}");
+            Console.WriteLine($"【{DateTime.Now}】发送邮件结果{result}");
+            return result;
         }
     }
 }

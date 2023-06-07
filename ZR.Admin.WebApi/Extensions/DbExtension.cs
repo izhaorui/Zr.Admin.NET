@@ -26,7 +26,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// 初始化db
         /// </summary>
         /// <param name="Configuration"></param>
-        public static void AddDb(IConfiguration Configuration)
+        public static void AddDb(this IServiceCollection services, IConfiguration Configuration)
         {
             List<DbConfigs> dbConfigs = Configuration.GetSection("DbConfigs").Get<List<DbConfigs>>();
 

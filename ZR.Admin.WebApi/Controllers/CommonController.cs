@@ -70,15 +70,15 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="sendEmailVo">请求参数接收实体</param>
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "tool:email:send")]
-        [Log(Title = "发送邮件", IsSaveRequestData = false)]
+        [Log(Title = "发送邮件")]
         [HttpPost]
         public IActionResult SendEmail([FromBody] SendEmailDto sendEmailVo)
         {
-            if (sendEmailVo == null || string.IsNullOrEmpty(sendEmailVo.Subject) || string.IsNullOrEmpty(sendEmailVo.ToUser))
+            if (sendEmailVo == null)
             {
                 return ToResponse(ApiResult.Error($"请求参数不完整"));
             }
-            if (string.IsNullOrEmpty(OptionsSetting.MailOptions.From) || string.IsNullOrEmpty(OptionsSetting.MailOptions.Password))
+            if (string.IsNullOrEmpty(OptionsSetting.MailOptions.FromEmail) || string.IsNullOrEmpty(OptionsSetting.MailOptions.Password))
             {
                 return ToResponse(ApiResult.Error($"请配置邮箱信息"));
             }
@@ -90,11 +90,11 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 toUsers.Append(mailHelper.FromEmail);
             }
-            mailHelper.SendMail(toUsers, sendEmailVo.Subject, sendEmailVo.Content, sendEmailVo.FileUrl, sendEmailVo.HtmlContent);
+            string result = mailHelper.SendMail(toUsers, sendEmailVo.Subject, sendEmailVo.Content, sendEmailVo.FileUrl, sendEmailVo.HtmlContent);
 
-            logger.Info($"发送邮件{JsonConvert.SerializeObject(sendEmailVo)}");
+            logger.Info($"发送邮件{JsonConvert.SerializeObject(sendEmailVo)}, 结果{result}");
 
-            return SUCCESS(true);
+            return SUCCESS(result);
         }
 
         #region 上传
