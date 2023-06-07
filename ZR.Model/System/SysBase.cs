@@ -8,6 +8,9 @@ namespace ZR.Model.System
     //[EpplusTable(PrintHeaders = true, AutofitColumns = true, AutoCalculate = true, ShowTotal = true)]
     public class SysBase
     {
+        /// <summary>
+        /// 创建人
+        /// </summary>
         [SugarColumn(IsOnlyIgnoreUpdate = true, Length = 64, IsNullable = true)]
         [JsonProperty(propertyName: "CreateBy")]
         [ExcelIgnore]
@@ -31,13 +34,5 @@ namespace ZR.Model.System
         public DateTime? Update_time { get; set; }
         [SugarColumn(Length = 500)]
         public string Remark { get; set; }
-        [SugarColumn(IsIgnore = true, IsNullable = true)]
-        [JsonIgnore]
-        [ExcelIgnore]
-        public DateTime? BeginTime { get; set; }
-        [SugarColumn(IsIgnore = true, IsNullable = true)]
-        [JsonIgnore]
-        [ExcelIgnore]
-        public DateTime? EndTime { get; set; }
     }
 }

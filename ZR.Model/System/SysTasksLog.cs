@@ -6,7 +6,7 @@ namespace ZR.Model.System
     /// <summary>
     /// 任务日志
     /// </summary>
-    [SugarTable("sys_tasks_log")]
+    [SugarTable("sys_tasks_log", "任务日志表")]
     [Tenant("0")]
     public class SysTasksLog
     {
@@ -18,12 +18,22 @@ namespace ZR.Model.System
         /// <summary>
         /// 任务Id
         /// </summary>
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string JobId { get; set; }
+        /// <summary>
+        /// 任务名
+        /// </summary>
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string JobName { get; set; }
+        /// <summary>
+        /// 任务分组
+        /// </summary>
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string JobGroup { get; set; }
         /// <summary>
         /// 执行状态（0正常 1失败）
         /// </summary>
+        [SugarColumn(DefaultValue = "0")]
         public string Status { get; set; }
         /// <summary>
         /// 异常

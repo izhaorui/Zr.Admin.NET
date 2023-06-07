@@ -1,9 +1,11 @@
 using Infrastructure;
+using Infrastructure.Extensions;
 using Infrastructure.Helper;
 using SqlSugar;
 using SqlSugar.IOC;
 using System.Reflection;
 using ZR.Admin.WebApi.Framework;
+using ZR.Model;
 using ZR.Model.System;
 
 namespace ZR.Admin.WebApi.Extensions
@@ -22,12 +24,16 @@ namespace ZR.Admin.WebApi.Extensions
         //仅本人数据权限
         public static long DATA_SCOPE_SELF = 5;
 
+        private static XmlCommentHelper commentHelper = new XmlCommentHelper();
+        
         /// <summary>
         /// 初始化db
         /// </summary>
+        /// <param name="services"></param>
         /// <param name="Configuration"></param>
         public static void AddDb(this IServiceCollection services, IConfiguration Configuration)
         {
+            commentHelper.LoadAll();
             List<DbConfigs> dbConfigs = Configuration.GetSection("DbConfigs").Get<List<DbConfigs>>();
 
             var iocList = new List<IocConfig>();
@@ -110,11 +116,43 @@ namespace ZR.Admin.WebApi.Extensions
                 DataInfoCacheService = cache,
                 EntityService = (c, p) =>
                 {
-                    if (db.GetConnectionScope(configId).CurrentConnectionConfig.DbType == DbType.PostgreSQL && p.DataType != null && p.DataType.Contains("nvarchar"))
+                    p.DbTableName = p.DbTableName.FirstLowerCase();
+                    p.DbColumnName = p.DbColumnName.FirstLowerCase();
+                    var des = commentHelper.GetFieldOrPropertyComment(c);
+                    if (des.IsNotEmpty())
                     {
-                        p.DataType = "text";
+                        p.ColumnDescription = des;
+                    }
+
+                    if (db.GetConnectionScope(configId).CurrentConnectionConfig.DbType == DbType.PostgreSQL)
+                    {
+                        if (p.DataType != null && p.DataType.Contains("nvarchar"))
+                        {
+                            p.DataType = "text";
+                        }
+                        if (c.Name == nameof(SysMenu.IsCache) || c.Name == nameof(SysMenu.IsFrame))
+                        {
+                            p.DataType = "char(1)";
+                        }
+                    }
+                    if (p.IsPrimarykey == true)//主键不能为null
+                    {
+                        p.IsNullable = false;
+                    }
+                    else if (p.ExtendedAttribute?.ToString() == ProteryConstant.NOTNULL.ToString())
+                    {
+                        p.IsNullable = false;
+                    }
+                    else//则否默认为null
+                    {
+                        p.IsNullable = true;
                     }
                 }
+            };
+
+            db.GetConnectionScope(configId).Aop.DataExecuting = (oldValue, entiyInfo) =>
+            {
+                
             };
         }
 
@@ -130,7 +168,9 @@ namespace ZR.Admin.WebApi.Extensions
 
             var baseType = typeof(SysBase);
             var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && /*p.IsAssignableTo(baseType) && */p.GetCustomAttribute<SugarTable>() != null).ToArray();
-            db.CodeFirst.SetStringDefaultLength(200).InitTables(entityes);
+
+            //23个表
+            db.CodeFirst.InitTables(entityes);
         }
 
         private static object GetParsValue(SugarParameter x)

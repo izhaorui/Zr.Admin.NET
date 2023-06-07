@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace ZR.Model.System
+namespace ZR.Model.System.Dto
 {
     /// <summary>
     /// 登录用户信息存储

@@ -6,9 +6,9 @@ namespace ZR.Model.System
     /// <summary>
     /// 部门表
     /// </summary>
-    [SugarTable("sys_dept")]
+    [SugarTable("sys_dept", "部门配置表")]
     [Tenant("0")]
-    public class SysDept: SysBase
+    public class SysDept : SysBase
     {
         /// <summary>
         /// 部门ID
@@ -29,6 +29,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 部门名称
         /// </summary>
+        [SugarColumn(Length = 30, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string DeptName { get; set; }
 
         /// <summary>
@@ -39,32 +40,36 @@ namespace ZR.Model.System
         /// <summary>
         /// 负责人
         /// </summary>
+        [SugarColumn(Length = 30)]
         public string Leader { get; set; }
 
         /// <summary>
         /// 联系电话
         /// </summary>
+        [SugarColumn(Length = 11)]
         public string Phone { get; set; }
 
         /// <summary>
         /// 邮箱
         /// </summary>
+        [SugarColumn(Length = 50)]
         public string Email { get; set; }
 
         /// <summary>
         /// 部门状态:0正常,1停用
         /// </summary>
+        [SugarColumn(Length = 1, DefaultValue = "0")]
         public string Status { get; set; }
 
         /// <summary>
         /// 删除标志（0代表存在 2代表删除）
         /// </summary>
-        [SugarColumn(IsOnlyIgnoreInsert = true)]
+        [SugarColumn(Length = 1, DefaultValue = "0")]
         public string DelFlag { get; set; }
 
         /// <summary>
         /// 子菜单
         /// </summary>
-        public List<SysDept> children = new List<SysDept>();
+        public List<SysDept> children = new();
     }
 }

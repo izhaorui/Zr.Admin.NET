@@ -9,7 +9,7 @@ namespace ZR.Model.System
     /// <summary>
     /// 用户表
     /// </summary>
-    [SugarTable("sys_user")]
+    [SugarTable("sys_user", "用户表")]
     [Tenant("0")]
     public class SysUser : SysBase
     {
@@ -21,12 +21,12 @@ namespace ZR.Model.System
         /// <summary>
         /// 登录用户名
         /// </summary>
-        [SugarColumn(Length = 30, ColumnDescription = "用户账号", IsNullable = false)]
+        [SugarColumn(Length = 30, ColumnDescription = "用户账号", ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string UserName { get; set; }
         /// <summary>
         /// 用户昵称
         /// </summary>
-        [SugarColumn(Length = 30, ColumnDescription = "用户昵称", IsNullable = false)]
+        [SugarColumn(Length = 30, ColumnDescription = "用户昵称", ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string NickName { get; set; }
         /// <summary>
         /// 用户类型（00系统用户）
@@ -40,7 +40,7 @@ namespace ZR.Model.System
 
         [JsonIgnore]
         [ExcelIgnore]
-        [SugarColumn(Length = 100, ColumnDescription = "密码", IsNullable = false)]
+        [SugarColumn(Length = 100, ColumnDescription = "密码", ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string Password { get; set; }
         /// <summary>
         /// 手机号

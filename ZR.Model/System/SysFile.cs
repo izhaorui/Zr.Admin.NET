@@ -5,7 +5,7 @@ using System;
 namespace ZR.Model.System
 {
     [Tenant("0")]
-    [SugarTable("sys_file")]
+    [SugarTable("sys_file", "文件存储表")]
     public class SysFile
     {
         /// <summary>

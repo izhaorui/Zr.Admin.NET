@@ -5,7 +5,7 @@ namespace ZR.Model.System
     /// <summary>
     /// 用户角色关联表 用户N-1 角色
     /// </summary>
-    [SugarTable("sys_user_role")]
+    [SugarTable("sys_user_role", "用户和角色关联表")]
     [Tenant("0")]
     public class SysUserRole
     {

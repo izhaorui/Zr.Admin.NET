@@ -9,6 +9,7 @@ using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers.System
@@ -44,7 +45,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "system:user:list")]
         [HttpGet("list")]
-        public IActionResult List([FromQuery] SysUser user, PagerInfo pager)
+        public IActionResult List([FromQuery] SysUserQueryDto user, PagerInfo pager)
         {
             var list = UserService.SelectUserList(user, pager);
 
@@ -208,7 +209,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("export")]
         [Log(Title = "用户导出", BusinessType = BusinessType.EXPORT)]
         [ActionPermissionFilter(Permission = "system:user:export")]
-        public IActionResult UserExport([FromQuery] SysUser user)
+        public IActionResult UserExport([FromQuery] SysUserQueryDto user)
         {
             var list = UserService.SelectUserList(user, new PagerInfo(1, 10000));
 

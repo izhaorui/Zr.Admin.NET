@@ -2,7 +2,7 @@
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Admin.WebApi.Filters
 {

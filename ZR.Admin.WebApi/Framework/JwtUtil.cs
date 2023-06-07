@@ -6,7 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Service.System;
 
 namespace ZR.Admin.WebApi.Framework

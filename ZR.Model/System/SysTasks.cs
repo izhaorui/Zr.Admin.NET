@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using SqlSugar;
+﻿using SqlSugar;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -8,9 +7,9 @@ namespace ZR.Model.System
     ///<summary>
     ///计划任务
     ///</summary>
-    [SugarTable("sys_tasks")]
+    [SugarTable("sys_tasks", "计划任务表")]
     [Tenant("0")]
-    public class SysTasks
+    public class SysTasks : SysBase
     {
         public SysTasks()
         {
@@ -28,42 +27,42 @@ namespace ZR.Model.System
         /// 任务名称 
         /// </summary>
         [Display(Name = "任务名称")]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string Name { get; set; }
 
         /// <summary>
         /// 任务分组 
         /// </summary>
         [Display(Name = "任务分组")]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string JobGroup { get; set; }
 
         /// <summary>
         /// 运行时间表达式 
         /// </summary>
         [Display(Name = "运行时间表达式")]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string Cron { get; set; }
 
         /// <summary>
         /// 程序集名称 
         /// </summary>
         [Display(Name = "程序集名称")]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string AssemblyName { get; set; }
 
         /// <summary>
         /// 任务所在类 
         /// </summary>
         [Display(Name = "任务所在类")]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string ClassName { get; set; }
-
-        /// <summary>
-        /// 任务描述 
-        /// </summary>
-        [Display(Name = "任务描述")]
-        public string Remark { get; set; }
 
         /// <summary>
         /// 执行次数 
         /// </summary>
         [Display(Name = "执行次数")]
+        [SugarColumn(DefaultValue = "0", ExtendedAttribute = ProteryConstant.NOTNULL)]
         public int RunTimes { get; set; }
 
         /// <summary>
@@ -83,6 +82,7 @@ namespace ZR.Model.System
         /// 默认 : 1
         /// </summary>
         [Display(Name = "触发器类型（0、simple 1、cron）")]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public int TriggerType { get; set; }
 
         /// <summary>
@@ -90,42 +90,22 @@ namespace ZR.Model.System
         /// 默认 : 0
         /// </summary>
         [Display(Name = "执行间隔时间(单位:秒)")]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
         public int IntervalSecond { get; set; }
 
         /// <summary>
         /// 是否启动
-        /// 默认 : 0
         /// </summary>
         [Display(Name = "是否启动")]
+        [SugarColumn(DefaultValue = "0", ExtendedAttribute = ProteryConstant.NOTNULL)]
         public int IsStart { get; set; }
 
         /// <summary>
         /// 传入参数
-        /// 默认 : 
         /// </summary>
         [Display(Name = "传入参数")]
         public string JobParams { get; set; }
 
-        [SugarColumn(IsOnlyIgnoreUpdate = true)]//设置后修改不会有此字段
-        [JsonProperty(propertyName: "CreateBy")]
-        public string Create_by { get; set; }
-
-        /// <summary>
-        /// 创建时间
-        /// </summary>
-        //[Display(Name = "创建时间")]
-        [SugarColumn(IsOnlyIgnoreUpdate = true)]//设置后修改不会有此字段
-        [JsonProperty(propertyName: "CreateTime")]
-        public DateTime Create_time { get; set; } = DateTime.Now;
-
-        [JsonIgnore]
-        [JsonProperty(propertyName: "UpdateBy")]
-        [SugarColumn(IsOnlyIgnoreInsert = true)]
-        public string Update_by { get; set; }
-
-        [SugarColumn(IsOnlyIgnoreInsert = true)]//设置后插入数据不会有此字段
-        [JsonProperty(propertyName: "UpdateTime")]
-        public DateTime Update_time { get; set; } = DateTime.Now;
         /// <summary>
         /// 最后运行时间
         /// </summary>
@@ -137,6 +117,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 任务类型 1、程序集 2、网络请求 3、SQL语句
         /// </summary>
+        [SugarColumn(DefaultValue = "1")]
         public int TaskType { get; set; }
 
         /// <summary>
@@ -146,6 +127,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 网络请求方式
         /// </summary>
+        [SugarColumn(Length = 20)]
         public string RequestMethod { get; set; }
     }
 }

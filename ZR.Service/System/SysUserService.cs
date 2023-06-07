@@ -39,7 +39,7 @@ namespace ZR.Service
         /// 根据条件分页查询用户列表
         /// </summary>
         /// <returns></returns>
-        public PagedInfo<SysUser> SelectUserList(SysUser user, PagerInfo pager)
+        public PagedInfo<SysUser> SelectUserList(SysUserQueryDto user, PagerInfo pager)
         {
             var exp = Expressionable.Create<SysUser>();
             exp.AndIF(!string.IsNullOrEmpty(user.UserName), u => u.UserName.Contains(user.UserName));
@@ -323,7 +323,7 @@ namespace ZR.Service
         /// <returns></returns>
         public SysUser Login(LoginBodyDto user)
         {
-            return GetFirst(it => it.UserName == user.Username && it.Password == user.Password);
+            return GetFirst(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower());
         }
 
         /// <summary>

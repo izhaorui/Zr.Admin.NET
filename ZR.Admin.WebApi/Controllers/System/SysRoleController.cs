@@ -58,16 +58,16 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 添加角色
         /// </summary>
-        /// <param name="sysRoleDto"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "system:role:add")]
         [Log(Title = "角色管理", BusinessType = BusinessType.INSERT)]
         [Route("edit")]
-        public IActionResult RoleAdd([FromBody] SysRole sysRoleDto)
+        public IActionResult RoleAdd([FromBody] SysRoleDto dto)
         {
-            if (sysRoleDto == null) return ToResponse(ApiResult.Error(101, "请求参数错误"));
-
+            if (dto == null) return ToResponse(ApiResult.Error(101, "请求参数错误"));
+            SysRole sysRoleDto = dto.Adapt<SysRole>();
             if (UserConstants.NOT_UNIQUE.Equals(sysRoleService.CheckRoleKeyUnique(sysRoleDto)))
             {
                 return ToResponse(ApiResult.Error((int)ResultCode.CUSTOM_ERROR, $"新增角色'{sysRoleDto.RoleName}'失败，角色权限已存在"));
@@ -82,18 +82,19 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 修改角色
         /// </summary>
-        /// <param name="sysRoleDto"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPut]
         [ActionPermissionFilter(Permission = "system:role:edit")]
         [Log(Title = "角色管理", BusinessType = BusinessType.UPDATE)]
         [Route("edit")]
-        public IActionResult RoleEdit([FromBody] SysRole sysRoleDto)
+        public IActionResult RoleEdit([FromBody] SysRoleDto dto)
         {
-            if (sysRoleDto == null || sysRoleDto.RoleId <= 0 || string.IsNullOrEmpty(sysRoleDto.RoleKey))
+            if (dto == null || dto.RoleId <= 0 || string.IsNullOrEmpty(dto.RoleKey))
             {
                 return ToResponse(ApiResult.Error(101, "请求参数错误"));
             }
+            SysRole sysRoleDto = dto.Adapt<SysRole>();
             sysRoleService.CheckRoleAllowed(sysRoleDto);
             var info = sysRoleService.SelectRoleById(sysRoleDto.RoleId);
             if (info != null && info.RoleKey != sysRoleDto.RoleKey)

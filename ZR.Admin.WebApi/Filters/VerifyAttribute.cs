@@ -9,7 +9,7 @@ using System;
 using System.Linq;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Framework;
-using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Admin.WebApi.Filters
 {

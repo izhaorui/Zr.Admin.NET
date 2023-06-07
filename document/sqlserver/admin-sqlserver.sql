@@ -104,8 +104,8 @@ CREATE TABLE sys_dict_type  (
   customSql varchar(500)  NULL DEFAULT NULL ,-- '自定义sql',
 )
 GO
-CREATE UNIQUE INDEX dictType ON dbo.sys_dict_type(dictType)
-GO
+--CREATE UNIQUE INDEX dictType ON dbo.sys_dict_type(dictType)
+--GO
 
 if OBJECT_ID(N'sys_dict_data',N'U') is not NULL DROP TABLE sys_dict_data
 GO
@@ -137,7 +137,7 @@ CREATE TABLE sys_logininfor  (
   loginLocation varchar(255)  NULL DEFAULT '' ,-- '登录地点',
   browser varchar(50)  NULL DEFAULT '' ,-- '浏览器类型',
   os varchar(50)  NULL DEFAULT '' ,-- '操作系统',
-  status char(1)  NULL DEFAULT '0' ,-- '登录状态（0成功 1失败）',
+  status varchar(1)  NULL DEFAULT '0' ,-- '登录状态（0成功 1失败）',
   msg varchar(255)  NULL DEFAULT '' ,-- '提示消息',
   loginTime DATETIME NULL DEFAULT NULL  ,-- '访问时间',
 ) 
@@ -153,9 +153,9 @@ CREATE TABLE sys_menu  (
   component varchar(255)  NULL DEFAULT NULL ,-- '组件路径',
   isFrame int NULL DEFAULT 0 ,-- '是否外链(0 否 1 是)',
   isCache int NULL DEFAULT 0 ,-- '是否缓存(0缓存 1不缓存)',
-  menuType char(1)  NULL DEFAULT '' ,-- '菜单类型（M目录 C菜单 F按钮 L链接）',
-  visible char(1)  NULL DEFAULT '0' ,-- '菜单状态（0显示 1隐藏）',
-  status char(1)  NULL DEFAULT '0' ,-- '菜单状态（0正常 1停用）',
+  menuType varchar(1)  NULL DEFAULT '' ,-- '菜单类型（M目录 C菜单 F按钮 L链接）',
+  visible varchar(1)  NULL DEFAULT '0' ,-- '菜单状态（0显示 1隐藏）',
+  status varchar(1)  NULL DEFAULT '0' ,-- '菜单状态（0正常 1停用）',
   perms varchar(100)  NULL DEFAULT NULL ,-- '权限标识',
   icon varchar(100)  NULL DEFAULT '#' ,-- '菜单图标',
   create_by varchar(64)  NULL DEFAULT '' ,-- '创建者',
@@ -186,7 +186,7 @@ CREATE TABLE sys_oper_log  (
   operIP varchar(50)  DEFAULT '' , -- '主机地址',
   operLocation varchar(255)  DEFAULT '' , -- '操作地点',
   operParam varchar(2000)  DEFAULT '' , -- '请求参数',
-  jsonResult varchar(max)  DEFAULT '' , -- '返回参数',
+  jsonResult TEXT  DEFAULT '' , -- '返回参数',
   status int NULL DEFAULT 0 , -- '操作状态（0正常 1异常）',
   errorMsg varchar(2000)  DEFAULT '' , -- '错误消息',
   operTime datetime NULL DEFAULT NULL , -- '操作时间',
@@ -265,8 +265,8 @@ CREATE TABLE sys_role  (
   roleKey varchar(100)  NOT NULL , -- '角色权限字符串',
   roleSort int NOT NULL , -- '显示顺序',
   dataScope int  NULL DEFAULT 1 , -- '数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 ）',
-  menu_check_strictly int NULL DEFAULT 1 , -- '菜单树选择项是否关联显示',
-  dept_check_strictly int NOT NULL DEFAULT 1 , -- '部门树选择项是否关联显示',
+  menu_check_strictly BIT NOT NULL DEFAULT 1 , -- '菜单树选择项是否关联显示',
+  dept_check_strictly BIT NOT NULL DEFAULT 1 , -- '部门树选择项是否关联显示',
   status int  NOT NULL , -- '角色状态（0正常 1停用）',
   delFlag int  NOT NULL DEFAULT 0 , -- '删除标志（0代表存在 2代表删除）',
   create_by varchar(64)  NULL DEFAULT '' , -- '创建者',
@@ -310,7 +310,10 @@ CREATE TABLE sys_role_menu  (
   role_id bigint NOT NULL , -- '角色ID',
   menu_id bigint NOT NULL , -- '菜单ID',
   create_by varchar(20) DEFAULT NULL,
-  create_time datetime NULL DEFAULT NULL
+  create_time datetime NULL DEFAULT NULL,
+  update_by VARCHAR(20) DEFAULT NULL,
+  update_time DATETIME NULL ,
+  remark VARCHAR(100)
 )
 GO
 alter table sys_role_menu add primary key(menu_id,role_id)

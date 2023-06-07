@@ -33,11 +33,11 @@ namespace ZR.Model.System.Dto
         /// 是否缓存（1缓存 0不缓存）
         /// </summary>
         [Required(ErrorMessage = "是否缓存不能为空")]
-        public string IsCache { get; set; }
+        public int IsCache { get; set; }
         /// <summary>
         /// 是否外链 1、是 0、否
         /// </summary>
-        public string IsFrame { get; set; }
+        public int IsFrame { get; set; }
 
         /// <summary>
         /// 类型（M目录 C菜单 F按钮 L链接）

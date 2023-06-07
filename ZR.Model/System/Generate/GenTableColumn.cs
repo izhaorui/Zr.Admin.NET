@@ -7,18 +7,21 @@ namespace ZR.Model.System.Generate
     /// <summary>
     /// 代码生成表字段
     /// </summary>
-    [SugarTable("gen_table_column")]
+    [SugarTable("gen_table_column", "代码生成表字段")]
     [Tenant("0")]
     public class GenTableColumn : SysBase
     {
+        /// <summary>
+        /// 列id
+        /// </summary>
         [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
-        public int ColumnId { get; set; }
+        public long ColumnId { get; set; }
         /// <summary>
         /// 导入代码生成表列名 首字母转了小写
         /// </summary>
         public string ColumnName { get; set; }
         [SugarColumn(IsOnlyIgnoreUpdate = true)]
-        public int TableId { get; set; }
+        public long TableId { get; set; }
 
         [SugarColumn(IsOnlyIgnoreUpdate = true)]
         public string TableName { get; set; }
@@ -96,6 +99,7 @@ namespace ZR.Model.System.Generate
         /// <summary>
         /// 查询类型（等于、不等于、大于、小于、范围）
         /// </summary>
+        [SugarColumn(DefaultValue = "EQ")]
         public string QueryType { get; set; } = "EQ";
         public int Sort { get; set; }
         /// <summary>

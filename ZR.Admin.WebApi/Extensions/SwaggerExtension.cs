@@ -38,7 +38,7 @@ namespace ZR.Admin.WebApi.Extensions
         public static void AddSwaggerConfig(this IServiceCollection services)
         {
             if (services == null) throw new ArgumentNullException(nameof(services));
-            //IWebHostEnvironment hostEnvironment = App.GetRequiredService<IWebHostEnvironment>();
+            //IWebHostEnvironment hostEnvironment = services.BuildServiceProvider().GetRequiredService<IWebHostEnvironment>();
 
             services.AddSwaggerGen(c =>
             {
@@ -50,10 +50,10 @@ namespace ZR.Admin.WebApi.Extensions
                 });
                 try
                 {
-                    var tempPath = "";// hostEnvironment.ContentRootPath;
+                    //var tempPath = hostEnvironment.ContentRootPath;
                     //添加文档注释
-                    c.IncludeXmlComments(Path.Combine(tempPath, "ZRAdmin.xml"), true);
-                    c.IncludeXmlComments(Path.Combine(tempPath, "ZRModel.xml"), true);
+                    c.IncludeXmlComments(Path.Combine("ZRAdmin.xml"), true);
+                    c.IncludeXmlComments(Path.Combine("ZRModel.xml"), true);
                     //c.IncludeXmlComments(Path.Combine(Directory.GetParent(tempPath).FullName, "ZR.Model", "ZRModel.xml"), true);
                 }
                 catch (Exception ex)
