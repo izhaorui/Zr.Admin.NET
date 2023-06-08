@@ -9,6 +9,7 @@ using ZR.Admin.WebApi.Middleware;
 using ZR.Admin.WebApi.Hubs;
 using ZR.Common.Cache;
 using AspNetCoreRateLimit;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,19 +21,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //注入HttpContextAccessor
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-var corsUrls = builder.Configuration["corsUrls"]?.Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-//配置跨域
-builder.Services.AddCors(c =>
-{
-    c.AddPolicy("Policy", policy =>
-    {
-        policy.WithOrigins(corsUrls ?? Array.Empty<string>())
-        .AllowAnyHeader()//允许任意头
-        .AllowCredentials()//允许cookie
-        .AllowAnyMethod();//允许任意方法
-    });
-});
+// 跨域配置
+builder.Services.AddCors(builder.Configuration);
 // 显示logo
 builder.Services.AddLogo();
 //注入SignalR实时通讯，默认用json传输
@@ -58,6 +48,19 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(o =>
 {
     o.TokenValidationParameters = JwtUtil.ValidParameters();
+    o.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            // 如果过期，把过期信息添加到头部
+            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+            {
+                context.Response.Headers.Add("Token-Expired", "true");
+            }
+
+            return Task.CompletedTask;
+        }
+    };
 });
 
 //InternalApp.InternalServices = builder.Services;
@@ -66,7 +69,7 @@ builder.Services.AddAppService();
 //开启计划任务
 builder.Services.AddTaskSchedulers();
 //初始化db
-DbExtension.AddDb(builder.Configuration);
+builder.Services.AddDb(builder.Configuration);
 
 //注册REDIS 服务
 var openRedis = builder.Configuration["RedisServer:open"];
