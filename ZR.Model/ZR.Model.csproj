@@ -2,15 +2,14 @@
 
 	<PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<DocumentationFile>../ZR.Admin.WebApi/ZRModel.xml</DocumentationFile>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>1701;1702;1591;1570</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="MiniExcel" Version="1.30.3" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.84-preview01" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.84-preview08" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 	</ItemGroup>
 </Project>

@@ -1,15 +1,14 @@
+using AspNetCoreRateLimit;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
-using ZR.Admin.WebApi.Framework;
-using Infrastructure.Extensions;
+using Microsoft.IdentityModel.Tokens;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
-using ZR.Admin.WebApi.Middleware;
+using ZR.Admin.WebApi.Framework;
 using ZR.Admin.WebApi.Hubs;
+using ZR.Admin.WebApi.Middleware;
 using ZR.Common.Cache;
-using AspNetCoreRateLimit;
-using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,8 +67,6 @@ builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 builder.Services.AddAppService();
 //开启计划任务
 builder.Services.AddTaskSchedulers();
-//初始化db
-builder.Services.AddDb(builder.Configuration);
 
 //注册REDIS 服务
 var openRedis = builder.Configuration["RedisServer:open"];
@@ -92,10 +89,8 @@ builder.Services.AddSwaggerConfig();
 
 var app = builder.Build();
 InternalApp.ServiceProvider = app.Services;
-if (builder.Configuration["InitDb"].ParseToBool() == true && app.Environment.IsDevelopment())
-{
-    app.Services.InitDb();
-}
+//初始化db
+builder.Services.AddDb(builder.Configuration, app.Environment);
 
 app.UseSwagger();
 

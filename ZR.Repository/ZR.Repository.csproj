@@ -15,6 +15,6 @@
 		<PackageReference Include="MySqlConnector" Version="2.2.6" />
 		<PackageReference Include="NETCore.Encrypt" Version="2.1.1" />
 		<PackageReference Include="SqlSugar.IOC" Version="2.0.0" />
-		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.84-preview01" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.84-preview08" />
 	</ItemGroup>
 </Project>

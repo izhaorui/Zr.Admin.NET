@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
+using System.Reflection;
 
 namespace ZR.Admin.WebApi.Extensions
 {
@@ -52,9 +53,12 @@ namespace ZR.Admin.WebApi.Extensions
                 {
                     //var tempPath = hostEnvironment.ContentRootPath;
                     //添加文档注释
-                    c.IncludeXmlComments(Path.Combine("ZRAdmin.xml"), true);
-                    c.IncludeXmlComments(Path.Combine("ZRModel.xml"), true);
-                    //c.IncludeXmlComments(Path.Combine(Directory.GetParent(tempPath).FullName, "ZR.Model", "ZRModel.xml"), true);
+                    var baseDir = AppContext.BaseDirectory;
+                    c.IncludeXmlComments(Path.Combine(baseDir, "ZR.Model.xml"), true);
+
+                    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                    var xmlPath = Path.Combine(baseDir, xmlFile);
+                    c.IncludeXmlComments(xmlPath);
                 }
                 catch (Exception ex)
                 {

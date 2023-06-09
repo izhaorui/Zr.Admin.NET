@@ -24,16 +24,14 @@ namespace ZR.Admin.WebApi.Extensions
         //仅本人数据权限
         public static long DATA_SCOPE_SELF = 5;
 
-        private static XmlCommentHelper commentHelper = new XmlCommentHelper();
-        
         /// <summary>
         /// 初始化db
         /// </summary>
         /// <param name="services"></param>
         /// <param name="Configuration"></param>
-        public static void AddDb(this IServiceCollection services, IConfiguration Configuration)
+        /// <param name="environment"></param>
+        public static void AddDb(this IServiceCollection services, IConfiguration Configuration, IWebHostEnvironment environment)
         {
-            commentHelper.LoadAll();
             List<DbConfigs> dbConfigs = Configuration.GetSection("DbConfigs").Get<List<DbConfigs>>();
 
             var iocList = new List<IocConfig>();
@@ -64,6 +62,11 @@ namespace ZR.Admin.WebApi.Extensions
                     SetSugarAop(db, iocConfig, cache);
                 });
             });
+
+            if(Configuration["InitDb"].ParseToBool() == true && environment.IsDevelopment())
+            {
+                InitDb();
+            }
         }
 
         /// <summary>
@@ -74,8 +77,8 @@ namespace ZR.Admin.WebApi.Extensions
         /// <param name="cache"></param>
         private static void SetSugarAop(SqlSugarClient db, IocConfig iocConfig, ICacheService cache)
         {
-            var config = db.GetConnection(iocConfig.ConfigId).CurrentConnectionConfig;
-
+            var config = db.GetConnectionScope(iocConfig.ConfigId).CurrentConnectionConfig;
+            
             string configId = config.ConfigId;
             db.GetConnectionScope(configId).Aop.OnLogExecuting = (sql, pars) =>
             {
@@ -107,6 +110,9 @@ namespace ZR.Admin.WebApi.Extensions
                 logger.Error(ex, $"{sql}\r\n{ex.Message}\r\n{ex.StackTrace}");
             };
 
+            db.GetConnectionScope(configId).Aop.DataExecuting = (oldValue, entiyInfo) =>
+            {
+            };
             db.GetConnectionScope(configId).CurrentConnectionConfig.MoreSettings = new ConnMoreSettings()
             {
                 IsAutoRemoveDataCache = true
@@ -118,11 +124,6 @@ namespace ZR.Admin.WebApi.Extensions
                 {
                     p.DbTableName = p.DbTableName.FirstLowerCase();
                     p.DbColumnName = p.DbColumnName.FirstLowerCase();
-                    var des = commentHelper.GetFieldOrPropertyComment(c);
-                    if (des.IsNotEmpty())
-                    {
-                        p.ColumnDescription = des;
-                    }
 
                     if (db.GetConnectionScope(configId).CurrentConnectionConfig.DbType == DbType.PostgreSQL)
                     {
@@ -149,26 +150,20 @@ namespace ZR.Admin.WebApi.Extensions
                     }
                 }
             };
-
-            db.GetConnectionScope(configId).Aop.DataExecuting = (oldValue, entiyInfo) =>
-            {
-                
-            };
         }
 
         /// <summary>
         /// 创建db、表
         /// </summary>
-        /// <param name="service"></param>
-        public static void InitDb(this IServiceProvider service)
+        public static void InitDb()
         {
             var db = DbScoped.SugarScope;
             //建库：如果不存在创建数据库存在不会重复创建 
             db.DbMaintenance.CreateDatabase();// 注意 ：Oracle和个别国产库需不支持该方法，需要手动建库 
 
             var baseType = typeof(SysBase);
-            var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && /*p.IsAssignableTo(baseType) && */p.GetCustomAttribute<SugarTable>() != null).ToArray();
-
+            var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && p.GetCustomAttribute<SugarTable>() != null).ToArray();
+            
             //23个表
             db.CodeFirst.InitTables(entityes);
         }
