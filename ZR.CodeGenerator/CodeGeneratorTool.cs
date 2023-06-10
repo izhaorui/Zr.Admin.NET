@@ -50,6 +50,7 @@ namespace ZR.CodeGenerator
                 ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5),
                 ShowBtnTruncate = dto.GenTable.Options.CheckedBtn.Any(f => f == 6),
                 ShowBtnMultiDel = dto.GenTable.Options.CheckedBtn.Any(f => f == 7),
+                ViewFileName = dto.GenTable.BusinessName.FirstUpperCase()
             };
             var columns = dto.GenTable.Columns;
 
@@ -67,7 +68,7 @@ namespace ZR.CodeGenerator
             GenerateControllers(replaceDto, dto);
             if (dto.VueVersion == 3)
             {
-                GenerateVue3Views(dto);
+                GenerateVue3Views(replaceDto, dto);
             }
             else
             {
@@ -182,7 +183,7 @@ namespace ZR.CodeGenerator
             replaceDto.VueViewFormHtml = GenerateCurdForm();
 
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
-            var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
+            var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{replaceDto.ViewFileName}.vue");
 
             generateDto.GenCodes.Add(new GenCode(6, "index.vue", fullPath, tpl.Render()));
         }
@@ -191,7 +192,7 @@ namespace ZR.CodeGenerator
         /// vue3
         /// </summary>
         /// <param name="generateDto"></param>
-        private static void GenerateVue3Views(GenerateDto generateDto)
+        private static void GenerateVue3Views(ReplaceDto replaceDto, GenerateDto generateDto)
         {
             string fileName = generateDto.GenTable.TplCategory switch
             {
@@ -206,7 +207,7 @@ namespace ZR.CodeGenerator
             tpl.Set("options", generateDto.GenTable?.Options);
 
             var result = tpl.Render();
-            var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{generateDto.GenTable.BusinessName.FirstUpperCase()}.vue");
+            var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{replaceDto.ViewFileName}.vue");
             generateDto.GenCodes.Add(new GenCode(16, "index.vue", fullPath, result));
         }
 
@@ -240,21 +241,13 @@ namespace ZR.CodeGenerator
         /// <param name="generateDto"></param>
         public static void GenerateSql(GenerateDto generateDto)
         {
-            var tempName = "";
-            switch (generateDto.DbType)
+            string tempName = generateDto.DbType switch
             {
-                case 0:
-                    tempName = "MySqlTemplate";
-                    break;
-                case 1:
-                    tempName = "SqlTemplate";
-                    break;
-                case 4:
-                    tempName = "PgSql";
-                    break;
-                default:
-                    break;
-            }
+                0 => "MySqlTemplate",
+                1 => "SqlTemplate",
+                4 => "PgSql",
+                _ => "Other",
+            };
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, Path.Combine("sql", $"{tempName}.txt"));
             tpl.Set("parentId", generateDto.GenTable?.Options?.ParentMenuId ?? 0);
             var result = tpl.Render();
@@ -315,18 +308,8 @@ namespace ZR.CodeGenerator
                     }
                 }
             }
-            return tableName.UnderScoreToCamelCase();
-        }
-
-        /// <summary>
-        /// 获取前端标签名
-        /// </summary>
-        /// <param name="columnDescription"></param>
-        /// <param name="columnName"></param>
-        /// <returns></returns>
-        public static string GetLabelName(string columnDescription, string columnName)
-        {
-            return string.IsNullOrEmpty(columnDescription) ? columnName : columnDescription;
+            //return tableName.UnderScoreToCamelCase();
+            return tableName.ConvertToPascal("_");
         }
 
         /// <summary>
@@ -343,7 +326,7 @@ namespace ZR.CodeGenerator
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return "";
+                return str;
             }
         }
 
@@ -357,8 +340,8 @@ namespace ZR.CodeGenerator
             sDatatype = sDatatype.ToLower();
             string sTempDatatype = sDatatype switch
             {
-                "int" or "number" or "integer" or "smallint" or "int4" or "int8" or "int2" => "int",
-                "bigint" => "long",
+                "int" or "integer" or "smallint" or "int4" or "int8" or "int2" => "int",
+                "bigint" or "number" => "long",
                 "tinyint" => "byte",
                 "numeric" or "real" or "float" => "float",
                 "decimal" or "numer(8,2)" or "numeric" => "decimal",
@@ -389,8 +372,8 @@ namespace ZR.CodeGenerator
                 DbName = dbName,
                 BaseNameSpace = "ZR.",//导入默认命名空间前缀
                 ModuleName = "business",//导入默认模块名
-                ClassName = GetClassName(tableName).FirstUpperCase(),
-                BusinessName = tableName.UnderScoreToCamelCase().FirstUpperCase(),
+                ClassName = GetClassName(tableName),
+                BusinessName = GetClassName(tableName),
                 FunctionAuthor = AppSettings.GetConfig(GenConstants.Gen_author),
                 TableName = tableName,
                 TableComment = desc,
@@ -412,12 +395,13 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="genTable"></param>
         /// <param name="dbColumnInfos"></param>
-        public static List<GenTableColumn> InitGenTableColumn(GenTable genTable, List<DbColumnInfo> dbColumnInfos)
+        /// <param name="seqs"></param>
+        public static List<GenTableColumn> InitGenTableColumn(GenTable genTable, List<DbColumnInfo> dbColumnInfos, List<OracleSeq> seqs = null)
         {
             List<GenTableColumn> genTableColumns = new();
             foreach (var column in dbColumnInfos)
             {
-                genTableColumns.Add(InitColumnField(genTable, column));
+                genTableColumns.Add(InitColumnField(genTable, column, seqs));
             }
             return genTableColumns;
         }
@@ -428,17 +412,26 @@ namespace ZR.CodeGenerator
         /// <param name="genTable"></param>
         /// <param name="column"></param>
         /// <returns></returns>
-        private static GenTableColumn InitColumnField(GenTable genTable, DbColumnInfo column)
+        private static GenTableColumn InitColumnField(GenTable genTable, DbColumnInfo column, List<OracleSeq> seqs)
         {
+            var dbType = AppSettings.Get<int>(GenConstants.Gen_conn_dbType);
+            var dataType = column.DataType;
+            if (dbType == 3)
+            {
+                dataType = column.OracleDataType;
+                var seqName = $"SEQ_{genTable.TableName}_{column.DbColumnName}";
+                var isIdentity = seqs.Any(f => seqName.Equals(f.SEQUENCE_NAME, StringComparison.CurrentCultureIgnoreCase));
+                column.IsIdentity = isIdentity;
+            }
             GenTableColumn genTableColumn = new()
             {
                 ColumnName = column.DbColumnName.FirstLowerCase(),
                 ColumnComment = column.ColumnDescription,
                 IsPk = column.IsPrimarykey,
-                ColumnType = column.DataType,
+                ColumnType = dataType,
                 TableId = genTable.TableId,
                 TableName = genTable.TableName,
-                CsharpType = GetCSharpDatatype(column.DataType),
+                CsharpType = GetCSharpDatatype(dataType),
                 CsharpField = column.DbColumnName.ConvertToPascal("_"),
                 IsRequired = !column.IsNullable,
                 IsIncrement = column.IsIdentity,

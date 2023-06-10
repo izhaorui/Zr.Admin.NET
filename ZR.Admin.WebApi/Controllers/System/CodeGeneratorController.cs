@@ -153,6 +153,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("表不能为空");
             }
+            var dbType = AppSettings.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
             string[] tableNames = tables.Split(',', StringSplitOptions.RemoveEmptyEntries);
             int result = 0;
             foreach (var tableName in tableNames)
@@ -160,15 +161,18 @@ namespace ZR.Admin.WebApi.Controllers
                 var tabInfo = _CodeGeneraterService.GetTableInfo(dbName, tableName);
                 if (tabInfo != null)
                 {
+                    List<OracleSeq> seqs = new();
                     GenTable genTable = CodeGeneratorTool.InitTable(dbName, HttpContext.GetName(), tableName, tabInfo?.Description);
                     genTable.TableId = GenTableService.ImportGenTable(genTable);
-
+                    if (dbType == 3)
+                    {
+                        seqs = _CodeGeneraterService.GetAllOracleSeqs(dbName);
+                    }
                     if (genTable.TableId > 0)
                     {
                         //保存列信息
                         List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dbName, tableName);
-                        List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos);
-
+                        List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos, seqs);
                         GenTableColumnService.DeleteGenTableColumnByTableName(tableName);
                         GenTableColumnService.InsertGenTableColumn(genTableColumns);
                         genTable.Columns = genTableColumns;
@@ -264,10 +268,11 @@ namespace ZR.Admin.WebApi.Controllers
             //自定义路径
             if (genTableInfo.GenType == "1")
             {
+                var genPath = genTableInfo.GenPath;
                 string tempPath = WebHostEnvironment.ContentRootPath;
                 var parentPath = tempPath[..tempPath.LastIndexOf(@"\")];
                 //代码生成文件夹路径
-                dto.GenCodePath = genTableInfo.GenPath.IsEmpty() ? parentPath : genTableInfo.GenPath;
+                dto.GenCodePath = (genPath.IsEmpty() || genPath.Equals("/")) ? parentPath : genTableInfo.GenPath;
             }
             else
             {

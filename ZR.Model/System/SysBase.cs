@@ -16,17 +16,26 @@ namespace ZR.Model.System
         [ExcelIgnore]
         public string Create_by { get; set; }
 
+        /// <summary>
+        /// 创建时间
+        /// </summary>
         [SugarColumn(IsOnlyIgnoreUpdate = true, IsNullable = true)]
         [JsonProperty(propertyName: "CreateTime")]
         [ExcelColumn(Format = "yyyy-MM-dd HH:mm:ss")]
         public DateTime Create_time { get; set; } = DateTime.Now;
 
+        /// <summary>
+        /// 更新人
+        /// </summary>
         [JsonIgnore]
         [JsonProperty(propertyName: "UpdateBy")]
         [SugarColumn(IsOnlyIgnoreInsert = true, Length = 64, IsNullable = true)]
         [ExcelIgnore]
         public string Update_by { get; set; }
 
+        /// <summary>
+        /// 更新时间
+        /// </summary>
         //[JsonIgnore]
         [SugarColumn(IsOnlyIgnoreInsert = true, IsNullable = true)]
         [JsonProperty(propertyName: "UpdateTime")]

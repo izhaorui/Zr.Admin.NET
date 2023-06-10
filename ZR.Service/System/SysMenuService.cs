@@ -660,8 +660,10 @@ namespace ZR.Service
             //Insert(menuList);
 
             var x = Storageable(menuList)
-            .WhereColumns(it => new { it.MenuName, it.ParentId })
-            .ToStorage();
+                .SplitInsert(it => !it.Any())
+                .SplitUpdate(it => !it.Any())
+                .WhereColumns(it => new { it.MenuName, it.ParentId })
+                .ToStorage();
             x.AsInsertable.ExecuteCommand();//插入可插入部分;
             x.AsUpdateable.ExecuteCommand();
         }

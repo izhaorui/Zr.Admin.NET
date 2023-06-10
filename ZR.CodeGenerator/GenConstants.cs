@@ -15,7 +15,7 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// InputDto输入实体是不包含字段
         /// </summary>
-        public static readonly string[] inputDtoNoField = new string[] { "createTime", "updateTime", "addtime", "create_time", "update_time" };
+        public static readonly string[] inputDtoNoField = new string[] { "createTime", "updateTime", "addtime", "create_time", "update_time", "create_by", "update_by" };
         /// <summary>
         /// 图片字段
         /// </summary>
@@ -27,7 +27,7 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 单选按钮字段
         /// </summary>
-        public static readonly string[] radioFiled = new string[] { "status", "state", "is"};
+        public static readonly string[] radioFiled = new string[] { "status", "state", "is" };
 
 
         /// <summary>

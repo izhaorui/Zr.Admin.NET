@@ -65,5 +65,9 @@ namespace ZR.CodeGenerator.Model
         /// 是否有编辑器
         /// </summary>
         public int ShowEditor { get; set; }
+        /// <summary>
+        /// vue页面文件名
+        /// </summary>
+        public string ViewFileName { get; set; }
     }
 }

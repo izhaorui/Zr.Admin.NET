@@ -72,13 +72,13 @@ namespace ZR.Model.System
         /// <summary>
         /// 请求参数
         /// </summary>
-        [SugarColumn(Length = 2000)]
+        [SugarColumn(Length = 4000)]
         public string OperParam { get; set; }
 
         /// <summary>
         /// 返回参数
         /// </summary>
-        [SugarColumn(ColumnDataType = "text")]
+        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString)]
         public string JsonResult { get; set; }
 
         /// <summary>

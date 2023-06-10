@@ -33,7 +33,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 文章内容
         /// </summary>
-        [SugarColumn(ColumnDescription = "文章内容", ColumnDataType = "text")]
+        [SugarColumn(ColumnDescription = "文章内容", ColumnDataType = StaticConfig.CodeFirst_BigString)]
         public string Content { get; set; }
         /// <summary>
         /// 作者名

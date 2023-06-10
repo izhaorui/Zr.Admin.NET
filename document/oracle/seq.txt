@@ -1,0 +1,46 @@
+
+--通用序列id
+create sequence SEQ_ID
+minvalue 1
+maxvalue 99999999
+start with 1
+increment by 1
+nocache
+order;
+
+--角色表序列id
+create sequence SEQ_SYS_ROLE_ROLEID
+minvalue 10
+maxvalue 99999999
+start with 10
+increment by 1
+nocache
+order;
+
+--菜单表序列id
+create sequence SEQ_SYS_MENU_MENUID
+minvalue 2000
+maxvalue 99999999
+start with 2000
+increment by 1
+nocache
+order;
+
+--用户表序列id
+create sequence SEQ_SYS_USER_USERID
+minvalue 100
+maxvalue 99999999
+start with 1
+increment by 100
+nocache
+order;
+
+--部门表序列id
+create sequence SEQ_SYS_DEPT_DEPTID
+minvalue 200
+maxvalue 99999999
+start with 200
+increment by 1
+nocache
+order;
+

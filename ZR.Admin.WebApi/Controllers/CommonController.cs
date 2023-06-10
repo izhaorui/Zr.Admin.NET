@@ -190,7 +190,6 @@ namespace ZR.Admin.WebApi.Controllers
                 return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败");
             }
             var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
-            //var sheetNames = MiniExcel.GetSheetNames(path);
             SeedDataService seedDataService = new();
             var result = seedDataService.InitSeedData(path, clean);
             Console.ForegroundColor = ConsoleColor.Red;

@@ -49,14 +49,12 @@ namespace ZR.Service.System
         public (string, object, object) InitMenuData(List<SysMenu> data)
         {
             var db = DbScoped.SugarScope;
-            db.Ado.BeginTran();
             var x = db.Storageable(data)
                 .SplitInsert(it => it.NotAny())
                 .WhereColumns(it => it.MenuId)//如果不是主键可以这样实现（多字段it=>new{it.x1,it.x2}）
                 .ToStorage();
             var result = x.AsInsertable.OffIdentity().ExecuteCommand();//插入可插入部分;
-            db.Ado.CommitTran();
-
+            
             string msg = $"[菜单数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
@@ -89,7 +87,7 @@ namespace ZR.Service.System
                 .SplitInsert(it => it.NotAny())
                 .WhereColumns(it => it.DeptId)
                 .ToStorage();
-            var result = x.AsInsertable.ExecuteCommand();
+            var result = x.AsInsertable.OffIdentity().ExecuteCommand();
 
             string msg = $"[部门数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);

@@ -2,6 +2,7 @@
 using SqlSugar;
 using System.Collections.Generic;
 using System.Linq;
+using ZR.CodeGenerator.Model;
 using ZR.Model;
 
 namespace ZR.CodeGenerator.Service
@@ -71,6 +72,19 @@ namespace ZR.CodeGenerator.Service
         public List<DbColumnInfo> GetColumnInfo(string dbName, string tableName)
         {
             return GetSugarDbContext(dbName).DbMaintenance.GetColumnInfosByTableName(tableName, true);
+        }
+
+        /// <summary>
+        /// 获取Oracle所有序列
+        /// </summary>
+        /// <param name="dbName"></param>
+        /// <returns></returns>
+        public List<OracleSeq> GetAllOracleSeqs(string dbName)
+        {
+            string sql = "SELECT * FROM USER_SEQUENCES";
+            var seqs = GetSugarDbContext(dbName).Ado.SqlQuery<OracleSeq>(sql);
+
+            return seqs.ToList();
         }
     }
 }

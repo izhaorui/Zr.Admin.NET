@@ -1,15 +1,16 @@
 using Infrastructure;
 using Infrastructure.Extensions;
-using Infrastructure.Helper;
 using SqlSugar;
 using SqlSugar.IOC;
-using System.Reflection;
 using ZR.Admin.WebApi.Framework;
 using ZR.Model;
 using ZR.Model.System;
 
 namespace ZR.Admin.WebApi.Extensions
 {
+    /// <summary>
+    /// sqlsugar 数据处理
+    /// </summary>
     public static class DbExtension
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
@@ -63,9 +64,9 @@ namespace ZR.Admin.WebApi.Extensions
                 });
             });
 
-            if(Configuration["InitDb"].ParseToBool() == true && environment.IsDevelopment())
+            if (Configuration["InitDb"].ParseToBool() == true && environment.IsDevelopment())
             {
-                InitDb();
+                InitTable.InitDb();
             }
         }
 
@@ -78,7 +79,7 @@ namespace ZR.Admin.WebApi.Extensions
         private static void SetSugarAop(SqlSugarClient db, IocConfig iocConfig, ICacheService cache)
         {
             var config = db.GetConnectionScope(iocConfig.ConfigId).CurrentConnectionConfig;
-            
+
             string configId = config.ConfigId;
             db.GetConnectionScope(configId).Aop.OnLogExecuting = (sql, pars) =>
             {
@@ -101,7 +102,6 @@ namespace ZR.Admin.WebApi.Extensions
                     logger.Info(log);
                 }
             };
-
             db.GetConnectionScope(configId).Aop.OnError = (ex) =>
             {
                 var pars = db.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
@@ -109,10 +109,10 @@ namespace ZR.Admin.WebApi.Extensions
                 string sql = "【错误SQL】" + UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n";
                 logger.Error(ex, $"{sql}\r\n{ex.Message}\r\n{ex.StackTrace}");
             };
-
             db.GetConnectionScope(configId).Aop.DataExecuting = (oldValue, entiyInfo) =>
             {
             };
+
             db.GetConnectionScope(configId).CurrentConnectionConfig.MoreSettings = new ConnMoreSettings()
             {
                 IsAutoRemoveDataCache = true
@@ -122,20 +122,6 @@ namespace ZR.Admin.WebApi.Extensions
                 DataInfoCacheService = cache,
                 EntityService = (c, p) =>
                 {
-                    p.DbTableName = p.DbTableName.FirstLowerCase();
-                    p.DbColumnName = p.DbColumnName.FirstLowerCase();
-
-                    if (db.GetConnectionScope(configId).CurrentConnectionConfig.DbType == DbType.PostgreSQL)
-                    {
-                        if (p.DataType != null && p.DataType.Contains("nvarchar"))
-                        {
-                            p.DataType = "text";
-                        }
-                        if (c.Name == nameof(SysMenu.IsCache) || c.Name == nameof(SysMenu.IsFrame))
-                        {
-                            p.DataType = "char(1)";
-                        }
-                    }
                     if (p.IsPrimarykey == true)//主键不能为null
                     {
                         p.IsNullable = false;
@@ -148,24 +134,44 @@ namespace ZR.Admin.WebApi.Extensions
                     {
                         p.IsNullable = true;
                     }
+
+                    if (config.DbType == DbType.PostgreSQL)
+                    {
+                        if (c.Name == nameof(SysMenu.IsCache) || c.Name == nameof(SysMenu.IsFrame))
+                        {
+                            p.DataType = "char(1)";
+                        }
+                    }
+                    #region 兼容Oracle
+                    if (config.DbType == DbType.Oracle)
+                    {
+                        if (p.IsIdentity == true)
+                        {
+                            if (p.EntityName == nameof(SysUser))
+                            {
+                                p.OracleSequenceName = "SEQ_SYS_USER_USERID";
+                            }
+                            else if (p.EntityName == nameof(SysRole))
+                            {
+                                p.OracleSequenceName = "SEQ_SYS_ROLE_ROLEID";
+                            }
+                            else if (p.EntityName == nameof(SysDept))
+                            {
+                                p.OracleSequenceName = "SEQ_SYS_DEPT_DEPTID";
+                            }
+                            else if (p.EntityName == nameof(SysMenu))
+                            {
+                                p.OracleSequenceName = "SEQ_SYS_MENU_MENUID";
+                            }
+                            else
+                            {
+                                p.OracleSequenceName = "SEQ_ID";
+                            }
+                        }
+                    }
+                    #endregion
                 }
             };
-        }
-
-        /// <summary>
-        /// 创建db、表
-        /// </summary>
-        public static void InitDb()
-        {
-            var db = DbScoped.SugarScope;
-            //建库：如果不存在创建数据库存在不会重复创建 
-            db.DbMaintenance.CreateDatabase();// 注意 ：Oracle和个别国产库需不支持该方法，需要手动建库 
-
-            var baseType = typeof(SysBase);
-            var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && p.GetCustomAttribute<SugarTable>() != null).ToArray();
-            
-            //23个表
-            db.CodeFirst.InitTables(entityes);
         }
 
         private static object GetParsValue(SugarParameter x)

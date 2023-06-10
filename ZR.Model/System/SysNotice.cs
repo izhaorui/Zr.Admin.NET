@@ -30,7 +30,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 公告内容
         /// </summary>
-        [SugarColumn(ColumnName = "notice_content", ColumnDataType = "text")]
+        [SugarColumn(ColumnName = "notice_content", ColumnDataType = StaticConfig.CodeFirst_BigString)]
         public string NoticeContent { get; set; }
         /// <summary>
         /// 公告状态 (0正常 1关闭)
