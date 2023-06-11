@@ -1,11 +1,16 @@
 ﻿using Infrastructure.Extensions;
+using MiniExcelLibs;
 using SqlSugar.IOC;
 using System.Collections.Generic;
+using System.Linq;
 using ZR.Common;
 using ZR.Model.System;
 
 namespace ZR.Service.System
 {
+    /// <summary>
+    /// 种子数据处理
+    /// </summary>
     public class SeedDataService
     {
         /// <summary>
@@ -217,6 +222,75 @@ namespace ZR.Service.System
 
             string msg = $"[任务数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
+        }
+
+        /// <summary>
+        /// 初始化种子数据
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="clean"></param>
+        /// <returns></returns>
+        public List<string> InitSeedData(string path, bool clean)
+        {
+            List<string> result = new();
+
+            var db = DbScoped.SugarScope;
+            if (clean)
+            {
+                db.DbMaintenance.TruncateTable<SysRoleDept>();
+                db.DbMaintenance.TruncateTable<SysRoleMenu>();
+                db.DbMaintenance.TruncateTable<SysMenu>();
+                db.DbMaintenance.TruncateTable<SysRole>();
+                db.DbMaintenance.TruncateTable<SysUser>();
+                db.DbMaintenance.TruncateTable<SysDept>();
+                db.DbMaintenance.TruncateTable<SysPost>();
+            }
+
+            var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
+            var result1 = InitUserData(sysUser);
+            result.Add(result1.Item1);
+
+            var sysPost = MiniExcel.Query<SysPost>(path, sheetName: "post").ToList();
+            var result2 = InitPostData(sysPost);
+            result.Add(result2.Item1);
+
+            var sysRole = MiniExcel.Query<SysRole>(path, sheetName: "role").ToList();
+            var result3 = InitRoleData(sysRole);
+            result.Add(result3.Item1);
+
+            var sysUserRole = MiniExcel.Query<SysUserRole>(path, sheetName: "user_role").ToList();
+            var result4 = InitUserRoleData(sysUserRole);
+            result.Add(result4.Item1);
+
+            var sysMenu = MiniExcel.Query<SysMenu>(path, sheetName: "menu").ToList();
+            var result5 = InitMenuData(sysMenu);
+            result.Add(result5.Item1);
+
+            var sysConfig = MiniExcel.Query<SysConfig>(path, sheetName: "config").ToList();
+            var result6 = InitConfigData(sysConfig);
+            result.Add(result6.Item1);
+
+            var sysRoleMenu = MiniExcel.Query<SysRoleMenu>(path, sheetName: "role_menu").ToList();
+            var result7 = InitRoleMenuData(sysRoleMenu);
+            result.Add(result7.Item1);
+
+            var sysDict = MiniExcel.Query<SysDictType>(path, sheetName: "dict_type").ToList();
+            var result8 = InitDictType(sysDict);
+            result.Add(result8.Item1);
+
+            var sysDictData = MiniExcel.Query<SysDictData>(path, sheetName: "dict_data").ToList();
+            var result9 = InitDictData(sysDictData);
+            result.Add(result9.Item1);
+
+            var sysDept = MiniExcel.Query<SysDept>(path, sheetName: "dept").ToList();
+            var result10 = InitDeptData(sysDept);
+            result.Add(result10.Item1);
+
+            var sysArticleCategory = MiniExcel.Query<ArticleCategory>(path, sheetName: "article_category").ToList();
+            var result11 = InitArticleCategoryData(sysArticleCategory);
+            result.Add(result11.Item1);
+
+            return result;
         }
     }
 }
