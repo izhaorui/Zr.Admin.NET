@@ -35,7 +35,7 @@ namespace ZR.Admin.WebApi.Extensions
             List<DbConfigs> dbConfigs = Configuration.GetSection("DbConfigs").Get<List<DbConfigs>>();
 
             var iocList = new List<IocConfig>();
-            foreach (var item in dbConfigs)
+            foreach (var item in dbConfigs.FindAll(f => !f.IsGenerateDb))
             {
                 iocList.Add(new IocConfig()
                 {

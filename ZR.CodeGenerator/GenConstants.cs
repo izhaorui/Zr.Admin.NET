@@ -7,12 +7,10 @@ namespace ZR.CodeGenerator
     /// </summary>
     public class GenConstants
     {
-        public static string Gen_conn = "gen:conn";
         public static string Gen_conn_dbType = "gen:dbType";
         public static string Gen_author = "gen:author";
         public static string Gen_autoPre = "gen:autoPre";
         public static string Gen_tablePrefix = "gen:tablePrefix";
-        public static string Gen_oracle_db = "gen:oracle_db";
 
         /// <summary>
         /// InputDto输入实体是不包含字段

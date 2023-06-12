@@ -2,6 +2,7 @@
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Extensions;
+using IP2Region.Ex.Models;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
@@ -230,8 +231,9 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
+            var dbConfig = AppSettings.Get<List<DbConfigs>>("dbConfigs").FirstOrDefault(f => f.IsGenerateDb);
 
-            dto.DbType = AppSettings.GetAppConfig("gen:dbType", 0);
+            dto.DbType = dbConfig.DbType;
             dto.GenTable = genTableInfo;
             dto.IsPreview = true;
             //生成代码
@@ -255,8 +257,9 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
+            var dbConfig = AppSettings.Get<List<DbConfigs>>("dbConfigs").FirstOrDefault(f => f.IsGenerateDb);
 
-            dto.DbType = AppSettings.GetAppConfig("gen:dbType", 0);
+            dto.DbType = dbConfig.DbType;
             dto.GenTable = genTableInfo;
             //自定义路径
             if (genTableInfo.GenType == "1")

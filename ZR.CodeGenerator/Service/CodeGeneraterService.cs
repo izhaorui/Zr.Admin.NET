@@ -16,15 +16,15 @@ namespace ZR.CodeGenerator.Service
         {
             var db = GetSugarDbContext();
             //Oracle库特殊处理
-            var dbType = AppSettings.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
-            if (dbType == 3)
+            List<DbConfigs> dbConfigs = AppSettings.Get<List<DbConfigs>>("dbConfigs");
+            DbConfigs configs = dbConfigs.Find(f => f.IsGenerateDb == true);
+            if (configs.DbType == 3)
             {
-                var defaultDb = AppSettings.GetAppConfig(GenConstants.Gen_oracle_db, string.Empty);
-                return new List<string>() { defaultDb };
+                return new List<string>() { configs?.DbName };
             }
             var templist = db.DbMaintenance.GetDataBaseList(db);
 
-            return templist;
+            return templist.FindAll(f => !f.Contains("schema"));
         }
 
         /// <summary>

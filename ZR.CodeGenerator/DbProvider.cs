@@ -1,5 +1,4 @@
 ﻿using Infrastructure;
-using Infrastructure.Extensions;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -21,27 +20,22 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public SqlSugarClient GetSugarDbContext(string dbName = "")
         {
-            Gen options = new();
-            AppSettings.Bind("gen", options);
-            string connStr = options.Conn;
+            List<DbConfigs> dbConfigs = AppSettings.Get<List<DbConfigs>>("dbConfigs");
+
+            DbConfigs configs = dbConfigs.Find(f => f.IsGenerateDb == true);
+            string connStr = configs.Conn;
+
             if (!string.IsNullOrEmpty(dbName))
             {
-                string replaceStr = GetValue(options.Conn, "Database=", ";");
-                string replaceStr2 = GetValue(options.Conn, "Initial Catalog=", ";");
-                if (replaceStr.IsNotEmpty())
-                {
-                    connStr = options.Conn.Replace(replaceStr, dbName, StringComparison.OrdinalIgnoreCase);
-                }
-                if (replaceStr2.IsNotEmpty())
-                {
-                    connStr = options.Conn.Replace(replaceStr2, dbName, StringComparison.OrdinalIgnoreCase);
-                }
+                configs.DbName = dbName;
             }
+            connStr = connStr.Replace("{dbName}", configs.DbName, StringComparison.OrdinalIgnoreCase);
+
             var db = new SqlSugarClient(new List<ConnectionConfig>()
             {
                 new ConnectionConfig(){
                     ConnectionString = connStr,
-                    DbType = (DbType)options.DbType,
+                    DbType = (DbType)configs.DbType,
                     IsAutoCloseConnection = true,//开启自动释放模式和EF原理一样
                     InitKeyType = InitKeyType.Attribute,//从特性读取主键和自增列信息
                 },
