@@ -182,7 +182,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             List<SysUser> users = new();
             using (var stream = formFile.OpenReadStream())
             {
-                users = stream.Query<SysUser>().ToList();
+                users = stream.Query<SysUser>(startCell: "A2").ToList();
             }
 
             return SUCCESS(UserService.ImportUsers(users));
