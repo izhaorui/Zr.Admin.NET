@@ -119,7 +119,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ApiResult.Error($"修改菜单'{modal.MenuName}'失败，上级菜单不能选择自己"));
             }
             modal.Update_by = HttpContext.GetName();
-            int result = sysMenuService.EditMenu(modal);
+            long result = sysMenuService.EditMenu(modal);
 
             return ToResponse(result);
         }
@@ -151,7 +151,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             menu.Create_by = HttpContext.GetName();
-            int result = sysMenuService.AddMenu(menu);
+            long result = sysMenuService.AddMenu(menu);
 
             return ToResponse(result);
         }

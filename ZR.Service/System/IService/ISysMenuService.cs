@@ -15,9 +15,9 @@ namespace ZR.Service.System.IService
 
         SysMenu GetMenuByMenuId(int menuId);
         List<SysMenu> GetMenusByMenuId(int menuId, long userId);
-        int AddMenu(SysMenu menu);
+        long AddMenu(SysMenu menu);
 
-        int EditMenu(SysMenu menu);
+        long EditMenu(SysMenu menu);
 
         int DeleteMenuById(int menuId);
 

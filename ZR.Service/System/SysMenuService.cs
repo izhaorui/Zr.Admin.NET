@@ -10,7 +10,6 @@ using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
 using ZR.Model.System.Vo;
 using ZR.Service.System.IService;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ZR.Service
 {
@@ -108,10 +107,10 @@ namespace ZR.Service
         /// </summary>
         /// <param name="menu"></param>
         /// <returns></returns>
-        public int AddMenu(SysMenu menu)
+        public long AddMenu(SysMenu menu)
         {
             menu.Create_time = DateTime.Now;
-            return InsertReturnIdentity(menu);
+            return InsertReturnBigIdentity(menu);
         }
 
         /// <summary>
@@ -119,7 +118,7 @@ namespace ZR.Service
         /// </summary>
         /// <param name="menu"></param>
         /// <returns></returns>
-        public int EditMenu(SysMenu menu)
+        public long EditMenu(SysMenu menu)
         {
             menu.Icon = string.IsNullOrEmpty(menu.Icon) ? "" : menu.Icon;
             return Update(menu, false);
