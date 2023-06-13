@@ -1,4 +1,6 @@
 ﻿using Quartz.Spi;
+using SqlSugar.IOC;
+using ZR.Model.System;
 using ZR.Tasks;
 
 namespace ZR.Admin.WebApi.Extensions
@@ -31,11 +33,11 @@ namespace ZR.Admin.WebApi.Extensions
         {
             ITaskSchedulerServer _schedulerServer = app.ApplicationServices.GetRequiredService<ITaskSchedulerServer>();
 
-            var tasks = SqlSugar.IOC.DbScoped.SugarScope.Queryable<Model.System.SysTasks>()
-                .Where(m => m.IsStart == 1).ToList();
+            var tasks = DbScoped.SugarScope.Queryable<SysTasks>()
+                .Where(m => m.IsStart == 1).ToListAsync();
 
             //程序启动后注册所有定时任务
-            foreach (var task in tasks)
+            foreach (var task in tasks.Result)
             {
                 var result = _schedulerServer.AddTaskScheduleAsync(task);
                 if (result.Result.Code == 200)

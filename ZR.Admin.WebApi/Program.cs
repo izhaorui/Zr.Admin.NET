@@ -92,7 +92,8 @@ InternalApp.ServiceProvider = app.Services;
 //初始化db
 builder.Services.AddDb(builder.Configuration, app.Environment);
 
-app.UseSwagger();
+//使用全局异常中间件
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 //使可以多次多去body内容
 app.Use((context, next) =>
@@ -118,8 +119,8 @@ app.UseAuthorization();
 app.UseResponseCaching();
 //恢复/启动任务
 app.UseAddTaskSchedulers();
-//使用全局异常中间件
-app.UseMiddleware<GlobalExceptionMiddleware>();
+//使用swagger
+app.UseSwagger();
 //启用客户端IP限制速率
 app.UseIpRateLimiting();
 app.UseRateLimiter();
