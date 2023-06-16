@@ -414,9 +414,9 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         private static GenTableColumn InitColumnField(GenTable genTable, DbColumnInfo column, List<OracleSeq> seqs)
         {
-            var dbType = AppSettings.Get<int>(GenConstants.Gen_conn_dbType);
+            var dbConfig = AppSettings.Get<List<DbConfigs>>("dbConfigs").FirstOrDefault(f => f.IsGenerateDb);
             var dataType = column.DataType;
-            if (dbType == 3)
+            if (dbConfig.DbType == 3)
             {
                 dataType = column.OracleDataType;
                 var seqName = $"SEQ_{genTable.TableName}_{column.DbColumnName}";

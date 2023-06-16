@@ -153,7 +153,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("表不能为空");
             }
-            var dbType = AppSettings.GetAppConfig(GenConstants.Gen_conn_dbType, 0);
+            var dbConfig = AppSettings.Get<List<DbConfigs>>("dbConfigs").FirstOrDefault(f => f.IsGenerateDb);
             string[] tableNames = tables.Split(',', StringSplitOptions.RemoveEmptyEntries);
             int result = 0;
             foreach (var tableName in tableNames)
@@ -164,7 +164,7 @@ namespace ZR.Admin.WebApi.Controllers
                     List<OracleSeq> seqs = new();
                     GenTable genTable = CodeGeneratorTool.InitTable(dbName, HttpContext.GetName(), tableName, tabInfo?.Description);
                     genTable.TableId = GenTableService.ImportGenTable(genTable);
-                    if (dbType == 3)
+                    if (dbConfig.DbType == 3)
                     {
                         seqs = _CodeGeneraterService.GetAllOracleSeqs(dbName);
                     }
