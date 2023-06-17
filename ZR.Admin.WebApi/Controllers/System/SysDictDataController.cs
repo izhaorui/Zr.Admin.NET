@@ -38,6 +38,14 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult List([FromQuery] SysDictData dictData, [FromQuery] PagerInfo pagerInfo)
         {
             var list = SysDictDataService.SelectDictDataList(dictData, pagerInfo);
+
+            if (dictData.DictType.StartsWith("sql_"))
+            {
+                var result = SysDictService.SelectDictDataByCustomSql(dictData.DictType);
+
+                list.Result.AddRange(result);
+                list.TotalNum += result.Count;
+            }
             return SUCCESS(list);
         }
 
@@ -75,7 +83,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 };
                 if (dic.DictType.StartsWith("cus_") || dic.DictType.StartsWith("sql_"))
                 {
-                    vo.List = SysDictService.SelectDictDataByCustomSql(dic.DictType);
+                    vo.List.AddRange(SysDictService.SelectDictDataByCustomSql(dic.DictType));
                 }
                 dataVos.Add(vo);
             }
