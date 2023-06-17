@@ -11,6 +11,11 @@ using ZR.Service.System.IService;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Model.System.Dto;
 using Mapster;
+using ZR.Service;
+using Microsoft.AspNetCore.Authorization;
+using Aliyun.OSS;
+using MiniExcelLibs.OpenXml;
+using MiniExcelLibs;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -22,11 +27,14 @@ namespace ZR.Admin.WebApi.Controllers.System
     public class SysRoleController : BaseController
     {
         private readonly ISysRoleService sysRoleService;
+        private readonly ISysMenuService sysMenuService;
 
         public SysRoleController(
-            ISysRoleService sysRoleService)
+            ISysRoleService sysRoleService,
+            ISysMenuService sysMenuService)
         {
             this.sysRoleService = sysRoleService;
+            this.sysMenuService = sysMenuService;
         }
 
         /// <summary>
@@ -178,6 +186,24 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             string sFileName = ExportExcel(list, "sysrole", "角色");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
+
+        /// <summary>
+        /// 导出角色菜单
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "角色菜单导出")]
+        [HttpGet("exportRoleMenu")]
+        [AllowAnonymous]
+        public IActionResult ExportRoleMenu(int roleId)
+        {
+            MenuQueryDto dto = new() { Status = "0", MenuTypeIds = "M,C,F" };
+
+            var list = sysMenuService.SelectRoleMenuListByRole(dto, roleId);
+
+            var result = ExportExcelMini(list, roleId.ToString(), "角色菜单");
+            return ExportExcel(result.Item2, result.Item1);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MiniExcelLibs.Attributes;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ZR.Model.System.Dto
@@ -7,7 +9,9 @@ namespace ZR.Model.System.Dto
     {
         //{"parentId":0,"menuName":"aaa","icon":"documentation","menuType":"M","orderNum":999,"visible":0,"status":0,"path":"aaa"}
         [Required(ErrorMessage = "菜单id不能为空")]
+        [ExcelColumn(Name = "菜单id")]
         public int MenuId { get; set; }
+        [ExcelColumn(Name = "菜单名")]
         public string MenuName { get; set; }
         /// <summary>
         /// 父菜单ID
@@ -22,17 +26,20 @@ namespace ZR.Model.System.Dto
         /// <summary>
         /// 路由地址
         /// </summary>
+        [ExcelColumn(Name = "路由地址")] 
         public string Path { get; set; } = "#";
 
         /// <summary>
         /// 组件路径
         /// </summary>
+        [ExcelColumn(Name = "组件地址")]
         public string Component { get; set; }
 
         /// <summary>
         /// 是否缓存（1缓存 0不缓存）
         /// </summary>
         [Required(ErrorMessage = "是否缓存不能为空")]
+        [ExcelColumn(Name = "是否缓存")]
         public int IsCache { get; set; }
         /// <summary>
         /// 是否外链 1、是 0、否
@@ -60,6 +67,7 @@ namespace ZR.Model.System.Dto
         /// <summary>
         /// 权限字符串
         /// </summary>
+        [ExcelColumn(Name = "权限字符串")]
         public string Perms { get; set; }
 
         /// <summary>
@@ -70,6 +78,7 @@ namespace ZR.Model.System.Dto
         /// 翻译key
         /// </summary>
         public string MenuNameKey { get; set; }
+        public List<MenuDto> Children { get; set; } = new List<MenuDto>();
     }
 
     public class MenuQueryDto

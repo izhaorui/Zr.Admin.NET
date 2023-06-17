@@ -1,5 +1,6 @@
 using Infrastructure.Attribute;
 using Infrastructure.Extensions;
+using JinianNet.JNTemplate.Dynamic;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.Linq;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Generate;
 using ZR.Model.System.Vo;
 using ZR.Service.System.IService;
@@ -220,7 +222,7 @@ namespace ZR.Service
         /// <param name="menu"></param>
         /// <param name="roles">用户角色集合</param>
         /// <returns></returns>
-        private List<SysMenu> SelectTreeMenuListByRoles(MenuQueryDto menu, List<long> roles)
+        public List<SysMenu> SelectTreeMenuListByRoles(MenuQueryDto menu, List<long> roles)
         {
             var roleMenus = Context.Queryable<SysRoleMenu>()
                 .Where(r => roles.Contains(r.Role_id))
@@ -235,6 +237,35 @@ namespace ZR.Service
                 .OrderBy((c) => new { c.ParentId, c.OrderNum })
                 .Select(c => c)
                 .ToTree(it => it.Children, it => it.ParentId, 0);
+        }
+
+        /// <summary>
+        /// 根据用户查询系统菜单列表
+        /// </summary>
+        /// <param name="menu"></param>
+        /// <param name="roleId">用户角色</param>
+        /// <returns></returns>
+        public List<RoleMenuExportDto> SelectRoleMenuListByRole(MenuQueryDto menu, int roleId)
+        {
+            var menuIds = Context.Queryable<SysRoleMenu>()
+                .Where(r => r.Role_id == roleId)
+                .Select(f => f.Menu_id).Distinct().ToList();
+
+            return Context.Queryable<SysMenu>()
+                .InnerJoin<SysMenu>((t1, t2) => t1.MenuId == t2.ParentId)
+                .InnerJoin<SysMenu>((t1, t2, t3) => t2.MenuId == t3.ParentId)
+                .Where((t1, t2, t3) => menuIds.Contains(t1.MenuId))
+                .Select((t1, t2, t3) => new RoleMenuExportDto()
+                {
+                    MenuName = $"{t1.MenuName}->{t2.MenuName}->{t3.MenuName}",
+                    //MenuName1 = t2.MenuName,
+                    //MenuName2 = t3.MenuName,
+                    Path = t2.Path,
+                    Component = t2.Component,
+                    Perms = t3.Perms,
+                    //MenuType = (MenuType)Enum.Parse(typeof(MenuType), t3.MenuType) //(MenuType)t3.MenuType,
+                    //Status = t3.Status
+                }).ToList();
         }
 
         /// <summary>
