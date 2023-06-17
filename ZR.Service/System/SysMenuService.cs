@@ -1,6 +1,5 @@
 using Infrastructure.Attribute;
 using Infrastructure.Extensions;
-using JinianNet.JNTemplate.Dynamic;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -34,17 +33,11 @@ namespace ZR.Service
         /// <returns></returns>
         public List<SysMenu> SelectTreeMenuList(MenuQueryDto menu, long userId)
         {
-            List<SysMenu> menuList;
-            //if (SysRoleService.IsAdmin(userId))
-            //{
-            //    menuList = SelectTreeMenuList(menu);
-            //}
-            //else
-            //{
-            //    var userRoles = SysRoleService.SelectUserRoles(userId);
-            //    menuList = SelectTreeMenuListByRoles(menu, userRoles);
-            //}
-            menuList = BuildMenuTree(SelectMenuList(menu, userId));
+            if (menu.ParentId != null)
+            {
+                return GetMenusByMenuId(menu.ParentId.ParseToInt(), userId);
+            }
+            List<SysMenu> menuList = BuildMenuTree(SelectMenuList(menu, userId));
             return menuList;
         }
 
@@ -274,14 +267,17 @@ namespace ZR.Service
         /// <returns></returns>
         private List<SysMenu> SelectMenuList(MenuQueryDto menu)
         {
+            var menuExp = Expressionable.Create<SysMenu>();
+            menuExp.AndIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName));
+            menuExp.AndIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible);
+            menuExp.AndIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status);
+            menuExp.AndIF(!string.IsNullOrEmpty(menu.MenuTypeIds), it => menu.MenuTypeIdArr.Contains(it.MenuType));
+            menuExp.AndIF(menu.ParentId != null, it => it.ParentId == menu.ParentId);
+
             return Queryable()
-                .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible)
-                .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status)
-                .WhereIF(!string.IsNullOrEmpty(menu.MenuTypeIds), it => menu.MenuTypeIdArr.Contains(it.MenuType))
-                .WhereIF(menu.ParentId != null, it => it.ParentId == menu.ParentId)
-                .OrderBy(it => new { it.ParentId, it.OrderNum })
-                .ToList();
+            .Where(menuExp.ToExpression())
+            .OrderBy(it => new { it.ParentId, it.OrderNum })
+            .ToList();
         }
 
         /// <summary>
