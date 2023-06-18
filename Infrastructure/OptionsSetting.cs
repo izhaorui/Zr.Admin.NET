@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Collections.Generic;
 
 namespace Infrastructure
@@ -80,7 +81,11 @@ namespace Infrastructure
 
     public class Gen
     {
-        public string Database { get; set; }
+        public bool AutoPre { get; set; }
+        public string VuePath { get; set; }
+        public string Author { get; set; }
+        public DbConfigs GenDbConfig { get; set; }
+        public CsharpTypeArr CsharpTypeArr { get; set; }
     }
 
     public class DbConfigs
@@ -94,5 +99,16 @@ namespace Infrastructure
         /// </summary>
         public bool IsGenerateDb { get; set; }
         public string DbName { get; set; }
+    }
+
+    public class CsharpTypeArr
+    {
+        public string[] String { get; set; }
+        public string[] Int { get; set; }
+        public string[] Long { get; set; }
+        public string[] DateTime { get; set; }
+        public string[] Float { get; set; }
+        public string[] Decimal { get; set; }
+        public string[] Bool { get; set; }
     }
 }

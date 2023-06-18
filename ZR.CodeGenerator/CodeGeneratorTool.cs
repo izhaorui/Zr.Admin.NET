@@ -334,23 +334,36 @@ namespace ZR.CodeGenerator
         /// 获取C# 类型
         /// </summary>
         /// <param name="sDatatype"></param>
+        /// <param name="csharpType"></param>
         /// <returns></returns>
-        public static string GetCSharpDatatype(string sDatatype)
+        public static CSharpDataType GetCSharpDatatype(string sDatatype, CsharpTypeArr csharpType)
         {
             sDatatype = sDatatype.ToLower();
-            string sTempDatatype = sDatatype switch
+            if (csharpType.Int.Contains(sDatatype))
             {
-                "int" or "integer" or "smallint" or "int4" or "int8" or "int2" => "int",
-                "bigint" or "number" => "long",
-                "tinyint" => "byte",
-                "numeric" or "real" or "float" => "float",
-                "decimal" or "numer(8,2)" or "numeric" => "decimal",
-                "bit" => "bool",
-                "date" or "datetime" or "datetime2" or "smalldatetime" or "timestamp" => "DateTime",
-                "money" or "smallmoney" => "decimal",
-                _ => "string",
-            };
-            return sTempDatatype;
+                return CSharpDataType.@int;
+            }
+            else if (csharpType.Long.Contains(sDatatype))
+            {
+                return CSharpDataType.@long;
+            }
+            else if (csharpType.Float.Contains(sDatatype))
+            {
+                return CSharpDataType.@float;
+            }
+            else if (csharpType.Decimal.Contains(sDatatype))
+            {
+                return CSharpDataType.@decimal;
+            }
+            else if (csharpType.DateTime.Contains(sDatatype))
+            {
+                return CSharpDataType.DateTime;
+            }
+            else if (csharpType.Bool.Contains(sDatatype))
+            {
+                return CSharpDataType.@bool;
+            }
+            return CSharpDataType.@string;
         }
 
         #endregion
@@ -398,10 +411,18 @@ namespace ZR.CodeGenerator
         /// <param name="seqs"></param>
         public static List<GenTableColumn> InitGenTableColumn(GenTable genTable, List<DbColumnInfo> dbColumnInfos, List<OracleSeq> seqs = null)
         {
+            OptionsSetting optionsSetting = new();
+
+            var gen = AppSettings.Get<Gen>("gen");
+            var dbConfigs = AppSettings.Get<List<DbConfigs>>("dbConfigs");
+            var dbConfig = dbConfigs.FirstOrDefault(f => f.IsGenerateDb);
+            optionsSetting.DbConfigs = dbConfigs;
+            optionsSetting.Gen = gen ?? throw new CustomException("代码生成节点配置异常");
+            optionsSetting.Gen.GenDbConfig = dbConfig ?? throw new CustomException("代码生成节点数据配置异常");
             List<GenTableColumn> genTableColumns = new();
             foreach (var column in dbColumnInfos)
             {
-                genTableColumns.Add(InitColumnField(genTable, column, seqs));
+                genTableColumns.Add(InitColumnField(genTable, column, seqs, optionsSetting));
             }
             return genTableColumns;
         }
@@ -411,12 +432,13 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="genTable"></param>
         /// <param name="column"></param>
+        /// <param name="optionsSetting"></param>
+        /// <param name="seqs">oracle 序列</param>
         /// <returns></returns>
-        private static GenTableColumn InitColumnField(GenTable genTable, DbColumnInfo column, List<OracleSeq> seqs)
+        private static GenTableColumn InitColumnField(GenTable genTable, DbColumnInfo column, List<OracleSeq> seqs, OptionsSetting optionsSetting)
         {
-            var dbConfig = AppSettings.Get<List<DbConfigs>>("dbConfigs").FirstOrDefault(f => f.IsGenerateDb);
             var dataType = column.DataType;
-            if (dbConfig.DbType == 3)
+            if (optionsSetting.Gen.GenDbConfig.DbType == 3)
             {
                 dataType = column.OracleDataType;
                 var seqName = $"SEQ_{genTable.TableName}_{column.DbColumnName}";
@@ -431,7 +453,7 @@ namespace ZR.CodeGenerator
                 ColumnType = dataType,
                 TableId = genTable.TableId,
                 TableName = genTable.TableName,
-                CsharpType = GetCSharpDatatype(dataType),
+                CsharpType = GetCSharpDatatype(dataType, optionsSetting.Gen.CsharpTypeArr).ToString(),
                 CsharpField = column.DbColumnName.ConvertToPascal("_"),
                 IsRequired = !column.IsNullable,
                 IsIncrement = column.IsIdentity,
