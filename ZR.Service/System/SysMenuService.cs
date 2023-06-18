@@ -251,13 +251,11 @@ namespace ZR.Service
                 .Select((t1, t2, t3) => new RoleMenuExportDto()
                 {
                     MenuName = $"{t1.MenuName}->{t2.MenuName}->{t3.MenuName}",
-                    //MenuName1 = t2.MenuName,
-                    //MenuName2 = t3.MenuName,
                     Path = t2.Path,
                     Component = t2.Component,
                     Perms = t3.Perms,
-                    //MenuType = (MenuType)Enum.Parse(typeof(MenuType), t3.MenuType) //(MenuType)t3.MenuType,
-                    //Status = t3.Status
+                    MenuType = (MenuType)(object)t3.MenuType,
+                    Status = (MenuStatus)(object)t3.Status
                 }).ToList();
         }
 

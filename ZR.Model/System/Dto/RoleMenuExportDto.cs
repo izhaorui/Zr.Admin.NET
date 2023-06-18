@@ -21,10 +21,9 @@ namespace ZR.Model.System.Dto
         public string Component { get; set; }
         [ExcelColumn(Name = "权限字符", Width = 20)]
         public string Perms { get; set; }
-        //[ExcelColumn(Name = "菜单类型")]
-        //[SqlSugar.SugarColumn(SqlParameterDbType = typeof(EnumToStringConvert))]
-        //public MenuType MenuType { get; set; }
-        //[ExcelColumn(Name = "菜单状态")]
-        //public MenuStatus Status { get; set; }
+        [ExcelColumn(Name = "菜单类型")]
+        public MenuType MenuType { get; set; }
+        [ExcelColumn(Name = "菜单状态")]
+        public MenuStatus Status { get; set; }
     }
 }
