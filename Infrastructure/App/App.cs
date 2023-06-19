@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Security.Claims;
@@ -10,16 +12,23 @@ namespace Infrastructure
         /// <summary>
         /// 服务提供器
         /// </summary>
-        public static IServiceProvider ServiceProvider => HttpContext?.RequestServices ?? InternalApp.ServiceProvider;
+        public static IServiceProvider ServiceProvider => InternalApp.ServiceProvider;
         /// <summary>
         /// 获取请求上下文
         /// </summary>
-        public static HttpContext HttpContext => HttpContextLocal.Current();
+        public static HttpContext HttpContext => CatchOrDefault(() => ServiceProvider?.GetService<IHttpContextAccessor>()?.HttpContext);
         /// <summary>
         /// 获取请求上下文用户
         /// </summary>
         public static ClaimsPrincipal User => HttpContext?.User;
-
+        /// <summary>
+        /// 获取Web主机环境
+        /// </summary>
+        public static IWebHostEnvironment WebHostEnvironment => InternalApp.WebHostEnvironment; 
+        /// <summary>
+        /// 获取全局配置
+        /// </summary>
+        public static IConfiguration Configuration => CatchOrDefault(() => InternalApp.Configuration, new ConfigurationBuilder().Build());
         /// <summary>
         /// 获取请求生命周期的服务
         /// </summary>
@@ -60,6 +69,26 @@ namespace Infrastructure
         public static object GetRequiredService(Type type)
         {
             return ServiceProvider.GetRequiredService(type);
+        }
+
+        /// <summary>
+        /// 处理获取对象异常问题
+        /// </summary>
+        /// <typeparam name="T">类型</typeparam>
+        /// <param name="action">获取对象委托</param>
+        /// <param name="defaultValue">默认值</param>
+        /// <returns>T</returns>
+        private static T CatchOrDefault<T>(Func<T> action, T defaultValue = null)
+            where T : class
+        {
+            try
+            {
+                return action();
+            }
+            catch
+            {
+                return defaultValue ?? null;
+            }
         }
     }
 }

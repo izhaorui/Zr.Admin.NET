@@ -89,6 +89,8 @@ builder.Services.AddSwaggerConfig();
 
 var app = builder.Build();
 InternalApp.ServiceProvider = app.Services;
+InternalApp.Configuration = builder.Configuration;
+InternalApp.WebHostEnvironment = app.Environment;
 //初始化db
 builder.Services.AddDb(builder.Configuration, app.Environment);
 

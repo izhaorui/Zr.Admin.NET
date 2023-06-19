@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZR.Admin.WebApi", "ZR.Admin.WebApi\ZR.Admin.WebApi.csproj", "{E5497BB4-B0C1-4794-9FAE-163F626EC399}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.Admin.WebApi", "ZR.Admin.WebApi\ZR.Admin.WebApi.csproj", "{E5497BB4-B0C1-4794-9FAE-163F626EC399}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.Model", "ZR.Model\ZR.Model.csproj", "{B35D73B1-2E22-4636-B88B-10C5E6D8E524}"
 EndProject

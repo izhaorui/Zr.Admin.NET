@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using System;
 
 namespace Infrastructure
@@ -15,12 +14,12 @@ namespace Infrastructure
         /// <summary>
         /// 全局配置构建器
         /// </summary>
-        //public static IConfigurationBuilder ConfigurationBuilder;
+        public static IConfiguration Configuration;
 
         /// <summary>
         /// 获取Web主机环境
         /// </summary>
-        //internal static IWebHostEnvironment WebHostEnvironment;
+        public static IWebHostEnvironment WebHostEnvironment;
 
         /// <summary>
         /// 获取泛型主机环境
