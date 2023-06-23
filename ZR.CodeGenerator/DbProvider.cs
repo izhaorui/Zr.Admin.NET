@@ -20,9 +20,8 @@ namespace ZR.CodeGenerator
         /// <returns></returns>
         public SqlSugarClient GetSugarDbContext(string dbName = "")
         {
-            List<DbConfigs> dbConfigs = AppSettings.Get<List<DbConfigs>>("dbConfigs");
+            DbConfigs configs = AppSettings.Get<DbConfigs>("CodeGenDbConfig");
 
-            DbConfigs configs = dbConfigs.Find(f => f.IsGenerateDb == true);
             string connStr = configs.Conn;
 
             if (!string.IsNullOrEmpty(dbName))

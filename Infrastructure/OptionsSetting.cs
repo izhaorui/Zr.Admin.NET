@@ -19,6 +19,7 @@ namespace Infrastructure
         public JwtSettings JwtSettings { get; set; }
         public Gen Gen { get; set; }
         public List<DbConfigs> DbConfigs { get; set; }
+        public DbConfigs CodeGenDbConfig { get; set; }
     }
     /// <summary>
     /// 发送邮件数据配置
@@ -94,10 +95,6 @@ namespace Infrastructure
         public int DbType { get; set; }
         public string ConfigId { get; set; }
         public bool IsAutoCloseConnection { get; set; }
-        /// <summary>
-        /// 是否代码生成使用库
-        /// </summary>
-        public bool IsGenerateDb { get; set; }
         public string DbName { get; set; }
     }
 

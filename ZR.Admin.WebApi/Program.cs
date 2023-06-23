@@ -62,7 +62,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-//InternalApp.InternalServices = builder.Services;
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 builder.Services.AddAppService();
 //开启计划任务

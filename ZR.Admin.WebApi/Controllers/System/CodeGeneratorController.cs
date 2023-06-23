@@ -2,7 +2,6 @@
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Extensions;
-using IP2Region.Ex.Models;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
@@ -13,7 +12,6 @@ using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
 using ZR.Common;
 using ZR.Model;
-using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
 using ZR.Service.System.IService;
@@ -153,7 +151,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("表不能为空");
             }
-            var dbConfig = AppSettings.Get<List<DbConfigs>>("dbConfigs").FirstOrDefault(f => f.IsGenerateDb);
+            DbConfigs dbConfig = AppSettings.Get<DbConfigs>(nameof(GlobalConstant.CodeGenDbConfig));
             string[] tableNames = tables.Split(',', StringSplitOptions.RemoveEmptyEntries);
             int result = 0;
             foreach (var tableName in tableNames)
@@ -218,29 +216,25 @@ namespace ZR.Admin.WebApi.Controllers
         /// <summary>
         /// 预览代码
         /// </summary>
+        /// <param name="dto"></param>
         /// <param name="tableId"></param>
-        /// <param name="VueVersion"></param>
         /// <returns></returns>
         [HttpPost("preview/{tableId}")]
         [ActionPermissionFilter(Permission = "tool:gen:preview")]
-        public IActionResult Preview(long tableId = 0, int VueVersion = 0)
+        public IActionResult Preview([FromQuery] GenerateDto dto, [FromRoute] int tableId = 0)
         {
-            GenerateDto dto = new()
-            {
-                TableId = tableId,
-                VueVersion = VueVersion
-            };
+            dto.TableId = tableId;
             if (dto == null || dto.TableId <= 0)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            var dbConfig = AppSettings.Get<List<DbConfigs>>("dbConfigs").FirstOrDefault(f => f.IsGenerateDb);
-
+            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GlobalConstant.CodeGenDbConfig));
+            
             dto.DbType = dbConfig.DbType;
             dto.GenTable = genTableInfo;
             dto.IsPreview = true;
-            //生成代码
+            
             CodeGeneratorTool.Generate(dto);
 
             return SUCCESS(dto.GenCodes);
@@ -261,7 +255,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            var dbConfig = AppSettings.Get<List<DbConfigs>>("dbConfigs").FirstOrDefault(f => f.IsGenerateDb);
+            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GlobalConstant.CodeGenDbConfig));
 
             dto.DbType = dbConfig.DbType;
             dto.GenTable = genTableInfo;

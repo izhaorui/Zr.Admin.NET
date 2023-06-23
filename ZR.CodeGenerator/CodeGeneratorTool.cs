@@ -414,9 +414,9 @@ namespace ZR.CodeGenerator
             OptionsSetting optionsSetting = new();
 
             var gen = AppSettings.Get<Gen>("gen");
-            var dbConfigs = AppSettings.Get<List<DbConfigs>>("dbConfigs");
-            var dbConfig = dbConfigs.FirstOrDefault(f => f.IsGenerateDb);
-            optionsSetting.DbConfigs = dbConfigs;
+            var dbConfig = AppSettings.Get<DbConfigs>("CodeGenDbConfig");
+            
+            optionsSetting.CodeGenDbConfig = dbConfig;
             optionsSetting.Gen = gen ?? throw new CustomException("代码生成节点配置异常");
             optionsSetting.Gen.GenDbConfig = dbConfig ?? throw new CustomException("代码生成节点数据配置异常");
             List<GenTableColumn> genTableColumns = new();

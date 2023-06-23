@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System;
 using System.Security.Claims;
 
@@ -9,6 +10,11 @@ namespace Infrastructure
 {
     public static class App
     {
+        /// <summary>
+        /// 全局配置文件
+        /// </summary>
+        public static OptionsSetting OptionsSetting => CatchOrDefault(() => ServiceProvider?.GetService<IOptions<OptionsSetting>>()?.Value);
+
         /// <summary>
         /// 服务提供器
         /// </summary>
