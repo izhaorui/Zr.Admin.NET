@@ -1,0 +1,78 @@
+﻿import request from '@/utils/request'
+
+/**
+* ${genTable.functionName}分页查询
+* @param {查询条件} data
+*/
+export function list${genTable.BusinessName}(query) {
+  return request({
+    url: '/${genTable.ModuleName}/${genTable.BusinessName}/list',
+    method: 'get',
+    data: query,
+  })
+}
+
+$if(replaceDto.ShowBtnAdd)
+/**
+* 新增${genTable.functionName}
+* @param data
+*/
+export function add${genTable.BusinessName}(data) {
+  return request({
+    url: '/${genTable.ModuleName}/${genTable.BusinessName}',
+    method: 'post',
+    data: data,
+  })
+}
+$end
+$if(replaceDto.ShowBtnEdit)
+/**
+* 修改${genTable.functionName}
+* @param data
+*/
+export function update${genTable.BusinessName}(data) {
+  return request({
+    url: '/${genTable.ModuleName}/${genTable.BusinessName}',
+    method: 'PUT',
+    data: data,
+  })
+}
+$end
+/**
+* 获取${genTable.functionName}详情
+* @param {Id}
+*/
+export function get${genTable.BusinessName}(id) {
+  return request({
+    url: '/${genTable.ModuleName}/${genTable.BusinessName}/' + id,
+    method: 'get'
+  })
+}
+
+$if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
+/**
+* 删除${genTable.functionName}
+* @param {主键} pid
+*/
+export function del${genTable.BusinessName}(pid) {
+  return request({
+    url: '/${genTable.ModuleName}/${genTable.BusinessName}/' + pid,
+    method: 'delete'
+  })
+}
+$end
+$if(replaceDto.ShowBtnTruncate)
+// 清空${genTable.functionName}
+export function clear${genTable.BusinessName}() {
+  return request({
+    url: '/${genTable.ModuleName}/${genTable.BusinessName}/clean',
+    method: 'delete'
+  })
+}
+$end
+$if(replaceDto.ShowBtnExport)
+// 导出${genTable.functionName}
+export async function export${genTable.BusinessName}(query) {
+  await downFile('$/{genTable.ModuleName}/${genTable.BusinessName}/export', { ...query })
+}
+$end

@@ -292,7 +292,7 @@ $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-select v-model="form.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
-                <el-option 
+                <el-option
                   v-for="item in $if(column.DictType != "")options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" 
                   :key="item.dictValue" 
                   :label="item.dictLabel" 

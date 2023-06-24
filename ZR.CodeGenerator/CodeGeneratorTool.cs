@@ -80,6 +80,9 @@ namespace ZR.CodeGenerator
             }
             GenerateVueJs(dto);
             GenerateSql(dto);
+            GenerateAppVueViews(replaceDto, dto);
+            GenerateAppVueFormViews(replaceDto, dto);
+            GenerateAppJs(dto);
             dto.ReplaceDto = replaceDto;
             if (dto.IsPreview) return;
 
@@ -284,6 +287,52 @@ namespace ZR.CodeGenerator
         }
         #endregion
 
+        #region app页面
+
+        /// <summary>
+        /// 列表页面
+        /// </summary>
+        /// <param name="generateDto"></param>
+        private static void GenerateAppVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
+        {
+            var fileName = Path.Combine("app", "vue2.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
+
+            tpl.Set("options", generateDto.GenTable?.Options);
+
+            var result = tpl.Render();
+            var fullPath = Path.Combine(generateDto.AppVuePath, "pages", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{replaceDto.ViewFileName.FirstLowerCase()}", "index.vue");
+            generateDto.GenCodes.Add(new GenCode(20, "uniapp页面", fullPath, result));
+        }
+        private static void GenerateAppVueFormViews(ReplaceDto replaceDto, GenerateDto generateDto)
+        {
+            var fileName = Path.Combine("app", "form.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
+
+            tpl.Set("options", generateDto.GenTable?.Options);
+
+            var result = tpl.Render();
+            var fullPath = Path.Combine(generateDto.AppVuePath, "pages", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{replaceDto.ViewFileName.FirstLowerCase()}", "edit.vue");
+            generateDto.GenCodes.Add(new GenCode(20, "uniapp表单", fullPath, result));
+        }
+        /// <summary>
+        /// 生成vue页面api
+        /// </summary>
+        /// <param name="generateDto"></param>
+        /// <returns></returns>
+        public static void GenerateAppJs(GenerateDto generateDto)
+        {
+            var filePath = Path.Combine("app", "api.txt");
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, filePath);
+            var result = tpl.Render();
+
+            string fileName = generateDto.GenTable.BusinessName.ToLower() + ".js";
+            string fullPath = Path.Combine(generateDto.AppVuePath, "api", generateDto.GenTable.ModuleName.FirstLowerCase(), fileName);
+
+            generateDto.GenCodes.Add(new GenCode(21, "uniapp Api", fullPath, result));
+        }
+        #endregion
+
         #region 帮助方法
 
         /// <summary>
@@ -415,7 +464,7 @@ namespace ZR.CodeGenerator
 
             var gen = AppSettings.Get<Gen>("gen");
             var dbConfig = AppSettings.Get<DbConfigs>("CodeGenDbConfig");
-            
+
             optionsSetting.CodeGenDbConfig = dbConfig;
             optionsSetting.Gen = gen ?? throw new CustomException("代码生成节点配置异常");
             optionsSetting.Gen.GenDbConfig = dbConfig ?? throw new CustomException("代码生成节点数据配置异常");
@@ -533,6 +582,7 @@ namespace ZR.CodeGenerator
                 options.Data.Set("index", "$");//特殊标签替换
                 options.Data.Set("confirm", "$");//特殊标签替换
                 options.Data.Set("nextTick", "$");
+                options.Data.Set("tab", "$");
                 options.Data.Set("replaceDto", replaceDto);
                 options.Data.Set("options", dto.GenOptions);
                 options.Data.Set("subTableOptions", dto.SubTableOptions);

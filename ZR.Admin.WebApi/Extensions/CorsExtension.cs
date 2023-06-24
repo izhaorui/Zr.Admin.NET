@@ -9,7 +9,7 @@
         /// <param name="configuration"></param>
         public static void AddCors(this IServiceCollection services, IConfiguration configuration)
         {
-            var corsUrls = configuration["corsUrls"]?.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var corsUrls = configuration.GetSection("corsUrls").Get<string[]>();
 
             //配置跨域
             services.AddCors(c =>

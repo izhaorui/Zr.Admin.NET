@@ -57,6 +57,10 @@ namespace ZR.CodeGenerator.Model
         /// vue代码路径
         /// </summary>
         public string VueParentPath { get; set; }
+        /// <summary>
+        /// uniapp存储路径
+        /// </summary>
+        public string AppVuePath { get; set; } = "ZRAdminn-app";
         #endregion
         public ReplaceDto ReplaceDto { get; set; }
     }

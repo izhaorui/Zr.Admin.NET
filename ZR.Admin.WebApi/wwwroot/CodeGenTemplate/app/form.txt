@@ -1,0 +1,206 @@
+﻿<template>
+  <view class="edit-form">
+    <u--form labelPosition="left" :model="form" labelWidth="90px" :rules="rules" ref="uForm">
+$foreach(column in genTable.Columns)
+$set(columnName = column.CsharpFieldFl)
+$set(value = "item.value")
+$set(number = "")
+$set(labelName = column.ColumnComment)
+$if(column.CsharpType == "int" || column.CsharpType == "long")
+    $set(value = "parseInt(item.value)")
+    $set(number = ".number")
+$end
+
+$if(column.IsPK || column.IsIncrement)
+$if(column.IsPK && column.IsIncrement == false)
+            <u-form-item label="${labelName}" prop="${columnName}">
+              <u--input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"></u--input>
+            </u-form-item>
+$else
+            <u-form-item label="${labelName}" prop="${columnName}" v-if="opertype != 1">
+              <u--input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="true"/>
+            </u-form-item>
+$end
+$else
+$if(column.HtmlType == "radio" || column.HtmlType == "selectRadio")
+      <u-form-item label="${labelName}" prop="${columnName}">
+            <u-radio-group v-model="form.${columnName}">
+              <u-radio v-for="item in ${if(column.DictType != "")}dict.type.${column.DictType}${else}${column.CsharpFieldFl}Options$end" :name="${value}" class="margin-right-xl">{{item.label}}</u-radio>
+            </u-radio-group>
+      </u-form-item>
+$elseif(column.HtmlType == "checkbox")
+      <u-form-item label="${labelName}" prop="${columnName}">
+      <view class="">
+        <u-checkbox-group v-model="form.${columnName}Checked">
+          <u-checkbox :customStyle="{marginRight: '20px', marginBottom: '15px'}" v-for="(item, index) in ${if(column.DictType != "")}dict.type.${column.DictType}${else}${column.CsharpFieldFl}Options$end" :key="index"
+            :label="item.label" :name="${value}">
+          </u-checkbox>
+        </u-checkbox-group>
+        </view>
+      </u-form-item>
+$elseif(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
+            <u-form-item label="${labelName}" prop="${columnName}">
+              <u-number-box v-model="form.${columnName}"></u-number-box>
+            </u-form-item>
+$elseif(column.HtmlType == "datetime" || column.HtmlType == "month")
+      <u-form-item label="${labelName}" prop="${columnName}">
+              <uni-datetime-picker v-model="form.${columnName}" />
+      </u-form-item>
+$elseif(column.HtmlType == "textarea")
+      <u-form-item label="${labelName}" prop="${columnName}">
+        <u--textarea v-model="form.${columnName}" placeholder="请输入内容" count ></u--textarea>
+      </u-form-item>
+$elseif(column.HtmlType == "imageUpload" || column.HtmlType == "fileUpload")
+      <u-form-item label="${labelName}" prop="${columnName}">
+        <UploadFile v-model="form.${columnName}"></UploadFile>
+      </u-form-item>
+$elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
+            <u-form-item label="${labelName}" prop="${columnName}">
+              <uni-data-select v-model="form.${columnName}" :clear="true" :localdata="${if(column.DictType != "")}dict.type.${column.DictType}${else}${column.CsharpFieldFl}Options$end"
+              format="{label} - {value}"></uni-data-select>
+            </u-form-item>
+$else
+            <u-form-item label="${labelName}" prop="${columnName}">
+              <u--input v-model${number}="form.${columnName}" placeholder="请输入${labelName}" ${column.DisabledStr}/>
+            </u-form-item>
+$end
+$end
+$end
+
+    </u--form>
+
+    <view class="btn-group">
+      <view class="btn-item">
+        <u-button text="取消" shape="circle" icon="close" type="info" @click="handleCancel"></u-button>
+      </view>
+      <view class="btn-item">
+        <u-button text="确定" shape="circle" icon="checkmark" type="primary" @click="submit"></u-button>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import "@/static/scss/page.scss";
+  import {
+    get${genTable.BusinessName},
+$if(replaceDto.ShowBtnAdd) 
+    add${genTable.BusinessName},
+$end
+$if(replaceDto.ShowBtnEdit) 
+    update${genTable.BusinessName},
+$end
+}
+from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+ 
+  export default {
+    dicts: [
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "radio" || item.HtmlType.Contains("select") || item.HtmlType == "checkbox") && item.DictType != "")
+      "${item.DictType}",
+$end
+$end
+    ],
+    data() {
+      return {
+        form: {},
+        rules: {
+          xxx: {},
+$foreach(column in genTable.Columns)
+$if(column.IsRequired && column.IsIncrement == false)
+          ${column.CsharpFieldFl}: [{
+            required: true, 
+            message: "${column.ColumnComment}不能为空", 
+            trigger: [ 'change', 'blur' ],
+$if(column.CsharpType == "int" || column.CsharpType == "long")            type: "number"$end 
+          }],
+$end
+$end
+        },
+        opertype: 0,
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType == "")
+        // ${item.ColumnComment}选项列表 格式 eg:{ label: '标签', value: '0'}
+        ${item.CsharpFieldFl}Options: [],
+$end
+$end
+      }
+    },
+    onReady() {
+      // 需要在onReady中设置规则
+      setTimeout(() => {
+        this.${refs}refs.uForm.setRules(this.rules)
+      }, 300)
+    },
+    onLoad(e) {
+      this.opertype = e.opertype
+      if (e.id) {
+        get${genTable.BusinessName}(e.id).then(res => {
+          const {
+            code,
+            data
+          } = res
+          if (code == 200) {
+            this.form = {
+              ...data,
+              $foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+              ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
+$end
+$end
+            }
+          }
+        })
+      } else {
+        this.reset()
+      }
+    },
+    methods: {
+      reset(){
+      this.form = {
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "checkbox"))
+        ${item.CsharpFieldFl}Checked: [],
+$else
+        $item.CsharpFieldFl: undefined,
+$end
+$end
+      };
+    },
+      submit() {
+        this.${refs}refs.uForm.validate().then(res => {
+          this.${modal}modal.msg('表单校验通过')
+
+          $foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+          this.form.${item.CsharpFieldFl} = this.form.${item.CsharpFieldFl}Checked.toString();
+$end
+$end
+          if (this.form.${replaceDto.FistLowerPk} != undefined && this.opertype == 2) {
+            update${genTable.BusinessName}(this.form).then((res) => {
+                this.${modal}modal.msgSuccess("修改成功")
+            })
+              .catch(() => {})
+          } else {
+            add${genTable.BusinessName}(this.form).then((res) => {
+                this.${modal}modal.msgSuccess("新增成功")
+              })
+              .catch(() => {})
+          }
+        }).catch(errors => {
+          this.${modal}modal.msg('表单校验失败')
+        })
+      },
+      handleCancel() {
+        uni.navigateBack()
+      }
+    }
+  }
+</script>
+
+<style scoped>
+  .btn-wrap {
+    margin: 150rpx auto 0 auto;
+    width: 80%
+  }
+</style>
