@@ -101,7 +101,7 @@ namespace ZR.Service.System
         public string GetdirPath(string storePath = "", bool byTimeStore = true)
         {
             DateTime date = DateTime.Now;
-            string timeDir = date.ToString("yyyyMMdd");
+            string timeDir = date.ToString("yyyy/MMdd");
 
             if (!string.IsNullOrEmpty(storePath))
             {
@@ -116,8 +116,7 @@ namespace ZR.Service.System
             {
                 str = Guid.NewGuid().ToString();
             }
-            MD5 md5 = MD5.Create();
-            return BitConverter.ToString(md5.ComputeHash(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
+            return BitConverter.ToString(MD5.HashData(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
         }
 
         public Task<long> InsertFile(SysFile file)
