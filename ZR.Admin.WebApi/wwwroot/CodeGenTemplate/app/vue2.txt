@@ -37,6 +37,12 @@ $end
 $end
 $end
       <view class="info-btn-wrap justify-end">
+$if(replaceDto.ShowBtnView)
+        <view class="tag-item">
+          <u-tag text="详情" plain shape="circle" type="info" icon="eye" @click="handleView(item)"
+            v-if="checkPermi(['${replaceDto.PermissionPrefix}:query'])"></u-tag>
+        </view>
+$end
 $if(replaceDto.ShowBtnEdit)
         <view class="tag-item">
           <u-tag text="编辑" plain shape="circle" icon="edit-pen" @click="handleEdit(item)"
@@ -128,25 +134,12 @@ $end
   import "@/static/scss/page.scss";
   import { 
     list${genTable.BusinessName},
-    get${genTable.BusinessName},
-$if(replaceDto.ShowBtnAdd) 
-    add${genTable.BusinessName},
-$end
 $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
     del${genTable.BusinessName},
-$end 
-$if(replaceDto.ShowBtnEdit) 
-    update${genTable.BusinessName},
 $end
-$if(replaceDto.ShowBtnTruncate) 
-    clear${genTable.BusinessName},
-$end
-$if(showCustomInput) 
-    changeSort 
-$end 
 } 
-from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
-  
+  from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+
   import {
     getDate
   } from '@/utils/common.js'
@@ -216,12 +209,22 @@ $end
           }
         })
       },
+$if(replaceDto.ShowBtnAdd)
       handleAdd() {
         this.${tab}tab.navigateTo('./edit?opertype=1')
       },
+$end
+$if(replaceDto.ShowBtnEdit)
       handleEdit(e) {
         this.${tab}tab.navigateTo('./edit?opertype=2&${replaceDto.FistLowerPk}=' + e.id)
       },
+$end
+$if(replaceDto.ShowBtnView)
+      handleView(e) {
+        this.${tab}tab.navigateTo('./edit?opertype=3&${replaceDto.FistLowerPk}=' + e.id)
+      },
+$end
+$if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
       handleDelete(row) {
         const Ids = row.${replaceDto.FistLowerPk};
         
@@ -234,6 +237,7 @@ $end
         })
         .catch(() => {});
       },
+$end
       resetQuery() {
         this.${refs}refs.uForm.resetFields()
 $foreach(column in genTable.Columns)

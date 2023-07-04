@@ -73,7 +73,7 @@ $end
       <view class="btn-item">
         <u-button text="取消" shape="circle" icon="close" type="info" @click="handleCancel"></u-button>
       </view>
-      <view class="btn-item">
+      <view class="btn-item" v-if="opertype != 3">
         <u-button text="确定" shape="circle" icon="checkmark" type="primary" @click="submit"></u-button>
       </view>
     </view>
@@ -92,7 +92,7 @@ $if(replaceDto.ShowBtnEdit)
 $end
 }
 from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
- 
+
   export default {
     dicts: [
 $foreach(item in genTable.Columns)
