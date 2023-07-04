@@ -105,7 +105,7 @@ namespace ZR.Model.System.Generate
 
     public class Options
     {
-        public long ParentMenuId { get; set; } = 0;
+        public long ParentMenuId { get; set; }
         public string SortType { get; set; } = "asc";
         public string SortField { get; set; } = string.Empty;
         public string TreeCode { get; set; } = string.Empty;
@@ -128,5 +128,9 @@ namespace ZR.Model.System.Generate
         /// 自动生成菜单
         /// </summary>
         public bool GenerateMenu { get; set; }
+        /// <summary>
+        /// 操作按钮样式
+        /// </summary>
+        public int OperBtnStyle { get; set; } = 1;
     }
 }

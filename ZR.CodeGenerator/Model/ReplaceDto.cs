@@ -69,5 +69,9 @@ namespace ZR.CodeGenerator.Model
         /// vue页面文件名
         /// </summary>
         public string ViewFileName { get; set; }
+        /// <summary>
+        /// 操作按钮样式
+        /// </summary>
+        public int OperBtnStyle { get; set; }
     }
 }

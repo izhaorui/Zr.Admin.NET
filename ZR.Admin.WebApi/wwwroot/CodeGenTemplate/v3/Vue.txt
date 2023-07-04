@@ -201,6 +201,19 @@ $end
 $end
       <el-table-column label="操作" align="center" width="160">
         <template #default="scope">
+$if(replaceDto.OperBtnStyle == 2)
+        <el-button-group>
+$if(replaceDto.ShowBtnView)
+          <el-button text type="primary" icon="view" @click="handlePreview(scope.row)"></el-button>
+$end
+$if(replaceDto.ShowBtnEdit)
+          <el-button text v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" type="success" icon="edit" title="编辑" @click="handleUpdate(scope.row)"></el-button>
+$end
+$if(replaceDto.ShowBtnDelete)
+          <el-button text v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="delete" title="删除" @click="handleDelete(scope.row)"></el-button>
+$end
+        </el-button-group>
+$else
 $if(replaceDto.ShowBtnView)
           <el-button type="primary" icon="view" @click="handlePreview(scope.row)"></el-button>
 $end
@@ -209,6 +222,7 @@ $if(replaceDto.ShowBtnEdit)
 $end
 $if(replaceDto.ShowBtnDelete)
           <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="delete" title="删除" @click="handleDelete(scope.row)"></el-button>
+$end
 $end
         </template>
       </el-table-column>

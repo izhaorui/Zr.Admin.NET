@@ -50,7 +50,8 @@ namespace ZR.CodeGenerator
                 ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5),
                 ShowBtnTruncate = dto.GenTable.Options.CheckedBtn.Any(f => f == 6),
                 ShowBtnMultiDel = dto.GenTable.Options.CheckedBtn.Any(f => f == 7),
-                ViewFileName = dto.GenTable.BusinessName.FirstUpperCase()
+                ViewFileName = dto.GenTable.BusinessName.FirstUpperCase(),
+                OperBtnStyle = dto.GenTable.Options.OperBtnStyle
             };
             var columns = dto.GenTable.Columns;
 
