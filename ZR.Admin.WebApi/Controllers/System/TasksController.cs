@@ -253,11 +253,12 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "执行任务", BusinessType = BusinessType.OTHER)]
         public async Task<IActionResult> Run(string id)
         {
-            if (!_tasksQzService.Any(m => m.ID == id))
+            var result = await _tasksQzService.IsAnyAsync(m => m.ID == id);
+            if (!result)
             {
                 throw new CustomException("任务不存在");
             }
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
+            var tasksQz = await _tasksQzService.GetFirstAsync(m => m.ID == id);
             var taskResult = await _schedulerServer.RunTaskScheduleAsync(tasksQz);
 
             return ToResponse(taskResult);
