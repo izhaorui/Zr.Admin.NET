@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ZR.Model.System.Dto
 {
-    public class TasksQueryDto
+    public class TasksQueryDto : PagerInfo
     {
         /// <summary>
         /// 查询字符串
@@ -12,6 +12,7 @@ namespace ZR.Model.System.Dto
         public string QueryText { get; set; }
         public int? TaskType { get; set; }
         public int? TriggerType { get; set; }
+        public int? IsStart { get; set; }
     }
 
     /// <summary>

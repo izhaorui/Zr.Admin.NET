@@ -1,7 +1,12 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
 using Infrastructure.Extensions;
+using SqlSugar;
 using System;
+using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
+using ZR.Repository;
 using ZR.Service.System.IService;
 
 namespace ZR.Service.System
@@ -12,6 +17,26 @@ namespace ZR.Service.System
     [AppService(ServiceType = typeof(ISysTasksQzService), ServiceLifetime = LifeTime.Transient)]
     public class SysTasksQzService : BaseService<SysTasks>, ISysTasksQzService
     {
+        /// <summary>
+        /// 查询任务
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public PagedInfo<SysTasks> SelectTaskList(TasksQueryDto parm)
+        {
+            var predicate = Expressionable.Create<SysTasks>();
+
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.QueryText),
+                m => m.Name.Contains(parm.QueryText) ||
+                m.JobGroup.Contains(parm.QueryText) ||
+                m.AssemblyName.Contains(parm.QueryText));
+            predicate.AndIF(parm.TaskType != null, m => m.TaskType == parm.TaskType);
+            predicate.AndIF(parm.IsStart != null, m => m.IsStart == parm.IsStart);
+
+            return Queryable().Where(predicate.ToExpression())
+                .ToPage(parm);
+        }
+
         /// <summary>
         /// 添加任务
         /// </summary>

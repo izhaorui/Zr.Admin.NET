@@ -8,7 +8,6 @@ using Quartz;
 using SqlSugar;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
@@ -40,19 +39,9 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpGet("list")]
         [ActionPermissionFilter(Permission = "monitor:job:list")]
-        public IActionResult ListTask([FromQuery] TasksQueryDto parm, [FromQuery] PagerInfo pager)
+        public IActionResult ListTask([FromQuery] TasksQueryDto parm)
         {
-            //开始拼装查询条件
-            var predicate = Expressionable.Create<SysTasks>();
-
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.QueryText),
-                m => m.Name.Contains(parm.QueryText) ||
-                m.JobGroup.Contains(parm.QueryText) ||
-                m.AssemblyName.Contains(parm.QueryText));
-            predicate.AndIF(parm.TaskType != null, m => m.TaskType == parm.TaskType);
-
-            var response = _tasksQzService.GetPages(predicate.ToExpression(), pager);
-
+            var response = _tasksQzService.SelectTaskList(parm);
             return SUCCESS(response, TIME_FORMAT_FULL);
         }
 
