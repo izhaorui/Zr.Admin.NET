@@ -62,9 +62,10 @@ $end
       <u-empty mode="list" :marginTop="140" v-if="total == 0"></u-empty>
       <uni-pagination v-else show-icon="true" :total="total" :pageSize="queryParams.pageSize"
         :current="queryParams.pageNum" @change="getData"></uni-pagination>
+      <view class="text-grey padding text-center"> 共 {{ total }}条数据 </view>
     </view>
 
-    <u-popup :show="show" mode="top" @close="show = false" @open="show = true">
+    <u-popup :show="show" mode="bottom" @close="show = false" @open="show = true">
       <view class="search-form">
         <view class="search-title">搜索</view>
         <u--form labelPosition="left" :model="queryParams" labelWidth="100px" ref="uForm">
