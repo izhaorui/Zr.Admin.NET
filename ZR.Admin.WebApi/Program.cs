@@ -121,8 +121,11 @@ app.UseAuthorization();
 
 //开启缓存
 app.UseResponseCaching();
-//恢复/启动任务
-app.UseAddTaskSchedulers();
+if (builder.Environment.IsProduction())
+{
+    //恢复/启动任务
+    app.UseAddTaskSchedulers();
+}
 //使用swagger
 app.UseSwagger();
 //启用客户端IP限制速率
