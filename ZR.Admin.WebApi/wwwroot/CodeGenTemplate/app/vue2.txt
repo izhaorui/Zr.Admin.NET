@@ -31,7 +31,7 @@ $end
 $else
       <view class="info-line">
         <text class="label-name">${labelName}</text>
-        <text class="text-success">{{item.${columnName}}}</text>
+        <text>{{item.${columnName}}}</text>
       </view>
 $end
 $end
