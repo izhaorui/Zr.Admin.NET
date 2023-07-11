@@ -5,9 +5,9 @@ using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ZR.Common;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Model.System.Vo;
 using ZR.Service.System.IService;
 
@@ -30,13 +30,12 @@ namespace ZR.Service.System
         /// </summary>
         /// <param name="dept"></param>
         /// <returns></returns>
-        public List<SysDept> GetSysDepts(SysDept dept)
+        public List<SysDept> GetSysDepts(SysDeptQueryDto dept)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<SysDept>();
-            predicate = predicate.And(it => it.DelFlag == "0");
+            predicate = predicate.And(it => it.DelFlag == 0);
             predicate = predicate.AndIF(dept.DeptName.IfNotEmpty(), it => it.DeptName.Contains(dept.DeptName));
-            predicate = predicate.AndIF(dept.Status.IfNotEmpty(), it => it.Status == dept.Status);
+            predicate = predicate.AndIF(dept.Status != null, it => it.Status == dept.Status);
 
             var response = GetList(predicate.ToExpression());
 
@@ -113,7 +112,7 @@ namespace ZR.Service.System
         private void UpdateParentDeptStatusNormal(SysDept dept)
         {
             long[] depts = Tools.SpitLongArrary(dept.Ancestors);
-            dept.Status = "0";
+            dept.Status = 0;
             dept.Update_time = DateTime.Now;
 
             Update(dept, it => new { it.Update_by, it.Update_time, it.Status }, f => depts.Contains(f.DeptId));
@@ -127,7 +126,7 @@ namespace ZR.Service.System
         /// <param name="oldAncestors">旧的父ID集合</param>
         public void UpdateDeptChildren(long deptId, string newAncestors, string oldAncestors)
         {
-            List<SysDept> children = GetChildrenDepts(GetSysDepts(new SysDept()), deptId);
+            List<SysDept> children = GetChildrenDepts(GetSysDepts(new SysDeptQueryDto()), deptId);
 
             foreach (var child in children)
             {

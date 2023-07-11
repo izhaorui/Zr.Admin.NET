@@ -69,16 +69,16 @@ GO
 if OBJECT_ID(N'sys_dept',N'U') is not NULL DROP TABLE sys_dept
 GO
 CREATE TABLE sys_dept  (
-  deptId bigint NOT NULL PRIMARY KEY IDENTITY(100,1) ,-- '部门id',
-  parentId bigint NULL DEFAULT 0 ,					-- '父部门id',
+  deptId bigint NOT NULL PRIMARY KEY IDENTITY(100,1) ,		-- '部门id',
+  parentId bigint NULL DEFAULT 0 ,				-- '父部门id',
   ancestors varchar(50)  NULL DEFAULT '' ,			-- '祖级列表',
   deptName varchar(30)  NULL DEFAULT '' ,			-- '部门名称',
-  orderNum int NULL DEFAULT 0 ,						-- '显示顺序',
+  orderNum int NULL DEFAULT 0 ,					-- '显示顺序',
   leader varchar(20)  NULL DEFAULT NULL ,			-- '负责人',
   phone varchar(11)  NULL DEFAULT NULL ,			-- '联系电话',
   email varchar(50)  NULL DEFAULT NULL ,			-- '邮箱',
-  status varchar(1)  NULL DEFAULT '0' ,				-- '部门状态（0正常 1停用）',
-  delFlag varchar(1)  NULL DEFAULT '0' ,			-- '删除标志（0代表存在 2代表删除）',
+  status int  NULL DEFAULT 0 ,					-- '部门状态（0正常 1停用）',
+  delFlag int  NULL DEFAULT 0 ,					-- '删除标志（0代表存在 2代表删除）',
   create_by varchar(64)  NULL DEFAULT '' ,			-- '创建者',
   create_time datetime NULL DEFAULT NULL ,			-- '创建时间',
   update_by varchar(64)  NULL DEFAULT '' ,			-- '更新者',

@@ -4,11 +4,11 @@ USE ZrAdmin
 GO
 INSERT INTO sys_tasks VALUES ('1410905433996136448', '测试任务', 'SYSTEM', '0 0/10 * * * ? ', 'ZR.Tasks', 'TaskScheduler.Job_SyncTest', NULL, 0, '2021-07-02 18:17:31', '9999-12-31 00:00:00', 1, 1, 1, NULL, '2021-07-02 18:17:23', '2021-07-02 18:17:31', 'admin', NULL, NULL, 1, '', '', '');
 GO
-INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (0,   'XXX公司', 0,'0', '0', 'admin', GETDATE() );
-INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (100, '研发部门',1,'0', '0', 'admin', GETDATE());
-INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (100, '市场部门',2,'0', '0', 'admin', GETDATE());
-INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (100, '测试部门',3,'0', '0', 'admin', GETDATE());
-INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (100, '财务部门',4,'0', '0', 'admin', GETDATE());
+INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (0,   'XXX公司', 0,0, 0, 'admin', GETDATE() );
+INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (100, '研发部门',1,0, 0, 'admin', GETDATE());
+INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (100, '市场部门',2,0, 0, 'admin', GETDATE());
+INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (100, '测试部门',3,0, 0, 'admin', GETDATE());
+INSERT INTO sys_dept(parentId, deptName, orderNum, status, delFlag, create_by, create_time) VALUES (100, '财务部门',4,0, 0, 'admin', GETDATE());
 GO
 INSERT INTO sys_dict_type VALUES ('用户性别', 'sys_user_sex', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '用户性别列表', NULL);
 INSERT INTO sys_dict_type VALUES ('菜单状态', 'sys_show_hide', '0', 'Y', 'admin', '2021-02-24 10:55:26', '', NULL, '菜单状态列表', NULL);

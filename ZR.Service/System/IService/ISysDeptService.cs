@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Model.System.Vo;
-using ZR.Repository;
 
 namespace ZR.Service.System.IService
 {
     public interface ISysDeptService : IBaseService<SysDept>
     {
-        List<SysDept> GetSysDepts(SysDept dept);
+        List<SysDept> GetSysDepts(SysDeptQueryDto dept);
         string CheckDeptNameUnique(SysDept dept);
         int InsertDept(SysDept dept);
         int UpdateDept(SysDept dept);
