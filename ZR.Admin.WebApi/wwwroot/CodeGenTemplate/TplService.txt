@@ -51,7 +51,7 @@ $end
 $end
             var response = Queryable()
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
-                .Includes(x => x.${genTable.SubTable.ClassName}Nav) //填充子对象
+                //.Includes(x => x.${genTable.SubTable.ClassName}Nav) //填充子对象
 $end
 $if(genTable.Options.SortField != "" && genTable.Options.SortField != null)
                 //.OrderBy("${genTable.Options.SortField} ${genTable.Options.SortType}")
@@ -91,13 +91,34 @@ $end
 $end
 
         /// <summary>
+        /// 获取详情
+        /// </summary>
+        /// <param name="${replaceDto.PKName}"></param>
+        /// <returns></returns>
+        public ${replaceDto.ModelTypeName} GetInfo(${replaceDto.PKType} ${replaceDto.PKName})
+        {
+            var response = Queryable()
+$if(null != genTable.SubTableName && "" != genTable.SubTableName)
+                .Includes(x => x.${genTable.SubTable.ClassName}Nav) //填充子对象
+$end
+                .Where(x => x.${replaceDto.PKName} == ${replaceDto.PKName})
+                .First();
+
+            return response;
+        }
+
+        /// <summary>
         /// 添加${genTable.FunctionName}
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
         public int Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} model)
         {
+$if(null != genTable.SubTableName && "" != genTable.SubTableName)
+            return Context.InsertNav(model).Include(s1 => s1.${genTable.SubTable.ClassName}Nav).ExecuteCommand() ? 1 : 0;
+$else
             return Add(model, true);
+$end
         }
 
         /// <summary>
@@ -116,7 +137,11 @@ $end
 ${end}
             //});
             //return response;
+$if(null != genTable.SubTableName && "" != genTable.SubTableName)
+            return Context.UpdateNav(model).Include(z1 => z1.${genTable.SubTable.ClassName}Nav).ExecuteCommand() ? 1 : 0;
+$else
             return Update(model, true);
+$end
         }
 $if(replaceDto.ShowBtnTruncate)
         /// <summary>

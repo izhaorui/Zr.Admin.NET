@@ -68,7 +68,7 @@ $end
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:query")]
         public IActionResult Get${replaceDto.ModelTypeName}(${replaceDto.PKType} ${replaceDto.PKName})
         {
-            var response = _${replaceDto.ModelTypeName}Service.GetFirst(x => x.${replaceDto.PKName} == ${replaceDto.PKName});
+            var response = _${replaceDto.ModelTypeName}Service.GetInfo(${replaceDto.PKName});
             
             var info = response.Adapt<${replaceDto.ModelTypeName}>();
             return SUCCESS(info);

@@ -118,14 +118,17 @@ $end
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <!-- 数据区域 -->
-    <el-table 
-      :data="dataList" 
-      v-loading="loading" 
-      ref="table" 
-      border 
-      highlight-current-row 
+    <el-table
+      :data="dataList"
+      v-loading="loading"
+      ref="table"
+      border
+      header-cell-class-name="el-table-header-cell"
+      highlight-current-row
       @sort-change="sortChange"
+$if(sub)
+      @row-click="rowClick"
+$end
 $if(replaceDto.ShowBtnMultiDel)
       @selection-change="handleSelectionChange"
 $end
@@ -133,30 +136,7 @@ $end
 $if(replaceDto.ShowBtnMultiDel)
       <el-table-column type="selection" width="50" align="center"/>
 $end
-$if(null != genTable.SubTableName && "" != genTable.SubTableName && genTable.TplCategory == "subNav")
-      <el-table-column type="expand">
-        <template #default="props">
-          <el-descriptions border>
-$foreach(subColumn in genSubTable.Columns)
-            <el-descriptions-item label="${subColumn.ColumnComment}">{{ props.row.$tool.FirstLowerCase(genTable.SubTable.ClassName)Nav.${subColumn.CsharpFieldFl} }}</el-descriptions-item>
-$end
-          </el-descriptions>
-        </template>
-      </el-table-column>
-$end
-$if(null != genTable.SubTableName && "" != genTable.SubTableName && genTable.TplCategory == "subNavMore")
-      <el-table-column type="expand">
-        <template #default="props">
-          <el-table :data="props.row.$tool.FirstLowerCase(genTable.SubTable.ClassName)Nav" header-row-class-name="text-navy">
-$foreach(subColumn in genSubTable.Columns)
-$if(subColumn.IsList == true)
-            <el-table-column prop="${subColumn.CsharpFieldFl}" label="${subColumn.ColumnComment}" align="center"/>
-$end
-$end
-        </el-table>
-        </template>
-      </el-table-column>
-$end
+
 $foreach(column in genTable.Columns)
 $set(labelName = column.ColumnComment)
 $set(showToolTipHtml = "")
@@ -199,7 +179,7 @@ $else
 $end
 $end
 $end
-      <el-table-column label="操作" align="center" width="160">
+      <el-table-column label="操作" width="160">
         <template #default="scope">
 $if(replaceDto.OperBtnStyle == 2)
         <el-button-group>
@@ -227,10 +207,35 @@ $end
         </template>
       </el-table-column>
     </el-table>
-    <pagination class="mt10" background :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
+    <pagination :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
+
+$* 一对一/一对多列表显示详情 *$
+$if(sub)
+    <el-table :data="$tool.FirstLowerCase(genTable.SubTable.ClassName)List" header-row-class-name="text-navy">
+      <el-table-column label="序号" type="index" width="80" />
+$foreach(column in genSubTable.Columns)
+$set(columnName = column.CsharpFieldFl)
+$if(column.IsList == true)
+$if(column.HtmlType == "checkbox" || column.HtmlType.Contains("select") || column.HtmlType == "radio")
+      <el-table-column prop="${columnName}" label="${column.ColumnComment}">
+        <template #default="scope">
+$if(column.HtmlType == "checkbox")
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
+$else
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
+$end
+        </template>
+      </el-table-column>
+$else
+      <el-table-column prop="${column.CsharpFieldFl}" label="${column.ColumnComment}"/>
+$end
+$end
+$end
+    </el-table>
+$end
 
     <!-- 添加或修改${genTable.functionName}对话框 -->
-    <el-dialog :title="title" :lock-scroll="false" v-model="open" >
+    <el-dialog :title="title" :lock-scroll="false" v-model="open" ${if(sub)}:fullscreen="fullScreen"$end>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
 $foreach(column in genTable.Columns)
@@ -286,7 +291,7 @@ $elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}"${column.DisabledStr}>
-                <el-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
+                <el-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -310,7 +315,7 @@ $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
                   v-for="item in $if(column.DictType != "")options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" 
                   :key="item.dictValue" 
                   :label="item.dictLabel" 
-                  :value="${value}"></el-option>
+                  :value="item.dictValue"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -340,6 +345,67 @@ $end
 $end
 $end
         </el-row>
+$* 子表信息 *$
+$if(sub)
+        <el-divider content-position="center">${genTable.SubTable.FunctionName}信息</el-divider>
+        <el-row :gutter="10" class="mb8">
+          <el-col :span="1.5">
+            <el-button type="primary" icon="Plus" @click="handleAdd${genTable.SubTable.ClassName}">添加</el-button>
+          </el-col>
+          <el-col :span="1.5">
+            <el-button type="danger" icon="Delete" @click="handleDelete${genTable.SubTable.ClassName}">删除</el-button>
+          </el-col>
+          <el-col :span="1.5">
+            <el-button type="info" icon="FullScreen" @click="fullScreen = !fullScreen">全屏</el-button>
+          </el-col>
+        </el-row>
+        <el-table :data="${tool.FirstLowerCase(genTable.SubTable.ClassName)}List" :row-class-name="row${genTable.SubTable.ClassName}Index" @selection-change="handle${genTable.SubTable.ClassName}SelectionChange" ref="${genTable.SubTable.ClassName}Ref">
+          <el-table-column type="selection" width="50" align="center" />
+          <el-table-column label="序号" align="center" prop="index" width="50"/>
+$foreach(column in genTable.SubTable.Columns)
+$set(labelName = column.ColumnComment)
+$set(columnName = column.CsharpFieldFl)
+$if(column.CsharpType == "int" || column.CsharpType == "long")
+$set(value = "parseInt(item.dictValue)")
+$set(number = ".number")
+$end
+$if(column.IsList == true)
+$if(column.IsPk || column.CsharpField == genTable.SubTableFkName)
+$elseif(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
+          <el-table-column label="${labelName}" align="center" prop="${columnName}" width="140">
+            <template #default="scope">
+              <el-input-number v-model="scope.row.${columnName}" controls-position="right" placeholder="请输入${labelName}" />
+            </template>
+          </el-table-column>
+$elseif(column.HtmlType == "datetime" || column.HtmlType == "month")
+          <el-table-column label="${labelName}" align="center" prop="${columnName}">
+            <template #default="scope">
+              <el-date-picker clearable v-model="scope.row.${columnName}" type="date" placeholder="选择日期时间"></el-date-picker>
+            </template>
+          </el-table-column>
+$elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio" || column.HtmlType == "select" || column.HtmlType == "selectMulti")
+          <el-table-column label="${labelName}" prop="${columnName}">
+            <template #default="scope">
+              <el-select v-model="scope.row.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
+                <el-option
+                  v-for="item in $if(column.DictType != "")options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" 
+                  :key="item.dictValue" 
+                  :label="item.dictLabel" 
+                  :value="${value}"></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+$else
+          <el-table-column label="${labelName}" align="center" prop="${columnName}">
+            <template #default="scope">
+              <el-input v-model="scope.row.${columnName}" placeholder="请输入${labelName}" />
+            </template>
+          </el-table-column>
+$end
+$end
+$end
+        </el-table>
+$end
       </el-form>
       <template #footer v-if="opertype != 3">
         <el-button text @click="cancel">{{ ${t}t('btn.cancel') }}</el-button>
@@ -433,8 +499,8 @@ $end
 
 $set(index = 0)
 var dictParams = [
-$foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType.Contains("select") || item.HtmlType == "checkbox") && item.DictType != "")
+$foreach(item in dicts)
+$if(item.DictType != "")
   { dictType: "${item.DictType}" },
 $set(index = index + 1)
 $end
@@ -532,7 +598,7 @@ $end
 $end
   },
   options: {
-$foreach(column in genTable.Columns)
+$foreach(column in dicts)
 $if(column.HtmlType == "radio" || column.HtmlType.Contains("select") || column.HtmlType == "checkbox")
     //$if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
     $if(column.DictType != "")${column.DictType}$else${column.CsharpFieldFl}Options$end: [],
@@ -556,10 +622,13 @@ $foreach(item in genTable.Columns)
 $if((item.HtmlType == "checkbox"))
     ${item.CsharpFieldFl}Checked: [],
 $else
-    $item.CsharpFieldFl: undefined,
+    $item.CsharpFieldFl: null,
 $end
 $end
   };
+$if(sub)
+  ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value = []
+$end
   proxy.resetForm("formRef")
 }
 
@@ -567,7 +636,7 @@ $end
 function handleAdd() {
   reset();
   open.value = true
-  title.value = '添加'
+  title.value = '添加${genTable.functionName}'
   opertype.value = 1
 }
 
@@ -579,7 +648,7 @@ function handleUpdate(row) {
     const { code, data } = res
     if (code == 200) {
       open.value = true
-      title.value = "修改数据"
+      title.value = '修改${genTable.functionName}'
       opertype.value = 2
 
       form.value = {
@@ -590,6 +659,9 @@ $if(item.HtmlType == "checkbox")
 $end
 $end
       }
+$if(sub)
+      ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value = res.data.${tool.FirstLowerCase(genTable.SubTable.ClassName)}Nav
+$end
     }
   })
 }
@@ -602,6 +674,10 @@ $foreach(item in genTable.Columns)
 $if(item.HtmlType == "checkbox")
       form.value.${item.CsharpFieldFl} = form.value.${item.CsharpFieldFl}Checked.toString();
 $end
+$end
+
+$if(sub)
+      form.value.${tool.FirstLowerCase(genTable.SubTable.ClassName)}Nav = ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value
 $end
       if (form.value.${replaceDto.FistLowerPk} != undefined && opertype.value === 2) {
         update${genTable.BusinessName}(form.value).then((res) => {
@@ -684,6 +760,60 @@ function handleExport() {
       await proxy.downFile('/${genTable.ModuleName}/${genTable.BusinessName}/export', { ...queryParams })
     })
 }
+$end
+
+$if(sub)
+/*********************${genTable.SubTable.FunctionName}子表信息*************************/
+const ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List = ref([])
+const checked${genTable.SubTable.ClassName} = ref([])
+const fullScreen = ref(false)
+
+/** ${genTable.SubTable.FunctionName}序号 */
+function row${genTable.SubTable.ClassName}Index({ row, rowIndex }) {
+  row.index = rowIndex + 1;
+}
+
+/** ${genTable.SubTable.FunctionName}添加按钮操作 */
+function handleAdd${genTable.SubTable.ClassName}() {
+  let obj = {};
+$foreach(column in genTable.SubTable.Columns)
+$if(column.IsPK || column.CsharpField == genTable.SubTableFkName)
+$elseif(column.IsList == true && "" != column.CsharpField)
+  //obj.${column.CsharpFieldFl} = null;
+$end
+$end
+  ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value.push(obj);
+}
+
+/** 复选框选中数据 */
+function handle${genTable.SubTable.ClassName}SelectionChange(selection) {
+  checked${genTable.SubTable.ClassName}.value = selection.map(item => item.index)
+}
+
+/** ${genTable.SubTable.FunctionName}删除按钮操作 */
+function handleDelete${genTable.SubTable.ClassName}() {
+  if(checked${genTable.SubTable.ClassName}.value.length == 0){
+    proxy.${modal}modal.msgError('请先选择要删除的${genTable.SubTable.FunctionName}数据')
+  } else {
+    const ${genTable.SubTable.ClassName}s = ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value;
+    const checked${genTable.SubTable.ClassName}s = checked${genTable.SubTable.ClassName}.value;
+    ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value = ${genTable.SubTable.ClassName}s.filter(function(item) {
+      return checked${genTable.SubTable.ClassName}s.indexOf(item.index) == -1
+    });
+  }
+}
+
+/** ${genTable.SubTable.FunctionName}详情 */
+function rowClick(row) {
+  const id = row.${replaceDto.FistLowerPk} || ids.value
+  get${genTable.BusinessName}(id).then((res) => {
+    const { code, data } = res
+    if (code == 200) {
+      ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value = data.${tool.FirstLowerCase(genTable.SubTable.ClassName)}Nav
+    }
+  })
+}
+
 $end
 
 handleQuery()

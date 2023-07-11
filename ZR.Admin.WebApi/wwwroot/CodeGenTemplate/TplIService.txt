@@ -13,6 +13,8 @@ namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNam
     {
         PagedInfo<${replaceDto.ModelTypeName}Dto> GetList(${replaceDto.ModelTypeName}QueryDto parm);
 
+        ${replaceDto.ModelTypeName} GetInfo(${replaceDto.PKType} ${replaceDto.PKName});
+
 $if(genTable.TplCategory == "tree")
         List<${replaceDto.ModelTypeName}> GetTreeList(${replaceDto.ModelTypeName}QueryDto parm);
 $end

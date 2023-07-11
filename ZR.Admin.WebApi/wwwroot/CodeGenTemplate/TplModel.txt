@@ -1,7 +1,4 @@
-﻿using System;
-using SqlSugar;
-using System.Collections.Generic;
-$if(genTable.TplCategory.Contains("subNav") && genTable.SubTable != null)
+﻿$if(genTable.TplCategory.Contains("subNav") && genTable.SubTable != null)
 using ${subTableOptions.ModelsNamespace}.${subTableOptions.SubNamespace};
 $end
 
@@ -37,7 +34,7 @@ $if(genTable.TplCategory == "tree")
         [SugarColumn(IsIgnore = true)]
         public List<${replaceDto.ModelTypeName}> Children { get; set; }
 $end
-$if(genTable.TplCategory == "subNav" && genTable.SubTable != null)
+$if((genTable.TplCategory == "subNav" || genTable.TplCategory == "sub") && genTable.SubTable != null)
         [Navigate(NavigateType.OneToOne, nameof(${replaceDto.PKName}))] //自定义关系映射
         public ${genTable.SubTable.ClassName} ${genTable.SubTable.ClassName}Nav { get; set; }
 $end

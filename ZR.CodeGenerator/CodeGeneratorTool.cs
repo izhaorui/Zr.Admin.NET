@@ -85,13 +85,6 @@ namespace ZR.CodeGenerator
             GenerateAppVueFormViews(replaceDto, dto);
             GenerateAppJs(dto);
             dto.ReplaceDto = replaceDto;
-            if (dto.IsPreview) return;
-
-            foreach (var item in dto.GenCodes)
-            {
-                item.Path = Path.Combine(dto.GenCodePath, item.Path);
-                FileUtil.WriteAndSave(item.Path, item.Content);
-            }
         }
 
         private static CodeGenerateOption GenerateOption(GenTable genTable)
@@ -566,9 +559,22 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto"></param>
         private static void InitJntTemplate(GenerateDto dto, ReplaceDto replaceDto)
         {
+#if DEBUG
             Engine.Current.Clean();
+#endif
             dto.GenTable.Columns = dto.GenTable.Columns.OrderBy(x => x.Sort).ToList();
             bool showCustomInput = dto.GenTable.Columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_CUSTOM_INPUT, StringComparison.OrdinalIgnoreCase));
+
+            #region 查询所有字典
+            var dictHtml = new string[] { GenConstants.HTML_CHECKBOX, GenConstants.HTML_RADIO, GenConstants.HTML_SELECT, GenConstants.HTML_SELECT_MULTI };
+            var dicts = new List<GenTableColumn>();
+            dicts.AddRange(dto.GenTable.Columns.FindAll(f => dictHtml.Contains(f.HtmlType)));
+            if (dto.GenTable.SubTable != null && dto.GenTable.SubTableName.IsNotEmpty())
+            {
+                dicts.AddRange(dto.GenTable?.SubTable?.Columns?.FindAll(f => dictHtml.Contains(f.HtmlType)));
+            }
+            #endregion
+
             //jnt模板引擎全局变量
             Engine.Configure((options) =>
             {
@@ -592,6 +598,8 @@ namespace ZR.CodeGenerator
                 options.Data.Set("showCustomInput", showCustomInput);
                 options.Data.Set("tool", new CodeGeneratorTool());
                 options.Data.Set("codeTool", new CodeGenerateTemplate());
+                options.Data.Set("dicts", dicts);
+                options.Data.Set("sub", dto.GenTable.SubTable != null && dto.GenTable.SubTableName.IsNotEmpty());
                 options.EnableCache = true;
                 //...其它数据
             });

@@ -230,11 +230,11 @@ namespace ZR.Admin.WebApi.Controllers
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
             var dbConfig = AppSettings.Get<DbConfigs>(nameof(GlobalConstant.CodeGenDbConfig));
-            
+
             dto.DbType = dbConfig.DbType;
             dto.GenTable = genTableInfo;
             dto.IsPreview = true;
-            
+
             CodeGeneratorTool.Generate(dto);
 
             return SUCCESS(dto.GenCodes);
@@ -278,12 +278,20 @@ namespace ZR.Admin.WebApi.Controllers
 
             //生成代码到指定文件夹
             CodeGeneratorTool.Generate(dto);
-            //下载文件
-            FileUtil.ZipGenCode(dto.ZipPath, dto.GenCodePath, zipReturnFileName);
             if (genTableInfo.Options.GenerateMenu)
             {
                 SysMenuService.AddSysMenu(genTableInfo, dto.ReplaceDto.PermissionPrefix, dto.ReplaceDto.ShowBtnEdit, dto.ReplaceDto.ShowBtnExport);
             }
+
+            foreach (var item in dto.GenCodes)
+            {
+                item.Path = Path.Combine(dto.GenCodePath, item.Path);
+                FileUtil.WriteAndSave(item.Path, item.Content);
+            }
+
+            //下载文件
+            FileUtil.ZipGenCode(dto.ZipPath, dto.GenCodePath, zipReturnFileName);
+
             return SUCCESS(new { path = "/Generatecode/" + zipReturnFileName, fileName = dto.ZipFileName });
         }
 
