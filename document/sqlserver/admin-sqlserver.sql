@@ -497,31 +497,3 @@ CREATE TABLE sys_common_lang
 	addtime DATETIME
 )
 GO
-SELECT * FROM dbo.sys_user
-GO
-SELECT * FROM dbo.sys_user_role
-GO
-SELECT * FROM dbo.sys_user_post
-GO
-SELECT * FROM dbo.sys_role
-GO
-SELECT * FROM dbo.sys_role_menu
-GO
-SELECT * FROM dbo.sys_dept
-GO
-SELECT * FROM dbo.sys_dict_type
-GO
-SELECT * FROM dbo.sys_dict_data
-GO
-SELECT * FROM dbo.sys_menu
-GO
-SELECT * FROM dbo.articleCategory
-GO
-SELECT * FROM dbo.sys_config
-
-SELECT * FROM dbo.gen_table
-SELECT * FROM dbo.gen_table_column
-SELECT * FROM dbo.gen_demo
-GO
---TRUNCATE TABLE gen_table_column
---TRUNCATE TABLE gen_table

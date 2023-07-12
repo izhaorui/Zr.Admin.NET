@@ -285,8 +285,6 @@ INSERT INTO sys_role VALUES ('超级管理员', 'admin', 1, 1, 1, 0, 0, 0, 'admi
 INSERT INTO sys_role VALUES ('普通角色', 'common', 2, 5, 1, 0, 0, 0, 'admin', GETDATE(), '',  NULL, '普通角色');
 
 GO
-alter table sys_user_role add primary key(user_id,role_id)
-GO
 -- ----------------------------
 -- Records of sys_user_role
 -- ----------------------------
@@ -346,6 +344,7 @@ INSERT INTO sys_config VALUES('文章预览地址', 		   		   'sys.article.previ
 
 GO
 
+
 SELECT * FROM dbo.sys_user
 GO
 SELECT * FROM dbo.sys_user_role
@@ -367,4 +366,10 @@ GO
 SELECT * FROM dbo.articleCategory
 GO
 SELECT * FROM dbo.sys_config
+
+SELECT * FROM dbo.gen_table
+SELECT * FROM dbo.gen_table_column
+SELECT * FROM dbo.gen_demo
 GO
+--TRUNCATE TABLE gen_table_column
+--TRUNCATE TABLE gen_table

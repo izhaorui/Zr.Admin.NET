@@ -59,6 +59,7 @@ CREATE TABLE `sys_tasks_log` (
 	PRIMARY KEY ( `jobLogId` ) USING BTREE 
 ) ENGINE = INNODB AUTO_INCREMENT = 198 CHARACTER 
 SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '定时任务调度日志表' ROW_FORMAT = Dynamic;
+
 -- ----------------------------
 -- 通知公告表
 -- ----------------------------
