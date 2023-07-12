@@ -165,11 +165,7 @@ $elseif(column.HtmlType == "imageUpload")
 $elseif(column.HtmlType == "checkbox" || column.HtmlType.Contains("select") || column.HtmlType == "radio")
       <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr} v-if="columns.showColumn('${columnName}')">
         <template #default="scope">
-$if(column.HtmlType == "checkbox")
-          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
-$else
-          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
-$end
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" $if(column.HtmlType == "checkbox")split=","$end />
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "datetime")
@@ -219,11 +215,7 @@ $if(column.IsList == true)
 $if(column.HtmlType == "checkbox" || column.HtmlType.Contains("select") || column.HtmlType == "radio")
       <el-table-column prop="${columnName}" label="${column.ColumnComment}">
         <template #default="scope">
-$if(column.HtmlType == "checkbox")
-          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
-$else
-          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
-$end
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" $if(column.HtmlType == "checkbox")split=","$end />
         </template>
       </el-table-column>
 $else
@@ -291,7 +283,9 @@ $elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}"${column.DisabledStr}>
-                <el-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-radio>
+                <el-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">
+                  {{item.dictLabel}}
+                </el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -315,7 +309,7 @@ $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
                   v-for="item in $if(column.DictType != "")options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" 
                   :key="item.dictValue" 
                   :label="item.dictLabel" 
-                  :value="item.dictValue"></el-option>
+                  :value="${value}"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
