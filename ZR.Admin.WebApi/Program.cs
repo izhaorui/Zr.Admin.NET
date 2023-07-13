@@ -3,6 +3,7 @@ using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
+using System.Text.Json.Serialization;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Framework;
@@ -13,7 +14,6 @@ using ZR.Common.Cache;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -80,6 +80,9 @@ builder.Services.AddMvc(options =>
 })
 .AddJsonOptions(options =>
 {
+    options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString |
+                    JsonNumberHandling.WriteAsString;
+    options.JsonSerializerOptions.WriteIndented = true;
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeConverter());
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeNullConverter());
 });
