@@ -126,9 +126,6 @@ $end
       header-cell-class-name="el-table-header-cell"
       highlight-current-row
       @sort-change="sortChange"
-$if(sub)
-      @row-click="rowClick"
-$end
 $if(replaceDto.ShowBtnMultiDel)
       @selection-change="handleSelectionChange"
 $end
@@ -136,7 +133,13 @@ $end
 $if(replaceDto.ShowBtnMultiDel)
       <el-table-column type="selection" width="50" align="center"/>
 $end
-
+$if(sub)
+      <el-table-column align="center" width="90">
+        <template #default="scope">
+          <el-button text @click="rowClick(scope.row)">详情</el-button>
+        </template>
+      </el-table-column>
+$end
 $foreach(column in genTable.Columns)
 $set(labelName = column.ColumnComment)
 $set(showToolTipHtml = "")
@@ -207,23 +210,25 @@ $end
 
 $* 一对一/一对多列表显示详情 *$
 $if(sub)
-    <el-table :data="$tool.FirstLowerCase(genTable.SubTable.ClassName)List" header-row-class-name="text-navy">
-      <el-table-column label="序号" type="index" width="80" />
+    <el-drawer v-model="drawer" :with-header="false" direction="btt">
+      <el-table :data="$tool.FirstLowerCase(genTable.SubTable.ClassName)List" header-row-class-name="text-navy">
+        <el-table-column label="序号" type="index" width="80" />
 $foreach(column in genSubTable.Columns)
 $set(columnName = column.CsharpFieldFl)
 $if(column.IsList == true)
 $if(column.HtmlType == "checkbox" || column.HtmlType.Contains("select") || column.HtmlType == "radio")
-      <el-table-column prop="${columnName}" label="${column.ColumnComment}">
-        <template #default="scope">
-          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" $if(column.HtmlType == "checkbox")split=","$end />
-        </template>
-      </el-table-column>
+        <el-table-column prop="${columnName}" label="${column.ColumnComment}">
+          <template #default="scope">
+            <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" $if(column.HtmlType == "checkbox")split=","$end />
+          </template>
+        </el-table-column>
 $else
-      <el-table-column prop="${column.CsharpFieldFl}" label="${column.ColumnComment}"/>
+        <el-table-column prop="${column.CsharpFieldFl}" label="${column.ColumnComment}"/>
 $end
 $end
 $end
-    </el-table>
+      </el-table>
+    </el-drawer>
 $end
 
     <!-- 添加或修改${genTable.functionName}对话框 -->
@@ -350,7 +355,7 @@ $if(sub)
             <el-button type="danger" icon="Delete" @click="handleDelete${genTable.SubTable.ClassName}">删除</el-button>
           </el-col>
           <el-col :span="1.5">
-            <el-button type="info" icon="FullScreen" @click="fullScreen = !fullScreen">全屏</el-button>
+            <el-button type="info" icon="FullScreen" @click="fullScreen = !fullScreen">{{ fullScreen ? '退出全屏' : '全屏' }}</el-button>
           </el-col>
         </el-row>
         <el-table :data="${tool.FirstLowerCase(genTable.SubTable.ClassName)}List" :row-class-name="row${genTable.SubTable.ClassName}Index" @selection-change="handle${genTable.SubTable.ClassName}SelectionChange" ref="${genTable.SubTable.ClassName}Ref">
@@ -761,6 +766,7 @@ $if(sub)
 const ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List = ref([])
 const checked${genTable.SubTable.ClassName} = ref([])
 const fullScreen = ref(false)
+const drawer = ref(false)
 
 /** ${genTable.SubTable.FunctionName}序号 */
 function row${genTable.SubTable.ClassName}Index({ row, rowIndex }) {
@@ -803,6 +809,7 @@ function rowClick(row) {
   get${genTable.BusinessName}(id).then((res) => {
     const { code, data } = res
     if (code == 200) {
+      drawer.value = true
       ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value = data.${tool.FirstLowerCase(genTable.SubTable.ClassName)}Nav
     }
   })
