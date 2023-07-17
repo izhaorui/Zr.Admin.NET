@@ -17,7 +17,7 @@ $if(column.IsList == true)
 $if(column.HtmlType == "imageUpload")
       <view class="info-line">
         <text class="label-name">${labelName}</text>
-        <ImagePreview :src="item.${columnName}"></ImagePreview>
+        <imagePreview :src="item.${columnName}"></imagePreview>
       </view>
 $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio")
       <view class="info-line">
@@ -98,14 +98,16 @@ $if(column.HtmlType == "datetime")
           </u-form-item>
 $elseif(column.HtmlType == "radio" || column.HtmlType == "select")
           <u-form-item label="${labelName}" prop="${column.CsharpFieldFl}" borderBottom ref="item2">
-            <view class="tag-item">
-              <u-tag text="全部" :plain="null != queryParams.${column.CsharpFieldFl}" name="" @click="queryParams.${column.CsharpFieldFl} = null">
-              </u-tag>
-            </view>
-            <view class="tag-item" v-for="(item, index) in $if(column.DictType != "") dict.type.${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="index">
-              <u-tag :text="item.label" :plain="item.value != queryParams.${column.CsharpFieldFl}" :name="item.value"
-                @click="${column.CsharpFieldFl}Select(item)">
-              </u-tag>
+            <view class="tag-wrap">            
+              <view class="tag-item">
+                <u-tag text="全部" :plain="null != queryParams.${column.CsharpFieldFl}" name="" @click="queryParams.${column.CsharpFieldFl} = null">
+                </u-tag>
+              </view>
+              <view class="tag-item" v-for="(item, index) in $if(column.DictType != "") dict.type.${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="index">
+                <u-tag :text="item.label" :plain="item.value != queryParams.${column.CsharpFieldFl}" :name="item.value"
+                  @click="${column.CsharpFieldFl}Select(item)">
+                </u-tag>
+              </view>
             </view>
           </u-form-item>
 $else
@@ -135,10 +137,10 @@ $end
   import "@/static/scss/page.scss";
   import { 
     list${genTable.BusinessName},
-$if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
+$if(replaceDto.ShowBtnDelete)
     del${genTable.BusinessName},
 $end
-} 
+  }
   from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
   import {

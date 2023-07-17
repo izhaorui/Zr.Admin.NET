@@ -13,20 +13,20 @@ $end
 
 $if(column.IsPK || column.IsIncrement)
 $if(column.IsPK && column.IsIncrement == false)
-            <u-form-item label="${labelName}" prop="${columnName}">
-              <u--input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"></u--input>
-            </u-form-item>
+      <u-form-item label="${labelName}" prop="${columnName}">
+        <u--input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"></u--input>
+      </u-form-item>
 $else
-            <u-form-item label="${labelName}" prop="${columnName}" v-if="opertype != 1">
-              <u--input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="true"/>
-            </u-form-item>
+      <u-form-item label="${labelName}" prop="${columnName}" v-if="opertype != 1">
+        <u--input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="true"/>
+      </u-form-item>
 $end
 $else
 $if(column.HtmlType == "radio" || column.HtmlType == "selectRadio")
       <u-form-item label="${labelName}" prop="${columnName}">
-            <u-radio-group v-model="form.${columnName}">
-              <u-radio v-for="item in ${if(column.DictType != "")}dict.type.${column.DictType}${else}${column.CsharpFieldFl}Options$end" :name="${value}" class="margin-right-xl">{{item.label}}</u-radio>
-            </u-radio-group>
+        <u-radio-group v-model="form.${columnName}">
+          <u-radio v-for="item in ${if(column.DictType != "")}dict.type.${column.DictType}${else}${column.CsharpFieldFl}Options$end" :name="${value}" class="margin-right-xl">{{item.label}}</u-radio>
+        </u-radio-group>
       </u-form-item>
 $elseif(column.HtmlType == "checkbox")
       <u-form-item label="${labelName}" prop="${columnName}">
@@ -39,12 +39,12 @@ $elseif(column.HtmlType == "checkbox")
         </view>
       </u-form-item>
 $elseif(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
-            <u-form-item label="${labelName}" prop="${columnName}">
-              <u-number-box v-model="form.${columnName}"></u-number-box>
-            </u-form-item>
+      <u-form-item label="${labelName}" prop="${columnName}">
+        <u-number-box v-model="form.${columnName}"></u-number-box>
+      </u-form-item>
 $elseif(column.HtmlType == "datetime" || column.HtmlType == "month")
       <u-form-item label="${labelName}" prop="${columnName}">
-              <uni-datetime-picker v-model="form.${columnName}" />
+        <uni-datetime-picker v-model="form.${columnName}" />
       </u-form-item>
 $elseif(column.HtmlType == "textarea")
       <u-form-item label="${labelName}" prop="${columnName}">
@@ -52,17 +52,17 @@ $elseif(column.HtmlType == "textarea")
       </u-form-item>
 $elseif(column.HtmlType == "imageUpload" || column.HtmlType == "fileUpload")
       <u-form-item label="${labelName}" prop="${columnName}">
-        <UploadFile v-model="form.${columnName}"></UploadFile>
+        <uploadImage v-model="form.${columnName}"></uploadImage>
       </u-form-item>
 $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
-            <u-form-item label="${labelName}" prop="${columnName}">
-              <uni-data-select v-model="form.${columnName}" :clear="true" :localdata="${if(column.DictType != "")}dict.type.${column.DictType}${else}${column.CsharpFieldFl}Options$end"
-              format="{label} - {value}"></uni-data-select>
-            </u-form-item>
+      <u-form-item label="${labelName}" prop="${columnName}">
+        <uni-data-select v-model="form.${columnName}" :clear="true" :localdata="${if(column.DictType != "")}dict.type.${column.DictType}${else}${column.CsharpFieldFl}Options$end"
+          format="{label} - {value}"></uni-data-select>
+      </u-form-item>
 $else
-            <u-form-item label="${labelName}" prop="${columnName}">
-              <u--input v-model${number}="form.${columnName}" placeholder="请输入${labelName}" ${column.DisabledStr}/>
-            </u-form-item>
+      <u-form-item label="${labelName}" prop="${columnName}">
+        <u--input v-model${number}="form.${columnName}" placeholder="请输入${labelName}" ${column.DisabledStr}/>
+      </u-form-item>
 $end
 $end
 $end
@@ -90,10 +90,15 @@ $end
 $if(replaceDto.ShowBtnEdit) 
     update${genTable.BusinessName},
 $end
-}
+  }
 from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
   export default {
+$if(replaceDto.UploadFile == 1)
+    components: {
+      UploadImage
+    },
+$end
     dicts: [
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType.Contains("select") || item.HtmlType == "checkbox") && item.DictType != "")
