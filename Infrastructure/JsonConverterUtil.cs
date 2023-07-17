@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ZR.Admin.WebApi.Framework
+namespace Infrastructure
 {
     public class JsonConverterUtil
     {
@@ -29,7 +29,7 @@ namespace ZR.Admin.WebApi.Framework
 
         public static DateTime? ParseDateTime(string dateStr)
         {
-            if (System.Text.RegularExpressions.Regex.IsMatch(dateStr, @"^\d{4}[/-]") && DateTime.TryParse(dateStr, null,System.Globalization.DateTimeStyles.AssumeLocal, out var dateVal))
+            if (System.Text.RegularExpressions.Regex.IsMatch(dateStr, @"^\d{4}[/-]") && DateTime.TryParse(dateStr, null, System.Globalization.DateTimeStyles.AssumeLocal, out var dateVal))
                 return dateVal;
             return null;
         }
