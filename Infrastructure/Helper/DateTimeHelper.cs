@@ -100,6 +100,12 @@ namespace Infrastructure
             long unixTime = ((DateTimeOffset)dt).ToUnixTimeMilliseconds();
             return unixTime;
         }
+
+        public static long GetUnixTimeSeconds(DateTime dt)
+        {
+            long unixTime = ((DateTimeOffset)dt).ToUnixTimeSeconds();
+            return unixTime;
+        }
         #endregion
 
         #region 获取日期天的最小时间

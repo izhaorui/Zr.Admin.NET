@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using System.Collections.Generic;
 using System.Text.Json;
+using ZR.Common.Model;
 
 namespace ZR.Common
 {
@@ -44,7 +45,7 @@ namespace ZR.Common
                 System.Console.WriteLine("请完成企业微信配置");
                 return (0, "请完成企业微信通知配置");
             }
-            GetTokenResult tokenResult = GetAccessToken();
+            WxTokenResult tokenResult = GetAccessToken();
 
             if (tokenResult == null || tokenResult.errcode != 0)
             {
@@ -74,7 +75,7 @@ namespace ZR.Common
             //返回结果
             //{"errcode":0,"errmsg":"ok","invaliduser":""}
             string msgResult = HttpHelper.HttpPost(msgUrl, postData, "contentType/json");
-            GetTokenResult getTokenResult = JsonSerializer.Deserialize<GetTokenResult>(msgResult);
+            WxTokenResult getTokenResult = JsonSerializer.Deserialize<WxTokenResult>(msgResult);
             System.Console.WriteLine(msgResult);
             return (getTokenResult?.errcode == 0 ? 100 : 0, getTokenResult?.errmsg);
         }
@@ -89,12 +90,12 @@ namespace ZR.Common
         /// <returns>           
         /// {"errcode":0,"errmsg":"ok","access_token":"iCbcfE1OjfRhV0_io-CzqTNC0lnrudeW3oF5rhJKfmINaxLClLa1FoqAY_wEXtodYh_DTnrtAwZfzeb-NRXvwiOoqUTHx3i6QKLYcfBtF8y-xd5mvaeaf3e9mvTAPhmX0lkm1cLTwRLmoa1IwzgQ-QZEZcuIcntWdEMGseVYok3BwCGpC87bt6nNdgnekZdFVRp1uuaxoctDGlXpoQlQsA","expires_in":7200}
         /// </returns>
-        private static GetTokenResult GetAccessToken()
+        private static WxTokenResult GetAccessToken()
         {
             string getTokenUrl = $"{GetTokenUrl}?corpid={CORPID}&corpsecret={CORPSECRET}";
             string getTokenResult = HttpHelper.HttpGet(getTokenUrl);
             System.Console.WriteLine(getTokenResult);
-            GetTokenResult tokenResult = JsonSerializer.Deserialize<GetTokenResult>(getTokenResult);
+            WxTokenResult tokenResult = JsonSerializer.Deserialize<WxTokenResult>(getTokenResult);
             return tokenResult;
         }
 
@@ -145,16 +146,6 @@ namespace ZR.Common
                 }
             };
             return dic;
-        }
-
-        public class GetTokenResult
-        {
-            /// <summary>
-            /// 0、正常
-            /// </summary>
-            public int errcode { get; set; }
-            public string errmsg { get; set; }
-            public string access_token { get; set; }
         }
     }
 }
