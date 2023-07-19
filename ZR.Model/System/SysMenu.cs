@@ -63,13 +63,13 @@ namespace ZR.Model.System
         /// <summary>
         /// 显示状态（0显示 1隐藏）
         /// </summary>
-        [SugarColumn(DefaultValue = "0", Length = 1)]
+        [SugarColumn(DefaultValue = "0")]
         public string Visible { get; set; }
 
         /// <summary>
         /// 菜单状态（0正常 1停用）
         /// </summary>
-        [SugarColumn(DefaultValue = "0", Length = 1)]
+        [SugarColumn(DefaultValue = "0")]
         public string Status { get; set; }
 
         /// <summary>
