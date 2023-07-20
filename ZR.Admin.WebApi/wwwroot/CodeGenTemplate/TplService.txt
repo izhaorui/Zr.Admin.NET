@@ -112,12 +112,12 @@ $end
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public int Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} model)
+        public ${replaceDto.ModelTypeName} Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} model)
         {
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
-            return Context.InsertNav(model).Include(s1 => s1.${genTable.SubTable.ClassName}Nav).ExecuteCommand() ? 1 : 0;
+            return Context.InsertNav(model).Include(s1 => s1.${genTable.SubTable.ClassName}Nav).ExecuteReturnEntity();
 $else
-            return Add(model, true);
+            return Insertable(model).IgnoreColumns(true).ExecuteReturnEntity();
 $end
         }
 

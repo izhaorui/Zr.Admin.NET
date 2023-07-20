@@ -88,7 +88,7 @@ $if(replaceDto.ShowBtnAdd)
 
             var response = _${replaceDto.ModelTypeName}Service.Add${replaceDto.ModelTypeName}(modal);
 
-            return ToResponse(response);
+            return SUCCESS(response);
         }
 $end
 
