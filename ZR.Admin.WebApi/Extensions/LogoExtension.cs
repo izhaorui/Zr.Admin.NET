@@ -13,9 +13,10 @@ namespace ZR.Admin.WebApi.Extensions
             
             Console.WriteLine(content);
             Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("源码地址: https://gitee.com/izory/ZrAdminNetCore");
-            Console.WriteLine("官方文档：http://www.izhaorui.cn/doc");
-            Console.WriteLine("打赏作者：http://www.izhaorui.cn/doc/support.html");
+            Console.WriteLine("🎉源码地址: https://gitee.com/izory/ZrAdminNetCore");
+            Console.WriteLine("📖官方文档：http://www.izhaorui.cn/doc");
+            Console.WriteLine("🤑打赏作者：http://www.izhaorui.cn/doc/support.html");
+            Console.WriteLine("📱移动端体验：http://www.izhaorui.cn/h5");
         }
     }
 }
