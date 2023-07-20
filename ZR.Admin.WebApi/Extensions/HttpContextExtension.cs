@@ -164,6 +164,36 @@ namespace ZR.Admin.WebApi.Extensions
         {
             return context != null ? context.Request.QueryString.Value : "";
         }
+
+        /// <summary>
+        /// 获取body请求参数
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static string GetBody(this HttpContext context)
+        {
+            context.Request.EnableBuffering();
+            //context.Request.Body.Seek(0, SeekOrigin.Begin);
+            //using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
+            ////需要使用异步方式才能获取
+            //return reader.ReadToEndAsync().Result;
+            string body = string.Empty;
+            var buffer = new MemoryStream();
+            context.Request.Body.Seek(0, SeekOrigin.Begin);
+            context.Request.Body.CopyToAsync(buffer);
+            buffer.Position = 0;
+            try
+            {
+                using StreamReader streamReader = new(buffer, Encoding.UTF8);
+                body = streamReader.ReadToEndAsync().Result;
+            }
+            finally
+            {
+                buffer?.Dispose();
+            }
+            return body;
+        }
+
         /// <summary>
         /// 设置请求参数
         /// </summary>
@@ -172,21 +202,14 @@ namespace ZR.Admin.WebApi.Extensions
         public static void GetRequestValue(this HttpContext context, SysOperLog operLog)
         {
             string reqMethod = operLog.RequestMethod;
-            string param;
+            string param= string.Empty;
 
             if (HttpMethods.IsPost(reqMethod) || HttpMethods.IsPut(reqMethod) || HttpMethods.IsDelete(reqMethod))
             {
-                context.Request.Body.Seek(0, SeekOrigin.Begin);
-                using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
-                //需要使用异步方式才能获取
-                param = reader.ReadToEndAsync().Result;
-                if (param.IsEmpty())
-                {
-                    param = context.GetQueryString();
-                }
+                param = context.GetBody();
                 param = PwdRep().Replace(param, "***");
             }
-            else
+            if (param.IsEmpty())
             {
                 param = context.GetQueryString();
             }

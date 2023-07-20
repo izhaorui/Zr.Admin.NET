@@ -70,7 +70,7 @@ namespace ZR.Service.System
         /// <returns>结果</returns>
         public int DeleteOperLogByIds(long[] operIds)
         {
-            return Context.Deleteable<SysOperLog>().In(operIds).ExecuteCommand();
+            return Delete(operIds);
         }
 
         /// <summary>

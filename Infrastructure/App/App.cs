@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
 using System.Security.Claims;
+using System.Security.Principal;
+using System.Xml.Linq;
 
 namespace Infrastructure
 {
@@ -27,6 +29,10 @@ namespace Infrastructure
         /// 获取请求上下文用户
         /// </summary>
         public static ClaimsPrincipal User => HttpContext?.User;
+        /// <summary>
+        /// 获取用户名
+        /// </summary>
+        public static string UserName => User?.Identity?.Name;
         /// <summary>
         /// 获取Web主机环境
         /// </summary>

@@ -56,7 +56,7 @@ namespace ZR.Repository
         }
         public IInsertable<T> Insertable(T t)
         {
-            return Context.Insertable<T>(t);
+            return Context.Insertable(t);
         }
         #endregion add
 
@@ -212,13 +212,13 @@ namespace ZR.Repository
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public int Delete(object[] obj)
+        public int Delete(object[] obj, string title = "")
         {
-            return Context.Deleteable<T>().In(obj).ExecuteCommand();
+            return Context.Deleteable<T>().In(obj).EnableDiffLogEventIF(title.IsNotEmpty(), title).ExecuteCommand();
         }
-        public int Delete(object id)
+        public int Delete(object id, string title = "")
         {
-            return Context.Deleteable<T>(id).ExecuteCommand();
+            return Context.Deleteable<T>(id).EnableDiffLogEventIF(title.IsNotEmpty(), title).ExecuteCommand();
         }
         public int DeleteTable()
         {
@@ -376,7 +376,7 @@ namespace ZR.Repository
             var result = source
                 .OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(!string.IsNullOrWhiteSpace(parm.SortType) && parm.SortType.Contains("desc") ? "desc" : "asc")}")
                 .ToPageList(parm.PageNum, parm.PageSize, ref total);
-            
+
             page.TotalNum = total;
             page.Result = result.Adapt<List<T2>>();
             return page;

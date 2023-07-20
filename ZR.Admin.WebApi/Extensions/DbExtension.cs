@@ -2,6 +2,7 @@ using Infrastructure;
 using Infrastructure.Extensions;
 using SqlSugar;
 using SqlSugar.IOC;
+using System.Security.Principal;
 using ZR.Model;
 using ZR.Model.System;
 
@@ -13,7 +14,7 @@ namespace ZR.Admin.WebApi.Extensions
     public static class DbExtension
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-        
+
         /// <summary>
         /// 初始化db
         /// </summary>
@@ -93,7 +94,7 @@ namespace ZR.Admin.WebApi.Extensions
             };
             db.GetConnectionScope(configId).Aop.OnError = (ex) =>
             {
-                var pars = db.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
+                //var pars = db.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
 
                 string sql = "【错误SQL】" + UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n";
                 logger.Error(ex, $"{sql}\r\n{ex.Message}\r\n{ex.StackTrace}");
@@ -101,7 +102,44 @@ namespace ZR.Admin.WebApi.Extensions
             db.GetConnectionScope(configId).Aop.DataExecuting = (oldValue, entiyInfo) =>
             {
             };
+            //差异日志功能
+            db.GetConnectionScope(configId).Aop.OnDiffLogEvent = it =>
+            {
+                //操作前记录  包含： 字段描述 列名 值 表名 表描述
+                var editBeforeData = it.BeforeData;//插入Before为null，之前还没进库
+                //操作后记录   包含： 字段描述 列名 值  表名 表描述
+                var editAfterData = it.AfterData;
+                var sql = it.Sql;
+                var parameter = it.Parameters;
+                var data = it.BusinessData;//这边会显示你传进来的对象
+                var time = it.Time;
+                var diffType = it.DiffType;//enum insert 、update and delete  
 
+                if (diffType == DiffType.delete)
+                {
+                    string name = App.UserName;
+
+                    foreach (var item in editBeforeData)
+                    {
+                        var pars = db.Utilities.SerializeObject(item.Columns.ToDictionary(it => it.ColumnName, it => it.Value));
+
+                        SqlDiffLog log = new()
+                        {
+                            AfterData = pars,
+                            BusinessData = data,
+                            DiffType = diffType.ToString(),
+                            Sql = sql,
+                            TableName = item.TableName,
+                            UserName = name,
+                            AddTime = DateTime.Now
+                        };
+                        //logger.WithProperty("title", data).Info(pars);
+                        db.GetConnectionScope(configId).Insertable(log).ExecuteReturnSnowflakeId();
+                    }
+                }
+
+                //Write logic
+            };
             db.GetConnectionScope(configId).CurrentConnectionConfig.MoreSettings = new ConnMoreSettings()
             {
                 IsAutoRemoveDataCache = true

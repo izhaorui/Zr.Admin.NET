@@ -47,8 +47,8 @@ namespace ZR.Repository
 
         #region delete
         IDeleteable<T> Deleteable();
-        int Delete(object[] obj);
-        int Delete(object id);
+        int Delete(object[] obj, string title = "");
+        int Delete(object id, string title = "");
         int DeleteTable();
         bool Truncate();
 

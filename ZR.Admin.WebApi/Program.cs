@@ -99,9 +99,9 @@ builder.Services.AddDb(builder.Configuration, app.Environment);
 //使用全局异常中间件
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-//使可以多次多去body内容
 app.Use((context, next) =>
 {
+    //设置可以多次获取body内容
     context.Request.EnableBuffering();
     if (context.Request.Query.TryGetValue("access_token", out var token))
     {
