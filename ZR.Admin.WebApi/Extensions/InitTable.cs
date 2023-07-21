@@ -23,8 +23,7 @@ namespace ZR.Admin.WebApi.Extensions
             //var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && p.GetCustomAttribute<SugarTable>() != null).ToArray();
             //db.CodeFirst.InitTables(entityes);
 
-            //23个表,建议先使用下面方法初始化表，方便排查问题
-            db.CodeFirst.InitTables(typeof(SqlDiffLog));
+            //24个表,建议先使用下面方法初始化表，方便排查问题
             db.CodeFirst.InitTables(typeof(SysUser));
             db.CodeFirst.InitTables(typeof(SysRole));
             db.CodeFirst.InitTables(typeof(SysDept));
@@ -48,6 +47,7 @@ namespace ZR.Admin.WebApi.Extensions
             db.CodeFirst.InitTables(typeof(ArticleCategory));
             db.CodeFirst.InitTables(typeof(SysDictData));
             db.CodeFirst.InitTables(typeof(SysDictType));
+            db.CodeFirst.InitTables(typeof(SqlDiffLog));
         }
 
     }

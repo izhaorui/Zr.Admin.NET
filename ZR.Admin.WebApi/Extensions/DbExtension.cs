@@ -2,7 +2,6 @@ using Infrastructure;
 using Infrastructure.Extensions;
 using SqlSugar;
 using SqlSugar.IOC;
-using System.Security.Principal;
 using ZR.Model;
 using ZR.Model.System;
 
@@ -125,20 +124,19 @@ namespace ZR.Admin.WebApi.Extensions
 
                         SqlDiffLog log = new()
                         {
-                            AfterData = pars,
-                            BusinessData = data,
+                            BeforeData = pars,
+                            BusinessData = data.ToString(),
                             DiffType = diffType.ToString(),
                             Sql = sql,
                             TableName = item.TableName,
                             UserName = name,
-                            AddTime = DateTime.Now
+                            AddTime = DateTime.Now,
+                            ConfigId = configId
                         };
                         //logger.WithProperty("title", data).Info(pars);
-                        db.GetConnectionScope(configId).Insertable(log).ExecuteReturnSnowflakeId();
+                        db.GetConnectionScope(0).Insertable(log).ExecuteReturnSnowflakeId();
                     }
                 }
-
-                //Write logic
             };
             db.GetConnectionScope(configId).CurrentConnectionConfig.MoreSettings = new ConnMoreSettings()
             {

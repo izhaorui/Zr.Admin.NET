@@ -1,7 +1,4 @@
-﻿using SqlSugar;
-using System;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     /// <summary>
     /// 文章表
