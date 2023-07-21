@@ -34,7 +34,7 @@
 
 | H5                                                                                     | 微信小程序                                                                           |
 | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/net7.0/document/images/qrcodeH5.png) | ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/net7.0/document/images/qrcode.jpg) |
+| ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcodeH5.png) | ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcode.jpg) |
 
 ```
 由于是个人项目，资金有限，体验服是低配，请大家爱惜，轻戳，不胜感激！！！
@@ -49,7 +49,7 @@
 
 ## 🍁 前端技术
 
-Vue 版前端技术栈 ：基于 vue2.x/vue3.x、vuex、vue-router 、vue-cli 、axios、 element-ui、echats、i18n 国际化等，前端采用 vscode 工具开发
+Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue-cli 、axios、 element-ui、echats、i18n 国际化等，前端采用 vscode 工具开发
 
 ## 🍀 后端技术
 
@@ -184,4 +184,4 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x、vuex、vue-router 、vue-cli �
 ## 🎀 捐赠
 
 如果你觉得这个项目帮助到了你，你可以请作者喝杯咖啡表示鼓励 ☕️
-<img src="https://gitee.com/izory/ZrAdminNetCore/raw/net7.0/document/images/pay.jpg"/>
+<img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/pay.jpg"/>
