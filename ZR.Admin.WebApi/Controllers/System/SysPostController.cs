@@ -1,7 +1,9 @@
-﻿using Infrastructure;
+﻿using Aliyun.OSS;
+using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Enums;
 using Infrastructure.Extensions;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using ZR.Admin.WebApi.Extensions;
@@ -71,8 +73,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
-
-            post.Create_by = HttpContext.GetName();
+            post.ToCreate(HttpContext);
+            
             return ToResponse(PostService.Add(post));
         }
 
@@ -94,7 +96,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
-            post.Update_by = HttpContext.GetName();
+            post.ToUpdate(HttpContext);
             return ToResponse(PostService.Update(post));
         }
 

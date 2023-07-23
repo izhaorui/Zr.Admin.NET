@@ -1,4 +1,6 @@
 ﻿
+using System.Reflection;
+
 namespace ZR.Admin.WebApi.Extensions
 {
     public static class EntityExtension
@@ -7,26 +9,14 @@ namespace ZR.Admin.WebApi.Extensions
         {
             var types = source?.GetType();
             if (types == null) return source;
+            BindingFlags flag = BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.Instance;
 
-            types.GetProperty("CreateTime")?.SetValue(source, DateTime.Now, null);
-            types.GetProperty("AddTime")?.SetValue(source, DateTime.Now, null);
-            types.GetProperty("UpdateTime")?.SetValue(source, DateTime.Now, null);
-            if (types.GetProperty("Create_by") != null && context != null)
-            {
-                types.GetProperty("Create_by")?.SetValue(source, context.GetName(), null);
-            }
-            if (types.GetProperty("Create_By") != null && context != null)
-            {
-                types.GetProperty("Create_By")?.SetValue(source, context.GetName(), null);
-            }
-            if (types.GetProperty("CreateBy") != null && context != null)
-            {
-                types.GetProperty("CreateBy")?.SetValue(source, context.GetName(), null);
-            }
-            if (types.GetProperty("UserId") != null && context != null)
-            {
-                types.GetProperty("UserId")?.SetValue(source, context.GetUId(), null);
-            }
+            types.GetProperty("CreateTime", flag)?.SetValue(source, DateTime.Now, null);
+            types.GetProperty("AddTime", flag)?.SetValue(source, DateTime.Now, null);
+            types.GetProperty("CreateBy", flag)?.SetValue(source, context.GetName(), null);
+            types.GetProperty("Create_by", flag)?.SetValue(source, context.GetName(), null);
+            types.GetProperty("UserId", flag)?.SetValue(source, context.GetUId(), null);
+
             return source;
         }
 
@@ -34,12 +24,12 @@ namespace ZR.Admin.WebApi.Extensions
         {
             var types = source?.GetType();
             if (types == null) return source;
+            BindingFlags flag = BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.Instance;
 
-            types.GetProperty("UpdateTime")?.SetValue(source, DateTime.Now, null);
-            types.GetProperty("Update_time")?.SetValue(source, DateTime.Now, null);
-
-            types.GetProperty("UpdateBy")?.SetValue(source,context.GetName(), null);
-            types.GetProperty("Update_by")?.SetValue(source, context.GetName(), null);
+            types.GetProperty("UpdateTime", flag)?.SetValue(source, DateTime.Now, null);
+            types.GetProperty("Update_time", flag)?.SetValue(source, DateTime.Now, null);
+            types.GetProperty("UpdateBy", flag)?.SetValue(source, context.GetName(), null);
+            types.GetProperty("Update_by", flag)?.SetValue(source, context.GetName(), null);
 
             return source;
         }

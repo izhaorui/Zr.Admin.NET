@@ -1,6 +1,7 @@
-using System;
 using System.Collections.Generic;
+using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Service.System.IService
 {
@@ -10,8 +11,10 @@ namespace ZR.Service.System.IService
     /// @author zr
     /// @date 2021-12-15
     /// </summary>
-    public interface ISysNoticeService: IBaseService<SysNotice>
+    public interface ISysNoticeService : IBaseService<SysNotice>
     {
         List<SysNotice> GetSysNotices();
+
+        PagedInfo<SysNotice> GetPageList(SysNoticeQueryDto parm);
     }
 }

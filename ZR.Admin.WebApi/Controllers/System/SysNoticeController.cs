@@ -11,6 +11,7 @@ using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Hubs;
 using ZR.Common;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Service.System.IService;
@@ -58,13 +59,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:notice:list")]
         public IActionResult QuerySysNotice([FromQuery] SysNoticeQueryDto parm)
         {
-            var predicate = Expressionable.Create<SysNotice>();
-
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.NoticeTitle), m => m.NoticeTitle.Contains(parm.NoticeTitle));
-            predicate = predicate.AndIF(parm.NoticeType != null, m => m.NoticeType == parm.NoticeType);
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.CreateBy), m => m.Create_by.Contains(parm.CreateBy) || m.Update_by.Contains(parm.CreateBy));
-            predicate = predicate.AndIF(parm.Status != null, m => m.Status == parm.Status);
-            var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
+            PagedInfo<SysNotice> response = _SysNoticeService.GetPageList(parm);
             return SUCCESS(response);
         }
 
@@ -74,7 +69,6 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="NoticeId"></param>
         /// <returns></returns>
         [HttpGet("{NoticeId}")]
-        [ActionPermissionFilter(Permission = "system:notice:query")]
         public IActionResult GetSysNotice(int NoticeId)
         {
             var response = _SysNoticeService.GetFirst(x => x.NoticeId == NoticeId);
@@ -92,9 +86,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult AddSysNotice([FromBody] SysNoticeDto parm)
         {
             var modal = parm.Adapt<SysNotice>().ToCreate(HttpContext);
-            modal.Create_by = HttpContext.GetName();
-            modal.Create_time = DateTime.Now;
-
+            
             int result = _SysNoticeService.Insert(modal, it => new
             {
                 it.NoticeTitle,
