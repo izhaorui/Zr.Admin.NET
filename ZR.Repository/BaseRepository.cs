@@ -351,8 +351,12 @@ namespace ZR.Repository
             var total = 0;
             page.PageSize = parm.PageSize;
             page.PageIndex = parm.PageNum;
-
-            page.Result = source.OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(!string.IsNullOrWhiteSpace(parm.SortType) && parm.SortType.Contains("desc") ? "desc" : "asc")}")
+            if (parm.Sort.IsNotEmpty())
+            {
+                source.OrderByPropertyName(parm.Sort, parm.SortType.Contains("desc") ? OrderByType.Desc : OrderByType.Asc);
+            }
+            page.Result = source
+                //.OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(!string.IsNullOrWhiteSpace(parm.SortType) && parm.SortType.Contains("desc") ? "desc" : "asc")}")
                 .ToPageList(parm.PageNum, parm.PageSize, ref total);
             page.TotalNum = total;
             return page;
@@ -372,9 +376,12 @@ namespace ZR.Repository
             var total = 0;
             page.PageSize = parm.PageSize;
             page.PageIndex = parm.PageNum;
-
+            if (parm.Sort.IsNotEmpty())
+            {
+                source.OrderByPropertyName(parm.Sort, parm.SortType.Contains("desc") ? OrderByType.Desc : OrderByType.Asc);
+            }
             var result = source
-                .OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(!string.IsNullOrWhiteSpace(parm.SortType) && parm.SortType.Contains("desc") ? "desc" : "asc")}")
+                //.OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(!string.IsNullOrWhiteSpace(parm.SortType) && parm.SortType.Contains("desc") ? "desc" : "asc")}")
                 .ToPageList(parm.PageNum, parm.PageSize, ref total);
 
             page.TotalNum = total;
