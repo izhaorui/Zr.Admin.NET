@@ -43,6 +43,7 @@ namespace ZR.Service
         {
             var exp = Expressionable.Create<SysUser>();
             exp.AndIF(!string.IsNullOrEmpty(user.UserName), u => u.UserName.Contains(user.UserName));
+            exp.AndIF(user.UserId > 0, u => u.UserId == user.UserId);
             exp.AndIF(user.Status != -1, u => u.Status == user.Status);
             exp.AndIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, u => u.Create_time >= user.BeginTime);
             exp.AndIF(user.EndTime != DateTime.MinValue && user.EndTime != null, u => u.Create_time <= user.EndTime);

@@ -18,7 +18,7 @@ namespace ZR.Model.System.Dto
 
     public class SysUserQueryDto
     {
-        public long UserId { get; set; }
+        public long? UserId { get; set; }
         public string UserName { get; set; }
         public string NickName { get; set; }
         public string Email { get; set; }
