@@ -126,7 +126,7 @@ $end
         </view>
       </view>
     </u-popup>
-    <u-back-top :scroll-top="scrollTop" :bottom="150"></u-back-top>
+    <u-back-top :scroll-top="scrollTop" :bottom="180"></u-back-top>
   </view>
 </template>
 
@@ -174,13 +174,14 @@ $end
         loading: false,
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType == "")
-        // ${item.ColumnComment}选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
+        // ${item.ColumnComment}选项列表 格式 eg:{ label: '标签', value: '0'}
         ${item.CsharpFieldFl}Options: [],
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
         //${item.ColumnComment}时间范围
         dateRange${item.CsharpField}: [],
 $end
 $end
+        // 排序集合 格式 eg:{ label: '名称', value: 'userId'}
         sortOptions: [
 $foreach(column in genTable.Columns)
 $if(column.IsSort)
@@ -199,6 +200,9 @@ $end
     methods: {
       checkPermi,
       getList() {
+        uni.showLoading({
+          title: 'loading...'
+        });
 $foreach(item in genTable.Columns)
 $if(item.HtmlType == "datetime" && item.IsQuery == true)
       this.addDateRange(this.queryParams, this.dateRange${item.CsharpField}, '${item.CsharpField}');
@@ -206,9 +210,8 @@ $end
 $end
         list${genTable.BusinessName}(this.queryParams).then(res => {
          if (res.code == 200) {
-           this.dataList = res.data.result;
+           this.dataList = [...this.dataList, ...res.data.result]
            this.total = res.data.totalNum;
-           this.loading = false;
           }
         })
       },
@@ -283,9 +286,3 @@ $end
     }
   }
 </script>
-
-<style lang="scss">
-  .container {
-    padding-bottom: 20px;
-  }
-</style>
