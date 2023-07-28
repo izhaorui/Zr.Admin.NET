@@ -159,5 +159,40 @@ $if(replaceDto.ShowBtnTruncate)
             return Truncate();
         }
 $end
+
+$if(replaceDto.ShowBtnImport)
+        /// <summary>
+        /// 导入${genTable.FunctionName}
+        /// </summary>
+        /// <returns></returns>
+        public (string, object, object) Import${replaceDto.ModelTypeName}(List<${replaceDto.ModelTypeName}> list)
+        {
+            var x = Context.Storageable(list)
+                .SplitInsert(it => !it.Any())
+$foreach(column in genTable.Columns)
+$if(column.IsRequired && column.IsIncrement == false)
+                .SplitError(x => x.Item.${column.CsharpField}.IsEmpty(), "${column.ColumnComment}不能为空")
+$end
+$end
+                //.WhereColumns(it => it.UserName)//如果不是主键可以这样实现（多字段it=>new{it.x1,it.x2}）
+                .ToStorage();
+            var result = x.AsInsertable.ExecuteCommand();//插入可插入部分;
+
+            string msg = $"插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误数据{x.ErrorList.Count} 不计算数据{x.IgnoreList.Count} 删除数据{x.DeleteList.Count} 总共{x.TotalList.Count}";                    
+            Console.WriteLine(msg);
+
+            //输出错误信息               
+            foreach (var item in x.ErrorList)
+            {
+                Console.WriteLine("错误" + item.StorageMessage);
+            }
+            foreach (var item in x.IgnoreList)
+            {
+                Console.WriteLine("忽略" + item.StorageMessage);
+            }
+
+            return (msg, x.ErrorList, x.IgnoreList);
+        }
+$end
     }
 }

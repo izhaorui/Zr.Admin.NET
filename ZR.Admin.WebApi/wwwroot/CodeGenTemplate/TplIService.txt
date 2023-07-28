@@ -24,5 +24,9 @@ $end
 $if(replaceDto.ShowBtnTruncate)        
         bool Truncate${replaceDto.ModelTypeName}();
 $end
+
+$if(replaceDto.ShowBtnImport)
+        (string, object, object) Import${replaceDto.ModelTypeName}(List<${replaceDto.ModelTypeName}> list);
+$end
     }
 }

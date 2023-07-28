@@ -280,7 +280,7 @@ namespace ZR.Admin.WebApi.Controllers
             CodeGeneratorTool.Generate(dto);
             if (genTableInfo.Options.GenerateMenu)
             {
-                SysMenuService.AddSysMenu(genTableInfo, dto.ReplaceDto.PermissionPrefix, dto.ReplaceDto.ShowBtnEdit, dto.ReplaceDto.ShowBtnExport);
+                SysMenuService.AddSysMenu(genTableInfo, dto.ReplaceDto.PermissionPrefix, dto.ReplaceDto.ShowBtnEdit, dto.ReplaceDto.ShowBtnExport, dto.ReplaceDto.ShowBtnImport);
             }
 
             foreach (var item in dto.GenCodes)

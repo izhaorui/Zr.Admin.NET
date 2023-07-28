@@ -588,7 +588,7 @@ namespace ZR.Service
         #endregion
 
 
-        public void AddSysMenu(GenTable genTableInfo, string permPrefix, bool showEdit, bool showExport)
+        public void AddSysMenu(GenTable genTableInfo, string permPrefix, bool showEdit, bool showExport, bool showImport)
         {
             var menu = GetFirst(f => f.MenuName == genTableInfo.FunctionName);
             if (menu is null)
@@ -671,6 +671,18 @@ namespace ZR.Service
                 Icon = "",
             };
 
+            SysMenu menuImport = new()
+            {
+                MenuName = "导入",
+                ParentId = menu.MenuId,
+                OrderNum = 5,
+                Perms = $"{permPrefix}:import",
+                MenuType = "F",
+                Visible = "0",
+                Status = "0",
+                Icon = "",
+            };
+
             menuList.Add(menuQuery);
             menuList.Add(menuAdd);
             menuList.Add(menuDel);
@@ -681,6 +693,10 @@ namespace ZR.Service
             if (showExport)
             {
                 menuList.Add(menuExport);
+            }
+            if (showImport)
+            {
+                menuList.Add(menuImport);
             }
             //Insert(menuList);
 

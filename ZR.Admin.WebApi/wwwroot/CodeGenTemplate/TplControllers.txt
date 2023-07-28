@@ -1,15 +1,12 @@
-using Infrastructure;
-using Infrastructure.Attribute;
-using Infrastructure.Enums;
-using Infrastructure.Model;
-using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using ${options.DtosNamespace};
 using ${options.ModelsNamespace}.${options.SubNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
 using ${options.ApiControllerNamespace}.Extensions;
 using ${options.ApiControllerNamespace}.Filters;
-using ${options.BaseNamespace}Common;
+$if(replaceDto.ShowBtnImport)
+using MiniExcelLibs;
+$end
 
 //创建时间：${replaceDto.AddTime}
 namespace ${options.ApiControllerNamespace}.Controllers
@@ -165,6 +162,40 @@ $if(replaceDto.ShowBtnTruncate)
                 return ToResponse(ResultCode.FAIL, "操作失败");
             }
             return SUCCESS(_${replaceDto.ModelTypeName}Service.Truncate${replaceDto.ModelTypeName}());
+        }
+$end
+
+$if(replaceDto.ShowBtnImport)
+        /// <summary>
+        /// 导入
+        /// </summary>
+        /// <param name="formFile"></param>
+        /// <returns></returns>
+        [HttpPost("importData")]
+        [Log(Title = "${genTable.FunctionName}导入", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false, IsSaveResponseData = true)]
+        [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:import")]
+        public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
+        {
+            List<${replaceDto.ModelTypeName}> list = new();
+            using (var stream = formFile.OpenReadStream())
+            {
+                list = stream.Query<${replaceDto.ModelTypeName}>(startCell: "A1").ToList();
+            }
+
+            return SUCCESS(_${replaceDto.ModelTypeName}Service.Import${replaceDto.ModelTypeName}(list));
+        }
+
+        /// <summary>
+        /// ${genTable.FunctionName}导入模板下载
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("importTemplate")]
+        [Log(Title = "${genTable.FunctionName}模板", BusinessType = BusinessType.EXPORT, IsSaveRequestData = true, IsSaveResponseData = false)]
+        [AllowAnonymous]
+        public IActionResult ImportTemplateExcel()
+        {
+            var result = DownloadImportTemplate(new List<${replaceDto.ModelTypeName}>() { }, "${replaceDto.ModelTypeName}");
+            return ExportExcel(result.Item2, result.Item1);
         }
 $end
 

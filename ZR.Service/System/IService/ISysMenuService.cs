@@ -39,7 +39,7 @@ namespace ZR.Service.System.IService
 
         List<TreeSelectVo> BuildMenuTreeSelect(List<SysMenu> menus);
 
-        void AddSysMenu(GenTable genTableInfo, string permPrefix, bool showEdit, bool showExport);
+        void AddSysMenu(GenTable genTableInfo, string permPrefix, bool showEdit, bool showExport, bool showImport);
         List<SysMenu> SelectTreeMenuListByRoles(MenuQueryDto menu, List<long> roles);
         List<RoleMenuExportDto> SelectRoleMenuListByRole(MenuQueryDto menu, int roleId);
     }

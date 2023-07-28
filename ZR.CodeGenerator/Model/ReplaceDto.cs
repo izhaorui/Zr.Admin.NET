@@ -50,6 +50,7 @@ namespace ZR.CodeGenerator.Model
         public bool ShowBtnView { get; set; }
         public bool ShowBtnTruncate { get; set; }
         public bool ShowBtnMultiDel { get; set; }
+        public bool ShowBtnImport { get; set; }
         /// <summary>
         /// 上传URL data
         /// </summary>

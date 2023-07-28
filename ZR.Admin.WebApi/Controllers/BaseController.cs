@@ -58,9 +58,11 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         protected IActionResult ExportExcel(string path, string fileName)
         {
-            //IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
-            //string fileDir = Path.Combine(webHostEnvironment.WebRootPath, path, fileName);
-
+            //var webHostEnvironment = App.WebHostEnvironment;
+            if (!Path.Exists(path))
+            {
+                throw new CustomException(fileName + "文件不存在");
+            }
             var stream = Io.File.OpenRead(path);  //创建文件流
 
             Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
@@ -169,23 +171,23 @@ namespace ZR.Admin.WebApi.Controllers
         /// <summary>
         /// 下载导入模板
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="list"></param>
-        /// <param name="stream"></param>
+        /// <typeparam name="T">数据类型</typeparam>
+        /// <param name="list">空数据类型集合</param>
         /// <param name="fileName">下载文件名</param>
         /// <returns></returns>
-        protected string DownloadImportTemplate<T>(List<T> list, Stream stream, string fileName)
+        protected (string, string) DownloadImportTemplate<T>(List<T> list, string fileName)
         {
-            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
-            string sFileName = $"{fileName}模板.xlsx";
-            string newFileName = Path.Combine(webHostEnvironment.WebRootPath, "ImportTemplate", sFileName);
+            IWebHostEnvironment webHostEnvironment = App.WebHostEnvironment;
+            string sFileName = $"{fileName}.xlsx";
+            string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "ImportTemplate", sFileName);
 
-            if (!Directory.Exists(newFileName))
+            //不存在模板创建模板
+            if (!Directory.Exists(fullPath))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(newFileName));
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                MiniExcel.SaveAs(fullPath, list, overwriteFile: true);
             }
-            MiniExcel.SaveAs(newFileName, list);
-            return sFileName;
+            return (sFileName, fullPath);
         }
 
         /// <summary>

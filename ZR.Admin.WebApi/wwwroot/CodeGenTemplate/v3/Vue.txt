@@ -108,6 +108,25 @@ $if(replaceDto.ShowBtnTruncate)
         </el-button>
       </el-col>
 $end
+$if(replaceDto.ShowBtnImport)
+      <el-col :span="1.5">
+        <el-dropdown trigger="click" v-hasPermi="['${replaceDto.PermissionPrefix}:import']">
+          <el-button type="primary" plain icon="Upload">
+            {{ ${t}t('btn.import') }}<el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="upload">
+                <importData
+                  templateUrl="${genTable.ModuleName}/${genTable.BusinessName}/importTemplate"
+                  importUrl="/${genTable.ModuleName}/${genTable.BusinessName}/importData"
+                  @success="handleFileSuccess"></importData>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-col>
+$end
 $if(replaceDto.ShowBtnExport)
       <el-col :span="1.5">
         <el-button type="warning" plain icon="download" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">
@@ -136,7 +155,7 @@ $end
 $if(sub)
       <el-table-column align="center" width="90">
         <template #default="scope">
-          <el-button text @click="rowClick(scope.row)">详情</el-button>
+          <el-button text @click="rowClick(scope.row)">{{ ${t}t('btn.details') }}</el-button>
         </template>
       </el-table-column>
 $end
@@ -194,7 +213,7 @@ $end
         </el-button-group>
 $else
 $if(replaceDto.ShowBtnView)
-          <el-button type="primary" icon="view" @click="handlePreview(scope.row)"></el-button>
+          <el-button type="primary" icon="view" title="详情" @click="handlePreview(scope.row)"></el-button>
 $end
 $if(replaceDto.ShowBtnEdit)
           <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" type="success" icon="edit" title="编辑" @click="handleUpdate(scope.row)"></el-button>
@@ -426,7 +445,9 @@ from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.
 $if(replaceDto.ShowEditor == 1)
 import Editor from '@/components/Editor'
 $end
-
+$if(replaceDto.ShowBtnImport)
+import importData from '@/components/ImportData'
+$end
 const { proxy } = getCurrentInstance()
 const ids = ref([])
 const loading = ref(false)
@@ -743,6 +764,20 @@ function handlePreview(row) {
   title.value = '查看'
   opertype.value = 3
   form.value = row
+}
+$end
+
+$if(replaceDto.ShowBtnImport)
+// 导入数据成功处理
+const handleFileSuccess = (response) => {
+  const { item1, item2 } = response.data
+  var error = ''
+  item2.forEach((item) => {
+    error += item.storageMessage + ','
+  })
+  proxy.${alert}alert(item1 + '<p>' + error + '</p>', '导入结果', {
+    dangerouslyUseHTMLString: true
+  })
 }
 $end
 

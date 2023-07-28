@@ -50,6 +50,7 @@ namespace ZR.CodeGenerator
                 ShowBtnView = dto.GenTable.Options.CheckedBtn.Any(f => f == 5),
                 ShowBtnTruncate = dto.GenTable.Options.CheckedBtn.Any(f => f == 6),
                 ShowBtnMultiDel = dto.GenTable.Options.CheckedBtn.Any(f => f == 7),
+                ShowBtnImport = dto.GenTable.Options.CheckedBtn.Any(f => f == 8),
                 ViewFileName = dto.GenTable.BusinessName.FirstUpperCase(),
                 OperBtnStyle = dto.GenTable.Options.OperBtnStyle
             };
@@ -586,6 +587,7 @@ namespace ZR.CodeGenerator
                 options.Data.Set("refs", "$");//特殊标签替换
                 options.Data.Set("t", "$");//特殊标签替换
                 options.Data.Set("modal", "$");//特殊标签替换
+                options.Data.Set("alert", "$");//特殊标签替换
                 options.Data.Set("index", "$");//特殊标签替换
                 options.Data.Set("confirm", "$");//特殊标签替换
                 options.Data.Set("nextTick", "$");
