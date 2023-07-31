@@ -1,8 +1,5 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
-using IPTools.Core;
+﻿using IPTools.Core;
 using Lazy.Captcha.Core;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using UAParser;

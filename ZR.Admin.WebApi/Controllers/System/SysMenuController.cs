@@ -1,9 +1,4 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
-using Infrastructure.Enums;
-using Infrastructure.Model;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
