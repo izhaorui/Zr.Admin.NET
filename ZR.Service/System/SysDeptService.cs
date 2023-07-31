@@ -67,7 +67,7 @@ namespace ZR.Service.System
         {
             SysDept info = GetFirst(it => it.DeptId == dept.ParentId);
             //如果父节点不为正常状态,则不允许新增子节点
-            if (info != null && !UserConstants.DEPT_NORMAL.Equals(info?.Status))
+            if (info != null && UserConstants.DEPT_NORMAL != info?.Status)
             {
                 throw new CustomException("部门停用，不允许新增");
             }

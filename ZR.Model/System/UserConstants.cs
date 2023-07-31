@@ -30,7 +30,7 @@
         /// <summary>
         /// 部门正常状态
         /// </summary>
-        public static string DEPT_NORMAL = "0";
+        public static int DEPT_NORMAL = 0;
 
         /// <summary>
         /// 部门停用状态
