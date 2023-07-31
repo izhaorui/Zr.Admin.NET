@@ -486,7 +486,7 @@ CREATE TABLE [dbo].[sys_file](
 	[storeType] [INT] NULL
 )
 GO
-IF OBJECT_ID(N'sys_common_lang',N'U') is not NULL DROP TABLE sys_common_lang
+IF OBJECT_ID(N'sys_common_lang',N'U') is not NULL DROP TABLE dbo.sys_common_lang
 GO
 CREATE TABLE sys_common_lang
 (
@@ -495,5 +495,22 @@ CREATE TABLE sys_common_lang
 	lang_key NVARCHAR(100) NULL,				--语言翻译key
 	lang_name NVARCHAR(2000) NOT NULL,			--
 	addtime DATETIME
+)
+GO
+
+GO
+IF OBJECT_ID(N'SqlDiffLog',N'U') is not NULL DROP TABLE dbo.SqlDiffLog
+GO
+CREATE TABLE [dbo].[SqlDiffLog](
+	[PId] [BIGINT] NOT NULL PRIMARY KEY,
+	[TableName] [VARCHAR](255) NULL,
+	[BusinessData] [VARCHAR](4000) NULL,
+	[DiffType] [VARCHAR](255) NULL,
+	[Sql] [NVARCHAR](MAX) NULL,
+	[BeforeData] [NVARCHAR](MAX) NULL,
+	[AfterData] [NVARCHAR](MAX) NULL,
+	[UserName] [VARCHAR](255) NULL,
+	[AddTime] [DATETIME] NULL,
+	[ConfigId] [VARCHAR](255) NULL
 )
 GO

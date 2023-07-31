@@ -650,3 +650,34 @@ EXEC sp_addextendedproperty
 'TABLE', N'gen_demo',
 'COLUMN', N'remark'
 GO
+
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'主键' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'PId'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'表名' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'TableName'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'业务数据内容' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'BusinessData'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'差异类型insert，update，delete' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'DiffType'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'执行sql语句' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'Sql'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'变更前数据' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'BeforeData'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'变更后数据' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'AfterData'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'操作用户名' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'UserName'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'数据库配置id' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog', @level2type=N'COLUMN',@level2name=N'ConfigId'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'数据差异日志' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlDiffLog'
+GO

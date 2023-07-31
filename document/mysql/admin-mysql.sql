@@ -511,3 +511,23 @@ CREATE TABLE `sys_common_lang`  (
   `addtime` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
   PRIMARY KEY (`Id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+
+
+-- ----------------------------
+-- Table structure for SqlDiffLog
+-- ----------------------------
+DROP TABLE IF EXISTS `SqlDiffLog`;
+CREATE TABLE `SqlDiffLog`  (
+  `PId` bigint(20) NOT NULL COMMENT '主键',
+  `TableName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '表名',
+  `BusinessData` varchar(4000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '业务数据内容',
+  `DiffType` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '差异类型insert，update，delete',
+  `Sql` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '执行sql语句',
+  `BeforeData` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '变更前数据',
+  `AfterData` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '变更后数据',
+  `UserName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '操作用户名',
+  `AddTime` datetime NULL DEFAULT NULL,
+  `ConfigId` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '数据库配置id',
+  PRIMARY KEY (`PId`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '数据差异日志' ROW_FORMAT = Dynamic;
