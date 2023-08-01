@@ -262,6 +262,7 @@ $set(labelName = column.ColumnComment)
 $if(column.CsharpType == "int" || column.CsharpType == "long")
     $set(value = "parseInt(item.dictValue)")
     $set(number = ".number")
+    $set(switchType = ":active-value='1' :inactive-value='0'")
 $end
 
 $if(column.IsPK || column.IsIncrement)
@@ -353,6 +354,12 @@ $elseif(column.HtmlType == "colorPicker")
               <el-color-picker v-model="form.${columnName}" />
             </el-form-item>
           </el-col>
+$elseif(column.HtmlType == "switch")
+          <el-col :lg="12">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-switch v-model="form.${columnName}" ${switchType} />
+            </el-form-item>
+          </el-col>
 $else
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
@@ -386,6 +393,7 @@ $set(columnName = column.CsharpFieldFl)
 $if(column.CsharpType == "int" || column.CsharpType == "long")
 $set(value = "parseInt(item.dictValue)")
 $set(number = ".number")
+$set(switchType = ":active-value='1' :inactive-value='0'")
 $end
 $if(column.IsList == true)
 $if(column.IsPk || column.CsharpField == genTable.SubTableFkName)
@@ -412,6 +420,12 @@ $elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio" || column
                   :value="${value}"></el-option>
               </el-select>
             </template>
+          </el-table-column>
+$elseif(column.HtmlType == "switch")
+          <el-table-column label="${labelName}" prop="${columnName}">
+            <template #default="scope">
+              <el-switch v-model="scope.row.${columnName}" ${switchType} />
+            <template #default="scope">
           </el-table-column>
 $else
           <el-table-column label="${labelName}" align="center" prop="${columnName}">

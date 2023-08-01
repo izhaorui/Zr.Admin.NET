@@ -45,7 +45,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var list = UserService.SelectUserList(user, pager);
 
-            return SUCCESS(list, TIME_FORMAT_FULL);
+            return SUCCESS(list);
         }
 
         /// <summary>
