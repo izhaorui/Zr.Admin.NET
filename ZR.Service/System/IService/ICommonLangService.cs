@@ -3,6 +3,7 @@ using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.Models;
 using System.Collections.Generic;
+using JinianNet.JNTemplate;
 
 namespace ZR.Service.System.IService
 {
@@ -19,5 +20,7 @@ namespace ZR.Service.System.IService
         dynamic GetListToPivot(CommonLangQueryDto parm);
         void StorageCommonLang(CommonLangDto parm);
         Dictionary<string, object> SetLang(List<CommonLang> msgList);
+
+        (string, object, object) ImportCommonLang(List<CommonLang> list);
     }
 }

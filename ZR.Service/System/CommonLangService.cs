@@ -1,7 +1,6 @@
 using Infrastructure.Attribute;
 using SqlSugar;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using ZR.Model;
 using ZR.Model.Dto;
@@ -29,10 +28,8 @@ namespace ZR.Service.System
         /// <returns></returns>
         public PagedInfo<CommonLang> GetList(CommonLangQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<CommonLang>();
 
-            //搜索条件查询语法参考Sqlsugar
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
             predicate = predicate.AndIF(parm.BeginAddtime != null, it => it.Addtime >= parm.BeginAddtime && it.Addtime <= parm.EndAddtime);
@@ -49,10 +46,8 @@ namespace ZR.Service.System
         /// <returns></returns>
         public dynamic GetListToPivot(CommonLangQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<CommonLang>();
 
-            //搜索条件查询语法参考Sqlsugar
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
             predicate = predicate.AndIF(parm.BeginAddtime != null, it => it.Addtime >= parm.BeginAddtime && it.Addtime <= parm.EndAddtime);
@@ -64,10 +59,8 @@ namespace ZR.Service.System
 
         public List<CommonLang> GetLangList(CommonLangQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<CommonLang>();
 
-            //搜索条件查询语法参考Sqlsugar
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangCode), it => it.LangCode == parm.LangCode);
             //predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.LangKey), it => it.LangKey.Contains(parm.LangKey));
             var response = Queryable()
@@ -109,6 +102,33 @@ namespace ZR.Service.System
                 }
             }
             return dic;
+        }
+
+        /// <summary>
+        /// 导入多语言设置
+        /// </summary>
+        /// <returns></returns>
+        public (string, object, object) ImportCommonLang(List<CommonLang> list)
+        {
+            var x = Storageable(list)
+                .WhereColumns(it => new { it.LangKey, it.LangCode })
+                .ToStorage();
+            x.AsInsertable.ExecuteReturnSnowflakeIdList();//插入可插入部分;
+            x.AsUpdateable.UpdateColumns(it => new { it.LangName }).ExecuteCommand();
+
+            string msg = $"插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误数据{x.ErrorList.Count} 不计算数据{x.IgnoreList.Count} 删除数据{x.DeleteList.Count} 总共{x.TotalList.Count}";
+
+            //输出错误信息               
+            foreach (var item in x.ErrorList)
+            {
+                Console.WriteLine("错误" + item.StorageMessage);
+            }
+            foreach (var item in x.IgnoreList)
+            {
+                Console.WriteLine("忽略" + item.StorageMessage);
+            }
+
+            return (msg, x.ErrorList, x.IgnoreList);
         }
         #endregion
     }
