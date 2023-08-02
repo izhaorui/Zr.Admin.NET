@@ -125,7 +125,7 @@ namespace ZR.Admin.WebApi.Extensions
                         SqlDiffLog log = new()
                         {
                             BeforeData = pars,
-                            BusinessData = data.ToString(),
+                            BusinessData = data?.ToString(),
                             DiffType = diffType.ToString(),
                             Sql = sql,
                             TableName = item.TableName,

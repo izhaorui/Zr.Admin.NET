@@ -390,6 +390,7 @@ $if(sub)
 $foreach(column in genTable.SubTable.Columns)
 $set(labelName = column.ColumnComment)
 $set(columnName = column.CsharpFieldFl)
+$set(value = "item.dictValue")
 $if(column.CsharpType == "int" || column.CsharpType == "long")
 $set(value = "parseInt(item.dictValue)")
 $set(number = ".number")
@@ -425,7 +426,7 @@ $elseif(column.HtmlType == "switch")
           <el-table-column label="${labelName}" prop="${columnName}">
             <template #default="scope">
               <el-switch v-model="scope.row.${columnName}" ${switchType} />
-            <template #default="scope">
+            </template>
           </el-table-column>
 $else
           <el-table-column label="${labelName}" align="center" prop="${columnName}">
@@ -792,6 +793,7 @@ const handleFileSuccess = (response) => {
   proxy.${alert}alert(item1 + '<p>' + error + '</p>', '导入结果', {
     dangerouslyUseHTMLString: true
   })
+  getList()
 }
 $end
 
