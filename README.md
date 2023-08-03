@@ -5,8 +5,16 @@
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
 <a href='https://gitee.com/izory/ZrAdminNetCore/members'><img src='https://gitee.com/izory/ZrAdminNetCore/badge/fork.svg?theme=dark' alt='fork'></img></a>
 	<a href="https://gitee.com/izory/ZrAdminNetCore/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
-	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/change-更新日志-yellow"/></a>
+	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230713-yellow"/></a>
 </p>
+
+---
+
+<div align="center">
+	<p><strong><a href="README.md">简体中文</a> | <a href="README.en.md">English</a></strong></p>
+</div>
+
+---
 
 ## 🍟 概述
 
@@ -37,15 +45,15 @@
 | ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcodeH5.png) | ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcode.jpg) |
 
 ```
-由于是个人项目，资金有限，体验服是低配，请大家爱惜，轻戳，不胜感激！！！
+由于是个人项目，资金有限，体验服务器是低配，请大家爱惜，轻戳，不胜感激！！！
 ```
 
 ## 💒 代码仓库
 
-| 仓库 | Github                                                 | Gitee                                                            |
-| ---- | ------------------------------------------------------ | ---------------------------------------------------------------- |
-| Net7 | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
-| Vue3 | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
+| 仓库           | Github                                                 | Gitee                                                            |
+| -------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
+| Net7           | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
+| Vue3(推荐使用) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
 
 ## 🍁 前端技术
 
@@ -97,7 +105,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 ├─ZR.Admin.WebApi               	->[webapi接口]：为Vue版或其他三方系统提供接口服务。
 ├─ZR.Tasks               		->[定时任务类库]：提供项目定时任务实现功能；
 ├─ZR.CodeGenerator               	->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
-├─ZR.Vue               			->[前端UI]：vue2.0版本UI层。
+├─ZR.Vue               			->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。
 ├─document               		->[文档]：数据库脚本
 ```
 
@@ -160,6 +168,13 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
     <tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a5.png"/></td>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a6.png"/></td>
+    </tr>
+		<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a7.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a9.png"/></td>
+    </tr>
+<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a10.png"/></td>
     </tr>
 
 </table>
