@@ -1,0 +1,3 @@
+先导入 admin-sqlserver
+再导入 admin-sqlserver-表字段说明导入
+初始化 admin-sqlserver-初始化数据
