@@ -1,5 +1,6 @@
 <template>
   <div class="app-container home">
+    <el-alert title="当前Vue2项目已不再更新新内容，请升级至Vue3，体验更丰富的内容" type="error"> </el-alert>
     <el-row :gutter="20">
       <el-col :sm="24" :lg="24">
         <blockquote class="text-warning" style="font-size: 14px">
@@ -72,13 +73,13 @@
           <el-col :span="10">
             <h4>后端技术</h4>
             <ul>
-              <li>NET5</li>
+              <li>NET7</li>
               <li>JWT</li>
               <li>SqlSugar</li>
               <li>Quartz.Net</li>
               <li>MySql</li>
               <li>Mapster</li>
-              <li>Epplus</li>
+              <li>MiniExcel</li>
               <li>Signalr</li>
               <li>...</li>
             </ul>
@@ -100,7 +101,7 @@
     </el-row>
     <el-divider />
     <el-row :gutter="20" class="mt10">
-      <el-col :sm="24" :lg="8">
+      <el-col :sm="24" :lg="6">
         <el-card>
           <div slot="header" class="clearfix">
             <span>联系信息</span>
@@ -133,12 +134,32 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="10">
-        <!-- <el-card>
-          <div slot="header" class="clearfix">
-            <span></span>
+      <el-col :sm="24" :lg="10">
+        <el-card>
+          <template #header>
+            <span>
+              移动端体验
+              <span style="color: red">如有需要联系作者</span>
+            </span>
+          </template>
+
+          <div class="body">
+            <table style="width: 100%; text-align: center">
+              <tr>
+                <td>微信小程序</td>
+                <td>H5</td>
+              </tr>
+              <tr>
+                <td>
+                  <img src="@/assets/image/qrcode.jpg" alt="donate" style="width: 160px" />
+                </td>
+                <td>
+                  <img src="@/assets/image/qrcodeH5.png" alt="donate" style="width: 160px" />
+                </td>
+              </tr>
+            </table>
           </div>
-        </el-card> -->
+        </el-card>
       </el-col>
     </el-row>
     <el-divider />

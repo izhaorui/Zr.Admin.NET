@@ -51,7 +51,7 @@
           <el-form-item label="状态" prop="status">
             <el-select v-model="queryParams.status" placeholder="用户状态" clearable size="small" style="width: 240px">
               <el-option label="全部" :value="-1" />
-							<el-option v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
+              <el-option v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
             </el-select>
           </el-form-item>
           <el-form-item label="创建时间">
@@ -418,7 +418,7 @@ export default {
     },
     // 用户状态修改
     handleStatusChange(row) {
-      let text = row.status === '0' ? '启用' : '停用'
+      let text = row.status == 0 ? '启用' : '停用'
       this.$confirm('确认要"' + text + '""' + row.userName + '"用户吗?', '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -431,7 +431,7 @@ export default {
           this.msgSuccess(text + '成功')
         })
         .catch(function () {
-          row.status = row.status === '0' ? '1' : '0'
+          row.status = row.status == 0 ? 1 : 0
         })
     },
     // 取消按钮

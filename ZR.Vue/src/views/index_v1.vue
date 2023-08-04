@@ -15,7 +15,8 @@
             <div class="user-item-right overflow">
               <el-row>
                 <el-col :xs="24" :md="24" class="right-title mb20 one-text-overflow">
-                  {{ userInfo.welcomeMessage }}，{{ userInfo.nickName }}，{{ userInfo.welcomeContent }}</el-col>
+                  {{ userInfo.welcomeMessage }}，{{ userInfo.nickName }}，{{ userInfo.welcomeContent }}</el-col
+                >
                 <el-col :xs="24" :sm="24" :md="24">
                   <el-col :xs="24" :md="8" class="right-l-v">
                     <div class="right-label">昵称：</div>
@@ -70,7 +71,7 @@
     </el-row>
     <panel-group @handleSetLineChartData="handleSetLineChartData" />
 
-    <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
+    <el-row style="background: #fff; padding: 16px 16px 0; margin-bottom: 32px">
       <line-chart :chart-data="lineChartData" />
     </el-row>
 
@@ -106,20 +107,20 @@ import { listNewArticle } from '@/api/system/article.js'
 const lineChartData = {
   newVisitis: {
     expectedData: [100, 120, 161, 134, 105, 160, 165],
-    actualData: [120, 82, 91, 154, 162, 140, 145]
+    actualData: [120, 82, 91, 154, 162, 140, 145],
   },
   messages: {
     expectedData: [200, 192, 120, 144, 160, 130, 140],
-    actualData: [180, 160, 151, 106, 145, 150, 130]
+    actualData: [180, 160, 151, 106, 145, 150, 130],
   },
   purchases: {
     expectedData: [80, 100, 121, 104, 105, 90, 100],
-    actualData: [120, 90, 100, 138, 142, 130, 130]
+    actualData: [120, 90, 100, 138, 142, 130, 130],
   },
   shoppings: {
     expectedData: [130, 140, 141, 142, 145, 150, 160],
-    actualData: [120, 82, 91, 154, 162, 140, 130]
-  }
+    actualData: [120, 82, 91, 154, 162, 140, 130],
+  },
 }
 export default {
   name: 'Index',
@@ -129,7 +130,7 @@ export default {
     RaddarChart,
     PieChart,
     BarChart,
-    Scroll
+    Scroll,
   },
   computed: {
     photo() {
@@ -150,14 +151,14 @@ export default {
         openWatch: true, // 开启数据实时监控刷新dom
         singleHeight: 0, // 单步运动停止的高度(默认值0是无缝不停止的滚动) direction => 0/1
         singleWidth: 0, // 单步运动停止的宽度(默认值0是无缝不停止的滚动) direction => 2/3
-        waitTime: 1000 // 单步运动停止的时间(默认值1000ms)
+        waitTime: 1000, // 单步运动停止的时间(默认值1000ms)
       }
-    }
+    },
   },
   data() {
     return {
       lineChartData: lineChartData.newVisitis,
-      newArticleList: []
+      newArticleList: [],
     }
   },
   created() {
@@ -169,8 +170,8 @@ export default {
     handleSetLineChartData(type) {
       this.lineChartData = lineChartData[type]
     },
-    onOpenGitee() {}
-  }
+    onOpenGitee() {},
+  },
 }
 </script>
 

@@ -330,7 +330,7 @@ export default {
     },
     // 角色状态修改
     handleStatusChange(row) {
-      const text = row.status === '0' ? '启用' : '停用'
+      const text = row.status == 0 ? '启用' : '停用'
 
       console.log(JSON.stringify(row), text)
       this.$confirm('确认要"' + text + '""' + row.roleName + '"角色吗?', '警告', {
@@ -345,7 +345,7 @@ export default {
           this.msgSuccess(text + '成功')
         })
         .catch(function () {
-          row.status = row.status === '0' ? '1' : '0'
+          row.status = row.status == 0 ? 1 : 0
         })
     },
     // 取消按钮
