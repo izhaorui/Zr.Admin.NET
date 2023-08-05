@@ -82,6 +82,7 @@ namespace Infrastructure
 
     public class Gen
     {
+        public bool ShowApp { get; set; }
         public bool AutoPre { get; set; }
         public string VuePath { get; set; }
         public string Author { get; set; }

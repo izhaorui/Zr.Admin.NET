@@ -26,11 +26,11 @@ namespace ZR.CodeGenerator
         /// <param name="dto"></param>
         public static void Generate(GenerateDto dto)
         {
-            var vuePath = AppSettings.GetConfig("gen:vuePath");
+            var genOptions = AppSettings.Get<Gen>("gen");
             dto.VueParentPath = dto.VueVersion == 3 ? "ZRAdmin-vue" : "ZR.Vue";
-            if (!vuePath.IsEmpty())
+            if (!genOptions.VuePath.IsEmpty())
             {
-                dto.VueParentPath = vuePath;
+                dto.VueParentPath = genOptions.VuePath;
             }
             dto.GenOptions = GenerateOption(dto.GenTable);
             if (dto.GenTable.SubTable != null)
@@ -82,9 +82,12 @@ namespace ZR.CodeGenerator
             }
             GenerateVueJs(dto);
             GenerateSql(dto);
-            GenerateAppVueViews(replaceDto, dto);
-            GenerateAppVueFormViews(replaceDto, dto);
-            GenerateAppJs(dto);
+            if (genOptions.ShowApp)
+            {
+                GenerateAppVueViews(replaceDto, dto);
+                GenerateAppVueFormViews(replaceDto, dto);
+                GenerateAppJs(dto);
+            }
             dto.ReplaceDto = replaceDto;
         }
 
