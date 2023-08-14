@@ -778,7 +778,7 @@ function handlePreview(row) {
   open.value = true
   title.value = '查看'
   opertype.value = 3
-  form.value = row
+  form.value = { ...row }
 }
 $end
 

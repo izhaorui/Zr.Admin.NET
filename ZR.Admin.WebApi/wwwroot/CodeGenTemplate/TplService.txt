@@ -117,7 +117,7 @@ $end
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
             return Context.InsertNav(model).Include(s1 => s1.${genTable.SubTable.ClassName}Nav).ExecuteReturnEntity();
 $else
-            return Insertable(model).IgnoreColumns(true).ExecuteReturnEntity();
+            return Context.Insertable(model).ExecuteReturnEntity();
 $end
         }
 
