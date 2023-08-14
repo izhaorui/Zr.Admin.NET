@@ -68,27 +68,30 @@ namespace ZR.Admin.WebApi.Extensions
         private static void SetSugarAop(SqlSugarClient db, IocConfig iocConfig, ICacheService cache)
         {
             var config = db.GetConnectionScope(iocConfig.ConfigId).CurrentConnectionConfig;
-
+            var showDbLog = AppSettings.Get<bool>("ShowDbLog");
             string configId = config.ConfigId;
             db.GetConnectionScope(configId).Aop.OnLogExecuting = (sql, pars) =>
             {
-                string log = $"【db{configId} SQL语句】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
-                if (sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+                if (showDbLog)
                 {
-                    logger.Info(log);
-                }
-                else if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-                {
-                    logger.Warn(log);
-                }
-                else if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("TRUNCATE", StringComparison.OrdinalIgnoreCase))
-                {
-                    logger.Error(log);
-                }
-                else
-                {
-                    log = $"【db{configId} SQL语句】dbo.{sql} {string.Join(", ", pars.Select(x => x.ParameterName + " = " + GetParsValue(x)))};\n";
-                    logger.Info(log);
+                    string log = $"【db{configId} SQL语句】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
+                    if (sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        logger.Info(log);
+                    }
+                    else if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        logger.Warn(log);
+                    }
+                    else if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("TRUNCATE", StringComparison.OrdinalIgnoreCase))
+                    {
+                        logger.Error(log);
+                    }
+                    else
+                    {
+                        log = $"【db{configId} SQL语句】dbo.{sql} {string.Join(", ", pars.Select(x => x.ParameterName + " = " + GetParsValue(x)))};\n";
+                        logger.Info(log);
+                    }
                 }
             };
             db.GetConnectionScope(configId).Aop.OnError = (ex) =>
