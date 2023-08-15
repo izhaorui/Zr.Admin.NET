@@ -105,16 +105,14 @@ namespace ZR.Service
         /// </summary>
         /// <param name="sysUser"></param>
         /// <returns></returns>
-        public long InsertUser(SysUser sysUser)
+        public SysUser InsertUser(SysUser sysUser)
         {
-            sysUser.Create_time = DateTime.Now;
-            long userId = Insertable(sysUser).ExecuteReturnIdentity();
-            sysUser.UserId = userId;
+            sysUser.UserId = Insertable(sysUser).ExecuteReturnIdentity();
             //新增用户角色信息
             UserRoleService.InsertUserRole(sysUser);
             //新增用户岗位信息
             UserPostService.InsertUserPost(sysUser);
-            return userId;
+            return sysUser;
         }
 
         /// <summary>

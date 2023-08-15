@@ -93,9 +93,10 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             user.Create_by = HttpContext.GetName();
+            user.Create_time = DateTime.Now;
             user.Password = NETCore.Encrypt.EncryptProvider.Md5(user.Password);
 
-            return ToResponse(UserService.InsertUser(user));
+            return SUCCESS(UserService.InsertUser(user));
         }
 
         /// <summary>

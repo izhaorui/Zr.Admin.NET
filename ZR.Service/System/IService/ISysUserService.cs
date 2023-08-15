@@ -28,7 +28,7 @@ namespace ZR.Service.System.IService
         /// </summary>
         /// <param name="sysUser"></param>
         /// <returns></returns>
-        public long InsertUser(SysUser sysUser);
+        public SysUser InsertUser(SysUser sysUser);
 
         /// <summary>
         /// 修改用户信息
