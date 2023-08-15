@@ -700,7 +700,7 @@ namespace ZR.Service
             }
             //Insert(menuList);
 
-            var x = Storageable(menuList)
+            var x = Context.Storageable(menuList)
                 .SplitInsert(it => !it.Any())
                 .SplitUpdate(it => !it.Any())
                 .WhereColumns(it => new { it.MenuName, it.ParentId })

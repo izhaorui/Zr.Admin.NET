@@ -82,7 +82,7 @@ namespace ZR.Service.System
                     LangName = item.LangName,
                 });
             }
-            var storage = Storageable(langs)
+            var storage = Context.Storageable(langs)
                 .WhereColumns(it => new { it.LangKey, it.LangCode })
                 .ToStorage();
 
@@ -110,7 +110,7 @@ namespace ZR.Service.System
         /// <returns></returns>
         public (string, object, object) ImportCommonLang(List<CommonLang> list)
         {
-            var x = Storageable(list)
+            var x = Context.Storageable(list)
                 .WhereColumns(it => new { it.LangKey, it.LangCode })
                 .ToStorage();
             x.AsInsertable.ExecuteReturnSnowflakeIdList();//插入可插入部分;

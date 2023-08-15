@@ -61,11 +61,11 @@ namespace ZR.Repository
         #endregion add
 
         #region update
-        public IUpdateable<T> Updateable(T entity)
-        {
-            return Context.Updateable(entity);
-        }
-
+        //public IUpdateable<T> Updateable(T entity)
+        //{
+        //    return Context.Updateable(entity);
+        //}
+        
         /// <summary>
         /// 实体根据主键更新
         /// </summary>
@@ -103,37 +103,6 @@ namespace ZR.Repository
             return Context.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand();
         }
 
-        public int Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where)
-        {
-            return client.Updateable(entity).UpdateColumns(expression).Where(where).ExecuteCommand();
-        }
-
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="list"></param>
-        /// <param name="isNull">默认为true</param>
-        /// <returns></returns>
-        public int Update(T entity, List<string> list = null, bool isNull = true)
-        {
-            list ??= new List<string>()
-            {
-                "Create_By",
-                "Create_time"
-            };
-            return Context.Updateable(entity).IgnoreColumns(isNull).IgnoreColumns(list.ToArray()).ExecuteCommand();
-        }
-
-        //public bool Update(List<T> entity)
-        //{
-        //    var result = base.Context.Ado.UseTran(() =>
-        //    {
-        //        base.Context.Updateable(entity).ExecuteCommand();
-        //    });
-        //    return result.IsSuccess;
-        //}
-
         /// <summary>
         /// 更新指定列 eg：Update(w => w.NoticeId == model.NoticeId, it => new SysNotice(){ Update_time = DateTime.Now, Title = "通知标题" });
         /// </summary>
@@ -159,14 +128,6 @@ namespace ZR.Repository
                 Console.WriteLine(ex.Message);
                 throw;
             }
-        }
-        public IStorageable<T> Storageable(T t)
-        {
-            return Context.Storageable<T>(t);
-        }
-        public IStorageable<T> Storageable(List<T> t)
-        {
-            return Context.Storageable(t);
         }
 
         /// <summary>

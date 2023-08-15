@@ -19,7 +19,6 @@ namespace ZR.Repository
         #endregion add
 
         #region update
-        IUpdateable<T> Updateable(T entity);
         int Update(T entity, bool ignoreNullColumns = false);
 
         /// <summary>
@@ -32,13 +31,9 @@ namespace ZR.Repository
 
         int Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
 
-        int Update(SqlSugarClient client, T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
-
         int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
 
         #endregion update
-        IStorageable<T> Storageable(T t);
-        IStorageable<T> Storageable(List<T> t);
         DbResult<bool> UseTran(Action action);
 
         DbResult<bool> UseTran(SqlSugarClient client, Action action);

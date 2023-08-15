@@ -1,6 +1,5 @@
 ﻿using Infrastructure.Attribute;
 using SqlSugar;
-using System.Collections.Generic;
 using System.Linq;
 using ZR.Model.System;
 using ZR.Service.System.IService;
@@ -20,14 +19,13 @@ namespace ZR.Service.System
         public void InsertUserPost(SysUser user)
         {
             // 新增用户与岗位管理
-            List<SysUserPost> list = new List<SysUserPost>();
+            List<SysUserPost> list = new();
             foreach (var item in user.PostIds)
             {
                 list.Add(new SysUserPost() { PostId = item, UserId = user.UserId });
             }
-            Insert(list);
+            InsertRange(list);
         }
-
 
         /// <summary>
         /// 查询用户岗位集合
