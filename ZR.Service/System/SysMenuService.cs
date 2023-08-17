@@ -389,12 +389,12 @@ namespace ZR.Service
                     Name = GetRouteName(menu),
                     Path = GetRoutePath(menu),
                     Component = GetComponent(menu),
-                    Meta = new Meta(menu.MenuName, menu.Icon, "1".Equals(menu.IsCache), menu.MenuNameKey, menu.Path)
+                    Meta = new Meta(menu.MenuName, menu.Icon, "1".Equals(menu.IsCache), menu.MenuNameKey, menu.Path, menu.Create_time)
                 };
 
                 List<SysMenu> cMenus = menu.Children;
                 //是目录并且有子菜单
-                if (cMenus != null && cMenus.Count > 0 && (UserConstants.TYPE_DIR.Equals(menu.MenuType)))
+                if (cMenus != null && cMenus.Count > 0 && UserConstants.TYPE_DIR.Equals(menu.MenuType))
                 {
                     router.AlwaysShow = true;
                     router.Redirect = "noRedirect";
@@ -409,7 +409,7 @@ namespace ZR.Service
                         Path = menu.Path,
                         Component = menu.Component,
                         Name = string.IsNullOrEmpty(menu.Path) ? "" : menu.Path.ToLower(),
-                        Meta = new Meta(menu.MenuName, menu.Icon, "1".Equals(menu.IsCache), menu.MenuNameKey, menu.Path)
+                        Meta = new Meta(menu.MenuName, menu.Icon, "1".Equals(menu.IsCache), menu.MenuNameKey, menu.Path, menu.Create_time)
                     };
                     childrenList.Add(children);
                     router.Children = childrenList;

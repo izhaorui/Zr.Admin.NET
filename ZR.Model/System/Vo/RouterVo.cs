@@ -38,6 +38,7 @@ namespace ZR.Model.System.Vo
         public bool NoCache { get; set; }
         public string TitleKey { get; set; } = string.Empty;
         public string Link { get; set; } = string.Empty;
+        public int IsNew { get; set; }
 
         public Meta(string title, string icon)
         {
@@ -50,7 +51,7 @@ namespace ZR.Model.System.Vo
             Icon = icon;
             Link = path;
         }
-        public Meta(string title, string icon, bool noCache, string titleKey, string path)
+        public Meta(string title, string icon, bool noCache, string titleKey, string path, DateTime addTime)
         {
             Title = title;
             Icon = icon;
@@ -59,6 +60,14 @@ namespace ZR.Model.System.Vo
             if (!string.IsNullOrEmpty(path) && (path.StartsWith(UserConstants.HTTP) || path.StartsWith(UserConstants.HTTPS)))
             {
                 Link = path;
+            }
+            if (addTime != DateTime.MinValue)
+            {
+                TimeSpan ts = DateTime.Now - addTime;
+                if (ts.Days < 7)
+                {
+                    IsNew = 1;
+                }
             }
         }
     }

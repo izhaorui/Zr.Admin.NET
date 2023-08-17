@@ -48,7 +48,7 @@ namespace ZR.Repository
 
         public int Insert(List<T> t)
         {
-            return Context.Insertable(t).ExecuteCommand();
+            return InsertRange(t) ? 1 : 0;
         }
         public int Insert(T parm, Expression<Func<T, object>> iClumns = null, bool ignoreNull = true)
         {
@@ -65,7 +65,7 @@ namespace ZR.Repository
         //{
         //    return Context.Updateable(entity);
         //}
-        
+
         /// <summary>
         /// 实体根据主键更新
         /// </summary>
