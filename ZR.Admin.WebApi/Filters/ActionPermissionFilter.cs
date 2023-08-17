@@ -1,6 +1,4 @@
-﻿using Infrastructure;
-using Infrastructure.Model;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using ZR.Model.System.Dto;
 
@@ -17,8 +15,11 @@ namespace ZR.Admin.WebApi.Filters
         /// 权限字符串，例如 system:user:view
         /// </summary>
         public string Permission { get; set; } = string.Empty;
+        /// <summary>
+        /// 角色字符串，例如 common,admin
+        /// </summary>
+        public string RolePermi { get; set; } = string.Empty;
         private bool HasPermi { get; set; }
-        private bool HasRole { get; set; }
         public ActionPermissionFilter() { }
         public ActionPermissionFilter(string permission)
         {
@@ -52,7 +53,10 @@ namespace ZR.Admin.WebApi.Filters
                 {
                     HasPermi = perms.Exists(f => f.ToLower() == Permission.ToLower());
                 }
-
+                if (!HasPermi && !string.IsNullOrEmpty(RolePermi))
+                {
+                    HasPermi = info.RoleIds.Contains(RolePermi);
+                }
                 bool isDemoMode = AppSettings.GetAppConfig("DemoMode", false);
                 var url = context.HttpContext.Request.Path;
                 //演示公开环境屏蔽权限
