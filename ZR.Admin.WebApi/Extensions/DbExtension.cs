@@ -116,29 +116,33 @@ namespace ZR.Admin.WebApi.Extensions
                 var data = it.BusinessData;//这边会显示你传进来的对象
                 var time = it.Time;
                 var diffType = it.DiffType;//enum insert 、update and delete  
+                string name = App.UserName;
 
-                if (diffType == DiffType.delete)
+                foreach (var item in editBeforeData)
                 {
-                    string name = App.UserName;
+                    var pars = db.Utilities.SerializeObject(item.Columns.ToDictionary(it => it.ColumnName, it => it.Value));
 
-                    foreach (var item in editBeforeData)
+                    SqlDiffLog log = new()
                     {
-                        var pars = db.Utilities.SerializeObject(item.Columns.ToDictionary(it => it.ColumnName, it => it.Value));
-
-                        SqlDiffLog log = new()
-                        {
-                            BeforeData = pars,
-                            BusinessData = data?.ToString(),
-                            DiffType = diffType.ToString(),
-                            Sql = sql,
-                            TableName = item.TableName,
-                            UserName = name,
-                            AddTime = DateTime.Now,
-                            ConfigId = configId
-                        };
-                        //logger.WithProperty("title", data).Info(pars);
-                        db.GetConnectionScope(0).Insertable(log).ExecuteReturnSnowflakeId();
+                        BeforeData = pars,
+                        BusinessData = data?.ToString(),
+                        DiffType = diffType.ToString(),
+                        Sql = sql,
+                        TableName = item.TableName,
+                        UserName = name,
+                        AddTime = DateTime.Now,
+                        ConfigId = configId
+                    };
+                    if (editAfterData != null)
+                    {
+                        var afterData = editAfterData?.First(x => x.TableName == item.TableName);
+                        var afterPars = db.Utilities.SerializeObject(afterData?.Columns.ToDictionary(it => it.ColumnName, it => it.Value));
+                        log.AfterData = afterPars;
                     }
+                    //logger.WithProperty("title", data).Info(pars);
+                    db.GetConnectionScope(0)
+                    .Insertable(log)
+                    .ExecuteReturnSnowflakeId();
                 }
             };
             db.GetConnectionScope(configId).CurrentConnectionConfig.MoreSettings = new ConnMoreSettings()

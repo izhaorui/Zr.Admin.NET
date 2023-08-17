@@ -72,9 +72,10 @@ namespace ZR.Repository
         /// <param name="entity"></param>
         /// <param name="ignoreNullColumns"></param>
         /// <returns></returns>
-        public int Update(T entity, bool ignoreNullColumns = false)
+        public int Update(T entity, bool ignoreNullColumns = false, object data = null)
         {
-            return Context.Updateable(entity).IgnoreColumns(ignoreNullColumns).ExecuteCommand();
+            return Context.Updateable(entity).IgnoreColumns(ignoreNullColumns)
+                .EnableDiffLogEventIF(data.IsNotEmpty(), data).ExecuteCommand();
         }
 
         /// <summary>

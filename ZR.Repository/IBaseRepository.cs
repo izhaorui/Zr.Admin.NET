@@ -19,7 +19,7 @@ namespace ZR.Repository
         #endregion add
 
         #region update
-        int Update(T entity, bool ignoreNullColumns = false);
+        int Update(T entity, bool ignoreNullColumns = false, object data = null);
 
         /// <summary>
         /// 只更新表达式的值
