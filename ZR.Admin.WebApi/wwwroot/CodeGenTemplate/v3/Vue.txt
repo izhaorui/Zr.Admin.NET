@@ -81,7 +81,7 @@ $end
       </el-form-item>
     </el-form>
     <!-- 工具区域 -->
-    <el-row :gutter="10" class="mb8">
+    <el-row :gutter="15" class="mb10">
 $if(replaceDto.ShowBtnAdd)
       <el-col :span="1.5">
         <el-button type="primary" v-hasPermi="['${replaceDto.PermissionPrefix}:add']" plain icon="plus" @click="handleAdd">
@@ -442,7 +442,9 @@ $end
       </el-form>
       <template #footer v-if="opertype != 3">
         <el-button text @click="cancel">{{ ${t}t('btn.cancel') }}</el-button>
+$if(replaceDto.ShowBtnEdit || replaceDto.ShowBtnAdd)
         <el-button type="primary" @click="submitForm">{{ ${t}t('btn.submit') }}</el-button>
+$end
       </template>
     </el-dialog>
   </div>
@@ -666,7 +668,7 @@ $if(sub)
 $end
   proxy.resetForm("formRef")
 }
-
+$if(replaceDto.ShowBtnAdd)
 // 添加按钮操作
 function handleAdd() {
   reset();
@@ -674,7 +676,8 @@ function handleAdd() {
   title.value = '添加${genTable.functionName}'
   opertype.value = 1
 }
-
+$end
+$if(replaceDto.ShowBtnEdit)
 // 修改按钮操作
 function handleUpdate(row) {
   reset()
@@ -700,6 +703,7 @@ $end
     }
   })
 }
+$end
 
 // 添加&修改 表单提交
 function submitForm() {
@@ -715,24 +719,29 @@ $if(sub)
       form.value.${tool.FirstLowerCase(genTable.SubTable.ClassName)}Nav = ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value
 $end
       if (form.value.${replaceDto.FistLowerPk} != undefined && opertype.value === 2) {
+$if(replaceDto.ShowBtnEdit)
         update${genTable.BusinessName}(form.value).then((res) => {
           proxy.${modal}modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
         .catch(() => {})
+$end
       } else {
+$if(replaceDto.ShowBtnAdd)
         add${genTable.BusinessName}(form.value).then((res) => {
             proxy.${modal}modal.msgSuccess("新增成功")
             open.value = false
             getList()
           })
           .catch(() => {})
+$end
       }
     }
   })
 }
 
+$if(replaceDto.ShowBtnMultiDel || replaceDto.ShowBtnDelete)
 // 删除按钮操作
 function handleDelete(row) {
   const Ids = row.${replaceDto.FistLowerPk} || ids.value
@@ -748,6 +757,7 @@ function handleDelete(row) {
     })
     .catch(() => {})
 }
+$end
 
 $if(replaceDto.ShowBtnTruncate)
 // 清空
