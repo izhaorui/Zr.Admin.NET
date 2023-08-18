@@ -17,6 +17,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/notice")]
+    [Tags("系统通知SysNotice")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysNoticeController : BaseController
     {
         /// <summary>

@@ -10,6 +10,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/userRole")]
+    [Tags("用户角色管理SysUserRole")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysUserRoleController : BaseController
     {
         private readonly ISysUserRoleService SysUserRoleService;

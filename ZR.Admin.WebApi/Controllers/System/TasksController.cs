@@ -16,6 +16,8 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Verify]
     [Route("system/Tasks")]
+    [Tags("计划Tasks")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class TasksController : BaseController
     {
         private ISysTasksQzService _tasksQzService;

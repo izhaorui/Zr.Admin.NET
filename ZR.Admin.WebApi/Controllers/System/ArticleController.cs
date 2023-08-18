@@ -13,6 +13,8 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Verify]
     [Route("article")]
+    [Tags("文章管理")]
+    [ApiExplorerSettings(GroupName = "article")]
     public class ArticleController : BaseController
     {
         /// <summary>
@@ -32,7 +34,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "system:article:list")]
+        [ActionPermissionFilter(RolePermi = "admin")]
         public IActionResult Query([FromQuery] ArticleQueryDto parm)
         {
             var response = _ArticleService.GetList(parm);

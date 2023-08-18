@@ -1,8 +1,4 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
-using Infrastructure.Enums;
-using Infrastructure.Extensions;
-using Mapster;
+﻿using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using ZR.Admin.WebApi.Extensions;
@@ -10,7 +6,6 @@ using ZR.Admin.WebApi.Filters;
 using ZR.CodeGenerator;
 using ZR.CodeGenerator.Model;
 using ZR.CodeGenerator.Service;
-using ZR.Common;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
@@ -23,6 +18,8 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Verify]
     [Route("tool/gen")]
+    [Tags("代码生成CodeGenerator")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class CodeGeneratorController : BaseController
     {
         private readonly CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();

@@ -14,6 +14,8 @@ namespace ZR.Admin.WebApi.Controllers
     /// 公共模块
     /// </summary>
     [Route("[controller]/[action]")]
+    [Tags("公共模块Common")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class CommonController : BaseController
     {
         private OptionsSetting OptionsSetting;

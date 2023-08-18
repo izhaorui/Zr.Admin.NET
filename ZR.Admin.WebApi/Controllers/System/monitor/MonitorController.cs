@@ -1,11 +1,6 @@
-using Infrastructure;
 using Infrastructure.Extensions;
-using Infrastructure.Model;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -14,6 +9,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     /// <summary>
     /// 系统监控
     /// </summary>
+    [Tags("系统监控Monitor")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class MonitorController : BaseController
     {
         private OptionsSetting Options;

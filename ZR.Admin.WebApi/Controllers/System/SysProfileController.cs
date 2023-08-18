@@ -12,6 +12,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/user/profile")]
+    [Tags("个人中心SysProfile")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysProfileController : BaseController
     {
         private readonly ISysUserService UserService;

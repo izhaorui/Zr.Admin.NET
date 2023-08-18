@@ -1,7 +1,7 @@
-﻿using Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
+using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Reflection;
 
 namespace ZR.Admin.WebApi.Extensions
@@ -33,7 +33,13 @@ namespace ZR.Admin.WebApi.Extensions
                         };
                 });
             });
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("v1/swagger.json", "ZrAdmin v1"));
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("sys/swagger.json", "系统管理");
+                c.SwaggerEndpoint("article/swagger.json", "文章管理");
+                c.SwaggerEndpoint("v1/swagger.json", "business");
+                c.DocExpansion(DocExpansion.None); //->修改界面打开时自动折叠
+            });
         }
 
         public static void AddSwaggerConfig(this IServiceCollection services)
@@ -43,6 +49,20 @@ namespace ZR.Admin.WebApi.Extensions
 
             services.AddSwaggerGen(c =>
             {
+                c.SwaggerDoc("sys", new OpenApiInfo
+                {
+                    Title = "ZrAdmin.NET Api",
+                    Version = "v1",
+                    Description = "系统管理",
+                    Contact = new OpenApiContact { Name = "ZRAdmin doc", Url = new Uri("https://www.izhaorui.cn/doc") }
+                });
+                c.SwaggerDoc("article", new OpenApiInfo
+                {
+                    Title = "ZrAdmin.NET Api",
+                    Version = "v1",
+                    Description = "文章管理",
+                    Contact = new OpenApiContact { Name = "ZRAdmin doc", Url = new Uri("https://www.izhaorui.cn/doc") }
+                });
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "ZrAdmin.NET Api",
@@ -92,6 +112,20 @@ namespace ZR.Admin.WebApi.Extensions
                             Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
                         },
                         new List<string>()
+                    }
+                });
+
+                //判断接口归于哪个分组
+                c.DocInclusionPredicate((docName, apiDescription) =>
+                {
+                    if (docName == "v1")
+                    {
+                        //当分组为NoGroup时，只要没加特性的都属于这个组
+                        return string.IsNullOrEmpty(apiDescription.GroupName);
+                    }
+                    else
+                    {
+                        return apiDescription.GroupName == docName;
                     }
                 });
             });

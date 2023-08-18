@@ -11,6 +11,8 @@ namespace ZR.Admin.WebApi.Controllers
     /// 文章目录Controller
     /// </summary>
     [Route("article/ArticleCategory")]
+    [Tags("文章目录")]
+    [ApiExplorerSettings(GroupName = "article")]
     public class ArticleCategoryController : BaseController
     {
         /// <summary>
@@ -59,7 +61,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult GetArticleCategory(int CategoryId)
         {
             var response = _ArticleCategoryService.GetFirst(x => x.CategoryId == CategoryId);
-            
+
             return SUCCESS(response);
         }
 

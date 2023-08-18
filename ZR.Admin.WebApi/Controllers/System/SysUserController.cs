@@ -15,6 +15,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/user")]
+    [Tags("用户管理SysUser")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysUserController : BaseController
     {
         private readonly ISysUserService UserService;

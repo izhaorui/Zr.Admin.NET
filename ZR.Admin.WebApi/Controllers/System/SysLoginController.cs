@@ -16,6 +16,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// <summary>
     /// 登录
     /// </summary>
+    [Tags("登录SysLogin")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysLoginController : BaseController
     {
         static readonly NLog.Logger logger = NLog.LogManager.GetLogger("LoginController");
@@ -157,6 +159,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
+        [ApiExplorerSettings(IgnoreApi = true)]
         public SysLogininfor RecordLogInfo(HttpContext context)
         {
             var ipAddr = context.GetClientUserIp();
@@ -194,7 +197,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
-            
+
             SysUser user = sysUserService.Register(dto);
             if (user.UserId > 0)
             {

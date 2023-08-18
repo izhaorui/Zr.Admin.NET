@@ -8,6 +8,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
 {
     [Verify]
     [Route("monitor/online")]
+    [Tags("在线用户SysUserOnline")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysUserOnlineController : BaseController
     {
         private IHubContext<Hub> HubContext;

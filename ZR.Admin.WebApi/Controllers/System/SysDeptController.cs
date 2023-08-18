@@ -13,6 +13,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/dept")]
+    [Tags("部门管理SysDept")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysDeptController : BaseController
     {
         public ISysDeptService DeptService;

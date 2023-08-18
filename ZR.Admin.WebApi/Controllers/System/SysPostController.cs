@@ -14,6 +14,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/post")]
+    [Tags("岗位管理SysPost")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysPostController : BaseController
     {
         private readonly ISysPostService PostService;
@@ -68,7 +70,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
             post.ToCreate(HttpContext);
-            
+
             return ToResponse(PostService.Add(post));
         }
 
@@ -122,7 +124,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 岗位导出
         /// </summary>
         /// <returns></returns>
-        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title= "岗位导出")]
+        [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "岗位导出")]
         [HttpGet("export")]
         [ActionPermissionFilter(Permission = "system:post:export")]
         public IActionResult Export()

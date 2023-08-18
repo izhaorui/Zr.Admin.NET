@@ -13,6 +13,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/dict/type")]
+    [Tags("字典数据类型SysDictType")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysDictTypeController : BaseController
     {
         private readonly ISysDictService SysDictService;

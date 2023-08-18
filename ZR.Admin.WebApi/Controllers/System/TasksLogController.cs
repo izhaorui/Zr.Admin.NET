@@ -1,11 +1,7 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
-using Infrastructure.Enums;
-using Infrastructure.Extensions;
+﻿using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using ZR.Admin.WebApi.Filters;
-using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -18,6 +14,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("/monitor/jobLog")]
+    [Tags("任务日志TasksLog")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class TasksLogController : BaseController
     {
         private readonly ISysTasksLogService tasksLogService;

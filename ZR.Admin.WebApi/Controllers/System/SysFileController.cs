@@ -1,13 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using Infrastructure.Attribute;
-using Infrastructure.Enums;
-using Infrastructure.Model;
 using ZR.Admin.WebApi.Filters;
-using ZR.Common;
 using ZR.Model.System;
-using ZR.Service.System.IService;
 using ZR.Model.System.Dto;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -16,6 +12,8 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Verify]
     [Route("tool/file")]
+    [Tags(" 文件存储SysFile")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysFileController : BaseController
     {
         /// <summary>
@@ -37,15 +35,13 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:file:list")]
         public IActionResult QuerySysFile([FromQuery] SysFileQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<SysFile>();
-            //搜索条件查询语法参考Sqlsugar
+
             predicate = predicate.AndIF(parm.BeginCreate_time != null, it => it.Create_time >= parm.BeginCreate_time);
             predicate = predicate.AndIF(parm.EndCreate_time != null, it => it.Create_time <= parm.EndCreate_time);
             predicate = predicate.AndIF(parm.StoreType != null, m => m.StoreType == parm.StoreType);
             predicate = predicate.AndIF(parm.FileId != null, m => m.Id == parm.FileId);
 
-            //搜索条件查询语法参考Sqlsugar
             var response = _SysFileService.GetPages(predicate.ToExpression(), parm, x => x.Id, OrderByType.Desc);
             return SUCCESS(response);
         }
