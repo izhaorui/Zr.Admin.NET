@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
-
-namespace ZR.Model.System.Vo
+﻿namespace ZR.Model.System.Vo
 {
     /// <summary>
     /// Treeselect树结构实体类
@@ -16,6 +13,8 @@ namespace ZR.Model.System.Vo
         /// 节点名称
         /// </summary>
         public string Label { get; set; }
+        public string Status { get; set; }
+        public string MenuType { get; set; }
 
         public TreeSelectVo() { }
 
@@ -23,8 +22,9 @@ namespace ZR.Model.System.Vo
         {
             Id = menu.MenuId;
             Label = menu.MenuName;
+            Status = menu.Status;
+            MenuType = menu.MenuType;
 
-            //menu.getChildren().stream().map(TreeSelect::new).collect(Collectors.toList()); java写法
             List<TreeSelectVo> child = new List<TreeSelectVo>();
             foreach (var item in menu.Children)
             {
