@@ -53,7 +53,7 @@ $elseif(column.HtmlType == "datePicker")
           :default-time="defaultTime">
         </el-date-picker>
       </el-form-item>
-$elseif(column.HtmlType.Contains("select") || column.HtmlType == "radio")
+$elseif(column.HtmlType.Contains("select"))
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-select clearable $if(column.HtmlType == "selectMulti")multiple$end v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
           <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue">
@@ -65,6 +65,7 @@ $elseif(column.HtmlType.Contains("select") || column.HtmlType == "radio")
 $elseif(column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-radio-group v-model="queryParams.${columnName}">
+          <el-radio>全部</el-radio>
           <el-radio v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-radio>
         </el-radio-group>
       </el-form-item>
@@ -187,7 +188,7 @@ $elseif(column.HtmlType == "imageUpload")
 $elseif(column.HtmlType == "checkbox" || column.HtmlType.Contains("select") || column.HtmlType == "radio")
       <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr} v-if="columns.showColumn('${columnName}')">
         <template #default="scope">
-          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" $if(column.HtmlType == "checkbox")split=","$end />
+          <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" $if(column.HtmlType == "checkbox" || column.HtmlType == "selectMulti")split=","$end />
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "datetime")
@@ -326,10 +327,16 @@ $elseif(column.HtmlType == "editor")
               <editor v-model="form.${columnName}" :min-height="200" />
             </el-form-item>
           </el-col>
+$elseif(column.HtmlType == "slider")
+          <el-col :lg="24">
+            <el-form-item label="${labelName}" prop="${columnName}">
+              <el-slider v-model="form.${columnName}" />
+            </el-form-item>
+          </el-col>
 $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-select v-model="form.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
+              <el-select v-model="form.${columnName}$if(column.HtmlType == "selectMulti")Checked$end" $if(column.HtmlType == "selectMulti")multiple$end placeholder="请选择${labelName}"${column.DisabledStr}>
                 <el-option
                   v-for="item in $if(column.DictType != "")options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" 
                   :key="item.dictValue" 
@@ -656,7 +663,7 @@ function cancel(){
 function reset() {
   form.value = {
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "checkbox"))
+$if(item.HtmlType == "checkbox" || item.HtmlType == "selectMulti")
     ${item.CsharpFieldFl}Checked: [],
 $else
     $item.CsharpFieldFl: null,
@@ -692,7 +699,7 @@ function handleUpdate(row) {
       form.value = {
         ...data,
 $foreach(item in genTable.Columns)
-$if(item.HtmlType == "checkbox")
+$if(item.HtmlType == "checkbox" || item.HtmlType == "selectMulti")
         ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
 $end
 $end
@@ -710,7 +717,7 @@ function submitForm() {
   proxy.${refs}refs["formRef"].validate((valid) => {
     if (valid) {
 $foreach(item in genTable.Columns)
-$if(item.HtmlType == "checkbox")
+$if(item.HtmlType == "checkbox" || item.HtmlType == "selectMulti")
       form.value.${item.CsharpFieldFl} = form.value.${item.CsharpFieldFl}Checked.toString();
 $end
 $end
@@ -725,7 +732,6 @@ $if(replaceDto.ShowBtnEdit)
           open.value = false
           getList()
         })
-        .catch(() => {})
 $end
       } else {
 $if(replaceDto.ShowBtnAdd)
@@ -734,7 +740,6 @@ $if(replaceDto.ShowBtnAdd)
             open.value = false
             getList()
           })
-          .catch(() => {})
 $end
       }
     }
@@ -755,7 +760,6 @@ function handleDelete(row) {
       getList()
       proxy.${modal}modal.msgSuccess("删除成功")
     })
-    .catch(() => {})
 }
 $end
 

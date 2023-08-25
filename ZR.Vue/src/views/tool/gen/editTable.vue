@@ -204,7 +204,6 @@ export default {
             checkedBtn: genTable.checkedBtn,
             permissionPrefix: genTable.permissionPrefix,
           }
-          console.log('genForm', genTable)
 
           updateGenTable(genTable).then((res) => {
             this.msgSuccess(res.msg)
