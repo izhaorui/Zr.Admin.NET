@@ -1,8 +1,7 @@
-﻿using Infrastructure;
-using Infrastructure.Constant;
-using Infrastructure.Model;
+﻿using Infrastructure.Constant;
 using IPTools.Core;
 using Microsoft.AspNetCore.SignalR;
+using System.Web;
 using UAParser;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Service.System.IService;
@@ -45,8 +44,11 @@ namespace ZR.Admin.WebApi.Hubs
 
             ClientInfo clientInfo = HttpContextExtension.GetClientInfo(App.HttpContext);
             string device = clientInfo.ToString();
+            var qs = HttpContextExtension.GetQueryString(App.HttpContext);
 
-            var userid = HttpContextExtension.GetUId(App.HttpContext);
+            string from = HttpUtility.ParseQueryString(qs).Get("from") ?? "web";
+            
+            long userid = HttpContextExtension.GetUId(App.HttpContext);
             string uuid = device + userid + ip;
             var user = clientUsers.Any(u => u.ConnnectionId == Context.ConnectionId);
             var user2 = clientUsers.Any(u => u.Uuid == uuid);
@@ -54,18 +56,20 @@ namespace ZR.Admin.WebApi.Hubs
             //判断用户是否存在，否则添加集合!user2 && !user && 
             if (!user2 && !user && Context.User.Identity.IsAuthenticated)
             {
-                OnlineUsers users = new(Context.ConnectionId, name, userid, ip, device)
+                OnlineUsers onlineUser = new(Context.ConnectionId, name, userid, ip, device)
                 {
                     Location = ip_info.City,
-                    Uuid = uuid
+                    Uuid = uuid,
+                    Platform = from
                 };
-                clientUsers.Add(users);
+                clientUsers.Add(onlineUser);
                 Console.WriteLine($"{DateTime.Now}：{name},{Context.ConnectionId}连接服务端success，当前已连接{clientUsers.Count}个");
                 //Clients.All.SendAsync("welcome", $"欢迎您：{name},当前时间：{DateTime.Now}");
-                Clients.All.SendAsync(HubsConstant.MoreNotice, SendNotice());
+                Clients.Caller.SendAsync(HubsConstant.MoreNotice, SendNotice());
+                Clients.Caller.SendAsync(HubsConstant.ConnId, onlineUser.ConnnectionId);
             }
 
-            Clients.All.SendAsync(HubsConstant.OnlineNum, clientUsers.Count);
+            Clients.Caller.SendAsync(HubsConstant.OnlineNum, clientUsers.Count);
             return base.OnConnectedAsync();
         }
 
@@ -90,7 +94,7 @@ namespace ZR.Admin.WebApi.Hubs
         #endregion
 
         /// <summary>
-        /// 注册信息
+        /// 发送信息
         /// </summary>
         /// <param name="connectId"></param>
         /// <param name="userName"></param>
@@ -102,6 +106,16 @@ namespace ZR.Admin.WebApi.Hubs
             Console.WriteLine($"{connectId},message={message}");
 
             await Clients.Client(connectId).SendAsync("receiveChat", new { userName, message });
+        }
+
+        /// <summary>
+        /// 获取链接id
+        /// </summary>
+        /// <returns></returns>
+        [HubMethodName("getConnId")]
+        public string GetConnectId()
+        {
+            return Context.ConnectionId;
         }
     }
 }

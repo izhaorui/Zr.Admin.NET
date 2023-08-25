@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Infrastructure.Constant
+﻿namespace Infrastructure.Constant
 {
     public class HubsConstant
     {
@@ -13,5 +7,7 @@ namespace Infrastructure.Constant
         public static string OnlineNum = "onlineNum";
         public static string MoreNotice = "moreNotice";
         public static string OnlineUser = "onlineUser";
+        public static string LockUser = "lockUser";
+        public static string ConnId = "connId";
     }
 }

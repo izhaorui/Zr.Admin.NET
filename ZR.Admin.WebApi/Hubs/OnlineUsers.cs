@@ -26,6 +26,10 @@
         /// 浏览器
         /// </summary>
         public string Browser { get; set; }
+        /// <summary>
+        /// 平台
+        /// </summary>
+        public string Platform { get; set; } = string.Empty;
 
         public OnlineUsers(string clientid, string name, long? userid, string userip, string browser)
         {

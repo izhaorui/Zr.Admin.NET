@@ -26,5 +26,6 @@ namespace ZR.Model.System.Dto
         /// </summary>
         public string Uuid { get; set; } = "";
         public string LoginIP { get; set; }
+        public string ClientId { get; set; }
     }
 }

@@ -91,7 +91,7 @@ namespace Infrastructure
 
         #region 获取unix时间戳
         /// <summary>
-        /// 获取unix时间戳
+        /// 获取unix时间戳(毫秒)
         /// </summary>
         /// <param name="dt"></param>
         /// <returns></returns>
