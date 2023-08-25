@@ -15,12 +15,12 @@ export function parseTime(time, pattern) {
   if (typeof time === 'object') {
     date = time
   } else {
-    if ((typeof time === 'string') && (/^[0-9]+$/.test(time))) {
+    if (typeof time === 'string' && /^[0-9]+$/.test(time)) {
       time = parseInt(time)
     } else if (typeof time === 'string') {
-      time = time.replace(new RegExp(/-/gm), '/');
+      time = time.replace(new RegExp(/-/gm), '/')
     }
-    if ((typeof time === 'number') && (time.toString().length === 10)) {
+    if (typeof time === 'number' && time.toString().length === 10) {
       time = time * 1000
     }
     date = new Date(time)
@@ -32,12 +32,14 @@ export function parseTime(time, pattern) {
     h: date.getHours(),
     i: date.getMinutes(),
     s: date.getSeconds(),
-    a: date.getDay()
+    a: date.getDay(),
   }
   const time_str = format.replace(/{(y|m|d|h|i|s|a)+}/g, (result, key) => {
     let value = formatObj[key]
     // Note: getDay() returns 0 on Sunday
-    if (key === 'a') { return ['日', '一', '二', '三', '四', '五', '六'][value] }
+    if (key === 'a') {
+      return ['日', '一', '二', '三', '四', '五', '六'][value]
+    }
     if (result.length > 0 && value < 10) {
       value = '0' + value
     }
@@ -49,89 +51,89 @@ export function parseTime(time, pattern) {
 // 表单重置
 export function resetForm(refName) {
   if (this.$refs[refName]) {
-    this.$refs[refName].resetFields();
+    this.$refs[refName].resetFields()
   }
 }
 
 /**
  * 添加日期范围
- * @param { beginTime: '', endTime: '', page: 1} params 
+ * @param { beginTime: '', endTime: '', page: 1} params
  * @param {*} dateRange 日期范围数组
  * @param {*} propName C#属性名首字母大写
- * @returns 
+ * @returns
  */
 // 添加日期范围
 export function addDateRange(params, dateRange, propName) {
-  let search = params;
-  search = typeof (search) === 'object' && search !== null && !Array.isArray(search) ? search : {};
-  dateRange = Array.isArray(dateRange) ? dateRange : [];
-  if (typeof (propName) === 'undefined') {
-    search['beginTime'] = dateRange[0];
-    search['endTime'] = dateRange[1];
+  let search = params
+  search = typeof search === 'object' && search !== null && !Array.isArray(search) ? search : {}
+  dateRange = Array.isArray(dateRange) ? dateRange : []
+  if (typeof propName === 'undefined') {
+    search['beginTime'] = dateRange[0]
+    search['endTime'] = dateRange[1]
   } else {
-    search['begin' + propName] = dateRange[0];
-    search['end' + propName] = dateRange[1];
+    search['begin' + propName] = dateRange[0]
+    search['end' + propName] = dateRange[1]
   }
-  return search;
+  return search
 }
 
 export function addDateRange2(dateRange, index) {
-  var time = undefined;
+  var time = undefined
   if (null != dateRange && '' != dateRange) {
     if (dateRange.length <= 2) {
-      time = dateRange[index];
+      time = dateRange[index]
     }
   }
-  return time;
+  return time
 }
 
 // 回显数据字典
 export function selectDictLabel(datas, value) {
   if (value === undefined) {
-    return "";
+    return ''
   }
-  var actions = [];
+  var actions = []
   Object.keys(datas).some((key) => {
-    if (datas[key].dictValue == ('' + value)) {
-      actions.push(datas[key].dictLabel);
-      return true;
+    if (datas[key].dictValue == '' + value) {
+      actions.push(datas[key].dictLabel)
+      return true
     }
   })
   if (actions.length === 0) {
-    actions.push(value);
+    actions.push(value)
   }
-  return actions.join('');
+  return actions.join('')
 }
 
 // 回显数据字典（字符串数组）
 export function selectDictLabels(datas, value, separator) {
   if (value === undefined) {
-    return "";
+    return ''
   }
-  var actions = [];
-  var currentSeparator = undefined === separator ? "," : separator;
-  var temp = value.split(currentSeparator);
+  var actions = []
+  var currentSeparator = undefined === separator ? ',' : separator
+  var temp = value.split(currentSeparator)
   Object.keys(value.split(currentSeparator)).some((val) => {
-    var match = false;
+    var match = false
     Object.keys(datas).some((key) => {
-      if (datas[key].value == ('' + temp[val])) {
-        actions.push(datas[key].label + currentSeparator);
-        match = true;
+      if (datas[key].value == '' + temp[val]) {
+        actions.push(datas[key].label + currentSeparator)
+        match = true
       }
     })
     if (!match) {
-      actions.push(temp[val] + currentSeparator);
+      actions.push(temp[val] + currentSeparator)
     }
   })
-  return actions.join('').substring(0, actions.join('').length - 1);
+  return actions.join('').substring(0, actions.join('').length - 1)
 }
 
 // table是否显示当前列
 export function showColumn(columns, value) {
   columns.filter((item, index) => {
     // console.log(item);
-    return item.key == value;
-  });
+    return item.key == value
+  })
 }
 
 // 通用下载方法
@@ -145,31 +147,31 @@ export function download(url, fileName) {
 export function sprintf(str) {
   var args = arguments,
     flag = true,
-    i = 1;
+    i = 1
   str = str.replace(/%s/g, function () {
-    var arg = args[i++];
+    var arg = args[i++]
     if (typeof arg === 'undefined') {
-      flag = false;
-      return '';
+      flag = false
+      return ''
     }
-    return arg;
-  });
-  return flag ? str : '';
+    return arg
+  })
+  return flag ? str : ''
 }
 
 // 转换字符串，undefined,null等转化为""
 export function praseStrEmpty(str) {
-  if (!str || str == "undefined" || str == "null") {
-    return "";
+  if (!str || str == 'undefined' || str == 'null') {
+    return ''
   }
-  return str;
+  return str
 }
 export function praseStrZero(str) {
-  if (!str || str == "undefined" || str == "null") {
+  if (!str || str == 'undefined' || str == 'null') {
     console.log('zero')
-    return 0;
+    return 0
   }
-  return str;
+  return str
 }
 /**
  * 构造树型结构数据
@@ -179,24 +181,48 @@ export function praseStrZero(str) {
  * @param {*} children 孩子节点字段 默认 'children'
  * @param {*} rootId 根Id 默认 0
  */
-export function handleTree(data, id, parentId, children, rootId) {
-  id = id || 'id'
-  parentId = parentId || 'parentId'
-  children = children || 'children'
-  rootId = rootId || Math.min.apply(Math, data.map(item => { return item[parentId] })) || 0
-  //对源数据深度克隆
-  const cloneData = JSON.parse(JSON.stringify(data))
-  //循环所有项
-  const treeData = cloneData.filter(father => {
-    let branchArr = cloneData.filter(child => {
-      //返回每一项的子级数组
-      return father[id] === child[parentId]
-    });
-    branchArr.length > 0 ? father.children = branchArr : '';
-    //返回第一层
-    return father[parentId] === rootId;
-  });
-  return treeData != '' ? treeData : data;
+export function handleTree(data, id, parentId, children) {
+  let config = {
+    id: id || 'id',
+    parentId: parentId || 'parentId',
+    childrenList: children || 'children',
+  }
+
+  var childrenListMap = {}
+  var nodeIds = {}
+  var tree = []
+
+  for (let d of data) {
+    let parentId = d[config.parentId]
+    if (childrenListMap[parentId] == null) {
+      childrenListMap[parentId] = []
+    }
+    nodeIds[d[config.id]] = d
+    childrenListMap[parentId].push(d)
+  }
+
+  for (let d of data) {
+    let parentId = d[config.parentId]
+    if (nodeIds[parentId] == null) {
+      tree.push(d)
+    }
+  }
+
+  for (let t of tree) {
+    adaptToChildrenList(t)
+  }
+
+  function adaptToChildrenList(o) {
+    if (childrenListMap[o[config.id]] !== null) {
+      o[config.childrenList] = childrenListMap[o[config.id]]
+    }
+    if (o[config.childrenList]) {
+      for (let c of o[config.childrenList]) {
+        adaptToChildrenList(c)
+      }
+    }
+  }
+  return tree
 }
 
 /**
@@ -209,26 +235,26 @@ export function handleDict(data, lableId, labelName) {
   lableId = lableId || 'id'
   labelName = labelName || 'name'
   //循环所有项
-  var dictList = [];
+  var dictList = []
   if (!Array.isArray(data)) {
-    return [];
+    return []
   }
   data.forEach((element) => {
     dictList.push({
       dictLabel: element[labelName],
       dictValue: element[lableId].toString(),
-    });
-  });
-  return dictList;
+    })
+  })
+  return dictList
 }
 
 // 验证是否为blob格式
 export async function blobValidate(data) {
   try {
-    const text = await data.text();
-    JSON.parse(text);
-    return false;
+    const text = await data.text()
+    JSON.parse(text)
+    return false
   } catch (error) {
-    return true;
+    return true
   }
 }
