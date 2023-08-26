@@ -3,7 +3,6 @@ using IPTools.Core;
 using Microsoft.AspNetCore.SignalR;
 using System.Web;
 using UAParser;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Hubs

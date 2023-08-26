@@ -50,8 +50,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
             await HubContext.Clients.Client(dto.ConnnectionId).SendAsync(HubsConstant.LockUser, new { dto.Reason, dto.Time });
             
             var expirTime = DateTimeHelper.GetUnixTimeSeconds(DateTime.Now.AddMinutes(dto.Time));
-
-            CacheService.SetLockUser(dto.ClientId, expirTime, dto.Time);
+            //PC 端采用设备 + 用户名的方式进行封锁
+            CacheService.SetLockUser(dto.ClientId + dto.Name, expirTime, dto.Time);
             return SUCCESS(new { expirTime });
         }
     }

@@ -74,7 +74,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
 
-            var lockTimeStamp = CacheService.GetLockUser(loginBody.ClientId);
+            var lockTimeStamp = CacheService.GetLockUser(loginBody.ClientId + loginBody.Username);
             var lockTime = DateTimeHelper.ToLocalTimeDateBySeconds(lockTimeStamp);
             var ts = lockTime - DateTime.Now;
 
@@ -278,7 +278,15 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult ScanLogin([FromBody] ScanDto dto)
         {
             if (dto == null) { return ToResponse(ResultCode.CUSTOM_ERROR, "扫码失败"); }
+            var name = App.HttpContext.GetName();
+            var lockTimeStamp = CacheService.GetLockUser(dto.DeviceId + name);
+            var lockTime = DateTimeHelper.ToLocalTimeDateBySeconds(lockTimeStamp);
+            var ts = lockTime - DateTime.Now;
 
+            if (lockTimeStamp > 0 && ts.TotalSeconds > 0)
+            {
+                return ToResponse(ResultCode.LOGIN_ERROR, $"当前设备已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
+            }
             var token = HttpContextExtension.GetToken(HttpContext);
             if (CacheService.GetScanLogin(dto.Uuid) is not null)
             {

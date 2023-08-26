@@ -52,7 +52,7 @@ namespace Infrastructure.Extensions
             if (result.Contains("::1"))
                 result = "127.0.0.1";
 
-            result = result.Replace("::ffff:", "127.0.0.1");
+            result = result.Replace("::ffff:", "");
             result = result.Split(':')?.FirstOrDefault() ?? "127.0.0.1";
             result = IsIP(result) ? result : "127.0.0.1";
             return result;

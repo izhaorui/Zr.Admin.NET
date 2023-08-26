@@ -1,11 +1,8 @@
-﻿using Infrastructure;
-using Infrastructure.Extensions;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Model.System.Dto;
 using ZR.Service.System;
 
