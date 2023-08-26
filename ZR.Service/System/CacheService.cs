@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using ZR.Common;
-using ZR.Common.Cache;
 
 namespace ZR.Service.System
 {
     public class CacheService
     {
+        private readonly static string CK_verifyScan = "verifyScan_";
         #region 用户权限 缓存
         public static List<string> GetUserPerms(string key)
         {
@@ -25,5 +24,40 @@ namespace ZR.Service.System
             //RedisServer.Cache.Del(key);
         }
         #endregion
+
+        public static object SetScanLogin(string key, Dictionary<string, object> val)
+        {
+            var ck = CK_verifyScan + key;
+            
+            return CacheHelper.SetCache(ck,val , 1);
+        }
+        public static object GetScanLogin(string key)
+        {
+            var ck = CK_verifyScan + key;
+            return CacheHelper.Get(ck);
+        }
+        public static void RemoveScanLogin(string key)
+        {
+            var ck = CK_verifyScan + key;
+            CacheHelper.Remove(ck);
+        }
+
+        public static void SetLockUser(string key, long val, int time)
+        {
+            var CK = "lock_user_" + key;
+
+            CacheHelper.SetCache(CK, val, time);
+        }
+
+        public static long GetLockUser(string key)
+        {
+            var CK = "lock_user_" + key;
+
+            if (CacheHelper.Get(CK) is long t)
+            {
+                return t;
+            }
+            return 0;
+        }
     }
 }

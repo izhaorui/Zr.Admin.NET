@@ -1,12 +1,14 @@
-﻿using Infrastructure;
-using Infrastructure.Extensions;
+﻿using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using UAParser;
-using ZR.Model.System;
 
-namespace ZR.Admin.WebApi.Extensions
+namespace Infrastructure.Extensions
 {
     /// <summary>
     /// HttpContext扩展类
@@ -82,7 +84,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static string? GetName(this HttpContext context)
+        public static string GetName(this HttpContext context)
         {
             var uid = context.User?.Identity?.Name;
 
@@ -105,7 +107,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static IEnumerable<ClaimsIdentity>? GetClaims(this HttpContext context)
+        public static IEnumerable<ClaimsIdentity> GetClaims(this HttpContext context)
         {
             return context.User?.Identities;
         }
@@ -132,25 +134,11 @@ namespace ZR.Admin.WebApi.Extensions
         }
 
         /// <summary>
-        /// 获取浏览器信息
-        /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        public static ClientInfo GetClientInfo(this HttpContext context)
-        {
-            var str = context.GetUserAgent();
-            var uaParser = Parser.GetDefault();
-            ClientInfo c = uaParser.Parse(str);
-
-            return c;
-        }
-
-        /// <summary>
         /// 获取请求Url
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static string? GetRequestUrl(this HttpContext context)
+        public static string GetRequestUrl(this HttpContext context)
         {
             return context != null ? context.Request.Path.Value : "";
         }
@@ -195,13 +183,26 @@ namespace ZR.Admin.WebApi.Extensions
         }
 
         /// <summary>
+        /// 获取浏览器信息
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static ClientInfo GetClientInfo(this HttpContext context)
+        {
+            var str = context.GetUserAgent();
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(str);
+
+            return c;
+        }
+
+        /// <summary>
         /// 设置请求参数
         /// </summary>
-        /// <param name="operLog"></param>
+        /// <param name="reqMethod"></param>
         /// <param name="context"></param>
-        public static void GetRequestValue(this HttpContext context, SysOperLog operLog)
+        public static string GetRequestValue(this HttpContext context,string reqMethod)
         {
-            string reqMethod = operLog.RequestMethod;
             string param= string.Empty;
 
             if (HttpMethods.IsPost(reqMethod) || HttpMethods.IsPut(reqMethod) || HttpMethods.IsDelete(reqMethod))
@@ -213,7 +214,7 @@ namespace ZR.Admin.WebApi.Extensions
             {
                 param = context.GetQueryString();
             }
-            operLog.OperParam = param;
+            return param;
         }
 
         [GeneratedRegex("(?<=\"password\":\")[^\",]*")]

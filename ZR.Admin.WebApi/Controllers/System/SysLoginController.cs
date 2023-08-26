@@ -2,6 +2,8 @@
 using Lazy.Captcha.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using SqlSugar;
+using System.Diagnostics;
 using UAParser;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
@@ -70,6 +72,15 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (sysConfig?.ConfigValue != "off" && !SecurityCodeHelper.Validate(loginBody.Uuid, loginBody.Code))
             {
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
+            }
+
+            var lockTimeStamp = CacheService.GetLockUser(loginBody.ClientId);
+            var lockTime = DateTimeHelper.ToLocalTimeDateBySeconds(lockTimeStamp);
+            var ts = lockTime - DateTime.Now;
+
+            if (lockTimeStamp > 0 && ts.TotalSeconds > 0)
+            {
+                return ToResponse(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
             }
 
             var user = sysLoginService.Login(loginBody, RecordLogInfo(httpContextAccessor.HttpContext));
@@ -205,5 +216,81 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
             return ToResponse(ResultCode.CUSTOM_ERROR, "注册失败，请联系管理员");
         }
+
+        #region 二维码登录
+
+        /// <summary>
+        /// 生成二维码
+        /// </summary>
+        /// <param name="uuid"></param>
+        /// <param name="deviceId"></param>
+        /// <returns></returns>
+        [HttpGet("/GenerateQrcode")]
+        public IActionResult GenerateQrcode(string uuid, string deviceId)
+        {
+            var state = Guid.NewGuid().ToString();
+            var dict = new Dictionary<string, object>
+            {
+                { "state", state }
+            };
+            CacheService.SetScanLogin(uuid, dict);
+            return SUCCESS(new
+            {
+                status = 1,
+                state,
+                uuid,
+                codeContent = new { uuid, deviceId }// "https://qm.qq.com/cgi-bin/qm/qr?k=kgt4HsckdljU0VM-0kxND6d_igmfuPlL&authKey=r55YUbruiKQ5iwC/folG7KLCmZ++Y4rQVgNlvLbUniUMkbk24Y9+zNuOmOnjAjRc&noverify=0"
+            });
+        }
+
+        /// <summary>
+        /// 轮询判断扫码状态
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("/VerifyScan")]
+        [AllowAnonymous]
+        public IActionResult VerifyScan([FromBody] ScanDto dto)
+        {
+            int status = -1;
+            object token = string.Empty;
+            if (CacheService.GetScanLogin(dto.Uuid) is Dictionary<string, object> str)
+            {
+                status = 0;
+                str.TryGetValue("token", out token);
+                if (str.ContainsKey("status") && (string)str.GetValueOrDefault("status") == "success")
+                {
+                    status = 2;//扫码成功
+                    CacheService.RemoveScanLogin(dto.Uuid);
+                }
+            }
+
+            return SUCCESS(new { status, token });
+        }
+
+        /// <summary>
+        /// 移动端扫码登录
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("/ScanLogin")]
+        [Log(Title = "扫码登录")]
+        public IActionResult ScanLogin([FromBody] ScanDto dto)
+        {
+            if (dto == null) { return ToResponse(ResultCode.CUSTOM_ERROR, "扫码失败"); }
+
+            var token = HttpContextExtension.GetToken(HttpContext);
+            if (CacheService.GetScanLogin(dto.Uuid) is not null)
+            {
+                Dictionary<string, object> dict = new() { };
+                dict.Add("status", "success");
+                dict.Add("token", token.Replace("Bearer ", ""));
+                CacheService.SetScanLogin(dto.Uuid, dict);
+                //TODO 待优化，应该生成新的token
+                return SUCCESS(1);
+            }
+            return ToResponse(ResultCode.FAIL, "二维码已失效");
+        }
+        #endregion
     }
 }

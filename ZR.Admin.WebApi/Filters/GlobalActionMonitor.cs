@@ -1,12 +1,9 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
-using Infrastructure.Model;
+﻿using Infrastructure.Extensions;
 using IPTools.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using NLog;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 
@@ -104,9 +101,9 @@ namespace ZR.Admin.WebApi.Filters
                     OperLocation = ip_info.Province + " " + ip_info.City,
                     Method = controller + "." + action + "()",
                     //Elapsed = _stopwatch.ElapsedMilliseconds,
-                    OperTime = DateTime.Now
+                    OperTime = DateTime.Now,
+                    OperParam = HttpContextExtension.GetRequestValue(context.HttpContext, method)
                 };
-                HttpContextExtension.GetRequestValue(context.HttpContext, sysOperLog);
 
                 if (logAttribute != null)
                 {
@@ -117,7 +114,7 @@ namespace ZR.Admin.WebApi.Filters
                 }
 
                 LogEventInfo ei = new(NLog.LogLevel.Info, "GlobalActionMonitor", "");
-                
+
                 ei.Properties["jsonResult"] = !HttpMethods.IsGet(method) ? jsonResult : "";
                 ei.Properties["requestParam"] = sysOperLog.OperParam;
                 ei.Properties["user"] = userName;

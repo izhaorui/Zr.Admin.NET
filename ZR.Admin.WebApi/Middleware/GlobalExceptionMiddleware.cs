@@ -1,14 +1,8 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
-using Infrastructure.Model;
-using IPTools.Core;
+﻿using IPTools.Core;
 using Microsoft.AspNetCore.Http.Features;
 using NLog;
-using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using ZR.Admin.WebApi.Extensions;
-using ZR.Common;
 using ZR.Model.System;
 using ZR.Service.System.IService;
 
@@ -90,9 +84,9 @@ namespace ZR.Admin.WebApi.Middleware
                 ErrorMsg = string.IsNullOrEmpty(error) ? msg : error,
                 OperName = HttpContextExtension.GetName(context),
                 OperLocation = ip_info.Province + " " + ip_info.City,
-                OperTime = DateTime.Now
+                OperTime = DateTime.Now,
+                OperParam = HttpContextExtension.GetRequestValue(context, context.Request.Method)
             };
-            HttpContextExtension.GetRequestValue(context, sysOperLog);
             var endpoint = GetEndpoint(context);
             if (endpoint != null)
             {
