@@ -1,7 +1,6 @@
 ﻿using JinianNet.JNTemplate;
-using ZR.Common;
 
-namespace ZR.Admin.WebApi.Extensions
+namespace Infrastructure
 {
     public static class LogoExtension
     {

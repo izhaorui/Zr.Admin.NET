@@ -6,3 +6,4 @@ global using Infrastructure.Enums;
 global using Infrastructure.Model;
 global using Mapster;
 global using Infrastructure.Extensions;
+global using Infrastructure.WebExtensins;

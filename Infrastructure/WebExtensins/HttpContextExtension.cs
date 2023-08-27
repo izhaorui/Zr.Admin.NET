@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,7 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UAParser;
 
-namespace Infrastructure.Extensions
+namespace Infrastructure.WebExtensins
 {
     /// <summary>
     /// HttpContext扩展类

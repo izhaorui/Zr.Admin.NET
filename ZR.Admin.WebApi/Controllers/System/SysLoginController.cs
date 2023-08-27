@@ -2,10 +2,7 @@
 using Lazy.Captcha.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using SqlSugar;
-using System.Diagnostics;
 using UAParser;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Framework;
 using ZR.Model.System;
@@ -31,7 +28,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ICaptcha SecurityCodeHelper;
         private readonly ISysConfigService sysConfigService;
         private readonly ISysRoleService roleService;
-        private readonly OptionsSetting jwtSettings;
+        private readonly OptionsSetting optionSettings;
 
         public SysLoginController(
             IHttpContextAccessor contextAccessor,
@@ -42,7 +39,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysConfigService configService,
             ISysRoleService sysRoleService,
             ICaptcha captcha,
-            IOptions<OptionsSetting> jwtSettings)
+            IOptions<OptionsSetting> optionSettings)
         {
             httpContextAccessor = contextAccessor;
             SecurityCodeHelper = captcha;
@@ -52,7 +49,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.permissionService = permissionService;
             this.sysConfigService = configService;
             roleService = sysRoleService;
-            this.jwtSettings = jwtSettings.Value;
+            this.optionSettings = optionSettings.Value;
         }
 
 
@@ -82,7 +79,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
             }
-
             var user = sysLoginService.Login(loginBody, RecordLogInfo(httpContextAccessor.HttpContext));
 
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
@@ -91,7 +87,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             LoginUser loginUser = new(user, roles, permissions);
             CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
-            return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser), jwtSettings.JwtSettings));
+            return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser), optionSettings.JwtSettings));
         }
 
         /// <summary>
@@ -131,6 +127,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
             user.WelcomeContent = GlobalConstant.WelcomeMessages[new Random().Next(0, GlobalConstant.WelcomeMessages.Length)];
+
+            //LoginUser loginUser = new(user, roleService.SelectUserRoleListByUserId(user.UserId), permissions);
+            //var token = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser), optionSettings.JwtSettings);
             return SUCCESS(new { user, roles, permissions });
         }
 
@@ -300,5 +299,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             return ToResponse(ResultCode.FAIL, "二维码已失效");
         }
         #endregion
+
     }
 }

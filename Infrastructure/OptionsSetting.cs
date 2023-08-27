@@ -1,6 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Infrastructure
 {
@@ -9,6 +7,10 @@ namespace Infrastructure
     /// </summary>
     public class OptionsSetting
     {
+        /// <summary>
+        /// 是否单点登录
+        /// </summary>
+        public bool SingleLogin { get; set; }
         /// <summary>
         /// 是否演示模式
         /// </summary>

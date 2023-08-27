@@ -1,8 +1,10 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
+﻿using Infrastructure.Attribute;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
 using System.Reflection;
 
-namespace ZR.Admin.WebApi.Extensions
+namespace Infrastructure
 {
     /// <summary>
     /// App服务注册
