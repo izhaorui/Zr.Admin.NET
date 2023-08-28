@@ -36,9 +36,24 @@ namespace ZR.Admin.WebApi.Filters
             var isAuthed = context.HttpContext.User.Identity.IsAuthenticated;
 
             //使用jwt token校验2020-11-21
-            LoginUser info = JwtUtil.GetLoginUser(context.HttpContext);
+            LoginUser loginUser = JwtUtil.GetLoginUser(context.HttpContext);
+            if (loginUser != null)
+            {
+                var nowTime = DateTime.UtcNow;
+                TimeSpan ts = loginUser.ExpireTime - nowTime;
 
-            if (info == null || !isAuthed)
+                //Console.WriteLine($"jwt到期剩余：{ts.TotalMinutes}分,{ts.TotalSeconds}秒");
+
+                var CK = "token_" + loginUser.UserId;
+                if (!CacheHelper.Exists(CK) && ts.TotalMinutes < 5)
+                {
+                    var newToken = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
+
+                    CacheHelper.SetCache(CK, CK, 1);
+                    context.HttpContext.Response.Headers.Add("X-Refresh-Token", newToken);
+                }
+            }
+            if (loginUser == null || !isAuthed)
             {
                 string msg = $"请求访问[{url}]失败，无法访问系统资源";
                 logger.Info($"{msg}");
