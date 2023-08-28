@@ -1,5 +1,4 @@
-﻿using Infrastructure.Extensions;
-using IPTools.Core;
+﻿using IPTools.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -26,9 +25,7 @@ namespace ZR.Admin.WebApi.Filters
         /// <returns></returns>
         public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            ApiResult response = new();
-            response.Code = (int)ResultCode.PARAM_ERROR;
-
+            string msg = string.Empty;
             var values = context.ModelState.Values;
             foreach (var item in values)
             {
@@ -38,17 +35,22 @@ namespace ZR.Admin.WebApi.Filters
                     {
                         return next();
                     }
-                    if (!string.IsNullOrEmpty(response.Msg))
+                    if (!string.IsNullOrEmpty(msg))
                     {
-                        response.Msg += " | ";
+                        msg += " | ";
                     }
 
-                    response.Msg += err.ErrorMessage;
+                    msg += err.ErrorMessage;
                 }
             }
-            if (!string.IsNullOrEmpty(response.Msg))
+            if (!string.IsNullOrEmpty(msg))
             {
-                logger.Info($"请求参数错误,{response.Msg}");
+                logger.Info($"请求参数错误,{msg}");
+                ApiResult response = new()
+                {
+                    Code = (int)ResultCode.PARAM_ERROR,
+                    Msg = msg
+                };
                 context.Result = new JsonResult(response);
             }
             return base.OnActionExecutionAsync(context, next);
@@ -98,7 +100,7 @@ namespace ZR.Admin.WebApi.Filters
                     OperUrl = HttpContextExtension.GetRequestUrl(context.HttpContext),
                     RequestMethod = method,
                     JsonResult = jsonResult,
-                    OperLocation = ip_info.Province + " " + ip_info.City,
+                    OperLocation = HttpContextExtension.GetIpInfo(ip),
                     Method = controller + "." + action + "()",
                     //Elapsed = _stopwatch.ElapsedMilliseconds,
                     OperTime = DateTime.Now,

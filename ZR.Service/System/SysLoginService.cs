@@ -1,8 +1,11 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Extensions;
+using Infrastructure.WebExtensins;
+using Microsoft.AspNetCore.Http;
 using SqlSugar;
 using System;
+using UAParser;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -15,13 +18,15 @@ namespace ZR.Service.System
     /// 登录
     /// </summary>
     [AppService(ServiceType = typeof(ISysLoginService), ServiceLifetime = LifeTime.Transient)]
-    public class SysLoginService: BaseService<SysLogininfor>, ISysLoginService
+    public class SysLoginService : BaseService<SysLogininfor>, ISysLoginService
     {
         private readonly ISysUserService SysUserService;
+        private readonly IHttpContextAccessor httpContextAccessor;
 
-        public SysLoginService(ISysUserService sysUserService)
+        public SysLoginService(ISysUserService sysUserService, IHttpContextAccessor httpContextAccessor)
         {
             SysUserService = sysUserService;
+            this.httpContextAccessor = httpContextAccessor;
         }
 
         /// <summary>
@@ -35,17 +40,21 @@ namespace ZR.Service.System
             {
                 loginBody.Password = NETCore.Encrypt.EncryptProvider.Md5(loginBody.Password);
             }
-
             SysUser user = SysUserService.Login(loginBody);
             logininfor.UserName = loginBody.Username;
             logininfor.Status = "1";
             logininfor.LoginTime = DateTime.Now;
+            logininfor.Ipaddr = loginBody.LoginIP;
 
+            ClientInfo clientInfo = httpContextAccessor.HttpContext.GetClientInfo();
+            logininfor.Browser = clientInfo.ToString();
+            logininfor.Os = clientInfo.OS.ToString();
+            
             if (user == null || user.UserId <= 0)
             {
                 logininfor.Msg = "用户名或密码错误";
                 AddLoginInfo(logininfor);
-                throw new CustomException(ResultCode.LOGIN_ERROR ,logininfor.Msg);
+                throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg);
             }
             if (user.Status == 1)
             {

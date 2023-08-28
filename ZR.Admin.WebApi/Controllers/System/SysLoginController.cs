@@ -79,13 +79,14 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
             }
-            var user = sysLoginService.Login(loginBody, RecordLogInfo(httpContextAccessor.HttpContext));
+            string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
+            var user = sysLoginService.Login(loginBody, new SysLogininfor() { LoginLocation = location });
 
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
 
-            LoginUser loginUser = new(user, roles);
+            LoginUser loginUser = new(user, roles.Adapt<List<Roles>>());
             CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }
@@ -128,8 +129,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             List<string> permissions = permissionService.GetMenuPermission(user);
             user.WelcomeContent = GlobalConstant.WelcomeMessages[new Random().Next(0, GlobalConstant.WelcomeMessages.Length)];
 
-            //LoginUser loginUser = new(user, roleService.SelectUserRoleListByUserId(user.UserId), permissions);
-            //var token = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser), optionSettings.JwtSettings);
             return SUCCESS(new { user, roles, permissions });
         }
 
@@ -162,29 +161,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             var obj = new { captchaOff, uuid, img = info.Base64 };// File(stream, "image/png")
 
             return SUCCESS(obj);
-        }
-
-        /// <summary>
-        /// 记录用户登陆信息
-        /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        [ApiExplorerSettings(IgnoreApi = true)]
-        public SysLogininfor RecordLogInfo(HttpContext context)
-        {
-            var ipAddr = context.GetClientUserIp();
-            var ip_info = IpTool.Search(ipAddr);
-            ClientInfo clientInfo = context.GetClientInfo();
-            SysLogininfor sysLogininfor = new()
-            {
-                Browser = clientInfo.ToString(),
-                Os = clientInfo.OS.ToString(),
-                Ipaddr = ipAddr,
-                UserName = context.GetName(),
-                LoginLocation = ip_info?.Province + "-" + ip_info?.City
-            };
-
-            return sysLogininfor;
         }
 
         /// <summary>

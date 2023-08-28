@@ -10,6 +10,7 @@ using ZR.Admin.WebApi.Framework;
 using ZR.Admin.WebApi.Hubs;
 using ZR.Admin.WebApi.Middleware;
 using ZR.Common.Cache;
+using ZR.Model.System.Dto;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,11 +55,12 @@ builder.Services.AddAuthentication(options =>
             // 如果过期，把过期信息添加到头部
             if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
             {
+                Console.WriteLine("jwt过期了");
                 context.Response.Headers.Add("Token-Expired", "true");
             }
 
             return Task.CompletedTask;
-        }
+        },
     };
 });
 

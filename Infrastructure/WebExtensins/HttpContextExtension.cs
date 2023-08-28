@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Extensions;
+using IPTools.Core;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -198,13 +199,23 @@ namespace Infrastructure.WebExtensins
         }
 
         /// <summary>
+        /// 根据IP获取地理位置
+        /// </summary>
+        /// <returns></returns>
+        public static string GetIpInfo(string IP)
+        {
+            var ipInfo = IpTool.Search(IP);
+            return ipInfo?.Province + "-" + ipInfo?.City + "-" + ipInfo?.NetworkOperator;
+        }
+
+        /// <summary>
         /// 设置请求参数
         /// </summary>
         /// <param name="reqMethod"></param>
         /// <param name="context"></param>
-        public static string GetRequestValue(this HttpContext context,string reqMethod)
+        public static string GetRequestValue(this HttpContext context, string reqMethod)
         {
-            string param= string.Empty;
+            string param = string.Empty;
 
             if (HttpMethods.IsPost(reqMethod) || HttpMethods.IsPut(reqMethod) || HttpMethods.IsDelete(reqMethod))
             {

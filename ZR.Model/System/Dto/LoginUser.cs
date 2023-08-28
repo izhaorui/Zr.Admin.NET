@@ -17,7 +17,7 @@ namespace ZR.Model.System.Dto
         /// <summary>
         /// 角色集合(数据权限过滤使用)
         /// </summary>
-        public List<SysRole> Roles { get; set; }
+        public List<Roles> Roles { get; set; }
         /// <summary>
         /// Jwt过期时间
         /// </summary>
@@ -30,7 +30,7 @@ namespace ZR.Model.System.Dto
         {
         }
 
-        public LoginUser(SysUser user, List<SysRole> roles)
+        public LoginUser(SysUser user, List<Roles> roles)
         {
             UserId = user.UserId;
             UserName = user.UserName;
@@ -38,5 +38,12 @@ namespace ZR.Model.System.Dto
             Roles = roles;
             RoleIds = roles.Select(f => f.RoleKey).ToList();
         }
+    }
+
+    public class Roles
+    {
+        public long RoleId { get; set; }
+        public string RoleKey { get; set; }
+        public int DataScope { get; set; }
     }
 }

@@ -195,6 +195,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 - 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
 - 👉vue-element-admin：[vue-element-admin](https://github.com/PanJiaChen/vue-element-admin)
 - 👉Meiam.System：[Meiam.System](https://github.com/91270/Meiam.System)
+- 👉Furion：[Furion](https://gitee.com/dotnetchina/Furion)
 
 ## 🎀 捐赠
 

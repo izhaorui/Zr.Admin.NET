@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ZR.Model;
-using ZR.Model.System.Dto;
+﻿using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.Service.System.IService
 {

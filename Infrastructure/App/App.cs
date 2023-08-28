@@ -5,8 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
 using System.Security.Claims;
-using System.Security.Principal;
-using System.Xml.Linq;
 
 namespace Infrastructure
 {

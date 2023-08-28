@@ -1,8 +1,13 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using JinianNet.JNTemplate;
+using JinianNet.JNTemplate.Nodes;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using ZR.Admin.WebApi.Hubs;
 using ZR.Model.System.Dto;
 
 namespace ZR.Admin.WebApi.Framework
@@ -122,7 +127,8 @@ namespace ZR.Admin.WebApi.Framework
         {
             try
             {
-                IEnumerable<Claim> claims = jwtSecurityToken.Claims;
+                if (jwtSecurityToken == null) return null;
+                IEnumerable<Claim> claims = jwtSecurityToken?.Claims;
                 LoginUser loginUser = null;
 
                 var userData = claims.FirstOrDefault(x => x.Type == ClaimTypes.UserData)?.Value;
@@ -131,7 +137,21 @@ namespace ZR.Admin.WebApi.Framework
                     loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
                     loginUser.ExpireTime = jwtSecurityToken.ValidTo;
                 }
-                //Console.WriteLine("jwt到期时间：" + validTo);
+                //var nowTime = DateTime.UtcNow;
+                //TimeSpan ts = loginUser.ExpireTime - nowTime;
+
+                //Console.WriteLine("jwt到期时间：" + loginUser.ExpireTime);
+                //Console.WriteLine("nowTime" + nowTime + ",相隔" + ts.TotalSeconds);
+
+                //if (loginUser != null && ts.TotalSeconds <= 30)
+                //{
+                //    var newToken = GenerateJwtToken(AddClaims(loginUser));
+                //    var CK = "token_" + loginUser.UserId;
+                //    if (!CacheHelper.Exists(CK))
+                //    {
+                //        CacheHelper.SetCache(CK, newToken);
+                //    }
+                //}
                 return loginUser;
             }
             catch (Exception ex)
