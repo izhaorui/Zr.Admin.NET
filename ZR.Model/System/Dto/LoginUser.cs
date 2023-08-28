@@ -19,21 +19,24 @@ namespace ZR.Model.System.Dto
         /// </summary>
         public List<SysRole> Roles { get; set; }
         /// <summary>
+        /// Jwt过期时间
+        /// </summary>
+        public DateTime ExpireTime { get; set; }
+        /// <summary>
         /// 权限集合
         /// </summary>
-        public List<string> Permissions { get; set; } = new List<string>();
+        //public List<string> Permissions { get; set; } = new List<string>();
         public LoginUser()
         {
         }
 
-        public LoginUser(SysUser user, List<SysRole> roles, List<string> permissions)
+        public LoginUser(SysUser user, List<SysRole> roles)
         {
             UserId = user.UserId;
             UserName = user.UserName;
             DeptId = user.DeptId;
             Roles = roles;
             RoleIds = roles.Select(f => f.RoleKey).ToList();
-            Permissions = permissions;
         }
     }
 }

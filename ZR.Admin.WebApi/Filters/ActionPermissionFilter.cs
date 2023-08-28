@@ -1,6 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Data;
+using ZR.Admin.WebApi.Framework;
+using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Service.System;
+using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Filters
 {
@@ -35,12 +41,22 @@ namespace ZR.Admin.WebApi.Filters
         /// <returns></returns>
         public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            LoginUser info = Framework.JwtUtil.GetLoginUser(context.HttpContext);
+            LoginUser info = JwtUtil.GetLoginUser(context.HttpContext);
 
             if (info != null && info?.UserId > 0)
             {
-                List<string> perms = info.Permissions;
+                long userId = info.UserId;
+                List<string> perms = CacheService.GetUserPerms(GlobalConstant.UserPermKEY + userId);
                 List<string> rolePerms = info.RoleIds;
+
+                if (perms == null)
+                {
+                    var sysPermissionService = App.GetService<ISysPermissionService>();
+                    perms = sysPermissionService.GetMenuPermission(new SysUser() { UserId = userId });
+
+                    CacheService.SetUserPerms(GlobalConstant.UserPermKEY + userId, perms);
+                }
+
                 if (perms.Exists(f => f.Equals(GlobalConstant.AdminPerm)))
                 {
                     HasPermi = true;

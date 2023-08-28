@@ -85,9 +85,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
 
-            LoginUser loginUser = new(user, roles, permissions);
+            LoginUser loginUser = new(user, roles);
             CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
-            return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser), optionSettings.JwtSettings));
+            return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }
 
         /// <summary>

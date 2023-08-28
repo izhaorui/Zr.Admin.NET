@@ -4,7 +4,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ZR.Model.System.Dto;
-using ZR.Service.System;
 
 namespace ZR.Admin.WebApi.Framework
 {
@@ -33,10 +32,12 @@ namespace ZR.Admin.WebApi.Framework
         /// 生成token
         /// </summary>
         /// <param name="claims"></param>
-        /// <param name="jwtSettings"></param>
         /// <returns></returns>
-        public static string GenerateJwtToken(List<Claim> claims, JwtSettings jwtSettings)
+        public static string GenerateJwtToken(List<Claim> claims)
         {
+            JwtSettings jwtSettings = new();
+            AppSettings.Bind("JwtSettings", jwtSettings);
+
             var authTime = DateTime.Now;
             var expiresAt = authTime.AddMinutes(jwtSettings.Expire);
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -93,7 +94,7 @@ namespace ZR.Admin.WebApi.Framework
         /// </summary>
         /// <param name="token">令牌</param>
         /// <returns></returns>
-        public static IEnumerable<Claim>? ParseToken(string token)
+        public static JwtSecurityToken? ParseToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var validateParameter = ValidParameters();
@@ -102,8 +103,7 @@ namespace ZR.Admin.WebApi.Framework
             {
                 tokenHandler.ValidateToken(token, validateParameter, out SecurityToken validatedToken);
 
-                var jwtToken = tokenHandler.ReadJwtToken(token);
-                return jwtToken.Claims;
+                return tokenHandler.ReadJwtToken(token);
             }
             catch (Exception ex)
             {
@@ -116,26 +116,22 @@ namespace ZR.Admin.WebApi.Framework
         /// <summary>
         /// jwt token校验
         /// </summary>
-        /// <param name="jwtToken"></param>
+        /// <param name="jwtSecurityToken"></param>
         /// <returns></returns>
-        public static LoginUser? ValidateJwtToken(IEnumerable<Claim> jwtToken)
+        public static LoginUser? ValidateJwtToken(JwtSecurityToken jwtSecurityToken)
         {
             try
             {
+                IEnumerable<Claim> claims = jwtSecurityToken.Claims;
                 LoginUser loginUser = null;
-                
-                var userData = jwtToken.FirstOrDefault(x => x.Type == ClaimTypes.UserData)?.Value;
+
+                var userData = claims.FirstOrDefault(x => x.Type == ClaimTypes.UserData)?.Value;
                 if (userData != null)
                 {
                     loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
-                    var permissions = CacheService.GetUserPerms(GlobalConstant.UserPermKEY + loginUser?.UserId);
-                    if (loginUser?.UserName == GlobalConstant.AdminRole)
-                    {
-                        permissions = new List<string>() { GlobalConstant.AdminPerm };
-                    }
-                    if (permissions == null) return null;
-                    loginUser.Permissions = permissions;
+                    loginUser.ExpireTime = jwtSecurityToken.ValidTo;
                 }
+                //Console.WriteLine("jwt到期时间：" + validTo);
                 return loginUser;
             }
             catch (Exception ex)
