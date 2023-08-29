@@ -1,11 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace ZR.Model.System.Dto
+namespace Infrastructure.Model
 {
-    /// <summary>
-    /// 登录用户信息存储
-    /// </summary>
-    public class LoginUser
+    public class TokenModel
     {
         public long UserId { get; set; }
         public long DeptId { get; set; }
@@ -26,15 +25,15 @@ namespace ZR.Model.System.Dto
         /// 权限集合
         /// </summary>
         //public List<string> Permissions { get; set; } = new List<string>();
-        public LoginUser()
+        public TokenModel()
         {
         }
 
-        public LoginUser(SysUser user, List<Roles> roles)
+        public TokenModel(TokenModel info, List<Roles> roles)
         {
-            UserId = user.UserId;
-            UserName = user.UserName;
-            DeptId = user.DeptId;
+            UserId = info.UserId;
+            UserName = info.UserName;
+            DeptId = info.DeptId;
             Roles = roles;
             RoleIds = roles.Select(f => f.RoleKey).ToList();
         }

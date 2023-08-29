@@ -2,6 +2,9 @@
 	<PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>8632</NoWarn>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -16,6 +19,7 @@
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="UAParser" Version="3.1.47" />
 		<PackageReference Include="IPTools.China" Version="1.6.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.7" />
 	</ItemGroup>
 
 </Project>

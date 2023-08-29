@@ -1,5 +1,4 @@
-﻿using Infrastructure.Constant;
-using IPTools.Core;
+﻿using IPTools.Core;
 using Microsoft.AspNetCore.SignalR;
 using System.Web;
 using UAParser;
@@ -81,7 +80,7 @@ namespace ZR.Admin.WebApi.Hubs
                     userInfo.TodayOnlineTime = 0;
                 }
                 var clientUser = onlineClients.Find(x => x.Userid == userid);
-                userInfo.TodayOnlineTime += clientUser?.OnlineTime ?? 0;
+                userInfo.TodayOnlineTime += Math.Round(clientUser?.OnlineTime ?? 0, 2);
             }
             //给当前所有登录当前账号的用户下发登录时长
             var connIds = onlineClients.Where(f => f.Userid == userid).ToList();
@@ -123,7 +122,7 @@ namespace ZR.Admin.WebApi.Hubs
                 {
                     userInfo.TodayOnlineTime += user?.OnlineTime ?? 0;
                 }
-                Log.WriteLine(ConsoleColor.Green, msg: $"用户{user?.Name}离开了,已在线{userInfo?.TodayOnlineTime}分，当前已连接{onlineClients.Count}个");
+                Log.WriteLine(ConsoleColor.Red, msg: $"用户{user?.Name}离开了,已在线{userInfo?.TodayOnlineTime}分，当前已连接{onlineClients.Count}个");
             }
             return base.OnDisconnectedAsync(exception);
         }

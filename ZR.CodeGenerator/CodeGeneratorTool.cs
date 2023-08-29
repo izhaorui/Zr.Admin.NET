@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Extensions;
+using Infrastructure.Model;
 using JinianNet.JNTemplate;
 using SqlSugar;
 using System;

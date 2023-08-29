@@ -1,10 +1,7 @@
-﻿using IPTools.Core;
-using Lazy.Captcha.Core;
+﻿using Lazy.Captcha.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using UAParser;
 using ZR.Admin.WebApi.Filters;
-using ZR.Admin.WebApi.Framework;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Service.System;
@@ -86,7 +83,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
 
-            LoginUser loginUser = new(user, roles.Adapt<List<Roles>>());
+            TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>());
             CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }

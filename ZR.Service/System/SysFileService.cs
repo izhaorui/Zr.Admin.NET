@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Extensions;
+using Infrastructure.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System;

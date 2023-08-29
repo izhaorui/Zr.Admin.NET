@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Infrastructure
+namespace Infrastructure.Model
 {
     /// <summary>
     /// 获取配置文件POCO实体类
@@ -80,6 +80,14 @@ namespace Infrastructure
         /// token时间（分）
         /// </summary>
         public int Expire { get; set; } = 1440;
+        /// <summary>
+        /// 刷新token时长
+        /// </summary>
+        public int RefreshTokenTime { get; set; }
+        /// <summary>
+        /// token类型
+        /// </summary>
+        public string TokenType { get; set; } = "Bearer";
     }
 
     public class Gen

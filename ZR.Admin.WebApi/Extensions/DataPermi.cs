@@ -1,7 +1,5 @@
-﻿using Infrastructure;
+﻿using SqlSugar;
 using SqlSugar.IOC;
-using SqlSugar;
-using ZR.Admin.WebApi.Framework;
 using ZR.Model.System;
 
 namespace ZR.Admin.WebApi.Extensions

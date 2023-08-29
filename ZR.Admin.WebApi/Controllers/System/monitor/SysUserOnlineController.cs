@@ -1,5 +1,4 @@
-﻿using Infrastructure.Constant;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Hubs;

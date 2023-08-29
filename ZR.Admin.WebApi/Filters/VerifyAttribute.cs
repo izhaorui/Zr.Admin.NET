@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using NLog;
-using ZR.Admin.WebApi.Framework;
-using ZR.Model.System.Dto;
 
 namespace ZR.Admin.WebApi.Filters
 {
@@ -36,7 +34,7 @@ namespace ZR.Admin.WebApi.Filters
             var isAuthed = context.HttpContext.User.Identity.IsAuthenticated;
 
             //使用jwt token校验2020-11-21
-            LoginUser loginUser = JwtUtil.GetLoginUser(context.HttpContext);
+            TokenModel loginUser = JwtUtil.GetLoginUser(context.HttpContext);
             if (loginUser != null)
             {
                 var nowTime = DateTime.UtcNow;
@@ -56,7 +54,7 @@ namespace ZR.Admin.WebApi.Filters
             if (loginUser == null || !isAuthed)
             {
                 string msg = $"请求访问[{url}]失败，无法访问系统资源";
-                logger.Info($"{msg}");
+                //logger.Info(msg);
 
                 context.Result = new JsonResult(new ApiResult((int)ResultCode.DENY, msg));
             }

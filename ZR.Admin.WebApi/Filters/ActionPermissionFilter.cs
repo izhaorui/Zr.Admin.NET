@@ -1,10 +1,6 @@
-﻿using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Data;
-using ZR.Admin.WebApi.Framework;
 using ZR.Model.System;
-using ZR.Model.System.Dto;
 using ZR.Service.System;
 using ZR.Service.System.IService;
 
@@ -41,7 +37,7 @@ namespace ZR.Admin.WebApi.Filters
         /// <returns></returns>
         public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            LoginUser info = JwtUtil.GetLoginUser(context.HttpContext);
+            TokenModel info = JwtUtil.GetLoginUser(context.HttpContext);
 
             if (info != null && info?.UserId > 0)
             {
@@ -79,7 +75,7 @@ namespace ZR.Admin.WebApi.Filters
                 string[] denyPerms = new string[] { "update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send", "export", "upload", "common", "gencode", "reset" };
                 if (isDemoMode && denyPerms.Any(f => Permission.ToLower().Contains(f)))
                 {
-                    context.Result = new JsonResult(new { code = ResultCode.FORBIDDEN, msg = "演示模式 , 不允许操作" });
+                    context.Result = new JsonResult(new { code = (int)ResultCode.FORBIDDEN, msg = "演示模式 , 不允许操作" });
                 }
                 if (!HasPermi && !Permission.Equals("common"))
                 {

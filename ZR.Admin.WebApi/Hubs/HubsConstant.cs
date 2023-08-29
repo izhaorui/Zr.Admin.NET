@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Constant
+﻿namespace ZR.Admin.WebApi.Hubs
 {
     public class HubsConstant
     {

@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Model;
 using SqlSugar;
 using System.Collections.Generic;
 using System.Linq;

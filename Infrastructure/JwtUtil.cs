@@ -1,14 +1,20 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Infrastructure.Extensions;
+using Infrastructure.Model;
+using Infrastructure.WebExtensins;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using ZR.Model.System.Dto;
 
-namespace ZR.Admin.WebApi.Framework
+namespace Infrastructure
 {
     /// <summary>
-    /// 2020-11-20
+    /// 2023-8-29已从WebApi移至此
     /// </summary>
     public class JwtUtil
     {
@@ -17,7 +23,7 @@ namespace ZR.Admin.WebApi.Framework
         /// </summary>
         /// <param name="httpContext"></param>
         /// <returns></returns>
-        public static LoginUser GetLoginUser(HttpContext httpContext)
+        public static TokenModel GetLoginUser(HttpContext httpContext)
         {
             string token = httpContext.GetToken();
 
@@ -53,7 +59,7 @@ namespace ZR.Admin.WebApi.Framework
                 IssuedAt = authTime,//token生成时间
                 Expires = expiresAt,
                 //NotBefore = authTime,
-                TokenType = "Bearer",
+                TokenType = jwtSettings.TokenType,
                 //对称秘钥，签名证书
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
@@ -118,18 +124,18 @@ namespace ZR.Admin.WebApi.Framework
         /// </summary>
         /// <param name="jwtSecurityToken"></param>
         /// <returns></returns>
-        public static LoginUser? ValidateJwtToken(JwtSecurityToken jwtSecurityToken)
+        public static TokenModel? ValidateJwtToken(JwtSecurityToken jwtSecurityToken)
         {
             try
             {
                 if (jwtSecurityToken == null) return null;
                 IEnumerable<Claim> claims = jwtSecurityToken?.Claims;
-                LoginUser loginUser = null;
+                TokenModel loginUser = null;
 
                 var userData = claims.FirstOrDefault(x => x.Type == ClaimTypes.UserData)?.Value;
                 if (userData != null)
                 {
-                    loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
+                    loginUser = JsonConvert.DeserializeObject<TokenModel>(userData);
                     loginUser.ExpireTime = jwtSecurityToken.ValidTo;
                 }
                 return loginUser;
@@ -146,7 +152,7 @@ namespace ZR.Admin.WebApi.Framework
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public static List<Claim> AddClaims(LoginUser user)
+        public static List<Claim> AddClaims(TokenModel user)
         {
             var claims = new List<Claim>()
                 {
