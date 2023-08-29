@@ -37,16 +37,18 @@ namespace ZR.Admin.WebApi.Hubs
         /// <returns></returns>
         public override Task OnConnectedAsync()
         {
-            var name = HttpContextExtension.GetName(App.HttpContext);
-            var ip = HttpContextExtension.GetClientUserIp(App.HttpContext);
+            var context = App.HttpContext;
+            var name = HttpContextExtension.GetName(context);
+            var ip = HttpContextExtension.GetClientUserIp(context);
             var ip_info = IpTool.Search(ip);
-
-            ClientInfo clientInfo = HttpContextExtension.GetClientInfo(App.HttpContext);
+            ClientInfo clientInfo = HttpContextExtension.GetClientInfo(context);
             string device = clientInfo.ToString();
-            string qs = HttpContextExtension.GetQueryString(App.HttpContext);
-            string from = HttpUtility.ParseQueryString(qs).Get("from") ?? "web";
+            string qs = HttpContextExtension.GetQueryString(context);
+            var query = HttpUtility.ParseQueryString(qs);
+            string from = query.Get("from") ?? "web";
+            string clientId = query.Get("clientId");
 
-            long userid = HttpContextExtension.GetUId(App.HttpContext);
+            long userid = HttpContextExtension.GetUId(context);
             string uuid = device + userid + ip;
             var user = onlineClients.Any(u => u.ConnnectionId == Context.ConnectionId);
             var user2 = onlineClients.Any(u => u.Uuid == uuid);
@@ -58,7 +60,8 @@ namespace ZR.Admin.WebApi.Hubs
                 {
                     Location = ip_info.City,
                     Uuid = uuid,
-                    Platform = from
+                    Platform = from,
+                    ClientId = clientId ?? Context.ConnectionId
                 };
                 onlineClients.Add(onlineUser);
                 Log.WriteLine(msg: $"{DateTime.Now}：{name},{Context.ConnectionId}连接服务端success，当前已连接{onlineClients.Count}个");

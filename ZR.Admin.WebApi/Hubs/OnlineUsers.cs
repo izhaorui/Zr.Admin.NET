@@ -50,6 +50,10 @@
         /// </summary>
         public int ClientNum { get; set; }
         /// <summary>
+        /// 客户端id
+        /// </summary>
+        public string ClientId { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         public OnlineUsers()

@@ -37,11 +37,12 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         }
 
         /// <summary>
-        /// 强退
+        /// 单条强退
         /// </summary>
         /// <returns></returns>
         [HttpDelete("lock")]
         [Log(Title = "强退", BusinessType = BusinessType.FORCE)]
+        [ActionPermissionFilter(Permission = "monitor:online:forceLogout")]
         public async Task<IActionResult> Lock([FromBody] LockUserDto dto)
         {
             if (dto == null) { return ToResponse(ResultCode.PARAM_ERROR); }
@@ -52,6 +53,22 @@ namespace ZR.Admin.WebApi.Controllers.monitor
             //PC 端采用设备 + 用户名的方式进行封锁
             CacheService.SetLockUser(dto.ClientId + dto.Name, expirTime, dto.Time);
             return SUCCESS(new { expirTime });
+        }
+
+        /// <summary>
+        /// 批量强退
+        /// </summary>
+        /// <returns></returns>
+        [HttpDelete("batchlock")]
+        [Log(Title = "强退", BusinessType = BusinessType.FORCE)]
+        [ActionPermissionFilter(Permission = "monitor:online:batchLogout")]
+        public async Task<IActionResult> BatchLock([FromBody] LockUserDto dto)
+        {
+            if (dto == null) { return ToResponse(ResultCode.PARAM_ERROR); }
+
+            await HubContext.Clients.All.SendAsync(HubsConstant.LockUser, new { dto.Reason, dto.Time });
+
+            return SUCCESS(1);
         }
     }
 }
