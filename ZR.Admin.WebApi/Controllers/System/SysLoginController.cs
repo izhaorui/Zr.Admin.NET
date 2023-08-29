@@ -247,6 +247,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPost("/ScanLogin")]
         [Log(Title = "扫码登录")]
+        [Verify]
         public IActionResult ScanLogin([FromBody] ScanDto dto)
         {
             if (dto == null) { return ToResponse(ResultCode.CUSTOM_ERROR, "扫码失败"); }
@@ -259,14 +260,15 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ResultCode.LOGIN_ERROR, $"当前设备已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
             }
-            var token = HttpContextExtension.GetToken(HttpContext);
+            //var token = HttpContextExtension.GetToken(HttpContext);
+            TokenModel tokenModel = JwtUtil.GetLoginUser(HttpContext);
             if (CacheService.GetScanLogin(dto.Uuid) is not null)
             {
                 Dictionary<string, object> dict = new() { };
                 dict.Add("status", "success");
-                dict.Add("token", token.Replace("Bearer ", ""));
+                dict.Add("token", JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(tokenModel)));
                 CacheService.SetScanLogin(dto.Uuid, dict);
-                //TODO 待优化，应该生成新的token
+                
                 return SUCCESS(1);
             }
             return ToResponse(ResultCode.FAIL, "二维码已失效");
