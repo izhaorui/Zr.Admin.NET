@@ -31,10 +31,6 @@ namespace ZR.Admin.WebApi.Filters
             {
                 foreach (var err in item.Errors)
                 {
-                    if (err.ErrorMessage.Contains("JSON"))
-                    {
-                        return next();
-                    }
                     if (!string.IsNullOrEmpty(msg))
                     {
                         msg += " | ";
