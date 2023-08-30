@@ -1,10 +1,12 @@
-﻿using ZR.Model;
+﻿using Infrastructure;
+using System;
+using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
 namespace ZR.Service.System.IService
 {
-    public interface ISysLoginService: IBaseService<SysLogininfor>
+    public interface ISysLoginService : IBaseService<SysLogininfor>
     {
         /// <summary>
         /// 登录
@@ -40,5 +42,7 @@ namespace ZR.Service.System.IService
         /// <param name="ids"></param>
         /// <returns></returns>
         public int DeleteLogininforByIds(long[] ids);
+
+        void CheckLockUser(string userName);
     }
 }

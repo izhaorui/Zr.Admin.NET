@@ -16,7 +16,7 @@ namespace ZR.Admin.WebApi.Controllers.System
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysLoginController : BaseController
     {
-        static readonly NLog.Logger logger = NLog.LogManager.GetLogger("LoginController");
+        //static readonly NLog.Logger logger = NLog.LogManager.GetLogger("LoginController");
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly ISysUserService sysUserService;
         private readonly ISysMenuService sysMenuService;
@@ -68,14 +68,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
 
-            var lockTimeStamp = CacheService.GetLockUser(loginBody.ClientId + loginBody.Username);
-            var lockTime = DateTimeHelper.ToLocalTimeDateBySeconds(lockTimeStamp);
-            var ts = lockTime - DateTime.Now;
-
-            if (lockTimeStamp > 0 && ts.TotalSeconds > 0)
-            {
-                return ToResponse(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
-            }
+            sysLoginService.CheckLockUser(loginBody.Username);
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
             var user = sysLoginService.Login(loginBody, new SysLogininfor() { LoginLocation = location });
 
@@ -252,15 +245,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (dto == null) { return ToResponse(ResultCode.CUSTOM_ERROR, "扫码失败"); }
             var name = App.HttpContext.GetName();
-            var lockTimeStamp = CacheService.GetLockUser(dto.DeviceId + name);
-            var lockTime = DateTimeHelper.ToLocalTimeDateBySeconds(lockTimeStamp);
-            var ts = lockTime - DateTime.Now;
+            
+            sysLoginService.CheckLockUser(name);
 
-            if (lockTimeStamp > 0 && ts.TotalSeconds > 0)
-            {
-                return ToResponse(ResultCode.LOGIN_ERROR, $"当前设备已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
-            }
-            //var token = HttpContextExtension.GetToken(HttpContext);
             TokenModel tokenModel = JwtUtil.GetLoginUser(HttpContext);
             if (CacheService.GetScanLogin(dto.Uuid) is not null)
             {

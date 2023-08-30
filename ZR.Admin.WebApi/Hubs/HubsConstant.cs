@@ -8,6 +8,7 @@
         public static string MoreNotice = "moreNotice";
         public static string OnlineUser = "onlineUser";
         public static string LockUser = "lockUser";
+        public static string ForceUser = "forceUser";
         public static string ConnId = "connId";
     }
 }

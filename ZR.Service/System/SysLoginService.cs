@@ -49,7 +49,7 @@ namespace ZR.Service.System
             ClientInfo clientInfo = httpContextAccessor.HttpContext.GetClientInfo();
             logininfor.Browser = clientInfo.ToString();
             logininfor.Os = clientInfo.OS.ToString();
-            
+
             if (user == null || user.UserId <= 0)
             {
                 logininfor.Msg = "用户名或密码错误";
@@ -121,5 +121,18 @@ namespace ZR.Service.System
         {
             return Delete(ids);
         }
+
+        public void CheckLockUser(string userName)
+        {
+            var lockTimeStamp = CacheService.GetLockUser(userName);
+            var lockTime = DateTimeHelper.ToLocalTimeDateBySeconds(lockTimeStamp);
+            var ts = lockTime - DateTime.Now;
+
+            if (lockTimeStamp > 0 && ts.TotalSeconds > 0)
+            {
+                throw new CustomException(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
+            }
+        }
+
     }
 }
