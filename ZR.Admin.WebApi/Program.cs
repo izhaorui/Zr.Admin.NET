@@ -83,6 +83,7 @@ builder.Services.AddMvc(options =>
     options.JsonSerializerOptions.WriteIndented = true;
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeConverter());
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeNullConverter());
+    options.JsonSerializerOptions.Converters.Add(new Infrastructure.StringConverter());
 });
 
 builder.Services.AddSwaggerConfig();

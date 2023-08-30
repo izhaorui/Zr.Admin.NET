@@ -14,6 +14,7 @@ namespace ZR.Model.System.Dto
         /// 用户性别（0男 1女 2未知）
         /// </summary>
         public int Sex { get; set; }
+        public string Password { get; set; }
     }
 
     public class SysUserQueryDto

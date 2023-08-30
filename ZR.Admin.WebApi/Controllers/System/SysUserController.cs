@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
 using SqlSugar;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
@@ -146,7 +145,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Remove(int userid = 0)
         {
             if (userid <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-            if (userid == 1) return ToResponse(Infrastructure.ResultCode.FAIL, "不能删除管理员账号");
+            if (userid == 1) return ToResponse(ResultCode.FAIL, "不能删除管理员账号");
             int result = UserService.DeleteUser(userid);
 
             return ToResponse(result);
@@ -159,7 +158,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPut("resetPwd")]
         [Log(Title = "重置密码", BusinessType = BusinessType.UPDATE)]
         [ActionPermissionFilter(Permission = "system:user:resetPwd")]
-        public IActionResult ResetPwd([FromBody] SysUser sysUser)
+        public IActionResult ResetPwd([FromBody] SysUserDto sysUser)
         {
             //密码md5
             sysUser.Password = NETCore.Encrypt.EncryptProvider.Md5(sysUser.Password);
