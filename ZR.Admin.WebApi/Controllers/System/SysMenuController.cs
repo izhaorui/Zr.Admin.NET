@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -12,7 +11,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("/system/menu")]
-    [Tags("菜单管理SysMenu")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysMenuController : BaseController
     {

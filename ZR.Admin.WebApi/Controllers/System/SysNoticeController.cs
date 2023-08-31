@@ -1,8 +1,6 @@
-﻿using Infrastructure.Constant;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SqlSugar;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Hubs;
 using ZR.Model;
@@ -17,7 +15,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/notice")]
-    [Tags("系统通知SysNotice")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysNoticeController : BaseController
     {

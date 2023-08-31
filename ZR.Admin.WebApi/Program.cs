@@ -1,13 +1,15 @@
 using AspNetCoreRateLimit;
+using Infrastructure.Converter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Admin.WebApi.Filters;
 using ZR.Admin.WebApi.Hubs;
-using ZR.Admin.WebApi.Middleware;
 using ZR.Common.Cache;
+using ZR.Infrastructure.WebExtensions;
+using ZR.ServiceCore.Middleware;
+using ZR.ServiceCore.SqlSugar;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,7 +85,7 @@ builder.Services.AddMvc(options =>
     options.JsonSerializerOptions.WriteIndented = true;
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeConverter());
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeNullConverter());
-    options.JsonSerializerOptions.Converters.Add(new Infrastructure.StringConverter());
+    options.JsonSerializerOptions.Converters.Add(new StringConverter());
 });
 
 builder.Services.AddSwaggerConfig();
@@ -93,7 +95,7 @@ InternalApp.ServiceProvider = app.Services;
 InternalApp.Configuration = builder.Configuration;
 InternalApp.WebHostEnvironment = app.Environment;
 //初始化db
-builder.Services.AddDb(builder.Configuration, app.Environment);
+builder.Services.AddDb(app.Environment);
 
 //使用全局异常中间件
 app.UseMiddleware<GlobalExceptionMiddleware>();

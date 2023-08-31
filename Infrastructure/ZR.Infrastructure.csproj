@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>8632</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AspectCore.Abstractions" Version="2.4.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyModel" Version="7.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="UAParser" Version="3.1.47" />
+		<PackageReference Include="IPTools.China" Version="1.6.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.7" />
+		<PackageReference Include="JinianNet.JNTemplate" Version="2.3.3" />
+		<PackageReference Include="MiniExcel" Version="1.31.2" />
+		<PackageReference Include="CSRedisCore" Version="3.8.670" />
+		<PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
+	</ItemGroup>
+
+</Project>

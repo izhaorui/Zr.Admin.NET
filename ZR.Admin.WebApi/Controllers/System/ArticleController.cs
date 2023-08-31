@@ -13,7 +13,6 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Verify]
     [Route("article")]
-    [Tags("文章管理")]
     [ApiExplorerSettings(GroupName = "article")]
     public class ArticleController : BaseController
     {
@@ -89,7 +88,7 @@ namespace ZR.Admin.WebApi.Controllers
             var model = response.Adapt<ArticleDto>();
             if (model.IsPublic == 0 && userId != model.UserId)
             {
-                return ToResponse(Infrastructure.ResultCode.CUSTOM_ERROR, "访问失败");
+                return ToResponse(ResultCode.CUSTOM_ERROR, "访问失败");
             }
             if (model != null)
             {

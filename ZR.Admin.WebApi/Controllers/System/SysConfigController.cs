@@ -14,7 +14,6 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Verify]
     [Route("system/config")]
-    [Tags("系统配置SysConfig")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysConfigController : BaseController
     {

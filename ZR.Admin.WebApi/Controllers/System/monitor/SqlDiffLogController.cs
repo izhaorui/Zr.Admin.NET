@@ -11,7 +11,6 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Verify]
     [Route("monitor/SqlDiffLog")]
-    [Tags("差异日志SqlDiffLog")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SqlDiffLogController : BaseController
     {

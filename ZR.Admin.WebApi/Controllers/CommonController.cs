@@ -1,10 +1,9 @@
-﻿using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
+using ZR.Service.IService;
 using ZR.Service.System;
 using ZR.Service.System.IService;
 
@@ -14,7 +13,6 @@ namespace ZR.Admin.WebApi.Controllers
     /// 公共模块
     /// </summary>
     [Route("[controller]/[action]")]
-    [Tags("公共模块Common")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class CommonController : BaseController
     {
@@ -23,18 +21,22 @@ namespace ZR.Admin.WebApi.Controllers
 
         private IWebHostEnvironment WebHostEnvironment;
         private ISysFileService SysFileService;
+        private IHelloService HelloService;
+
         public CommonController(
             IOptions<OptionsSetting> options,
             IWebHostEnvironment webHostEnvironment,
-            ISysFileService fileService)
+            ISysFileService fileService,
+            IHelloService helloService)
         {
             WebHostEnvironment = webHostEnvironment;
             SysFileService = fileService;
             OptionsSetting = options.Value;
+            HelloService = helloService;
         }
 
         /// <summary>
-        /// hello
+        /// home
         /// </summary>
         /// <returns></returns>
         [Route("/")]
@@ -43,6 +45,18 @@ namespace ZR.Admin.WebApi.Controllers
         {
             return Ok("看到这里页面说明你已经成功启动了本项目:)\n\n" +
                 "如果觉得项目有用，打赏作者喝杯咖啡作为奖励\n☛☛http://www.izhaorui.cn/doc/support.html\n");
+        }
+
+        /// <summary>
+        /// hello
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [Route("/hello")]
+        [HttpGet]
+        public IActionResult Hello(string name)
+        {
+            return Ok(HelloService.SayHello(name));
         }
 
         /// <summary>

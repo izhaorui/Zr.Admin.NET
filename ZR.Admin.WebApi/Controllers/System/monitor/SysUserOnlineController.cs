@@ -7,9 +7,11 @@ using ZR.Model.System.Dto;
 
 namespace ZR.Admin.WebApi.Controllers.monitor
 {
+    /// <summary>
+    /// 在线用户
+    /// </summary>
     [Verify]
     [Route("monitor/online")]
-    [Tags("在线用户SysUserOnline")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysUserOnlineController : BaseController
     {

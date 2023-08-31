@@ -15,6 +15,10 @@ namespace Infrastructure.Model
         /// 是否演示模式
         /// </summary>
         public bool DemoMode { get; set; }
+        /// <summary>
+        /// 初始化db
+        /// </summary>
+        public bool InitDb { get; set; }
         public MailOptions MailOptions { get; set; }
         public Upload Upload { get; set; }
         public ALIYUN_OSS ALIYUN_OSS { get; set; }

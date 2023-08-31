@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
@@ -13,7 +12,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/dict/data")]
-    [Tags("字典数据SysDictData")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysDictDataController : BaseController
     {

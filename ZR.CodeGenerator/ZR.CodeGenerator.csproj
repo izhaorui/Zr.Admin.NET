@@ -5,9 +5,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+		<ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
 		<ProjectReference Include="..\ZR.Common\ZR.Common.csproj" />
-		<ProjectReference Include="..\ZR.Model\ZR.Model.csproj" />
+		<ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

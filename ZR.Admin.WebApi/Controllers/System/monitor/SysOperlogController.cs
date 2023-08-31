@@ -11,7 +11,6 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     /// </summary>
     [Verify]
     [Route("/monitor/operlog")]
-    [Tags("操作日志SysOperlog")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysOperlogController : BaseController
     {
@@ -67,7 +66,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         {
             if (!HttpContextExtension.IsAdmin(HttpContext))
             {
-                return ToResponse(Infrastructure.ResultCode.CUSTOM_ERROR,"操作失败");
+                return ToResponse(ResultCode.CUSTOM_ERROR,"操作失败");
             }
             sysOperLogService.CleanOperLog();
 

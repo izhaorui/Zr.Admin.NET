@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -13,7 +12,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/dept")]
-    [Tags("部门管理SysDept")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysDeptController : BaseController
     {

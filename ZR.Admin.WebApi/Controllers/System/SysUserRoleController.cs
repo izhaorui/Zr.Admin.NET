@@ -10,7 +10,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/userRole")]
-    [Tags("用户角色管理SysUserRole")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysUserRoleController : BaseController
     {
@@ -45,7 +44,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPost("create")]
         [ActionPermissionFilter(Permission = "system:roleusers:add")]
-        [Log(Title = "添加角色用户", BusinessType = Infrastructure.Enums.BusinessType.INSERT)]
+        [Log(Title = "添加角色用户", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] RoleUsersCreateDto roleUsersCreateDto)
         {
             var response = SysUserRoleService.InsertRoleUser(roleUsersCreateDto);
@@ -60,7 +59,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPost("delete")]
         [ActionPermissionFilter(Permission = "system:roleusers:remove")]
-        [Log(Title = "删除角色用户", BusinessType = Infrastructure.Enums.BusinessType.DELETE)]
+        [Log(Title = "删除角色用户", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete([FromBody] RoleUsersCreateDto roleUsersCreateDto)
         {
             return SUCCESS(SysUserRoleService.DeleteRoleUserByUserIds(roleUsersCreateDto.RoleId, roleUsersCreateDto.UserIds));

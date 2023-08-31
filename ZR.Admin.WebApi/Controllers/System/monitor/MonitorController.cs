@@ -9,7 +9,6 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     /// <summary>
     /// 系统监控
     /// </summary>
-    [Tags("系统监控Monitor")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class MonitorController : BaseController
     {

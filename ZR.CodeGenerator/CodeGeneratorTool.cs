@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Extensions;
+using Infrastructure.Helper;
 using Infrastructure.Model;
 using JinianNet.JNTemplate;
 using SqlSugar;
@@ -8,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ZR.CodeGenerator.Model;
-using ZR.Common;
 using ZR.Model.System.Generate;
 
 namespace ZR.CodeGenerator

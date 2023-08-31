@@ -12,7 +12,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// <summary>
     /// 登录
     /// </summary>
-    [Tags("登录SysLogin")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysLoginController : BaseController
     {
@@ -160,7 +159,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPost("/register")]
         [AllowAnonymous]
-        [Log(Title = "注册", BusinessType = Infrastructure.Enums.BusinessType.INSERT)]
+        [Log(Title = "注册", BusinessType = BusinessType.INSERT)]
         public IActionResult Register([FromBody] RegisterDto dto)
         {
             SysConfig config = sysConfigService.GetSysConfigByKey("sys.account.register");

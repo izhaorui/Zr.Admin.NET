@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
@@ -13,7 +12,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("system/role")]
-    [Tags("角色管理SysRole")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysRoleController : BaseController
     {

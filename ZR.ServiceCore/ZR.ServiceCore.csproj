@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>1701;1702;1591;1570</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ZR.Common\ZR.Common.csproj" />
+		<ProjectReference Include="..\ZR.Repository\ZR.Repository.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="NETCore.Encrypt" Version="2.1.1" />
+		<PackageReference Include="NLog" Version="5.2.3" />
+	</ItemGroup>
+
+</Project>

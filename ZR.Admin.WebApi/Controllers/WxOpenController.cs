@@ -1,5 +1,4 @@
-﻿using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Web;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -11,9 +10,6 @@ namespace ZR.Admin.WebApi.Controllers
     [AllowAnonymous]
     public class WxOpenController : BaseController
     {
-        private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-        public WxOpenController() { }
-
         /// <summary>
         /// 获取签名
         /// </summary>

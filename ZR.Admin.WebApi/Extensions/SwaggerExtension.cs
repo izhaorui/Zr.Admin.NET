@@ -75,6 +75,9 @@ namespace ZR.Admin.WebApi.Extensions
                     //添加文档注释
                     var baseDir = AppContext.BaseDirectory;
                     c.IncludeXmlComments(Path.Combine(baseDir, "ZR.Model.xml"), true);
+                    c.IncludeXmlComments(Path.Combine(baseDir, "ZR.ServiceCore.xml"), true);
+                    c.IncludeXmlComments(Path.Combine(baseDir, "ZR.Service.xml"), true);
+                    c.IncludeXmlComments(Path.Combine(baseDir, "ZR.Admin.WebApi.xml"), true);
 
                     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                     var xmlPath = Path.Combine(baseDir, xmlFile);

@@ -13,7 +13,6 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     /// </summary>
     [Verify]
     [Route("/monitor/logininfor")]
-    [Tags("登录日志SysLogininfor")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysLogininforController : BaseController
     {

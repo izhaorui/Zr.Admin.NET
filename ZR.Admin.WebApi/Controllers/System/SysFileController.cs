@@ -12,7 +12,6 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Verify]
     [Route("tool/file")]
-    [Tags(" 文件存储SysFile")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysFileController : BaseController
     {

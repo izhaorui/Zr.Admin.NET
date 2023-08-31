@@ -54,5 +54,10 @@
         /// 清空数据
         /// </summary>
         CLEAN = 9,
+
+        /// <summary>
+        /// 下载
+        /// </summary>
+        DOWNLOAD = 10,
     }
 }

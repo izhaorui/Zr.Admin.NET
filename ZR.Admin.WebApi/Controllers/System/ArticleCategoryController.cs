@@ -11,7 +11,6 @@ namespace ZR.Admin.WebApi.Controllers
     /// 文章目录Controller
     /// </summary>
     [Route("article/ArticleCategory")]
-    [Tags("文章目录")]
     [ApiExplorerSettings(GroupName = "article")]
     public class ArticleCategoryController : BaseController
     {

@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.Model", "ZR.Model\ZR.Mod
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.Common", "ZR.Common\ZR.Common.csproj", "{42C84599-1E99-45B4-929B-417C37337EF8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{5D740120-5491-4FE2-B5BE-8A9C48BFE3C5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.Infrastructure", "Infrastructure\ZR.Infrastructure.csproj", "{5D740120-5491-4FE2-B5BE-8A9C48BFE3C5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.Tasks", "ZR.Tasks\ZR.Tasks.csproj", "{B657ED99-40E5-423A-AFE7-157C4EE576CB}"
 EndProject
@@ -18,6 +18,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.Repository", "ZR.Repository\ZR.Repository.csproj", "{17E277BF-B2B8-4111-AE43-38246128C83C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.CodeGenerator", "ZR.CodeGenerator\ZR.CodeGenerator.csproj", "{B353DE0B-12C6-4C15-909A-DB68F71D5AE9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.ServiceCore", "ZR.ServiceCore\ZR.ServiceCore.csproj", "{4E2CC4E4-F109-4876-8498-912E13905765}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +59,10 @@ Global
 		{B353DE0B-12C6-4C15-909A-DB68F71D5AE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B353DE0B-12C6-4C15-909A-DB68F71D5AE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B353DE0B-12C6-4C15-909A-DB68F71D5AE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E2CC4E4-F109-4876-8498-912E13905765}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E2CC4E4-F109-4876-8498-912E13905765}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E2CC4E4-F109-4876-8498-912E13905765}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E2CC4E4-F109-4876-8498-912E13905765}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

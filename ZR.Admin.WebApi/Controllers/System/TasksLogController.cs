@@ -1,5 +1,4 @@
-﻿using Infrastructure.Extensions;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
@@ -14,7 +13,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("/monitor/jobLog")]
-    [Tags("任务日志TasksLog")]
     [ApiExplorerSettings(GroupName = "sys")]
     public class TasksLogController : BaseController
     {
