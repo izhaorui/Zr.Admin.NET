@@ -20,7 +20,7 @@ namespace ZR.Common
         public MailHelper()
         {
             AppSettings.Bind("MailOptions", mailOptions);
-            FromEmail= mailOptions.FromEmail;
+            FromEmail = mailOptions.FromEmail;
         }
         public MailHelper(MailOptions _mailOptions)
         {
@@ -133,11 +133,20 @@ namespace ZR.Common
             //特别说明，对于服务器端的中文相应，Exception中有编码问题，显示乱码了
             client.Authenticate(System.Text.Encoding.UTF8, mailOptions.FromEmail, mailOptions.Password);
 
-            var result = client.Send(message);
-            //断开
-            client.Disconnect(true);
-            Console.WriteLine($"【{DateTime.Now}】发送邮件结果{result}");
-            return result;
+            try
+            {
+                var result = client.Send(message);
+                //断开
+                client.Disconnect(true);
+                Console.WriteLine($"【{DateTime.Now}】发送邮件结果{result}");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                client.Disconnect(true);
+                Log.WriteLine(ConsoleColor.Red, "发送邮件失败" + ex.Message);
+                return "fail";
+            }
         }
     }
 }
