@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using ${options.DtosNamespace};
 using ${options.ModelsNamespace}.${options.SubNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
-using ${options.ApiControllerNamespace}.Extensions;
 using ${options.ApiControllerNamespace}.Filters;
 $if(replaceDto.ShowBtnImport)
 using MiniExcelLibs;

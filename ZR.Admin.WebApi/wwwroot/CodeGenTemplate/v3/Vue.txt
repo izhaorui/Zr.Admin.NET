@@ -214,13 +214,13 @@ $end
         </el-button-group>
 $else
 $if(replaceDto.ShowBtnView)
-          <el-button type="primary" icon="view" title="详情" @click="handlePreview(scope.row)"></el-button>
+          <el-button type="primary" size="small" icon="view" title="详情" @click="handlePreview(scope.row)"></el-button>
 $end
 $if(replaceDto.ShowBtnEdit)
-          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" type="success" icon="edit" title="编辑" @click="handleUpdate(scope.row)"></el-button>
+          <el-button type="success" size="small" icon="edit" title="编辑" v-hasPermi="['${replaceDto.PermissionPrefix}:edit']" @click="handleUpdate(scope.row)"></el-button>
 $end
 $if(replaceDto.ShowBtnDelete)
-          <el-button v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" type="danger" icon="delete" title="删除" @click="handleDelete(scope.row)"></el-button>
+          <el-button type="danger" size="small" icon="delete" title="删除" v-hasPermi="['${replaceDto.PermissionPrefix}:delete']" @click="handleDelete(scope.row)"></el-button>
 $end
 $end
         </template>
