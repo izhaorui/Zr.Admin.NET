@@ -5,7 +5,7 @@
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
 <a href='https://gitee.com/izory/ZrAdminNetCore/members'><img src='https://gitee.com/izory/ZrAdminNetCore/badge/fork.svg?theme=dark' alt='fork'></img></a>
 	<a href="https://gitee.com/izory/ZrAdminNetCore/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
-	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230713-yellow"/></a>
+	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230811-yellow"/></a>
 </p>
 
 ---
@@ -28,7 +28,7 @@
 - 阿里云特惠专区：[☛☛ 点我进入 ☚☚](https://www.aliyun.com/minisite/goods?userCode=uotn5vt1&share_source=copy_link)
 
 ```
-如果对您有帮助，您可以点右上角 “Star” 收藏一下 ，这样作者才有继续免费下去的动力，谢谢！~
+如果对您有帮助，您可以点右上角 “Star” 收藏一下 ，谢谢！~
 ```
 
 ## 🍿 在线体验
@@ -38,7 +38,7 @@
 - Vue3.x 版本体验：[http://www.izhaorui.cn/vue3](http://www.izhaorui.cn/vue3)
 - Vue2.x 版本体验：[http://www.izhaorui.cn/admin](http://www.izhaorui.cn/admin)
 - Uniapp 版本体验：[http://www.izhaorui.cn/h5](http://www.izhaorui.cn/h5)
-- 账号密码：admin/123456
+- 账号密码：admin/123456，普通用户 user/123456
 
 | H5                                                                                     | 微信小程序                                                                           |
 | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -72,6 +72,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 - 分库分表：使用 orm sqlsugar 可以很轻松的实现分库分库性能优越
 - 多 租 户：支持多租户功能
 - 缓存数据：内置内存缓存和 Redis
+- signalR：使用signalr管理用户在线状态
 
 ## 🍖 内置功能
 
@@ -88,18 +89,24 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 11. 在线构建器：拖动表单元素生成相应的 VUE 代码(仅支持 vue2)。
 12. 任务系统：基于 Quartz.NET，可以在线（添加、修改、删除、手动执行)任务调度包含执行结果日志。
 13. 文章管理：可以写文章记录。
-14. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、.sql 等)支持下载，自定义配置前端展示控件、让开发更快捷高效（史上最强）。
+14. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、.sql、uniapp 等)支持下载，自定义配置前端展示控件、让开发更快捷高效（史上最强）。
 15. 参数管理：对系统动态配置常用参数。
 16. 发送邮件：可以对多个用户进行发送邮件。
 17. 文件管理：可以进行上传文件管理，目前支持上传到本地、阿里云。
 18. 通知管理：系统通知公告信息发布维护，使用 signalr 实现对用户实时通知。
 19. 账号注册：可以注册账号登录系统。
 20. 多语言管理：支持静态、后端动态配置国际化。目前只支持中、英、繁体(仅支持 vue3)
+21. 在线用户：可以查看正在登录使用的用户，可以对其踢出、通知操作
+22. db 审计日志：数据库审计功能
+23. 三方登录：提供三方登录实现逻辑
 
 ## 🍻 项目结构
 
+![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/kj.png)
+
 ```
-├─ZR.Service             		->[服务层类库]：提供WebApi接口调用；
+├─ZR.Service                 ->[你的业务服务层类库]：提供WebApi接口调用；
+├─ZR.ServiceCore             		->[系统服务层类库]：提供WebApi接口调用；
 ├─ZR.Repository                     ->[仓库层类库]：方便提供有执行存储过程的操作；
 ├─ZR.Model                		->[实体层类库]：提供项目中的数据库表、数据传输对象；
 ├─ZR.Admin.WebApi               	->[webapi接口]：为Vue版或其他三方系统提供接口服务。
