@@ -69,12 +69,14 @@ $end
 
     </u--form>
 
-    <view class="btn-group">
-      <view class="btn-item">
-        <u-button text="取消" shape="circle" icon="close" type="info" @click="handleCancel"></u-button>
-      </view>
-      <view class="btn-item" v-if="opertype != 3">
-        <u-button text="确定" shape="circle" icon="checkmark" type="primary" @click="submit"></u-button>
+    <view class="form-footer">
+      <view class="btn_wrap">
+        <view class="btn-item">
+          <u-button text="取消" shape="circle" icon="close" type="info" @click="handleCancel"></u-button>
+        </view>
+        <view class="btn-item" v-if="opertype != 3">
+          <u-button text="确定" shape="circle" icon="checkmark" type="primary" @click="submit"></u-button>
+        </view>
       </view>
     </view>
   </view>
@@ -110,7 +112,6 @@ $end
       return {
         form: {},
         rules: {
-          xxx: {},
 $foreach(column in genTable.Columns)
 $if(column.IsRequired && column.IsIncrement == false)
           ${column.CsharpFieldFl}: [{
