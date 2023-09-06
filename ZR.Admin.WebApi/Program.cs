@@ -1,8 +1,6 @@
 using AspNetCoreRateLimit;
 using Infrastructure.Converter;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Common.Cache;
@@ -38,31 +36,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<OptionsSetting>(builder.Configuration);
 
 //jwt 认证
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddCookie()
-.AddJwtBearer(o =>
-{
-    o.TokenValidationParameters = JwtUtil.ValidParameters();
-    o.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            // 如果过期，把过期信息添加到头部
-            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
-            {
-                Console.WriteLine("jwt过期了");
-                context.Response.Headers.Add("Token-Expired", "true");
-            }
-
-            return Task.CompletedTask;
-        },
-    };
-});
-
+builder.Services.AddJwt();
+//配置文件
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
+//app服务注册
 builder.Services.AddAppService();
 //开启计划任务
 builder.Services.AddTaskSchedulers();
