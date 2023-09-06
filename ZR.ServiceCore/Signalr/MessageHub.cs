@@ -1,10 +1,12 @@
-﻿using IPTools.Core;
+﻿using Infrastructure;
+using Infrastructure.Model;
+using IPTools.Core;
 using Microsoft.AspNetCore.SignalR;
 using System.Web;
 using UAParser;
 using ZR.Service.System.IService;
 
-namespace ZR.Admin.WebApi.Hubs
+namespace ZR.ServiceCore.Signalr
 {
     /// <summary>
     /// msghub
@@ -64,12 +66,12 @@ namespace ZR.Admin.WebApi.Hubs
                     ClientId = clientId ?? Context.ConnectionId
                 };
                 onlineClients.Add(onlineUser);
-                Log.WriteLine(msg: $"{DateTime.Now}：{name},{Context.ConnectionId}连接服务端success，当前已连接{onlineClients.Count}个");
+                Log.WriteLine(msg: $"{name},{Context.ConnectionId}连接服务端success，当前已连接{onlineClients.Count}个");
                 //Clients.All.SendAsync("welcome", $"欢迎您：{name},当前时间：{DateTime.Now}");
                 Clients.Caller.SendAsync(HubsConstant.MoreNotice, SendNotice());
                 Clients.Caller.SendAsync(HubsConstant.ConnId, onlineUser.ConnnectionId);
             }
-            OnlineUsers? userInfo = GetUserById(userid);
+            OnlineUsers userInfo = GetUserById(userid);
             if (userInfo == null)
             {
                 userInfo = new OnlineUsers() { Userid = userid, Name = name, LoginTime = DateTime.Now };
@@ -105,7 +107,7 @@ namespace ZR.Admin.WebApi.Hubs
         /// 连接终止时调用。
         /// </summary>
         /// <returns></returns>
-        public override Task OnDisconnectedAsync(Exception? exception)
+        public override Task OnDisconnectedAsync(Exception exception)
         {
             var user = onlineClients.Where(p => p.ConnnectionId == Context.ConnectionId).FirstOrDefault();
             if (user != null)
@@ -120,7 +122,7 @@ namespace ZR.Admin.WebApi.Hubs
                 });
 
                 //累计用户时长
-                OnlineUsers? userInfo = GetUserById(user.Userid);
+                OnlineUsers userInfo = GetUserById(user.Userid);
                 if (userInfo != null)
                 {
                     userInfo.TodayOnlineTime += user?.OnlineTime ?? 0;
@@ -176,7 +178,7 @@ namespace ZR.Admin.WebApi.Hubs
         {
             return onlineClients.Where(p => p.ConnnectionId == connId).FirstOrDefault();
         }
-        private static OnlineUsers? GetUserById(long userid)
+        private static OnlineUsers GetUserById(long userid)
         {
             return users.Where(f => f.Userid == userid).FirstOrDefault();
         }

@@ -5,10 +5,9 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Admin.WebApi.Hubs;
 using ZR.Common.Cache;
 using ZR.Infrastructure.WebExtensions;
-using ZR.ServiceCore.Middleware;
+using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
 
 var builder = WebApplication.CreateBuilder(args);

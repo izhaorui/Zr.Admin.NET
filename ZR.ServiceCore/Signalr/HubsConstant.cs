@@ -1,4 +1,4 @@
-﻿namespace ZR.Admin.WebApi.Hubs
+﻿namespace ZR.ServiceCore.Signalr
 {
     public class HubsConstant
     {

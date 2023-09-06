@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using ZR.Admin.WebApi.Filters;
-using ZR.Admin.WebApi.Hubs;
 using ZR.Model;
 using ZR.Model.System.Dto;
+using ZR.ServiceCore.Signalr;
 
 namespace ZR.Admin.WebApi.Controllers.monitor
 {

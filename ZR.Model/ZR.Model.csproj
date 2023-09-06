@@ -12,8 +12,4 @@
 		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.98" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Models\" />
-	</ItemGroup>
 </Project>
