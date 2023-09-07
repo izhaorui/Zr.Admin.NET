@@ -52,13 +52,13 @@ namespace ZR.Service.System
             {
                 logininfor.Msg = "用户名或密码错误";
                 AddLoginInfo(logininfor);
-                throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg);
+                throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
             if (user.Status == 1)
             {
                 logininfor.Msg = "该用户已禁用";
                 AddLoginInfo(logininfor);
-                throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg);
+                throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
 
             logininfor.Status = "0";

@@ -1,6 +1,8 @@
 using AspNetCoreRateLimit;
 using Infrastructure.Converter;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.IdentityModel.Tokens;
+using NLog.Web;
 using System.Text.Json.Serialization;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Common.Cache;
@@ -9,6 +11,9 @@ using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
 
 var builder = WebApplication.CreateBuilder(args);
+// NLog: Setup NLog for Dependency injection
+//builder.Logging.ClearProviders();
+builder.Host.UseNLog();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -76,6 +81,13 @@ builder.Services.AddDb(app.Environment);
 //使用全局异常中间件
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+//请求头转发
+//ForwardedHeaders中间件会自动把反向代理服务器转发过来的X-Forwarded-For（客户端真实IP）以及X-Forwarded-Proto（客户端请求的协议）自动填充到HttpContext.Connection.RemoteIPAddress和HttpContext.Request.Scheme中，这样应用代码中读取到的就是真实的IP和真实的协议了，不需要应用做特殊处理。
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
 app.Use((context, next) =>
 {
     //设置可以多次获取body内容
@@ -116,5 +128,4 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapControllers();
-
 app.Run();

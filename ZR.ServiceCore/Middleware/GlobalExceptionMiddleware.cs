@@ -44,16 +44,18 @@ namespace ZR.ServiceCore.Middleware
 
         private async Task HandleExceptionAsync(HttpContext context, Exception ex)
         {
-            NLog.LogLevel logLevel = NLog.LogLevel.Info;
+            LogLevel logLevel = LogLevel.Info;
             int code = (int)ResultCode.GLOBAL_ERROR;
             string msg;
             string error = string.Empty;
+            bool notice = true;
             //自定义异常
             if (ex is CustomException customException)
             {
                 code = customException.Code;
                 msg = customException.Message;
                 error = customException.LogMsg;
+                notice = customException.Notice;
             }
             else if (ex is ArgumentException)//参数异常
             {
@@ -64,7 +66,7 @@ namespace ZR.ServiceCore.Middleware
             {
                 msg = "服务器好像出了点问题，请联系系统管理员...";
                 error = $"{ex.Message}";
-                logLevel = NLog.LogLevel.Error;
+                logLevel = LogLevel.Error;
                 context.Response.StatusCode = 500;
             }
             var options = new textJson.JsonSerializerOptions
@@ -117,15 +119,16 @@ namespace ZR.ServiceCore.Middleware
             Logger.Log(ei);
             context.Response.ContentType = "text/json;charset=utf-8";
             await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
-            
+
             string errorMsg = $"> 操作人：{sysOperLog.OperName}" +
                 $"\n> 操作地区：{sysOperLog.OperIp}({sysOperLog.OperLocation})" +
                 $"\n> 操作模块：{sysOperLog.Title}" +
                 $"\n> 操作地址：{sysOperLog.OperUrl}" +
                 $"\n> 错误信息：{msg}\n\n> {error}";
-                
-            SysOperLogService.InsertOperlog(sysOperLog); 
-            WxNoticeHelper.SendMsg("系统出错", errorMsg, "", WxNoticeHelper.MsgType.markdown);
+
+            SysOperLogService.InsertOperlog(sysOperLog);
+            if (!notice) return;
+            WxNoticeHelper.SendMsg("系统异常", errorMsg, msgType: WxNoticeHelper.MsgType.markdown);
         }
 
         public static Endpoint GetEndpoint(HttpContext context)

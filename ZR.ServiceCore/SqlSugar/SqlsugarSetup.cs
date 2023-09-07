@@ -72,7 +72,7 @@ namespace ZR.ServiceCore.SqlSugar
             {
                 if (showDbLog)
                 {
-                    string log = $"【db{configId} SQL语句】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
+                    string log = $"【db{configId} SQL】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
                     if (sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
                     {
                         logger.Info(log);
