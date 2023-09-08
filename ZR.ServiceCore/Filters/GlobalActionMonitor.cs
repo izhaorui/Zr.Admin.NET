@@ -46,11 +46,8 @@ namespace ZR.ServiceCore.Middleware
             if (!string.IsNullOrEmpty(msg))
             {
                 logger.Info($"请求参数错误,{msg}");
-                ApiResult response = new()
-                {
-                    Code = (int)ResultCode.PARAM_ERROR,
-                    Msg = msg
-                };
+                ApiResult response = new((int)ResultCode.PARAM_ERROR, msg);
+                
                 context.Result = new JsonResult(response);
             }
             return base.OnActionExecutionAsync(context, next);

@@ -63,8 +63,9 @@ namespace ZR.Admin.WebApi.Filters
             {
                 string msg = $"请求访问[{url}]失败，无法访问系统资源";
                 //logger.Info(msg);
-
-                context.Result = new JsonResult(new ApiResult((int)ResultCode.DENY, msg));
+                var r = new ApiResult((int)ResultCode.DENY, msg);
+               
+                context.Result = new JsonResult(r);
             }
         }
     }

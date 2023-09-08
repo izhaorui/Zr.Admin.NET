@@ -12,6 +12,9 @@ using System.Web;
 
 namespace Infrastructure.Controllers
 {
+    /// <summary>
+    /// web层通用数据处理
+    /// </summary>
     public class BaseController : ControllerBase
     {
         public static string TIME_FORMAT_FULL = "yyyy-MM-dd HH:mm:ss";

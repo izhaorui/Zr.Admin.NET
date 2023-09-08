@@ -1,10 +1,19 @@
 ﻿using Infrastructure.Constant;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Infrastructure.Model
 {
-    public class ApiResult
+    public class ApiResult : Dictionary<string, object>
     {
+        /** 状态码 */
+        public static readonly string CODE_TAG = "code";
+
+        /** 返回内容 */
+        public static readonly string MSG_TAG = "msg";
+
+        /** 数据对象 */
+        public static readonly string DATA_TAG = "data";
         public int Code { get; set; }
         public string Msg { get; set; }
         /// <summary>
@@ -27,8 +36,8 @@ namespace Infrastructure.Model
         /// <param name="msg"></param>
         public ApiResult(int code, string msg)
         {
-            Code = code;
-            Msg = msg;
+            Add(CODE_TAG, code);
+            Add(MSG_TAG, msg);
         }
 
         /// <summary>
@@ -36,33 +45,28 @@ namespace Infrastructure.Model
         /// </summary>
         /// <param name="code"></param>
         /// <param name="msg"></param>
+        /// <param name="data"></param>
         public ApiResult(int code, string msg, object data)
         {
-            Code = code;
-            Msg = msg;
+            Add(CODE_TAG, code);
+            Add(MSG_TAG, msg);
             if (data != null)
             {
-                Data = data;
-            }
+                Add(DATA_TAG, data);
+            }            
         }
+        /// <summary>
+        /// 返回成功消息
+        /// </summary>
+        /// < returns > 成功消息 </ returns >
+        public static ApiResult Success() { return new ApiResult(HttpStatus.SUCCESS, "success"); }
 
         /// <summary>
         /// 返回成功消息
         /// </summary>
-        /// <returns></returns>
-        public ApiResult Success()
-        {
-            Code = (int)ResultCode.SUCCESS;
-            Msg = "success";
-            return this;
-        }
-
-        ///// <summary>
-        ///// 返回成功消息
-        ///// </summary>
-        ///// <param name = "data" > 数据对象 </ param >
-        ///// < returns > 成功消息 </ returns >
-        //public static ApiResult Success(object data) { return new ApiResult(HttpStatus.SUCCESS, "success", data); }
+        /// <param name="data"></param>
+        /// <returns> 成功消息 </returns >
+        public static ApiResult Success(object data) { return new ApiResult(HttpStatus.SUCCESS, "success", data); }
 
         /// <summary>
         /// 返回成功消息
@@ -79,21 +83,9 @@ namespace Infrastructure.Model
         /// <returns>成功消息</returns>
         public static ApiResult Success(string msg, object data) { return new ApiResult(HttpStatus.SUCCESS, msg, data); }
 
-        /// <summary>
-        /// 访问被拒
-        /// </summary>
-        /// <returns></returns>
-        public ApiResult On401()
+        public static ApiResult Error(ResultCode code, string msg = "")
         {
-            Code = (int)ResultCode.DENY;
-            Msg = "access denyed";
-            return this;
-        }
-        public ApiResult Error(ResultCode resultCode, string msg = "")
-        {
-            Code = (int)resultCode;
-            Msg = msg;
-            return this;
+            return Error((int)code, msg);
         }
 
         /// <summary>
