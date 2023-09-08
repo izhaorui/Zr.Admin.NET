@@ -197,7 +197,7 @@ $elseif(tool.CheckTree(genTable ,column.CsharpField))
             </el-form-item>
           </el-col>
 $elseif(column.IsPK || column.IsIncrement)
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
 $if(column.IsIncrement == false)
               <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" :disabled="title=='修改数据'"/>
@@ -208,13 +208,13 @@ $end
           </el-col>
 $else
 $if(column.HtmlType == "inputNumber")
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-input-number v-model.number="form.${columnName}" controls-position="right" placeholder="请输入${labelName}" ${labelDisabled}/>
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "datetime")
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-date-picker v-model="form.${columnName}" type="datetime" placeholder="选择日期时间"></el-date-picker>
             </el-form-item>
@@ -232,7 +232,7 @@ $elseif(column.HtmlType == "fileUpload")
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "radio")
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}">
                 <el-radio v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
@@ -252,7 +252,7 @@ $elseif(column.HtmlType == "editor")
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-select v-model="form.${columnName}" placeholder="请选择${labelName}"${column.DisabledStr}>
                 <el-option v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
@@ -268,7 +268,7 @@ $elseif(column.HtmlType == "checkbox")
             </el-form-item>
           </el-col>
 $else
-          <el-col :lg="12">
+          <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-input v-model="form.${columnName}" placeholder="请输入${labelName}" ${labelDisabled}/>
             </el-form-item>
@@ -301,10 +301,8 @@ import Editor from '@/components/Editor'
 $end
 
 const { proxy } = getCurrentInstance()
-// 是否展开，默认全部折叠
 const isExpandAll = ref(false)
 const refreshTable = ref(true)
-// 展开/折叠操作
 function toggleExpandAll() {
   refreshTable.value = false
   isExpandAll.value = !isExpandAll.value
