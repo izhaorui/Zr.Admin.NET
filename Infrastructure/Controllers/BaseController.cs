@@ -99,6 +99,10 @@ namespace Infrastructure.Controllers
 
             return new ApiResult((int)resultCode, msg, data);
         }
+        protected ApiResult Success()
+        {
+            return GetApiResult(ResultCode.SUCCESS);
+        }
 
         /// <summary>
         /// 

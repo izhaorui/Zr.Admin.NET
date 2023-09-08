@@ -40,7 +40,7 @@ namespace ZR.Admin.WebApi.Extensions
             foreach (var task in tasks.Result)
             {
                 var result = _schedulerServer.AddTaskScheduleAsync(task);
-                if (result.Result.Code == 200)
+                if (result.Result.IsSuccess())
                 {
                     Console.WriteLine($"注册任务[{task.Name}]ID：{task.ID}成功");
                 }

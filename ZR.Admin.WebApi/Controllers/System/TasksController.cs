@@ -86,7 +86,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException($"程序集或者类名不能为空");
             }
             //从 Dto 映射到 实体
-            var tasksQz = parm.Adapt<SysTasks>().ToCreate();
+            var tasksQz = parm.Adapt<SysTasks>().ToCreate(HttpContext);
             tasksQz.Create_by = HttpContext.GetName();
             tasksQz.ID = SnowFlakeSingle.Instance.NextId().ToString();
 
@@ -158,7 +158,7 @@ namespace ZR.Admin.WebApi.Controllers
             var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
             var taskResult = await _schedulerServer.DeleteTaskScheduleAsync(tasksQz);
 
-            if (taskResult.Code == 200)
+            if (taskResult.IsSuccess())
             {
                 _tasksQzService.Delete(id);
             }
@@ -187,7 +187,7 @@ namespace ZR.Admin.WebApi.Controllers
             var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
             var taskResult = await _schedulerServer.AddTaskScheduleAsync(tasksQz);
 
-            if (taskResult.Code == 200)
+            if (taskResult.IsSuccess())
             {
                 tasksQz.IsStart = 1;
                 _tasksQzService.Update(tasksQz);
@@ -218,7 +218,7 @@ namespace ZR.Admin.WebApi.Controllers
             var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
             var taskResult = await _schedulerServer.DeleteTaskScheduleAsync(tasksQz);//await _schedulerServer.PauseTaskScheduleAsync(tasksQz);
 
-            if (taskResult.Code == 200)
+            if (taskResult.IsSuccess())
             {
                 tasksQz.IsStart = 0;
                 _tasksQzService.Update(tasksQz);

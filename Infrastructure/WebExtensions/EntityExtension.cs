@@ -11,7 +11,7 @@ namespace Infrastructure
         public static TSource ToCreate<TSource>(this TSource source, HttpContext? context = null)
         {
             var types = source?.GetType();
-            if (types == null) return source;
+            if (types == null || context == null) return source;
             BindingFlags flag = BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.Instance;
 
             types.GetProperty("CreateTime", flag)?.SetValue(source, DateTime.Now, null);
@@ -26,7 +26,7 @@ namespace Infrastructure
         public static TSource ToUpdate<TSource>(this TSource source, HttpContext? context = null)
         {
             var types = source?.GetType();
-            if (types == null) return source;
+            if (types == null || context == null) return source;
             BindingFlags flag = BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.Instance;
 
             types.GetProperty("UpdateTime", flag)?.SetValue(source, DateTime.Now, null);

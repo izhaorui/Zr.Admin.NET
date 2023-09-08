@@ -14,13 +14,13 @@ namespace Infrastructure.Model
 
         /** 数据对象 */
         public static readonly string DATA_TAG = "data";
-        public int Code { get; set; }
-        public string Msg { get; set; }
+        //public int Code { get; set; }
+        //public string Msg { get; set; }
         /// <summary>
         /// 如果data值为null，则忽略序列化将不会返回data字段
         /// </summary>
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public object Data { get; set; }
+        //[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        //public object Data { get; set; }
 
         /// <summary>
         /// 初始化一个新创建的APIResult对象，使其表示一个空消息
@@ -53,7 +53,7 @@ namespace Infrastructure.Model
             if (data != null)
             {
                 Add(DATA_TAG, data);
-            }            
+            }
         }
         /// <summary>
         /// 返回成功消息
@@ -103,9 +103,26 @@ namespace Infrastructure.Model
         /// <returns></returns>
         public static ApiResult Error(string msg) { return new ApiResult((int)ResultCode.CUSTOM_ERROR, msg); }
 
-        public override string ToString()
+
+        /// <summary>
+        /// 是否为成功消息
+        /// </summary>
+        /// <returns></returns>
+        public bool IsSuccess()
         {
-            return $"msg={Msg},data={Data}";
+            return HttpStatus.SUCCESS == (int)this[CODE_TAG];
+        }
+
+        /// <summary>
+        /// 方便链式调用
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ApiResult Put(string key, object value)
+        {
+            Add(key, value);
+            return this;
         }
     }
 
