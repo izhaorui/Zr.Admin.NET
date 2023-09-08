@@ -1,8 +1,8 @@
 using AspNetCoreRateLimit;
 using Infrastructure.Converter;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.IdentityModel.Tokens;
 using NLog.Web;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Common.Cache;
@@ -26,8 +26,6 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddCors(builder.Configuration);
 // 显示logo
 builder.Services.AddLogo();
-//注入SignalR实时通讯，默认用json传输
-builder.Services.AddSignalR();
 //消除Error unprotecting the session cookie警告
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
@@ -67,8 +65,16 @@ builder.Services.AddMvc(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeConverter());
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeNullConverter());
     options.JsonSerializerOptions.Converters.Add(new StringConverter());
+    //PropertyNamingPolicy属性用于前端传过来的属性的格式策略，目前内置的仅有一种策略CamelCase
+    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    //options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;//属性可以忽略大小写格式，开启后性能会降低
 });
-
+//注入SignalR实时通讯，默认用json传输
+builder.Services.AddSignalR()
+.AddJsonProtocol(options =>
+{
+    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+});
 builder.Services.AddSwaggerConfig();
 
 var app = builder.Build();
