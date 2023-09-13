@@ -22,10 +22,6 @@
   -Based on. NET5/. A common rights management platform (RBAC model) implemented by NET7. Integrate the latest technology for efficient and rapid development, front-end and back-end separation mode, out of the box.
 - Less code, simple to learn, easy to understand, powerful, easy to extend, lightweight, make web development faster, simpler and more efficient (say goodbye to 996), solve 70% of repetitive work, focus on your business, easy development from now on!
 - 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
-- 七牛云通用云产品优惠券：[点我进入](https://s.qiniu.com/FzEfay)。
-- 腾讯云秒杀场：[☛☛ 点我进入 ☚☚](https://curl.qcloud.com/4yEoRquq)。
-- 腾讯云优惠券：[☛☛ 点我领取 ☚☚](https://curl.qcloud.com/5J4nag8D)。
-- 阿里云特惠专区：[☛☛ 点我进入 ☚☚](https://www.aliyun.com/minisite/goods?userCode=uotn5vt1&share_source=copy_link)
 
 ```
 If it helps you, you can click "Star" in the upper right corner to collect it, so that the author has the motivation to continue to go on for free, thank you! ~
@@ -52,7 +48,7 @@ Since it is a personal project, the funds are limited, and the experience server
 
 | repository           | Github                                                 | Gitee                                                            |
 | -------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
-| Net7           | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET)  | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
+| Net7           | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET)  | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
 | Vue3(Hot) | [Clone/Download](https://github.com/izhaorui/ZR.Admin.Vue3) | [Clone/Download](https://gitee.com/izory/ZRAdmin-vue)                 |
 
 ## 🍁 Front-end technology
@@ -61,7 +57,7 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 
 ## 🍀 Back-end technology
 
-- Core Framework: . Net5.0/. Net7.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
+- Core Framework: . Net7.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
 - Scheduled tasks: Quartz.Net component that supports the execution of assemblies or HTTP network requests
 - Security support: filters (data permission filtering), SQL injection, request forgery
 - Log management: NLog, login log, operation log, scheduled task log
@@ -99,7 +95,8 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 ## 🍻 Project structure
 
 ```
-├─ZR.Service             		->[服务层类库]：提供WebApi接口调用；
+├─ZR.Service                 ->[你的业务服务层类库]：提供WebApi接口调用；
+├─ZR.ServiceCore             		->[系统服务层类库]：提供WebApi接口调用；
 ├─ZR.Repository                     ->[仓库层类库]：方便提供有执行存储过程的操作；
 ├─ZR.Model                		->[实体层类库]：提供项目中的数据库表、数据传输对象；
 ├─ZR.Admin.WebApi               	->[webapi接口]：为Vue版或其他三方系统提供接口服务。

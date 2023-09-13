@@ -52,7 +52,7 @@
 
 | 仓库           | Github                                                 | Gitee                                                            |
 | -------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
-| Net7           | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net7.0/) |
+| Net7           | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore) |
 | Vue3(推荐使用) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)                 |
 
 ## 🍁 前端技术
