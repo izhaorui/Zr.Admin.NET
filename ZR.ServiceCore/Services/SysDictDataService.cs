@@ -103,7 +103,8 @@ namespace ZR.Service.System
                 DictValue = dict.DictValue,
                 Status = dict.Status,
                 CssClass = dict.CssClass,
-                ListClass = dict.ListClass
+                ListClass = dict.ListClass,
+                LangKey = dict.LangKey
             });
 
             CacheHelper.Remove($"SelectDictDataByCode_{dict.DictCode}");

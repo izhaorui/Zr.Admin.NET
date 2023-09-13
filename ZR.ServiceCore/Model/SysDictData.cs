@@ -53,5 +53,9 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(Length = 1)]
         public string Status { get; set; }
+        /// <summary>
+        /// 多语言翻译key值
+        /// </summary>
+        public string LangKey { get; set; } = string.Empty;
     }
 }

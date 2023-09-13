@@ -1,8 +1,5 @@
-﻿using Infrastructure.Extensions;
-using MiniExcelLibs;
+﻿using MiniExcelLibs;
 using SqlSugar.IOC;
-using System.Collections.Generic;
-using System.Linq;
 using ZR.Common;
 using ZR.Model.System;
 
@@ -37,7 +34,7 @@ namespace ZR.Service.System
             //db.Ado.ExecuteCommand("SET IDENTITY_INSERT sys_user OFF");
             db.Ado.CommitTran();
 
-            string msg = $"[用户数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[用户数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -55,7 +52,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.OffIdentity().ExecuteCommand();//插入可插入部分;
             
-            string msg = $"[菜单数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[菜单数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
         /// <summary>
@@ -72,7 +69,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.ExecuteCommand();//插入可插入部分;
 
-            string msg = $"[角色菜单] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[角色菜单] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
         /// <summary>
@@ -89,7 +86,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.OffIdentity().ExecuteCommand();
 
-            string msg = $"[部门数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[部门数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -102,7 +99,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.ExecuteCommand();
 
-            string msg = $"[岗位数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[岗位数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -115,7 +112,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.OffIdentity().ExecuteCommand();
 
-            string msg = $"[角色数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[角色数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -128,7 +125,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.ExecuteCommand();
 
-            string msg = $"[用户角色] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[用户角色] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -146,7 +143,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.ExecuteCommand();
 
-            string msg = $"[系统配置] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[系统配置] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -164,7 +161,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.ExecuteCommand();
 
-            string msg = $"[字典管理] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[字典管理] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -177,12 +174,14 @@ namespace ZR.Service.System
         {
             var db = DbScoped.SugarScope;
             var x = db.Storageable(data)
-                .SplitInsert(it => it.NotAny())
-                .WhereColumns(it => new { it.DictType, it.DictValue })
+                //.SplitInsert(it => it.NotAny())
+                //.SplitUpdate(it => !it.Any())
+                //.WhereColumns(it => new { it.DictType })
                 .ToStorage();
-            var result = x.AsInsertable.ExecuteCommand();
+            x.AsInsertable.ExecuteCommand();
+            x.AsUpdateable.ExecuteCommand();
 
-            string msg = $"[字典数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[字典数据] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -200,7 +199,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.OffIdentity().ExecuteCommand();
 
-            string msg = $"[字典数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[字典数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -218,7 +217,7 @@ namespace ZR.Service.System
                 .ToStorage();
             var result = x.AsInsertable.ExecuteCommand();
 
-            string msg = $"[任务数据] 插入{x.InsertList.Count} 错误数据{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            string msg = $"[任务数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -242,6 +241,8 @@ namespace ZR.Service.System
                 db.DbMaintenance.TruncateTable<SysUser>();
                 db.DbMaintenance.TruncateTable<SysDept>();
                 db.DbMaintenance.TruncateTable<SysPost>();
+                db.DbMaintenance.TruncateTable<SysDictType>();
+                db.DbMaintenance.TruncateTable<SysDictData>();
             }
 
             var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
