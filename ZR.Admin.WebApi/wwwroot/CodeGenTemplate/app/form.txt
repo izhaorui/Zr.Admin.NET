@@ -72,10 +72,10 @@ $end
     <view class="form-footer">
       <view class="btn_wrap">
         <view class="btn-item">
-          <u-button text="取消" shape="circle" icon="close" type="info" @click="handleCancel"></u-button>
+          <u-button text="取消" shape="circle" type="info" @click="handleCancel"></u-button>
         </view>
         <view class="btn-item" v-if="opertype != 3">
-          <u-button text="确定" shape="circle" icon="checkmark" type="primary" @click="submit"></u-button>
+          <u-button text="确定" shape="circle" type="primary" @click="submit"></u-button>
         </view>
       </view>
     </view>
@@ -186,12 +186,10 @@ $end
             update${genTable.BusinessName}(this.form).then((res) => {
                 this.${modal}modal.msgSuccess("修改成功")
             })
-              .catch(() => {})
           } else {
             add${genTable.BusinessName}(this.form).then((res) => {
                 this.${modal}modal.msgSuccess("新增成功")
               })
-              .catch(() => {})
           }
         }).catch(errors => {
           this.${modal}modal.msg('表单校验失败')
