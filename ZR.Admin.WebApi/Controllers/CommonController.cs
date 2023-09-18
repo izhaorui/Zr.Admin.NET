@@ -14,6 +14,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Route("[controller]/[action]")]
     [ApiExplorerSettings(GroupName = "sys")]
+    //[Produces("application/json")]
     public class CommonController : BaseController
     {
         private OptionsSetting OptionsSetting;

@@ -60,7 +60,7 @@ builder.Services.AddMvc(options =>
 })
 .AddJsonOptions(options =>
 {
-    options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString;
+    //options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString;
     options.JsonSerializerOptions.WriteIndented = true;
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeConverter());
     options.JsonSerializerOptions.Converters.Add(new JsonConverterUtil.DateTimeNullConverter());
