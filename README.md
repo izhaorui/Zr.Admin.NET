@@ -1,11 +1,11 @@
 <h2 align="center"> ZR.Admin.NET后台管理系统</h2>
-<h4 align="center">基于.NET5/.Net7 + vue2.x/vue3.x/uniapp前后端分离的.net快速开发框架</h4>
+<h4 align="center">基于.Net7 + vue2.x/vue3.x/uniapp前后端分离的.net快速开发框架</h4>
 
 <p align="center">
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
 <a href='https://gitee.com/izory/ZrAdminNetCore/members'><img src='https://gitee.com/izory/ZrAdminNetCore/badge/fork.svg?theme=dark' alt='fork'></img></a>
 	<a href="https://gitee.com/izory/ZrAdminNetCore/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
-	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230811-yellow"/></a>
+	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230920-yellow"/></a>
 </p>
 
 ---
@@ -105,13 +105,13 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/kj.png)
 
 ```
-├─ZR.Service                 ->[你的业务服务层类库]：提供WebApi接口调用；
-├─ZR.ServiceCore             		->[系统服务层类库]：提供WebApi接口调用；
-├─ZR.Repository                     ->[仓库层类库]：方便提供有执行存储过程的操作；
-├─ZR.Model                		->[实体层类库]：提供项目中的数据库表、数据传输对象；
-├─ZR.Admin.WebApi               	->[webapi接口]：为Vue版或其他三方系统提供接口服务。
+├─ZR.Service                ->[你的业务服务层类库]：提供WebApi接口调用；
+├─ZR.ServiceCore            ->[系统服务层类库]：提供WebApi接口调用；
+├─ZR.Repository             ->[仓库层类库]：方便提供有执行存储过程的操作；
+├─ZR.Model                	->[实体层类库]：提供项目中的数据库表、数据传输对象；
+├─ZR.Admin.WebApi           ->[webapi接口]：为Vue版或其他三方系统提供接口服务。
 ├─ZR.Tasks               		->[定时任务类库]：提供项目定时任务实现功能；
-├─ZR.CodeGenerator               	->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
+├─ZR.CodeGenerator          ->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
 ├─ZR.Vue               			->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。
 ├─document               		->[文档]：数据库脚本
 ```
@@ -153,11 +153,14 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
     </tr>
 	<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/17.png"/></td>
-		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/18.png"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/18.png"/></td>
     </tr>
 	<tr>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/19.png"/></td>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/20.png"/></td>
+	</tr>
+	<tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/21.png"/></td>
 	</tr>
 </table>
 

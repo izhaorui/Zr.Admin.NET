@@ -1,11 +1,11 @@
 <h2 align="center"> ZR.Admin.NET Back-end management system</h2>
-<h4 align="center">base.NET5/.Net7 + vue2.x/vue3.x/uniapp Front-end and back-end separation of .NET rapid development framework</h4>
+<h4 align="center">base .Net7 + vue2.x/vue3.x/uniapp Front-end and back-end separation of .NET rapid development framework</h4>
 
 <p align="center">
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
 <a href='https://gitee.com/izory/ZrAdminNetCore/members'><img src='https://gitee.com/izory/ZrAdminNetCore/badge/fork.svg?theme=dark' alt='fork'></img></a>
 	<a href="https://gitee.com/izory/ZrAdminNetCore/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
-	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230713-yellow"/></a>
+	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230920-yellow"/></a>
 </p>
 
 ---
