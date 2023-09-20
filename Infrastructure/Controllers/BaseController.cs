@@ -194,6 +194,9 @@ namespace Infrastructure.Controllers
             if (!Directory.Exists(fullPath))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+            }
+            if (!Path.Exists(fullPath))
+            {
                 MiniExcel.SaveAs(fullPath, list, overwriteFile: true);
             }
             return (sFileName, fullPath);

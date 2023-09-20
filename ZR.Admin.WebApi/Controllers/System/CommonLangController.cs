@@ -177,15 +177,16 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
         {
             List<CommonLang> list = new();
+            var nowTime = DateTime.Now;
             using (var stream = formFile.OpenReadStream())
             {
                 var rows = stream.Query(startCell: "A2").ToList();
 
                 foreach (var item in rows)
                 {
-                    list.Add(new CommonLang() { LangCode = "zh-cn", LangKey = item.A, LangName = item.B, Addtime = DateTime.Now });
-                    list.Add(new CommonLang() { LangCode = "en", LangKey = item.A, LangName = item.C, Addtime = DateTime.Now });
-                    list.Add(new CommonLang() { LangCode = "zh-tw", LangKey = item.A, LangName = item.D, Addtime = DateTime.Now });
+                    list.Add(new CommonLang() { LangCode = "zh-cn", LangKey = item.A, LangName = item.B, Addtime = nowTime });
+                    list.Add(new CommonLang() { LangCode = "en", LangKey = item.A, LangName = item.C, Addtime = nowTime });
+                    list.Add(new CommonLang() { LangCode = "zh-tw", LangKey = item.A, LangName = item.D, Addtime = nowTime });
                 }
             }
 

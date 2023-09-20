@@ -171,17 +171,17 @@ $if(replaceDto.ShowBtnImport)
         /// <param name="formFile"></param>
         /// <returns></returns>
         [HttpPost("importData")]
-        [Log(Title = "${genTable.FunctionName}导入", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false, IsSaveResponseData = true)]
+        [Log(Title = "${genTable.FunctionName}导入", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false)]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:import")]
         public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
         {
-            List<${replaceDto.ModelTypeName}> list = new();
+            List<${replaceDto.ModelTypeName}Dto> list = new();
             using (var stream = formFile.OpenReadStream())
             {
-                list = stream.Query<${replaceDto.ModelTypeName}>(startCell: "A1").ToList();
+                list = stream.Query<${replaceDto.ModelTypeName}Dto>(startCell: "A1").ToList();
             }
 
-            return SUCCESS(_${replaceDto.ModelTypeName}Service.Import${replaceDto.ModelTypeName}(list));
+            return SUCCESS(_${replaceDto.ModelTypeName}Service.Import${replaceDto.ModelTypeName}(list.Adapt<List<${replaceDto.ModelTypeName}>>()));
         }
 
         /// <summary>
@@ -189,11 +189,11 @@ $if(replaceDto.ShowBtnImport)
         /// </summary>
         /// <returns></returns>
         [HttpGet("importTemplate")]
-        [Log(Title = "${genTable.FunctionName}模板", BusinessType = BusinessType.EXPORT, IsSaveRequestData = true, IsSaveResponseData = false)]
+        [Log(Title = "${genTable.FunctionName}模板", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
         [AllowAnonymous]
         public IActionResult ImportTemplateExcel()
         {
-            var result = DownloadImportTemplate(new List<${replaceDto.ModelTypeName}>() { }, "${replaceDto.ModelTypeName}");
+            var result = DownloadImportTemplate(new List<${replaceDto.ModelTypeName}Dto>() { }, "${replaceDto.ModelTypeName}");
             return ExportExcel(result.Item2, result.Item1);
         }
 $end
