@@ -29,15 +29,27 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
+        /// 获取菜单树列表
+        /// </summary>
+        /// <returns></returns>
+        [ActionPermissionFilter(Permission = "system:menu:list")]
+        [HttpGet("treelist")]
+        public IActionResult TreeMenuList([FromQuery] MenuQueryDto menu)
+        {
+            long userId = HttpContext.GetUId();
+            return SUCCESS(sysMenuService.SelectTreeMenuList(menu, userId), "yyyy-MM-dd HH:mm:ss");
+        }
+
+        /// <summary>
         /// 获取菜单列表
         /// </summary>
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "system:menu:list")]
         [HttpGet("list")]
-        public IActionResult TreeMenuList([FromQuery] MenuQueryDto menu)
+        public IActionResult MenuList([FromQuery] MenuQueryDto menu)
         {
             long userId = HttpContext.GetUId();
-            return SUCCESS(sysMenuService.SelectTreeMenuList(menu, userId), "yyyy-MM-dd HH:mm:ss");
+            return SUCCESS(sysMenuService.SelectMenuList(menu, userId), "yyyy-MM-dd HH:mm:ss");
         }
 
         /// <summary>
