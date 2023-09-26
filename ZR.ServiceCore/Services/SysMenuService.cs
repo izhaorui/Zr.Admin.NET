@@ -449,8 +449,13 @@ namespace ZR.Service
                 // 如果是顶级节点, 遍历该父节点的所有子节点
                 if (!tempList.Contains(menu.ParentId))
                 {
-                    RecursionFn(menus, menu);
-                    returnList.Add(menu);
+                    var menuInfo = menus.Find(f => f.MenuId == menu.MenuId);
+                    //移除按钮没有上级
+                    if (!tempList.Contains(menuInfo.ParentId) && menu.MenuType != "F")
+                    {
+                        RecursionFn(menus, menu);
+                        returnList.Add(menu);
+                    }
                 }
             }
             if (!returnList.Any())
