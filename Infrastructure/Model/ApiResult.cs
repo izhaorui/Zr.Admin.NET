@@ -1,26 +1,24 @@
 ﻿using Infrastructure.Constant;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 
 namespace Infrastructure.Model
 {
     public class ApiResult : Dictionary<string, object>
     {
-        /** 状态码 */
+        /// <summary>
+        /// 状态码
+        /// </summary>
         public static readonly string CODE_TAG = "code";
 
-        /** 返回内容 */
+        /// <summary>
+        /// 返回内容
+        /// </summary>
         public static readonly string MSG_TAG = "msg";
 
-        /** 数据对象 */
-        public static readonly string DATA_TAG = "data";
-        //public int Code { get; set; }
-        //public string Msg { get; set; }
         /// <summary>
-        /// 如果data值为null，则忽略序列化将不会返回data字段
+        /// 数据对象
         /// </summary>
-        //[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        //public object Data { get; set; }
+        public static readonly string DATA_TAG = "data";
 
         /// <summary>
         /// 初始化一个新创建的APIResult对象，使其表示一个空消息
@@ -55,6 +53,7 @@ namespace Infrastructure.Model
                 Add(DATA_TAG, data);
             }
         }
+
         /// <summary>
         /// 返回成功消息
         /// </summary>
@@ -124,10 +123,5 @@ namespace Infrastructure.Model
             Add(key, value);
             return this;
         }
-    }
-
-    public class ApiResult<T> : ApiResult
-    {
-        public T Result { get; set; }
     }
 }

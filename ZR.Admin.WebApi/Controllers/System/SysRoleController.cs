@@ -168,7 +168,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "角色导出")]
         [HttpGet("export")]
-        //[ActionPermissionFilter(Permission = "system:role:export")]
+        [ActionPermissionFilter(Permission = "system:role:export")]
         public IActionResult Export()
         {
             var list = sysRoleService.SelectRoleAll();
@@ -184,7 +184,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "角色菜单导出")]
         [HttpGet("exportRoleMenu")]
-        [AllowAnonymous]
+        [ActionPermissionFilter(Permission = "system:role:export")]
         public IActionResult ExportRoleMenu(int roleId)
         {
             MenuQueryDto dto = new() { Status = "0", MenuTypeIds = "M,C,F" };
