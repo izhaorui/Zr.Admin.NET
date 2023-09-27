@@ -30,5 +30,6 @@ namespace ZR.Model.System.Dto
         /// 头像
         /// </summary>
         public string Photo { get; set; }
+        public string UserIP { get; set; }
     }
 }

@@ -1,8 +1,4 @@
 ﻿using MiniExcelLibs.Attributes;
-using Newtonsoft.Json;
-using SqlSugar;
-using System;
-using System.Collections.Generic;
 
 namespace ZR.Model.System
 {
@@ -82,7 +78,8 @@ namespace ZR.Model.System
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public long DeptId { get; set; }
-
+        public string Province { get; set; }
+        public string City { get; set; }
         #region 表额外字段
         public bool IsAdmin()
         {
