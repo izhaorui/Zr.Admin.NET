@@ -17,7 +17,7 @@ namespace ZR.ServiceCore.SqlSugar
         /// </summary>
         /// <param name="services"></param>
         /// <param name="environment"></param>
-        public static void AddDb(this IServiceCollection services,IWebHostEnvironment environment)
+        public static void AddDb(this IServiceCollection services, IWebHostEnvironment environment)
         {
             var options = App.OptionsSetting;
             List<DbConfigs> dbConfigs = options.DbConfigs;

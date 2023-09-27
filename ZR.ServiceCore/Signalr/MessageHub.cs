@@ -1,10 +1,12 @@
 ﻿using Infrastructure;
 using Infrastructure.Model;
 using IPTools.Core;
+using Mapster;
 using Microsoft.AspNetCore.SignalR;
 using System.Web;
 using UAParser;
 using ZR.Service.System.IService;
+using ZR.ServiceCore.Model.Dto;
 
 namespace ZR.ServiceCore.Signalr
 {
@@ -18,10 +20,12 @@ namespace ZR.ServiceCore.Signalr
         public static List<OnlineUsers> users = new();
         //private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly ISysNoticeService SysNoticeService;
+        private readonly ISysUserService UserService;
 
-        public MessageHub(ISysNoticeService noticeService)
+        public MessageHub(ISysNoticeService noticeService, ISysUserService userService)
         {
             SysNoticeService = noticeService;
+            UserService = userService;
         }
 
         private ApiResult SendNotice()
@@ -137,12 +141,11 @@ namespace ZR.ServiceCore.Signalr
         /// <summary>
         /// 发送信息
         /// </summary>
-        /// <param name="toConnectId">对方链接id</param>
         /// <param name="toUserId"></param>
         /// <param name="message"></param>
         /// <returns></returns>
         [HubMethodName("sendMessage")]
-        public async Task SendMessage(string toConnectId, long toUserId, string message)
+        public async Task SendMessage(long toUserId, string message)
         {
             var userName = HttpContextExtension.GetName(App.HttpContext);
             long userid = HttpContextExtension.GetUId(App.HttpContext);
@@ -150,28 +153,33 @@ namespace ZR.ServiceCore.Signalr
             var toUserInfo = toUserList.FirstOrDefault();
             IList<string> sendToUser = toUserList.Select(x => x.ConnnectionId).ToList();
             sendToUser.Add(GetConnectId());
-            if (toUserInfo != null)
+            var fromUser = await UserService.GetByIdAsync(userid);
+
+            ChatMessageDto messageDto = new()
             {
-                await Clients.Clients(sendToUser)
-                    .SendAsync("receiveChat", new
-                    {
-                        msgType = 0,//文本
-                        chatid = Guid.NewGuid().ToString(),
-                        userName,
-                        userid,
-                        toUserName = toUserInfo.Name,
-                        toUserid = toUserInfo.Userid,
-                        message,
-                        chatTime = DateTime.Now
-                    });
-            }
-            else
+                MsgType = 0,
+                StoredKey = $"{userid}-{toUserId}",
+                UserId = userid,
+                ChatId = Guid.NewGuid().ToString(),
+                ToUserId = toUserId,
+                Message = message,
+                Online = 1,
+                ChatTime = DateTimeHelper.GetUnixTimeSeconds(DateTime.Now),
+                FromUser = fromUser.Adapt<ChatUserDto>(),
+            };
+            if (toUserInfo == null)
             {
+                messageDto.Online = 0;
                 //TODO 存储离线消息
                 Console.WriteLine($"{toUserId}不在线");
             }
+            else
+            {
+                await Clients.Clients(sendToUser)
+                       .SendAsync("receiveChat", messageDto);
+            }
 
-            Console.WriteLine($"用户{userName}对{toConnectId}-{toUserId}说：{message}");
+            Console.WriteLine($"用户{userName}对{toUserId}说：{message}");
         }
 
         private OnlineUsers GetUserByConnId(string connId)
