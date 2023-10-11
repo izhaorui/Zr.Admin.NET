@@ -240,6 +240,8 @@ CREATE TABLE sys_user  (
   update_by varchar(64) ,				-- '更新者',
   update_time datetime NULL ,			-- '更新时间',
   remark varchar(500) ,					-- '备注',
+  province VARCHAR(50) ,
+  city VARCHAR(50)
 )
 GO
 CREATE UNIQUE INDEX index_userName ON dbo.sys_user(userName)

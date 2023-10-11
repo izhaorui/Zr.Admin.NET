@@ -268,8 +268,8 @@ GO
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO sys_user VALUES (0,		'admin',	'管理员', '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', NULL, '', NULL, '', NULL, '管理员');
-INSERT INTO sys_user VALUES (0,		'user',		'普通用户',	 '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', NULL, '', NULL, '', NULL, '普通用户');
+INSERT INTO sys_user VALUES (0,		'admin',	'管理员', '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', NULL, '', NULL, '', NULL, '管理员', '', '');
+INSERT INTO sys_user VALUES (0,		'user',		'普通用户',	 '0', '', '', '0', '', 'e10adc3949ba59abbe56e057f20f883e', '0', '0', '', NULL, '', NULL, '', NULL, '普通用户', '', '');
 
 GO
 -- ----------------------------

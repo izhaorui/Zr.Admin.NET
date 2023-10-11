@@ -332,7 +332,6 @@ INSERT INTO `articleCategory` VALUES (2, 'java', '2021-08-18 00:00:00.000000', 0
 INSERT INTO `articleCategory` VALUES (3, '前端', '2021-08-18 00:00:00.000000', 0);
 INSERT INTO `articleCategory` VALUES (4, '数据库', '2021-08-18 00:00:00.000000', 0);
 INSERT INTO `articleCategory` VALUES (5, '其他', '2021-08-19 00:00:00.000000', 0);
-INSERT INTO `articleCategory` VALUES (6, '羽毛球', '2021-08-19 00:00:00.000000', 5);
 INSERT INTO `articleCategory` VALUES (7, 'vue', '2021-08-19 00:00:00.000000', 3);
 INSERT INTO `articleCategory` VALUES (8, 'sqlserver', '2021-08-19 00:00:00.000000', 4);
 
@@ -344,8 +343,6 @@ INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `
 VALUES (3, '主框架页-侧边栏主题', 'sys.index.sideTheme', 'theme-dark', 'Y', 'admin', '2021-12-26 13:14:57', '', NULL, '深色主题theme-dark，浅色主题theme-light');
 INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
 VALUES (4, '账号自助-验证码开关', 'sys.account.captchaOnOff', '1', 'Y', 'admin', '2021-12-26 13:14:57', 'admin', '2022-03-30 12:43:48', '是否开启验证码功能（off、关闭，1、动态验证码 2、动态gif泡泡 3、泡泡 4、静态验证码）');
-INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
-VALUES (5, '本地文件上传访问域名', 'sys.file.uploadurl', 'http://localhost:8888', 'Y', '', sysdate(), '', NULL, NULL);
 INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
 VALUES (6, '开启注册功能', 'sys.account.register', 'true', 'Y', 'admin', sysdate(), 'admin', NULL, NULL);
 INSERT INTO `sys_config`(`configId`, `configName`, `configKey`, `configValue`, `configType`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) 
