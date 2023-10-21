@@ -46,7 +46,6 @@ namespace ZR.ServiceCore.Signalr
             var context = App.HttpContext;
             var name = HttpContextExtension.GetName(context);
             var ip = HttpContextExtension.GetClientUserIp(context);
-            var ip_info = IpTool.Search(ip);
             ClientInfo clientInfo = HttpContextExtension.GetClientInfo(context);
             string device = clientInfo.ToString();
             string qs = HttpContextExtension.GetQueryString(context);
@@ -62,9 +61,10 @@ namespace ZR.ServiceCore.Signalr
             //判断用户是否存在，否则添加集合!user2 && !user && 
             if (!user2 && !user && Context.User.Identity.IsAuthenticated)
             {
+                var ip_info = IpTool.Search(ip);
                 OnlineUsers onlineUser = new(Context.ConnectionId, name, userid, ip, device)
                 {
-                    Location = ip_info.City,
+                    Location = ip_info?.City,
                     Uuid = uuid,
                     Platform = from,
                     ClientId = clientId ?? Context.ConnectionId
