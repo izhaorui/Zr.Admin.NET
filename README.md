@@ -35,9 +35,9 @@
 
 - 官方文档：http://www.izhaorui.cn/doc
 - 加入群聊：[立即加入](http://www.izhaorui.cn/doc/contact.html)
-- Vue3.x 版本体验：[http://www.izhaorui.cn/vue3](http://www.izhaorui.cn/vue3)
-- Vue2.x 版本体验：[http://www.izhaorui.cn/admin](http://www.izhaorui.cn/admin)
-- Uniapp 版本体验：[http://www.izhaorui.cn/h5](http://www.izhaorui.cn/h5)
+- Vue3.x 版本体验：[http://demo.izhaorui.cn/vue3](http://demo.izhaorui.cn/vue3)
+- Vue2.x 版本体验：[http://demo.izhaorui.cn/admin](http://demo.izhaorui.cn/admin)
+- Uniapp 版本体验：[http://demo.izhaorui.cn/h5](http://demo.izhaorui.cn/h5)
 - 账号密码：admin/123456，普通用户 user/123456
 
 | H5                                                                                     | 微信小程序                                                                           |
