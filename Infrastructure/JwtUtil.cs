@@ -157,6 +157,7 @@ namespace Infrastructure
                 {
                     new Claim(ClaimTypes.PrimarySid, user.UserId.ToString()),
                     new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(ClaimTypes.GroupSid, user.DeptId.ToString()),
                     new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
                 };
 

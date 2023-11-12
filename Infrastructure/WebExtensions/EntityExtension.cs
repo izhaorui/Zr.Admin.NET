@@ -19,6 +19,7 @@ namespace Infrastructure
             types.GetProperty("CreateBy", flag)?.SetValue(source, context.GetName(), null);
             types.GetProperty("Create_by", flag)?.SetValue(source, context.GetName(), null);
             types.GetProperty("UserId", flag)?.SetValue(source, context.GetUId(), null);
+            types.GetProperty("DeptId", flag)?.SetValue(source, context.GetDeptId(), null);
 
             return source;
         }

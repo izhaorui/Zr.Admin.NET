@@ -38,7 +38,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult QueryNotice([FromQuery] SysNoticeQueryDto parm)
         {
             var predicate = Expressionable.Create<SysNotice>();
-
+            
             predicate = predicate.And(m => m.Status == 0);
             var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
             return SUCCESS(response);

@@ -42,7 +42,7 @@ namespace ZR.ServiceCore.SqlSugar
                 {
                     DataPermi.FilterData(0);
                     //ConfigId = 1的数据权限过滤
-                    //DataPermi.FilterData1(1);
+                    //DataPermiSevice.FilterData(1);
                 }
 
                 iocList.ForEach(iocConfig =>

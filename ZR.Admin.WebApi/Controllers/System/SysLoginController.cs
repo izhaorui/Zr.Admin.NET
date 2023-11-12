@@ -1,6 +1,5 @@
 ﻿using Lazy.Captcha.Core;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -15,8 +14,6 @@ namespace ZR.Admin.WebApi.Controllers.System
     [ApiExplorerSettings(GroupName = "sys")]
     public class SysLoginController : BaseController
     {
-        //static readonly NLog.Logger logger = NLog.LogManager.GetLogger("LoginController");
-        private readonly IHttpContextAccessor httpContextAccessor;
         private readonly ISysUserService sysUserService;
         private readonly ISysMenuService sysMenuService;
         private readonly ISysLoginService sysLoginService;
@@ -24,20 +21,16 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ICaptcha SecurityCodeHelper;
         private readonly ISysConfigService sysConfigService;
         private readonly ISysRoleService roleService;
-        private readonly OptionsSetting optionSettings;
 
         public SysLoginController(
-            IHttpContextAccessor contextAccessor,
             ISysMenuService sysMenuService,
             ISysUserService sysUserService,
             ISysLoginService sysLoginService,
             ISysPermissionService permissionService,
             ISysConfigService configService,
             ISysRoleService sysRoleService,
-            ICaptcha captcha,
-            IOptions<OptionsSetting> optionSettings)
+            ICaptcha captcha)
         {
-            httpContextAccessor = contextAccessor;
             SecurityCodeHelper = captcha;
             this.sysMenuService = sysMenuService;
             this.sysUserService = sysUserService;
@@ -45,7 +38,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.permissionService = permissionService;
             this.sysConfigService = configService;
             roleService = sysRoleService;
-            this.optionSettings = optionSettings.Value;
         }
 
 

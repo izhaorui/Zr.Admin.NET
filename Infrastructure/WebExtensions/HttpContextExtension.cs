@@ -81,6 +81,17 @@ namespace Infrastructure.Extensions
         }
 
         /// <summary>
+        /// 获取部门id
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static long GetDeptId(this HttpContext context)
+        {
+            var deptId = context.User.FindFirstValue(ClaimTypes.GroupSid);
+            return !string.IsNullOrEmpty(deptId) ? long.Parse(deptId) : 0;
+        }
+
+        /// <summary>
         /// 获取登录用户名
         /// </summary>
         /// <param name="context"></param>
