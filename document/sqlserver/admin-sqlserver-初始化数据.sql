@@ -338,7 +338,7 @@ insert into sys_config values('主框架页-默认皮肤样式名称',     'sys.
 insert into sys_config values('用户管理-账号初始密码',         'sys.user.initPassword',         '123456',        'Y', 'admin', GETDATE(), '', null, '初始化密码 123456' );
 insert into sys_config values('主框架页-侧边栏主题',           'sys.index.sideTheme',           'theme-dark',    'Y', 'admin', GETDATE(), '', null, '深色主题theme-dark，浅色主题theme-light' );
 insert into sys_config values('账号自助-验证码开关',           'sys.account.captchaOnOff',      '1',          'Y', 'admin', GETDATE(), '', null, '开启验证码功能（off、关闭，1、动态验证码 2、动态gif泡泡 3、泡泡 4、静态验证码）');
-INSERT INTO sys_config VALUES('本地文件上传访问域名', 		   'sys.file.uploadurl', 			'http://localhost:8888', 'Y', 'admin', GETDATE(), '', NULL, NULL);
+
 INSERT INTO sys_config VALUES('开启注册功能', 		   		   'sys.account.register', 		 	'true', 		'Y', 'admin', GETDATE(), '', NULL, NULL);
 INSERT INTO sys_config VALUES('文章预览地址', 		   		   'sys.article.preview.url', 		 	'http://www.izhaorui.cn/article/details/', 		'Y', 'admin', GETDATE(), '', NULL, '格式：http://www.izhaorui.cn/article/details/{aid}，其中{aid}为文章的id');
 
