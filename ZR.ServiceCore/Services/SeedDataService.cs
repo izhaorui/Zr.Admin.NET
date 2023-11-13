@@ -197,7 +197,7 @@ namespace ZR.Service.System
                 .SplitInsert(it => it.NotAny())
                 .WhereColumns(it => it.Name)
                 .ToStorage();
-            var result = x.AsInsertable.OffIdentity().ExecuteCommand();
+            var result = x.AsInsertable.ExecuteCommand();
 
             string msg = $"[字典数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);

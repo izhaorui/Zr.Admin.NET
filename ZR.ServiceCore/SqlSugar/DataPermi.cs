@@ -1,6 +1,5 @@
 ﻿using Infrastructure;
 using SqlSugar.IOC;
-using ZR.Model.Business;
 using ZR.Model.System;
 
 namespace ZR.ServiceCore.SqlSugar

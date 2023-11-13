@@ -2,6 +2,7 @@
 using ZR.Model.Models;
 using ZR.Model.System;
 using ZR.Model.System.Generate;
+using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -48,7 +49,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(SysDictData));
             db.CodeFirst.InitTables(typeof(SysDictType));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
+            db.CodeFirst.InitTables(typeof(EmailTpl));
         }
-
     }
 }
