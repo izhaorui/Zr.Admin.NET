@@ -1,11 +1,11 @@
-﻿using System;
-using ZR.Common;
+﻿using ZR.Common;
 
 namespace ZR.Service.System
 {
     public class CacheService
     {
         private readonly static string CK_verifyScan = "verifyScan_";
+        private readonly static string CK_phoneSmsCode = "phone_sms_code_";
         #region 用户权限 缓存
         public static List<string> GetUserPerms(string key)
         {
@@ -58,6 +58,24 @@ namespace ZR.Service.System
                 return t;
             }
             return 0;
+        }
+
+        public static object SetPhoneCode(string key, string val)
+        {
+            var ck = CK_phoneSmsCode + key;
+
+            return CacheHelper.SetCache(ck, val, 10);
+        }
+        public static bool CheckPhoneCode(string key, string val)
+        {
+            var ck = CK_phoneSmsCode + key;
+            var save_code = CacheHelper.Get(ck);
+
+            if (save_code != null && save_code.Equals(val))
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

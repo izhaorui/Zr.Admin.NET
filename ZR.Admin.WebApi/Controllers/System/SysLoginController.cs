@@ -1,10 +1,13 @@
 ﻿using Lazy.Captcha.Core;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
+using ZR.Infrastructure.Helper;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Service.System;
 using ZR.Service.System.IService;
+using ZR.ServiceCore.Model.Dto;
+using ZR.ServiceCore.Services;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -21,6 +24,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ICaptcha SecurityCodeHelper;
         private readonly ISysConfigService sysConfigService;
         private readonly ISysRoleService roleService;
+        private readonly ISmsCodeLogService smsCodeLogService;
 
         public SysLoginController(
             ISysMenuService sysMenuService,
@@ -29,6 +33,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysPermissionService permissionService,
             ISysConfigService configService,
             ISysRoleService sysRoleService,
+            ISmsCodeLogService smsCodeLogService,
             ICaptcha captcha)
         {
             SecurityCodeHelper = captcha;
@@ -37,6 +42,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.sysLoginService = sysLoginService;
             this.permissionService = permissionService;
             this.sysConfigService = configService;
+            this.smsCodeLogService = smsCodeLogService;
             roleService = sysRoleService;
         }
 
@@ -236,7 +242,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (dto == null) { return ToResponse(ResultCode.CUSTOM_ERROR, "扫码失败"); }
             var name = App.HttpContext.GetName();
-            
+
             sysLoginService.CheckLockUser(name);
 
             TokenModel tokenModel = JwtUtil.GetLoginUser(HttpContext);
@@ -246,12 +252,80 @@ namespace ZR.Admin.WebApi.Controllers.System
                 dict.Add("status", "success");
                 dict.Add("token", JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(tokenModel)));
                 CacheService.SetScanLogin(dto.Uuid, dict);
-                
+
                 return SUCCESS(1);
             }
             return ToResponse(ResultCode.FAIL, "二维码已失效");
         }
         #endregion
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("checkMobile")]
+        [Log(Title = "发送短息", BusinessType = BusinessType.INSERT)]
+        public IActionResult CheckMobile([FromBody] PhoneLoginDto dto)
+        {
+            dto.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
+
+            SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
+            if (sysConfig?.ConfigValue != "off" && !SecurityCodeHelper.Validate(dto.Uuid, dto.Code, false))
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "验证码错误");
+            }
+            string location = HttpContextExtension.GetIpInfo(dto.LoginIP);
+            var info = sysUserService.GetFirst(f => f.Phonenumber == dto.PhoneNum) ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "该手机号不存在", false);
+
+            var smsCode = RandomHelper.GenerateNum(6);
+            var smsContent = $"验证码{smsCode}（随机验证码）,有效期10分钟。";
+            //TODO 发送短息验证码,1分钟内允许一次
+            smsCodeLogService.AddSmscodeLog(new ServiceCore.Model.SmsCodeLog()
+            {
+                Userid = info.UserId,
+                PhoneNum = dto.PhoneNum.ParseToLong(),
+                AddTime = DateTime.Now,
+                SendType = 1,
+                SmsCode = smsCode,
+                SmsContent = smsContent,
+                UserIP = dto.LoginIP,
+                Location = location,
+            });
+            CacheService.SetPhoneCode(dto.PhoneNum, smsCode);
+
+            return SUCCESS(new { smsCode });
+        }
+
+        /// <summary>
+        /// 手机号登录
+        /// </summary>
+        /// <param name="loginBody">登录对象</param>
+        /// <returns></returns>
+        [Route("PhoneLogin")]
+        [HttpPost]
+        [Log(Title = "手机号登录")]
+        public IActionResult PhoneLogin([FromBody] PhoneLoginDto loginBody)
+        {
+            if (loginBody == null) { throw new CustomException("请求参数错误"); }
+            loginBody.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
+
+            if (!CacheService.CheckPhoneCode(loginBody.PhoneNum, loginBody.PhoneCode))
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "短信验证码错误");
+            }
+            var info = sysUserService.GetFirst(f => f.Phonenumber == loginBody.PhoneNum) ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "该手机号不存在", false);
+            sysLoginService.CheckLockUser(info.UserName);
+            string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
+            var user = sysLoginService.PhoneLogin(loginBody, new SysLogininfor() { LoginLocation = location }, info);
+
+            List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
+            //权限集合 eg *:*:*,system:user:list
+            List<string> permissions = permissionService.GetMenuPermission(user);
+
+            TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>());
+            CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
+            return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
+        }
     }
 }

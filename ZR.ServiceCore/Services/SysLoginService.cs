@@ -1,6 +1,5 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
-using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Http;
 using UAParser;
 using ZR.Model;
@@ -8,6 +7,7 @@ using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
 using ZR.Service.System.IService;
+using ZR.ServiceCore.Model.Dto;
 
 namespace ZR.Service.System
 {
@@ -64,10 +64,40 @@ namespace ZR.Service.System
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor);
-            SysUserService.UpdateLoginInfo(loginBody, user.UserId);
+            SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
             return user;
         }
+        /// <summary>
+        /// 登录验证
+        /// </summary>
+        /// <param name="logininfor"></param>
+        /// <param name="loginBody"></param>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public SysUser PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUser user)
+        {
+            logininfor.UserName = user.UserName;
+            logininfor.Status = "1";
+            logininfor.LoginTime = DateTime.Now;
+            logininfor.Ipaddr = loginBody.LoginIP;
 
+            ClientInfo clientInfo = httpContextAccessor.HttpContext.GetClientInfo();
+            logininfor.Browser = clientInfo.ToString();
+            logininfor.Os = clientInfo.OS.ToString();
+
+            if (user.Status == 1)
+            {
+                logininfor.Msg = "该用户已禁用";
+                AddLoginInfo(logininfor);
+                throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
+            }
+
+            logininfor.Status = "0";
+            logininfor.Msg = "登录成功";
+            AddLoginInfo(logininfor);
+            SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
+            return user;
+        }
         /// <summary>
         /// 查询登录日志
         /// </summary>

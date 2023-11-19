@@ -1,8 +1,7 @@
-﻿using Infrastructure;
-using System;
-using ZR.Model;
+﻿using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.ServiceCore.Model.Dto;
 
 namespace ZR.Service.System.IService
 {
@@ -15,7 +14,14 @@ namespace ZR.Service.System.IService
         /// <param name="logininfor"></param>
         /// <returns></returns>
         public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor);
-
+        /// <summary>
+        /// 手机号登录
+        /// </summary>
+        /// <param name="loginBody"></param>
+        /// <param name="logininfor"></param>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        SysUser PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUser user);
         /// <summary>
         /// 查询操作日志
         /// </summary>

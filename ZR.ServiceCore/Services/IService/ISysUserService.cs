@@ -81,6 +81,6 @@ namespace ZR.Service.System.IService
 
         SysUser Login(LoginBodyDto user);
 
-        void UpdateLoginInfo(LoginBodyDto user, long userId);
+        void UpdateLoginInfo(string userIP, long userId);
     }
 }

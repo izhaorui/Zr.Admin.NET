@@ -329,12 +329,12 @@ namespace ZR.Service
         /// <summary>
         /// 修改登录信息
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="userIP"></param>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public void UpdateLoginInfo(LoginBodyDto user, long userId)
+        public void UpdateLoginInfo(string userIP, long userId)
         {
-            Update(new SysUser() { LoginIP = user.LoginIP, LoginDate = DateTime.Now, UserId = userId }, it => new { it.LoginIP, it.LoginDate });
+            Update(new SysUser() { LoginIP = userIP, LoginDate = DateTime.Now, UserId = userId }, it => new { it.LoginIP, it.LoginDate });
         }
     }
 }
