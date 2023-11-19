@@ -50,6 +50,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(SysDictType));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
             db.CodeFirst.InitTables(typeof(EmailTpl));
+            db.CodeFirst.InitTables(typeof(SmsCodeLog));
         }
     }
 }
