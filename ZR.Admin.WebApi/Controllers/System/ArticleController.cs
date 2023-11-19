@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -33,7 +32,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("list")]
-        [ActionPermissionFilter(RolePermi = "admin")]
+        [ActionPermissionFilter(Permission = "system:article:list")]
         public IActionResult Query([FromQuery] ArticleQueryDto parm)
         {
             var response = _ArticleService.GetList(parm);
