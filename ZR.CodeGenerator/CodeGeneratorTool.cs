@@ -53,7 +53,8 @@ namespace ZR.CodeGenerator
                 ShowBtnMultiDel = dto.GenTable.Options.CheckedBtn.Any(f => f == 7),
                 ShowBtnImport = dto.GenTable.Options.CheckedBtn.Any(f => f == 8),
                 ViewFileName = dto.GenTable.BusinessName.FirstUpperCase(),
-                OperBtnStyle = dto.GenTable.Options.OperBtnStyle
+                OperBtnStyle = dto.GenTable.Options.OperBtnStyle,
+                UseSnowflakeId = dto.GenTable.Options.UseSnowflakeId
             };
             var columns = dto.GenTable.Columns;
 

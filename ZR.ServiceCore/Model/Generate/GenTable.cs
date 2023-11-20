@@ -132,5 +132,9 @@ namespace ZR.Model.System.Generate
         /// 操作按钮样式
         /// </summary>
         public int OperBtnStyle { get; set; } = 1;
+        /// <summary>
+        /// 是否使用雪花id
+        /// </summary>
+        public bool UseSnowflakeId { get; set; } = false;
     }
 }

@@ -66,7 +66,7 @@ $end
         {
             var response = _${replaceDto.ModelTypeName}Service.GetInfo(${replaceDto.PKName});
             
-            var info = response.Adapt<${replaceDto.ModelTypeName}>();
+            var info = response.Adapt<${replaceDto.ModelTypeName}Dto>();
             return SUCCESS(info);
         }
 

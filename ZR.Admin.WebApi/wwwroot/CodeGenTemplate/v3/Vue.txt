@@ -267,7 +267,7 @@ $if(column.CsharpType == "int" || column.CsharpType == "long")
 $end
 
 $if(column.IsPK || column.IsIncrement)
-$if(column.IsPK && column.IsIncrement == false)
+$if(column.IsPK && column.IsIncrement == false && replaceDto.useSnowflakeId == false)
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-input v-model${number}="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"/>
@@ -635,9 +635,11 @@ const state = reactive({
   form: {},
   rules: {
 $foreach(column in genTable.Columns)
-$if(column.IsRequired && column.IsIncrement == false)
+$if(column.IsRequired && column.IsPk && replaceDto.useSnowflakeId)
+    ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end }],
+$elseif(column.IsRequired && column.IsIncrement == false)
     ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
-$if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number"$end }],
+    $if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number" $end }],
 $end
 $end
   },

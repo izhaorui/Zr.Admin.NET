@@ -117,7 +117,12 @@ $end
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
             return Context.InsertNav(model).Include(s1 => s1.${genTable.SubTable.ClassName}Nav).ExecuteReturnEntity();
 $else
-            return Context.Insertable(model).ExecuteReturnEntity();
+$if(replaceDto.useSnowflakeId)
+            model.${replaceDto.PKName} = Insertable(model).ExecuteReturnSnowflakeId();
+            return model;
+$else
+            return Insertable(model).ExecuteReturnEntity();
+$end
 $end
         }
 

@@ -11,7 +11,7 @@ namespace ZR.CodeGenerator.Model
         /// <summary>
         /// 首字母小写主键
         /// </summary>
-        public string FistLowerPk{ get; set; }
+        public string FistLowerPk { get; set; }
         /// <summary>
         /// 主键类型
         /// </summary>
@@ -74,5 +74,9 @@ namespace ZR.CodeGenerator.Model
         /// 操作按钮样式
         /// </summary>
         public int OperBtnStyle { get; set; }
+        /// <summary>
+        /// 是否使用雪花id
+        /// </summary>
+        public bool UseSnowflakeId { get; set; }
     }
 }
