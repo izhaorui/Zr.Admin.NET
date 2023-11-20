@@ -1,4 +1,5 @@
 ﻿using AspNetCoreRateLimit;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -9,7 +10,7 @@ namespace ZR.Infrastructure.WebExtensions
     {
         public static void AddIPRate(this IServiceCollection services, IConfiguration configuration)
         {
-            if (services == null) throw new ArgumentNullException(nameof(services));
+            ArgumentNullException.ThrowIfNull(services);
 
             //从appsettings.json中加载常规配置，IpRateLimiting与配置文件中节点对应
             services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
@@ -22,6 +23,11 @@ namespace ZR.Infrastructure.WebExtensions
             //配置（解析器、计数器密钥生成器）
             services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
             services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+
+            services.AddRateLimiter(limiterOptions =>
+            {
+                // 配置限流策略
+            });
         }
     }
 }

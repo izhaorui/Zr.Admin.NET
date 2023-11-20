@@ -108,7 +108,7 @@ app.Use((context, next) =>
     context.Request.EnableBuffering();
     if (context.Request.Query.TryGetValue("access_token", out var token))
     {
-        context.Request.Headers.Add("Authorization", $"Bearer {token}");
+        context.Request.Headers.Append("Authorization", $"Bearer {token}");
     }
     return next();
 });
