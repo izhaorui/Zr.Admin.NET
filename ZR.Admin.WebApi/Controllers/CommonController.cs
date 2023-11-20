@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Service.IService;
@@ -73,39 +72,6 @@ namespace ZR.Admin.WebApi.Controllers
         {
             WxNoticeHelper.SendMsg("消息测试", msg, toUser, WxNoticeHelper.MsgType.markdown);
             return SUCCESS(msg);
-        }
-
-        /// <summary>
-        /// 发送邮件
-        /// </summary>
-        /// <param name="sendEmailVo">请求参数接收实体</param>
-        /// <returns></returns>
-        [ActionPermissionFilter(Permission = "tool:email:send")]
-        [Log(Title = "发送邮件")]
-        [HttpPost]
-        public IActionResult SendEmail([FromBody] SendEmailDto sendEmailVo)
-        {
-            if (sendEmailVo == null)
-            {
-                return ToResponse(ApiResult.Error($"请求参数不完整"));
-            }
-            if (string.IsNullOrEmpty(OptionsSetting.MailOptions.FromEmail) || string.IsNullOrEmpty(OptionsSetting.MailOptions.Password))
-            {
-                return ToResponse(ApiResult.Error($"请配置邮箱信息"));
-            }
-
-            MailHelper mailHelper = new();
-
-            string[] toUsers = sendEmailVo.ToUser.Split(",", StringSplitOptions.RemoveEmptyEntries);
-            if (sendEmailVo.SendMe)
-            {
-                toUsers.Append(mailHelper.FromEmail);
-            }
-            string result = mailHelper.SendMail(toUsers, sendEmailVo.Subject, sendEmailVo.Content, sendEmailVo.FileUrl, sendEmailVo.HtmlContent);
-
-            logger.Info($"发送邮件{JsonConvert.SerializeObject(sendEmailVo)}, 结果{result}");
-
-            return SUCCESS(result);
         }
 
         #region 上传

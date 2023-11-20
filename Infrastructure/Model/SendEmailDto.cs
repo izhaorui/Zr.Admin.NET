@@ -23,5 +23,9 @@ namespace Infrastructure.Model
         /// </summary>
         public bool SendMe { get; set; }
         public DateTime AddTime { get; set; }
+        /// <summary>
+        /// 是否发送
+        /// </summary>
+        public bool IsSend { get; set; }
     }
 }

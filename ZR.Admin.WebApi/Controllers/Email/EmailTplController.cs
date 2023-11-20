@@ -5,13 +5,14 @@ using ZR.Service.System.ISystemService;
 using ZR.ServiceCore.Model;
 
 //创建时间：2023-11-12
-namespace ZR.Admin.WebApi.Controllers
+namespace ZR.Admin.WebApi.Controllers.Email
 {
     /// <summary>
     /// 邮件模板
     /// </summary>
     [Verify]
     [Route("system/EmailTpl")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class EmailTplController : BaseController
     {
         /// <summary>
@@ -37,7 +38,6 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(response);
         }
 
-
         /// <summary>
         /// 查询邮件模板详情
         /// </summary>
@@ -47,7 +47,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult GetEmailTpl(int Id)
         {
             var response = _EmailTplService.GetInfo(Id);
-            
+
             var info = response.Adapt<EmailTpl>();
             return SUCCESS(info);
         }

@@ -1,0 +1,2 @@
+先导入 admin-mysql
+初始化 admin-mysql-初始化数据(已废弃，请查看文档https://www.izhaorui.cn/doc/quickstart.html)

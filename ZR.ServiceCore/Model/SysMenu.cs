@@ -44,10 +44,10 @@ namespace ZR.Model.System
         public string Component { get; set; }
 
         /// <summary>
-        /// 是否缓存（1缓存 0不缓存）
+        /// 是否缓存（1不缓存 0缓存）
         /// </summary>
         [SugarColumn(DefaultValue = "0", ColumnDataType = "int")]
-        public string IsCache { get; set; }
+        public string IsCache { get; set; } = "0";
         /// <summary>
         /// 是否外链 1、是 0、否
         /// </summary>

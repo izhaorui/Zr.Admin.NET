@@ -24,7 +24,7 @@ namespace ZR.ServiceCore.SqlSugar
             //var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && p.GetCustomAttribute<SugarTable>() != null).ToArray();
             //db.CodeFirst.InitTables(entityes);
 
-            //24个表,建议先使用下面方法初始化表，方便排查问题
+            //27个表,建议先使用下面方法初始化表，方便排查问题
             db.CodeFirst.InitTables(typeof(SysUser));
             db.CodeFirst.InitTables(typeof(SysRole));
             db.CodeFirst.InitTables(typeof(SysDept));
@@ -51,6 +51,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
             db.CodeFirst.InitTables(typeof(EmailTpl));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));
+            db.CodeFirst.InitTables(typeof(EmailLog));
         }
     }
 }
