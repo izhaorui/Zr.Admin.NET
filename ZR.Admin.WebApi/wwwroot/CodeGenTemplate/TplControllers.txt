@@ -115,7 +115,7 @@ $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete${replaceDto.ModelTypeName}(string ids)
         {
-            int[] idsArr = Tools.SpitIntArrary(ids);
+            long[] idsArr = Tools.SpitLongArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
             var response = _${replaceDto.ModelTypeName}Service.Delete(idsArr);
