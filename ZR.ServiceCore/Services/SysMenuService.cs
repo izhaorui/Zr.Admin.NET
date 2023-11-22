@@ -706,8 +706,8 @@ namespace ZR.Service
             //Insert(menuList);
 
             var x = Context.Storageable(menuList)
-                .SplitInsert(it => !it.Any())
-                .SplitUpdate(it => !it.Any())
+                //.SplitInsert(it => !it.Any())
+                //.SplitUpdate(it => !it.Any())
                 .WhereColumns(it => new { it.MenuName, it.ParentId })
                 .ToStorage();
             x.AsInsertable.ExecuteCommand();//插入可插入部分;

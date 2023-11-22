@@ -113,7 +113,7 @@ $end
         /// <returns></returns>
         public int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} model)
         {
-            //var response = Update(w => w.${replaceDto.PKName} == model.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
+            //return Update(w => w.${replaceDto.PKName} == model.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
             //{
 $foreach(item in genTable.Columns)
 $if((item.IsEdit))
@@ -121,7 +121,6 @@ $if((item.IsEdit))
 $end
 ${end}
             //});
-            //return response;
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
             return Context.UpdateNav(model).Include(z1 => z1.${genTable.SubTable.ClassName}Nav).ExecuteCommand() ? 1 : 0;
 $else
@@ -203,8 +202,8 @@ $end
                 .ToPage(parm);
 
             return response;
-$end
         }
+$end
 
         /// <summary>
         /// 查询导出表达式
