@@ -27,6 +27,10 @@
 If it helps you, you can click "Star" in the upper right corner to collect it, so that the author has the motivation to continue to go on for free, thank you! ~
 ```
 
+## 📈 Quick start
+
+- Quick start：[https://www.izhaorui.cn/doc/quickstart.html](https://www.izhaorui.cn/doc/quickstart.html)
+
 ## 🍿 Online experience
 
 - Official documentation：http://www.izhaorui.cn/doc

@@ -31,6 +31,10 @@
 如果对您有帮助，您可以点右上角 “Star” 收藏一下 ，谢谢！~
 ```
 
+## 📈 快速开始
+
+- 快速开始：[https://www.izhaorui.cn/doc/quickstart.html](https://www.izhaorui.cn/doc/quickstart.html)
+
 ## 🍿 在线体验
 
 - 官方文档：http://www.izhaorui.cn/doc
@@ -87,7 +91,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 9. 系统接口：使用 swagger 生成相关 api 接口文档。
 10. 服务监控：监视当前系统 CPU、内存、磁盘、堆栈等相关信息。
 11. 在线构建器：拖动表单元素生成相应的 VUE 代码(仅支持 vue2)。
-12. 任务系统：基于 Quartz.NET，可以在线（添加、修改、删除、手动执行)任务调度包含执行结果日志。
+12. 任务系统：基于 Quartz.NET，可以在线（添加、修改、删除、手动执行）任务调度包含执行结果日志。
 13. 文章管理：可以写文章记录。
 14. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、.sql、uniapp 等)支持下载，自定义配置前端展示控件、让开发更快捷高效（史上最强）。
 15. 参数管理：对系统动态配置常用参数。
