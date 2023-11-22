@@ -38,7 +38,7 @@ $if(item.IsRequired)
 $end
 $if(replaceDto.ShowBtnExport)
 $if(item.IsExport)
-        [ExcelColumn(Name = "$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}"$if(item.CsharpType == "DateTime"), Format = "yyyy-MM-dd HH:mm:ss"$end)]
+        [ExcelColumn(Name = "$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}"$if(item.CsharpType == "DateTime"), Format = "yyyy-MM-dd HH:mm:ss", Width = 20$end)]
         [ExcelColumnName("$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}")]
 $else
         [ExcelIgnore]
@@ -63,6 +63,13 @@ $if(replaceDto.ShowBtnExport)
         [ExcelIgnore]
 $end
         public List<${genTable.SubTable.ClassName}Dto> ${genTable.SubTable.ClassName}Nav { get; set; }
+$end
+$foreach(column in dicts)
+$if(column.IsExport)
+        [ExcelColumn(Name = "$if(column.ColumnComment == "")${column.CsharpField}${else}${column.ColumnComment}${end}")]
+        public string ${column.CsharpField}Label { get; set; }
+
+$end
 $end
     }
 }

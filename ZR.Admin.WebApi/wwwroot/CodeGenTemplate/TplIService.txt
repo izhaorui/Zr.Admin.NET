@@ -18,6 +18,7 @@ namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNam
 $if(genTable.TplCategory == "tree")
         List<${replaceDto.ModelTypeName}> GetTreeList(${replaceDto.ModelTypeName}QueryDto parm);
 $end
+
         ${replaceDto.ModelTypeName} Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm);
 
         int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm);
@@ -27,6 +28,10 @@ $end
 
 $if(replaceDto.ShowBtnImport)
         (string, object, object) Import${replaceDto.ModelTypeName}(List<${replaceDto.ModelTypeName}> list);
+$end
+
+$if(replaceDto.ShowBtnExport)
+        PagedInfo<${replaceDto.ModelTypeName}Dto> ExportList(${replaceDto.ModelTypeName}QueryDto parm);
 $end
     }
 }

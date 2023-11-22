@@ -1,4 +1,5 @@
 ﻿using Quartz.Spi;
+using SqlSugar;
 using SqlSugar.IOC;
 using ZR.Model.System;
 using ZR.Tasks;
@@ -49,5 +50,29 @@ namespace ZR.Admin.WebApi.Extensions
             return app;
         }
 
+        /// <summary>
+        /// 初始化字典
+        /// </summary>
+        /// <param name="app"></param>
+        /// <returns></returns>
+        public static IApplicationBuilder UseInit(this IApplicationBuilder app)
+        {
+            Console.WriteLine("初始化字典数据...");
+            var db = DbScoped.SugarScope;
+            var types = db.Queryable<SysDictType>()
+                .Where(it => it.Status == "0")
+                .Select(it => it.DictType)
+                .ToList();
+
+            //上面有耗时操作写在Any上面，保证程序启动后只执行一次
+            if (!db.ConfigQuery.Any())
+            {
+                foreach (var type in types)
+                {
+                    db.ConfigQuery.SetTable<SysDictData>(it => SqlFunc.ToString(it.DictValue), it => it.DictLabel, type, it => it.DictType == type);
+                }
+            }
+            return app;
+        }
     }
 }

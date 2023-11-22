@@ -27,28 +27,8 @@ namespace ${options.ServicesNamespace}.${options.SubNamespace}
         /// <returns></returns>
         public PagedInfo<${replaceDto.ModelTypeName}Dto> GetList(${replaceDto.ModelTypeName}QueryDto parm)
         {
-            var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
+            var predicate = QueryExp(parm);
 
-$foreach(column in genTable.Columns)
-$if(column.IsQuery)
-$if(column.HtmlType == "selectMulti")
-            predicate = predicate.AndIF(parm.${column.CsharpField} != null, it => parm.${column.CsharpField}.Contains(it.${column.CsharpField}));
-$elseif(column.CsharpType == "string")
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
-$elseif(column.CsharpType == "DateTime")
-$if(column.HtmlType == "month")
-            DateTime monthEnd = Convert.ToDateTime(parm.${column.CsharpField}).AddMonths(1);
-            predicate = predicate.AndIF(parm.${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.${column.CsharpField} && it.${column.CsharpField} < monthEnd);
-$else
-            predicate = predicate.AndIF(parm.Begin${column.CsharpField} == null, it => it.${column.CsharpField} >= DateTime.Now.ToShortDateString().ParseToDateTime());
-            predicate = predicate.AndIF(parm.Begin${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.Begin${column.CsharpField});
-            predicate = predicate.AndIF(parm.End${column.CsharpField} != null, it => it.${column.CsharpField} <= parm.End${column.CsharpField});
-$end
-$elseif(column.CsharpType == "int" || column.CsharpType == "long")
-            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
-$end
-$end
-$end
             var response = Queryable()
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
                 //.Includes(x => x.${genTable.SubTable.ClassName}Nav) //填充子对象
@@ -199,5 +179,63 @@ $end
             return (msg, x.ErrorList, x.IgnoreList);
         }
 $end
+
+$if(replaceDto.ShowBtnExport)
+        /// <summary>
+        /// 导出${genTable.FunctionName}
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public PagedInfo<${replaceDto.ModelTypeName}Dto> ExportList(${replaceDto.ModelTypeName}QueryDto parm)
+        {
+            var predicate = QueryExp(parm);
+
+            var response = Queryable()
+                .Where(predicate.ToExpression())
+                .Select((it) => new ${replaceDto.ModelTypeName}Dto()
+                {
+$foreach(column in dicts)
+$if(column.DictType != "")
+                ${column.CsharpField}Label = it.${column.CsharpField}.GetConfigValue<Model.System.SysDictData>("${column.DictType}"),
+$end
+$end
+                }, true)
+                .ToPage(parm);
+
+            return response;
+$end
+        }
+
+        /// <summary>
+        /// 查询导出表达式
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        private static Expressionable<${replaceDto.ModelTypeName}> QueryExp(${replaceDto.ModelTypeName}QueryDto parm)
+        {
+            var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
+
+$foreach(column in genTable.Columns)
+$if(column.IsQuery)
+$if(column.HtmlType == "selectMulti")
+            predicate = predicate.AndIF(parm.${column.CsharpField} != null, it => parm.${column.CsharpField}.Contains(it.${column.CsharpField}));
+$elseif(column.CsharpType == "string")
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+$elseif(column.CsharpType == "DateTime")
+$if(column.HtmlType == "month")
+            DateTime monthEnd = Convert.ToDateTime(parm.${column.CsharpField}).AddMonths(1);
+            predicate = predicate.AndIF(parm.${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.${column.CsharpField} && it.${column.CsharpField} < monthEnd);
+$else
+            predicate = predicate.AndIF(parm.Begin${column.CsharpField} == null, it => it.${column.CsharpField} >= DateTime.Now.ToShortDateString().ParseToDateTime());
+            predicate = predicate.AndIF(parm.Begin${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.Begin${column.CsharpField});
+            predicate = predicate.AndIF(parm.End${column.CsharpField} != null, it => it.${column.CsharpField} <= parm.End${column.CsharpField});
+$end
+$elseif(column.CsharpType == "int" || column.CsharpType == "long")
+            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+$end
+$end
+$end
+            return predicate;
+        }
     }
 }

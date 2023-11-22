@@ -120,6 +120,9 @@ if (builder.Environment.IsProduction())
     //恢复/启动任务
     app.UseAddTaskSchedulers();
 }
+//初始化字典数据
+app.UseInit();
+
 //使用swagger
 app.UseSwagger();
 //启用客户端IP限制速率
