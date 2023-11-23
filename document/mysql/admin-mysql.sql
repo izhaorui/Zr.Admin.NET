@@ -537,3 +537,57 @@ CREATE TABLE `SqlDiffLog`  (
   `ConfigId` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '数据库配置id',
   PRIMARY KEY (`PId`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '数据差异日志' ROW_FORMAT = Dynamic;
+
+
+-- ----------------------------
+-- Table structure for email_log
+-- ----------------------------
+DROP TABLE IF EXISTS `email_log`;
+CREATE TABLE `email_log`  (
+  `Id` bigint(20) NOT NULL,
+  `FromEmail` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '发送邮箱',
+  `Subject` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '邮件主题',
+  `ToEmails` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '接收邮箱',
+  `EmailContent` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '邮件内容',
+  `AddTime` datetime NULL DEFAULT NULL COMMENT '发送时间',
+  `IsSend` int(11) NULL DEFAULT NULL,
+  `SendResult` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `FileUrl` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `SendTime` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '邮件发送记录' ROW_FORMAT = Dynamic;
+
+
+-- ----------------------------
+-- Table structure for emailTpl
+-- ----------------------------
+DROP TABLE IF EXISTS `emailTpl`;
+CREATE TABLE `emailTpl`  (
+  `Id` int(11) NOT NULL AUTO_INCREMENT,
+  `Name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `Content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '模板内容',
+  `Create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '创建人',
+  `Create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `Update_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '更新人',
+  `Update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  `Remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '邮件发送模板' ROW_FORMAT = Dynamic;
+
+
+-- ----------------------------
+-- Table structure for smsCode_log
+-- ----------------------------
+DROP TABLE IF EXISTS `smsCode_log`;
+CREATE TABLE `smsCode_log`  (
+  `Id` bigint(20) NOT NULL,
+  `SmsCode` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '短信验证码',
+  `Userid` bigint(20) NULL DEFAULT NULL COMMENT '用户id',
+  `PhoneNum` bigint(20) NULL DEFAULT NULL COMMENT '手机号',
+  `SmsContent` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '短信内容',
+  `AddTime` datetime NULL DEFAULT NULL COMMENT '发送时间',
+  `UserIP` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '用户IP',
+  `SendType` int(11) NULL DEFAULT NULL COMMENT '1、登录 2、注册 3、找回密码',
+  `Location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '地理位置',
+  PRIMARY KEY (`Id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '短信验证码记录' ROW_FORMAT = Dynamic;

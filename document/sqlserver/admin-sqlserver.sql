@@ -1,5 +1,5 @@
 --CREATE DATABASE ZrAdmin
-GO
+--GO
 USE ZrAdmin
 GO
 if OBJECT_ID(N'sys_tasks',N'U') is not NULL DROP TABLE sys_tasks
@@ -348,9 +348,9 @@ GO
 -- ----------------------------
 -- Table structure for articleCategory
 -- ----------------------------
-IF OBJECT_ID(N'articleCategory',N'U') is not NULL DROP TABLE articleCategory
+IF OBJECT_ID(N'articleCategory',N'U') is not NULL DROP TABLE dbo.articleCategory
 GO
-CREATE TABLE articleCategory  (
+CREATE TABLE dbo.articleCategory  (
   category_id int NOT NULL IDENTITY(1,1) PRIMARY KEY ,  -- '目录id',
   name varchar(20) NOT NULL ,  -- '目录名',
   create_time datetime NULL DEFAULT NULL ,  -- '创建时间',
@@ -361,9 +361,9 @@ GO
 -- ----------------------------
 -- 18、代码生成业务表
 -- ----------------------------
-IF OBJECT_ID(N'gen_table',N'U') is not NULL DROP TABLE gen_table
+IF OBJECT_ID(N'gen_table',N'U') is not NULL DROP TABLE dbo.gen_table
 GO
-create table gen_table (
+create table dbo.gen_table (
   tableId          bigint      not NULL PRIMARY KEY IDENTITY(1,1)    , --'编号',
   tableName        varchar(200)    default ''                 , --'表名称',
   tableComment     varchar(500)    default ''                 , --'表描述',
@@ -390,9 +390,9 @@ GO
 -- ----------------------------
 -- 代码生成业务表字段
 -- ----------------------------
-IF OBJECT_ID(N'gen_table_column',N'U') is not NULL DROP TABLE gen_table_column
+IF OBJECT_ID(N'gen_table_column',N'U') is not NULL DROP TABLE dbo.gen_table_column
 GO
-create table gen_table_column (
+create table dbo.gen_table_column (
   columnId         bigint      not null IDENTITY(1,1) PRIMARY KEY    , --'编号',
   tableId          BIGINT									, --'归属表编号',
   tableName		   VARCHAR(200)								, --表名
@@ -425,9 +425,9 @@ GO
 -- ----------------------------
 -- 参数配置表
 -- ----------------------------
-IF OBJECT_ID(N'sys_config',N'U') is not NULL DROP TABLE sys_config
+IF OBJECT_ID(N'sys_config',N'U') is not NULL DROP TABLE dbo.sys_config
 GO
-create table sys_config (
+create table dbo.sys_config (
   configId         int          not null IDENTITY(1,1) PRIMARY KEY    ,-- '参数主键',
   configName       varchar(100)    default ''                 ,-- '参数名称',
   configKey        varchar(100)    default ''                 ,-- '参数键名',
@@ -491,7 +491,7 @@ CREATE TABLE [dbo].[sys_file](
 GO
 IF OBJECT_ID(N'sys_common_lang',N'U') is not NULL DROP TABLE dbo.sys_common_lang
 GO
-CREATE TABLE sys_common_lang
+CREATE TABLE dbo.sys_common_lang
 (
 	id BIGINT NOT NULL,
 	lang_code VARCHAR(10) NOT NULL,				--语言code eg：zh-cn
@@ -517,3 +517,44 @@ CREATE TABLE [dbo].[SqlDiffLog](
 	[ConfigId] [VARCHAR](255) NULL
 )
 GO
+IF OBJECT_ID(N'email_log',N'U') is not NULL DROP TABLE dbo.email_log
+GO
+CREATE TABLE [dbo].[email_log](
+	[Id] [BIGINT] NOT NULL PRIMARY KEY,
+	[FromEmail] [VARCHAR](255) NULL,
+	[Subject] [VARCHAR](255) NULL,
+	[ToEmails] [NVARCHAR](MAX) NULL,
+	[EmailContent] [NVARCHAR](MAX) NULL,
+	[AddTime] [DATETIME] NULL,
+	[IsSend] [INT] NULL,
+	[SendResult] [VARCHAR](255) NULL,
+	[FileUrl] [VARCHAR](255) NULL,
+	[SendTime] [DATETIME] NULL,
+)
+GO
+IF OBJECT_ID(N'emailTpl',N'U') is not NULL DROP TABLE dbo.emailTpl
+GO
+CREATE TABLE [dbo].[emailTpl](
+	[Id] [INT] IDENTITY(1,1) NOT NULL,
+	[Name] [VARCHAR](255) NULL,
+	[Content] [NVARCHAR](MAX) NULL,
+	[Create_by] [VARCHAR](64) NULL,
+	[Create_time] [DATETIME] NULL,
+	[Update_by] [VARCHAR](64) NULL,
+	[Update_time] [DATETIME] NULL,
+	[Remark] [VARCHAR](500) NULL,
+ )
+GO
+IF OBJECT_ID(N'smsCode_log',N'U') is not NULL DROP TABLE dbo.smsCode_log
+GO
+CREATE TABLE [dbo].[smsCode_log](
+	[Id] [BIGINT] NOT NULL,
+	[SmsCode] [VARCHAR](255) NULL,
+	[Userid] [BIGINT] NULL,
+	[PhoneNum] [BIGINT] NULL,
+	[SmsContent] [VARCHAR](255) NULL,
+	[AddTime] [DATETIME] NULL,
+	[UserIP] [VARCHAR](255) NULL,
+	[Location] [VARCHAR](255) NULL,
+	[SendType] [INT] NULL
+)
