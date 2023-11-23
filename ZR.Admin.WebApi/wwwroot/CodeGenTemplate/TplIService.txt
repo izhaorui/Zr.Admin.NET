@@ -1,8 +1,6 @@
-﻿using System;
-using ${options.BaseNamespace}Model;
+﻿using ${options.BaseNamespace}Model;
 using ${options.DtosNamespace};
 using ${options.ModelsNamespace}.${options.SubNamespace};
-using System.Collections.Generic;
 
 namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service
 {
