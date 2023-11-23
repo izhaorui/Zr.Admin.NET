@@ -19,7 +19,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.7" />
 		<PackageReference Include="JinianNet.JNTemplate" Version="2.4.1" />
 		<PackageReference Include="MiniExcel" Version="1.31.2" />
-		<PackageReference Include="CSRedisCore" Version="3.8.670" />
+		<PackageReference Include="CSRedisCore" Version="3.8.801" />
 		<PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
 	</ItemGroup>
 

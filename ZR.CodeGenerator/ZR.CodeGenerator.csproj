@@ -12,6 +12,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="JinianNet.JNTemplate" Version="2.4.1" />
-		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.115" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.123" />
 	</ItemGroup>
 </Project>
