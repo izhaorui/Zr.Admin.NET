@@ -2,7 +2,7 @@
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface ISysTasksQzService : IBaseService<SysTasks>
     {

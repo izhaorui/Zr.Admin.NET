@@ -1,9 +1,7 @@
-﻿using SqlSugar;
-using System.Collections.Generic;
-using ZR.Model;
+﻿using ZR.Model;
 using ZR.Model.System.Generate;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface IGenTableService : IBaseService<GenTable>
     {

@@ -3,7 +3,7 @@ using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.ServiceCore.Model.Dto;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface ISysLoginService : IBaseService<SysLogininfor>
     {

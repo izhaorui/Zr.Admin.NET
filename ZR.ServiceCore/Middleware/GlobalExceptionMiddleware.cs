@@ -8,7 +8,7 @@ using NLog;
 using System.Text.Encodings.Web;
 using ZR.Common;
 using ZR.Model.System;
-using ZR.Service.System.IService;
+using ZR.ServiceCore.Services;
 using textJson = System.Text.Json;
 
 namespace ZR.ServiceCore.Middleware

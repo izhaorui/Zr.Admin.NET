@@ -5,8 +5,8 @@ using Mapster;
 using Microsoft.AspNetCore.SignalR;
 using System.Web;
 using UAParser;
-using ZR.Service.System.IService;
 using ZR.ServiceCore.Model.Dto;
+using ZR.ServiceCore.Services;
 
 namespace ZR.ServiceCore.Signalr
 {

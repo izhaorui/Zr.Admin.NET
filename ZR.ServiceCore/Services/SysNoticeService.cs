@@ -1,12 +1,9 @@
 using Infrastructure.Attribute;
-using SqlSugar;
-using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 通知公告表Service业务层处理

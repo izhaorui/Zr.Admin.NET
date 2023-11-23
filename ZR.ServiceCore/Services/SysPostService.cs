@@ -1,9 +1,7 @@
 ﻿using Infrastructure.Attribute;
-using System.Collections.Generic;
 using ZR.Model.System;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 岗位管理

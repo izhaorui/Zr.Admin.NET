@@ -2,7 +2,7 @@ using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 数据差异日志service接口

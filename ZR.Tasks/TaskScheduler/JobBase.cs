@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using ZR.Common;
 using ZR.Model.System;
-using ZR.Service.System.IService;
+using ZR.ServiceCore.Services;
 
 namespace ZR.Tasks
 {

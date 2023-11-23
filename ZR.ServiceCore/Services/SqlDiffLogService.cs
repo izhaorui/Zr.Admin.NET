@@ -1,14 +1,10 @@
 using Infrastructure.Attribute;
-using Infrastructure.Extensions;
-using SqlSugar;
-using System;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 数据差异日志Service业务层处理

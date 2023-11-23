@@ -2,11 +2,9 @@ using Infrastructure.Attribute;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Repository;
-using ZR.Service;
 using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Services;
 
-namespace ZR.ServiceCore
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 邮件发送记录Service业务层处理

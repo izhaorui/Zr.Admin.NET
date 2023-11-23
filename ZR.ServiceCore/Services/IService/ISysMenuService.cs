@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Model.System;
-using ZR.Model.System.Vo;
 using ZR.Model.System.Generate;
+using ZR.Model.System.Vo;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface ISysMenuService : IBaseService<SysMenu>
     {

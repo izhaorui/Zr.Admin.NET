@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using NLog;
 using ZR.Model.System;
-using ZR.Service.System.IService;
+using ZR.ServiceCore.Services;
 
 namespace ZR.ServiceCore.Middleware
 {

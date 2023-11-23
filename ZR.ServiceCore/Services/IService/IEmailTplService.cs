@@ -2,7 +2,7 @@ using ZR.Model;
 using ZR.Model.Dto;
 using ZR.ServiceCore.Model;
 
-namespace ZR.Service.System.ISystemService
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 邮件模板service接口

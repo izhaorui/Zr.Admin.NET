@@ -1,10 +1,8 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
-using System.Collections.Generic;
 using ZR.Model.System;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 角色权限

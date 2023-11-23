@@ -5,9 +5,8 @@ using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Triggers;
 using SqlSugar.IOC;
-using System;
 using System.Threading.Tasks;
-using ZR.Service.System.IService;
+using ZR.ServiceCore.Services;
 
 namespace ZR.Tasks.TaskScheduler
 {

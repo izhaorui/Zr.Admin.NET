@@ -1,6 +1,6 @@
 ﻿using ZR.Common;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     public class CacheService
     {

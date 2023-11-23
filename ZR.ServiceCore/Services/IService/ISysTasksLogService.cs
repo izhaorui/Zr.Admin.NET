@@ -1,8 +1,6 @@
-﻿using System.Threading.Tasks;
-using ZR.Model.System;
-using ZR.Repository;
+﻿using ZR.Model.System;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface ISysTasksLogService : IBaseService<SysTasksLog>
     {

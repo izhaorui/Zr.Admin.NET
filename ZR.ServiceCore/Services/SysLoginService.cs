@@ -6,10 +6,9 @@ using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
-using ZR.Service.System.IService;
 using ZR.ServiceCore.Model.Dto;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 登录

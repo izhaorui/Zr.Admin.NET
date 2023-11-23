@@ -9,9 +9,8 @@ using System.Security.Cryptography;
 using System.Text;
 using ZR.Common;
 using ZR.Model.System;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 文件管理

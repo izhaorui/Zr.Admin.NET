@@ -2,7 +2,7 @@
 using ZR.Model;
 using ZR.Model.System;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface ISysDictDataService : IBaseService<SysDictData>
     {

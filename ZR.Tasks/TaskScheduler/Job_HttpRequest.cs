@@ -7,7 +7,6 @@ using SqlSugar.IOC;
 using System;
 using System.Threading.Tasks;
 using ZR.Model.System;
-using ZR.Service.System.IService;
 
 namespace ZR.Tasks.TaskScheduler
 {

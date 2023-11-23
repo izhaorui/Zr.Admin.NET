@@ -3,7 +3,7 @@ using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Vo;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface ISysDeptService : IBaseService<SysDept>
     {

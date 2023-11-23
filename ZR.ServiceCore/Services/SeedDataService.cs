@@ -3,7 +3,7 @@ using SqlSugar.IOC;
 using ZR.Common;
 using ZR.Model.System;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 种子数据处理

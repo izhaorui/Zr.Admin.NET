@@ -1,14 +1,10 @@
 using Infrastructure.Attribute;
-using SqlSugar;
-using System;
-using System.Linq;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.Models;
 using ZR.Repository;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 多语言配置Service业务层处理

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.CodeGenerator;
 using ZR.CodeGenerator.Model;
@@ -8,7 +7,6 @@ using ZR.CodeGenerator.Service;
 using ZR.Model;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Generate;
-using ZR.Service.System.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {

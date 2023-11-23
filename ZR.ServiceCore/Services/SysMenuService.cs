@@ -1,18 +1,12 @@
 using Infrastructure.Attribute;
-using Infrastructure.Extensions;
-using SqlSugar;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Enums;
 using ZR.Model.System.Generate;
 using ZR.Model.System.Vo;
-using ZR.Service.System.IService;
 
-namespace ZR.Service
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 菜单

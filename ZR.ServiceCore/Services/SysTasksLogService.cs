@@ -1,13 +1,7 @@
 ﻿using Infrastructure.Attribute;
-using System;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
-using ZR.Model;
 using ZR.Model.System;
-using ZR.Repository;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 任务日志

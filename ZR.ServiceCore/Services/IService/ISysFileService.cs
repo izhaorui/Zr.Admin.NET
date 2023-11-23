@@ -1,10 +1,7 @@
-﻿using Infrastructure.Attribute;
-using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
-using ZR.Model.Models;
+﻿using Microsoft.AspNetCore.Http;
 using ZR.Model.System;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface ISysFileService : IBaseService<SysFile>
     {

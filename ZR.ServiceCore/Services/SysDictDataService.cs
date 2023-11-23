@@ -1,14 +1,9 @@
 ﻿using Infrastructure.Attribute;
-using SqlSugar;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 字典数据类

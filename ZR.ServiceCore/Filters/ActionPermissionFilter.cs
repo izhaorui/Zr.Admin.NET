@@ -3,8 +3,7 @@ using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using ZR.Model.System;
-using ZR.Service.System;
-using ZR.Service.System.IService;
+using ZR.ServiceCore.Services;
 
 namespace ZR.ServiceCore.Middleware
 {

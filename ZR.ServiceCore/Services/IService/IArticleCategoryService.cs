@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using ZR.Model;
+﻿using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.System;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     public interface IArticleCategoryService : IBaseService<ArticleCategory>
     {

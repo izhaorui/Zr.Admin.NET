@@ -1,17 +1,12 @@
 using Infrastructure;
 using Infrastructure.Attribute;
-using SqlSugar;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
-using ZR.Service.System.IService;
 
-namespace ZR.Service
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 角色

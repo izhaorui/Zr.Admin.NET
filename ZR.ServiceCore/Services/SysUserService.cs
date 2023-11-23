@@ -7,9 +7,8 @@ using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
-using ZR.Service.System.IService;
 
-namespace ZR.Service
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 系统用户

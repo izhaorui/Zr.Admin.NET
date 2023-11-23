@@ -1,9 +1,8 @@
-using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 通知公告表service接口

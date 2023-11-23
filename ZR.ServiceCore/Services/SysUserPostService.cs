@@ -1,10 +1,7 @@
 ﻿using Infrastructure.Attribute;
-using SqlSugar;
-using System.Linq;
 using ZR.Model.System;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 用户岗位

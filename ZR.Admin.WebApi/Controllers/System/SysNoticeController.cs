@@ -5,7 +5,6 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Service.System.IService;
 using ZR.ServiceCore.Signalr;
 
 namespace ZR.Admin.WebApi.Controllers.System

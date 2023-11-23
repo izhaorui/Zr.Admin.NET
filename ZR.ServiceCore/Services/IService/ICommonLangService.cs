@@ -2,7 +2,7 @@ using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.Models;
 
-namespace ZR.Service.System.IService
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 多语言配置service接口

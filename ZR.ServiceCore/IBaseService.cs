@@ -1,6 +1,6 @@
 ﻿using ZR.Repository;
 
-namespace ZR.Service
+namespace ZR.ServiceCore
 {
     /// <summary>
     /// 基础服务定义

@@ -1,13 +1,10 @@
 ﻿using Infrastructure.Attribute;
-using SqlSugar;
-using System.Collections.Generic;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.System;
 using ZR.Repository;
-using ZR.Service.System.IService;
 
-namespace ZR.Service.System
+namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 文章目录Service业务层处理
