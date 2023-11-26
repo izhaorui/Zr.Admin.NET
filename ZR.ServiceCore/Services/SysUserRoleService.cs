@@ -107,6 +107,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public int InsertUserRole(SysUser user)
         {
+            //if(user.RoleIds == null) return 0;
             List<SysUserRole> userRoles = new();
             foreach (var item in user.RoleIds)
             {

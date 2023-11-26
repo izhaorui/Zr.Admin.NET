@@ -102,11 +102,18 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public SysUser InsertUser(SysUser sysUser)
         {
-            sysUser.UserId = Insertable(sysUser).ExecuteReturnIdentity();
-            //新增用户角色信息
-            UserRoleService.InsertUserRole(sysUser);
-            //新增用户岗位信息
-            UserPostService.InsertUserPost(sysUser);
+            var result = UseTran(() =>
+            {
+                sysUser.UserId = Insertable(sysUser).ExecuteReturnIdentity();
+                //新增用户角色信息
+                UserRoleService.InsertUserRole(sysUser);
+                //新增用户岗位信息
+                UserPostService.InsertUserPost(sysUser);
+            });
+            if (!result.IsSuccess)
+            {
+                throw new Exception("提交数据异常," + result.ErrorMessage, result.ErrorException);
+            }
             return sysUser;
         }
 

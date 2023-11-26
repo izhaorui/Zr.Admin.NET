@@ -6,7 +6,6 @@ using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
-
 namespace ZR.Admin.WebApi.Controllers.System
 {
     /// <summary>
@@ -79,21 +78,20 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 添加用户
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="parm"></param>
         /// <returns></returns>
-        [HttpPost("edit")]
+        [HttpPost("add")]
         [Log(Title = "用户管理", BusinessType = BusinessType.INSERT)]
         [ActionPermissionFilter(Permission = "system:user:add")]
-        public IActionResult AddUser([FromBody] SysUser user)
+        public IActionResult AddUser([FromBody] SysUserDto parm)
         {
+            var user = parm.Adapt<SysUser>().ToCreate(HttpContext);
             if (user == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
             if (UserConstants.NOT_UNIQUE.Equals(UserService.CheckUserNameUnique(user.UserName)))
             {
                 return ToResponse(ApiResult.Error($"新增用户 '{user.UserName}'失败，登录账号已存在"));
             }
 
-            user.Create_by = HttpContext.GetName();
-            user.Create_time = DateTime.Now;
             user.Password = NETCore.Encrypt.EncryptProvider.Md5(user.Password);
 
             return SUCCESS(UserService.InsertUser(user));
@@ -102,16 +100,16 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 修改用户
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="parm"></param>
         /// <returns></returns>
         [HttpPut("edit")]
         [Log(Title = "用户管理", BusinessType = BusinessType.UPDATE)]
         [ActionPermissionFilter(Permission = "system:user:edit")]
-        public IActionResult UpdateUser([FromBody] SysUser user)
+        public IActionResult UpdateUser([FromBody] SysUserDto parm)
         {
+            var user = parm.Adapt<SysUser>().ToUpdate(HttpContext);
             if (user == null || user.UserId <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
-            user.Update_by = HttpContext.GetName();
             int upResult = UserService.UpdateUser(user);
 
             return ToResponse(upResult);

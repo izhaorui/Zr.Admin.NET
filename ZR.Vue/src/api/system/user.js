@@ -22,7 +22,7 @@ export function getUser(userId) {
 // 新增用户
 export function addUser(data) {
   return request({
-    url: '/system/user/edit',
+    url: '/system/user/add',
     method: 'post',
     data: data,
   })

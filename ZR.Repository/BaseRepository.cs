@@ -146,8 +146,8 @@ namespace ZR.Repository
             }
             catch (Exception ex)
             {
+                Console.WriteLine("事务异常" + ex.Message);
                 client.AsTenant().RollbackTran();
-                Console.WriteLine(ex.Message);
                 throw;
             }
         }

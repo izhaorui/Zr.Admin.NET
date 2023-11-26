@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ZR.Model.System.Dto
+﻿namespace ZR.Model.System.Dto
 {
     public class SysUserDto
     {
@@ -15,6 +13,29 @@ namespace ZR.Model.System.Dto
         /// </summary>
         public int Sex { get; set; }
         public string Password { get; set; }
+
+        /// <summary>
+        /// 帐号状态（0正常 1停用）
+        /// </summary>
+        public int Status { get; set; }
+
+        /// <summary>
+        /// 最后登录IP
+        /// </summary>
+        public string LoginIP { get; set; }
+
+        /// <summary>
+        /// 部门Id
+        /// </summary>
+        public long DeptId { get; set; }
+        /// <summary>
+        /// 角色id集合
+        /// </summary>
+        public long[] RoleIds { get; set; }
+        /// <summary>
+        /// 岗位集合
+        /// </summary>
+        public int[] PostIds { get; set; }
     }
 
     public class SysUserQueryDto
