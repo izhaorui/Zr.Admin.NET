@@ -1,4 +1,6 @@
 using Infrastructure.Attribute;
+using JinianNet.JNTemplate.Caching;
+using System.ComponentModel;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -608,6 +610,21 @@ namespace ZR.ServiceCore.Services
                     Create_by = "system",
                 };
                 menu.MenuId = AddMenu(menu);
+            }
+            else
+            {
+
+                menu.MenuName = genTableInfo.FunctionName;
+                menu.ParentId = genTableInfo.Options.ParentMenuId;
+                menu.Path = genTableInfo.BusinessName;
+                menu.Component = $"{genTableInfo.ModuleName.FirstLowerCase()}/{genTableInfo.BusinessName}";
+                menu.Perms = $"{permPrefix}:list";
+                menu.IsCache = "1";
+                menu.Visible = "0";
+                menu.Status = "0";
+                menu.Update_by = "system";
+                menu.Update_time = DateTime.Now;
+                EditMenu(menu);
             }
 
             List<SysMenu> menuList = new();
