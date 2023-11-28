@@ -16,6 +16,7 @@ namespace ZR.Admin.WebApi.Filters
     [AttributeUsage(AttributeTargets.All)]
     public class VerifyAttribute : Attribute, IAuthorizationFilter
     {
+        private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         /// <summary>
         /// 只判断token是否正确，不判断权限
         /// 如果需要判断权限的在Action上加上ApiActionPermission属性标识权限类别，ActionPermissionFilter作权限处理
@@ -56,6 +57,7 @@ namespace ZR.Admin.WebApi.Filters
                     {
                         context.HttpContext.Response.Headers.Add("Access-Control-Expose-Headers", "X-Refresh-Token");
                     }
+                    logger.Info($"刷新token,userName={loginUser.UserName},token={newToken}");
                     context.HttpContext.Response.Headers.Add("X-Refresh-Token", newToken);
                 }
             }
