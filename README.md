@@ -1,12 +1,24 @@
 <h2 align="center"> ZR.Admin.NET后台管理系统</h2>
 <h4 align="center">基于.Net7 + vue2.x/vue3.x/uniapp前后端分离的.net快速开发框架</h4>
 
-<p align="center">
+<!-- <p align="center">
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
 <a href='https://gitee.com/izory/ZrAdminNetCore/members'><img src='https://gitee.com/izory/ZrAdminNetCore/badge/fork.svg?theme=dark' alt='fork'></img></a>
 	<a href="https://gitee.com/izory/ZrAdminNetCore/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
 	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230920-yellow"/></a>
-</p>
+</p> -->
+
+<div style="text-align:center">
+
+[![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
+[![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
+[![更新日志](https://img.shields.io/badge/更新日志-20230920-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+
+[![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/network)
+
+</div>
 
 ---
 
@@ -74,7 +86,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 - 代码生成：高效率开发，代码生成器可以一键生成所有前后端代码
 - 数据字典：支持数据字典，可以方便对一些状态进行管理
 - 分库分表：使用 orm sqlsugar 可以很轻松的实现分库分库性能优越
-- 多 租 户：支持多租户功能
+- 多 租 户：支持多租户功能(多数据库源)
 - 缓存数据：内置内存缓存和 Redis
 - signalR：使用 signalr 管理用户在线状态
 
@@ -103,6 +115,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 21. 在线用户：可以查看正在登录使用的用户，可以对其踢出、通知操作
 22. db 审计日志：数据库审计功能
 23. 三方登录：提供三方登录实现逻辑
+25. 导入导出：支持中文表头导入、字典数据转换成文本导出
 
 ## 🍻 项目结构
 
@@ -202,7 +215,6 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 5. 自定义的代码生成功能
 6. 依赖少，上手容易
 7. 文档全面
-8. 支持中文表头导入数据
 
 ## 💐 特别鸣谢
 

@@ -1,12 +1,17 @@
 <h2 align="center"> ZR.Admin.NET Back-end management system</h2>
 <h4 align="center">base .Net7 + vue2.x/vue3.x/uniapp Front-end and back-end separation of .NET rapid development framework</h4>
 
-<p align="center">
-	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
-<a href='https://gitee.com/izory/ZrAdminNetCore/members'><img src='https://gitee.com/izory/ZrAdminNetCore/badge/fork.svg?theme=dark' alt='fork'></img></a>
-	<a href="https://gitee.com/izory/ZrAdminNetCore/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
-	<a href="http://www.izhaorui.cn/doc/changelog.html"><img src="https://img.shields.io/badge/更新日志-20230920-yellow"/></a>
-</p>
+<div style="text-align:center">
+
+[![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
+[![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
+[![Change log](https://img.shields.io/badge/ChangeLog-20230920-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+
+[![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/network)
+
+</div>
 
 ---
 
@@ -50,10 +55,10 @@ Since it is a personal project, the funds are limited, and the experience server
 
 ## 💒 Code repository
 
-| repository           | Github                                                 | Gitee                                                            |
-| -------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
-| Net7           | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET)  | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
-| Vue3(Hot) | [Clone/Download](https://github.com/izhaorui/ZR.Admin.Vue3) | [Clone/Download](https://gitee.com/izory/ZRAdmin-vue)                 |
+| repository | Github                                                      | Gitee                                                    |
+| ---------- | ----------------------------------------------------------- | -------------------------------------------------------- |
+| Net7       | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET)  | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
+| Vue3(Hot)  | [Clone/Download](https://github.com/izhaorui/ZR.Admin.Vue3) | [Clone/Download](https://gitee.com/izory/ZRAdmin-vue)    |
 
 ## 🍁 Front-end technology
 
