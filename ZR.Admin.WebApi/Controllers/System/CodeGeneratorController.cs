@@ -256,8 +256,18 @@ namespace ZR.Admin.WebApi.Controllers
             if (genTableInfo.GenType == "1")
             {
                 var genPath = genTableInfo.GenPath;
+                string parentPath;
                 string tempPath = WebHostEnvironment.ContentRootPath;
-                var parentPath = tempPath[..tempPath.LastIndexOf(@"\")];
+
+                if (ComputerHelper.IsUnix())
+                {
+                    parentPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
+                }
+                else
+                {
+                    parentPath = tempPath[..tempPath.LastIndexOf(@"\")];
+                }
+                Console.WriteLine("代码生成路径" + parentPath);
                 //代码生成文件夹路径
                 dto.GenCodePath = (genPath.IsEmpty() || genPath.Equals("/")) ? parentPath : genTableInfo.GenPath;
             }

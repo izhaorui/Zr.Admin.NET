@@ -447,7 +447,7 @@ namespace ZR.CodeGenerator
                     CheckedBtn = new int[] { 1, 2, 3 }
                 }
             };
-            genTable.Options.PermissionPrefix = $"{genTable.ModuleName.ToLower()}:{genTable.ClassName.ToLower()}";//权限
+            genTable.Options.PermissionPrefix = $"{genTable.ClassName.ToLower()}";//权限
 
             return genTable;
         }
