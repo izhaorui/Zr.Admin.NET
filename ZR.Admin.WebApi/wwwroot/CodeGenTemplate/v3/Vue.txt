@@ -677,6 +677,37 @@ $if(sub)
 $end
   proxy.resetForm("formRef")
 }
+
+$if(replaceDto.ShowBtnView)
+/**
+ * 查看
+ * @param {*} row
+ */
+function handlePreview(row) {
+  reset()
+    const id = row.${replaceDto.FistLowerPk}
+    get${genTable.BusinessName}(id).then((res) => {
+    const { code, data } = res
+    if (code == 200) {
+      open.value = true
+      title.value = '查看'
+      opertype.value = 3
+      form.value = {
+        ...data,
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox" || item.HtmlType == "selectMulti")
+        ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
+$end
+$end
+      }
+$if(sub)
+      ${tool.FirstLowerCase(genTable.SubTable.ClassName)}List.value = res.data.${tool.FirstLowerCase(genTable.SubTable.ClassName)}Nav
+$end
+    }
+  })
+}
+$end
+
 $if(replaceDto.ShowBtnAdd)
 // 添加按钮操作
 function handleAdd() {
@@ -781,20 +812,6 @@ function handleClear() {
       handleQuery()
       proxy.${modal}modal.msgSuccess('清空成功')
     })
-}
-$end
-
-$if(replaceDto.ShowBtnView)
-/**
- * 查看
- * @param {*} row
- */
-function handlePreview(row) {
-  reset()
-  open.value = true
-  title.value = '查看'
-  opertype.value = 3
-  form.value = { ...row }
 }
 $end
 

@@ -44,7 +44,7 @@ $else
         [ExcelIgnore]
 $end
 $end
-$if(item.CsharpType == "long")
+$if(item.CsharpType == "long" && replaceDto.useSnowflakeId == true && item.IsPk)
         [JsonConverter(typeof(ValueToStringConverter))]
 $end
         public $item.CsharpType$item.RequiredStr $item.CsharpField { get; set; }
