@@ -115,7 +115,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 21. 在线用户：可以查看正在登录使用的用户，可以对其踢出、通知操作
 22. db 审计日志：数据库审计功能
 23. 三方登录：提供三方登录实现逻辑
-25. 导入导出：支持中文表头导入、字典数据转换成文本导出
+24. 导入导出：支持中文表头导入、字典数据转换成文本导出
 
 ## 🍻 项目结构
 
@@ -178,10 +178,11 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 	</tr>
 	<tr>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/21.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/22.png"/></td>
 	</tr>
 </table>
 
-## 移动端演示图
+## 📱 移动端演示图
 
 <table>
     <tr>
@@ -213,7 +214,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 3. 前台与后台系统分离，分别为不同的系统（域名可独立）
 4. 全局异常统一处理
 5. 自定义的代码生成功能
-6. 依赖少，上手容易
+6. 依赖少(只需数据库即可使用)，上手容易
 7. 文档全面
 
 ## 💐 特别鸣谢

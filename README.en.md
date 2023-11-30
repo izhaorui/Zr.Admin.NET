@@ -160,7 +160,7 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 	</tr>
 </table>
 
-## Mobile Storyplate
+## 📱 Mobile Storyplate
 
 <table>
     <tr>
@@ -179,8 +179,9 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a7.png"/></td>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a9.png"/></td>
     </tr>
-<tr>
+		<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a10.png"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/22.png"/></td>
     </tr>
 
 </table>
@@ -201,6 +202,7 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 - 👉SqlSugar：[SqlSugar](https://gitee.com/dotnetchina/SqlSugar)
 - 👉vue-element-admin：[vue-element-admin](https://github.com/PanJiaChen/vue-element-admin)
 - 👉Meiam.System：[Meiam.System](https://github.com/91270/Meiam.System)
+- 👉Furion：[Furion](https://gitee.com/dotnetchina/Furion)
 
 ## 🎀 donation
 
