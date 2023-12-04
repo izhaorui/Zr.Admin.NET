@@ -1,0 +1,13 @@
+name: 功能建议
+description: 对本项目提出一个功能建议
+title: "[功能建议]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢对项目的支持与关注。如果你在使用中有什么好的建议欢迎提出来
+  - type: textarea
+    attributes:
+      label: 请输入内容
+      description: 如果可以的话，上传任何关于 功能 的截图。
