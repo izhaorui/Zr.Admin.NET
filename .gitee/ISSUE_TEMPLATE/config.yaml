@@ -70,6 +70,7 @@ body:
         - 前端nginx + 后端 iis
         - 前端nginx + 后端自启动
         - docker
+        - 其他
     validations:
       required: true
 contact_links:
