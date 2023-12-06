@@ -1,4 +1,4 @@
-﻿using Infrastructure.Attribute;
+using Infrastructure.Attribute;
 using Quartz;
 using System.Threading.Tasks;
 
@@ -15,7 +15,7 @@ namespace ZR.Tasks.TaskScheduler
 
         public async Task Execute(IJobExecutionContext context)
         {
-            await ExecuteJob(context, async () => await Run());            
+            await ExecuteJob(context, Run);            
         }
 
         public async Task Run()
