@@ -1,4 +1,4 @@
-﻿using Infrastructure;
+using Infrastructure;
 using NLog;
 using Quartz;
 using System;
@@ -38,6 +38,51 @@ namespace ZR.Tasks
                 stopwatch.Stop();
                 elapsed = stopwatch.Elapsed.TotalMilliseconds;
                 logMsg = "success";
+            }
+            catch (Exception ex)
+            {
+                JobExecutionException e2 = new(ex)
+                {
+                    //true  是立即重新执行任务 
+                    RefireImmediately = true
+                };
+                status = 1;
+                logMsg = $"Job Run Fail，Exception：{ex.Message}";
+                WxNoticeHelper.SendMsg("任务执行出错", logMsg);
+            }
+
+            var logModel = new SysTasksLog()
+            {
+                Elapsed = elapsed,
+                Status = status.ToString(),
+                JobMessage = logMsg
+            };
+
+            await RecordTaskLog(context, logModel);
+            return logModel;
+        }
+
+        /// <summary>
+        /// 执行指定任务（接收返回结果）
+        /// </summary>
+        /// <param name="context">作业上下文</param>
+        /// <param name="job">业务逻辑方法</param>
+        public async Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task<string>> job)
+        {
+            double elapsed = 0;
+            int status = 0;
+            string logMsg;
+            try
+            {
+                //var s = context.Trigger.Key.Name;
+                //记录Job时间
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                //执行任，并返回结果
+                string result = await job();
+                stopwatch.Stop();
+                elapsed = stopwatch.Elapsed.TotalMilliseconds;
+                logMsg = result.Length <= 2000 ? result : result.Substring(0, 2000);
             }
             catch (Exception ex)
             {
