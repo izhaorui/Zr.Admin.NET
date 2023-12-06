@@ -1,4 +1,4 @@
-﻿using Infrastructure.Attribute;
+using Infrastructure.Attribute;
 using Quartz;
 using System.Threading.Tasks;
 
@@ -25,5 +25,23 @@ namespace ZR.Tasks.TaskScheduler
 
             System.Console.WriteLine("job test");
         }
+
+        
+        //public async Task Execute(IJobExecutionContext context)
+        //{
+        //    await ExecuteJob(context, async () =>
+        //    {
+        //        return await Run(context);
+        //    });
+        //}
+
+
+        //public async Task<string> Run()
+        //{
+        //    await Task.Delay(1);
+            //TODO 业务逻辑
+        //    System.Console.WriteLine("job test");
+        //    return "成功";
+        //}
     }
 }
