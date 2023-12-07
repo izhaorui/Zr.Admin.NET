@@ -2,6 +2,7 @@ using AspNetCoreRateLimit;
 using Infrastructure.Converter;
 using Microsoft.AspNetCore.DataProtection;
 using NLog.Web;
+using SqlSugar;
 using System.Text.Json;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Common.Cache;
@@ -82,7 +83,12 @@ InternalApp.Configuration = builder.Configuration;
 InternalApp.WebHostEnvironment = app.Environment;
 //初始化db
 builder.Services.AddDb(app.Environment);
-
+var workId = builder.Configuration["workId"].ParseToInt();
+if (app.Environment.IsDevelopment())
+{
+    workId += 1;
+}
+SnowFlakeSingle.WorkId = workId;
 //使用全局异常中间件
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
