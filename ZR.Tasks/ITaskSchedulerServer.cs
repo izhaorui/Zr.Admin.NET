@@ -1,13 +1,10 @@
 ﻿using Infrastructure.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using ZR.Model.System;
 
 namespace ZR.Tasks
 {
-	public interface ITaskSchedulerServer
+    public interface ITaskSchedulerServer
 	{
 		Task<ApiResult> StartTaskScheduleAsync();
 
