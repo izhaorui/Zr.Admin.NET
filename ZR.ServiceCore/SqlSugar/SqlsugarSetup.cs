@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SqlSugar.IOC;
+using ZR.Common;
 using ZR.Model.System;
 
 namespace ZR.ServiceCore.SqlSugar
@@ -200,6 +201,22 @@ namespace ZR.ServiceCore.SqlSugar
                         }
                     }
                     #endregion
+                }
+            };
+            db.GetConnectionScope(configId).Aop.OnLogExecuted = (sql, pars) =>
+            {
+                var sqlExecutionTime = AppSettings.Get<int>("sqlExecutionTime");
+                if (db.Ado.SqlExecutionTime.TotalSeconds > sqlExecutionTime)
+                {
+                    //代码CS文件名
+                    var fileName = db.Ado.SqlStackTrace.FirstFileName;
+                    //代码行数
+                    var fileLine = db.Ado.SqlStackTrace.FirstLine;
+                    //方法名
+                    var FirstMethodName = db.Ado.SqlStackTrace.FirstMethodName;
+                    var logInfo = $"Sql执行超时，用时{db.Ado.SqlExecutionTime.TotalSeconds}秒【{sql}】,fileName={fileName},line={fileLine},methodName={FirstMethodName}";
+                    WxNoticeHelper.SendMsg("Sql请求时间过长",logInfo);
+                    logger.Warn(logInfo);
                 }
             };
         }
