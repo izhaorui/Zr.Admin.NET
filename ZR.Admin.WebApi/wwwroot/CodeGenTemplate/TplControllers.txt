@@ -118,7 +118,7 @@ $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
             long[] idsArr = Tools.SpitLongArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
-            var response = _${replaceDto.ModelTypeName}Service.Delete(idsArr);
+            var response = _${replaceDto.ModelTypeName}Service.Delete(idsArr$if(replaceDto.enableLog), "删除${genTable.FunctionName}"$end);
 
             return ToResponse(response);
         }

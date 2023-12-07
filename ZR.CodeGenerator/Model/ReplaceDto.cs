@@ -78,5 +78,6 @@ namespace ZR.CodeGenerator.Model
         /// 是否使用雪花id
         /// </summary>
         public bool UseSnowflakeId { get; set; }
+        public bool EnableLog { get; set; }
     }
 }

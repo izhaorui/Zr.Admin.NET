@@ -122,7 +122,7 @@ ${end}
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
             return Context.UpdateNav(model).Include(z1 => z1.${genTable.SubTable.ClassName}Nav).ExecuteCommand() ? 1 : 0;
 $else
-            return Update(model, true);
+            return Update(model, true$if(replaceDto.enableLog), "修改${genTable.FunctionName}"$end);
 $end
         }
 $if(replaceDto.ShowBtnTruncate)

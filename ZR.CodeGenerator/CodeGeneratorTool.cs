@@ -54,7 +54,8 @@ namespace ZR.CodeGenerator
                 ShowBtnImport = dto.GenTable.Options.CheckedBtn.Any(f => f == 8),
                 ViewFileName = dto.GenTable.BusinessName.FirstUpperCase(),
                 OperBtnStyle = dto.GenTable.Options.OperBtnStyle,
-                UseSnowflakeId = dto.GenTable.Options.UseSnowflakeId
+                UseSnowflakeId = dto.GenTable.Options.UseSnowflakeId,
+                EnableLog = dto.GenTable.Options.EnableLog
             };
             var columns = dto.GenTable.Columns;
 

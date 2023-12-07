@@ -21,11 +21,11 @@ namespace ZR.Model.System.Dto
     public class SqlDiffLogDto
     {
         [Required(ErrorMessage = "主键不能为空")]
-        [ExcelColumn(Name = "主键")]
+        [ExcelColumn(Name = "主键", Width = 15)]
         [JsonConverter(typeof(ValueToStringConverter))]
         public long PId { get; set; }
 
-        [ExcelColumn(Name = "表名")]
+        [ExcelColumn(Name = "表名", Width = 15)]
         public string TableName { get; set; }
 
         [ExcelColumn(Name = "业务数据内容")]
@@ -34,25 +34,22 @@ namespace ZR.Model.System.Dto
         [ExcelColumn(Name = "差异类型")]
         public string DiffType { get; set; }
 
-        [ExcelColumn(Name = "执行sql语句")]
+        [ExcelColumn(Name = "执行sql语句", Width = 30)]
         public string Sql { get; set; }
 
-        [ExcelColumn(Name = "变更前数据")]
+        [ExcelColumn(Name = "变更前数据", Width = 30)]
         public string BeforeData { get; set; }
 
-        [ExcelColumn(Name = "变更后数据")]
+        [ExcelColumn(Name = "变更后数据", Width = 30)]
         public string AfterData { get; set; }
 
         [ExcelColumn(Name = "操作用户名")]
         public string UserName { get; set; }
 
-        [ExcelColumn(Name = "AddTime", Format = "yyyy-MM-dd HH:mm:ss")]
+        [ExcelColumn(Name = "记录时间", Format = "yyyy-MM-dd HH:mm:ss", Width = 20)]
         public DateTime? AddTime { get; set; }
 
         [ExcelColumn(Name = "数据库配置id")]
         public string ConfigId { get; set; }
-
-
-
     }
 }

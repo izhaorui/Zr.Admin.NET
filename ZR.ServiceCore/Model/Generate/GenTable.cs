@@ -136,5 +136,9 @@ namespace ZR.Model.System.Generate
         /// 是否使用雪花id
         /// </summary>
         public bool UseSnowflakeId { get; set; } = false;
+        /// <summary>
+        /// 是否启用日志(编辑、删除)自动记录日志
+        /// </summary>
+        public bool EnableLog { get; set; }
     }
 }
