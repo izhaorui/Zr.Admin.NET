@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System.Dto;
 
@@ -15,12 +14,10 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     public class SysOperlogController : BaseController
     {
         private ISysOperLogService sysOperLogService;
-        private IWebHostEnvironment WebHostEnvironment;
 
-        public SysOperlogController(ISysOperLogService sysOperLogService, IWebHostEnvironment hostEnvironment)
+        public SysOperlogController(ISysOperLogService sysOperLogService)
         {
             this.sysOperLogService = sysOperLogService;
-            WebHostEnvironment = hostEnvironment;
         }
 
         /// <summary>
