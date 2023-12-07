@@ -860,6 +860,7 @@ function row${genTable.SubTable.ClassName}Index({ row, rowIndex }) {
 /** ${genTable.SubTable.FunctionName}添加按钮操作 */
 function handleAdd${genTable.SubTable.ClassName}() {
   let obj = {};
+  //下面的代码自己设置默认值
 $foreach(column in genTable.SubTable.Columns)
 $if(column.IsPK || column.CsharpField == genTable.SubTableFkName)
 $elseif(column.IsList == true && "" != column.CsharpField)

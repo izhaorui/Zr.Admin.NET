@@ -140,8 +140,12 @@ namespace ZR.ServiceCore.Services
                     column.Sort = prevColumn.Sort;
                     column.IsExport = prevColumn.IsExport;
                     column.IsSort = prevColumn.IsSort;
+                    column.IsQuery = prevColumn.IsQuery;
+                    column.IsList = prevColumn.IsList;
+                    column.HtmlType = prevColumn.HtmlType;
                     column.Update_time = DateTime.Now;
                     column.Update_by = genTable.Update_by;
+
                     if (column.IsList)
                     {
                         column.DictType = prevColumn.DictType;

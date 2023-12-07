@@ -96,7 +96,7 @@ $if(null != genTable.SubTableName && "" != genTable.SubTableName)
             return Context.InsertNav(model).Include(s1 => s1.${genTable.SubTable.ClassName}Nav).ExecuteReturnEntity();
 $else
 $if(replaceDto.useSnowflakeId)
-            model.${replaceDto.PKName} = Insertable(model).ExecuteReturnSnowflakeId();
+            Insertable(model).ExecuteReturnSnowflakeId();
             return model;
 $else
             return Insertable(model).ExecuteReturnEntity();
@@ -111,14 +111,6 @@ $end
         /// <returns></returns>
         public int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} model)
         {
-            //return Update(w => w.${replaceDto.PKName} == model.${replaceDto.PKName}, it => new ${replaceDto.ModelTypeName}()
-            //{
-$foreach(item in genTable.Columns)
-$if((item.IsEdit))
-            //    $item.CsharpField = model.$item.CsharpField,
-$end
-${end}
-            //});
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
             return Context.UpdateNav(model).Include(z1 => z1.${genTable.SubTable.ClassName}Nav).ExecuteCommand() ? 1 : 0;
 $else
