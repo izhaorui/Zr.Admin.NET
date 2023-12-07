@@ -158,6 +158,13 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/19.png"/></td>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/20.png"/></td>
 	</tr>
+	<tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/21.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/22.png"/></td>
+	</tr>
+	<tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/23.png"/></td>
+	</tr>
 </table>
 
 ## 📱 Mobile Storyplate
