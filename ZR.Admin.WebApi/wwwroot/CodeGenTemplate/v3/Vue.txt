@@ -230,7 +230,7 @@ $end
 
 $* 一对一/一对多列表显示详情 *$
 $if(sub)
-    <el-drawer v-model="drawer" :with-header="false" direction="btt">
+    <el-drawer v-model="drawer" size="50%" direction="rtl">
       <el-table :data="$tool.FirstLowerCase(genTable.SubTable.ClassName)List" header-row-class-name="text-navy">
         <el-table-column label="序号" type="index" width="80" />
 $foreach(column in genSubTable.Columns)
@@ -392,7 +392,7 @@ $if(sub)
           </el-col>
         </el-row>
         <el-table :data="${tool.FirstLowerCase(genTable.SubTable.ClassName)}List" :row-class-name="row${genTable.SubTable.ClassName}Index" @selection-change="handle${genTable.SubTable.ClassName}SelectionChange" ref="${genTable.SubTable.ClassName}Ref">
-          <el-table-column type="selection" width="50" align="center" />
+          <el-table-column type="selection" width="40" align="center" />
           <el-table-column label="序号" align="center" prop="index" width="50"/>
 $foreach(column in genTable.SubTable.Columns)
 $set(labelName = column.ColumnComment)
@@ -433,6 +433,12 @@ $elseif(column.HtmlType == "switch")
           <el-table-column label="${labelName}" prop="${columnName}">
             <template #default="scope">
               <el-switch v-model="scope.row.${columnName}" ${switchType} />
+            </template>
+          </el-table-column>
+$elseif(column.HtmlType == "imageUpload")
+          <el-table-column label="${labelName}" prop="${columnName}">
+            <template #default="scope">
+              <UploadImage v-model="form.${columnName}" :isShowTip="false" :style="{ 'width': '50px' }" :data="{ uploadType: 1 }" />
             </template>
           </el-table-column>
 $else
