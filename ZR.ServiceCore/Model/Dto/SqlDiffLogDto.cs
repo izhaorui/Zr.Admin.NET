@@ -38,10 +38,10 @@ namespace ZR.Model.System.Dto
         public string Sql { get; set; }
 
         [ExcelColumn(Name = "变更前数据", Width = 30)]
-        public string BeforeData { get; set; }
+        public string BeforeData { get; set; } = string.Empty;
 
         [ExcelColumn(Name = "变更后数据", Width = 30)]
-        public string AfterData { get; set; }
+        public string AfterData { get; set; } = string.Empty;
 
         [ExcelColumn(Name = "操作用户名")]
         public string UserName { get; set; }

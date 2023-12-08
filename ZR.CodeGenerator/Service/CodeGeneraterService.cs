@@ -18,7 +18,7 @@ namespace ZR.CodeGenerator.Service
         {
             var db = GetSugarDbContext();
             //Oracle库特殊处理
-            DbConfigs configs = AppSettings.Get<DbConfigs>(nameof(GlobalConstant.CodeGenDbConfig));
+            DbConfigs configs = AppSettings.Get<DbConfigs>(nameof(GenConstants.CodeGenDbConfig));
             if (configs.DbType == 3)
             {
                 return new List<string>() { configs?.DbName };

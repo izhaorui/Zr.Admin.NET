@@ -48,7 +48,7 @@ namespace ZR.ServiceCore.Services
             if (info != null)
             {
                 info.Columns = GenTableColumnService.GenTableColumns(tableId);
-                if (!info.SubTableName.IsEmpty() && info.SubTable != null)
+                if (!info.SubTableName.IsEmpty())
                 {
                     info.SubTable = Queryable().Where(f => f.TableName == info.SubTableName).First();
                     info.SubTable.Columns = GenTableColumnService.GenTableColumns(info.SubTable.TableId);

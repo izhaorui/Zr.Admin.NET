@@ -132,43 +132,48 @@ namespace ZR.Admin.WebApi.Controllers
         /// <summary>
         /// 导入表结构（保存）
         /// </summary>
-        /// <param name="tables"></param>
-        /// <param name="dbName"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPost("importTable")]
         [Log(Title = "代码生成", BusinessType = BusinessType.IMPORT)]
         [ActionPermissionFilter(Permission = "tool:gen:import")]
-        public IActionResult ImportTableSave(string tables, string dbName)
+        public IActionResult ImportTableSave([FromBody] ImportCodeGenTableDto dto)
         {
-            if (string.IsNullOrEmpty(tables))
+            if (string.IsNullOrEmpty(dto.DbName) || dto.Tables == null)
             {
-                throw new CustomException("表不能为空");
+                throw new CustomException("表或数据库不能为空");
             }
-            DbConfigs dbConfig = AppSettings.Get<DbConfigs>(nameof(GlobalConstant.CodeGenDbConfig));
-            string[] tableNames = tables.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            DbConfigs dbConfig = AppSettings.Get<DbConfigs>(nameof(GenConstants.CodeGenDbConfig));
+            CodeGen codeGen = AppSettings.Get<CodeGen>("codeGen");
+
             int result = 0;
-            foreach (var tableName in tableNames)
+            foreach (var table in dto.Tables)
             {
-                var tabInfo = _CodeGeneraterService.GetTableInfo(dbName, tableName);
-                if (tabInfo != null)
+                List<OracleSeq> seqs = new();
+                InitTableDto initTableDto = new()
                 {
-                    List<OracleSeq> seqs = new();
-                    GenTable genTable = CodeGeneratorTool.InitTable(dbName, HttpContext.GetName(), tableName, tabInfo?.Description);
-                    genTable.TableId = GenTableService.ImportGenTable(genTable);
-                    if (dbConfig.DbType == 3)
-                    {
-                        seqs = _CodeGeneraterService.GetAllOracleSeqs(dbName);
-                    }
-                    if (genTable.TableId > 0)
-                    {
-                        //保存列信息
-                        List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dbName, tableName);
-                        List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos, seqs);
-                        GenTableColumnService.DeleteGenTableColumnByTableName(tableName);
-                        GenTableColumnService.InsertGenTableColumn(genTableColumns);
-                        genTable.Columns = genTableColumns;
-                        result++;
-                    }
+                    DbName = dto.DbName,
+                    UserName = HttpContext.GetName(),
+                    TableName = table.Name,
+                    Desc = table.Description,
+                    CodeGen = codeGen
+                };
+
+                GenTable genTable = CodeGeneratorTool.InitTable(initTableDto);
+                genTable.TableId = GenTableService.ImportGenTable(genTable);
+                if (dbConfig.DbType == 3)
+                {
+                    seqs = _CodeGeneraterService.GetAllOracleSeqs(table.Name);
+                }
+                if (genTable.TableId > 0)
+                {
+                    //保存列信息
+                    List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dto.DbName, table.Name);
+                    List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos, seqs, codeGen);
+                    GenTableColumnService.DeleteGenTableColumnByTableName(table.Name);
+                    GenTableColumnService.InsertGenTableColumn(genTableColumns);
+                    genTable.Columns = genTableColumns;
+                    result++;
                 }
             }
 
@@ -222,7 +227,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GlobalConstant.CodeGenDbConfig));
+            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GenConstants.CodeGenDbConfig));
 
             dto.DbType = dbConfig.DbType;
             dto.GenTable = genTableInfo;
@@ -248,7 +253,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GlobalConstant.CodeGenDbConfig));
+            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GenConstants.CodeGenDbConfig));
 
             dto.DbType = dbConfig.DbType;
             dto.GenTable = genTableInfo;
@@ -314,8 +319,9 @@ namespace ZR.Admin.WebApi.Controllers
             if (table == null) { throw new CustomException("同步数据失败，原表结构不存在"); }
             table.Update_by = HttpContext.GetName();
 
+            var codeGen = AppSettings.Get<CodeGen>("codeGen");
             List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(table.DbName, tableName);
-            List<GenTableColumn> dbTableColumns = CodeGeneratorTool.InitGenTableColumn(table, dbColumnInfos);
+            List<GenTableColumn> dbTableColumns = CodeGeneratorTool.InitGenTableColumn(table, dbColumnInfos, codeGen: codeGen);
 
             bool result = GenTableService.SynchDb(tableId, table, dbTableColumns);
             return SUCCESS(result);

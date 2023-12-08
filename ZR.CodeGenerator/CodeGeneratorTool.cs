@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml.Linq;
 using ZR.CodeGenerator.Model;
 using ZR.Model.System.Generate;
 
@@ -27,7 +28,7 @@ namespace ZR.CodeGenerator
         /// <param name="dto"></param>
         public static void Generate(GenerateDto dto)
         {
-            var genOptions = AppSettings.Get<Gen>("gen");
+            var genOptions = AppSettings.Get<CodeGen>("codeGen");
             dto.VueParentPath = dto.VueVersion == 3 ? "ZRAdmin-vue" : "ZR.Vue";
             if (!genOptions.VuePath.IsEmpty())
             {
@@ -346,11 +347,8 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        public static string GetClassName(string tableName)
+        public static string GetClassName(string tableName, bool autoRemovePre, string tablePrefix)
         {
-            bool autoRemovePre = AppSettings.GetAppConfig(GenConstants.Gen_autoPre, false);
-            string tablePrefix = AppSettings.GetAppConfig<string>(GenConstants.Gen_tablePrefix);
-
             if (!string.IsNullOrEmpty(tablePrefix) && autoRemovePre)
             {
                 string[] prefixList = tablePrefix.Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -427,32 +425,31 @@ namespace ZR.CodeGenerator
         /// <summary>
         /// 初始化表信息
         /// </summary>
-        /// <param name="dbName"></param>
-        /// <param name="userName"></param>
-        /// <param name="tableName"></param>
-        /// <param name="desc"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
-        public static GenTable InitTable(string dbName, string userName, string tableName, string desc)
+        public static GenTable InitTable(InitTableDto dto)
         {
+            var className = GetClassName(dto.TableName, dto.CodeGen.AutoPre, dto.CodeGen.TablePrefix);
+
             GenTable genTable = new()
             {
-                DbName = dbName,
+                DbName = dto.DbName,
                 BaseNameSpace = "ZR.",//导入默认命名空间前缀
-                ModuleName = "business",//导入默认模块名
-                ClassName = GetClassName(tableName),
-                BusinessName = GetClassName(tableName),
-                FunctionAuthor = AppSettings.GetConfig(GenConstants.Gen_author),
-                TableName = tableName,
-                TableComment = desc,
-                FunctionName = desc,
-                Create_by = userName,
+                ModuleName = dto.CodeGen.ModuleName,//导入默认模块名
+                ClassName = className,
+                BusinessName = className,
+                FunctionAuthor = dto.CodeGen.Author,
+                TableName = dto.TableName,
+                TableComment = dto.Desc,
+                FunctionName = dto.Desc,
+                Create_by = dto.UserName,
                 Options = new Options()
                 {
                     SortType = "asc",
-                    CheckedBtn = new int[] { 1, 2, 3 }
+                    CheckedBtn = new int[] { 1, 2, 3 },
+                    PermissionPrefix = className.ToLower()
                 }
             };
-            genTable.Options.PermissionPrefix = $"{genTable.ClassName.ToLower()}";//权限
 
             return genTable;
         }
@@ -463,16 +460,16 @@ namespace ZR.CodeGenerator
         /// <param name="genTable"></param>
         /// <param name="dbColumnInfos"></param>
         /// <param name="seqs"></param>
-        public static List<GenTableColumn> InitGenTableColumn(GenTable genTable, List<DbColumnInfo> dbColumnInfos, List<OracleSeq> seqs = null)
+        /// <param name="codeGen"></param>
+        public static List<GenTableColumn> InitGenTableColumn(GenTable genTable, List<DbColumnInfo> dbColumnInfos, List<OracleSeq> seqs = null, CodeGen codeGen = null)
         {
             OptionsSetting optionsSetting = new();
 
-            var gen = AppSettings.Get<Gen>("gen");
-            var dbConfig = AppSettings.Get<DbConfigs>("CodeGenDbConfig");
+            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GenConstants.CodeGenDbConfig));
 
-            optionsSetting.CodeGenDbConfig = dbConfig;
-            optionsSetting.Gen = gen ?? throw new CustomException("代码生成节点配置异常");
-            optionsSetting.Gen.GenDbConfig = dbConfig ?? throw new CustomException("代码生成节点数据配置异常");
+            optionsSetting.CodeGenDbConfig = dbConfig ?? throw new CustomException("代码生成节点数据配置异常"); ;
+            optionsSetting.CodeGen = codeGen ?? throw new CustomException("代码生成节点配置异常");
+
             List<GenTableColumn> genTableColumns = new();
             foreach (var column in dbColumnInfos)
             {
@@ -492,7 +489,7 @@ namespace ZR.CodeGenerator
         private static GenTableColumn InitColumnField(GenTable genTable, DbColumnInfo column, List<OracleSeq> seqs, OptionsSetting optionsSetting)
         {
             var dataType = column.DataType;
-            if (optionsSetting.Gen.GenDbConfig.DbType == 3)
+            if (optionsSetting.CodeGenDbConfig.DbType == 3)
             {
                 dataType = column.OracleDataType;
                 var seqName = $"SEQ_{genTable.TableName}_{column.DbColumnName}";
@@ -507,7 +504,7 @@ namespace ZR.CodeGenerator
                 ColumnType = dataType,
                 TableId = genTable.TableId,
                 TableName = genTable.TableName,
-                CsharpType = GetCSharpDatatype(dataType, optionsSetting.Gen.CsharpTypeArr).ToString(),
+                CsharpType = GetCSharpDatatype(dataType, optionsSetting.CodeGen.CsharpTypeArr).ToString(),
                 CsharpField = column.DbColumnName.ConvertToPascal("_"),
                 IsRequired = !column.IsNullable,
                 IsIncrement = column.IsIdentity,

@@ -1,0 +1,14 @@
+{
+  "CodeGen": {
+    "csharpTypeArr": {
+      "string": [ "varchar", "nvarchar", "text", "longtext" ],
+      "int": [ "int", "integer", "smallint", "int4", "int8", "int2" ],
+      "long": [ "bigint", "number" ],
+      "float": [ "numeric", "real", "float" ],
+      "decimal": [ "money", "decimal", "smallmoney" ],
+      "dateTime": [ "date", "datetime", "datetime2", "smalldatetime", "timestamp" ],
+      "byte": [ "tinyint" ],
+      "bool": [ "bit" ]
+    }
+  }
+}

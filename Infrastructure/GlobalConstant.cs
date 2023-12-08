@@ -6,11 +6,6 @@
     public class GlobalConstant
     {
         /// <summary>
-        /// 代码生成常量
-        /// </summary>
-        public static readonly string CodeGenDbConfig;
-
-        /// <summary>
         /// 管理员权限
         /// </summary>
         public static string AdminPerm = "*:*:*";

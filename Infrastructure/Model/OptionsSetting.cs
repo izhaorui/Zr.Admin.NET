@@ -23,7 +23,7 @@ namespace Infrastructure.Model
         public Upload Upload { get; set; }
         public ALIYUN_OSS ALIYUN_OSS { get; set; }
         public JwtSettings JwtSettings { get; set; }
-        public Gen Gen { get; set; }
+        public CodeGen CodeGen { get; set; }
         public List<DbConfigs> DbConfigs { get; set; }
         public DbConfigs CodeGenDbConfig { get; set; }
     }
@@ -94,13 +94,14 @@ namespace Infrastructure.Model
         public string TokenType { get; set; } = "Bearer";
     }
 
-    public class Gen
+    public class CodeGen
     {
         public bool ShowApp { get; set; }
         public bool AutoPre { get; set; }
         public string VuePath { get; set; }
         public string Author { get; set; }
-        public DbConfigs GenDbConfig { get; set; }
+        public string TablePrefix { get; set; }
+        public string ModuleName { get; set; }
         public CsharpTypeArr CsharpTypeArr { get; set; }
     }
 

@@ -7,9 +7,8 @@ namespace ZR.CodeGenerator
     /// </summary>
     public class GenConstants
     {
-        public static string Gen_author = "gen:author";
-        public static string Gen_autoPre = "gen:autoPre";
-        public static string Gen_tablePrefix = "gen:tablePrefix";
+        public static string Gen_author = "codeGen:author";
+        public static string CodeGenDbConfig;
 
         /// <summary>
         /// InputDto输入实体是不包含字段
