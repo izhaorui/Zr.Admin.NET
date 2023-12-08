@@ -38,6 +38,10 @@ namespace ZR.CodeGenerator
             {
                 dto.SubTableOptions = GenerateOption(dto.GenTable.SubTable);
             }
+            if (dto.GenTable.SubTableName.IsNotEmpty() && dto.GenTable.SubTable == null)
+            {
+                throw new CustomException($"{dto.GenTable.SubTableName}子表不存在");
+            }
 
             ReplaceDto replaceDto = new()
             {
@@ -257,7 +261,7 @@ namespace ZR.CodeGenerator
             var result = tpl.Render();
             string fullPath = Path.Combine(generateDto.GenCodePath, "sql", generateDto.GenTable.BusinessName + ".sql");
 
-            generateDto.GenCodes.Add(new GenCode(8, "sql", fullPath, result));
+            generateDto.GenCodes.Add(new GenCode(8, "sql菜单", fullPath, result));
         }
 
         /// <summary>
