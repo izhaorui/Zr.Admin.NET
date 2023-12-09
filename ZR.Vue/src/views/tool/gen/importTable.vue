@@ -72,7 +72,7 @@ export default {
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.tables = selection.map((item) => item.name);
+      this.tables = selection//.map((item) => item.name);
     },
     // 查询表数据
     getList() {
@@ -105,7 +105,7 @@ export default {
       console.log(JSON.stringify(this.tables));
 
       importTable({
-        tables: this.tables.join(","),
+        tables: this.tables,
         dbName: this.queryParams.dbName,
       }).then((res) => {
         this.msgSuccess(res.msg);

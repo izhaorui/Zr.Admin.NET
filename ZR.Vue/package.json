@@ -3,7 +3,7 @@
   "description": "ZrAdmnin.NET后台管理",
   "author": "ZR",
   "scripts": {
-    "dev": "vue-cli-service serve",
+    "dev": "SET NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service serve",
     "build:prod": "vue-cli-service build",
     "build:stage": "vue-cli-service build --mode staging"
   },

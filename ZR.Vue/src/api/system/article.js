@@ -5,7 +5,7 @@ export function listArticle(query) {
   return request({
     url: '/Article/list',
     method: 'get',
-    params: query
+    params: query,
   })
 }
 // 查询最新列表
@@ -13,7 +13,7 @@ export function listNewArticle(query) {
   return request({
     url: '/Article/newList',
     method: 'get',
-    params: query
+    params: query,
   })
 }
 
@@ -39,7 +39,7 @@ export function updateArticle(data) {
   return request({
     url: '/Article/edit',
     method: 'put',
-    data: data
+    data: data,
   })
 }
 
@@ -47,20 +47,20 @@ export function updateArticle(data) {
 export function delArticle(id) {
   return request({
     url: '/Article/' + id,
-    method: 'delete'
+    method: 'delete',
   })
 }
 // 查询菜单目录
 export function listArticleCategory() {
   return request({
     url: '/Article/CategoryList',
-    method: 'get'
+    method: 'get',
   })
 }
 // 查询菜单目录树
-export function listArticleCategoryTree(){
+export function listArticleCategoryTree() {
   return request({
-    url: '/Article/CategoryTreeList',
-    menubar: 'get'
+    url: '/Article/ArticleCategory/treeList',
+    menubar: 'get',
   })
 }

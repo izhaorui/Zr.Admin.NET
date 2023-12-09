@@ -256,7 +256,7 @@
 </template>
 <script>
 import { queryColumnInfo } from '@/api/tool/gen'
-import { listMenu } from '@/api/system/menu'
+import { listTreeMenu } from '@/api/system/menu'
 
 export default {
   name: 'BasicInfoForm',
@@ -366,7 +366,7 @@ export default {
     /** 查询菜单下拉树结构 */
     getMenuTreeselect() {
       /** 查询菜单下拉列表 */
-      listMenu({ menuTypeIds: 'M,C' }).then((response) => {
+      listTreeMenu({ menuTypeIds: 'M,C' }).then((response) => {
         this.menuOptions = response.data
       })
     },

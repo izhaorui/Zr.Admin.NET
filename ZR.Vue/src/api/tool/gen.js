@@ -64,7 +64,7 @@ export function importTable(data) {
   return request({
     url: '/tool/gen/importTable',
     method: 'post',
-    params: data
+    data: data
   })
 }
 // 删除表数据
