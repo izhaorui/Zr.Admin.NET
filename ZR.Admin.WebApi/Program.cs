@@ -16,7 +16,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseNLog();
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.ModelBinderProviders.Insert(0, new CommaSeparatedArrayModelBinderProvider<string>());
+    options.ModelBinderProviders.Insert(0, new CommaSeparatedArrayModelBinderProvider<int>());
+    options.ModelBinderProviders.Insert(0, new CommaSeparatedArrayModelBinderProvider<long>());
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -37,7 +42,8 @@ builder.Services.AddIPRate(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 //绑定整个对象到Model上
 builder.Services.Configure<OptionsSetting>(builder.Configuration);
-
+builder.Configuration.AddJsonFile("codeGen.json");
+builder.Configuration.AddJsonFile("iprate.json");
 //jwt 认证
 builder.Services.AddJwt();
 //配置文件

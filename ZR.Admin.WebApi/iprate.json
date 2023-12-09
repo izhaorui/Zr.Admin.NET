@@ -1,0 +1,30 @@
+{
+  //接口请求限制
+  "IpRateLimiting": {
+    "EnableEndpointRateLimiting": true,
+    "StackBlockedRequests": false,
+    "RealIpHeader": "X-Real-IP",
+    "ClientIdHeader": "X-ClientId",
+    "HttpStatusCode": 429,
+    "EndpointWhitelist": [ "post:/system/dict/data/types", "*:/msghub/negotiate", "*:/LogOut", "*:/common/uploadfile", "*:/VerifyScan" ],
+    "QuotaExceededResponse": {
+      "Content": "{{\"code\":429,\"msg\":\"访问过于频繁，请稍后重试\"}}",
+      "ContentType": "application/json",
+      "StatusCode": 429
+    },
+    //通用规则，api规则,结尾一定要带*
+    "GeneralRules": [
+      {
+        "Endpoint": "*:/captchaImage",
+        //时间段，格式：{数字}{单位}；可使用单位：s, m, h, d
+        "Period": "3s",
+        "Limit": 5
+      },
+      {
+        "Endpoint": "((post)|(put)):*",
+        "Period": "3s",
+        "Limit": 1
+      }
+    ]
+  }
+}
