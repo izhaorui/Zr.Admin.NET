@@ -9,4 +9,3 @@ global using Infrastructure.Extensions;
 global using Infrastructure.Controllers;
 global using ZR.ServiceCore.Middleware;
 global using ZR.ServiceCore.Services;
-global using ZR.Infrastructure.ModelBinder;

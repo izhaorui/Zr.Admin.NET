@@ -16,12 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseNLog();
 
 // Add services to the container.
-builder.Services.AddControllers(options =>
-{
-    options.ModelBinderProviders.Insert(0, new CommaSeparatedArrayModelBinderProvider<string>());
-    options.ModelBinderProviders.Insert(0, new CommaSeparatedArrayModelBinderProvider<int>());
-    options.ModelBinderProviders.Insert(0, new CommaSeparatedArrayModelBinderProvider<long>());
-});
+builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

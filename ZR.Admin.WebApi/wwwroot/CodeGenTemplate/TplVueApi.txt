@@ -80,7 +80,7 @@ $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
 */
 export function del${genTable.BusinessName}(pid) {
   return request({
-    url: '${genTable.ModuleName}/${genTable.BusinessName}/' + pid,
+    url: '${genTable.ModuleName}/${genTable.BusinessName}/delete/' + pid,
     method: 'delete'
   })
 }

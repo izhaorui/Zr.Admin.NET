@@ -29,6 +29,18 @@ namespace ZR.Common
             int[] infoIdss = Array.ConvertAll(strIds, s => int.Parse(s));
             return infoIdss;
         }
+        public static T[] SplitAndConvert<T>(string input, char split = ',')
+        {
+            if (string.IsNullOrEmpty(input)) { return Array.Empty<T>(); }
+            string[] parts = input.Split(split, (char)StringSplitOptions.RemoveEmptyEntries);
+            T[] result =  Array.ConvertAll(parts, s => (T)Convert.ChangeType(s, typeof(T)));
+            //for (int i = 0; i < parts.Length; i++)
+            //{
+            //    result[i] = (T)Convert.ChangeType(parts[i], typeof(T));
+            //}
+
+            return result;
+        }
 
         /// <summary>
         /// 根据日期获取星期几

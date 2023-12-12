@@ -86,8 +86,8 @@ $if(replaceDto.ShowBtnAdd)
 
             return SUCCESS(response);
         }
-$end
 
+$end
 $if(replaceDto.ShowBtnEdit)
         /// <summary>
         /// 更新${genTable.FunctionName}
@@ -103,24 +103,24 @@ $if(replaceDto.ShowBtnEdit)
 
             return ToResponse(response);
         }
-$end
 
+$end
 $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
         /// <summary>
         /// 删除${genTable.FunctionName}
         /// </summary>
         /// <returns></returns>
-        [HttpDelete("{ids}")]
+        [HttpDelete("delete/{ids}")]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:delete")]
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.DELETE)]
-        public IActionResult Delete${replaceDto.ModelTypeName}([ModelBinder(typeof(CommaSeparatedArrayModelBinder<${replaceDto.PKType}>))] ${replaceDto.PKType}[] ids)
+        public IActionResult Delete${replaceDto.ModelTypeName}([FromRoute]string ids)
         {
-            if (ids.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
+            var idArr = Tools.SplitAndConvert<${replaceDto.PKType}>(ids);
 
-            return ToResponse(_${replaceDto.ModelTypeName}Service.Delete(ids$if(replaceDto.enableLog), "删除${genTable.FunctionName}"$end));
+            return ToResponse(_${replaceDto.ModelTypeName}Service.Delete(idArr$if(replaceDto.enableLog), "删除${genTable.FunctionName}"$end));
         }
-$end
 
+$end
 $if(replaceDto.ShowBtnExport)
         /// <summary>
         /// 导出${genTable.FunctionName}
@@ -141,8 +141,8 @@ $if(replaceDto.ShowBtnExport)
             var result = ExportExcelMini(list, "${genTable.FunctionName}", "${genTable.FunctionName}");
             return ExportExcel(result.Item2, result.Item1);
         }
-$end
 
+$end
 $if(replaceDto.ShowBtnTruncate)
         /// <summary>
         /// 清空${genTable.FunctionName}
@@ -159,8 +159,8 @@ $if(replaceDto.ShowBtnTruncate)
             }
             return SUCCESS(_${replaceDto.ModelTypeName}Service.Truncate${replaceDto.ModelTypeName}());
         }
-$end
 
+$end
 $if(replaceDto.ShowBtnImport)
         /// <summary>
         /// 导入
@@ -193,8 +193,8 @@ $if(replaceDto.ShowBtnImport)
             var result = DownloadImportTemplate(new List<${replaceDto.ModelTypeName}Dto>() { }, "${replaceDto.ModelTypeName}");
             return ExportExcel(result.Item2, result.Item1);
         }
-$end
 
+$end
 $if(showCustomInput)
         /// <summary>
         /// 保存排序
