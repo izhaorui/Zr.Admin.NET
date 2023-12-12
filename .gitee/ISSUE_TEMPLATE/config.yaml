@@ -14,6 +14,12 @@ body:
       options:
         - label: 我已经搜索过现有的问题 (https://gitee.com/../../issues)
           required: true
+  - type: checkboxes
+    attributes:
+      label: 代码是否是最新获取的？
+      options:
+        - label: 我已经确认代码是最新主分支的代码
+          required: true		  
   - type: textarea
     attributes:
       label: 如何复现
