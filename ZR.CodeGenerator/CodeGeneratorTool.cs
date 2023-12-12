@@ -607,7 +607,7 @@ namespace ZR.CodeGenerator
                 options.Data.Set("showCustomInput", showCustomInput);
                 options.Data.Set("tool", new CodeGeneratorTool());
                 options.Data.Set("codeTool", new CodeGenerateTemplate());
-                options.Data.Set("dicts", dicts);
+                options.Data.Set("dicts", dicts.DistinctBy(x => x.DictType));
                 options.Data.Set("sub", dto.GenTable.SubTable != null && dto.GenTable.SubTableName.IsNotEmpty());
                 options.EnableCache = true;
                 //...其它数据
