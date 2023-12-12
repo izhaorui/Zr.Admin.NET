@@ -185,7 +185,7 @@ $if(replaceDto.ShowBtnExport)
                 {
 $foreach(column in dicts)
 $if(column.DictType != "")
-                ${column.CsharpField}Label = it.${column.CsharpField}.GetConfigValue<Model.System.SysDictData>("${column.DictType}"),
+                    ${column.CsharpField}Label = it.${column.CsharpField}.GetConfigValue<Model.System.SysDictData>("${column.DictType}"),
 $end
 $end
                 }, true)
