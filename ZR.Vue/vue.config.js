@@ -1,6 +1,10 @@
 'use strict'
 const path = require('path')
 const defaultSettings = require('./src/settings.js')
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+
+// 生产环境，测试和正式
+const IS_PROD = ['production', 'prod'].includes(process.env.NODE_ENV)
 
 function resolve(dir) {
   return path.join(__dirname, dir)
@@ -87,6 +91,16 @@ module.exports = {
       })
       .end()
 
+    /**
+     * 打包分析
+     */
+    if (IS_PROD) {
+      config.plugin('webpack-report').use(BundleAnalyzerPlugin, [
+        {
+          analyzerMode: 'static'
+        }
+      ])
+    }
     config
       .when(process.env.NODE_ENV !== 'development',
         config => {
