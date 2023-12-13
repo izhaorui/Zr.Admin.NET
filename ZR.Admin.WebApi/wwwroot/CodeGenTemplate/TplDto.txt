@@ -1,7 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-$if(replaceDto.ShowBtnExport)
-using MiniExcelLibs.Attributes;
-$end
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
 using ${subTableOptions.ModelsNamespace}.${subTableOptions.SubNamespace};
 $end
@@ -33,13 +29,19 @@ $end
     public class ${replaceDto.ModelTypeName}Dto
     {
 $foreach(item in genTable.Columns)
+$set(labelName = "")
+$if(item.ColumnComment != "")
+$set(labelName = item.ColumnComment)
+$else
+$set(labelName = item.CsharpField)
+$end
 $if(item.IsRequired)
         [Required(ErrorMessage = "${item.ColumnComment}不能为空")]
 $end
 $if(replaceDto.ShowBtnExport)
 $if(item.IsExport)
-        [ExcelColumn(Name = "$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}"$if(item.CsharpType == "DateTime"), Format = "yyyy-MM-dd HH:mm:ss", Width = 20$end)]
-        [ExcelColumnName("$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}")]
+        [ExcelColumn(Name = "$labelName"$if(item.CsharpType == "DateTime"), Format = "yyyy-MM-dd HH:mm:ss", Width = 20$end)]
+        [ExcelColumnName("$labelName")]
 $else
         [ExcelIgnore]
 $end
@@ -68,7 +70,6 @@ $foreach(column in dicts)
 $if(column.IsExport)
         [ExcelColumn(Name = "$if(column.ColumnComment == "")${column.CsharpField}${else}${column.ColumnComment}${end}")]
         public string ${column.CsharpField}Label { get; set; }
-
 $end
 $end
     }
