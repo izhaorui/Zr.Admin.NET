@@ -15,7 +15,7 @@
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.6" />
+		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.7" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.6" />
 		<PackageReference Include="NLog.Web.AspNetCore" Version="5.3.5" />
