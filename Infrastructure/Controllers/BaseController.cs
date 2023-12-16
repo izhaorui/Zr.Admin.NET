@@ -8,6 +8,7 @@ using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Web;
 
 namespace Infrastructure.Controllers
@@ -73,6 +74,23 @@ namespace Infrastructure.Controllers
 
             Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
             return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
+        }
+
+        /// <summary>
+        /// 下载文件
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="fileName">文件名，一定要带扩展名</param>
+        /// <returns></returns>
+        protected IActionResult DownFile(string path, string fileName)
+        {
+            if (!System.IO.File.Exists(path))
+            {
+                return NotFound();
+            }
+            var stream = System.IO.File.OpenRead(path);  //创建文件流
+            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+            return File(stream, "application/octet-stream", HttpUtility.UrlEncode(fileName));
         }
 
         #region 方法

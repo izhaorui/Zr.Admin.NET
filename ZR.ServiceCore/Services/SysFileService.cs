@@ -55,13 +55,15 @@ namespace ZR.ServiceCore.Services
                 await formFile.CopyToAsync(stream);
             }
             string uploadUrl = OptionsSetting.Upload.UploadUrl;
-            string accessPath = string.Concat(uploadUrl, "/", filePath.Replace("\\", "/"), "/", fileName);
+            string accessPath = string.Concat(filePath.Replace("\\", "/"), "/", fileName);
+            Uri baseUri = new(uploadUrl);
+            Uri fullUrl = new(baseUri, accessPath);
             SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, userName)
             {
                 StoreType = (int)StoreType.LOCAL,
                 FileType = formFile.ContentType,
                 FileUrl = finalFilePath.Replace("\\", "/"),
-                AccessUrl = accessPath
+                AccessUrl = fullUrl.AbsoluteUri
             };
             file.Id = await InsertFile(file);
             return file;
@@ -111,22 +113,14 @@ namespace ZR.ServiceCore.Services
         {
             if (string.IsNullOrEmpty(str))
             {
-                str = Guid.NewGuid().ToString();
+                str = Guid.NewGuid().ToString().ToLower();
             }
             return BitConverter.ToString(MD5.HashData(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
         }
 
         public Task<long> InsertFile(SysFile file)
         {
-            try
-            {
-                return Insertable(file).ExecuteReturnSnowflakeIdAsync();//单条插入返回雪花ID;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("存储图片失败" + ex.Message);
-                throw new Exception(ex.Message);
-            }
+            return Insertable(file).ExecuteReturnSnowflakeIdAsync();//单条插入返回雪花ID;
         }
     }
 }

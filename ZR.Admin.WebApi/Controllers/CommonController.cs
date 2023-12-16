@@ -152,6 +152,36 @@ namespace ZR.Admin.WebApi.Controllers
         #endregion
 
         /// <summary>
+        /// 下载文件
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="fileId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Verify]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "下载文件", IsSaveResponseData = false)]
+        public IActionResult DownloadFile(string? path, long fileId = 0)
+        {
+            var tempPath = path;
+            if (fileId > 0)
+            {
+                var fileInfo = SysFileService.GetById(fileId);
+                if (fileInfo != null)
+                {
+                    tempPath = fileInfo.FileUrl;
+                }
+            }
+            string fullPath = tempPath;
+            if (tempPath.StartsWith("/"))
+            {
+                fullPath = Path.Combine(WebHostEnvironment.WebRootPath, tempPath.ReplaceFirst("/", ""));
+            }
+            string fileName = Path.GetFileName(fullPath);
+            return DownFile(fullPath, fileName);
+        }
+
+        /// <summary>
         /// 初始化种子数据
         /// </summary>
         /// <param name="clean">是否清空数据</param>

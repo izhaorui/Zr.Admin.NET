@@ -144,7 +144,7 @@ namespace Infrastructure
         /// 写文件
         /// </summary>
         /// <param name="path">完整路径带扩展名的</param>
-        /// <param name="content"></param>
+        /// <param name="content">写入文件内容</param>
         public static void WriteAndSave(string path, string content)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -158,17 +158,7 @@ namespace Infrastructure
             Console.WriteLine("开始写入文件，Path=" + path);
             try
             {
-                //实例化一个文件流--->与写入文件相关联
-                using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
-                //实例化一个StreamWriter-->与fs相关联
-                using var sw = new StreamWriter(fs);
-                //开始写入
-                sw.Write(content);
-                //清空缓冲区
-                sw.Flush();
-                //关闭流
-                sw.Close();
-                fs.Close();
+                File.WriteAllText(path, content);
             }
             catch (Exception ex)
             {
