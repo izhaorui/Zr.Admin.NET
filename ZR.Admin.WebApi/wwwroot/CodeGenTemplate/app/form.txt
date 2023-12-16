@@ -12,7 +12,7 @@ $if(column.CsharpType == "int" || column.CsharpType == "long")
 $end
 
 $if(column.IsPK || column.IsIncrement)
-$if(column.IsPK && column.IsIncrement == false)
+$if(column.IsPK && column.IsIncrement == false && replaceDto.useSnowflakeId == false)
       <u-form-item label="${labelName}" prop="${columnName}">
         <u--input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"></u--input>
       </u-form-item>
@@ -83,7 +83,6 @@ $end
 </template>
 
 <script>
-  import "@/static/scss/page.scss";
   import {
     get${genTable.BusinessName},
 $if(replaceDto.ShowBtnAdd) 
@@ -92,15 +91,9 @@ $end
 $if(replaceDto.ShowBtnEdit) 
     update${genTable.BusinessName},
 $end
-  }
-from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+  } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
   export default {
-$if(replaceDto.UploadFile == 1)
-    components: {
-      UploadImage
-    },
-$end
     dicts: [
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType.Contains("select") || item.HtmlType == "checkbox") && item.DictType != "")
@@ -110,7 +103,15 @@ $end
     ],
     data() {
       return {
-        form: {},
+        form: {
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+          ${item.CsharpFieldFl}Checked: [],
+$else
+          $item.CsharpFieldFl: undefined,
+$end
+$end
+        },
         rules: {
 $foreach(column in genTable.Columns)
 $if(column.IsRequired && column.IsIncrement == false)
@@ -202,7 +203,8 @@ $end
   }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+  @import "@/static/scss/page.scss";
   .btn-wrap {
     margin: 150rpx auto 0 auto;
     width: 80%

@@ -1,4 +1,4 @@
-﻿namespace ZR.CodeGenerator
+﻿namespace ZR.CodeGenerator.Model
 {
     public class CodeGenerateOption
     {
@@ -39,11 +39,6 @@
         /// Api控制器命名空间
         /// </summary>
         public string ApiControllerNamespace { get; set; }
-
-        /// <summary>
-        /// 去掉的表头字符
-        /// </summary>
-        public string ReplaceTableNameStr { get; set; }
         /// <summary>
         /// 要生数据的表，用“，”分割
         /// </summary>

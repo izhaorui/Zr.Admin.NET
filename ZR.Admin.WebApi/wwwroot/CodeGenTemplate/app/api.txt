@@ -56,7 +56,7 @@ $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
 */
 export function del${genTable.BusinessName}(pid) {
   return request({
-    url: '/${genTable.ModuleName}/${genTable.BusinessName}/' + pid,
+    url: '/${genTable.ModuleName}/${genTable.BusinessName}/delete/' + pid,
     method: 'delete'
   })
 }
@@ -73,6 +73,6 @@ $end
 $if(replaceDto.ShowBtnExport)
 // 导出${genTable.functionName}
 export async function export${genTable.BusinessName}(query) {
-  await downFile('$/{genTable.ModuleName}/${genTable.BusinessName}/export', { ...query })
+  await downFile('/${genTable.ModuleName}/${genTable.BusinessName}/export', { ...query })
 }
 $end

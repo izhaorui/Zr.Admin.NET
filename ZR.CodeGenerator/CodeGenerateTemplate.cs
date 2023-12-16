@@ -1,9 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using ZR.Model.System.Generate;
-
-namespace ZR.CodeGenerator
+﻿namespace ZR.CodeGenerator
 {
     /// <summary>
     /// 代码生成模板

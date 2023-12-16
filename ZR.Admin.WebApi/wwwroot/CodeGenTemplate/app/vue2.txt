@@ -134,14 +134,12 @@ $end
   import {
     checkPermi
   } from '@/utils/permission.js'
-  import "@/static/scss/page.scss";
-  import { 
+  import {
     list${genTable.BusinessName},
 $if(replaceDto.ShowBtnDelete)
     del${genTable.BusinessName},
 $end
-  }
-  from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+  } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
   import {
     getDate
@@ -286,3 +284,7 @@ $end
     }
   }
 </script>
+
+<style lang="scss" scoped>
+  @import "@/static/scss/page.scss";
+</style>
