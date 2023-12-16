@@ -1,7 +1,4 @@
-﻿using SqlSugar;
-using System.Collections.Generic;
-
-namespace ZR.Model.System.Generate
+﻿namespace ZR.Model.System.Generate
 {
     /// <summary>
     /// 代码生成表
@@ -86,7 +83,7 @@ namespace ZR.Model.System.Generate
         /// 其他生成选项
         /// </summary>
         [SugarColumn(IsJson = true)]
-        public Options Options { get; set; }
+        public CodeOptions Options { get; set; }
 
         #region 表额外字段
         /// <summary>
@@ -103,7 +100,7 @@ namespace ZR.Model.System.Generate
         #endregion
     }
 
-    public class Options
+    public class CodeOptions
     {
         public long ParentMenuId { get; set; }
         public string SortType { get; set; } = "asc";

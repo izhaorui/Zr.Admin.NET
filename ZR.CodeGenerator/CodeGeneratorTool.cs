@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 using ZR.CodeGenerator.Model;
 using ZR.Model.System.Generate;
 
@@ -443,7 +442,7 @@ namespace ZR.CodeGenerator
                 TableComment = dto.Desc,
                 FunctionName = dto.Desc,
                 Create_by = dto.UserName,
-                Options = new Options()
+                Options = new CodeOptions()
                 {
                     SortType = "asc",
                     CheckedBtn = new int[] { 1, 2, 3 },

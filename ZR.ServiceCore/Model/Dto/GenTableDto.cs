@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using ZR.Model.System.Generate;
+﻿using ZR.Model.System.Generate;
 
 namespace ZR.Model.System.Dto
 {
@@ -24,28 +23,10 @@ namespace ZR.Model.System.Dto
         /// <summary>
         /// 额外参数
         /// </summary>
-        public Options Params { get; set; }
+        public CodeOptions Params { get; set; }
         public List<GenTableColumnDto> Columns { get; set; }
     }
 
-    /// <summary>
-    /// 额外参数
-    /// ****注意里面参数统一首字母小写*****
-    /// </summary>
-    public class Params
-    {
-        public string TreeCode { get; set; }
-        public string TreeName { get; set; }
-        public string TreeParentCode { get; set; }
-        public int? ParentMenuId { get; set; }
-        public string SortField { get; set; }
-        public string SortType { get; set; }
-        /// <summary>
-        /// 额外参数字符串
-        /// </summary>
-        public string CheckedBtn { get; set; }
-        public string PermissionPrefix { get; set; }
-    }
     public class GenTableColumnDto
     {
         public int ColumnId { get; set; }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.CodeGenerator;
@@ -23,16 +24,20 @@ namespace ZR.Admin.WebApi.Controllers
         private readonly IGenTableColumnService GenTableColumnService;
         private readonly ISysMenuService SysMenuService;
         private readonly IWebHostEnvironment WebHostEnvironment;
+        private readonly OptionsSetting OptionsSetting;
+
         public CodeGeneratorController(
             IGenTableService genTableService,
             IGenTableColumnService genTableColumnService,
             IWebHostEnvironment webHostEnvironment,
+            IOptions<OptionsSetting> options,
             ISysMenuService sysMenuService)
         {
             GenTableService = genTableService;
             GenTableColumnService = genTableColumnService;
             WebHostEnvironment = webHostEnvironment;
             SysMenuService = sysMenuService;
+            OptionsSetting = options.Value;
         }
 
         /// <summary>
@@ -143,8 +148,6 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("表或数据库不能为空");
             }
-            DbConfigs dbConfig = AppSettings.Get<DbConfigs>(nameof(GenConstants.CodeGenDbConfig));
-            CodeGen codeGen = AppSettings.Get<CodeGen>("codeGen");
 
             int result = 0;
             foreach (var table in dto.Tables)
@@ -156,12 +159,12 @@ namespace ZR.Admin.WebApi.Controllers
                     UserName = HttpContext.GetName(),
                     TableName = table.Name,
                     Desc = table.Description,
-                    CodeGen = codeGen
+                    CodeGen = OptionsSetting.CodeGen
                 };
 
                 GenTable genTable = CodeGeneratorTool.InitTable(initTableDto);
                 genTable.TableId = GenTableService.ImportGenTable(genTable);
-                if (dbConfig.DbType == 3)
+                if (OptionsSetting.CodeGenDbConfig.DbType == 3)
                 {
                     seqs = _CodeGeneraterService.GetAllOracleSeqs(table.Name);
                 }
@@ -169,7 +172,7 @@ namespace ZR.Admin.WebApi.Controllers
                 {
                     //保存列信息
                     List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dto.DbName, table.Name);
-                    List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos, seqs, codeGen);
+                    List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos, seqs, OptionsSetting.CodeGen);
                     GenTableColumnService.DeleteGenTableColumnByTableName(table.Name);
                     GenTableColumnService.InsertGenTableColumn(genTableColumns);
                     genTable.Columns = genTableColumns;
@@ -198,7 +201,7 @@ namespace ZR.Admin.WebApi.Controllers
             var genTable = genTableDto.Adapt<GenTable>().ToUpdate(HttpContext);
 
             //将前端额外参数转成字符串存入Options中
-            genTable.Options = genTableDto.Params.Adapt<Options>();
+            genTable.Options = genTableDto.Params.Adapt<CodeOptions>();
             DbResult<bool> result = GenTableService.UseTran(() =>
             {
                 int rows = GenTableService.UpdateGenTable(genTable);
@@ -227,9 +230,8 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
             var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GenConstants.CodeGenDbConfig));
 
-            dto.DbType = dbConfig.DbType;
+            dto.DbType = OptionsSetting.CodeGenDbConfig.DbType;
             dto.GenTable = genTableInfo;
             dto.IsPreview = true;
 
@@ -252,15 +254,21 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
-            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
-            var dbConfig = AppSettings.Get<DbConfigs>(nameof(GenConstants.CodeGenDbConfig));
 
-            dto.DbType = dbConfig.DbType;
-            dto.GenTable = genTableInfo;
-            //自定义路径
-            if (genTableInfo.GenType == "1")
+            dto.DbType = OptionsSetting.CodeGenDbConfig.DbType;
+            dto.GenTable = GenTableService.GetGenTableInfo(dto.TableId);
+            //生成压缩包
+            string zipReturnFileName = $"ZrAdmin.NET-{dto.GenTable.TableName}-{DateTime.Now:MMddHHmmss}.zip";
+
+            //生成代码到指定文件夹
+            CodeGeneratorTool.Generate(dto);
+            if (dto.GenTable.Options.GenerateMenu)
             {
-                var genPath = genTableInfo.GenPath;
+                SysMenuService.AddSysMenu(dto.GenTable, dto.ReplaceDto.PermissionPrefix, dto.ReplaceDto.ShowBtnEdit, dto.ReplaceDto.ShowBtnExport, dto.ReplaceDto.ShowBtnImport);
+            }
+            if (dto.GenTable.GenType == "1")//自定义路径
+            {
+                var genPath = dto.GenTable.GenPath;
                 string parentPath;
                 string tempPath = WebHostEnvironment.ContentRootPath;
 
@@ -274,32 +282,25 @@ namespace ZR.Admin.WebApi.Controllers
                 }
                 Console.WriteLine("代码生成路径" + parentPath);
                 //代码生成文件夹路径
-                dto.GenCodePath = (genPath.IsEmpty() || genPath.Equals("/")) ? parentPath : genTableInfo.GenPath;
+                dto.GenCodePath = (genPath.IsEmpty() || genPath.Equals("/")) ? parentPath : genPath;
             }
             else
             {
                 dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
                 dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
             }
-            //生成压缩包
-            string zipReturnFileName = $"ZrAdmin.NET-{genTableInfo.TableComment}-{DateTime.Now:MMddHHmmss}.zip";
 
-            //生成代码到指定文件夹
-            CodeGeneratorTool.Generate(dto);
-            if (genTableInfo.Options.GenerateMenu)
-            {
-                SysMenuService.AddSysMenu(genTableInfo, dto.ReplaceDto.PermissionPrefix, dto.ReplaceDto.ShowBtnEdit, dto.ReplaceDto.ShowBtnExport, dto.ReplaceDto.ShowBtnImport);
-            }
-
+            //写入文件
             foreach (var item in dto.GenCodes)
             {
                 item.Path = Path.Combine(dto.GenCodePath, item.Path);
                 FileUtil.WriteAndSave(item.Path, item.Content);
             }
-
-            //下载文件
-            FileUtil.ZipGenCode(dto.ZipPath, dto.GenCodePath, zipReturnFileName);
-
+            if (dto.GenTable.GenType != "1")
+            {
+                //压缩文件
+                FileUtil.ZipGenCode(dto.ZipPath, dto.GenCodePath, zipReturnFileName);
+            }
             return SUCCESS(new { path = "/Generatecode/" + zipReturnFileName, fileName = dto.ZipFileName });
         }
 
