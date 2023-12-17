@@ -116,6 +116,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 22. db 审计日志：数据库审计功能
 23. 三方登录：提供三方登录实现逻辑
 24. 导入导出：支持中文表头导入、字典数据转换成文本导出
+25. 数据大屏：更直观的展示数据
 
 ## 🍻 项目结构
 
@@ -182,6 +183,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 	</tr>
 	<tr>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/23.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/24.png"/></td>
 	</tr>
 </table>
 
