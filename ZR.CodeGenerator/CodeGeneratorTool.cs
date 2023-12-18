@@ -28,7 +28,7 @@ namespace ZR.CodeGenerator
         public static void Generate(GenerateDto dto)
         {
             var genOptions = AppSettings.Get<CodeGen>("codeGen");
-            dto.VueParentPath = dto.VueVersion == 3 ? "ZRAdmin-vue" : "ZR.Vue";
+            dto.VueParentPath = "Frontend";
             if (!genOptions.VuePath.IsEmpty())
             {
                 dto.VueParentPath = genOptions.VuePath;
@@ -75,13 +75,17 @@ namespace ZR.CodeGenerator
             GenerateModels(replaceDto, dto);
             GenerateService(replaceDto, dto);
             GenerateControllers(replaceDto, dto);
-            if (dto.VueVersion == 3)
+            if (dto.GenTable.Options.FrontTpl == 2)
             {
                 GenerateVue3Views(replaceDto, dto);
             }
-            else
+            else if (dto.GenTable.Options.FrontTpl == 1)
             {
                 GenerateVueViews(replaceDto, dto);
+            }
+            else
+            {
+                GenerateAntDesignViews(replaceDto, dto);
             }
             if (dto.GenTable.Options.GenerateRepo == 1)
             {
@@ -124,8 +128,9 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateModels(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplModel.txt");
-            var tplDto = JnHelper.ReadTemplate(CodeTemplateDir, "TplDto.txt");
+            var path = Path.Combine(CodeTemplateDir, "csharp");
+            var tpl = JnHelper.ReadTemplate(path, "TplModel.txt");
+            var tplDto = JnHelper.ReadTemplate(path, "TplDto.txt");
 
             string fullPath = Path.Combine(generateDto.GenOptions.ModelsNamespace, "Models", generateDto.GenOptions.SubNamespace, replaceDto.ModelTypeName + ".cs");
             string fullPathDto = Path.Combine(generateDto.GenOptions.ModelsNamespace, "Dto", generateDto.GenOptions.SubNamespace, replaceDto.ModelTypeName + "Dto.cs");
@@ -141,7 +146,7 @@ namespace ZR.CodeGenerator
         /// <param name="replaceDto">替换实体</param>
         private static void GenerateRepository(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplRepository.txt");
+            var tpl = JnHelper.ReadTemplate(Path.Combine(CodeTemplateDir, "csharp"), "TplRepository.txt");
             var result = tpl.Render();
             var fullPath = Path.Combine(generateDto.GenOptions.RepositoriesNamespace, generateDto.GenOptions.SubNamespace, $"{replaceDto.ModelTypeName}Repository.cs");
 
@@ -153,8 +158,9 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateService(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplService.txt");
-            var tpl2 = JnHelper.ReadTemplate(CodeTemplateDir, "TplIService.txt");
+            var path = Path.Combine(CodeTemplateDir, "csharp");
+            var tpl = JnHelper.ReadTemplate(path, "TplService.txt");
+            var tpl2 = JnHelper.ReadTemplate(path, "TplIService.txt");
 
             var fullPath = Path.Combine(generateDto.GenOptions.ServicesNamespace, generateDto.GenOptions.SubNamespace, $"{replaceDto.ModelTypeName}Service.cs");
             var fullPath2 = Path.Combine(generateDto.GenOptions.IServicsNamespace, generateDto.GenOptions.SubNamespace, $"I{generateDto.GenOptions.SubNamespace}Service", $"I{replaceDto.ModelTypeName}Service.cs");
@@ -168,7 +174,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         private static void GenerateControllers(ReplaceDto replaceDto, GenerateDto generateDto)
         {
-            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, "TplControllers.txt");
+            var tpl = JnHelper.ReadTemplate(Path.Combine(CodeTemplateDir, "csharp"), "TplControllers.txt");
             tpl.Set("QueryCondition", replaceDto.QueryCondition);
             var result = tpl.Render();
 
@@ -186,9 +192,11 @@ namespace ZR.CodeGenerator
                 "select" => "TplVueSelect.txt",
                 _ => "TplVue.txt",
             };
-            replaceDto.VueViewListHtml = GenerateVueTableList();
-            replaceDto.VueQueryFormHtml = GenerateVueQueryForm();
-            replaceDto.VueViewFormHtml = GenerateCurdForm();
+            var path = Path.Combine(CodeTemplateDir, "vue2");
+            fileName = Path.Combine("vue2", fileName);
+            replaceDto.VueViewListHtml = JnHelper.ReadTemplate(path, "TableList.txt").Render();
+            replaceDto.VueQueryFormHtml = JnHelper.ReadTemplate(path, "QueryForm.txt").Render();
+            replaceDto.VueViewFormHtml = JnHelper.ReadTemplate(path, "CurdForm.txt").Render();
 
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
             var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{replaceDto.ViewFileName}.vue");
@@ -208,6 +216,29 @@ namespace ZR.CodeGenerator
                 _ => "Vue.txt",
             };
             fileName = Path.Combine("v3", fileName);
+            var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
+            tpl.Set("treeCode", generateDto.GenTable?.Options?.TreeCode?.FirstLowerCase());
+            tpl.Set("treeName", generateDto.GenTable?.Options?.TreeName?.FirstLowerCase());
+            tpl.Set("treeParentCode", generateDto.GenTable?.Options?.TreeParentCode?.FirstLowerCase());
+            tpl.Set("options", generateDto.GenTable?.Options);
+
+            var result = tpl.Render();
+            var fullPath = Path.Combine(generateDto.VueParentPath, "src", "views", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{replaceDto.ViewFileName}.vue");
+            generateDto.GenCodes.Add(new GenCode(16, "index.vue", fullPath, result));
+        }
+
+        /// <summary>
+        /// AntDesign
+        /// </summary>
+        /// <param name="generateDto"></param>
+        private static void GenerateAntDesignViews(ReplaceDto replaceDto, GenerateDto generateDto)
+        {
+            string fileName = generateDto.GenTable.TplCategory switch
+            {
+                "tree" => "TreeVue.txt",
+                _ => "Vue2.txt",
+            };
+            fileName = Path.Combine("antDesign", fileName);
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
             tpl.Set("treeCode", generateDto.GenTable?.Options?.TreeCode?.FirstLowerCase());
             tpl.Set("treeName", generateDto.GenTable?.Options?.TreeName?.FirstLowerCase());
@@ -264,32 +295,6 @@ namespace ZR.CodeGenerator
             generateDto.GenCodes.Add(new GenCode(8, "sql菜单", fullPath, result));
         }
 
-        /// <summary>
-        /// 生成vue页面查询form
-        /// </summary>
-        /// <returns></returns>
-        public static string GenerateVueQueryForm()
-        {
-            return JnHelper.ReadTemplate(CodeTemplateDir, "QueryForm.txt").Render();
-        }
-
-        /// <summary>
-        /// 生成vue页面table
-        /// </summary>
-        /// <returns></returns>
-        public static string GenerateVueTableList()
-        {
-            return JnHelper.ReadTemplate(CodeTemplateDir, "TableList.txt").Render();
-        }
-
-        /// <summary>
-        /// 生成vue表单
-        /// </summary>
-        /// <returns></returns>
-        public static string GenerateCurdForm()
-        {
-            return JnHelper.ReadTemplate(CodeTemplateDir, "CurdForm.txt").Render();
-        }
         #endregion
 
         #region app页面
@@ -446,7 +451,8 @@ namespace ZR.CodeGenerator
                 {
                     SortType = "asc",
                     CheckedBtn = new int[] { 1, 2, 3 },
-                    PermissionPrefix = className.ToLower()
+                    PermissionPrefix = className.ToLower(),
+                    FrontTpl = dto.CodeGen.FrontTpl,
                 }
             };
 

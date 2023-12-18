@@ -102,6 +102,7 @@ namespace Infrastructure.Model
         public string Author { get; set; }
         public string TablePrefix { get; set; }
         public string ModuleName { get; set; }
+        public int FrontTpl { get; set; }
         public CsharpTypeArr CsharpTypeArr { get; set; }
     }
 

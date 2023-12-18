@@ -137,5 +137,9 @@
         /// 是否启用日志(编辑、删除)自动记录日志
         /// </summary>
         public bool EnableLog { get; set; }
+        /// <summary>
+        /// 前端模板 1、element ui 2、element plus
+        /// </summary>
+        public int FrontTpl { get; set; } = 2;
     }
 }
