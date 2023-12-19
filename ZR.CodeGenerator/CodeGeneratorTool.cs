@@ -452,7 +452,7 @@ namespace ZR.CodeGenerator
                     SortType = "asc",
                     CheckedBtn = new int[] { 1, 2, 3 },
                     PermissionPrefix = className.ToLower(),
-                    FrontTpl = dto.CodeGen.FrontTpl,
+                    FrontTpl = dto.FrontTpl
                 }
             };
 

@@ -4,6 +4,7 @@ namespace ZR.CodeGenerator.Model
 {
     public class InitTableDto
     {
+        public int FrontTpl { get; set; }
         public string DbName { get; set; }
         public string UserName { get; set; }
         public string TableName { get; set; }

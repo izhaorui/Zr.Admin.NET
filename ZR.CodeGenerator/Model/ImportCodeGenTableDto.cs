@@ -4,6 +4,7 @@ namespace ZR.CodeGenerator.Model
 {
     public class ImportCodeGenTableDto
     {
+        public int FrontTpl { get; set; }
         public string DbName { get; set; }
         public List<CodeGenTables> Tables { get; set; }
     }

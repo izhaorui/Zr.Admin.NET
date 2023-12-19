@@ -159,7 +159,8 @@ namespace ZR.Admin.WebApi.Controllers
                     UserName = HttpContext.GetName(),
                     TableName = table.Name,
                     Desc = table.Description,
-                    CodeGen = OptionsSetting.CodeGen
+                    CodeGen = OptionsSetting.CodeGen,
+                    FrontTpl = dto.FrontTpl,
                 };
 
                 GenTable genTable = CodeGeneratorTool.InitTable(initTableDto);
