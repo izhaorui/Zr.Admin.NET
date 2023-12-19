@@ -42,7 +42,7 @@ namespace ZR.Common
             }
             if (string.IsNullOrEmpty(CORPID))
             {
-                System.Console.WriteLine("请完成企业微信配置");
+                System.Console.WriteLine("如需微信接收异常消息，请完成企业微信配置");
                 return (0, "请完成企业微信通知配置");
             }
             WxTokenResult tokenResult = GetAccessToken();
