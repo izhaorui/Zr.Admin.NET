@@ -155,10 +155,11 @@ namespace Infrastructure
         {
             var claims = new List<Claim>()
                 {
-                    new Claim(ClaimTypes.PrimarySid, user.UserId.ToString()),
-                    new Claim(ClaimTypes.Name, user.UserName),
-                    new Claim(ClaimTypes.GroupSid, user.DeptId.ToString()),
-                    new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
+                    new(ClaimTypes.PrimarySid, user.UserId.ToString()),
+                    new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                    new(ClaimTypes.Name, user.UserName),
+                    new(ClaimTypes.GroupSid, user.DeptId.ToString()),
+                    new(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
                 };
 
             return claims;
