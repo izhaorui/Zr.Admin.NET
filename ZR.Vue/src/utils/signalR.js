@@ -82,5 +82,7 @@ export default {
         store.dispatch('socket/getNoticeList', data.data)
       }
     })
+    connection.on('onlineInfo', () => {})
+    connection.on('connId', () => {})
   },
 }
