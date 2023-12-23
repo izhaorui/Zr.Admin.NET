@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using ZR.Admin.WebApi.Filters;
 
 namespace ZR.Admin.WebApi.Controllers.monitor
 {
@@ -10,6 +11,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     /// 系统监控
     /// </summary>
     [ApiExplorerSettings(GroupName = "sys")]
+    [Verify]
     public class MonitorController : BaseController
     {
         private OptionsSetting Options;
