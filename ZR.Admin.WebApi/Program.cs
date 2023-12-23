@@ -47,6 +47,8 @@ builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 builder.Services.AddAppService();
 //开启计划任务
 builder.Services.AddTaskSchedulers();
+//请求大小限制
+builder.Services.AddRequestLimit(builder.Configuration);
 
 //注册REDIS 服务
 var openRedis = builder.Configuration["RedisServer:open"];
