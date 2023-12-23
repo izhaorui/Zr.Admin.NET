@@ -1,2 +1,3 @@
 通过数据库脚本创建表已经停更了，请大家使用 文档里面的方式进行创建表和初始化数据
-详情查看：https://www.izhaorui.cn/doc/quickstart.html
+详情查看：官方文档-> 快速开始
+初始化数据使用接口：http://localhost:8888/common/InitSeedData

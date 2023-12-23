@@ -188,7 +188,10 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
     </tr>
 		<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a10.png"/></td>
-				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/22.png"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a11.png"/></td>
+    </tr>
+		<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a12.png"/></td>
     </tr>
 
 </table>
