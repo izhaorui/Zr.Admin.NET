@@ -85,6 +85,7 @@ namespace ZR.Admin.WebApi.Controllers
             long userId = HttpContext.GetUId();
             var response = _ArticleService.GetId(id);
             var model = response.Adapt<ArticleDto>();
+            if (model == null) return ToResponse(ResultCode.FAIL, "文章不存在");
             if (model.IsPublic == 0 && userId != model.UserId)
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "访问失败");
