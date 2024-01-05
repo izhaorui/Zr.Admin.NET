@@ -12,7 +12,7 @@
 
 [![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
 [![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
-[![更新日志](https://img.shields.io/badge/更新日志-20230920-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+[![更新日志](https://img.shields.io/badge/更新日志-20240105-yellow)](http://www.izhaorui.cn/doc/changelog.html)
 
 [![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)
@@ -77,7 +77,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 
 ## 🍀 后端技术
 
-- 核心框架：.Net5.0/.Net7.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
+- 核心框架：.Net7.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
 - 定时计划任务：Quartz.Net 组件，支持执行程序集或者 http 网络请求
 - 安全支持：过滤器(数据权限过滤)、Sql 注入、请求伪造
 - 日志管理：NLog、登录日志、操作日志、定时任务日志
