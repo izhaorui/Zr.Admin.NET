@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
@@ -41,7 +40,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         /// 清空登录日志
         /// </summary>
         /// <returns></returns>
-        [Log(Title = "清空登录日志", BusinessType= BusinessType.CLEAN)]
+        [Log(Title = "清空登录日志", BusinessType = BusinessType.CLEAN)]
         [ActionPermissionFilter(Permission = "monitor:logininfor:remove")]
         [HttpDelete("clean")]
         public IActionResult CleanLoginInfo()
@@ -90,6 +89,20 @@ namespace ZR.Admin.WebApi.Controllers.monitor
 
             string sFileName = ExportExcel(list, "loginlog", "登录日志");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
+
+        /// <summary>
+        /// 查询登录日志统计
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("statiLoginLog")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult QueryStatiLoginLog()
+        {
+            var list = sysLoginService.GetStatiLoginlog();
+            var categories = list.Select(x => x.Date.ToString("dd日")).ToList();
+            var numList = list.Select(x => x.Num).ToList();
+            return SUCCESS(new { categories, numList });
         }
     }
 }

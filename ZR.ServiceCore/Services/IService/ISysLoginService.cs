@@ -50,5 +50,10 @@ namespace ZR.ServiceCore.Services
         public int DeleteLogininforByIds(long[] ids);
 
         void CheckLockUser(string userName);
+        /// <summary>
+        /// 查询登录日志统计
+        /// </summary>
+        /// <returns></returns>
+        List<StatiLoginLogDto> GetStatiLoginlog();
     }
 }

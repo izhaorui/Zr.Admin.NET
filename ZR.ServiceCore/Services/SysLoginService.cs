@@ -2,6 +2,7 @@
 using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Http;
 using UAParser;
+using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -105,9 +106,6 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public PagedInfo<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager)
         {
-            //logininfoDto.BeginTime = DateTimeHelper.GetBeginTime(logininfoDto.BeginTime, -1);
-            //logininfoDto.EndTime = DateTimeHelper.GetBeginTime(logininfoDto.EndTime, 1);
-
             var exp = Expressionable.Create<SysLogininfor>();
 
             exp.AndIF(logininfoDto.BeginTime == null, it => it.LoginTime >= DateTime.Now.ToShortDateString().ParseToDateTime());
@@ -159,6 +157,35 @@ namespace ZR.ServiceCore.Services
             {
                 throw new CustomException(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
             }
+        }
+
+        public List<StatiLoginLogDto> GetStatiLoginlog()
+        {
+            var time = DateTime.Now;
+
+            //如果是查询当月那么 time就是 DateTime.Now
+            var days = (time.AddMonths(1) - time).Days;//获取当月天数
+            var dayArray = Enumerable.Range(1, days).Select(it => Convert.ToDateTime(time.ToString("yyyy-MM-" + it))).ToList();//转成时间数组
+           
+            var queryableLeft = Context.Reportable(dayArray)
+                .ToQueryable<DateTime>();
+
+            var queryableRight = Context.Queryable<SysLogininfor>();
+            var list = Context.Queryable(queryableLeft, queryableRight, JoinType.Left, (x1, x2)
+                 => x2.LoginTime.ToString("yyyy-MM-dd") == x1.ColumnName.ToString("yyyy-MM-dd"))
+                .GroupBy((x1, x2) => x1.ColumnName)
+                .Where((x1, x2) => x1.ColumnName >= DateTime.Now.AddDays(-7) && x1.ColumnName <= DateTime.Now)
+                .Select((x1, x2) => new StatiLoginLogDto()
+                {
+                    DeRepeatNum = SqlFunc.AggregateDistinctCount(x2.Ipaddr),
+                    Num = SqlFunc.AggregateCount(x2.InfoId),
+                    Date = x1.ColumnName,
+                })
+                .Mapper(it =>
+                {
+                    it.WeekName = Tools.GetWeekByDate(it.Date);//相当于ToList循环赋值
+                }).ToList();
+            return list;
         }
 
     }
