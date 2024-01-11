@@ -342,7 +342,8 @@ CREATE TABLE article  (
   updateTime datetime NULL DEFAULT NULL ,  -- '修改时间',
   authorName varchar(20) DEFAULT NULL ,  -- '作者名',
   coverUrl varchar(300) NULL, 			--文章封面
-	isPublic int default(0)				--是否公开
+  isPublic int default(0),				--是否公开
+  abstractText NVARCHAR(100) NULL,		--摘要
 )
 GO
 -- ----------------------------

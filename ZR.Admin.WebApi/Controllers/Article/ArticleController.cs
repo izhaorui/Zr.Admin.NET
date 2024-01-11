@@ -109,6 +109,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
             addModel.AuthorName = HttpContext.GetName();
+            addModel.UserId = HttpContext.GetUId();
 
             return SUCCESS(_ArticleService.InsertReturnIdentity(addModel));
         }

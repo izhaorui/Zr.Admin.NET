@@ -24,7 +24,6 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
 
-            //搜索条件查询语法参考Sqlsugar
             var response = Queryable()
                 .Includes(x => x.ArticleCategoryNav) //填充子对象
                 .Where(predicate.ToExpression())
@@ -75,6 +74,7 @@ namespace ZR.ServiceCore.Services
                 CategoryId = model.CategoryId,
                 FmtType = model.FmtType,
                 IsPublic = model.IsPublic,
+                AbstractText = model.AbstractText,
             });
             return response;
         }

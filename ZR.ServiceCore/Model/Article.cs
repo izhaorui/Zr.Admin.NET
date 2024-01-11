@@ -74,6 +74,10 @@
         /// </summary>
         [SugarColumn(ColumnDescription = "是否公开 1、公开 0、不公开", DefaultValue = "0")]
         public int IsPublic { get; set; }
+        /// <summary>
+        /// 摘要
+        /// </summary>
+        public string AbstractText { get; set; }
 
         [Navigate(NavigateType.OneToOne, nameof(CategoryId), nameof(ArticleCategory.CategoryId))] //自定义关系映射
         public ArticleCategory ArticleCategoryNav { get; set; }

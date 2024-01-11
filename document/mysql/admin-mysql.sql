@@ -354,7 +354,8 @@ CREATE TABLE `article`  (
   `updateTime` datetime(6) NULL DEFAULT NULL COMMENT '修改时间',
   `authorName` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '作者名',
   `coverUrl` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '封面',
-	`isPublic` int(4) NULL DEFAULT 0 COMMENT '是否公开',
+  `isPublic` int(4) NULL DEFAULT 0 COMMENT '是否公开',
+  `abstractText` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '文章摘要',
   PRIMARY KEY (`cid`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 28 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 

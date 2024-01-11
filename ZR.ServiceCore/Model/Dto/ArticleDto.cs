@@ -47,5 +47,6 @@ namespace ZR.Model.System.Dto
         public ArticleCategory ArticleCategoryNav { get; set; }
         public string[] TagList { get; set; }
         public int IsPublic { get; set; }
+        public string AbstractText { get; set; }
     }
 }
