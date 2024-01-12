@@ -54,10 +54,24 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 前台查询文章列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("hotList")]
+        [AllowAnonymous]
+        public IActionResult QueryHot([FromQuery] ArticleQueryDto parm)
+        {
+            var response = _ArticleService.GetHotList(parm);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
         /// 查询最新文章列表
         /// </summary>
         /// <returns></returns>
         [HttpGet("newList")]
+        [AllowAnonymous]
         public IActionResult QueryNew()
         {
             var predicate = Expressionable.Create<Article>();
@@ -126,6 +140,34 @@ namespace ZR.Admin.WebApi.Controllers
             parm.AuthorName = HttpContext.GetName();
             var modal = parm.Adapt<Article>().ToUpdate(HttpContext);
             var response = _ArticleService.UpdateArticle(modal);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 置顶
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("top")]
+        [ActionPermissionFilter(Permission = "system:article:update")]
+        [Log(Title = "置顶文章", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Top([FromBody] Article parm)
+        {
+            var response = _ArticleService.TopArticle(parm);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 是否公开
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("changePublic")]
+        [ActionPermissionFilter(Permission = "system:article:update")]
+        [Log(Title = "是否公开", BusinessType = BusinessType.UPDATE)]
+        public IActionResult ChangePublic([FromBody] Article parm)
+        {
+            var response = _ArticleService.ChangeArticlePublic(parm);
 
             return SUCCESS(response);
         }

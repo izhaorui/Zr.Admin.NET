@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ZR.Model.System.Dto
 {
@@ -8,6 +7,10 @@ namespace ZR.Model.System.Dto
         public long? UserId { get; set; }
         public string Status { get; set; }
         public string Title { get; set; }
+        public string AbstractText { get; set; }
+        public int? IsPublic { get; set; }
+        public int? IsTop { get; set; }
+        public int? CategoryId { get; set; }
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
     }
@@ -32,7 +35,7 @@ namespace ZR.Model.System.Dto
 
         public string Tags { get; set; }
 
-        public int? Hits { get; set; }
+        public int Hits { get; set; }
 
         public int? CategoryId { get; set; }
 
@@ -46,7 +49,8 @@ namespace ZR.Model.System.Dto
 
         public ArticleCategory ArticleCategoryNav { get; set; }
         public string[] TagList { get; set; }
-        public int IsPublic { get; set; }
+        public int IsPublic { get; set; } = 1;
         public string AbstractText { get; set; }
+        public int IsTop { get; set; }
     }
 }

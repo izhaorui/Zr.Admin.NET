@@ -14,5 +14,8 @@ namespace ZR.ServiceCore.Services
         /// <param name="model"></param>
         /// <returns></returns>
         public int UpdateArticle(Article model);
+        PagedInfo<ArticleDto> GetHotList(ArticleQueryDto parm);
+        int TopArticle(Article model);
+        int ChangeArticlePublic(Article model);
     }
 }

@@ -75,6 +75,10 @@
         [SugarColumn(ColumnDescription = "是否公开 1、公开 0、不公开", DefaultValue = "0")]
         public int IsPublic { get; set; }
         /// <summary>
+        /// 是否置顶
+        /// </summary>
+        public int IsTop { get; set; }
+        /// <summary>
         /// 摘要
         /// </summary>
         public string AbstractText { get; set; }
