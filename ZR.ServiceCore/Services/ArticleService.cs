@@ -149,5 +149,19 @@ namespace ZR.ServiceCore.Services
             });
             return response;
         }
+
+        /// <summary>
+        /// 修改文章访问量
+        /// </summary>
+        /// <param name="cid"></param>
+        /// <returns></returns>
+        public int UpdateArticleHit(int cid)
+        {
+            var response = Context.Updateable<Article>()
+                .SetColumns(it => it.Hits == it.Hits + 1)
+                .Where(it => it.Cid == cid)
+                .ExecuteCommand();
+            return response;
+        }
     }
 }

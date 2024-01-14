@@ -17,5 +17,6 @@ namespace ZR.ServiceCore.Services
         PagedInfo<ArticleDto> GetHotList(ArticleQueryDto parm);
         int TopArticle(Article model);
         int ChangeArticlePublic(Article model);
+        int UpdateArticleHit(int cid);
     }
 }
