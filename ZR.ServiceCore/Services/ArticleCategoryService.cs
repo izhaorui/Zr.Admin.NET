@@ -19,10 +19,8 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public PagedInfo<ArticleCategory> GetList(ArticleCategoryQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<ArticleCategory>();
 
-            //搜索条件查询语法参考Sqlsugar
             var response = Queryable()
                 .Where(predicate.ToExpression())
                 .ToPage(parm);
@@ -37,15 +35,15 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public List<ArticleCategory> GetTreeList(ArticleCategoryQueryDto parm)
         {
-            //开始拼装查询条件
             var predicate = Expressionable.Create<ArticleCategory>();
+            var response = Queryable()
+                .Where(predicate.ToExpression());
 
-            //搜索条件查询语法参考Sqlsugar
-
-            var response = Queryable().Where(predicate.ToExpression())
-                .ToTree(it => it.Children, it => it.ParentId, 0);
-
-            return response;
+            if (parm.Sort.IsNotEmpty())
+            {
+                response = response.OrderByPropertyName(parm.Sort, parm.SortType.Contains("desc") ? OrderByType.Desc : OrderByType.Asc);
+            }
+            return response.ToTree(it => it.Children, it => it.ParentId, 0); ;
         }
 
         /// <summary>
@@ -55,12 +53,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public int AddArticleCategory(ArticleCategory parm)
         {
-            var response = Insert(parm, it => new
-            {
-                it.Name,
-                it.CreateTime,
-                it.ParentId,
-            });
+            var response = Add(parm);
             return response;
         }
     }

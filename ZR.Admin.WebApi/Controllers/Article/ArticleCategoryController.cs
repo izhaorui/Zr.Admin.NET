@@ -3,7 +3,6 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Model.Dto;
 using ZR.Model.System;
 
-
 namespace ZR.Admin.WebApi.Controllers
 {
     /// <summary>
@@ -90,11 +89,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult UpdateArticleCategory([FromBody] ArticleCategoryDto parm)
         {
             var modal = parm.Adapt<ArticleCategory>().ToUpdate(HttpContext);
-            var response = _ArticleCategoryService.Update(w => w.CategoryId == modal.CategoryId, it => new ArticleCategory()
-            {
-                Name = modal.Name,
-                ParentId = modal.ParentId,
-            });
+            var response = _ArticleCategoryService.Update(modal);
 
             return ToResponse(response);
         }
@@ -143,5 +138,24 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(response);
         }
 
+        /// <summary>
+        /// 保存排序
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [ActionPermissionFilter(Permission = "articlecategory:edit")]
+        [HttpGet("ChangeSort")]
+        [Log(Title = "保存排序", BusinessType = BusinessType.UPDATE)]
+        public IActionResult ChangeSort(int id = 0, int value = 0)
+        {
+            if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
+            var response =  _ArticleCategoryService.Update(w => w.CategoryId == id, it => new ArticleCategory ()
+            {
+                CategoryId = id,
+                OrderNum = value
+            });
+            return ToResponse(response);
+        }
     }
 }

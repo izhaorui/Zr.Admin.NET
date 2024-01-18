@@ -1,9 +1,4 @@
-﻿using Newtonsoft.Json;
-using SqlSugar;
-using System;
-using System.Collections.Generic;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     /// <summary>
     /// 文章目录
@@ -20,6 +15,12 @@ namespace ZR.Model.System
 
         [SugarColumn(ColumnDescription = "目录名", Length = 20, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string Name { get; set; }
+        [SugarColumn(ColumnDescription = "图标")]
+        public string Icon { get; set; }
+        /// <summary>
+        /// 排序id
+        /// </summary>
+        public int OrderNum { get; set; }
         public int? ParentId { get; set; }
         [SugarColumn(ColumnDescription = "创建时间", ColumnName = "create_time")]
         public DateTime? CreateTime { get; set; }

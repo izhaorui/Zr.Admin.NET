@@ -12,6 +12,8 @@ namespace ZR.Model.Dto
         public int CategoryId { get; set; }
         [Required(ErrorMessage = "目录名不能为空")]
         public string Name { get; set; }
+        public string Icon { get; set; }
+        public int OrderNum { get; set; }
         public DateTime? CreateTime { get; set; }
         public int? ParentId { get; set; }
     }
