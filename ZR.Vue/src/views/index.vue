@@ -109,7 +109,7 @@
           <div class="body">
             <p>
               <i class="el-icon-s-promotion"></i>官网：
-              <el-link href="http://www.izhaorui.cn/doc" target="_blank">http://www.izhaorui.cn/doc</el-link>
+              <el-link href="http://www.izhaorui.cn" target="_blank">http://www.izhaorui.cn</el-link>
             </p>
           </div>
           <div class="body">
