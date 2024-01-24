@@ -24,8 +24,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // 跨域配置
 builder.Services.AddCors(builder.Configuration);
-// 显示logo
-builder.Services.AddLogo();
 //消除Error unprotecting the session cookie警告
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
@@ -79,6 +77,8 @@ builder.Services.AddSignalR()
     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 builder.Services.AddSwaggerConfig();
+// 显示logo
+builder.Services.AddLogo();
 
 var app = builder.Build();
 InternalApp.ServiceProvider = app.Services;

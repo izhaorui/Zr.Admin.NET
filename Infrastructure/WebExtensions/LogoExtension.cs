@@ -12,14 +12,15 @@ namespace Infrastructure
             Console.ForegroundColor = ConsoleColor.Blue;
             var contentTpl = JnHelper.ReadTemplate("", "logo.txt");
             var content = contentTpl?.Render();
-            
+            var url = AppSettings.GetConfig("urls");
             Console.WriteLine(content);
             Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("🎉源码地址: https://gitee.com/izory/ZrAdminNetCore");
+            //Console.WriteLine("🎉源码地址: https://gitee.com/izory/ZrAdminNetCore");
             Console.WriteLine("📖官方文档：http://www.izhaorui.cn");
-            Console.WriteLine("💰打赏作者：http://www.izhaorui.cn/member");
+            Console.WriteLine("💰打赏作者：http://www.izhaorui.cn/vip");
             Console.WriteLine("📱移动端体验：http://demo.izhaorui.cn/h5");
-            Console.WriteLine($"Swagger地址：[你启动的后端地址]/swagger/index.html");
+            Console.WriteLine($"Swagger地址：{url}/swagger/index.html");
+            Console.WriteLine($"初始化种子数据：{url}/common/InitSeedData");
         }
     }
 }
