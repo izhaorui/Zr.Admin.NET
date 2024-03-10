@@ -47,7 +47,7 @@ namespace ZR.ServiceCore.Middleware
             {
                 logger.Info($"请求参数错误,{msg}");
                 ApiResult response = new((int)ResultCode.PARAM_ERROR, msg);
-                
+
                 context.Result = new JsonResult(response);
             }
             return base.OnActionExecutionAsync(context, next);
@@ -60,10 +60,10 @@ namespace ZR.ServiceCore.Middleware
         public override void OnResultExecuted(ResultExecutedContext context)
         {
             if (context.ActionDescriptor is not ControllerActionDescriptor controllerActionDescriptor) return;
-
+            int statusCode = context.HttpContext.Response.StatusCode;
             //获得注解信息
             LogAttribute logAttribute = GetLogAttribute(controllerActionDescriptor);
-            if (logAttribute == null) return;
+            if (logAttribute == null && statusCode != 403) return;
 
             try
             {
@@ -111,7 +111,11 @@ namespace ZR.ServiceCore.Middleware
                     sysOperLog.OperParam = logAttribute.IsSaveRequestData ? sysOperLog.OperParam : "";
                     sysOperLog.JsonResult = logAttribute.IsSaveResponseData ? sysOperLog.JsonResult : "";
                 }
-
+                if (statusCode == 403)
+                {
+                    sysOperLog.Status = 1;
+                    sysOperLog.ErrorMsg = "无权限访问";
+                }
                 LogEventInfo ei = new(NLog.LogLevel.Info, "GlobalActionMonitor", "");
 
                 ei.Properties["jsonResult"] = !HttpMethods.IsGet(method) ? jsonResult : "";

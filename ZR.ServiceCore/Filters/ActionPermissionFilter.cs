@@ -81,9 +81,13 @@ namespace ZR.ServiceCore.Middleware
                 if (!HasPermi && !Permission.Equals("common"))
                 {
                     logger.Info($"用户{info.UserName}没有权限访问{url}，当前权限[{Permission}]");
-                    JsonResult result = new(new ApiResult((int)ResultCode.FORBIDDEN, $"你当前没有权限访问,请联系管理员", url))
+                    var apiResult = new ApiResult((int)ResultCode.FORBIDDEN, $"你当前没有权限访问,请联系管理员", url);
+                    apiResult.Put("permi", Permission);
+                    JsonResult result = new(apiResult)
                     {
+                        StatusCode = 403,
                         ContentType = "application/json",
+                        Value = JsonConvert.SerializeObject(apiResult)
                     };
                     context.HttpContext.Response.StatusCode = 403;
                     context.Result = result;
