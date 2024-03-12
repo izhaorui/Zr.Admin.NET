@@ -791,7 +791,11 @@ function handleDelete(row) {
   const Ids = row.${replaceDto.FistLowerPk} || ids.value
 
   proxy
-    .${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？')
+    .${confirm}confirm('是否确认删除参数编号为"' + Ids + '"的数据项？', "警告", {
+      confirmButtonText: proxy.${t}t('common.ok'),
+      cancelButtonText: proxy.${t}t('common.cancel'),
+      type: "warning",
+    })
     .then(function () {
       return del${genTable.BusinessName}(Ids)
     })
@@ -807,8 +811,8 @@ $if(replaceDto.ShowBtnTruncate)
 function handleClear() {
   proxy
     .${confirm}confirm("是否确认清空所有数据项?", "警告", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
+      confirmButtonText: proxy.${t}t('common.ok'),
+      cancelButtonText: proxy.${t}t('common.cancel'),
       type: "warning",
     })
     .then(function () {
