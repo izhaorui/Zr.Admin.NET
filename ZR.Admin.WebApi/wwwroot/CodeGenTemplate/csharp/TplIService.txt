@@ -18,8 +18,9 @@ $if(genTable.TplCategory == "tree")
 $end
 
         ${replaceDto.ModelTypeName} Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm);
-
+$if(replaceDto.ShowBtnEdit)
         int Update${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} parm);
+$end
 $if(replaceDto.ShowBtnTruncate)        
         bool Truncate${replaceDto.ModelTypeName}();
 $end

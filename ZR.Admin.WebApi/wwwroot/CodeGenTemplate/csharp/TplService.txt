@@ -104,6 +104,7 @@ $end
 $end
         }
 
+$if(replaceDto.ShowBtnEdit)
         /// <summary>
         /// 修改${genTable.FunctionName}
         /// </summary>
@@ -117,6 +118,8 @@ $else
             return Update(model, true$if(replaceDto.enableLog), "修改${genTable.FunctionName}"$end);
 $end
         }
+
+$end
 $if(replaceDto.ShowBtnTruncate)
         /// <summary>
         /// 清空${genTable.FunctionName}
@@ -133,7 +136,6 @@ $if(replaceDto.ShowBtnTruncate)
             return Truncate();
         }
 $end
-
 $if(replaceDto.ShowBtnImport)
         /// <summary>
         /// 导入${genTable.FunctionName}
@@ -167,8 +169,8 @@ $end
 
             return (msg, x.ErrorList, x.IgnoreList);
         }
-$end
 
+$end
 $if(replaceDto.ShowBtnExport)
         /// <summary>
         /// 导出${genTable.FunctionName}
@@ -193,8 +195,8 @@ $end
 
             return response;
         }
-$end
 
+$end
         /// <summary>
         /// 查询导出表达式
         /// </summary>
