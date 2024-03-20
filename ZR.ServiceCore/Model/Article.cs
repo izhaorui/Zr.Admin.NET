@@ -79,6 +79,10 @@
         /// </summary>
         public int IsTop { get; set; }
         /// <summary>
+        /// 0、文章 1、随笔
+        /// </summary>
+        public int ArticleType { get; set; }
+        /// <summary>
         /// 摘要
         /// </summary>
         public string AbstractText { get; set; }
