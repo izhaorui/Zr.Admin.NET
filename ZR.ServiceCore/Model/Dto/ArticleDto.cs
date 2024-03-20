@@ -13,6 +13,7 @@ namespace ZR.Model.System.Dto
         public int? CategoryId { get; set; }
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
+        public int? ArticleType { get; set; }
     }
 
     /// <summary>
@@ -52,5 +53,6 @@ namespace ZR.Model.System.Dto
         public int IsPublic { get; set; } = 1;
         public string AbstractText { get; set; }
         public int IsTop { get; set; }
+        public int ArticleType { get; set; }
     }
 }

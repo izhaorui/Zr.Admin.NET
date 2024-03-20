@@ -89,12 +89,17 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(parm.BeginTime != null, m => m.CreateTime >= parm.BeginTime);
             predicate = predicate.AndIF(parm.EndTime != null, m => m.CreateTime <= parm.EndTime);
             predicate = predicate.And(m => m.UserId == parm.UserId);
+            predicate = predicate.AndIF(parm.ArticleType != null, m => m.ArticleType == parm.ArticleType);
 
             var response = Queryable()
-                .IgnoreColumns(x => new { x.Content })
+                //.IgnoreColumns(x => new { x.Content })
                 .Includes(x => x.ArticleCategoryNav)
                 .Where(predicate.ToExpression())
-                .ToPage<Article, ArticleDto>(parm);
+                .Select((x) => new ArticleDto()
+                {
+                    Content = x.ArticleType == 1 ? x.Content : string.Empty,
+                }, true)
+                .ToPage(parm);
 
             return response;
         }
