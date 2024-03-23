@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model;
 using ZR.Model.System;
-
+using ZR.Repository;
+using ZR.ServiceCore.Model.Dto;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -27,11 +27,20 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpGet("list")]
         [ActionPermissionFilter(Permission = "system:post:list")]
-        public IActionResult List([FromQuery] SysPost post, [FromQuery] PagerInfo pagerInfo)
+        public IActionResult List([FromQuery] SysPostQueryDto dto)
         {
             var predicate = Expressionable.Create<SysPost>();
-            predicate = predicate.AndIF(post.Status.IfNotEmpty(), it => it.Status == post.Status);
-            var list = PostService.GetPages(predicate.ToExpression(), pagerInfo, s => new { s.PostSort });
+            predicate = predicate.AndIF(dto.Status.IfNotEmpty(), it => it.Status == dto.Status);
+            predicate = predicate.AndIF(dto.PostName.IfNotEmpty(), it => it.PostName.Contains(dto.PostName));
+            predicate = predicate.AndIF(dto.PostCode.IfNotEmpty(), it => it.PostCode.Contains(dto.PostCode));
+
+            var list = PostService.Queryable()
+             .Where(predicate.ToExpression())
+                .Select((it) => new SysPostDto
+                {
+                    UserNum = SqlFunc.Subqueryable<SysUserPost>().Where(f => f.PostId == it.PostId).Sum(f => f.UserId)
+                }, true)
+                .ToPage(dto);
 
             return SUCCESS(list);
         }

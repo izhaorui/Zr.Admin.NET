@@ -31,7 +31,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysDeptQueryDto dept)
         {
-            return SUCCESS(DeptService.GetSysDepts(dept), TIME_FORMAT_FULL);
+            return SUCCESS(DeptService.GetList(dept));
         }
 
         /// <summary>
@@ -42,11 +42,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list/exclude/{deptId}")]
         public IActionResult ExcludeChild(long deptId)
         {
-            var depts = DeptService.GetSysDepts(new SysDeptQueryDto());
+            var depts = DeptService.GetList(new SysDeptQueryDto());
 
             for (int i = 0; i < depts.Count; i++)
             {
-                SysDept d = depts[i];
+                SysDeptDto d = depts[i];
                 long[] deptIds = Tools.SpitLongArrary(d.Ancestors);
                 if (d.DeptId == deptId || ((IList)deptIds).Contains(deptId))
                 {

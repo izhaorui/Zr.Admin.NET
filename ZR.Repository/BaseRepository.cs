@@ -159,7 +159,9 @@ namespace ZR.Repository
         /// <returns></returns>
         public bool UseTran2(Action action)
         {
+            Console.WriteLine("---事务开始---");
             var result = Context.Ado.UseTran(() => action());
+            Console.WriteLine("---事务结束---");
             return result.IsSuccess;
         }
 

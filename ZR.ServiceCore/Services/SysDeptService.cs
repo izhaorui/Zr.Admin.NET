@@ -18,7 +18,28 @@ namespace ZR.ServiceCore.Services
         {
             RoleDeptRepository = roleDeptRepository;
         }
+        /// <summary>
+        /// 查询部门管理数据
+        /// </summary>
+        /// <param name="dept"></param>
+        /// <returns></returns>
+        public List<SysDeptDto> GetList(SysDeptQueryDto dept)
+        {
+            var predicate = Expressionable.Create<SysDept>();
+            predicate = predicate.And(it => it.DelFlag == 0);
+            predicate = predicate.AndIF(dept.DeptName.IfNotEmpty(), it => it.DeptName.Contains(dept.DeptName));
+            predicate = predicate.AndIF(dept.Status != null, it => it.Status == dept.Status);
 
+            var response = Queryable()
+                .Where(predicate.ToExpression())
+                .Select((it) => new SysDeptDto()
+                {
+                    UserNum = SqlFunc.Subqueryable<SysUser>().Where(f => f.DeptId == it.DeptId).Count()
+                }, true)
+                .ToList();
+
+            return response;
+        }
         /// <summary>
         /// 查询部门管理数据
         /// </summary>
@@ -31,7 +52,7 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(dept.DeptName.IfNotEmpty(), it => it.DeptName.Contains(dept.DeptName));
             predicate = predicate.AndIF(dept.Status != null, it => it.Status == dept.Status);
 
-            var response = GetList(predicate.ToExpression());
+            var response = Queryable().Where(predicate.ToExpression()).ToList();
 
             return response;
         }

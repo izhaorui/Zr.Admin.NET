@@ -193,11 +193,15 @@ namespace ZR.ServiceCore.Services
         public int DeleteUser(long userid)
         {
             CheckUserAllowed(new SysUser() { UserId = userid });
-            //删除用户与角色关联
-            UserRoleService.DeleteUserRoleByUserId((int)userid);
-            // 删除用户与岗位关联
-            UserPostService.Delete(userid);
-            return Update(new SysUser() { UserId = userid, DelFlag = 2 }, it => new { it.DelFlag }, f => f.UserId == userid);
+            bool result = UseTran2(() =>
+            {
+                //删除用户与角色关联
+                UserRoleService.DeleteUserRoleByUserId((int)userid);
+                // 删除用户与岗位关联
+                UserPostService.Delete(userid);
+                Update(new SysUser() { UserId = userid, DelFlag = 2 }, it => new { it.DelFlag }, f => f.UserId == userid);
+            });
+            return result ? 1 : 0;
         }
 
         /// <summary>
@@ -254,7 +258,7 @@ namespace ZR.ServiceCore.Services
         /// <param name="user"></param>
         public void CheckUserAllowed(SysUser user)
         {
-            if (user.IsAdmin())
+            if (user.IsAdmin)
             {
                 throw new CustomException("不允许操作超级管理员角色");
             }
@@ -267,12 +271,6 @@ namespace ZR.ServiceCore.Services
         /// <param name="loginUserId"></param>
         public void CheckUserDataScope(long userid, long loginUserId)
         {
-            if (!SysUser.IsAdmin(loginUserId))
-            {
-                SysUser user = new SysUser() { UserId = userid };
-
-                //TODO 判断用户是否有数据权限
-            }
         }
 
         /// <summary>

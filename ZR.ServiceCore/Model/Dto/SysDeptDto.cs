@@ -27,5 +27,6 @@
         public int Status { get; set; }
 
         public int DelFlag { get; set; }
+        public int UserNum { get; set; }
     }
 }
