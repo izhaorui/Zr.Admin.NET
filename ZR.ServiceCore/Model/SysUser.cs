@@ -81,15 +81,15 @@ namespace ZR.Model.System
         public string Province { get; set; }
         public string City { get; set; }
         #region 表额外字段
-        public bool IsAdmin()
+        
+        [SugarColumn(IsIgnore = true)]
+        public bool IsAdmin
         {
-            return IsAdmin(UserId);
+            get
+            {
+                return UserId == 1;
+            }
         }
-        public static bool IsAdmin(long userId)
-        {
-            return 1 == userId;
-        }
-
         /// <summary>
         /// 拥有角色个数
         /// </summary>

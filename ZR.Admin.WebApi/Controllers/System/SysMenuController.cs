@@ -117,7 +117,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 .NameMatchingStrategy(NameMatchingStrategy.IgnoreCase);//忽略字段名称的大小写;//忽略除以上配置的所有字段
 
             var modal = menuDto.Adapt<SysMenu>(config).ToUpdate(HttpContext);
-            if (UserConstants.YES_FRAME.Equals(modal.IsFrame) && !modal.Path.StartsWith("http"))
+            if (UserConstants.YES_FRAME.Equals(modal.IsFrame) && (!modal.Path.StartsWith("http") && !modal.Path.StartsWith("/link")))
             {
                 return ToResponse(ApiResult.Error($"修改菜单'{modal.MenuName}'失败，地址必须以http(s)://开头"));
             }

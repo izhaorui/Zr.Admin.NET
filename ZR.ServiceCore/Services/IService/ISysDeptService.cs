@@ -7,6 +7,7 @@ namespace ZR.ServiceCore.Services
 {
     public interface ISysDeptService : IBaseService<SysDept>
     {
+        List<SysDeptDto> GetList(SysDeptQueryDto dept);
         List<SysDept> GetSysDepts(SysDeptQueryDto dept);
         string CheckDeptNameUnique(SysDept dept);
         int InsertDept(SysDept dept);
