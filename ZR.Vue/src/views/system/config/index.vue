@@ -2,39 +2,46 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="参数名称" prop="configName">
-        <el-input v-model="queryParams.configName" placeholder="请输入参数名称" clearable size="small" style="width: 240px"
-          @keyup.enter.native="handleQuery" />
+        <el-input v-model="queryParams.configName" placeholder="请输入参数名称" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
       </el-form-item>
       <el-form-item label="参数键名" prop="configKey">
-        <el-input v-model="queryParams.configKey" placeholder="请输入参数键名" clearable size="small" style="width: 240px"
-          @keyup.enter.native="handleQuery" />
+        <el-input v-model="queryParams.configKey" placeholder="请输入参数键名" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
       </el-form-item>
       <el-form-item label="系统内置" prop="configType">
-        <el-select v-model="queryParams.configType" placeholder="系统内置" clearable size="small">
+        <el-select v-model="queryParams.configType" placeholder="系统内置" clearable>
           <el-option v-for="dict in sysYesNoOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
         </el-select>
       </el-form-item>
       <el-form-item label="创建时间">
-        <el-date-picker v-model="dateRange" size="small" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-"
-          start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+        <el-date-picker
+          v-model="dateRange"
+          style="width: 240px"
+          value-format="yyyy-MM-dd"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+        <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+        <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:config:add']">新增</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" @click="handleAdd" v-hasPermi="['system:config:add']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['system:config:edit']">
-          修改</el-button>
+        <el-button type="success" plain icon="el-icon-edit" :disabled="single" @click="handleUpdate" v-hasPermi="['system:config:edit']">
+          修改</el-button
+        >
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete"
-          v-hasPermi="['system:config:remove']">删除</el-button>
+        <el-button type="danger" plain icon="el-icon-delete" :disabled="multiple" @click="handleDelete" v-hasPermi="['system:config:remove']"
+          >删除</el-button
+        >
       </el-col>
       <!-- <el-col :span="1.5">
         <el-button type="danger" plain icon="el-icon-refresh" size="mini" @click="handleRefreshCache" v-hasPermi="['system:config:remove']">刷新缓存</el-button>
@@ -56,13 +63,16 @@
       <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
-          <span>{{scope.row.createTime}}</span>
+          <span>{{ scope.row.createTime }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:config:edit']">修改</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['system:config:remove']">删除
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:config:edit']"
+            >修改</el-button
+          >
+          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['system:config:remove']"
+            >删除
           </el-button>
         </template>
       </el-table-column>
@@ -84,7 +94,7 @@
         </el-form-item>
         <el-form-item label="系统内置" prop="configType">
           <el-radio-group v-model="form.configType">
-            <el-radio v-for="dict in sysYesNoOptions" :key="dict.dictValue" :label="dict.dictValue">{{dict.dictLabel}}</el-radio>
+            <el-radio v-for="dict in sysYesNoOptions" :key="dict.dictValue" :label="dict.dictValue">{{ dict.dictLabel }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
@@ -108,10 +118,10 @@ import {
   updateConfig,
   // exportConfig,
   refreshCache,
-} from "@/api/system/config";
+} from '@/api/system/config'
 
 export default {
-  name: "config",
+  name: 'config',
   data() {
     return {
       // 遮罩层
@@ -131,7 +141,7 @@ export default {
       // 参数表格数据
       configList: [],
       // 弹出层标题
-      title: "",
+      title: '',
       // 是否显示弹出层
       open: false,
       // 日期范围
@@ -150,40 +160,32 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        configName: [
-          { required: true, message: "参数名称不能为空", trigger: "blur" },
-        ],
-        configKey: [
-          { required: true, message: "参数键名不能为空", trigger: "blur" },
-        ],
-        configValue: [
-          { required: true, message: "参数键值不能为空", trigger: "blur" },
-        ],
+        configName: [{ required: true, message: '参数名称不能为空', trigger: 'blur' }],
+        configKey: [{ required: true, message: '参数键名不能为空', trigger: 'blur' }],
+        configValue: [{ required: true, message: '参数键值不能为空', trigger: 'blur' }],
       },
-    };
+    }
   },
   created() {
-    this.getDicts("sys_yes_no").then((response) => {
-      this.sysYesNoOptions = response.data;
-    });
-    this.getList();
+    this.getDicts('sys_yes_no').then((response) => {
+      this.sysYesNoOptions = response.data
+    })
+    this.getList()
   },
   methods: {
     /** 查询参数列表 */
     getList() {
-      this.loading = true;
-      listConfig(this.addDateRange(this.queryParams, this.dateRange)).then(
-        (response) => {
-          this.configList = response.data.result;
-          this.total = response.data.totalNum;
-          this.loading = false;
-        }
-      );
+      this.loading = true
+      listConfig(this.addDateRange(this.queryParams, this.dateRange)).then((response) => {
+        this.configList = response.data.result
+        this.total = response.data.totalNum
+        this.loading = false
+      })
     },
     // 取消按钮
     cancel() {
-      this.open = false;
-      this.reset();
+      this.open = false
+      this.reset()
     },
     // 表单重置
     reset() {
@@ -192,83 +194,83 @@ export default {
         configName: undefined,
         configKey: undefined,
         configValue: undefined,
-        configType: "Y",
+        configType: 'Y',
         remark: undefined,
-      };
-      this.resetForm("form");
+      }
+      this.resetForm('form')
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.queryParams.pageNum = 1;
-      this.getList();
+      this.queryParams.pageNum = 1
+      this.getList()
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.dateRange = [];
-      this.resetForm("queryForm");
-      this.handleQuery();
+      this.dateRange = []
+      this.resetForm('queryForm')
+      this.handleQuery()
     },
     /** 新增按钮操作 */
     handleAdd() {
-      this.reset();
-      this.open = true;
-      this.title = "添加参数";
+      this.reset()
+      this.open = true
+      this.title = '添加参数'
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.ids = selection.map((item) => item.configId);
-      this.single = selection.length != 1;
-      this.multiple = !selection.length;
+      this.ids = selection.map((item) => item.configId)
+      this.single = selection.length != 1
+      this.multiple = !selection.length
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
-      this.reset();
-      const configId = row.configId || this.ids;
+      this.reset()
+      const configId = row.configId || this.ids
       getConfig(configId).then((response) => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改参数";
-      });
+        this.form = response.data
+        this.open = true
+        this.title = '修改参数'
+      })
     },
     /** 提交按钮 */
     submitForm: function () {
-      this.$refs["form"].validate((valid) => {
+      this.$refs['form'].validate((valid) => {
         if (valid) {
           if (this.form.configId != undefined) {
             updateConfig(this.form).then((response) => {
-              this.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
+              this.msgSuccess('修改成功')
+              this.open = false
+              this.getList()
+            })
           } else {
             addConfig(this.form).then((response) => {
-              this.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
+              this.msgSuccess('新增成功')
+              this.open = false
+              this.getList()
+            })
           }
         }
-      });
+      })
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const configIds = row.configId || this.ids;
+      const configIds = row.configId || this.ids
       this.$confirm('是否确认删除参数编号为"' + configIds + '"的数据项？')
         .then(function () {
-          return delConfig(configIds);
+          return delConfig(configIds)
         })
         .then(() => {
-          this.getList();
-          this.msgSuccess("删除成功");
+          this.getList()
+          this.msgSuccess('删除成功')
         })
-        .catch(() => {});
+        .catch(() => {})
     },
     /** 刷新缓存按钮操作 */
     handleRefreshCache() {
       refreshCache().then(() => {
-        this.msgSuccess("刷新成功");
-      });
+        this.msgSuccess('刷新成功')
+      })
     },
   },
-};
+}
 </script>

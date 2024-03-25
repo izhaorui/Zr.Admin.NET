@@ -22,7 +22,7 @@
     </el-row>
     <el-row class="mb8" :gutter="20">
       <el-col :span="1.5">
-        <el-button v-hasPermi="['monitor:job:add']" plain type="primary" icon="el-icon-plus" size="mini" @click="handleCreate">新增</el-button>
+        <el-button v-hasPermi="['monitor:job:add']" plain type="primary" icon="el-icon-plus" @click="handleCreate">新增</el-button>
       </el-col>
       <!-- <el-col :span="1.5">
         <el-button v-hasPermi="['monitor:job:edit']" plain type="success" icon="el-icon-edit" size="mini" @click="handleRun(null)" :disabled="single">运行一次</el-button>
@@ -31,14 +31,10 @@
         <el-button v-hasPermi="['monitor:job:delete']" plain type="danger" icon="el-icon-remove" size="mini" @click="handleDelete(null)" :disabled="single">删除</el-button>
       </el-col>-->
       <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['monitor:job:export']"
-          >导出</el-button
-        >
+        <el-button type="warning" plain icon="el-icon-download" @click="handleExport" v-hasPermi="['monitor:job:export']">导出</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button plain v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" size="mini" @click="handleJobLog()"
-          >日志
-        </el-button>
+        <el-button plain v-hasPermi="['monitor:job:query']" type="info" icon="el-icon-s-operation" @click="handleJobLog()">日志 </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="searchToggle" @queryTable="handleQuery"></right-toolbar>
     </el-row>

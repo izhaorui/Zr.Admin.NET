@@ -5,19 +5,19 @@
       <el-form :model="queryParams" label-position="left" inline ref="queryForm" v-show="showSearch" @submit.native.prevent>
         <el-col :span="6">
           <el-form-item label="文章标题" prop="title">
-            <el-input v-model="queryParams.title" placeholder="请输入文章标题" size="small" />
+            <el-input v-model="queryParams.title" placeholder="请输入文章标题" />
           </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item label="文章状态" prop="status">
-            <el-select v-model="queryParams.status" size="small">
+            <el-select v-model="queryParams.status">
               <el-option v-for="item in statusOptions" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
         <el-form-item>
-          <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-          <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+          <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+          <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>
     </el-row>
