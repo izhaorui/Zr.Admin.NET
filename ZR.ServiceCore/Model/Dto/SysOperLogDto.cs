@@ -11,11 +11,11 @@ namespace ZR.Model.System.Dto
         /// <summary>
         /// 业务类型 0=其它,1=新增,2=修改,3=删除,4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据
         /// </summary>
-        public int BusinessType { get; set; } = -1;
+        public int? BusinessType { get; set; }
         /// <summary>
         /// 状态
         /// </summary>
-        public int Status { get; set; } = -1;
+        public int? Status { get; set; }
         /// <summary>
         /// 操作模块
         /// </summary>
