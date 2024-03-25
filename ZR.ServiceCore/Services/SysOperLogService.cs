@@ -38,8 +38,8 @@ namespace ZR.ServiceCore.Services
             exp.AndIF(sysOper.BeginTime != null, it => it.OperTime >= sysOper.BeginTime && it.OperTime <= sysOper.EndTime);
             exp.AndIF(sysOper.Title.IfNotEmpty(), it => it.Title.Contains(sysOper.Title));
             exp.AndIF(sysOper.OperName.IfNotEmpty(), it => it.OperName.Contains(sysOper.OperName));
-            exp.AndIF(sysOper.BusinessType != -1, it => it.BusinessType == sysOper.BusinessType);
-            exp.AndIF(sysOper.Status != -1, it => it.Status == sysOper.Status);
+            exp.AndIF(sysOper.BusinessType != null, it => it.BusinessType == sysOper.BusinessType);
+            exp.AndIF(sysOper.Status != null, it => it.Status == sysOper.Status);
             exp.AndIF(sysOper.OperParam != null, it => it.OperParam.Contains(sysOper.OperParam));
 
             return Queryable()
