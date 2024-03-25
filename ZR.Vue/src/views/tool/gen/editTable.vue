@@ -9,9 +9,9 @@
       </el-tab-pane>
       <el-tab-pane label="字段信息" name="cloum">
         <el-table ref="dragTable" v-loading="loading" :data="columns" row-key="columnId" min-height="150px" :max-height="tableHeight">
-          <el-table-column label="序号" type="index" class-name="allowDrag"  />
-          <el-table-column label="字段列名" prop="columnName" :show-overflow-tooltip="true"  />
-          <el-table-column label="字段描述" >
+          <el-table-column label="序号" type="index" class-name="allowDrag" />
+          <el-table-column label="字段列名" prop="columnName" :show-overflow-tooltip="true" />
+          <el-table-column label="字段描述">
             <template slot-scope="scope">
               <el-input v-model="scope.row.columnComment" :ref="scope.row.columnId" @keydown.native="nextFocus(scope.row, scope.$index, $event)">
               </el-input>
@@ -203,6 +203,7 @@ export default {
             sortType: genTable.sortType,
             checkedBtn: genTable.checkedBtn,
             permissionPrefix: genTable.permissionPrefix,
+            frontTpl: genTable.frontTpl,
           }
 
           updateGenTable(genTable).then((res) => {
