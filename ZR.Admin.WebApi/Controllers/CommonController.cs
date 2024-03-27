@@ -86,9 +86,9 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public async Task<IActionResult> UploadFile([FromForm] UploadDto uploadDto, StoreType storeType = StoreType.LOCAL)
         {
-            IFormFile formFile = uploadDto.File;
-            if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
+            if (uploadDto?.File == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             SysFile file = new();
+            IFormFile formFile = uploadDto.File;
             string fileExt = Path.GetExtension(formFile.FileName);//文件后缀
             double fileSize = Math.Round(formFile.Length / 1024.0, 2);//文件大小KB
 
