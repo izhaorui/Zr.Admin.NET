@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 using System.Web;
 using UAParser;
 using ZR.ServiceCore.Model.Dto;
+using ZR.ServiceCore.Monitor.IMonitorService;
 using ZR.ServiceCore.Services;
 
 namespace ZR.ServiceCore.Signalr
@@ -21,11 +22,13 @@ namespace ZR.ServiceCore.Signalr
         //private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly ISysNoticeService SysNoticeService;
         private readonly ISysUserService UserService;
+        private readonly IUserOnlineLogService UserOnlineLogService;
 
-        public MessageHub(ISysNoticeService noticeService, ISysUserService userService)
+        public MessageHub(ISysNoticeService noticeService, ISysUserService userService, IUserOnlineLogService userOnlineLogService)
         {
             SysNoticeService = noticeService;
             UserService = userService;
+            UserOnlineLogService = userOnlineLogService;
         }
 
         private ApiResult SendNotice()
@@ -130,8 +133,21 @@ namespace ZR.ServiceCore.Signalr
                 if (userInfo != null)
                 {
                     userInfo.TodayOnlineTime += user?.OnlineTime ?? 0;
+
+                    UserOnlineLogService.AddUserOnlineLog(new Model.UserOnlineLog()
+                    {
+                        UserId = user.Userid,
+                        AddTime = DateTime.Now,
+                        Location = user?.Location,
+                        OnlineTime = user.OnlineTime,
+                        UserIP = user.UserIP,
+                        TodayOnlineTime = userInfo.TodayOnlineTime,
+                        Platform = user.Platform,
+                        Remark = user.Browser,
+                        LoginTime = user.LoginTime,
+                    });
                 }
-                Log.WriteLine(ConsoleColor.Red, msg: $"用户{user?.Name}离开了,已在线{userInfo?.TodayOnlineTime}分，当前已连接{onlineClients.Count}个");
+                Log.WriteLine(ConsoleColor.Red, msg: $"用户{user?.Name}离开了,已在线{userInfo?.TodayOnlineTime}分种，当前已连接{onlineClients.Count}个");
             }
             return base.OnDisconnectedAsync(exception);
         }
