@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using SqlSugar.IOC;
 using ZR.Model.System;
+using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -84,6 +85,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.QueryFilter.AddTableFilter(expUser.ToExpression());
             db.QueryFilter.AddTableFilter(expRole.ToExpression());
             db.QueryFilter.AddTableFilter(expLoginlog.ToExpression());
+            db.QueryFilter.AddTableFilter<UserOnlineLog>(f => f.UserId == user.UserId, QueryFilterProvider.FilterJoinPosition.Where);
         }
     }
 }
