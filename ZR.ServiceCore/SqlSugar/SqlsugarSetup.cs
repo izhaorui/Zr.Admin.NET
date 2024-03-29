@@ -52,9 +52,13 @@ namespace ZR.ServiceCore.SqlSugar
                 });
             });
 
-            if (options.InitDb && environment.IsDevelopment())
+            if (environment.IsDevelopment())
             {
-                InitTable.InitDb();
+                if (options.InitDb)
+                {
+                    InitTable.InitDb();
+                }
+                InitTable.InitNewTb();
             }
         }
 
@@ -215,7 +219,7 @@ namespace ZR.ServiceCore.SqlSugar
                     //方法名
                     var FirstMethodName = db.Ado.SqlStackTrace.FirstMethodName;
                     var logInfo = $"Sql执行超时，用时{db.Ado.SqlExecutionTime.TotalSeconds}秒【{sql}】,fileName={fileName},line={fileLine},methodName={FirstMethodName}";
-                    WxNoticeHelper.SendMsg("Sql请求时间过长",logInfo);
+                    WxNoticeHelper.SendMsg("Sql请求时间过长", logInfo);
                     logger.Warn(logInfo);
                 }
             };

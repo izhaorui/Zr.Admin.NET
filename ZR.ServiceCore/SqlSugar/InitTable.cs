@@ -52,7 +52,16 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(EmailTpl));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));
             db.CodeFirst.InitTables(typeof(EmailLog));
-            db.CodeFirst.InitTables(typeof(UserOnlineLog));
+            //db.CodeFirst.InitTables(typeof(UserOnlineLog));
+        }
+        public static void InitNewTb()
+        {
+            var db = DbScoped.SugarScope;
+            var t1 = db.DbMaintenance.IsAnyTable(typeof(UserOnlineLog).Name);
+            if (!t1)
+            {
+                db.CodeFirst.InitTables(typeof(UserOnlineLog));
+            }
         }
     }
 }
