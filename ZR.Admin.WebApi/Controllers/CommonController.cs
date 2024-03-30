@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using MiniExcelLibs;
+using System.IO;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Service.IService;
@@ -208,6 +210,35 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(new
             {
                 result
+            });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(BusinessType = BusinessType.INSERT, Title = "初始化数据")]
+        public IActionResult UpdateSeedData()
+        {
+            if (!WebHostEnvironment.IsDevelopment())
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败");
+            }
+            var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
+            SeedDataService seedDataService = new();
+
+            var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "notice").ToList();
+            var result = seedDataService.InitNoticeData(sysNotice);
+
+            var sysMenu = MiniExcel.Query<SysMenu>(path, sheetName: "menu").Where(f => f.MenuId >= 1104).ToList();
+            var result5 = seedDataService.InitMenuData(sysMenu);
+
+            return SUCCESS(new
+            {
+                result,
+                result5
             });
         }
     }

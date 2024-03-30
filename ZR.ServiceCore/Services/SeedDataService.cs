@@ -222,6 +222,24 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
+        /// 公告数据
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public (string, object, object) InitNoticeData(List<SysNotice> data)
+        {
+            var db = DbScoped.SugarScope;
+            var x = db.Storageable(data)
+                .WhereColumns(it => new { it.NoticeId })
+                .ToStorage();
+            x.AsInsertable.ExecuteCommand();
+            x.AsUpdateable.ExecuteCommand();
+
+            string msg = $"[通知公告数据] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            return (msg, x.ErrorList, x.IgnoreList);
+        }
+
+        /// <summary>
         /// 初始化种子数据
         /// </summary>
         /// <param name="path"></param>
@@ -288,6 +306,10 @@ namespace ZR.ServiceCore.Services
             var sysArticleCategory = MiniExcel.Query<ArticleCategory>(path, sheetName: "article_category").ToList();
             var result11 = InitArticleCategoryData(sysArticleCategory);
             result.Add(result11.Item1);
+
+            var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "article_category").ToList();
+            var result12 = InitNoticeData(sysNotice);
+            result.Add(result12.Item1);
 
             return result;
         }
