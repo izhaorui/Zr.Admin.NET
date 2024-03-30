@@ -20,7 +20,7 @@ namespace Infrastructure
             Console.WriteLine("💰打赏作者：http://www.izhaorui.cn/vip");
             Console.WriteLine("📱移动端体验：http://demo.izhaorui.cn/h5");
             Console.WriteLine($"Swagger地址：{url}/swagger/index.html");
-            Console.WriteLine($"初始化种子数据：{url}/common/InitSeedData");
+            Console.WriteLine($"初始化种子数据地址：{url}/common/InitSeedData");
         }
     }
 }
