@@ -154,5 +154,25 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             return SUCCESS(response);
         }
+
+        /// <summary>
+        /// 导出通知公告表
+        /// </summary>
+        /// <returns></returns>
+        [Log(Title = "通知公告表", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "system:notice:export")]
+        public IActionResult Export([FromQuery] SysNoticeQueryDto parm)
+        {
+            parm.PageNum = 1;
+            parm.PageSize = 100000;
+            var list = _SysNoticeService.ExportList(parm).Result;
+            if (list == null || list.Count <= 0)
+            {
+                return ToResponse(ResultCode.FAIL, "没有要导出的数据");
+            }
+            var result = ExportExcelMini(list, "通知公告表", "通知公告表");
+            return ExportExcel(result.Item2, result.Item1);
+        }
     }
 }
