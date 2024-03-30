@@ -57,7 +57,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// <returns></returns>
         public static IApplicationBuilder UseInit(this IApplicationBuilder app)
         {
-            Console.WriteLine("初始化字典数据...");
+            //Console.WriteLine("初始化字典数据...");
             var db = DbScoped.SugarScope;
             var types = db.Queryable<SysDictType>()
                 .Where(it => it.Status == "0")

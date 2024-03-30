@@ -15,5 +15,6 @@ namespace ZR.ServiceCore.Services
         List<SysNotice> GetSysNotices();
 
         PagedInfo<SysNotice> GetPageList(SysNoticeQueryDto parm);
+        PagedInfo<SysNoticeDto> ExportList(SysNoticeQueryDto parm);
     }
 }
