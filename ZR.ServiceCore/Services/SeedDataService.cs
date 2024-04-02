@@ -261,6 +261,7 @@ namespace ZR.ServiceCore.Services
                 db.DbMaintenance.TruncateTable<SysPost>();
                 db.DbMaintenance.TruncateTable<SysDictType>();
                 db.DbMaintenance.TruncateTable<SysDictData>();
+                db.DbMaintenance.TruncateTable<SysNotice>();
             }
 
             var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
@@ -307,7 +308,7 @@ namespace ZR.ServiceCore.Services
             var result11 = InitArticleCategoryData(sysArticleCategory);
             result.Add(result11.Item1);
 
-            var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "article_category").ToList();
+            var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "notice").ToList();
             var result12 = InitNoticeData(sysNotice);
             result.Add(result12.Item1);
 

@@ -2,6 +2,7 @@
 using Infrastructure.Attribute;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.ServiceCore.Services
 {
@@ -120,7 +121,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="dictType"></param>
         /// <returns></returns>
-        public List<SysDictData> SelectDictDataByCustomSql(string dictType)
+        public List<SysDictDataDto> SelectDictDataByCustomSql(string dictType)
         {
             var dictInfo = Queryable()
                 .Where(f => f.DictType == dictType).First();
