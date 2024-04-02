@@ -2,6 +2,7 @@
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.ServiceCore.Services
 {
@@ -44,7 +45,7 @@ namespace ZR.ServiceCore.Services
 
             return list;
         }
-        public List<SysDictData> SelectDictDataByTypes(string[] dictTypes)
+        public List<SysDictDataDto> SelectDictDataByTypes(string[] dictTypes)
         {
             string CK = $"SelectDictDataByTypes_{dictTypes}";
 
@@ -52,6 +53,11 @@ namespace ZR.ServiceCore.Services
             .WithCache(CK, 60 * 30)
             .Where(f => f.Status == "0" && dictTypes.Contains(f.DictType))
             .OrderBy(it => it.DictSort)
+            .Select((it) => new SysDictDataDto()
+            {
+                Label = it.DictLabel,
+                Value = it.DictValue
+            }, true)
             .ToList();
 
             return list;
@@ -136,9 +142,9 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="sysDictType"></param>
         /// <returns></returns>
-        public List<SysDictData> SelectDictDataByCustomSql(SysDictType sysDictType)
+        public List<SysDictDataDto> SelectDictDataByCustomSql(SysDictType sysDictType)
         {
-            return Context.Ado.SqlQuery<SysDictData>(sysDictType?.CustomSql).ToList();
+            return Context.Ado.SqlQuery<SysDictDataDto>(sysDictType?.CustomSql).ToList();
         }
     }
 }

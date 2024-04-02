@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
@@ -39,7 +40,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 var result = SysDictService.SelectDictDataByCustomSql(dictData.DictType);
 
-                list.Result.AddRange(result);
+                list.Result.AddRange(result.Adapt<List<SysDictData>>());
                 list.TotalNum += result.Count;
             }
             return SUCCESS(list);
@@ -64,26 +65,45 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [AllowAnonymous]
         [HttpPost("types")]
-        public IActionResult DictTypes([FromBody] List<SysdictDataDto> dto)
+        public IActionResult DictTypes([FromBody] List<SysdictDataParamDto> dto)
         {
             var list = SysDictDataService.SelectDictDataByTypes(dto.Select(f => f.DictType).ToArray());
-            List<SysdictDataDto> dataVos = new();
+            var dataVos = GetDicts(dto.Select(f => f.DictType).ToArray());
 
-            foreach (var dic in dto)
+            return SUCCESS(dataVos);
+        }
+
+        /// <summary>
+        /// 移动端使用uniapp
+        /// </summary>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpPost("dicts")]
+        public IActionResult GetDictTypes()
+        {
+            var data = HttpContext.GetBody();
+            return SUCCESS(GetDicts(JsonConvert.DeserializeObject<string[]>(data)));
+        }
+
+        private List<SysdictDataParamDto> GetDicts([FromBody]string[] dicts)
+        {
+            List<SysdictDataParamDto> dataVos = new();
+            var list = SysDictDataService.SelectDictDataByTypes(dicts);
+
+            foreach (var dic in dicts)
             {
-                SysdictDataDto vo = new()
+                SysdictDataParamDto vo = new()
                 {
-                    DictType = dic.DictType,
-                    ColumnName = dic.ColumnName,
-                    List = list.FindAll(f => f.DictType == dic.DictType)
+                    DictType = dic,
+                    List = list.FindAll(f => f.DictType == dic)
                 };
-                if (dic.DictType.StartsWith("cus_") || dic.DictType.StartsWith("sql_"))
+                if (dic.StartsWith("cus_") || dic.StartsWith("sql_"))
                 {
-                    vo.List.AddRange(SysDictService.SelectDictDataByCustomSql(dic.DictType));
+                    vo.List.AddRange(SysDictService.SelectDictDataByCustomSql(dic));
                 }
                 dataVos.Add(vo);
             }
-            return SUCCESS(dataVos);
+            return dataVos;
         }
 
         /// <summary>
