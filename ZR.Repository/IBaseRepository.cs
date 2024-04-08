@@ -36,7 +36,7 @@ namespace ZR.Repository
         #endregion update
         DbResult<bool> UseTran(Action action);
 
-        DbResult<bool> UseTran(SqlSugarClient client, Action action);
+        DbResult<bool> UseTran(ISqlSugarClient client, Action action);
 
         bool UseTran2(Action action);
 

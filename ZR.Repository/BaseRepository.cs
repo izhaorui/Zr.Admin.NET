@@ -137,7 +137,7 @@ namespace ZR.Repository
         /// <param name="client"></param>
         /// <param name="action">增删改查方法</param>
         /// <returns></returns>
-        public DbResult<bool> UseTran(SqlSugarClient client, Action action)
+        public DbResult<bool> UseTran(ISqlSugarClient client, Action action)
         {
             try
             {
