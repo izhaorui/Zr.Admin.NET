@@ -15,8 +15,10 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public int UpdateArticle(Article model);
         PagedInfo<ArticleDto> GetHotList(ArticleQueryDto parm);
+        PagedInfo<ArticleDto> GetArticleList(ArticleQueryDto parm);
         int TopArticle(Article model);
         int ChangeArticlePublic(Article model);
         int UpdateArticleHit(int cid);
+        int PraiseArticle(int cid);
     }
 }

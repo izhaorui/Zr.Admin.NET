@@ -1,4 +1,6 @@
-﻿namespace ZR.Model.System
+﻿using ZR.ServiceCore.Model.Enums;
+
+namespace ZR.Model.System
 {
     /// <summary>
     /// 文章表
@@ -67,7 +69,7 @@
         /// <summary>
         /// 封面地址
         /// </summary>
-        [SugarColumn(ColumnDescription = "封面地址", Length = 255)]
+        [SugarColumn(ColumnDescription = "封面地址", Length = 5000)]
         public string CoverUrl { get; set; }
         /// <summary>
         /// 是否公开 1、公开 0、不公开
@@ -79,9 +81,10 @@
         /// </summary>
         public int IsTop { get; set; }
         /// <summary>
-        /// 0、文章 1、随笔
+        /// 0、文章 1、随笔 2、动态
         /// </summary>
-        public int ArticleType { get; set; }
+        [SugarColumn(ColumnDescription = "内容类型0、文章 1、随笔 2、动态", DefaultValue = "0")]
+        public ArticleTypeEnum ArticleType { get; set; }
         /// <summary>
         /// 摘要
         /// </summary>
@@ -89,5 +92,25 @@
 
         [Navigate(NavigateType.OneToOne, nameof(CategoryId), nameof(ArticleCategory.CategoryId))] //自定义关系映射
         public ArticleCategory ArticleCategoryNav { get; set; }
+        /// <summary>
+        /// 评论数
+        /// </summary>
+        public int CommentNum { get; set; }
+        /// <summary>
+        /// 点赞数
+        /// </summary>
+        public int PraiseNum { get; set; }
+        /// <summary>
+        /// 用户IP
+        /// </summary>
+        public string UserIP { get; set; }
+        /// <summary>
+        /// 地理位置
+        /// </summary>
+        public string Location { get; set; }
+        /// <summary>
+        /// 手机型号
+        /// </summary>
+        public string PhoneModel { get; set; }
     }
 }

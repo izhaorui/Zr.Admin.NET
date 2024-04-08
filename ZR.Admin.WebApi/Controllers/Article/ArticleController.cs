@@ -3,12 +3,12 @@ using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-
+using ZR.ServiceCore.Model.Enums;
 
 namespace ZR.Admin.WebApi.Controllers
 {
     /// <summary>
-    /// 文章管理
+    /// 内容管理
     /// </summary>
     [Verify]
     [Route("article")]
@@ -190,5 +190,6 @@ namespace ZR.Admin.WebApi.Controllers
             var response = _ArticleService.Delete(id);
             return SUCCESS(response);
         }
+
     }
 }

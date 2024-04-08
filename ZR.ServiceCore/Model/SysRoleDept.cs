@@ -9,7 +9,7 @@ namespace ZR.Model.System
         [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL, IsPrimaryKey = true)]
         public long RoleId { get; set; }
 
-        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL, IsPrimaryKey = true)]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL, IsPrimaryKey = false)]
         public long DeptId { get; set; }
     }
 }
