@@ -71,7 +71,7 @@ namespace ZR.ServiceCore.Services
         public SysUser SelectUserById(long userId)
         {
             var user = Queryable().Filter(null, true).WithCache(60 * 5)
-                .Where(f => f.UserId == userId).First();
+                .Where(f => f.UserId == userId && f.DelFlag == 0).First();
             if (user != null && user.UserId > 0)
             {
                 user.Roles = RoleService.SelectUserRoleListByUserId(userId);
@@ -127,7 +127,7 @@ namespace ZR.ServiceCore.Services
             var roleIds = RoleService.SelectUserRoles(user.UserId);
             var diffArr = roleIds.Where(c => !((IList)user.RoleIds).Contains(c)).ToArray();
             var diffArr2 = user.RoleIds.Where(c => !((IList)roleIds).Contains(c)).ToArray();
-            bool result = UseTran2(() =>
+            var result = UseTran(() =>
             {
                 if (diffArr.Length > 0 || diffArr2.Length > 0)
                 {
@@ -142,7 +142,7 @@ namespace ZR.ServiceCore.Services
                 UserPostService.InsertUserPost(user);
                 ChangeUser(user);
             });
-            return result ? 1 : 0;
+            return result.IsSuccess ? 1 : 0;
         }
 
         public int ChangeUser(SysUser user)
@@ -193,7 +193,7 @@ namespace ZR.ServiceCore.Services
         public int DeleteUser(long userid)
         {
             CheckUserAllowed(new SysUser() { UserId = userid });
-            bool result = UseTran2(() =>
+            var result = UseTran(() =>
             {
                 //删除用户与角色关联
                 UserRoleService.DeleteUserRoleByUserId((int)userid);
@@ -201,7 +201,7 @@ namespace ZR.ServiceCore.Services
                 UserPostService.Delete(userid);
                 Update(new SysUser() { UserId = userid, DelFlag = 2 }, it => new { it.DelFlag }, f => f.UserId == userid);
             });
-            return result ? 1 : 0;
+            return result.IsSuccess ? 1 : 0;
         }
 
         /// <summary>
@@ -327,7 +327,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public SysUser Login(LoginBodyDto user)
         {
-            return GetFirst(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower());
+            return GetFirst(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower() && it.DelFlag == 0);
         }
 
         /// <summary>
