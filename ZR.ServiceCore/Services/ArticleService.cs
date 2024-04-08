@@ -3,6 +3,7 @@ using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
+using ZR.ServiceCore.Model.Enums;
 
 namespace ZR.ServiceCore.Services
 {
@@ -26,6 +27,7 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
             predicate = predicate.AndIF(parm.IsPublic != null, m => m.IsPublic == parm.IsPublic);
             predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
+            predicate = predicate.AndIF(parm.ArticleType != null, m => (int)m.ArticleType == parm.ArticleType);
 
             if (parm.CategoryId != null)
             {
@@ -56,8 +58,9 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.And(m => m.Status == "1");
             predicate = predicate.And(m => m.IsPublic == 1);
             predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
-
+            predicate = predicate.And(m => (int)m.ArticleType == parm.ArticleType);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
+
             if (parm.CategoryId != null)
             {
                 var allChildCategory = Context.Queryable<ArticleCategory>()
@@ -69,8 +72,42 @@ namespace ZR.ServiceCore.Services
             var response = Queryable()
                 .IgnoreColumns(x => new { x.Content })
                 .Includes(x => x.ArticleCategoryNav)
+                .LeftJoin<SysUser>((m, u) => m.UserId == u.UserId).Filter(null, true)
                 .Where(predicate.ToExpression())
-                .ToPage<Article, ArticleDto>(parm);
+                .OrderByDescending(m => m.Cid)
+                .Select((m, u) => new ArticleDto()
+                {
+                    Avatar = u.Avatar,
+                    NickName = u.NickName
+                }, true)
+                .ToPage(parm);
+
+            return response;
+        }
+
+        /// <summary>
+        /// 前台查询动态列表
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public PagedInfo<ArticleDto> GetArticleList(ArticleQueryDto parm)
+        {
+            var predicate = Expressionable.Create<Article>();
+            predicate = predicate.And(m => m.Status == "1");
+            predicate = predicate.And(m => m.IsPublic == 1);
+            predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Monent);
+
+            var response = Queryable()
+                .LeftJoin<SysUser>((m, u) => m.UserId == u.UserId).Filter(null, true)
+                .Where(predicate.ToExpression())
+                .OrderByIF(parm.TabId == 3, m => new { m.PraiseNum }, OrderByType.Desc)
+                .OrderBy(m => m.Cid, OrderByType.Desc)
+                .Select((m, u) => new ArticleDto()
+                {
+                    Avatar = u.Avatar,
+                    NickName = u.NickName
+                }, true)
+                .ToPage(parm);
 
             return response;
         }
@@ -89,15 +126,18 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(parm.BeginTime != null, m => m.CreateTime >= parm.BeginTime);
             predicate = predicate.AndIF(parm.EndTime != null, m => m.CreateTime <= parm.EndTime);
             predicate = predicate.And(m => m.UserId == parm.UserId);
-            predicate = predicate.AndIF(parm.ArticleType != null, m => m.ArticleType == parm.ArticleType);
+            predicate = predicate.AndIF(parm.ArticleType != null, m => (int)m.ArticleType == parm.ArticleType);
+            predicate = predicate.AndIF(parm.TabId == 2, m => m.IsPublic == 0 && m.UserId == parm.UserId);
 
             var response = Queryable()
                 //.IgnoreColumns(x => new { x.Content })
                 .Includes(x => x.ArticleCategoryNav)
                 .Where(predicate.ToExpression())
+                .OrderByIF(parm.TabId == 3, m => new { m.PraiseNum }, OrderByType.Desc)
+                .OrderByDescending(m => m.Cid)
                 .Select((x) => new ArticleDto()
                 {
-                    Content = x.ArticleType == 1 ? x.Content : string.Empty,
+                    Content = x.ArticleType == 0 ? string.Empty : x.Content,
                 }, true)
                 .ToPage(parm);
 
@@ -167,6 +207,19 @@ namespace ZR.ServiceCore.Services
                 .Where(it => it.Cid == cid)
                 .ExecuteCommand();
             return response;
+        }
+
+        /// <summary>
+        /// 点赞
+        /// </summary>
+        /// <param name="cid"></param>
+        /// <returns></returns>
+        public int PraiseArticle(int cid)
+        {
+            return Context.Updateable<Article>()
+                .SetColumns(it => it.PraiseNum == it.PraiseNum + 1)
+                .Where(it => it.Cid == cid)
+                .ExecuteCommand();
         }
     }
 }

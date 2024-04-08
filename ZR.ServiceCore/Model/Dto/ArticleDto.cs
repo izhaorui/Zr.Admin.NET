@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using ZR.Common;
 
 namespace ZR.Model.System.Dto
 {
@@ -14,6 +15,10 @@ namespace ZR.Model.System.Dto
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
         public int? ArticleType { get; set; }
+        /// <summary>
+        /// 1、最新 2、私密 3、热门
+        /// </summary>
+        public int TabId { get; set; }
     }
 
     /// <summary>
@@ -23,9 +28,9 @@ namespace ZR.Model.System.Dto
     {
         [Required(ErrorMessage = "Cid不能为空")]
         public int Cid { get; set; }
-        [Required(ErrorMessage = "文章标题不能为空")]
+        [Required(ErrorMessage = "标题不能为空")]
         public string Title { get; set; }
-        [Required(ErrorMessage = "文章内容不能为空")]
+        [Required(ErrorMessage = "内容不能为空")]
         public string Content { get; set; }
 
         public long? UserId { get; set; }
@@ -53,6 +58,45 @@ namespace ZR.Model.System.Dto
         public int IsPublic { get; set; } = 1;
         public string AbstractText { get; set; }
         public int IsTop { get; set; }
+        /// <summary>
+        /// 内容类型
+        /// </summary>
         public int ArticleType { get; set; }
+        /// <summary>
+        /// 点赞数
+        /// </summary>
+        public int PraiseNum { get; set; }
+        /// <summary>
+        /// 评论数
+        /// </summary>
+        public int CommentNum { get; set; }
+        /// <summary>
+        /// 分享数
+        /// </summary>
+        public int ShareNum { get; set; }
+        /// <summary>
+        /// 用户IP
+        /// </summary>
+        public string UserIP { get; set; }
+        /// <summary>
+        /// 地理位置
+        /// </summary>
+        public string Location { get; set; }
+        /// <summary>
+        /// 手机型号
+        /// </summary>
+        public string PhoneModel { get; set; }
+        /// <summary>
+        /// 封面图片集合
+        /// </summary>
+        public string[] CoverImgList
+        {
+            get
+            {
+                return Tools.SplitAndConvert<string>(CoverUrl, ',');
+            }
+        }
+        public string Avatar { get; set; }
+        public string NickName { get; set; }
     }
 }

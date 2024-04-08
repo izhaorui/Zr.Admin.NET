@@ -1,7 +1,4 @@
 ﻿using MiniExcelLibs.Attributes;
-using SqlSugar;
-using System;
-using System.ComponentModel;
 
 namespace ZR.Model.System
 {
@@ -90,6 +87,7 @@ namespace ZR.Model.System
         /// <summary>
         /// 错误消息
         /// </summary>
+        [SugarColumn(Length = 4000)]
         public string ErrorMsg { get; set; }
 
         /// <summary>
