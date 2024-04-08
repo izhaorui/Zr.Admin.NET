@@ -196,7 +196,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (!WebHostEnvironment.IsDevelopment())
             {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败");
+                return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败，请在开发模式下初始化");
             }
             var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
             SeedDataService seedDataService = new();
@@ -224,7 +224,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (!WebHostEnvironment.IsDevelopment())
             {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败");
+                return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败，请在开发模式下初始化");
             }
             var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
             SeedDataService seedDataService = new();
