@@ -49,6 +49,7 @@ namespace ZR.ServiceCore.SqlSugar
             var expUser = Expressionable.Create<SysUser>();
             var expRole = Expressionable.Create<SysRole>();
             var expLoginlog = Expressionable.Create<SysLogininfor>();
+            expUser.And(it => it.DelFlag == 0);
 
             foreach (var role in user.Roles.OrderBy(f => f.DataScope))
             {
