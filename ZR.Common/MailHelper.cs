@@ -6,6 +6,7 @@ using MimeKit.Text;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ZR.Common
 {
@@ -14,18 +15,18 @@ namespace ZR.Common
         /// <summary>
         /// 发送人邮箱
         /// </summary>
-        public string FromEmail { get; set; } = "";
         private readonly MailOptions mailOptions = new();
 
-        //public MailHelper()
-        //{
-        //    AppSettings.Bind("MailOptions", mailOptions);
-        //    FromEmail = mailOptions.FromEmail;
-        //}
+        public MailHelper()
+        {
+            List<MailOptions> options = new();
+
+            AppSettings.Bind("MailOptions", options);
+            mailOptions = options.First();
+        }
         public MailHelper(MailOptions _mailOptions)
         {
-            this.mailOptions = _mailOptions;
-            FromEmail = _mailOptions.FromEmail;
+            mailOptions = _mailOptions;
         }
         /// <summary>
         /// 发送一个
