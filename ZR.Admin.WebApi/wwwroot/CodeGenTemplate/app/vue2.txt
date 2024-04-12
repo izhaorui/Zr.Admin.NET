@@ -141,9 +141,6 @@ $if(replaceDto.ShowBtnDelete)
 $end
   } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
 
-  import {
-    getDate
-  } from '@/utils/common.js'
   export default {
     dicts: [
 $foreach(item in genTable.Columns)

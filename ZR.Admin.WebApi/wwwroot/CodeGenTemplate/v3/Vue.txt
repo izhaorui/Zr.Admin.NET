@@ -66,7 +66,7 @@ $elseif(column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-radio-group v-model="queryParams.${columnName}">
           <el-radio>全部</el-radio>
-          <el-radio v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-radio>
+          <el-radio v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :value="item.dictValue">{{item.dictLabel}}</el-radio>
         </el-radio-group>
       </el-form-item>
 $else
@@ -309,7 +309,7 @@ $elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}"${column.DisabledStr}>
-                <el-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">
+                <el-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :value="${value}">
                   {{item.dictLabel}}
                 </el-radio>
               </el-radio-group>

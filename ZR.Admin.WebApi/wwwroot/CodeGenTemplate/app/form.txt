@@ -1,5 +1,6 @@
 ﻿<template>
-  <view class="edit-form">
+  <view class="edit-wrap">
+    <view class="edit-form">
     <u--form labelPosition="left" :model="form" labelWidth="90px" :rules="rules" ref="uForm">
 $foreach(column in genTable.Columns)
 $set(columnName = column.CsharpFieldFl)
@@ -67,7 +68,8 @@ $end
 $end
 $end
 
-    </u--form>
+      </u--form>
+    </view>
 
     <view class="form-footer">
       <view class="btn_wrap">

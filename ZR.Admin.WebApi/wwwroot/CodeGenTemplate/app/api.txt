@@ -61,18 +61,3 @@ export function del${genTable.BusinessName}(pid) {
   })
 }
 $end
-$if(replaceDto.ShowBtnTruncate)
-// 清空${genTable.functionName}
-export function clear${genTable.BusinessName}() {
-  return request({
-    url: '/${genTable.ModuleName}/${genTable.BusinessName}/clean',
-    method: 'delete'
-  })
-}
-$end
-$if(replaceDto.ShowBtnExport)
-// 导出${genTable.functionName}
-export async function export${genTable.BusinessName}(query) {
-  await downFile('/${genTable.ModuleName}/${genTable.BusinessName}/export', { ...query })
-}
-$end
