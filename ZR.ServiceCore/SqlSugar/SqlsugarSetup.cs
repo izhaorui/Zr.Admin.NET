@@ -54,10 +54,8 @@ namespace ZR.ServiceCore.SqlSugar
 
             if (environment.IsDevelopment())
             {
-                if (options.InitDb)
-                {
-                    InitTable.InitDb();
-                }
+                InitTable.InitDb(options.InitDb);
+
                 InitTable.InitNewTb();
             }
         }
