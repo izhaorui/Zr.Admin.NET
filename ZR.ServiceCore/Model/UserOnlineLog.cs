@@ -4,7 +4,7 @@ namespace ZR.ServiceCore.Model
     /// <summary>
     /// 用户在线时长
     /// </summary>
-    [SugarTable("UserOnlineLog", TableDescription = "用户在线时长")]
+    [SugarTable("userOnlineLog", TableDescription = "用户在线时长")]
     [Tenant("0")]
     public class UserOnlineLog
     {
