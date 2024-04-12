@@ -27,5 +27,10 @@ namespace Infrastructure.Model
         /// 是否发送
         /// </summary>
         public bool IsSend { get; set; }
+        /// <summary>
+        /// 发送邮箱
+        /// </summary>
+        public string FromName { get; set; }
+        public string FromEmail { get; set; }
     }
 }

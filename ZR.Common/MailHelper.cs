@@ -17,11 +17,11 @@ namespace ZR.Common
         public string FromEmail { get; set; } = "";
         private readonly MailOptions mailOptions = new();
 
-        public MailHelper()
-        {
-            AppSettings.Bind("MailOptions", mailOptions);
-            FromEmail = mailOptions.FromEmail;
-        }
+        //public MailHelper()
+        //{
+        //    AppSettings.Bind("MailOptions", mailOptions);
+        //    FromEmail = mailOptions.FromEmail;
+        //}
         public MailHelper(MailOptions _mailOptions)
         {
             this.mailOptions = _mailOptions;

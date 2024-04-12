@@ -10,6 +10,10 @@
         [SugarColumn(IsPrimaryKey = true, IsIdentity = false)]
         public long Id { get; set; }
         /// <summary>
+        /// 发送人名称
+        /// </summary>
+        public string FromName { get; set; }
+        /// <summary>
         /// 发送邮箱
         /// </summary>
         public string FromEmail { get; set; }

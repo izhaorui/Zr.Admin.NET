@@ -1,3 +1,4 @@
+using Infrastructure.Model;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.ServiceCore.Model;
@@ -13,7 +14,7 @@ namespace ZR.ServiceCore.Services
 
         EmailLog GetInfo(long Id);
 
-        EmailLog AddEmailLog(EmailLog parm);
+        EmailLog AddEmailLog(SendEmailDto parm, string result);
 
         int UpdateEmailLog(EmailLog parm);
     }

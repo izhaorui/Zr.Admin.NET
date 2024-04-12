@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.Dto;
 using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Services;
 
 //创建时间：2023-11-20
 namespace ZR.Admin.WebApi.Controllers.Email
@@ -58,32 +57,35 @@ namespace ZR.Admin.WebApi.Controllers.Email
         }
 
         /// <summary>
-        /// 添加邮件发送记录
+        /// 批量发送邮件(从记录发送)
         /// </summary>
         /// <returns></returns>
         [HttpPost("sendEmail")]
         [ActionPermissionFilter(Permission = "tool:email:send")]
-        [Log(Title = "邮件发送", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "批量邮件发送", BusinessType = BusinessType.INSERT)]
         public IActionResult SendEmail([FromBody] EmailLogDto dto)
         {
             if (dto.IdArr.Length <= 0) { return ToResponse(ApiResult.Error($"发送失败Id 不能为空")); }
             int count = 0;
+
             foreach (var item in dto.IdArr)
             {
                 var response = _EmailLogService.GetInfo(item);
-                if (response?.IsSend == 0)
+                MailOptions mailOptions = OptionsSetting.MailOptions.Find(x => x.FromName == response.FromName);
+                if (mailOptions == null || string.IsNullOrEmpty(mailOptions.Password))
                 {
-                    MailHelper mailHelper = new();
-                    string[] toUsers = response.ToEmails.Split(",", StringSplitOptions.RemoveEmptyEntries);
-
-                    string result = mailHelper.SendMail(toUsers, response.Subject, "", response.FileUrl, response.EmailContent);
-                    count += _EmailLogService.Update(x => x.Id == item, x => new EmailLog()
-                    {
-                        IsSend = 1,
-                        SendTime = DateTime.Now,
-                        SendResult = result
-                    });
+                    continue;
                 }
+                MailHelper mailHelper = new(mailOptions);
+                string[] toUsers = response.ToEmails.Split(",", StringSplitOptions.RemoveEmptyEntries);
+
+                string result = mailHelper.SendMail(toUsers, response.Subject, "", response.FileUrl, response.EmailContent);
+                count += _EmailLogService.Update(x => x.Id == item, x => new EmailLog()
+                {
+                    IsSend = 1,
+                    SendTime = DateTime.Now,
+                    SendResult = result
+                });
             }
             return SUCCESS(count);
         }
@@ -119,12 +121,13 @@ namespace ZR.Admin.WebApi.Controllers.Email
             {
                 return ToResponse(ApiResult.Error($"请求参数不完整"));
             }
-            if (string.IsNullOrEmpty(OptionsSetting.MailOptions.FromEmail) || string.IsNullOrEmpty(OptionsSetting.MailOptions.Password))
+            MailOptions mailOptions = OptionsSetting.MailOptions.Find(x => x.FromName == sendEmailVo.FromName);
+            if (mailOptions == null || string.IsNullOrEmpty(mailOptions.Password))
             {
                 return ToResponse(ApiResult.Error($"请配置邮箱信息"));
             }
 
-            MailHelper mailHelper = new();
+            MailHelper mailHelper = new(mailOptions);
 
             string[] toUsers = sendEmailVo.ToUser.Split(",", StringSplitOptions.RemoveEmptyEntries);
             string result = string.Empty;
@@ -132,7 +135,8 @@ namespace ZR.Admin.WebApi.Controllers.Email
             {
                 result = mailHelper.SendMail(toUsers, sendEmailVo.Subject, sendEmailVo.Content, sendEmailVo.FileUrl, sendEmailVo.HtmlContent);
             }
-            _EmailLogService.AddEmailLog(new EmailLog() { EmailContent = sendEmailVo.HtmlContent, Subject = sendEmailVo.Subject, ToEmails = sendEmailVo.ToUser, AddTime = DateTime.Now, FromEmail = OptionsSetting.MailOptions.FromEmail, IsSend = sendEmailVo.IsSend ? 1 : 0, SendResult = result });
+            sendEmailVo.FromEmail = mailOptions.FromEmail;
+            _EmailLogService.AddEmailLog(sendEmailVo, result);
             //logger.Info($"发送邮件{JsonConvert.SerializeObject(sendEmailVo)}, 结果{result}");
 
             return SUCCESS(result);
