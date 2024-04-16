@@ -107,7 +107,7 @@ namespace ZR.Admin.WebApi.Controllers
             if (model != null)
             {
                 model.ArticleCategoryNav = _ArticleCategoryService.GetById(model.CategoryId);
-                model.TagList = model.Tags?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                //model.TagList = model.Tags?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
             }
             var CK = "ARTICLE_DETAILS_" + userId + HttpContextExtension.GetClientUserIp(HttpContext);
             if (!CacheHelper.Exists(CK))

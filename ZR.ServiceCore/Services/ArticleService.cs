@@ -70,7 +70,6 @@ namespace ZR.ServiceCore.Services
             }
 
             var response = Queryable()
-                .IgnoreColumns(x => new { x.Content })
                 .Includes(x => x.ArticleCategoryNav)
                 .LeftJoin<SysUser>((m, u) => m.UserId == u.UserId).Filter(null, true)
                 .Where(predicate.ToExpression())
@@ -78,7 +77,11 @@ namespace ZR.ServiceCore.Services
                 .Select((m, u) => new ArticleDto()
                 {
                     Avatar = u.Avatar,
-                    NickName = u.NickName
+                    NickName = u.NickName,
+                    Sex = u.Sex,
+                    Content = string.Empty,
+                    UserIP = string.Empty,
+                    ArticleCategoryNav = m.ArticleCategoryNav
                 }, true)
                 .ToPage(parm);
 
@@ -105,7 +108,8 @@ namespace ZR.ServiceCore.Services
                 .Select((m, u) => new ArticleDto()
                 {
                     Avatar = u.Avatar,
-                    NickName = u.NickName
+                    NickName = u.NickName,
+                    Sex = u.Sex
                 }, true)
                 .ToPage(parm);
 

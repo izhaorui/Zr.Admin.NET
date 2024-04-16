@@ -54,7 +54,13 @@ namespace ZR.Model.System.Dto
         public string CoverUrl { get; set; }
 
         public ArticleCategory ArticleCategoryNav { get; set; }
-        public string[] TagList { get; set; }
+        public string[] TagList
+        {
+            get
+            {
+                return Tags?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+            }
+        }
         public int IsPublic { get; set; } = 1;
         public string AbstractText { get; set; }
         public int IsTop { get; set; }
@@ -98,5 +104,6 @@ namespace ZR.Model.System.Dto
         }
         public string Avatar { get; set; }
         public string NickName { get; set; }
+        public int Sex { get; set; }
     }
 }
