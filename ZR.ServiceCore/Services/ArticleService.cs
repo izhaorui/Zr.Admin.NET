@@ -32,12 +32,13 @@ namespace ZR.ServiceCore.Services
             if (parm.CategoryId != null)
             {
                 var allChildCategory = Context.Queryable<ArticleCategory>()
-                    .ToChildList(it => it.ParentId, parm.CategoryId);
+                    .ToChildList(m => m.ParentId, parm.CategoryId);
                 var categoryIdList = allChildCategory.Select(x => x.CategoryId).ToArray();
-                predicate = predicate.And(it => categoryIdList.Contains(it.CategoryId));
+                predicate = predicate.And(m => categoryIdList.Contains(m.CategoryId));
             }
 
             var response = Queryable()
+                .WithCache(60 * 24)
                 .IgnoreColumns(x => new { x.Content })
                 .Includes(x => x.ArticleCategoryNav) //填充子对象
                 .Where(predicate.ToExpression())
@@ -64,9 +65,9 @@ namespace ZR.ServiceCore.Services
             if (parm.CategoryId != null)
             {
                 var allChildCategory = Context.Queryable<ArticleCategory>()
-                    .ToChildList(it => it.ParentId, parm.CategoryId);
+                    .ToChildList(m => m.ParentId, parm.CategoryId);
                 var categoryIdList = allChildCategory.Select(x => x.CategoryId).ToArray();
-                predicate = predicate.And(it => categoryIdList.Contains(it.CategoryId));
+                predicate = predicate.And(m => categoryIdList.Contains(m.CategoryId));
             }
 
             var response = Queryable()
