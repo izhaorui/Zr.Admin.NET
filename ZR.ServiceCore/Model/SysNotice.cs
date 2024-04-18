@@ -1,5 +1,3 @@
-using SqlSugar;
-
 namespace ZR.Model.System
 {
     /// <summary>

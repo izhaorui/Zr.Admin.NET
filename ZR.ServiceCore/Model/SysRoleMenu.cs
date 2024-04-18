@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using SqlSugar;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     /// <summary>
     /// 角色菜单

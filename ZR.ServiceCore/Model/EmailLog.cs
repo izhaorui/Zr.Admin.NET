@@ -4,6 +4,7 @@
     /// 邮件发送记录
     /// </summary>
     [SugarTable("email_log")]
+    [Tenant("0")]
     public class EmailLog
     {
         [JsonConverter(typeof(ValueToStringConverter))]

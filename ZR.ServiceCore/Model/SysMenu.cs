@@ -1,7 +1,4 @@
-﻿using SqlSugar;
-using System.Collections.Generic;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     /// <summary>
     /// Sys_menu表

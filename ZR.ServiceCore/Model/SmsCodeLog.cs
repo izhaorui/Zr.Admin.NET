@@ -4,6 +4,7 @@
     /// 短信验证码记录
     /// </summary>
     [SugarTable("smsCode_log")]
+    [Tenant("0")]
     public class SmsCodeLog
     {
         [JsonConverter(typeof(ValueToStringConverter))]

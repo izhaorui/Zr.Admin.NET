@@ -1,6 +1,4 @@
-﻿using SqlSugar;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     /// <summary>
     /// 字典类型表
