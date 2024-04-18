@@ -3,7 +3,6 @@ using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.ServiceCore.Model.Enums;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -49,40 +48,6 @@ namespace ZR.Admin.WebApi.Controllers
         {
             parm.UserId = HttpContext.GetUId();
             var response = _ArticleService.GetMyList(parm);
-
-            return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 前台查询文章列表
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("hotList")]
-        [AllowAnonymous]
-        public IActionResult QueryHot([FromQuery] ArticleQueryDto parm)
-        {
-            var response = _ArticleService.GetHotList(parm);
-
-            return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 查询最新文章列表
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("newList")]
-        [AllowAnonymous]
-        public IActionResult QueryNew()
-        {
-            var predicate = Expressionable.Create<Article>();
-            predicate = predicate.And(m => m.Status == "1");
-            predicate = predicate.And(m => m.IsPublic == 1);
-
-            var response = _ArticleService.Queryable()
-                .Where(predicate.ToExpression())
-                .Includes(x => x.ArticleCategoryNav) //填充子对象
-                .Take(10)
-                .OrderBy(f => f.UpdateTime, OrderByType.Desc).ToList();
 
             return SUCCESS(response);
         }
@@ -191,5 +156,43 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(response);
         }
 
+        #region 前端接口
+
+        /// <summary>
+        /// 前台查询文章列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("hotList")]
+        [AllowAnonymous]
+        public IActionResult QueryHot([FromQuery] ArticleQueryDto parm)
+        {
+            var response = _ArticleService.GetHotList(parm);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 查询最新文章列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("newList")]
+        [AllowAnonymous]
+        public IActionResult QueryNew()
+        {
+            var predicate = Expressionable.Create<Article>();
+            predicate = predicate.And(m => m.Status == "1");
+            predicate = predicate.And(m => m.IsPublic == 1);
+            predicate = predicate.And(m => m.ArticleType == 0);
+
+            var response = _ArticleService.Queryable()
+                .Where(predicate.ToExpression())
+                .Includes(x => x.ArticleCategoryNav) //填充子对象
+                .Take(10)
+                .OrderBy(f => f.UpdateTime, OrderByType.Desc).ToList();
+
+            return SUCCESS(response);
+        }
+
+        #endregion
     }
 }

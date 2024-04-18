@@ -46,7 +46,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             parm.UserId = HttpContext.GetUId();
             parm.ArticleType = 2;
-            var response = _ArticleService.GetArticleList(parm);
+            var response = _ArticleService.GetMonentList(parm);
 
             return SUCCESS(response);
         }

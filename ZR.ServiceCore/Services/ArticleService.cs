@@ -71,6 +71,7 @@ namespace ZR.ServiceCore.Services
             }
 
             var response = Queryable()
+                .WithCache(60 * 30)
                 .Includes(x => x.ArticleCategoryNav)
                 .LeftJoin<SysUser>((m, u) => m.UserId == u.UserId).Filter(null, true)
                 .Where(predicate.ToExpression())
@@ -94,7 +95,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
-        public PagedInfo<ArticleDto> GetArticleList(ArticleQueryDto parm)
+        public PagedInfo<ArticleDto> GetMonentList(ArticleQueryDto parm)
         {
             var predicate = Expressionable.Create<Article>();
             predicate = predicate.And(m => m.Status == "1");
@@ -207,10 +208,11 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public int UpdateArticleHit(int cid)
         {
-            var response = Context.Updateable<Article>()
-                .SetColumns(it => it.Hits == it.Hits + 1)
-                .Where(it => it.Cid == cid)
-                .ExecuteCommand();
+            //var response = Context.Updateable<Article>()
+            //    .SetColumns(it => it.Hits == it.Hits + 1)
+            //    .Where(it => it.Cid == cid)
+            //    .ExecuteCommand();
+            var response = Update(w => w.Cid == cid, it => new Article() { Hits = it.Hits + 1 });
             return response;
         }
 
