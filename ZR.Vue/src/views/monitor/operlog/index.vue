@@ -9,12 +9,12 @@
       </el-form-item>
       <el-form-item label="类型" prop="businessType">
         <el-select v-model="queryParams.businessType" placeholder="操作类型" clearable style="width: 240px">
-          <el-option v-for="dict in businessTypeOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
+          <el-option v-for="dict in sys_oper_type" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
         </el-select>
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="操作状态" clearable style="width: 240px">
-          <el-option v-for="dict in statusOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
+          <el-option v-for="dict in sys_common_status" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
         </el-select>
       </el-form-item>
       <el-form-item label="操作时间">
@@ -55,7 +55,7 @@
       <el-table-column label="系统模块" align="center" prop="title" :show-overflow-tooltip="true" />
       <el-table-column prop="businessType" label="业务类型" align="center">
         <template slot-scope="scope">
-          <dict-tag :options="businessTypeOptions" :value="scope.row.businessType" />
+          <dict-tag :options="sys_oper_type" :value="scope.row.businessType" />
         </template>
       </el-table-column>
       <el-table-column label="请求方式" align="center" prop="requestMethod" />
@@ -64,7 +64,7 @@
       <el-table-column label="操作地点" align="center" prop="operLocation" :show-overflow-tooltip="true" />
       <el-table-column label="操作状态" align="center" prop="status">
         <template slot-scope="{ row }">
-          <dict-tag :options="statusOptions" :value="row.status"></dict-tag>
+          <dict-tag :options="sys_common_status" :value="row.status"></dict-tag>
         </template>
       </el-table-column>
       <el-table-column label="用时" align="center" prop="elapsed">
@@ -108,7 +108,7 @@
           </el-col>
           <el-col :lg="12">
             <el-form-item label="操作类型：">
-              <dict-tag :options="businessTypeOptions" :value="form.businessType" />
+              <dict-tag :options="sys_oper_type" :value="form.businessType" />
             </el-form-item>
           </el-col>
           <el-col :lg="24">
@@ -121,7 +121,7 @@
           </el-col>
           <el-col :lg="12">
             <el-form-item label="操作状态：">
-              <dict-tag :options="statusOptions" :value="form.status"></dict-tag>
+              <dict-tag :options="sys_common_status" :value="form.status"></dict-tag>
             </el-form-item>
           </el-col>
           <el-col :lg="12">
@@ -161,9 +161,9 @@ export default {
       // 是否显示弹出层
       open: false,
       // 类型数据字典
-      statusOptions: [],
+      sys_common_status: [],
       // 业务类型（0其它 1新增 2修改 3删除）选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
-      businessTypeOptions: [],
+      sys_oper_type: [],
       // 日期范围
       dateRange: [],
       // 表单参数
@@ -181,13 +181,10 @@ export default {
   },
   created() {
     this.getList()
-    var dictParams = [
-      { dictType: 'sys_oper_type', columnName: 'businessTypeOptions' },
-      { dictType: 'sys_common_status', columnName: 'statusOptions' },
-    ]
+    var dictParams = [{ dictType: 'sys_oper_type' }, { dictType: 'sys_common_status' }]
     this.getDicts(dictParams).then((response) => {
       response.data.forEach((element) => {
-        this[element.columnName] = element.list
+        this[element.dictType] = element.list
       })
     })
   },
@@ -205,10 +202,6 @@ export default {
           this.list = []
         }
       })
-    },
-    // 操作日志状态字典翻译
-    statusFormat(row, column) {
-      return this.selectDictLabel(this.statusOptions, row.status)
     },
     /** 搜索按钮操作 */
     handleQuery() {
