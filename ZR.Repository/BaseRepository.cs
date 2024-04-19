@@ -171,15 +171,6 @@ namespace ZR.Repository
             return Context.Deleteable<T>();
         }
 
-        /// <summary>
-        /// 批量删除
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public int Delete(object[] obj, string title = "")
-        {
-            return Context.Deleteable<T>().In(obj).EnableDiffLogEventIF(title.IsNotEmpty(), title).ExecuteCommand();
-        }
         public int Delete(object id, string title = "")
         {
             return Context.Deleteable<T>(id).EnableDiffLogEventIF(title.IsNotEmpty(), title).ExecuteCommand();
