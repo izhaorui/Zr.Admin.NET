@@ -174,9 +174,7 @@ namespace ZR.ServiceCore.Services
         {
             var db = DbScoped.SugarScope;
             var x = db.Storageable(data)
-                //.SplitInsert(it => it.NotAny())
-                //.SplitUpdate(it => !it.Any())
-                //.WhereColumns(it => new { it.DictType })
+                .WhereColumns(it => new { it.DictType, it.DictValue })
                 .ToStorage();
             x.AsInsertable.ExecuteCommand();
             x.AsUpdateable.ExecuteCommand();
