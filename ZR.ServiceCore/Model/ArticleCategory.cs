@@ -22,6 +22,10 @@
         /// </summary>
         public int OrderNum { get; set; }
         public int? ParentId { get; set; }
+        /// <summary>
+        /// 分类类型
+        /// </summary>
+        public int CategoryType { get; set; }
         [SugarColumn(ColumnDescription = "创建时间", ColumnName = "create_time")]
         public DateTime? CreateTime { get; set; }
 

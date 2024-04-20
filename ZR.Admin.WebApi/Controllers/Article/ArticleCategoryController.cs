@@ -63,6 +63,20 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 查询目录分类
+        /// </summary>
+        /// <param name="categoryType"></param>
+        /// <returns></returns>
+        [HttpGet("type{categoryType}")]
+        //[ActionPermissionFilter(Permission = "articlecategory:query")]
+        public IActionResult GetArticleCategoryByType(int categoryType)
+        {
+            var response = _ArticleCategoryService.GetFirst(x => x.CategoryType == categoryType);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
         /// 添加文章目录
         /// </summary>
         /// <returns></returns>

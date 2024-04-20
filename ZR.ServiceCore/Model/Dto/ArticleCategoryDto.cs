@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace ZR.Model.Dto
@@ -16,6 +15,7 @@ namespace ZR.Model.Dto
         public int OrderNum { get; set; }
         public DateTime? CreateTime { get; set; }
         public int? ParentId { get; set; }
+        public int CategoryType { get; set; }
     }
 
     /// <summary>
@@ -23,5 +23,6 @@ namespace ZR.Model.Dto
     /// </summary>
     public class ArticleCategoryQueryDto : PagerInfo 
     {
+        public int? CategoryType { get; set; }
     }
 }

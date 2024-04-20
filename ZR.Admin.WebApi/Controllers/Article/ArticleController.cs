@@ -89,7 +89,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost("add")]
         [ActionPermissionFilter(Permission = "system:article:add")]
-        [Log(Title = "发布文章", BusinessType = BusinessType.INSERT)]
+        //[Log(Title = "发布文章", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] ArticleDto parm)
         {
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
@@ -105,7 +105,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPut("edit")]
         [ActionPermissionFilter(Permission = "system:article:update")]
-        [Log(Title = "文章修改", BusinessType = BusinessType.UPDATE)]
+        //[Log(Title = "文章修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] ArticleDto parm)
         {
             parm.AuthorName = HttpContext.GetName();

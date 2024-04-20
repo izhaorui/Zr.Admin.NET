@@ -20,6 +20,7 @@ namespace ZR.ServiceCore.Services
         public PagedInfo<ArticleCategory> GetList(ArticleCategoryQueryDto parm)
         {
             var predicate = Expressionable.Create<ArticleCategory>();
+            predicate.AndIF(parm.CategoryType != null, m => m.CategoryType == parm.CategoryType);
 
             var response = Queryable()
                 .Where(predicate.ToExpression())
@@ -35,7 +36,9 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public List<ArticleCategory> GetTreeList(ArticleCategoryQueryDto parm)
         {
-            var predicate = Expressionable.Create<ArticleCategory>();
+            var predicate = Expressionable.Create<ArticleCategory>(); 
+            predicate.AndIF(parm.CategoryType != null, m => m.CategoryType == parm.CategoryType);
+
             var response = Queryable()
                 .Where(predicate.ToExpression());
 

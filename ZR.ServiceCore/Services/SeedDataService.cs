@@ -25,7 +25,7 @@ namespace ZR.ServiceCore.Services
             db.Ado.BeginTran();
             //db.Ado.ExecuteCommand("SET IDENTITY_INSERT sys_user ON");
             var x = db.Storageable(data)
-                .SplitInsert(it => it.NotAny())
+                .SplitInsert(it => it.NotAny())//表示如果有where条件根据条件判断是否存在数据，不存在插入，存在不操作
                 .SplitError(x => x.Item.UserName.IsEmpty(), "用户名不能为空")
                 .SplitError(x => !Tools.CheckUserName(x.Item.UserName), "用户名不符合规范")
                 .WhereColumns(it => it.UserId)//如果不是主键可以这样实现（多字段it=>new{it.x1,it.x2}）
@@ -192,12 +192,12 @@ namespace ZR.ServiceCore.Services
         {
             var db = DbScoped.SugarScope;
             var x = db.Storageable(data)
-                .SplitInsert(it => it.NotAny())
+                //.SplitInsert(it => it.NotAny())
                 .WhereColumns(it => it.Name)
                 .ToStorage();
-            var result = x.AsInsertable.ExecuteCommand();
-
-            string msg = $"[字典数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            x.AsInsertable.ExecuteCommand();
+            x.AsUpdateable.ExecuteCommand();
+            string msg = $"[文章目录] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
