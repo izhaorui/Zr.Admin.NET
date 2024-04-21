@@ -83,10 +83,12 @@ namespace ZR.Model.System.Dto
         /// <summary>
         /// 用户IP
         /// </summary>
+        [JsonIgnore]
         public string UserIP { get; set; }
         /// <summary>
         /// 地理位置
         /// </summary>
+        [JsonIgnore]
         public string Location { get; set; }
         /// <summary>
         /// 手机型号
@@ -100,6 +102,16 @@ namespace ZR.Model.System.Dto
             get
             {
                 return Tools.SplitAndConvert<string>(CoverUrl, ',');
+            }
+        }
+        /// <summary>
+        /// 地理位置
+        /// </summary>
+        public string Position
+        {
+            get
+            {
+                return Location?.Split("-")[0];
             }
         }
         public string Avatar { get; set; }

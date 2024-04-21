@@ -20,5 +20,6 @@ namespace ZR.ServiceCore.Services
         int ChangeArticlePublic(Article model);
         int UpdateArticleHit(int cid);
         int PraiseArticle(int cid);
+        Article PublishArticle(Article article);
     }
 }

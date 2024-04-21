@@ -84,7 +84,7 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 添加文章
+        /// 发布文章
         /// </summary>
         /// <returns></returns>
         [HttpPost("add")]
@@ -95,6 +95,8 @@ namespace ZR.Admin.WebApi.Controllers
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
             addModel.AuthorName = HttpContext.GetName();
             addModel.UserId = HttpContext.GetUId();
+            addModel.UserIP = HttpContext.GetClientUserIp();
+            addModel.Location = HttpContextExtension.GetIpInfo(addModel.UserIP);
 
             return SUCCESS(_ArticleService.InsertReturnIdentity(addModel));
         }

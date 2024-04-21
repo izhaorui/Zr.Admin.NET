@@ -228,5 +228,10 @@ namespace ZR.ServiceCore.Services
                 .Where(it => it.Cid == cid)
                 .ExecuteCommand();
         }
+
+        public Article PublishArticle(Article article)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
