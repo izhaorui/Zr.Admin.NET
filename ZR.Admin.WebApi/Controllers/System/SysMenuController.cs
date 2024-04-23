@@ -185,6 +185,20 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             return ToResponse(result);
         }
+        /// <summary>
+        /// 菜单删除
+        /// </summary>
+        /// <param name="menuId"></param>
+        /// <returns></returns>
+        [HttpDelete("deleteAll/{menuId}")]
+        [Log(Title = "菜单管理", BusinessType = BusinessType.DELETE)]
+        [ActionPermissionFilter(Permission = "system:menu:remove")]
+        public IActionResult RemoveAll(int menuId = 0)
+        {
+            int result = sysMenuService.DeleteAllMenuById(menuId);
+
+            return ToResponse(result);
+        }
 
         /// <summary>
         /// 保存排序
