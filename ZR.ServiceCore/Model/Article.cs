@@ -5,7 +5,7 @@ namespace ZR.Model.System
     /// <summary>
     /// 文章表
     /// </summary>
-    [SugarTable("article", "文章管理")]
+    [SugarTable("article", "内容管理")]
     [Tenant("0")]
     public class Article
     {
@@ -13,7 +13,7 @@ namespace ZR.Model.System
         /// 文章id
         /// </summary>
         [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
-        public int Cid { get; set; }
+        public long Cid { get; set; }
         /// <summary>
         /// 文章标题
         /// </summary>

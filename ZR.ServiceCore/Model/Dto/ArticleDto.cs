@@ -27,7 +27,7 @@ namespace ZR.Model.System.Dto
     public class ArticleDto
     {
         [Required(ErrorMessage = "Cid不能为空")]
-        public int Cid { get; set; }
+        public long Cid { get; set; }
         [Required(ErrorMessage = "标题不能为空")]
         public string Title { get; set; }
         [Required(ErrorMessage = "内容不能为空")]

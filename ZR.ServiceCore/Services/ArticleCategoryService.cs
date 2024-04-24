@@ -21,9 +21,11 @@ namespace ZR.ServiceCore.Services
         {
             var predicate = Expressionable.Create<ArticleCategory>();
             predicate.AndIF(parm.CategoryType != null, m => m.CategoryType == parm.CategoryType);
+            predicate.AndIF(parm.ParentId != null, m => m.ParentId == parm.ParentId);
 
             var response = Queryable()
                 .Where(predicate.ToExpression())
+                .WithCache(60 * 5)
                 .ToPage(parm);
 
             return response;
@@ -36,7 +38,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public List<ArticleCategory> GetTreeList(ArticleCategoryQueryDto parm)
         {
-            var predicate = Expressionable.Create<ArticleCategory>(); 
+            var predicate = Expressionable.Create<ArticleCategory>();
             predicate.AndIF(parm.CategoryType != null, m => m.CategoryType == parm.CategoryType);
 
             var response = Queryable()

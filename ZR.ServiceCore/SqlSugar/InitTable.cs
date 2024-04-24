@@ -47,6 +47,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(GenTableColumn));
             db.CodeFirst.InitTables(typeof(Article));
             db.CodeFirst.InitTables(typeof(ArticleCategory));
+            db.CodeFirst.InitTables(typeof(ArticleBrowsingLog));
             db.CodeFirst.InitTables(typeof(SysDictData));
             db.CodeFirst.InitTables(typeof(SysDictType));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));

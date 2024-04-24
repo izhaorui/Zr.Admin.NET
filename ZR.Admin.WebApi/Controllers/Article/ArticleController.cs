@@ -3,6 +3,9 @@ using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.ServiceCore.Model;
+using ZR.ServiceCore.Model.Dto;
+using ZR.ServiceCore.Services.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -19,11 +22,16 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         private readonly IArticleService _ArticleService;
         private readonly IArticleCategoryService _ArticleCategoryService;
+        private readonly IArticlePraiseService _ArticlePraiseService;
 
-        public ArticleController(IArticleService ArticleService, IArticleCategoryService articleCategoryService)
+        public ArticleController(
+            IArticleService ArticleService, 
+            IArticleCategoryService articleCategoryService,
+            IArticlePraiseService articlePraiseService)
         {
             _ArticleService = ArticleService;
             _ArticleCategoryService = articleCategoryService;
+            _ArticleService = ArticleService;
         }
 
         /// <summary>
@@ -62,24 +70,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Get(int id)
         {
             long userId = HttpContext.GetUId();
-            var response = _ArticleService.GetId(id);
-            var model = response.Adapt<ArticleDto>();
-            if (model == null) return ToResponse(ResultCode.FAIL, "文章不存在");
-            if (model.IsPublic == 0 && userId != model.UserId)
-            {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "访问失败");
-            }
-            if (model != null)
-            {
-                model.ArticleCategoryNav = _ArticleCategoryService.GetById(model.CategoryId);
-                //model.TagList = model.Tags?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-            }
-            var CK = "ARTICLE_DETAILS_" + userId + HttpContextExtension.GetClientUserIp(HttpContext);
-            if (!CacheHelper.Exists(CK))
-            {
-                _ArticleService.UpdateArticleHit(id);
-            }
-            CacheHelper.SetCache(CK, 1, 10);
+            var model = _ArticleService.GetArticle(id, userId);
             return SUCCESS(model);
         }
 
@@ -164,9 +155,9 @@ namespace ZR.Admin.WebApi.Controllers
         /// 前台查询文章列表
         /// </summary>
         /// <returns></returns>
-        [HttpGet("hotList")]
+        [HttpGet("homeList")]
         [AllowAnonymous]
-        public IActionResult QueryHot([FromQuery] ArticleQueryDto parm)
+        public IActionResult QueryHomeList([FromQuery] ArticleQueryDto parm)
         {
             var response = _ArticleService.GetHotList(parm);
 
@@ -195,6 +186,21 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(response);
         }
 
+        /// <summary>
+        /// 点赞
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("praise")]
+        public IActionResult PraiseArticle([FromBody] ArticlePraiseDto parm)
+        {
+            var addModel = parm.Adapt<ArticlePraise>().ToCreate(context: HttpContext);
+            
+            addModel.UserId = HttpContext.GetUId();
+            addModel.UserIP = HttpContext.GetClientUserIp();
+            addModel.Location = HttpContextExtension.GetIpInfo(addModel.UserIP);
+
+            return SUCCESS(_ArticlePraiseService.Praise(addModel));
+        }
         #endregion
     }
 }

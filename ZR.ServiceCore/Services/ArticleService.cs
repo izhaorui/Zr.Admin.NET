@@ -1,8 +1,12 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
+using Mapster;
+using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
+using ZR.ServiceCore.Model;
 using ZR.ServiceCore.Model.Enums;
 
 namespace ZR.ServiceCore.Services
@@ -13,6 +17,13 @@ namespace ZR.ServiceCore.Services
     [AppService(ServiceType = typeof(IArticleService), ServiceLifetime = LifeTime.Transient)]
     public class ArticleService : BaseService<Article>, IArticleService
     {
+        private readonly IArticleCategoryService _categoryService;
+        
+        public ArticleService(IArticleCategoryService categoryService)
+        {
+            _categoryService = categoryService;
+        }
+
         /// <summary>
         /// 查询文章管理列表
         /// </summary>
@@ -59,7 +70,7 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.And(m => m.Status == "1");
             predicate = predicate.And(m => m.IsPublic == 1);
             predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
-            predicate = predicate.And(m => (int)m.ArticleType == parm.ArticleType);
+            predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Article);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
 
             if (parm.CategoryId != null)
@@ -206,12 +217,8 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="cid"></param>
         /// <returns></returns>
-        public int UpdateArticleHit(int cid)
+        public int UpdateArticleHit(long cid)
         {
-            //var response = Context.Updateable<Article>()
-            //    .SetColumns(it => it.Hits == it.Hits + 1)
-            //    .Where(it => it.Cid == cid)
-            //    .ExecuteCommand();
             var response = Update(w => w.Cid == cid, it => new Article() { Hits = it.Hits + 1 });
             return response;
         }
@@ -221,17 +228,48 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="cid"></param>
         /// <returns></returns>
-        public int PraiseArticle(int cid)
+        public int PraiseArticle(long cid)
         {
-            return Context.Updateable<Article>()
-                .SetColumns(it => it.PraiseNum == it.PraiseNum + 1)
-                .Where(it => it.Cid == cid)
-                .ExecuteCommand();
+            return Update(w => w.Cid == cid, it => new Article() { PraiseNum = it.PraiseNum + 1 });
         }
 
         public Article PublishArticle(Article article)
         {
             throw new NotImplementedException();
+        }
+
+        public ArticleDto GetArticle(long cid, long userId)
+        {
+            var response = GetId(cid);
+            var model = response.Adapt<ArticleDto>() ?? throw new CustomException(ResultCode.FAIL, "文章不存在");
+            if (model.IsPublic == 0 && userId != model.UserId)
+            {
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "访问失败");
+            }
+            if (model != null)
+            {
+                model.ArticleCategoryNav = _categoryService.GetById(model.CategoryId);
+            }
+
+            var webContext = App.HttpContext;
+            var CK = "ARTICLE_DETAILS_" + userId + HttpContextExtension.GetClientUserIp(webContext);
+            if (!CacheHelper.Exists(CK))
+            {
+                UpdateArticleHit(cid);
+                var userIP = HttpContextExtension.GetClientUserIp(webContext);
+                var location = HttpContextExtension.GetIpInfo(userIP);
+                itenant.InsertableWithAttr(new ArticleBrowsingLog()
+                {
+                    ArticleId = cid,
+                    UserId = userId,
+                    Location = location,
+                    UserIP = userIP,
+                    AddTime = DateTime.Now,
+                }).ExecuteReturnSnowflakeId();
+            }
+            CacheHelper.SetCache(CK, 1, 10);
+
+            return model;
         }
     }
 }

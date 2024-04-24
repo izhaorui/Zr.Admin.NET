@@ -18,8 +18,10 @@ namespace ZR.ServiceCore.Services
         PagedInfo<ArticleDto> GetMonentList(ArticleQueryDto parm);
         int TopArticle(Article model);
         int ChangeArticlePublic(Article model);
-        int UpdateArticleHit(int cid);
-        int PraiseArticle(int cid);
+        int UpdateArticleHit(long cid);
+        int PraiseArticle(long cid);
         Article PublishArticle(Article article);
+
+        ArticleDto GetArticle(long cid, long userId);
     }
 }

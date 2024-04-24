@@ -24,5 +24,6 @@ namespace ZR.Model.Dto
     public class ArticleCategoryQueryDto : PagerInfo 
     {
         public int? CategoryType { get; set; }
+        public int? ParentId { get; set; }
     }
 }
