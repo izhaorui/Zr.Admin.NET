@@ -111,11 +111,21 @@ namespace ZR.Model.System.Dto
         {
             get
             {
-                return Location?.Split("-")[0];
+                var temp_location = Location?.Split("-")?[0];
+
+                if (temp_location == "0")
+                {
+                    return "IP未知";
+                }
+                return temp_location?.Replace("省", "");
             }
         }
         public string Avatar { get; set; }
         public string NickName { get; set; }
         public int Sex { get; set; }
+        /// <summary>
+        /// 是否点赞
+        /// </summary>
+        public int IsPraise { get; set; }
     }
 }

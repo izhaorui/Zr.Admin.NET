@@ -11,6 +11,7 @@
         public string UserIP { get; set; }
         public long ToUserId { get; set; }
         public int IsDelete { get; set; }
+        [SugarColumn(InsertServerTime = true)]
         public DateTime AddTime { get; set; }
         public string Location { get; set; }
     }

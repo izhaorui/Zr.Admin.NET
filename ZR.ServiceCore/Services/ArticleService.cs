@@ -18,7 +18,7 @@ namespace ZR.ServiceCore.Services
     public class ArticleService : BaseService<Article>, IArticleService
     {
         private readonly IArticleCategoryService _categoryService;
-        
+
         public ArticleService(IArticleCategoryService categoryService)
         {
             _categoryService = categoryService;
@@ -98,6 +98,16 @@ namespace ZR.ServiceCore.Services
                 }, true)
                 .ToPage(parm);
 
+            if (parm.UserId > 0)
+            {
+                Context.ThenMapper(response.Result, item =>
+                {
+                    item.IsPraise = Context.Queryable<ArticlePraise>()
+                    .Where(f => f.UserId == parm.UserId && f.ArticleId == item.Cid && f.IsDelete == 0)
+                    .SetContext(scl => scl.ArticleId, () => item.Cid, item).Any() ? 1 : 0;
+                });
+            }
+
             return response;
         }
 
@@ -125,6 +135,16 @@ namespace ZR.ServiceCore.Services
                     Sex = u.Sex
                 }, true)
                 .ToPage(parm);
+
+            if (parm.UserId > 0)
+            {
+                Context.ThenMapper(response.Result, item =>
+                {
+                    item.IsPraise = Context.Queryable<ArticlePraise>()
+                    .Where(f => f.UserId == parm.UserId && f.IsDelete == 0)
+                    .SetContext(scl => scl.ArticleId, () => item.Cid, item).Any() ? 1 : 0;
+                });
+            }            
 
             return response;
         }
@@ -232,16 +252,27 @@ namespace ZR.ServiceCore.Services
         {
             return Update(w => w.Cid == cid, it => new Article() { PraiseNum = it.PraiseNum + 1 });
         }
+        public int CancelPraise(long cid)
+        {
+            return Update(w => w.Cid == cid, it => new Article() { PraiseNum = it.PraiseNum - 1 });
+        }
 
         public Article PublishArticle(Article article)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="cid">内容id</param>
+        /// <param name="userId">当前用户id</param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
         public ArticleDto GetArticle(long cid, long userId)
         {
             var response = GetId(cid);
-            var model = response.Adapt<ArticleDto>() ?? throw new CustomException(ResultCode.FAIL, "文章不存在");
+            var model = response.Adapt<ArticleDto>() ?? throw new CustomException(ResultCode.FAIL, "内容不存在");
             if (model.IsPublic == 0 && userId != model.UserId)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "访问失败");
@@ -268,7 +299,13 @@ namespace ZR.ServiceCore.Services
                 }).ExecuteReturnSnowflakeId();
             }
             CacheHelper.SetCache(CK, 1, 10);
-
+            if (userId > 0)
+            {
+                model.IsPraise = Context.Queryable<ArticlePraise>()
+               .Where(f => f.UserId == userId && f.ArticleId == cid && f.IsDelete == 0)
+               .Any() ? 1 : 0;
+            }
+           
             return model;
         }
     }

@@ -14,12 +14,15 @@ namespace ZR.Admin.WebApi.Controllers
         /// 动态接口
         /// </summary>
         private readonly IArticleService _ArticleService;
-        private readonly IArticleCategoryService _ArticleCategoryService;
 
-        public MonentController(IArticleService ArticleService, IArticleCategoryService articleCategoryService)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ArticleService"></param>
+        public MonentController(
+            IArticleService ArticleService)
         {
             _ArticleService = ArticleService;
-            _ArticleCategoryService = articleCategoryService;
         }
 
         /// <summary>
@@ -52,37 +55,10 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 置顶
-        /// </summary>
-        /// <returns></returns>
-        [HttpPut("top")]
-        [Log(Title = "置顶动态", BusinessType = BusinessType.UPDATE)]
-        public IActionResult Top([FromBody] Article parm)
-        {
-            var response = _ArticleService.TopArticle(parm);
-
-            return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 修改可见范围
-        /// </summary>
-        /// <returns></returns>
-        [HttpPut("changePublic")]
-        [Log(Title = "是否公开", BusinessType = BusinessType.UPDATE)]
-        public IActionResult ChangePublic([FromBody] Article parm)
-        {
-            var response = _ArticleService.ChangeArticlePublic(parm);
-
-            return SUCCESS(response);
-        }
-
-        /// <summary>
         /// 动态发布
         /// </summary>
         /// <returns></returns>
         [HttpPost("publishMonent")]
-        [Log(Title = "动态发布", BusinessType = BusinessType.INSERT)]
         public IActionResult PublishMonent([FromBody] ArticleDto parm)
         {
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
@@ -97,39 +73,10 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 删除动态
-        /// </summary>
-        /// <returns></returns>
-        [HttpDelete("del/{id}")]
-        [Log(Title = "动态删除", BusinessType = BusinessType.DELETE)]
-        public IActionResult DeleteMonents(int id = 0)
-        {
-            var userId = HttpContext.GetUId();
-            var info = _ArticleService.GetId(id);
-            if (info == null || info.UserId != userId)
-            {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "删除失败(-1)");
-            }
-            var response = _ArticleService.Delete(id);
-            return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 点赞动态
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost("praise/{id}")]
-        public IActionResult PraiseMonents(int id = 0)
-        {
-            var response = _ArticleService.PraiseArticle(id);
-            return SUCCESS(response);
-        }
-
-        /// <summary>
         /// 动态信息
         /// </summary>
         /// <returns></returns>
-        [HttpDelete("getInfo")]
+        [HttpGet("getInfo")]
         public IActionResult GetInfo()
         {
             var userId = HttpContext.GetUId();

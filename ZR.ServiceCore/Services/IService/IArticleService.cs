@@ -20,6 +20,7 @@ namespace ZR.ServiceCore.Services
         int ChangeArticlePublic(Article model);
         int UpdateArticleHit(long cid);
         int PraiseArticle(long cid);
+        int CancelPraise(long cid);
         Article PublishArticle(Article article);
 
         ArticleDto GetArticle(long cid, long userId);

@@ -1,4 +1,5 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
 using ZR.ServiceCore.Model;
 using ZR.ServiceCore.Services.IService;
 
@@ -23,24 +24,24 @@ namespace ZR.ServiceCore.Services
         {
             int result = 0;
             var praiseInfo = GetFirst(f => f.UserId == dto.UserId && f.ArticleId == dto.ArticleId);
-
+            var isPraise = 0;
             var r = UseTran(() =>
             {
                 //第一次点赞插入数据
                 if (praiseInfo == null)
                 {
-                    result = Add(dto);
-
-                    if (result > 0)
-                    {
-                        _articleService.PraiseArticle(dto.ArticleId);
-                    }
+                    Insertable(dto).ExecuteReturnSnowflakeId();
+                    result = _articleService.PraiseArticle(dto.ArticleId);
+                    isPraise = 1;
+                    //TODO 消息通知
                 }
                 else
                 {
                     if (praiseInfo.IsDelete == 0)
                     {
                         result = CanclePraise(dto.UserId, dto.ArticleId);
+                        //文章点赞-1
+                        _articleService.CancelPraise(dto.ArticleId);
                     }
                     else
                     {
@@ -48,11 +49,11 @@ namespace ZR.ServiceCore.Services
                         _articleService.PraiseArticle(dto.ArticleId);
                         //恢复点赞为未删除状态
                         PlusPraise(praiseInfo.PId);
+                        isPraise = 1;
                     }
                 }
             });
-            
-            return result;
+            return r.IsSuccess && isPraise == 1 ? 1 : 0;
         }
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace ZR.ServiceCore.Services
             return Deleteable()
                 .Where(f => f.ArticleId == articleId && f.UserId == userid)
                 .IsLogic()
-                .ExecuteCommand();
+                .ExecuteCommand(deleteValue: 1);
         }
 
         /// <summary>

@@ -19,7 +19,7 @@ namespace ZR.ServiceCore.SqlSugar
             var db = DbScoped.SugarScope;
             //TODO 可在此处单独更新某个表的结构
             //例如：db.CodeFirst.InitTables(typeof(EmailLog));
-
+            
 
             if (!init) return;
             //建库：如果不存在创建数据库存在不会重复创建 
@@ -54,6 +54,8 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(EmailTpl));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));
             db.CodeFirst.InitTables(typeof(EmailLog));
+            db.CodeFirst.InitTables(typeof(ArticlePraise));
+            db.CodeFirst.InitTables(typeof(ArticleComment));
             //db.CodeFirst.InitTables(typeof(UserOnlineLog));
         }
         public static void InitNewTb()

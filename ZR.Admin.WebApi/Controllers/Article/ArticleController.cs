@@ -4,7 +4,6 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
 using ZR.ServiceCore.Services.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -23,15 +22,19 @@ namespace ZR.Admin.WebApi.Controllers
         private readonly IArticleService _ArticleService;
         private readonly IArticleCategoryService _ArticleCategoryService;
         private readonly IArticlePraiseService _ArticlePraiseService;
+        private readonly ISysUserService _SysUserService;
 
         public ArticleController(
-            IArticleService ArticleService, 
+            IArticleService ArticleService,
             IArticleCategoryService articleCategoryService,
-            IArticlePraiseService articlePraiseService)
+            IArticlePraiseService articlePraiseService,
+            ISysUserService sysUserService)
         {
             _ArticleService = ArticleService;
             _ArticleCategoryService = articleCategoryService;
             _ArticleService = ArticleService;
+            _ArticlePraiseService = articlePraiseService;
+            _SysUserService = sysUserService;
         }
 
         /// <summary>
@@ -66,12 +69,14 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
-        [AllowAnonymous]
         public IActionResult Get(int id)
         {
             long userId = HttpContext.GetUId();
             var model = _ArticleService.GetArticle(id, userId);
-            return SUCCESS(model);
+            
+            ApiResult apiResult = ApiResult.Success(model);
+
+            return ToResponse(apiResult);
         }
 
         /// <summary>
@@ -148,59 +153,5 @@ namespace ZR.Admin.WebApi.Controllers
             var response = _ArticleService.Delete(id);
             return SUCCESS(response);
         }
-
-        #region 前端接口
-
-        /// <summary>
-        /// 前台查询文章列表
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("homeList")]
-        [AllowAnonymous]
-        public IActionResult QueryHomeList([FromQuery] ArticleQueryDto parm)
-        {
-            var response = _ArticleService.GetHotList(parm);
-
-            return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 查询最新文章列表
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("newList")]
-        [AllowAnonymous]
-        public IActionResult QueryNew()
-        {
-            var predicate = Expressionable.Create<Article>();
-            predicate = predicate.And(m => m.Status == "1");
-            predicate = predicate.And(m => m.IsPublic == 1);
-            predicate = predicate.And(m => m.ArticleType == 0);
-
-            var response = _ArticleService.Queryable()
-                .Where(predicate.ToExpression())
-                .Includes(x => x.ArticleCategoryNav) //填充子对象
-                .Take(10)
-                .OrderBy(f => f.UpdateTime, OrderByType.Desc).ToList();
-
-            return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 点赞
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost("praise")]
-        public IActionResult PraiseArticle([FromBody] ArticlePraiseDto parm)
-        {
-            var addModel = parm.Adapt<ArticlePraise>().ToCreate(context: HttpContext);
-            
-            addModel.UserId = HttpContext.GetUId();
-            addModel.UserIP = HttpContext.GetClientUserIp();
-            addModel.Location = HttpContextExtension.GetIpInfo(addModel.UserIP);
-
-            return SUCCESS(_ArticlePraiseService.Praise(addModel));
-        }
-        #endregion
     }
 }
