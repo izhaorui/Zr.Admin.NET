@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Services.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -21,20 +18,14 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         private readonly IArticleService _ArticleService;
         private readonly IArticleCategoryService _ArticleCategoryService;
-        private readonly IArticlePraiseService _ArticlePraiseService;
-        private readonly ISysUserService _SysUserService;
 
         public ArticleController(
             IArticleService ArticleService,
-            IArticleCategoryService articleCategoryService,
-            IArticlePraiseService articlePraiseService,
-            ISysUserService sysUserService)
+            IArticleCategoryService articleCategoryService)
         {
             _ArticleService = ArticleService;
             _ArticleCategoryService = articleCategoryService;
             _ArticleService = ArticleService;
-            _ArticlePraiseService = articlePraiseService;
-            _SysUserService = sysUserService;
         }
 
         /// <summary>

@@ -10,6 +10,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// 用户在线时长
     /// </summary>
     [Verify]
+    [ApiExplorerSettings(GroupName = "sys")]
     [Route("monitor/UserOnlineLog")]
     public class UserOnlineLogController : BaseController
     {

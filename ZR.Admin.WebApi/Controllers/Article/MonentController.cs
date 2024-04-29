@@ -8,6 +8,7 @@ namespace ZR.Admin.WebApi.Controllers
 {
     [Verify]
     [Route("monent")]
+    [ApiExplorerSettings(GroupName = "article")]
     public class MonentController : BaseController
     {
         /// <summary>
@@ -59,17 +60,14 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost("publishMonent")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult PublishMonent([FromBody] ArticleDto parm)
         {
+            if (parm == null) { return ToResponse(ResultCode.PARAM_ERROR); }
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
-            addModel.AuthorName = HttpContext.GetName();
-            addModel.UserId = HttpContext.GetUId();
-            addModel.ArticleType = ArticleTypeEnum.Monent;
-            addModel.UserIP = HttpContext.GetClientUserIp();
+            addModel.Tags = parm.TopicName;
 
-            string location = HttpContextExtension.GetIpInfo(addModel.UserIP);
-            addModel.Location = location;
-            return SUCCESS(_ArticleService.InsertReturnIdentity(addModel));
+            return SUCCESS(_ArticleService.PublishMonent(addModel));
         }
 
         /// <summary>

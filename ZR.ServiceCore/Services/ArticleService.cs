@@ -8,6 +8,7 @@ using ZR.Model.System.Dto;
 using ZR.Repository;
 using ZR.ServiceCore.Model;
 using ZR.ServiceCore.Model.Enums;
+using ZR.ServiceCore.Services.IService;
 
 namespace ZR.ServiceCore.Services
 {
@@ -18,10 +19,20 @@ namespace ZR.ServiceCore.Services
     public class ArticleService : BaseService<Article>, IArticleService
     {
         private readonly IArticleCategoryService _categoryService;
+        private readonly IArticleTopicService _topicService;
+        private readonly ISysConfigService _sysConfigService;
 
-        public ArticleService(IArticleCategoryService categoryService)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="categoryService"></param>
+        /// <param name="topicService"></param>
+        /// <param name="sysConfigService"></param>
+        public ArticleService(IArticleCategoryService categoryService, IArticleTopicService topicService, ISysConfigService sysConfigService)
         {
             _categoryService = categoryService;
+            _topicService = topicService;
+            _sysConfigService = sysConfigService;
         }
 
         /// <summary>
@@ -39,6 +50,7 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(parm.IsPublic != null, m => m.IsPublic == parm.IsPublic);
             predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
             predicate = predicate.AndIF(parm.ArticleType != null, m => (int)m.ArticleType == parm.ArticleType);
+            predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
 
             if (parm.CategoryId != null)
             {
@@ -64,7 +76,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
-        public PagedInfo<ArticleDto> GetHotList(ArticleQueryDto parm)
+        public PagedInfo<ArticleDto> GetArticleList(ArticleQueryDto parm)
         {
             var predicate = Expressionable.Create<Article>();
             predicate = predicate.And(m => m.Status == "1");
@@ -72,6 +84,7 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
             predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Article);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
+            predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
 
             if (parm.CategoryId != null)
             {
@@ -89,9 +102,12 @@ namespace ZR.ServiceCore.Services
                 .OrderByDescending(m => m.Cid)
                 .Select((m, u) => new ArticleDto()
                 {
-                    Avatar = u.Avatar,
-                    NickName = u.NickName,
-                    Sex = u.Sex,
+                    User = new ArticleUser()
+                    {
+                        Avatar = u.Avatar,
+                        NickName = u.NickName,
+                        Sex = u.Sex,
+                    },
                     Content = string.Empty,
                     UserIP = string.Empty,
                     ArticleCategoryNav = m.ArticleCategoryNav
@@ -122,6 +138,7 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.And(m => m.Status == "1");
             predicate = predicate.And(m => m.IsPublic == 1);
             predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Monent);
+            predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
 
             var response = Queryable()
                 .LeftJoin<SysUser>((m, u) => m.UserId == u.UserId).Filter(null, true)
@@ -130,9 +147,12 @@ namespace ZR.ServiceCore.Services
                 .OrderBy(m => m.Cid, OrderByType.Desc)
                 .Select((m, u) => new ArticleDto()
                 {
-                    Avatar = u.Avatar,
-                    NickName = u.NickName,
-                    Sex = u.Sex
+                    User = new ArticleUser()
+                    {
+                        Avatar = u.Avatar,
+                        NickName = u.NickName,
+                        Sex = u.Sex,
+                    },
                 }, true)
                 .ToPage(parm);
 
@@ -144,7 +164,7 @@ namespace ZR.ServiceCore.Services
                     .Where(f => f.UserId == parm.UserId && f.IsDelete == 0)
                     .SetContext(scl => scl.ArticleId, () => item.Cid, item).Any() ? 1 : 0;
                 });
-            }            
+            }
 
             return response;
         }
@@ -263,7 +283,30 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 
+        /// 发布动态
+        /// </summary>
+        /// <param name="article"></param>
+        /// <returns></returns>
+        public Article PublishMonent(Article article)
+        {
+            var httpContext = App.HttpContext;
+            article.ArticleType = ArticleTypeEnum.Monent;
+            article.AuthorName = HttpContextExtension.GetName(httpContext);
+            article.UserId = HttpContextExtension.GetUId(httpContext);
+            article.UserIP = HttpContextExtension.GetClientUserIp(httpContext);
+            article.Location = HttpContextExtension.GetIpInfo(article.UserIP);
+
+            article = InsertReturnEntity(article);
+            if (article.Cid > 0 && article.TopicId > 0)
+            {
+                _topicService.Update(w => w.TopicId == article.TopicId, it => new ArticleTopic() { JoinNum = it.JoinNum + 1 });
+            }
+
+            return article;
+        }
+
+        /// <summary>
+        /// 获取文章详情
         /// </summary>
         /// <param name="cid">内容id</param>
         /// <param name="userId">当前用户id</param>
@@ -305,7 +348,7 @@ namespace ZR.ServiceCore.Services
                .Where(f => f.UserId == userId && f.ArticleId == cid && f.IsDelete == 0)
                .Any() ? 1 : 0;
             }
-           
+
             return model;
         }
     }

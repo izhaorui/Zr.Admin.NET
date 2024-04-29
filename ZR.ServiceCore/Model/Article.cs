@@ -112,5 +112,9 @@ namespace ZR.Model.System
         /// 手机型号
         /// </summary>
         public string PhoneModel { get; set; }
+        /// <summary>
+        /// 话题ID
+        /// </summary>
+        public long TopicId { get; set; }
     }
 }

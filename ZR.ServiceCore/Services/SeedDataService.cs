@@ -2,6 +2,7 @@
 using SqlSugar.IOC;
 using ZR.Common;
 using ZR.Model.System;
+using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.Services
 {
@@ -202,6 +203,23 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
+        /// 文章话题
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public (string, object, object) InitArticleTopicData(List<ArticleTopic> data)
+        {
+            var db = DbScoped.SugarScope;
+            var x = db.Storageable(data)
+                .WhereColumns(it => it.TopicName)
+                .ToStorage();
+            x.AsInsertable.ExecuteCommand();
+            x.AsUpdateable.ExecuteCommand();
+            string msg = $"[文章话题] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            return (msg, x.ErrorList, x.IgnoreList);
+        }
+
+        /// <summary>
         /// 任务
         /// </summary>
         /// <param name="data"></param>
@@ -305,6 +323,10 @@ namespace ZR.ServiceCore.Services
             var sysArticleCategory = MiniExcel.Query<ArticleCategory>(path, sheetName: "article_category").ToList();
             var result11 = InitArticleCategoryData(sysArticleCategory);
             result.Add(result11.Item1);
+
+            var sysArticleTopic = MiniExcel.Query<ArticleTopic>(path, sheetName: "article_topic").ToList();
+            var result13 = InitArticleTopicData(sysArticleTopic);
+            result.Add(result13.Item1);
 
             var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "notice").ToList();
             var result12 = InitNoticeData(sysNotice);

@@ -19,6 +19,10 @@ namespace ZR.Model.System.Dto
         /// 1、最新 2、私密 3、热门
         /// </summary>
         public int TabId { get; set; }
+        /// <summary>
+        /// 话题ID
+        /// </summary>
+        public int? TopicId { get; set; }
     }
 
     /// <summary>
@@ -120,12 +124,18 @@ namespace ZR.Model.System.Dto
                 return temp_location?.Replace("省", "");
             }
         }
-        public string Avatar { get; set; }
-        public string NickName { get; set; }
-        public int Sex { get; set; }
         /// <summary>
         /// 是否点赞
         /// </summary>
         public int IsPraise { get; set; }
+        public long TopicId { get; set; }
+        public string TopicName { get; set; }
+        public ArticleUser User { get; set; }
+    }
+    public class ArticleUser
+    {
+        public string Avatar { get; set; } = string.Empty;
+        public string NickName { get; set; }
+        public int Sex { get; set; }
     }
 }

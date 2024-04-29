@@ -11,6 +11,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// 评论
     /// </summary>
     [Route("front/comment")]
+    [ApiExplorerSettings(GroupName = "article")]
     [ApiController]
     public class FrontCommentController : BaseController
     {
@@ -48,6 +49,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPost("add")]
         [Verify]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult Create([FromBody] ArticleCommentDto parm)
         {
             var uid = HttpContextExtension.GetUId(HttpContext);
@@ -65,6 +67,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPost("praise")]
+        [ActionPermissionFilter(Permission = "common")]
         [Verify]
         public IActionResult Praise([FromBody] ArticleCommentDto dto)
         {
@@ -80,6 +83,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="mid"></param>
         /// <returns></returns>
         [HttpDelete("delete/{mid}")]
+        [ActionPermissionFilter(Permission = "common")]
         [Verify]
         public IActionResult Delete(string mid)
         {

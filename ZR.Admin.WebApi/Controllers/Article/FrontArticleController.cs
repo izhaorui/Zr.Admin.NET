@@ -4,6 +4,7 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.ServiceCore.Model;
+using ZR.ServiceCore.Model.Dto;
 using ZR.ServiceCore.Services.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -12,6 +13,7 @@ namespace ZR.Admin.WebApi.Controllers
     /// 内容管理前端接口
     /// </summary>
     [Route("front/article")]
+    [ApiExplorerSettings(GroupName = "article")]
     [Verify]
     public class FrontArticleController : BaseController
     {
@@ -22,20 +24,22 @@ namespace ZR.Admin.WebApi.Controllers
         private readonly IArticleCategoryService _ArticleCategoryService;
         private readonly IArticlePraiseService _ArticlePraiseService;
         private readonly ISysUserService _SysUserService;
+        private readonly IArticleTopicService _ArticleTopicService;
 
         public FrontArticleController(
             IArticleService ArticleService,
             IArticleCategoryService articleCategoryService,
             IArticlePraiseService articlePraiseService,
-            ISysUserService sysUserService)
+            ISysUserService sysUserService,
+            IArticleTopicService articleTopicService)
         {
             _ArticleService = ArticleService;
             _ArticleCategoryService = articleCategoryService;
             _ArticleService = ArticleService;
             _ArticlePraiseService = articlePraiseService;
             _SysUserService = sysUserService;
+            _ArticleTopicService = articleTopicService;
         }
-
 
         /// <summary>
         /// 前台查询文章列表
@@ -46,7 +50,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult QueryHomeList([FromQuery] ArticleQueryDto parm)
         {
             parm.UserId = HttpContext.GetUId();
-            var response = _ArticleService.GetHotList(parm);
+            var response = _ArticleService.GetArticleList(parm);
 
             return SUCCESS(response);
         }
@@ -80,6 +84,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="authorId"></param>
         /// <returns></returns>
         [HttpPost("praise/{id}")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult Praise(int id = 0, long authorId = 0)
         {
             ArticlePraise addModel = new()
@@ -94,12 +99,12 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(_ArticlePraiseService.Praise(addModel));
         }
 
-
         /// <summary>
         /// 置顶
         /// </summary>
         /// <returns></returns>
         [HttpPut("top")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult Top([FromBody] Article parm)
         {
             var response = _ArticleService.TopArticle(parm);
@@ -112,6 +117,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPut("changePublic")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult ChangePublic([FromBody] Article parm)
         {
             if (parm == null) { return ToResponse(ResultCode.CUSTOM_ERROR); }
@@ -130,6 +136,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpDelete("del/{id}")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult Delete(int id = 0)
         {
             var userId = HttpContext.GetUId();
@@ -155,13 +162,46 @@ namespace ZR.Admin.WebApi.Controllers
             var model = _ArticleService.GetArticle(id, userId);
             var user = _SysUserService.GetById(model.UserId);
             ApiResult apiResult = ApiResult.Success(model);
+            model.User = new ArticleUser()
+            {
+                Avatar = user.Avatar,
+                NickName = user.NickName,
+                Sex = user.Sex,
+            };
 
-            model.NickName = user.NickName;
-            model.Avatar = user.Avatar;
-            model.Sex = user.Sex;
             apiResult.Put("user", user.Adapt<SysUserDto>());
             return ToResponse(apiResult);
         }
 
+        /// <summary>
+        /// 前台查询话题
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        [HttpGet("topicList")]
+        [AllowAnonymous]
+        public IActionResult QueryTopicList([FromQuery] ArticleTopicQueryDto parm)
+        {
+            var response = _ArticleTopicService.GetTopicList(parm);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 查询文章话题详情
+        /// </summary>
+        /// <param name="TopicId"></param>
+        /// <returns></returns>
+        [HttpGet("topic/{TopicId}")]
+        [AllowAnonymous]
+        public IActionResult GetArticleTopic(long TopicId)
+        {
+            var response = _ArticleTopicService.GetInfo(TopicId);
+
+            _ArticleTopicService.Update(w => w.TopicId == TopicId, it => new ArticleTopic() { ViewNum = it.ViewNum + 1 });
+
+            var info = response.Adapt<ArticleTopicDto>();
+            return SUCCESS(info);
+        }
     }
 }

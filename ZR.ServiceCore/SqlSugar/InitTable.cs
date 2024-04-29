@@ -56,6 +56,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(EmailLog));
             db.CodeFirst.InitTables(typeof(ArticlePraise));
             db.CodeFirst.InitTables(typeof(ArticleComment));
+            db.CodeFirst.InitTables(typeof(ArticleTopic));
             //db.CodeFirst.InitTables(typeof(UserOnlineLog));
         }
         public static void InitNewTb()
