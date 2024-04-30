@@ -29,6 +29,7 @@
         /// <summary>
         /// 发送时间
         /// </summary>
+        [SugarColumn(InsertServerTime = true)]
         public DateTime AddTime { get; set; }
         /// <summary>
         /// 用户IP

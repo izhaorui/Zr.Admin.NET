@@ -96,6 +96,29 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
+        /// 校验手机号是否绑定
+        /// </summary>
+        /// <param name="phoneNum"></param>
+        /// <returns></returns>
+        public List<long> CheckPhoneBind(string phoneNum)
+        {
+            var list = GetList(it => it.Phonenumber == phoneNum);
+            var temp = list.Select(x => x.UserId).ToList();
+            return list.Count > 0 ?  temp : new List<long>();
+        }
+
+        /// <summary>
+        /// 绑定手机号
+        /// </summary>
+        /// <param name="userid"></param>
+        /// <param name="phoneNum"></param>
+        /// <returns></returns>
+        public int ChangePhoneNum(long userid, string phoneNum)
+        {
+           return Update(new SysUser() { Phonenumber = phoneNum }, it => new { it.Phonenumber }, f => f.UserId == userid);
+        }
+
+        /// <summary>
         /// 新增保存用户信息
         /// </summary>
         /// <param name="sysUser"></param>

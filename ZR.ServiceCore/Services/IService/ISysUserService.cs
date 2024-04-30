@@ -37,6 +37,13 @@ namespace ZR.ServiceCore.Services
         public int UpdateUser(SysUser user);
 
         public int ChangeUser(SysUser user);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="phoneNum"></param>
+        /// <returns></returns>
+        List<long> CheckPhoneBind(string phoneNum);
+        int ChangePhoneNum(long userid, string phoneNum);
 
         /// <summary>
         /// 重置密码

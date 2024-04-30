@@ -21,6 +21,12 @@
         "Limit": 5
       },
       {
+        "Endpoint": "*:/checkMobile",
+        //时间段，格式：{数字}{单位}；可使用单位：s, m, h, d
+        "Period": "60s",
+        "Limit": 1
+      },
+      {
         "Endpoint": "((post)|(put)):*",
         "Period": "3s",
         "Limit": 1

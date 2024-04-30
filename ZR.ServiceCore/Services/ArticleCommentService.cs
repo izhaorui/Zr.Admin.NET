@@ -1,4 +1,5 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Repository;
@@ -138,13 +139,14 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 删除评论
         /// </summary>
-        /// <param name="mid"></param>
-        /// <param name="userId"></param>
+        /// <param name="mid">评论ID</param>
+        /// <param name="userId">当前登录用户</param>
         /// <returns></returns>
         public int DeleteMessage(long mid, long userId)
         {
-            var info = GetById(mid);
-            if (info != null && userId != info.UserId)
+            var info = GetById(mid) ?? throw new CustomException("评论不存在");
+            var postInfo = ArticleService.GetById(info.TargetId);
+            if (userId != info.UserId && userId != postInfo.UserId)
             {
                 return 0;
             }
