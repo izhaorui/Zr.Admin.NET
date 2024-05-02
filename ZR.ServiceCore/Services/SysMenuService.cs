@@ -1,6 +1,4 @@
 using Infrastructure.Attribute;
-using JinianNet.JNTemplate.Caching;
-using System.ComponentModel;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -123,6 +121,22 @@ namespace ZR.ServiceCore.Services
         public int DeleteMenuById(int menuId)
         {
             return Delete(menuId);
+        }
+
+        /// <summary>
+        /// 删除所有菜单
+        /// </summary>
+        /// <param name="menuId"></param>
+        /// <returns></returns>
+        public int DeleteAllMenuById(int menuId)
+        {
+            var childMenu = Queryable().ToChildList(x => x.ParentId, menuId).Select(x => x.MenuId);
+            var result = UseTran(() =>
+            {
+                Delete(childMenu.ToArray(), "删除菜单");
+                Context.Deleteable<SysRoleMenu>().Where(f => childMenu.Contains(f.Menu_id)).ExecuteCommand();
+            });
+            return result.IsSuccess ? 1 : 0;
         }
 
         /// <summary>
@@ -316,26 +330,6 @@ namespace ZR.ServiceCore.Services
             return list;
         }
         #region 方法
-
-        ///// <summary>
-        ///// 根据父节点的ID获取所有子节点
-        ///// </summary>
-        ///// <param name="list">分类表</param>
-        ///// <param name="parentId">传入的父节点ID</param>
-        ///// <returns></returns>
-        //public List<SysMenu> GetChildPerms(List<SysMenu> list, int parentId)
-        //{
-        //    List<SysMenu> returnList = new List<SysMenu>();
-        //    var data = list.FindAll(f => f.parentId == parentId);
-
-        //    foreach (var item in data)
-        //    {
-        //        RecursionFn(list, item);
-
-        //        returnList.Add(item);
-        //    }
-        //    return returnList;
-        //}
 
         /// <summary>
         /// 递归列表

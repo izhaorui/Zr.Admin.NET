@@ -19,6 +19,7 @@ namespace ZR.ServiceCore.Services
         long EditMenu(SysMenu menu);
 
         int DeleteMenuById(int menuId);
+        int DeleteAllMenuById(int menuId);
 
         string CheckMenuNameUnique(SysMenu menu);
 

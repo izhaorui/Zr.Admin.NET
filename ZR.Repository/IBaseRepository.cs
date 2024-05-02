@@ -36,13 +36,12 @@ namespace ZR.Repository
         #endregion update
         DbResult<bool> UseTran(Action action);
 
-        DbResult<bool> UseTran(SqlSugarClient client, Action action);
+        DbResult<bool> UseTran(ISqlSugarClient client, Action action);
 
         bool UseTran2(Action action);
 
         #region delete
         IDeleteable<T> Deleteable();
-        int Delete(object[] obj, string title = "");
         int Delete(object id, string title = "");
         int DeleteTable();
         bool Truncate();

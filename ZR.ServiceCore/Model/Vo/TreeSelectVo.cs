@@ -15,6 +15,7 @@
         public string Label { get; set; }
         public string Status { get; set; }
         public string MenuType { get; set; }
+        public string Permission { get; set; }
 
         public TreeSelectVo() { }
 
@@ -24,6 +25,7 @@
             Label = menu.MenuName;
             Status = menu.Status;
             MenuType = menu.MenuType;
+            Permission = menu.Perms;
 
             List<TreeSelectVo> child = new List<TreeSelectVo>();
             foreach (var item in menu.Children)

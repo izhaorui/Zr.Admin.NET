@@ -21,5 +21,9 @@ namespace ZR.ServiceCore.Model.Dto
         /// </summary>
         //[Required(ErrorMessage = "短信验证码不能为空")]
         public string PhoneCode { get; set; }
+        /// <summary>
+        /// 0、登录 1、绑定
+        /// </summary>
+        public int SendType { get; set; }
     }
 }

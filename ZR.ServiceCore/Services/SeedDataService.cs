@@ -2,6 +2,7 @@
 using SqlSugar.IOC;
 using ZR.Common;
 using ZR.Model.System;
+using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.Services
 {
@@ -25,7 +26,7 @@ namespace ZR.ServiceCore.Services
             db.Ado.BeginTran();
             //db.Ado.ExecuteCommand("SET IDENTITY_INSERT sys_user ON");
             var x = db.Storageable(data)
-                .SplitInsert(it => it.NotAny())
+                .SplitInsert(it => it.NotAny())//表示如果有where条件根据条件判断是否存在数据，不存在插入，存在不操作
                 .SplitError(x => x.Item.UserName.IsEmpty(), "用户名不能为空")
                 .SplitError(x => !Tools.CheckUserName(x.Item.UserName), "用户名不符合规范")
                 .WhereColumns(it => it.UserId)//如果不是主键可以这样实现（多字段it=>new{it.x1,it.x2}）
@@ -174,9 +175,7 @@ namespace ZR.ServiceCore.Services
         {
             var db = DbScoped.SugarScope;
             var x = db.Storageable(data)
-                //.SplitInsert(it => it.NotAny())
-                //.SplitUpdate(it => !it.Any())
-                //.WhereColumns(it => new { it.DictType })
+                .WhereColumns(it => new { it.DictType, it.DictValue })
                 .ToStorage();
             x.AsInsertable.ExecuteCommand();
             x.AsUpdateable.ExecuteCommand();
@@ -194,12 +193,29 @@ namespace ZR.ServiceCore.Services
         {
             var db = DbScoped.SugarScope;
             var x = db.Storageable(data)
-                .SplitInsert(it => it.NotAny())
+                //.SplitInsert(it => it.NotAny())
                 .WhereColumns(it => it.Name)
                 .ToStorage();
-            var result = x.AsInsertable.ExecuteCommand();
+            x.AsInsertable.ExecuteCommand();
+            x.AsUpdateable.ExecuteCommand();
+            string msg = $"[文章目录] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            return (msg, x.ErrorList, x.IgnoreList);
+        }
 
-            string msg = $"[字典数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
+        /// <summary>
+        /// 文章话题
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public (string, object, object) InitArticleTopicData(List<ArticleTopic> data)
+        {
+            var db = DbScoped.SugarScope;
+            var x = db.Storageable(data)
+                .WhereColumns(it => it.TopicName)
+                .ToStorage();
+            x.AsInsertable.ExecuteCommand();
+            x.AsUpdateable.ExecuteCommand();
+            string msg = $"[文章话题] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -218,6 +234,24 @@ namespace ZR.ServiceCore.Services
             var result = x.AsInsertable.ExecuteCommand();
 
             string msg = $"[任务数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            return (msg, x.ErrorList, x.IgnoreList);
+        }
+
+        /// <summary>
+        /// 公告数据
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public (string, object, object) InitNoticeData(List<SysNotice> data)
+        {
+            var db = DbScoped.SugarScope;
+            var x = db.Storageable(data)
+                .WhereColumns(it => new { it.NoticeId })
+                .ToStorage();
+            x.AsInsertable.ExecuteCommand();
+            x.AsUpdateable.ExecuteCommand();
+
+            string msg = $"[通知公告数据] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -243,6 +277,7 @@ namespace ZR.ServiceCore.Services
                 db.DbMaintenance.TruncateTable<SysPost>();
                 db.DbMaintenance.TruncateTable<SysDictType>();
                 db.DbMaintenance.TruncateTable<SysDictData>();
+                db.DbMaintenance.TruncateTable<SysNotice>();
             }
 
             var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
@@ -288,6 +323,14 @@ namespace ZR.ServiceCore.Services
             var sysArticleCategory = MiniExcel.Query<ArticleCategory>(path, sheetName: "article_category").ToList();
             var result11 = InitArticleCategoryData(sysArticleCategory);
             result.Add(result11.Item1);
+
+            var sysArticleTopic = MiniExcel.Query<ArticleTopic>(path, sheetName: "article_topic").ToList();
+            var result13 = InitArticleTopicData(sysArticleTopic);
+            result.Add(result13.Item1);
+
+            var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "notice").ToList();
+            var result12 = InitNoticeData(sysNotice);
+            result.Add(result12.Item1);
 
             return result;
         }

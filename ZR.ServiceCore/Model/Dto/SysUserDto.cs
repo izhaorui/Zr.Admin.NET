@@ -8,6 +8,7 @@
         public string Email { get; set; }
         public string Remark { get; set; }
         public string Phonenumber { get; set; }
+        public string Avatar { get; set; }
         /// <summary>
         /// 用户性别（0男 1女 2未知）
         /// </summary>
@@ -36,6 +37,9 @@
         /// 岗位集合
         /// </summary>
         public int[] PostIds { get; set; }
+        public string WelcomeContent { get; set; }
+        public string WelcomeMessage { get; set; }
+        public bool IsAdmin { get; set; }
     }
 
     public class SysUserQueryDto

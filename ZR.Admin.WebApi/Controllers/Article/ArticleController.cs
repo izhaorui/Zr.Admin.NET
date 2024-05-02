@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
-
 namespace ZR.Admin.WebApi.Controllers
 {
     /// <summary>
-    /// 文章管理
+    /// 内容管理
     /// </summary>
     [Verify]
     [Route("article")]
@@ -21,10 +19,13 @@ namespace ZR.Admin.WebApi.Controllers
         private readonly IArticleService _ArticleService;
         private readonly IArticleCategoryService _ArticleCategoryService;
 
-        public ArticleController(IArticleService ArticleService, IArticleCategoryService articleCategoryService)
+        public ArticleController(
+            IArticleService ArticleService,
+            IArticleCategoryService articleCategoryService)
         {
             _ArticleService = ArticleService;
             _ArticleCategoryService = articleCategoryService;
+            _ArticleService = ArticleService;
         }
 
         /// <summary>
@@ -54,82 +55,35 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
-        /// 前台查询文章列表
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("hotList")]
-        [AllowAnonymous]
-        public IActionResult QueryHot([FromQuery] ArticleQueryDto parm)
-        {
-            var response = _ArticleService.GetHotList(parm);
-
-            return SUCCESS(response);
-        }
-
-        /// <summary>
-        /// 查询最新文章列表
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("newList")]
-        [AllowAnonymous]
-        public IActionResult QueryNew()
-        {
-            var predicate = Expressionable.Create<Article>();
-            predicate = predicate.And(m => m.Status == "1");
-            predicate = predicate.And(m => m.IsPublic == 1);
-
-            var response = _ArticleService.Queryable()
-                .Where(predicate.ToExpression())
-                .Includes(x => x.ArticleCategoryNav) //填充子对象
-                .Take(10)
-                .OrderBy(f => f.UpdateTime, OrderByType.Desc).ToList();
-
-            return SUCCESS(response);
-        }
-
-        /// <summary>
         /// 查询文章详情
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
-        [AllowAnonymous]
         public IActionResult Get(int id)
         {
             long userId = HttpContext.GetUId();
-            var response = _ArticleService.GetId(id);
-            var model = response.Adapt<ArticleDto>();
-            if (model == null) return ToResponse(ResultCode.FAIL, "文章不存在");
-            if (model.IsPublic == 0 && userId != model.UserId)
-            {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "访问失败");
-            }
-            if (model != null)
-            {
-                model.ArticleCategoryNav = _ArticleCategoryService.GetById(model.CategoryId);
-                model.TagList = model.Tags?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-            }
-            var CK = "ARTICLE_DETAILS_" + userId + HttpContextExtension.GetClientUserIp(HttpContext);
-            if (!CacheHelper.Exists(CK))
-            {
-                _ArticleService.UpdateArticleHit(id);
-            }
-            CacheHelper.SetCache(CK, 1, 10);
-            return SUCCESS(model);
+            var model = _ArticleService.GetArticle(id, userId);
+            
+            ApiResult apiResult = ApiResult.Success(model);
+
+            return ToResponse(apiResult);
         }
 
         /// <summary>
-        /// 添加文章
+        /// 发布文章
         /// </summary>
         /// <returns></returns>
         [HttpPost("add")]
         [ActionPermissionFilter(Permission = "system:article:add")]
-        [Log(Title = "发布文章", BusinessType = BusinessType.INSERT)]
+        //[Log(Title = "发布文章", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] ArticleDto parm)
         {
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
             addModel.AuthorName = HttpContext.GetName();
             addModel.UserId = HttpContext.GetUId();
+            addModel.UserIP = HttpContext.GetClientUserIp();
+            addModel.Location = HttpContextExtension.GetIpInfo(addModel.UserIP);
 
             return SUCCESS(_ArticleService.InsertReturnIdentity(addModel));
         }
@@ -140,7 +94,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpPut("edit")]
         [ActionPermissionFilter(Permission = "system:article:update")]
-        [Log(Title = "文章修改", BusinessType = BusinessType.UPDATE)]
+        //[Log(Title = "文章修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] ArticleDto parm)
         {
             parm.AuthorName = HttpContext.GetName();

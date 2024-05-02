@@ -19,7 +19,8 @@ namespace Infrastructure.Model
         /// 初始化db
         /// </summary>
         public bool InitDb { get; set; }
-        public MailOptions MailOptions { get; set; }
+        public string[] InitTables { get; set; }
+        public List<MailOptions> MailOptions { get; set; }
         public Upload Upload { get; set; }
         public ALIYUN_OSS ALIYUN_OSS { get; set; }
         public JwtSettings JwtSettings { get; set; }

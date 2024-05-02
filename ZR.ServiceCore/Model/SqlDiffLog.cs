@@ -1,6 +1,6 @@
 ﻿namespace ZR.Model.System
 {
-    [SugarTable("SqlDiffLog", "数据差异日志")]
+    [SugarTable("sqlDiffLog", "数据差异日志")]
     [Tenant("0")]
     public class SqlDiffLog
     {

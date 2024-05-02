@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using MiniExcelLibs;
+using System.IO;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System;
 using ZR.Service.IService;
@@ -86,9 +88,9 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public async Task<IActionResult> UploadFile([FromForm] UploadDto uploadDto, StoreType storeType = StoreType.LOCAL)
         {
-            IFormFile formFile = uploadDto.File;
-            if (formFile == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
+            if (uploadDto?.File == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             SysFile file = new();
+            IFormFile formFile = uploadDto.File;
             string fileExt = Path.GetExtension(formFile.FileName);//文件后缀
             double fileSize = Math.Round(formFile.Length / 1024.0, 2);//文件大小KB
 
@@ -194,7 +196,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (!WebHostEnvironment.IsDevelopment())
             {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败");
+                return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败，请在开发模式下初始化");
             }
             var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
             SeedDataService seedDataService = new();
@@ -208,6 +210,35 @@ namespace ZR.Admin.WebApi.Controllers
             return SUCCESS(new
             {
                 result
+            });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(BusinessType = BusinessType.INSERT, Title = "初始化数据")]
+        public IActionResult UpdateSeedData()
+        {
+            if (!WebHostEnvironment.IsDevelopment())
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败，请在开发模式下初始化");
+            }
+            var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
+            SeedDataService seedDataService = new();
+
+            var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "notice").ToList();
+            var result = seedDataService.InitNoticeData(sysNotice);
+
+            var sysMenu = MiniExcel.Query<SysMenu>(path, sheetName: "menu").Where(f => f.MenuId >= 1104).ToList();
+            var result5 = seedDataService.InitMenuData(sysMenu);
+
+            return SUCCESS(new
+            {
+                result,
+                result5
             });
         }
     }

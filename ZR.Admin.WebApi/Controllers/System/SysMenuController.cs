@@ -117,7 +117,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 .NameMatchingStrategy(NameMatchingStrategy.IgnoreCase);//忽略字段名称的大小写;//忽略除以上配置的所有字段
 
             var modal = menuDto.Adapt<SysMenu>(config).ToUpdate(HttpContext);
-            if (UserConstants.YES_FRAME.Equals(modal.IsFrame) && !modal.Path.StartsWith("http"))
+            if (UserConstants.YES_FRAME.Equals(modal.IsFrame) && (!modal.Path.StartsWith("http") && !modal.Path.StartsWith("/link")))
             {
                 return ToResponse(ApiResult.Error($"修改菜单'{modal.MenuName}'失败，地址必须以http(s)://开头"));
             }
@@ -182,6 +182,20 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ResultCode.CUSTOM_ERROR, "菜单已分配,不允许删除");
             }
             int result = sysMenuService.DeleteMenuById(menuId);
+
+            return ToResponse(result);
+        }
+        /// <summary>
+        /// 菜单删除
+        /// </summary>
+        /// <param name="menuId"></param>
+        /// <returns></returns>
+        [HttpDelete("deleteAll/{menuId}")]
+        [Log(Title = "菜单管理", BusinessType = BusinessType.DELETE)]
+        [ActionPermissionFilter(Permission = "system:menu:remove")]
+        public IActionResult RemoveAll(int menuId = 0)
+        {
+            int result = sysMenuService.DeleteAllMenuById(menuId);
 
             return ToResponse(result);
         }

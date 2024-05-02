@@ -14,15 +14,16 @@ namespace ZR.ServiceCore.SqlSugar
         /// <summary>
         /// 创建db、表
         /// </summary>
-        public static void InitDb()
+        public static void InitDb(bool init)
         {
             var db = DbScoped.SugarScope;
+            //TODO 可在此处单独更新某个表的结构
+            //例如：db.CodeFirst.InitTables(typeof(EmailLog));
+            
+
+            if (!init) return;
             //建库：如果不存在创建数据库存在不会重复创建 
             db.DbMaintenance.CreateDatabase();// 注意 ：Oracle和个别国产库需不支持该方法，需要手动建库 
-
-            //var baseType = typeof(SysBase);
-            //var entityes = AssemblyUtils.GetAllTypes().Where(p => !p.IsAbstract && p != baseType && p.GetCustomAttribute<SugarTable>() != null).ToArray();
-            //db.CodeFirst.InitTables(entityes);
 
             //27个表,建议先使用下面方法初始化表，方便排查问题
             db.CodeFirst.InitTables(typeof(SysUser));
@@ -46,12 +47,26 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(GenTableColumn));
             db.CodeFirst.InitTables(typeof(Article));
             db.CodeFirst.InitTables(typeof(ArticleCategory));
+            db.CodeFirst.InitTables(typeof(ArticleBrowsingLog));
             db.CodeFirst.InitTables(typeof(SysDictData));
             db.CodeFirst.InitTables(typeof(SysDictType));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
             db.CodeFirst.InitTables(typeof(EmailTpl));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));
             db.CodeFirst.InitTables(typeof(EmailLog));
+            db.CodeFirst.InitTables(typeof(ArticlePraise));
+            db.CodeFirst.InitTables(typeof(ArticleComment));
+            db.CodeFirst.InitTables(typeof(ArticleTopic));
+            //db.CodeFirst.InitTables(typeof(UserOnlineLog));
+        }
+        public static void InitNewTb()
+        {
+            var db = DbScoped.SugarScope;
+            var t1 = db.DbMaintenance.IsAnyTable(typeof(UserOnlineLog).Name);
+            if (!t1)
+            {
+                db.CodeFirst.InitTables(typeof(UserOnlineLog));
+            }
         }
     }
 }

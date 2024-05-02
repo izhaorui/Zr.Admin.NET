@@ -43,7 +43,6 @@ namespace ZR.Admin.WebApi.Controllers.System
             roleService = sysRoleService;
         }
 
-
         /// <summary>
         /// 登录
         /// </summary>
@@ -112,8 +111,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
             user.WelcomeContent = GlobalConstant.WelcomeMessages[new Random().Next(0, GlobalConstant.WelcomeMessages.Length)];
-
-            return SUCCESS(new { user, roles, permissions });
+            user.Password = string.Empty;
+            return SUCCESS(new { user = user.Adapt<SysUserDto>(), roles, permissions });
         }
 
         /// <summary>
@@ -261,37 +260,49 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        [HttpPost("checkMobile")]
+        [HttpPost("/checkMobile")]
         [Log(Title = "发送短息", BusinessType = BusinessType.INSERT)]
         public IActionResult CheckMobile([FromBody] PhoneLoginDto dto)
         {
             dto.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
-
-            SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
-            if (sysConfig?.ConfigValue != "off" && !SecurityCodeHelper.Validate(dto.Uuid, dto.Code, false))
+            var uid = HttpContext.GetUId();
+            //SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
+            //if (!SecurityCodeHelper.Validate(dto.Uuid, dto.Code, false))
+            //{
+            //    return ToResponse(ResultCode.CUSTOM_ERROR, "验证码错误");
+            //}
+            if (dto.SendType == 0)
             {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "验证码错误");
+                var info = sysUserService.GetFirst(f => f.Phonenumber == dto.PhoneNum) ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "该手机号不存在", false);
+                uid = info.UserId;
             }
+            if (dto.SendType == 1)
+            {
+                if (sysUserService.CheckPhoneBind(dto.PhoneNum).Count > 0)
+                {
+                    return ToResponse(ResultCode.CUSTOM_ERROR, "手机号已绑定其他账号");
+                }
+            }
+
             string location = HttpContextExtension.GetIpInfo(dto.LoginIP);
-            var info = sysUserService.GetFirst(f => f.Phonenumber == dto.PhoneNum) ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "该手机号不存在", false);
 
             var smsCode = RandomHelper.GenerateNum(6);
-            var smsContent = $"验证码{smsCode}（随机验证码）,有效期10分钟。";
+            var smsContent = $"验证码{smsCode},有效期10分钟。";
             //TODO 发送短息验证码,1分钟内允许一次
             smsCodeLogService.AddSmscodeLog(new ServiceCore.Model.SmsCodeLog()
             {
-                Userid = info.UserId,
+                Userid = uid,
                 PhoneNum = dto.PhoneNum.ParseToLong(),
-                AddTime = DateTime.Now,
-                SendType = 1,
+                SendType = dto.SendType,
                 SmsCode = smsCode,
                 SmsContent = smsContent,
                 UserIP = dto.LoginIP,
                 Location = location,
             });
+            
             CacheService.SetPhoneCode(dto.PhoneNum, smsCode);
 
-            return SUCCESS(new { smsCode });
+            return SUCCESS(1);
         }
 
         /// <summary>
@@ -323,6 +334,28 @@ namespace ZR.Admin.WebApi.Controllers.System
             TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>());
             CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
+        }
+
+        /// <summary>
+        /// 手机号绑定
+        /// </summary>
+        /// <param name="loginBody"></param>
+        /// <returns></returns>
+        [Route("/PhoneBind")]
+        [HttpPost]
+        [Log(Title = "手机号绑定")]
+        public IActionResult PhoneBind([FromBody] PhoneLoginDto loginBody)
+        {
+            if (loginBody == null) { throw new CustomException("请求参数错误"); }
+            loginBody.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
+            var uid = HttpContext.GetUId();
+            if (!CacheService.CheckPhoneCode(loginBody.PhoneNum, loginBody.PhoneCode))
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "短信验证码错误");
+            }
+            var result = sysUserService.ChangePhoneNum(uid, loginBody.PhoneNum);
+
+            return SUCCESS(result);
         }
     }
 }

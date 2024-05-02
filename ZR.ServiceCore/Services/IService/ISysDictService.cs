@@ -1,5 +1,6 @@
 ﻿using ZR.Model;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.ServiceCore.Services
 {
@@ -46,6 +47,6 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         SysDictType GetInfo(long dictId);
 
-        List<SysDictData> SelectDictDataByCustomSql(string dictType);
+        List<SysDictDataDto> SelectDictDataByCustomSql(string dictType);
     }
 }

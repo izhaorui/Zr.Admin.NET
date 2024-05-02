@@ -4,11 +4,16 @@
     /// 邮件发送记录
     /// </summary>
     [SugarTable("email_log")]
+    [Tenant("0")]
     public class EmailLog
     {
         [JsonConverter(typeof(ValueToStringConverter))]
         [SugarColumn(IsPrimaryKey = true, IsIdentity = false)]
         public long Id { get; set; }
+        /// <summary>
+        /// 发送人名称
+        /// </summary>
+        public string FromName { get; set; }
         /// <summary>
         /// 发送邮箱
         /// </summary>

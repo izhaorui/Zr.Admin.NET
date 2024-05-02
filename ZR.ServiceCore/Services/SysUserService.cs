@@ -71,7 +71,7 @@ namespace ZR.ServiceCore.Services
         public SysUser SelectUserById(long userId)
         {
             var user = Queryable().Filter(null, true).WithCache(60 * 5)
-                .Where(f => f.UserId == userId).First();
+                .Where(f => f.UserId == userId && f.DelFlag == 0).First();
             if (user != null && user.UserId > 0)
             {
                 user.Roles = RoleService.SelectUserRoleListByUserId(userId);
@@ -93,6 +93,29 @@ namespace ZR.ServiceCore.Services
                 return UserConstants.NOT_UNIQUE;
             }
             return UserConstants.UNIQUE;
+        }
+
+        /// <summary>
+        /// 校验手机号是否绑定
+        /// </summary>
+        /// <param name="phoneNum"></param>
+        /// <returns></returns>
+        public List<long> CheckPhoneBind(string phoneNum)
+        {
+            var list = GetList(it => it.Phonenumber == phoneNum);
+            var temp = list.Select(x => x.UserId).ToList();
+            return list.Count > 0 ?  temp : new List<long>();
+        }
+
+        /// <summary>
+        /// 绑定手机号
+        /// </summary>
+        /// <param name="userid"></param>
+        /// <param name="phoneNum"></param>
+        /// <returns></returns>
+        public int ChangePhoneNum(long userid, string phoneNum)
+        {
+           return Update(new SysUser() { Phonenumber = phoneNum }, it => new { it.Phonenumber }, f => f.UserId == userid);
         }
 
         /// <summary>
@@ -127,7 +150,7 @@ namespace ZR.ServiceCore.Services
             var roleIds = RoleService.SelectUserRoles(user.UserId);
             var diffArr = roleIds.Where(c => !((IList)user.RoleIds).Contains(c)).ToArray();
             var diffArr2 = user.RoleIds.Where(c => !((IList)roleIds).Contains(c)).ToArray();
-            bool result = UseTran2(() =>
+            var result = UseTran(() =>
             {
                 if (diffArr.Length > 0 || diffArr2.Length > 0)
                 {
@@ -142,7 +165,7 @@ namespace ZR.ServiceCore.Services
                 UserPostService.InsertUserPost(user);
                 ChangeUser(user);
             });
-            return result ? 1 : 0;
+            return result.IsSuccess ? 1 : 0;
         }
 
         public int ChangeUser(SysUser user)
@@ -193,11 +216,15 @@ namespace ZR.ServiceCore.Services
         public int DeleteUser(long userid)
         {
             CheckUserAllowed(new SysUser() { UserId = userid });
-            //删除用户与角色关联
-            UserRoleService.DeleteUserRoleByUserId((int)userid);
-            // 删除用户与岗位关联
-            UserPostService.Delete(userid);
-            return Update(new SysUser() { UserId = userid, DelFlag = 2 }, it => new { it.DelFlag }, f => f.UserId == userid);
+            var result = UseTran(() =>
+            {
+                //删除用户与角色关联
+                UserRoleService.DeleteUserRoleByUserId((int)userid);
+                // 删除用户与岗位关联
+                UserPostService.Delete(userid);
+                Update(new SysUser() { UserId = userid, DelFlag = 2 }, it => new { it.DelFlag }, f => f.UserId == userid);
+            });
+            return result.IsSuccess ? 1 : 0;
         }
 
         /// <summary>
@@ -254,7 +281,7 @@ namespace ZR.ServiceCore.Services
         /// <param name="user"></param>
         public void CheckUserAllowed(SysUser user)
         {
-            if (user.IsAdmin())
+            if (user.IsAdmin)
             {
                 throw new CustomException("不允许操作超级管理员角色");
             }
@@ -267,12 +294,6 @@ namespace ZR.ServiceCore.Services
         /// <param name="loginUserId"></param>
         public void CheckUserDataScope(long userid, long loginUserId)
         {
-            if (!SysUser.IsAdmin(loginUserId))
-            {
-                SysUser user = new SysUser() { UserId = userid };
-
-                //TODO 判断用户是否有数据权限
-            }
         }
 
         /// <summary>
@@ -329,7 +350,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public SysUser Login(LoginBodyDto user)
         {
-            return GetFirst(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower());
+            return GetFirst(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower() && it.DelFlag == 0);
         }
 
         /// <summary>

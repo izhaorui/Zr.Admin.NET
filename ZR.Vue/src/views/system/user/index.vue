@@ -8,7 +8,6 @@
             v-model="deptName"
             placeholder="请输入部门名称"
             clearable
-            size="small"
             prefix-icon="el-icon-search"
             style="margin-bottom: 20px"
           />
@@ -33,7 +32,6 @@
               v-model="queryParams.userName"
               placeholder="请输入用户名称"
               clearable
-              size="small"
               style="width: 240px"
               @keyup.enter.native="handleQuery"
             />
@@ -43,7 +41,6 @@
               v-model="queryParams.phonenumber"
               placeholder="请输入手机号码"
               clearable
-              size="small"
               style="width: 240px"
               @keyup.enter.native="handleQuery"
             />
@@ -57,7 +54,6 @@
           <el-form-item label="创建时间">
             <el-date-picker
               v-model="dateRange"
-              size="small"
               style="width: 240px"
               value-format="yyyy-MM-dd"
               type="daterange"
@@ -67,26 +63,26 @@
             ></el-date-picker>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-            <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+            <el-button type="primary" icon="el-icon-search"  @click="handleQuery">搜索</el-button>
+            <el-button icon="el-icon-refresh"  @click="resetQuery">重置</el-button>
           </el-form-item>
         </el-form>
 
         <el-row :gutter="10" class="mb8">
           <el-col :span="1.5">
-            <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['system:user:add']">新增</el-button>
+            <el-button type="primary" plain icon="el-icon-plus" @click="handleAdd" v-hasPermi="['system:user:add']">新增</el-button>
           </el-col>
           <!-- <el-col :span="1.5">
             <el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate"
               v-hasPermi="['system:user:edit']">修改</el-button>
           </el-col> -->
           <el-col :span="1.5">
-            <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['system:user:import']"
+            <el-button type="info" plain icon="el-icon-upload2" @click="handleImport" v-hasPermi="['system:user:import']"
               >导入</el-button
             >
           </el-col>
           <el-col :span="1.5">
-            <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:user:export']"
+            <el-button type="warning" plain icon="el-icon-download" @click="handleExport" v-hasPermi="['system:user:export']"
               >导出
             </el-button>
           </el-col>

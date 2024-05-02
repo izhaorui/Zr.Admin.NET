@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace ZR.Model.Dto
 {
     /// <summary>
@@ -9,6 +7,7 @@ namespace ZR.Model.Dto
     {
         public string FromEmail { get; set; }
         public string Subject { get; set; }
+        public int? IsSend { get; set; }
         public DateTime? BeginAddTime { get; set; }
         public DateTime? EndAddTime { get; set; }
     }
@@ -40,5 +39,6 @@ namespace ZR.Model.Dto
         /// </summary>
         public string SendResult { get; set; }
         public long[] IdArr { get; set; }
+        public string FromName { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using SqlSugar.IOC;
 using ZR.Model.System;
+using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -48,6 +49,7 @@ namespace ZR.ServiceCore.SqlSugar
             var expUser = Expressionable.Create<SysUser>();
             var expRole = Expressionable.Create<SysRole>();
             var expLoginlog = Expressionable.Create<SysLogininfor>();
+            expUser.And(it => it.DelFlag == 0);
 
             foreach (var role in user.Roles.OrderBy(f => f.DataScope))
             {
@@ -84,6 +86,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.QueryFilter.AddTableFilter(expUser.ToExpression());
             db.QueryFilter.AddTableFilter(expRole.ToExpression());
             db.QueryFilter.AddTableFilter(expLoginlog.ToExpression());
+            db.QueryFilter.AddTableFilter<UserOnlineLog>(f => f.UserId == user.UserId, QueryFilterProvider.FilterJoinPosition.Where);
         }
     }
 }

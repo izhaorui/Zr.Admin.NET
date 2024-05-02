@@ -159,7 +159,7 @@ namespace ZR.ServiceCore.Services
                     updateColumns.Add(column);
                 }
             }
-            bool result = UseTran2(() =>
+            var result = UseTran(() =>
             {
                 if (insertColumns.Count > 0)
                 {
@@ -176,7 +176,7 @@ namespace ZR.ServiceCore.Services
                     GenTableColumnService.Delete(delColumns.Select(f => f.ColumnId).ToList());
                 }
             });
-            return result;
+            return result.IsSuccess;
         }
     }
 

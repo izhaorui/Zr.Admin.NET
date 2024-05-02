@@ -30,7 +30,7 @@ namespace ZR.ServiceCore.Services
         {
             List<string> roles = new();
             // 管理员拥有所有权限
-            if (user.IsAdmin())
+            if (user.IsAdmin)
             {
                 roles.Add("admin");
             }
@@ -50,7 +50,7 @@ namespace ZR.ServiceCore.Services
         {
             List<string> perms = new();
             // 管理员拥有所有权限
-            if (user.IsAdmin() || GetRolePermission(user).Exists(f => f.Equals(GlobalConstant.AdminRole)))
+            if (user.IsAdmin || GetRolePermission(user).Exists(f => f.Equals(GlobalConstant.AdminRole)))
             {
                 perms.Add(GlobalConstant.AdminPerm);
             }

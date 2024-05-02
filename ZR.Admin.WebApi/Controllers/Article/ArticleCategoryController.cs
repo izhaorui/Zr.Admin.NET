@@ -28,7 +28,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="parm"></param>
         /// <returns></returns>
         [HttpGet("list")]
-        //[ActionPermissionFilter(Permission = "articlecategory:list")]
+        [AllowAnonymous]
         public IActionResult QueryArticleCategory([FromQuery] ArticleCategoryQueryDto parm)
         {
             var response = _ArticleCategoryService.GetList(parm);
@@ -41,7 +41,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="parm"></param>
         /// <returns></returns>
         [HttpGet("treeList")]
-        //[ActionPermissionFilter(Permission = "articlecategory:list")]
+        [AllowAnonymous]
         public IActionResult QueryTreeArticleCategory([FromQuery] ArticleCategoryQueryDto parm)
         {
             var response = _ArticleCategoryService.GetTreeList(parm);
@@ -58,6 +58,20 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult GetArticleCategory(int CategoryId)
         {
             var response = _ArticleCategoryService.GetFirst(x => x.CategoryId == CategoryId);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 查询目录分类
+        /// </summary>
+        /// <param name="categoryType"></param>
+        /// <returns></returns>
+        [HttpGet("type{categoryType}")]
+        //[ActionPermissionFilter(Permission = "articlecategory:query")]
+        public IActionResult GetArticleCategoryByType(int categoryType)
+        {
+            var response = _ArticleCategoryService.GetFirst(x => x.CategoryType == categoryType);
 
             return SUCCESS(response);
         }

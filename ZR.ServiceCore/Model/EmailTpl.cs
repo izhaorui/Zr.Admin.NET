@@ -6,6 +6,7 @@ namespace ZR.ServiceCore.Model
     /// 邮件发送模板
     /// </summary>
     [SugarTable("emailTpl")]
+    [Tenant("0")]
     public class EmailTpl : SysBase
     {
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]

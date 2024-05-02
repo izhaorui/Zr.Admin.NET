@@ -137,7 +137,7 @@ namespace ZR.Repository
         /// <param name="client"></param>
         /// <param name="action">增删改查方法</param>
         /// <returns></returns>
-        public DbResult<bool> UseTran(SqlSugarClient client, Action action)
+        public DbResult<bool> UseTran(ISqlSugarClient client, Action action)
         {
             try
             {
@@ -159,7 +159,9 @@ namespace ZR.Repository
         /// <returns></returns>
         public bool UseTran2(Action action)
         {
+            Console.WriteLine("---事务开始---");
             var result = Context.Ado.UseTran(() => action());
+            Console.WriteLine("---事务结束---");
             return result.IsSuccess;
         }
 
@@ -169,15 +171,6 @@ namespace ZR.Repository
             return Context.Deleteable<T>();
         }
 
-        /// <summary>
-        /// 批量删除
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public int Delete(object[] obj, string title = "")
-        {
-            return Context.Deleteable<T>().In(obj).EnableDiffLogEventIF(title.IsNotEmpty(), title).ExecuteCommand();
-        }
         public int Delete(object id, string title = "")
         {
             return Context.Deleteable<T>(id).EnableDiffLogEventIF(title.IsNotEmpty(), title).ExecuteCommand();

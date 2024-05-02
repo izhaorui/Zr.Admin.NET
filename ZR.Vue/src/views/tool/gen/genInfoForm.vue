@@ -14,7 +14,16 @@
           </el-select>
         </el-form-item>
       </el-col>
-
+      <el-col :lg="12">
+        <el-form-item prop="frontTpl">
+          <template #label>前端模板</template>
+          <el-select v-model="info.frontTpl">
+            <el-option label="Vue2 element ui" :value="1" />
+            <el-option label="Vue3 element plus" :value="2" />
+            <el-option label="Ant design" :value="3" />
+          </el-select>
+        </el-form-item>
+      </el-col>
       <el-col :lg="12">
         <el-form-item prop="baseNameSpace">
           <span slot="label">

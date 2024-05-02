@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json;
-using SqlSugar;
-using System;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     [Tenant("0")]
     [SugarTable("sys_file", "文件存储表")]

@@ -20,22 +20,22 @@
           @keyup.enter.native="searchRoleUser" />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="searchRoleUser">搜索</el-button>
+        <el-button type="primary" icon="el-icon-search" @click="searchRoleUser">搜索</el-button>
         <!-- <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button> -->
       </el-form-item>
     </el-form>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain size="mini" icon="el-icon-plus" @click="handleGetUserTable" v-hasPermi="['system:roleusers:add']">添加用户
+        <el-button type="primary" plain icon="el-icon-plus" @click="handleGetUserTable" v-hasPermi="['system:roleusers:add']">添加用户
         </el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain size="mini" icon="el-icon-circle-close" @click="cancelAuthUserAll" v-hasPermi="['system:roleusers:remove']">
+        <el-button type="danger" plain  icon="el-icon-circle-close" @click="cancelAuthUserAll" v-hasPermi="['system:roleusers:remove']">
           批量取消授权</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-close" size="mini" @click="handleClose">关闭</el-button>
+        <el-button type="warning" plain icon="el-icon-close" @click="handleClose">关闭</el-button>
       </el-col>
     </el-row>
 

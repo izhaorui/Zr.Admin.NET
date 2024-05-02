@@ -1,6 +1,4 @@
-﻿using SqlSugar;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     [SugarTable("sys_role_dept", "角色部门")]
     [Tenant(0)]
@@ -9,7 +7,7 @@ namespace ZR.Model.System
         [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL, IsPrimaryKey = true)]
         public long RoleId { get; set; }
 
-        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL, IsPrimaryKey = true)]
+        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL, IsPrimaryKey = false)]
         public long DeptId { get; set; }
     }
 }

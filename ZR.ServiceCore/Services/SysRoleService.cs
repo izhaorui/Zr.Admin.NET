@@ -177,7 +177,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public bool AuthDataScope(SysRoleDto sysRoleDto)
         {
-            return UseTran2(() =>
+            var result = UseTran(() =>
             {
                 //删除角色菜单
                 //DeleteRoleMenuByRoleId(sysRoleDto.RoleId);
@@ -194,10 +194,11 @@ namespace ZR.ServiceCore.Services
 
                 RoleMenuService.DeleteRoleMenuByRoleIdMenuIds(sysRoleDto.RoleId, delMenuIds);
                 sysRoleDto.MenuIds = addMenuIds.ToList();
-                sysRoleDto.DelMenuIds= delMenuIds.ToList();
+                sysRoleDto.DelMenuIds = delMenuIds.ToList();
                 InsertRoleMenu(sysRoleDto);
                 Console.WriteLine($"减少了{delMenuIds.Length},增加了{addMenuIds.Length}菜单");
             });
+            return result.IsSuccess;
         }
 
         #region Service

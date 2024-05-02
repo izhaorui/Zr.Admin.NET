@@ -1,6 +1,4 @@
-﻿using SqlSugar;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     [SugarTable("sys_post", "岗位表")]
     [Tenant("0")]
