@@ -16,6 +16,11 @@ namespace ZR.Admin.WebApi.Controllers
     public class FrontCommentController : BaseController
     {
         private readonly IArticleCommentService messageService;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="messageService"></param>
         public FrontCommentController(IArticleCommentService messageService)
         {
             this.messageService = messageService;
@@ -71,9 +76,9 @@ namespace ZR.Admin.WebApi.Controllers
         [Verify]
         public IActionResult Praise([FromBody] ArticleCommentDto dto)
         {
-            if(dto == null || dto.CommentId <= 0) return ToResponse(ResultCode.PARAM_ERROR);
+            if (dto == null || dto.CommentId <= 0) return ToResponse(ResultCode.PARAM_ERROR);
             //var uid = HttpContextExtension.GetUId(HttpContext);
-            
+
             return SUCCESS(messageService.PraiseMessage(dto.CommentId));
         }
 
@@ -85,7 +90,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpDelete("delete/{mid}")]
         [ActionPermissionFilter(Permission = "common")]
         [Verify]
-        public IActionResult Delete(string mid)
+        public IActionResult Delete(long mid)
         {
             var uid = HttpContextExtension.GetUId(HttpContext);
             if (uid <= 0) { return ToResponse(ResultCode.DENY); }

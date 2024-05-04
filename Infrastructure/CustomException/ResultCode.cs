@@ -34,6 +34,9 @@ namespace Infrastructure
         [Description("授权失败")]
         OAUTH_FAIL = 201,
 
+        [Description("请先绑定手机号")]
+        PHONE_BIND = 202,
+
         [Description("未授权")]
         DENY = 401,
 

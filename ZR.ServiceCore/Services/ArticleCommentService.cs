@@ -15,12 +15,18 @@ namespace ZR.ServiceCore.Services
         private ISysUserService UserService;
         private IEmailLogService EmailLogService;
         private IArticleService ArticleService;
+        private ISysConfigService SysConfigService;
 
-        public ArticleCommentService(ISysUserService userService, IEmailLogService emailLogService, IArticleService articleService)
+        public ArticleCommentService(
+            ISysUserService userService,
+            IEmailLogService emailLogService,
+            IArticleService articleService,
+            ISysConfigService sysConfigService)
         {
             this.UserService = userService;
             EmailLogService = emailLogService;
             ArticleService = articleService;
+            SysConfigService = sysConfigService;
         }
 
         /// <summary>
@@ -90,6 +96,14 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public ArticleComment AddMessage(ArticleComment message)
         {
+            var configInfo = SysConfigService.GetFirst(f => f.ConfigKey == "article.comment") ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "评论失败，请联系管理员");
+            var userInfo = UserService.GetById(message.UserId);
+
+            if (configInfo.ConfigValue == "1" && userInfo.Phonenumber.IsEmpty())
+            {
+                throw new CustomException(ResultCode.PHONE_BIND, "请绑定手机号");
+            }
+
             var ipInfo = HttpContextExtension.GetIpInfo(message.UserIP);
             message.Location = ipInfo;
             message.AddTime = DateTime.Now;
@@ -104,7 +118,7 @@ namespace ZR.ServiceCore.Services
                         //评论表 评论数 + 1
                         Update(it => it.CommentId == message.ParentId, it => new ArticleComment() { ReplyNum = it.ReplyNum + 1 });
                     }
-                    
+
                     //内容表评论数加1
                     if (message.TargetId > 0)
                     {
@@ -139,12 +153,12 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 删除评论
         /// </summary>
-        /// <param name="mid">评论ID</param>
+        /// <param name="commentId">评论ID</param>
         /// <param name="userId">当前登录用户</param>
         /// <returns></returns>
-        public int DeleteMessage(long mid, long userId)
+        public int DeleteMessage(long commentId, long userId)
         {
-            var info = GetById(mid) ?? throw new CustomException("评论不存在");
+            var info = GetById(commentId) ?? throw new CustomException("评论不存在");
             var postInfo = ArticleService.GetById(info.TargetId);
             if (userId != info.UserId && userId != postInfo.UserId)
             {
@@ -152,7 +166,7 @@ namespace ZR.ServiceCore.Services
             }
             var result = UseTran(() =>
             {
-                Update(it => it.CommentId == mid, it => new ArticleComment() { IsDelete = 1 });
+                Update(it => it.CommentId == commentId, it => new ArticleComment() { IsDelete = 1 });
                 if (info.ParentId > 0)
                 {
                     //评论表 评论数 - 1
@@ -161,7 +175,12 @@ namespace ZR.ServiceCore.Services
                 //减少文章评论次数
                 if (info.TargetId > 0)
                 {
-                    ArticleService.Update(it => it.Cid == (int)info.TargetId, it => new Article() { CommentNum = it.CommentNum - 1 });
+                    var deleteNum = info.ReplyNum > 0 ? info.ReplyNum + 1 : 1;
+
+                    ArticleService.Update(it => it.Cid == (int)info.TargetId, it => new Article()
+                    {
+                        CommentNum = it.CommentNum - deleteNum
+                    });
                 }
             });
             return result.IsSuccess ? 1 : 0;
