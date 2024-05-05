@@ -8,9 +8,9 @@ using ZR.Service.Content.IService;
 namespace ZR.Admin.WebApi.Controllers
 {
     [Verify]
-    [Route("monent")]
+    [Route("moment")]
     [ApiExplorerSettings(GroupName = "article")]
-    public class MonentController : BaseController
+    public class MomentsController : BaseController
     {
         /// <summary>
         /// 动态接口
@@ -21,7 +21,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// 
         /// </summary>
         /// <param name="ArticleService"></param>
-        public MonentController(
+        public MomentsController(
             IArticleService ArticleService)
         {
             _ArticleService = ArticleService;
@@ -45,7 +45,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// 查询动态列表
         /// </summary>
         /// <returns></returns>
-        [HttpGet("monentList")]
+        [HttpGet("momentList")]
         [AllowAnonymous]
         public IActionResult QueryMonentList([FromQuery] ArticleQueryDto parm)
         {
@@ -62,9 +62,9 @@ namespace ZR.Admin.WebApi.Controllers
         /// 动态发布
         /// </summary>
         /// <returns></returns>
-        [HttpPost("publishMonent")]
+        [HttpPost("publishMoment")]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult PublishMonent([FromBody] ArticleDto parm)
+        public IActionResult PublishMoment([FromBody] ArticleDto parm)
         {
             if (parm == null) { return ToResponse(ResultCode.PARAM_ERROR); }
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
