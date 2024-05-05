@@ -34,6 +34,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpGet("list")]
         public IActionResult QueryList([FromQuery] MessageQueryDto parm)
         {
+            parm.PageSize = 10;
             PagedInfo<ArticleCommentDto>? response;
             //查询二级评论
             if (parm.CommentId > 0)

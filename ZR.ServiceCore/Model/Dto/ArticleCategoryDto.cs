@@ -16,12 +16,20 @@ namespace ZR.Model.Dto
         public DateTime? CreateTime { get; set; }
         public int? ParentId { get; set; }
         public int CategoryType { get; set; }
+        /// <summary>
+        /// 背景图
+        /// </summary>
+        public string BgImg { get; set; }
+        /// <summary>
+        /// 介绍
+        /// </summary>
+        public string Introduce { get; set; }
     }
 
     /// <summary>
     /// 文章目录查询对象
     /// </summary>
-    public class ArticleCategoryQueryDto : PagerInfo 
+    public class ArticleCategoryQueryDto : PagerInfo
     {
         public int? CategoryType { get; set; }
         public int? ParentId { get; set; }

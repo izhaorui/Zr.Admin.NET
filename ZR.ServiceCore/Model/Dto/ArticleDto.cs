@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using ZR.Common;
+using ZR.Model.Dto;
 
 namespace ZR.Model.System.Dto
 {
@@ -57,7 +58,7 @@ namespace ZR.Model.System.Dto
 
         public string CoverUrl { get; set; }
 
-        public ArticleCategory ArticleCategoryNav { get; set; }
+        public ArticleCategoryDto CategoryNav { get; set; }
         public string[] TagList
         {
             get

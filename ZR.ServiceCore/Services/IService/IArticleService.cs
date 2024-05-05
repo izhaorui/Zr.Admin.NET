@@ -16,6 +16,7 @@ namespace ZR.ServiceCore.Services
         public int UpdateArticle(Article model);
         PagedInfo<ArticleDto> GetArticleList(ArticleQueryDto parm);
         PagedInfo<ArticleDto> GetMonentList(ArticleQueryDto parm);
+        PagedInfo<ArticleDto> GetFollowMonentList(ArticleQueryDto parm);
         int TopArticle(Article model);
         int ChangeArticlePublic(Article model);
         int UpdateArticleHit(long cid);

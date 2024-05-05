@@ -73,5 +73,13 @@
         /// 目标id(内容id)
         /// </summary>
         public long TargetId { get; set; }
+        /// <summary>
+        /// 是否置顶
+        /// </summary>
+        public long Top { get; set; }
+        /// <summary>
+        /// 作者回复过
+        /// </summary>
+        public int AuthorReply { get; set; }
     }
 }

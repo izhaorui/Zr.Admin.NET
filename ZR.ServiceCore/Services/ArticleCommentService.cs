@@ -164,6 +164,7 @@ namespace ZR.ServiceCore.Services
             {
                 return 0;
             }
+            var deleteNum = 0;
             var result = UseTran(() =>
             {
                 Update(it => it.CommentId == commentId, it => new ArticleComment() { IsDelete = 1 });
@@ -175,7 +176,7 @@ namespace ZR.ServiceCore.Services
                 //减少文章评论次数
                 if (info.TargetId > 0)
                 {
-                    var deleteNum = info.ReplyNum > 0 ? info.ReplyNum + 1 : 1;
+                    deleteNum = info.ReplyNum > 0 ? info.ReplyNum + 1 : 1;
 
                     ArticleService.Update(it => it.Cid == (int)info.TargetId, it => new Article()
                     {
@@ -183,7 +184,7 @@ namespace ZR.ServiceCore.Services
                     });
                 }
             });
-            return result.IsSuccess ? 1 : 0;
+            return result.IsSuccess ? deleteNum : 0;
         }
 
         /// <summary>

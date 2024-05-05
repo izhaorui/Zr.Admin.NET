@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using Mapster;
 using ZR.Common;
 using ZR.Model;
+using ZR.Model.Dto;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
@@ -110,7 +111,7 @@ namespace ZR.ServiceCore.Services
                     },
                     Content = string.Empty,
                     UserIP = string.Empty,
-                    ArticleCategoryNav = m.ArticleCategoryNav
+                    CategoryNav = m.ArticleCategoryNav.Adapt<ArticleCategoryDto>()
                 }, true)
                 .ToPage(parm);
 
@@ -139,8 +140,10 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.And(m => m.IsPublic == 1);
             predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Monent);
             predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
+            predicate = predicate.AndIF(parm.CategoryId != null, m => m.CategoryId == parm.CategoryId);
 
             var response = Queryable()
+                .Includes(x => x.ArticleCategoryNav) //填充子对象
                 .LeftJoin<SysUser>((m, u) => m.UserId == u.UserId).Filter(null, true)
                 .Where(predicate.ToExpression())
                 .OrderByIF(parm.TabId == 3, m => new { m.PraiseNum }, OrderByType.Desc)
@@ -153,6 +156,7 @@ namespace ZR.ServiceCore.Services
                         NickName = u.NickName,
                         Sex = u.Sex,
                     },
+                    CategoryNav = m.ArticleCategoryNav.Adapt<ArticleCategoryDto>()
                 }, true)
                 .ToPage(parm);
 
@@ -168,7 +172,23 @@ namespace ZR.ServiceCore.Services
 
             return response;
         }
+        /// <summary>
+        /// 前台查询关注动态列表
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public PagedInfo<ArticleDto> GetFollowMonentList(ArticleQueryDto parm)
+        {
+            var predicate = Expressionable.Create<Article>();
+            predicate = predicate.And(m => m.Status == "1");
+            predicate = predicate.And(m => m.IsPublic == 1);
+            predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Monent);
+            predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
+            predicate = predicate.AndIF(parm.CategoryId != null, m => m.CategoryId == parm.CategoryId);
 
+
+            return new PagedInfo<ArticleDto>() { };
+        }
         /// <summary>
         /// 查询我的文章列表
         /// </summary>
@@ -190,8 +210,8 @@ namespace ZR.ServiceCore.Services
                 //.IgnoreColumns(x => new { x.Content })
                 .Includes(x => x.ArticleCategoryNav)
                 .Where(predicate.ToExpression())
-                .OrderByIF(parm.TabId == 3, m => new { m.PraiseNum }, OrderByType.Desc)
-                .OrderByDescending(m => m.Cid)
+                .OrderByIF(parm.TabId == 3, m => new { m.IsTop, m.PraiseNum }, OrderByType.Desc)
+                .OrderByDescending(m => new { m.IsTop, m.Cid })
                 .Select((x) => new ArticleDto()
                 {
                     Content = x.ArticleType == 0 ? string.Empty : x.Content,
@@ -322,7 +342,7 @@ namespace ZR.ServiceCore.Services
             }
             if (model != null)
             {
-                model.ArticleCategoryNav = _categoryService.GetById(model.CategoryId);
+                model.CategoryNav = _categoryService.GetById(model.CategoryId).Adapt<ArticleCategoryDto>();
             }
 
             var webContext = App.HttpContext;

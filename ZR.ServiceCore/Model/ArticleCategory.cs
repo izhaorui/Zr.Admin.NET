@@ -23,11 +23,22 @@
         public int OrderNum { get; set; }
         public int? ParentId { get; set; }
         /// <summary>
-        /// 分类类型
+        /// 背景图
+        /// </summary>
+        public string BgImg { get; set; }
+        /// <summary>
+        /// 介绍
+        /// </summary>
+        public string Introduce { get; set; }
+        /// <summary>
+        /// 分类类型 0、文章  1、圈子
         /// </summary>
         public int CategoryType { get; set; }
-        [SugarColumn(ColumnDescription = "创建时间", ColumnName = "create_time")]
-        public DateTime? CreateTime { get; set; }
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        [SugarColumn(ColumnDescription = "创建时间", ColumnName = "create_time", InsertServerTime = true)]
+        public DateTime CreateTime { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         [SugarColumn(IsIgnore = true)]

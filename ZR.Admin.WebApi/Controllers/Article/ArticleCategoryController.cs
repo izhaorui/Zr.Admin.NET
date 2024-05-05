@@ -54,6 +54,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="CategoryId"></param>
         /// <returns></returns>
         [HttpGet("{CategoryId}")]
+        [AllowAnonymous]
         //[ActionPermissionFilter(Permission = "articlecategory:query")]
         public IActionResult GetArticleCategory(int CategoryId)
         {
