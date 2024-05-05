@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
-using ZR.ServiceCore.Services.IService;
+using ZR.Model.Content;
+using ZR.Model.Dto;
+using ZR.Service.Content.IService;
 
 //创建时间：2024-04-29
 namespace ZR.Admin.WebApi.Controllers

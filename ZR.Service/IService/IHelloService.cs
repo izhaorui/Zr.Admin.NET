@@ -1,4 +1,4 @@
-﻿using ZR.Model.System;
+﻿using ZR.Model.Content;
 
 namespace ZR.Service.IService
 {

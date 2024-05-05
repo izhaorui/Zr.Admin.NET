@@ -1,17 +1,18 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Extensions;
 using Mapster;
 using ZR.Common;
 using ZR.Model;
+using ZR.Model.Content;
 using ZR.Model.Dto;
+using ZR.Model.Enum;
 using ZR.Model.System;
-using ZR.Model.System.Dto;
 using ZR.Repository;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Enums;
-using ZR.ServiceCore.Services.IService;
+using ZR.Service.Content.IService;
+using ZR.ServiceCore.Services;
 
-namespace ZR.ServiceCore.Services
+namespace ZR.Service.Content
 {
     /// <summary>
     /// 
@@ -146,7 +147,8 @@ namespace ZR.ServiceCore.Services
                 .Includes(x => x.ArticleCategoryNav) //填充子对象
                 .LeftJoin<SysUser>((m, u) => m.UserId == u.UserId).Filter(null, true)
                 .Where(predicate.ToExpression())
-                .OrderByIF(parm.TabId == 3, m => new { m.PraiseNum }, OrderByType.Desc)
+                .OrderByIF(parm.OrderBy == 1, m => new { m.PraiseNum, m.CommentNum }, OrderByType.Desc)
+                .OrderByIF(parm.OrderBy == 2, m => new { m.Cid }, OrderByType.Desc)
                 .OrderBy(m => m.Cid, OrderByType.Desc)
                 .Select((m, u) => new ArticleDto()
                 {
@@ -317,11 +319,16 @@ namespace ZR.ServiceCore.Services
             article.Location = HttpContextExtension.GetIpInfo(article.UserIP);
 
             article = InsertReturnEntity(article);
+            //跟新话题加入数
             if (article.Cid > 0 && article.TopicId > 0)
             {
                 _topicService.Update(w => w.TopicId == article.TopicId, it => new ArticleTopic() { JoinNum = it.JoinNum + 1 });
             }
-
+            //更新圈子加入数
+            if (article.Cid > 0 && article.CategoryId > 0)
+            {
+                _categoryService.Update(w => w.CategoryId == article.CategoryId, it => new ArticleCategory() { JoinNum = it.JoinNum + 1 });
+            }
             return article;
         }
 

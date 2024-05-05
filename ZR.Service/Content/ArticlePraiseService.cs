@@ -1,9 +1,8 @@
-﻿using Infrastructure;
-using Infrastructure.Attribute;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Services.IService;
+﻿using Infrastructure.Attribute;
+using ZR.Model.Content;
+using ZR.Service.Content.IService;
 
-namespace ZR.ServiceCore.Services
+namespace ZR.Service.Content
 {
     [AppService(ServiceType = typeof(IArticlePraiseService), ServiceLifetime = LifeTime.Transient)]
     public class ArticlePraiseService : BaseService<ArticlePraise>, IArticlePraiseService

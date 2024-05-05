@@ -1,4 +1,4 @@
-﻿namespace ZR.Model.System
+﻿namespace ZR.Model.Content
 {
     /// <summary>
     /// 文章目录
@@ -13,7 +13,7 @@
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true, ColumnName = "category_id")]
         public int CategoryId { get; set; }
 
-        [SugarColumn(ColumnDescription = "目录名", Length = 20, ExtendedAttribute = ProteryConstant.NOTNULL)]
+        [SugarColumn(ColumnDescription = "目录名", Length = 20, ExtendedAttribute = EntityConstant.NOTNULL)]
         public string Name { get; set; }
         [SugarColumn(ColumnDescription = "图标")]
         public string Icon { get; set; }
@@ -34,6 +34,14 @@
         /// 分类类型 0、文章  1、圈子
         /// </summary>
         public int CategoryType { get; set; }
+        /// <summary>
+        /// 文章数
+        /// </summary>
+        public int ArticleNum { get; set; }
+        /// <summary>
+        /// 加入人数
+        /// </summary>
+        public int JoinNum { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>

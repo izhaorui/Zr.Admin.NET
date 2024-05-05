@@ -1,8 +1,8 @@
 using ZR.Model;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
+using ZR.Model.Content;
+using ZR.Model.Dto;
 
-namespace ZR.ServiceCore.Services.IService
+namespace ZR.Service.Content.IService
 {
     /// <summary>
     /// 文章话题service接口

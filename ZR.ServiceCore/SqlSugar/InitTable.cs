@@ -1,4 +1,5 @@
 ﻿using SqlSugar.IOC;
+using ZR.Model.Content;
 using ZR.Model.Models;
 using ZR.Model.System;
 using ZR.Model.System.Generate;
@@ -45,15 +46,15 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(CommonLang));
             db.CodeFirst.InitTables(typeof(GenTable));
             db.CodeFirst.InitTables(typeof(GenTableColumn));
-            db.CodeFirst.InitTables(typeof(Article));
-            db.CodeFirst.InitTables(typeof(ArticleCategory));
-            db.CodeFirst.InitTables(typeof(ArticleBrowsingLog));
             db.CodeFirst.InitTables(typeof(SysDictData));
             db.CodeFirst.InitTables(typeof(SysDictType));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
             db.CodeFirst.InitTables(typeof(EmailTpl));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));
             db.CodeFirst.InitTables(typeof(EmailLog));
+            db.CodeFirst.InitTables(typeof(Article));
+            db.CodeFirst.InitTables(typeof(ArticleCategory));
+            db.CodeFirst.InitTables(typeof(ArticleBrowsingLog));
             db.CodeFirst.InitTables(typeof(ArticlePraise));
             db.CodeFirst.InitTables(typeof(ArticleComment));
             db.CodeFirst.InitTables(typeof(ArticleTopic));

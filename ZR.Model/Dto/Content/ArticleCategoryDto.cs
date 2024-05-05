@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace ZR.Model.Dto
 {
     /// <summary>
@@ -24,6 +22,14 @@ namespace ZR.Model.Dto
         /// 介绍
         /// </summary>
         public string Introduce { get; set; }
+        /// <summary>
+        /// 文章数
+        /// </summary>
+        public int ArticleNum { get; set; }
+        /// <summary>
+        /// 加入人数
+        /// </summary>
+        public int JoinNum { get; set; }
     }
 
     /// <summary>

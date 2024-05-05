@@ -1,6 +1,6 @@
-﻿using ZR.ServiceCore.Model;
+﻿using ZR.Model.Content;
 
-namespace ZR.ServiceCore.Services.IService
+namespace ZR.Service.Content.IService
 {
     public interface IArticlePraiseService : IBaseService<ArticlePraise>
     {

@@ -1,4 +1,4 @@
-﻿namespace ZR.ServiceCore.Model
+﻿namespace ZR.Model.Content
 {
     [SugarTable("article_praise", "内容点赞记录")]
     [Tenant("0")]

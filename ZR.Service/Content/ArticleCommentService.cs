@@ -1,13 +1,15 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Extensions;
 using ZR.Model;
+using ZR.Model.Content;
+using ZR.Model.Dto;
 using ZR.Model.System;
 using ZR.Repository;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
-using ZR.ServiceCore.Services.IBusinessService;
+using ZR.Service.Content.IService;
+using ZR.ServiceCore.Services;
 
-namespace ZR.ServiceCore.Services
+namespace ZR.Service.Content
 {
     [AppService(ServiceType = typeof(IArticleCommentService), ServiceLifetime = LifeTime.Transient)]
     public class ArticleCommentService : BaseService<ArticleComment>, IArticleCommentService

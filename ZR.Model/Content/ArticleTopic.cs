@@ -1,5 +1,5 @@
 
-namespace ZR.ServiceCore.Model
+namespace ZR.Model.Content
 {
     /// <summary>
     /// 文章话题

@@ -1,8 +1,8 @@
 ﻿using ZR.Model;
-using ZR.Model.System;
-using ZR.Model.System.Dto;
+using ZR.Model.Content;
+using ZR.Model.Dto;
 
-namespace ZR.ServiceCore.Services
+namespace ZR.Service.Content.IService
 {
     public interface IArticleService : IBaseService<Article>
     {

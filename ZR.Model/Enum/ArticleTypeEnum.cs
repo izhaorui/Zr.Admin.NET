@@ -1,4 +1,4 @@
-﻿namespace ZR.ServiceCore.Model.Enums
+﻿namespace ZR.Model.Enum
 {
     public enum ArticleTypeEnum
     {

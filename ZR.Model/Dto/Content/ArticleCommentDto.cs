@@ -1,6 +1,4 @@
-﻿using ZR.Model;
-
-namespace ZR.ServiceCore.Model.Dto
+﻿namespace ZR.Model.Dto
 {
     /// <summary>
     /// 评论
@@ -93,6 +91,10 @@ namespace ZR.ServiceCore.Model.Dto
         /// 目标id
         /// </summary>
         public long TargetId { get; set; }
+        /// <summary>
+        /// 置顶
+        /// </summary>
+        public long Top { get; set; }
         public string Position
         {
             get

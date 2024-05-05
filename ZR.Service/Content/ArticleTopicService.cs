@@ -1,12 +1,12 @@
 using Infrastructure.Attribute;
 using Mapster;
 using ZR.Model;
+using ZR.Model.Content;
+using ZR.Model.Dto;
 using ZR.Repository;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
-using ZR.ServiceCore.Services.IService;
+using ZR.Service.Content.IService;
 
-namespace ZR.ServiceCore.Services
+namespace ZR.Service.Content
 {
     /// <summary>
     /// 文章话题Service业务层处理

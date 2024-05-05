@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model.System;
+using ZR.Model.Content;
+using ZR.Model.Dto;
 using ZR.Model.System.Dto;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
-using ZR.ServiceCore.Services.IService;
+using ZR.Service.Content.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -168,8 +167,7 @@ namespace ZR.Admin.WebApi.Controllers
                 NickName = user.NickName,
                 Sex = user.Sex,
             };
-
-            apiResult.Put("user", user.Adapt<SysUserDto>());
+            //apiResult.Put("user", user.Adapt<UserDto>());
             return ToResponse(apiResult);
         }
 

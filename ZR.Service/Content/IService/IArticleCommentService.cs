@@ -1,8 +1,8 @@
 ﻿using ZR.Model;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
+using ZR.Model.Content;
+using ZR.Model.Dto;
 
-namespace ZR.ServiceCore.Services.IBusinessService
+namespace ZR.Service.Content.IService
 {
     public interface IArticleCommentService
     {

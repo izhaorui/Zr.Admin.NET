@@ -1,8 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-using ZR.Common;
-using ZR.Model.Dto;
+﻿using ZR.Model.Dto;
 
-namespace ZR.Model.System.Dto
+namespace ZR.Model.Dto
 {
     public class ArticleQueryDto : PagerInfo
     {
@@ -24,6 +22,10 @@ namespace ZR.Model.System.Dto
         /// 话题ID
         /// </summary>
         public int? TopicId { get; set; }
+        /// <summary>
+        /// 排序 1、热门 2、最新
+        /// </summary>
+        public int? OrderBy { get; set; }
     }
 
     /// <summary>
@@ -106,7 +108,7 @@ namespace ZR.Model.System.Dto
         {
             get
             {
-                return Tools.SplitAndConvert<string>(CoverUrl, ',');
+                return CoverUrl?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
             }
         }
         /// <summary>

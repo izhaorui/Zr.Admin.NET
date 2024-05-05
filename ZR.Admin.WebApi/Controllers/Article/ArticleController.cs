@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model.System;
-using ZR.Model.System.Dto;
+using ZR.Model.Content;
+using ZR.Model.Dto;
+using ZR.Service.Content.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
