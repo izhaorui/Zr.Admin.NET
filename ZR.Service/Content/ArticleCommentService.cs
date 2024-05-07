@@ -43,12 +43,13 @@ namespace ZR.Service.Content
             predicate.And(it => it.ParentId == dto.CommentId);
             predicate.AndIF(dto.UserId != null, it => it.UserId == dto.UserId);
             predicate.AndIF(dto.CommentId > 0, it => it.CommentId > dto.CommentId);//分页使用
-            predicate.AndIF(dto.ClassifyId > 0, it => it.ClassifyId == dto.ClassifyId);
-            predicate.AndIF(dto.ClassifyId == 0, it => it.ClassifyId == 0);
+            //predicate.AndIF(dto.ClassifyId > 0, it => it.ClassifyId == dto.ClassifyId);
+            //predicate.AndIF(dto.ClassifyId == 0, it => it.ClassifyId == 0);
             predicate.AndIF(dto.TargetId > 0, it => it.TargetId == dto.TargetId);
 
-            return Queryable()
+            var list = Queryable()
                 .LeftJoin<SysUser>((it, u) => it.UserId == u.UserId)
+                .OrderByDescending(it => it.Top)
                 .OrderByIF(dto.OrderBy == 1, it => it.PraiseNum, OrderByType.Desc)
                 .OrderByIF(dto.OrderBy == 2, it => it.CommentId, OrderByType.Desc)
                 .Where(predicate.ToExpression())
@@ -59,6 +60,21 @@ namespace ZR.Service.Content
                     Avatar = u.Avatar
                 }, true)
                 .ToPage(dto);
+
+            foreach (var item in list.Result)
+            {
+                int take = 1;
+                if (item.ReplyNum > 0)
+                {
+                    item.ReplyList = GetCommentQueryable(item.CommentId).Take(take).ToList();
+                }
+                if (item.ReplyNum > take)
+                {
+                    item.HasMore = true;
+                }
+            }
+
+            return list;
         }
 
         /// <summary>
@@ -69,18 +85,7 @@ namespace ZR.Service.Content
         /// <returns></returns>
         public PagedInfo<ArticleCommentDto> GetReplyComments(long cid, MessageQueryDto pager)
         {
-            var list = Queryable()
-                .LeftJoin<SysUser>((f, u) => f.UserId == u.UserId)
-                .Where(f => f.ParentId == cid && f.IsDelete == 0)
-                //.WhereIF(cid > 0, f => f.MId > cid)
-                //.Includes(f => f.User.MappingField(z => z.Useridx, () => f.Useridx))
-                .OrderBy(f => f.CommentId)
-                .Select((f, u) => new ArticleCommentDto()
-                {
-                    NickName = u.NickName,
-                    Avatar = u.Avatar
-                }, true)
-                .ToPage(pager);
+            PagedInfo<ArticleCommentDto> list = GetCommentQueryable(cid).ToPage(pager);
             //Context.ThenMapper(list.Result, f =>
             //{
             //    if (f.ReplyId > 0 && f.ReplyUserId > 0)
@@ -89,6 +94,21 @@ namespace ZR.Service.Content
             //    }
             //});
             return list;
+        }
+
+        private ISugarQueryable<ArticleCommentDto> GetCommentQueryable(long cid)
+        {
+            return Queryable()
+                            .LeftJoin<SysUser>((f, u) => f.UserId == u.UserId)
+                            .Where(f => f.ParentId == cid && f.IsDelete == 0)
+                            //.WhereIF(cid > 0, f => f.MId > cid)
+                            //.Includes(f => f.User.MappingField(z => z.Useridx, () => f.Useridx))
+                            .OrderBy(f => f.CommentId)
+                            .Select((f, u) => new ArticleCommentDto()
+                            {
+                                NickName = u.NickName,
+                                Avatar = u.Avatar
+                            }, true);
         }
 
         /// <summary>
@@ -140,7 +160,7 @@ namespace ZR.Service.Content
         }
 
         /// <summary>
-        /// 消息点赞
+        /// 评论点赞
         /// </summary>
         /// <param name="mid"></param>
         /// <returns></returns>
@@ -215,6 +235,23 @@ namespace ZR.Service.Content
                 //    //Avatar = u.Avatar
                 //}, true)
                 .ToPage<ArticleComment, ArticleCommentDto>(dto);
+        }
+
+        /// <summary>
+        /// 置顶评论
+        /// </summary>
+        /// <param name="commentId"></param>
+        /// <param name="top"></param>
+        /// <returns></returns>
+        public long TopMessage(long commentId, long top)
+        {
+            long time = 0;
+            if (top <= 0)
+            {
+                time = DateTimeHelper.GetUnixTimeStamp(DateTime.Now);
+            }
+            Update(it => it.CommentId == commentId, it => new ArticleComment() { Top = time });
+            return time;
         }
     }
 }

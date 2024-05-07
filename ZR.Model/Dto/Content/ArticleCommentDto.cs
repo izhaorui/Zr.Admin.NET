@@ -95,6 +95,7 @@
         /// 置顶
         /// </summary>
         public long Top { get; set; }
+        public bool HasMore { get; set; } = false;
         public string Position
         {
             get
@@ -108,5 +109,9 @@
                 return temp_location?.Replace("省", "");
             }
         }
+        /// <summary>
+        /// 回复列表
+        /// </summary>
+        public List<ArticleCommentDto> ReplyList { get; set; }
     }
 }

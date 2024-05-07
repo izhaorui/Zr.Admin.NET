@@ -16,14 +16,17 @@ namespace ZR.Admin.WebApi.Controllers
     public class FrontCommentController : BaseController
     {
         private readonly IArticleCommentService messageService;
-
+        private readonly IArticleService articleService;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="messageService"></param>
-        public FrontCommentController(IArticleCommentService messageService)
+        /// <param name="articleService"></param>
+        public FrontCommentController(
+            IArticleCommentService messageService, IArticleService articleService)
         {
             this.messageService = messageService;
+            this.articleService = articleService;
         }
 
         /// <summary>
@@ -110,6 +113,22 @@ namespace ZR.Admin.WebApi.Controllers
             PagedInfo<ArticleCommentDto> response = messageService.GetMyMessageList(parm);
 
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 评论置顶
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("top")]
+        [Verify]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult Top([FromBody] ArticleCommentDto parm)
+        {
+            var uid = HttpContextExtension.GetUId(HttpContext);
+            if (uid <= 0) { return ToResponse(ResultCode.DENY); }
+            var contentInfo = articleService.GetArticle(parm.TargetId, uid);
+            if (contentInfo == null) { return ToResponse(ResultCode.CUSTOM_ERROR, "操作失败"); }
+            return SUCCESS(messageService.TopMessage(parm.CommentId, parm.Top));
         }
     }
 }

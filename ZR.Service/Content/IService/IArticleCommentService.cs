@@ -12,5 +12,6 @@ namespace ZR.Service.Content.IService
         int DeleteMessage(long mid, long userId);
         PagedInfo<ArticleCommentDto> GetReplyComments(long mid, MessageQueryDto pager);
         PagedInfo<ArticleCommentDto> GetMyMessageList(MessageQueryDto dto);
+        long TopMessage(long commentId, long top);
     }
 }
