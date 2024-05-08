@@ -53,7 +53,8 @@
 - 加入群聊：[立即加入](http://www.izhaorui.cn/doc/contact.html)
 - Vue3.x 版本体验：[http://demo.izhaorui.cn/vue3](http://demo.izhaorui.cn/vue3)
 - Vue2.x 版本体验：[http://demo.izhaorui.cn/admin](http://demo.izhaorui.cn/admin)
-- Uniapp 版本体验：[http://demo.izhaorui.cn/h5](http://demo.izhaorui.cn/h5)
+- Uniapp 版本体验(vue2)：[http://demo.izhaorui.cn/h5](http://demo.izhaorui.cn/h5)
+- Uniapp 版本体验(vue3)：[http://demo.izhaorui.cn/uplus](http://demo.izhaorui.cn/uplus)
 - 账号密码：admin/123456，普通用户 user/123456
 
 | H5                                                                                     | 微信小程序                                                                           |
@@ -212,6 +213,23 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
     </tr>
 		<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a12.png"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/1.PNG"/></td>
+    </tr>
+		<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a12.png"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/1.PNG"/></td>
+    </tr>
+		<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/2.PNG"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/3.PNG"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/4.PNG"/></td>
+    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/5.PNG"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/6.PNG"/></td>
+    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/7.PNG"/></td>
     </tr>
 
 </table>
