@@ -1,6 +1,4 @@
-﻿using ZR.Model.Dto;
-
-namespace ZR.Model.Dto
+﻿namespace ZR.Model.Content.Dto
 {
     public class ArticleQueryDto : PagerInfo
     {
@@ -35,7 +33,7 @@ namespace ZR.Model.Dto
     {
         [Required(ErrorMessage = "Cid不能为空")]
         public long Cid { get; set; }
-        [Required(ErrorMessage = "标题不能为空")]
+        //[Required(ErrorMessage = "标题不能为空")]
         public string Title { get; set; }
         [Required(ErrorMessage = "内容不能为空")]
         public string Content { get; set; }

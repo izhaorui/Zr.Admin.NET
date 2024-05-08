@@ -2,7 +2,7 @@
 using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.Content;
-using ZR.Model.Dto;
+using ZR.Model.Content.Dto;
 using ZR.Model.System.Dto;
 using ZR.Service.Content.IService;
 

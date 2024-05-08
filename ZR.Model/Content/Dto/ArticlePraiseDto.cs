@@ -1,4 +1,4 @@
-﻿namespace ZR.Model.Dto
+﻿namespace ZR.Model.Content.Dto
 {
     public class ArticlePraiseDto
     {

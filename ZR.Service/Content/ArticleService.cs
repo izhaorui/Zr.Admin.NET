@@ -5,7 +5,7 @@ using Mapster;
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.Content;
-using ZR.Model.Dto;
+using ZR.Model.Content.Dto;
 using ZR.Model.Enum;
 using ZR.Model.System;
 using ZR.Repository;

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.Content;
-using ZR.Model.Dto;
+using ZR.Model.Content.Dto;
 using ZR.Model.Enum;
 using ZR.Service.Content.IService;
 

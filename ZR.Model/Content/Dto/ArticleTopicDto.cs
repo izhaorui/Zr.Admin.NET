@@ -1,9 +1,9 @@
-namespace ZR.Model.Dto
+namespace ZR.Model.Content.Dto
 {
     /// <summary>
     /// 文章话题查询对象
     /// </summary>
-    public class ArticleTopicQueryDto : PagerInfo 
+    public class ArticleTopicQueryDto : PagerInfo
     {
     }
 
