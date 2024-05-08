@@ -109,7 +109,7 @@ namespace ZR.CodeGenerator
                 BaseNamespace = genTable.BaseNameSpace,
                 SubNamespace = genTable.ModuleName.FirstUpperCase()
             };
-            _option.DtosNamespace = _option.BaseNamespace + "Model.Dto";
+            _option.DtosNamespace = _option.BaseNamespace + "Model";
             _option.ModelsNamespace = _option.BaseNamespace + "Model";
             _option.RepositoriesNamespace = _option.BaseNamespace + "Repository";
             //_option.IRepositoriesNamespace = _option.BaseNamespace + "Repository";
@@ -132,8 +132,8 @@ namespace ZR.CodeGenerator
             var tpl = JnHelper.ReadTemplate(path, "TplModel.txt");
             var tplDto = JnHelper.ReadTemplate(path, "TplDto.txt");
 
-            string fullPath = Path.Combine(generateDto.GenOptions.ModelsNamespace, "Models", generateDto.GenOptions.SubNamespace, replaceDto.ModelTypeName + ".cs");
-            string fullPathDto = Path.Combine(generateDto.GenOptions.ModelsNamespace, "Dto", generateDto.GenOptions.SubNamespace, replaceDto.ModelTypeName + "Dto.cs");
+            string fullPath = Path.Combine(generateDto.GenOptions.ModelsNamespace, generateDto.GenOptions.SubNamespace, replaceDto.ModelTypeName + ".cs");
+            string fullPathDto = Path.Combine(generateDto.GenOptions.ModelsNamespace, generateDto.GenOptions.SubNamespace, "Dto", replaceDto.ModelTypeName + "Dto.cs");
 
             generateDto.GenCodes.Add(new GenCode(1, "Model.cs", fullPath, tpl.Render()));
             generateDto.GenCodes.Add(new GenCode(2, "Dto.cs", fullPathDto, tplDto.Render()));
