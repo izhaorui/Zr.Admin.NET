@@ -1,4 +1,6 @@
+using Infrastructure;
 using Infrastructure.Attribute;
+using ZR.Infrastructure.Helper;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Repository;
@@ -57,7 +59,28 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public SmsCodeLog AddSmscodeLog(SmsCodeLog model)
         {
+            model.AddTime = Context.GetDate();
+
+            var smsCode = RandomHelper.GenerateNum(6);
+            var smsContent = $"验证码{smsCode},有效期10分钟。";
+
+            var oneMinus = Queryable().Any(f => f.PhoneNum == model.PhoneNum && SqlFunc.DateDiff(DateType.Minute, f.AddTime, model.AddTime) <= 1);
+            if (oneMinus)
+            {
+                throw new CustomException("请稍后再试");
+            }
+            var oneMinusIP = Queryable().Any(f => f.UserIP == model.UserIP && SqlFunc.DateDiff(DateType.Minute, f.AddTime, model.AddTime) <= 1);
+            if (oneMinusIP)
+            {
+                throw new CustomException("请稍后再试");
+            }
+            model.SmsCode = smsCode;
+            model.SmsContent = smsContent;
             model.Id = Context.Insertable(model).ExecuteReturnSnowflakeId();
+            //TODO 发送验证码
+
+            CacheService.SetPhoneCode(model.PhoneNum.ToString(), smsCode);
+
             return model;
         }
     }

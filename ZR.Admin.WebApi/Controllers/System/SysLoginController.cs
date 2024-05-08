@@ -4,6 +4,7 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Infrastructure.Helper;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.ServiceCore.Model;
 using ZR.ServiceCore.Model.Dto;
 
 namespace ZR.Admin.WebApi.Controllers.System
@@ -286,22 +287,15 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             string location = HttpContextExtension.GetIpInfo(dto.LoginIP);
 
-            var smsCode = RandomHelper.GenerateNum(6);
-            var smsContent = $"验证码{smsCode},有效期10分钟。";
-            //TODO 发送短息验证码,1分钟内允许一次
-            smsCodeLogService.AddSmscodeLog(new ServiceCore.Model.SmsCodeLog()
+            smsCodeLogService.AddSmscodeLog(new SmsCodeLog()
             {
                 Userid = uid,
                 PhoneNum = dto.PhoneNum.ParseToLong(),
                 SendType = dto.SendType,
-                SmsCode = smsCode,
-                SmsContent = smsContent,
                 UserIP = dto.LoginIP,
                 Location = location,
             });
             
-            CacheService.SetPhoneCode(dto.PhoneNum, smsCode);
-
             return SUCCESS(1);
         }
 
