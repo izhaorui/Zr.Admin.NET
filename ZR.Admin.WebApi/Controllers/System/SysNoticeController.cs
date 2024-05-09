@@ -78,17 +78,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult AddSysNotice([FromBody] SysNoticeDto parm)
         {
             var modal = parm.Adapt<SysNotice>().ToCreate(HttpContext);
-            
-            int result = _SysNoticeService.Insert(modal, it => new
-            {
-                it.NoticeTitle,
-                it.NoticeType,
-                it.NoticeContent,
-                it.Status,
-                it.Remark,
-                it.Create_by,
-                it.Create_time
-            });
+
+            int result = _SysNoticeService.InsertReturnIdentity(modal);
 
             return SUCCESS(result);
         }
