@@ -19,15 +19,18 @@ namespace ZR.ServiceCore.Services
         private readonly ISysRoleService RoleService;
         private readonly ISysUserRoleService UserRoleService;
         private readonly ISysUserPostService UserPostService;
+        private readonly ISysUserMsgService UserMsgService;
 
         public SysUserService(
             ISysRoleService sysRoleService,
             ISysUserRoleService userRoleService,
-            ISysUserPostService userPostService)
+            ISysUserPostService userPostService,
+            ISysUserMsgService userMsgService)
         {
             RoleService = sysRoleService;
             UserRoleService = userRoleService;
             UserPostService = userPostService;
+            UserMsgService = userMsgService;
         }
 
         /// <summary>
@@ -164,6 +167,7 @@ namespace ZR.ServiceCore.Services
                 // 新增用户与岗位管理
                 UserPostService.InsertUserPost(user);
                 ChangeUser(user);
+                UserMsgService.AddSysUserMsg(user.UserId, "你的资料已被修改", Infrastructure.Enums.UserMsgType.SYSTEM);
             });
             return result.IsSuccess ? 1 : 0;
         }
