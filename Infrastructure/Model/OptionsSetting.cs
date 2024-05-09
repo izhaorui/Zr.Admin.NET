@@ -8,7 +8,7 @@ namespace Infrastructure.Model
     public class OptionsSetting
     {
         /// <summary>
-        /// 是否单点登录
+        /// 是否单设备登录
         /// </summary>
         public bool SingleLogin { get; set; }
         /// <summary>
@@ -20,13 +20,35 @@ namespace Infrastructure.Model
         /// </summary>
         public bool InitDb { get; set; }
         public string[] InitTables { get; set; }
+        /// <summary>
+        /// 邮箱配置
+        /// </summary>
         public List<MailOptions> MailOptions { get; set; }
+        /// <summary>
+        /// 上传配置
+        /// </summary>
         public Upload Upload { get; set; }
+        /// <summary>
+        /// 阿里云oss
+        /// </summary>
         public ALIYUN_OSS ALIYUN_OSS { get; set; }
         public JwtSettings JwtSettings { get; set; }
+        /// <summary>
+        /// 代码生成配置
+        /// </summary>
         public CodeGen CodeGen { get; set; }
+        /// <summary>
+        /// 数据库集合
+        /// </summary>
         public List<DbConfigs> DbConfigs { get; set; }
+        /// <summary>
+        /// 代码生成数据库配置
+        /// </summary>
         public DbConfigs CodeGenDbConfig { get; set; }
+        /// <summary>
+        /// Reids配置
+        /// </summary>
+        public RedisServerConfig RedisServer { get; set; }
     }
     /// <summary>
     /// 发送邮件数据配置
@@ -125,5 +147,11 @@ namespace Infrastructure.Model
         public string[] Float { get; set; }
         public string[] Decimal { get; set; }
         public string[] Bool { get; set; }
+    }
+
+    public class RedisServerConfig
+    {
+        public int Open { get; set; }
+        public bool DbCache { get; set; }
     }
 }
