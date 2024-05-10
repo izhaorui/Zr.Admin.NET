@@ -90,7 +90,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public string CheckUserNameUnique(string userName)
         {
-            int count = Count(it => it.UserName == userName);
+            int count = Count(it => it.UserName == userName && it.DelFlag == 0);
             if (count > 0)
             {
                 return UserConstants.NOT_UNIQUE;

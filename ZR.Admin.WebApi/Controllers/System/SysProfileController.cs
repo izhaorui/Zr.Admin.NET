@@ -80,11 +80,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPut("updatePwd")]
         [ActionPermissionFilter(Permission = "common")]
-        [Log(Title = "修改密码", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "修改密码", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false)]
         public IActionResult UpdatePwd(string oldPassword, string newPassword)
         {
             long userId = HttpContext.GetUId();
-            SysUser user = UserService.SelectUserById(userId);
+            SysUser user = UserService.GetFirst(f => f.UserId == userId);
             string oldMd5 = NETCore.Encrypt.EncryptProvider.Md5(oldPassword);
             string newMd5 = NETCore.Encrypt.EncryptProvider.Md5(newPassword);
 
