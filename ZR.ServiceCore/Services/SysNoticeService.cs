@@ -22,8 +22,8 @@ namespace ZR.ServiceCore.Services
         public List<SysNotice> GetSysNotices()
         {
             var predicate = Expressionable.Create<SysNotice>();
-
-            predicate = predicate.And(m => m.Status == 0);
+            var now = DateTime.Now;
+            predicate = predicate.And(m => m.Status == 0 || m.BeginTime != null && m.BeginTime >= now);
             return Queryable()
                 .Where(predicate.ToExpression())
                 .OrderByDescending(f => f.Create_time)
@@ -31,7 +31,7 @@ namespace ZR.ServiceCore.Services
         }
 
         public PagedInfo<SysNotice> GetPageList(SysNoticeQueryDto parm)
-        { 
+        {
             var predicate = QueryExp(parm);
             var response = GetPages(predicate.ToExpression(), parm);
             return response;
@@ -58,10 +58,10 @@ namespace ZR.ServiceCore.Services
             return response;
         }
         /// <summary>
-         /// 查询导出表达式
-         /// </summary>
-         /// <param name="parm"></param>
-         /// <returns></returns>
+        /// 查询导出表达式
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
         private static Expressionable<SysNotice> QueryExp(SysNoticeQueryDto parm)
         {
             var predicate = Expressionable.Create<SysNotice>();

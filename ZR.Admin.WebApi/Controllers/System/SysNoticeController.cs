@@ -78,7 +78,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult AddSysNotice([FromBody] SysNoticeDto parm)
         {
             var modal = parm.Adapt<SysNotice>().ToCreate(HttpContext);
-
+            
             int result = _SysNoticeService.InsertReturnIdentity(modal);
 
             return SUCCESS(result);
@@ -94,20 +94,12 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult UpdateSysNotice([FromBody] SysNoticeDto parm)
         {
             var model = parm.Adapt<SysNotice>().ToUpdate(HttpContext);
-            model.Update_by = HttpContext.GetName();
-            var response = _SysNoticeService.Update(w => w.NoticeId == model.NoticeId, it => new SysNotice()
-            {
-                NoticeTitle = model.NoticeTitle,
-                NoticeType = model.NoticeType,
-                NoticeContent = model.NoticeContent,
-                Status = model.Status,
-                Remark = model.Remark,
-                Update_by = HttpContext.GetName(),
-                Update_time = DateTime.Now
-            });
+            
+            var response = _SysNoticeService.Update(model);
 
             return SUCCESS(response);
         }
+
         /// <summary>
         /// 发送通知公告表
         /// </summary>
