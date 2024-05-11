@@ -30,16 +30,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 查询通知公告表列表
+        /// 查询通知公告表列表(移动端用)
         /// </summary>
         /// <returns></returns>
         [HttpGet("queryNotice")]
         public IActionResult QueryNotice([FromQuery] SysNoticeQueryDto parm)
         {
-            var predicate = Expressionable.Create<SysNotice>();
-            
-            predicate = predicate.And(m => m.Status == 0);
-            var response = _SysNoticeService.GetPages(predicate.ToExpression(), parm);
+            var response = _SysNoticeService.GetSysNotices();
             return SUCCESS(response);
         }
 
@@ -74,7 +71,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "system:notice:add")]
-        [Log(Title = "发布通告", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "发布通告", BusinessType = BusinessType.INSERT, IsSaveRequestData = false)]
         public IActionResult AddSysNotice([FromBody] SysNoticeDto parm)
         {
             var modal = parm.Adapt<SysNotice>().ToCreate(HttpContext);
@@ -90,7 +87,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [ActionPermissionFilter(Permission = "system:notice:update")]
-        [Log(Title = "修改公告", BusinessType = BusinessType.UPDATE)]
+        [Log(Title = "修改公告", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false)]
         public IActionResult UpdateSysNotice([FromBody] SysNoticeDto parm)
         {
             var model = parm.Adapt<SysNotice>().ToUpdate(HttpContext);

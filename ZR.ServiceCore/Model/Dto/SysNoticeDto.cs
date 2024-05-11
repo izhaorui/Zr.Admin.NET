@@ -48,8 +48,8 @@ namespace ZR.Model.System.Dto
         public string NoticeTypeLabel { get; set; }
         [ExcelColumn(Name = "公告状态")]
         public string StatusLabel { get; set; }
-        public DateTime BeginTime { get; set; }
-        public DateTime EndTime { get; set; }
+        public DateTime? BeginTime { get; set; }
+        public DateTime? EndTime { get; set; }
         public string Publisher { get; set; }
     }
 

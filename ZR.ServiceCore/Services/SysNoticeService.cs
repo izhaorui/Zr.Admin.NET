@@ -23,7 +23,9 @@ namespace ZR.ServiceCore.Services
         {
             var predicate = Expressionable.Create<SysNotice>();
             var now = DateTime.Now;
-            predicate = predicate.And(m => m.Status == 0 || m.BeginTime != null && m.BeginTime >= now);
+            predicate = predicate.And(m => m.Status == 0);
+            predicate = predicate.Or(m => m.BeginTime != null && m.BeginTime <= now && m.EndTime >= now && m.Status == 0);
+
             return Queryable()
                 .Where(predicate.ToExpression())
                 .OrderByDescending(f => f.Create_time)
