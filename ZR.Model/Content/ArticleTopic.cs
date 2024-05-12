@@ -2,10 +2,10 @@
 namespace ZR.Model.Content
 {
     /// <summary>
-    /// 文章话题
+    /// 话题
     /// </summary>
-    [SugarTable("article_topic", TableDescription = "话题")]
-    [Tenant("0")]
+    [SugarTable("article_topic", TableDescription = "文章话题")]
+    [Tenant(0)]
     public class ArticleTopic
     {
         /// <summary>
@@ -28,18 +28,21 @@ namespace ZR.Model.Content
         /// 参与/发起次数 
         /// </summary>
         public int JoinNum { get; set; }
+
         /// <summary>
-        /// 浏览次数
+        /// 浏览次数 
         /// </summary>
         public int ViewNum { get; set; }
+
         /// <summary>
         /// 创建时间 
         /// </summary>
-        [SugarColumn(InsertServerTime = true)]
         public DateTime? AddTime { get; set; }
+
         /// <summary>
-        /// 话题分类
+        /// 话题分类 
         /// </summary>
-        public int TopicType { get; set; }
+        public int? TopicType { get; set; }
+
     }
 }

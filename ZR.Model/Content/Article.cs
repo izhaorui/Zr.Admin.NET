@@ -25,7 +25,7 @@ namespace ZR.Model.Content
         [SugarColumn(ColumnDescription = "发布时间")]
         public DateTime? CreateTime { get; set; }
         /// <summary>
-        /// 更新时间
+        /// 修改时间
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true, ColumnDescription = "更新时间")]
         public DateTime? UpdateTime { get; set; }
@@ -89,6 +89,9 @@ namespace ZR.Model.Content
         /// 摘要
         /// </summary>
         public string AbstractText { get; set; }
+        /// <summary>
+        /// 分类
+        /// </summary>
 
         [Navigate(NavigateType.OneToOne, nameof(CategoryId), nameof(ArticleCategory.CategoryId))] //自定义关系映射
         public ArticleCategory ArticleCategoryNav { get; set; }
@@ -109,12 +112,16 @@ namespace ZR.Model.Content
         /// </summary>
         public string Location { get; set; }
         /// <summary>
-        /// 手机型号
-        /// </summary>
-        public string PhoneModel { get; set; }
-        /// <summary>
         /// 话题ID
         /// </summary>
         public long TopicId { get; set; }
+        /// <summary>
+        /// 评论开关 0、所有人可评论 1、仅粉丝 2、仅自己
+        /// </summary>
+        public CommentSwitchEnum CommentSwitch { get; set; }
+        /// <summary>
+        /// 审核状态 0、待审核 1、通过 2、拒绝
+        /// </summary>
+        public AuditStatusEnum AuditStatus { get; set; }
     }
 }

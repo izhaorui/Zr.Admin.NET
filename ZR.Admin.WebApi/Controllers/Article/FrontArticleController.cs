@@ -3,7 +3,6 @@ using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.Content;
 using ZR.Model.Content.Dto;
-using ZR.Model.System.Dto;
 using ZR.Service.Content.IService;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -25,6 +24,14 @@ namespace ZR.Admin.WebApi.Controllers
         private readonly ISysUserService _SysUserService;
         private readonly IArticleTopicService _ArticleTopicService;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ArticleService"></param>
+        /// <param name="articleCategoryService"></param>
+        /// <param name="articlePraiseService"></param>
+        /// <param name="sysUserService"></param>
+        /// <param name="articleTopicService"></param>
         public FrontArticleController(
             IArticleService ArticleService,
             IArticleCategoryService articleCategoryService,
@@ -66,6 +73,7 @@ namespace ZR.Admin.WebApi.Controllers
             predicate = predicate.And(m => m.Status == "1");
             predicate = predicate.And(m => m.IsPublic == 1);
             predicate = predicate.And(m => m.ArticleType == 0);
+            predicate = predicate.And(m => m.AuditStatus == Model.Enum.AuditStatusEnum.Passed);
 
             var response = _ArticleService.Queryable()
                 .Where(predicate.ToExpression())
@@ -126,6 +134,25 @@ namespace ZR.Admin.WebApi.Controllers
                 return ToResponse(ResultCode.CUSTOM_ERROR, "操作失败");
             }
             var response = _ArticleService.ChangeArticlePublic(parm);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 修改评论权限
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("changeComment")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult ChangeComment([FromBody] Article parm)
+        {
+            if (parm == null) { return ToResponse(ResultCode.CUSTOM_ERROR); }
+            var userId = HttpContext.GetUId();
+            if (userId != parm.UserId)
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "操作失败");
+            }
+            var response = _ArticleService.ChangeComment(parm);
 
             return SUCCESS(response);
         }

@@ -1,4 +1,6 @@
-﻿namespace ZR.Model.Content.Dto
+﻿using ZR.Model.Enum;
+
+namespace ZR.Model.Content.Dto
 {
     public class ArticleQueryDto : PagerInfo
     {
@@ -24,6 +26,10 @@
         /// 排序 1、热门 2、最新
         /// </summary>
         public int? OrderBy { get; set; }
+        /// <summary>
+        /// 审核状态
+        /// </summary>
+        public AuditStatusEnum? AuditStatus { get; set; }
     }
 
     /// <summary>
@@ -96,10 +102,6 @@
         [JsonIgnore]
         public string Location { get; set; }
         /// <summary>
-        /// 手机型号
-        /// </summary>
-        public string PhoneModel { get; set; }
-        /// <summary>
         /// 封面图片集合
         /// </summary>
         public string[] CoverImgList
@@ -132,6 +134,11 @@
         public long TopicId { get; set; }
         public string TopicName { get; set; }
         public ArticleUser User { get; set; }
+        /// <summary>
+        /// 审核状态
+        /// </summary>
+        public AuditStatusEnum? AuditStatus { get; set; }
+        public CommentSwitchEnum? CommentSwitch { get; set; }
     }
     public class ArticleUser
     {

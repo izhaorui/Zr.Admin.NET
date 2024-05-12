@@ -3,7 +3,6 @@ using Infrastructure.Attribute;
 using Infrastructure.Extensions;
 using Mapster;
 using ZR.Common;
-using ZR.Model;
 using ZR.Model.Content;
 using ZR.Model.Content.Dto;
 using ZR.Model.Enum;
@@ -23,6 +22,7 @@ namespace ZR.Service.Content
         private readonly IArticleCategoryService _categoryService;
         private readonly IArticleTopicService _topicService;
         private readonly ISysConfigService _sysConfigService;
+        private readonly ISysUserMsgService _userMsgService;
 
         /// <summary>
         /// 
@@ -30,11 +30,17 @@ namespace ZR.Service.Content
         /// <param name="categoryService"></param>
         /// <param name="topicService"></param>
         /// <param name="sysConfigService"></param>
-        public ArticleService(IArticleCategoryService categoryService, IArticleTopicService topicService, ISysConfigService sysConfigService)
+        /// <param name="userMsgService"></param>
+        public ArticleService(
+            IArticleCategoryService categoryService, 
+            IArticleTopicService topicService, 
+            ISysConfigService sysConfigService,
+            ISysUserMsgService userMsgService)
         {
             _categoryService = categoryService;
             _topicService = topicService;
             _sysConfigService = sysConfigService;
+            _userMsgService = userMsgService;
         }
 
         /// <summary>
@@ -53,6 +59,7 @@ namespace ZR.Service.Content
             predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
             predicate = predicate.AndIF(parm.ArticleType != null, m => (int)m.ArticleType == parm.ArticleType);
             predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
+            predicate = predicate.AndIF(parm.AuditStatus != null, m => m.AuditStatus == parm.AuditStatus);
 
             if (parm.CategoryId != null)
             {
@@ -83,7 +90,8 @@ namespace ZR.Service.Content
             var predicate = Expressionable.Create<Article>();
             predicate = predicate.And(m => m.Status == "1");
             predicate = predicate.And(m => m.IsPublic == 1);
-            predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
+            predicate = predicate.And(m => m.AuditStatus == AuditStatusEnum.Passed);
+            //predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
             predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Article);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
             predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
@@ -139,7 +147,8 @@ namespace ZR.Service.Content
             var predicate = Expressionable.Create<Article>();
             predicate = predicate.And(m => m.Status == "1");
             predicate = predicate.And(m => m.IsPublic == 1);
-            predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Monent);
+            predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Monent); 
+            predicate = predicate.And(m => m.AuditStatus == AuditStatusEnum.Passed);
             predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
             predicate = predicate.AndIF(parm.CategoryId != null, m => m.CategoryId == parm.CategoryId);
 
@@ -261,6 +270,20 @@ namespace ZR.Service.Content
         }
 
         /// <summary>
+        /// 评论权限
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public int ChangeComment(Article model)
+        {
+            var response = Update(w => w.Cid == model.Cid, it => new Article()
+            {
+                CommentSwitch = model.CommentSwitch,
+            });
+            return response;
+        }
+
+        /// <summary>
         /// 是否公开
         /// </summary>
         /// <param name="model"></param>
@@ -317,6 +340,7 @@ namespace ZR.Service.Content
             article.UserId = HttpContextExtension.GetUId(httpContext);
             article.UserIP = HttpContextExtension.GetClientUserIp(httpContext);
             article.Location = HttpContextExtension.GetIpInfo(article.UserIP);
+            article.AuditStatus = AuditStatusEnum.Passed;
 
             article = InsertReturnEntity(article);
             //跟新话题加入数
@@ -378,5 +402,91 @@ namespace ZR.Service.Content
 
             return model;
         }
+
+        /// <summary>
+        /// 审核通过
+        /// </summary>
+        /// <param name="idsArr"></param>
+        /// <returns></returns>
+        public int Passed(long[] idsArr)
+        {
+            int result = 0;
+            List<Article> monents = new();
+            foreach (var item in idsArr)
+            {
+                var model = GetFirst(x => x.Cid == item && x.AuditStatus == 0);
+                if (model == null) continue;
+
+                //model.Auditor = HttpContext.GetName();
+                model.AuditStatus = AuditStatusEnum.Passed;
+                var response = Update(w => w.Cid == model.Cid, it => new Article()
+                {
+                    AuditStatus = model.AuditStatus,
+                    //Auditor = model.Auditor,
+                });
+                result += response;
+                monents.Add(model);
+            }
+            var data = from a in monents
+                       group a by new { a.UserId } into grp
+                       select new
+                       {
+                           userid = grp.Key.UserId,
+                           num = grp.Count()
+                       };
+            foreach (var item in data)
+            {
+                _userMsgService.AddSysUserMsg(item.userid, "您发布的内容已通过审核", Infrastructure.Enums.UserMsgType.SYSTEM);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 审核不通过
+        /// </summary>
+        /// <param name="reason"></param>
+        /// <param name="idsArr"></param>
+        /// <returns></returns>
+        public int Reject(string reason, long[] idsArr)
+        {
+            int result = 0;
+            List<Article> monents = new();
+            foreach (var item in idsArr)
+            {
+                var model = GetFirst(x => x.Cid == item && x.AuditStatus == 0);
+                if (model == null) continue;
+
+                //model.Auditor = HttpContext.GetName();
+                model.AuditStatus = AuditStatusEnum.Reject;
+                var response = Update(w => w.Cid == model.Cid, it => new Article()
+                {
+                    AuditStatus = model.AuditStatus,
+                    //Auditor = model.Auditor,
+                });
+                result += response;
+                monents.Add(model);
+            }
+            var data = from a in monents
+                       group a by new { a.UserId } into grp
+                       select new
+                       {
+                           userid = grp.Key.UserId,
+                           num = grp.Count()
+                       };
+            foreach (var item in data)
+            {
+                //Console.WriteLine(item.useridx +"," + item.num);
+                string content = $"您发布的内容未通过审核。";
+                if (!string.IsNullOrEmpty(reason))
+                {
+                    content += $"原因：{reason}";
+                }
+                _userMsgService.AddSysUserMsg(item.userid, content, Infrastructure.Enums.UserMsgType.SYSTEM);
+            }
+
+            return result;
+        }
+
     }
 }

@@ -1,3 +1,4 @@
+using Infrastructure;
 using Infrastructure.Attribute;
 using Mapster;
 using ZR.Model;
@@ -51,6 +52,10 @@ namespace ZR.Service.Content
         /// <returns></returns>
         public ArticleTopic AddArticleTopic(ArticleTopic model)
         {
+            if (Any(f => f.TopicName == model.TopicName))
+            {
+                throw new CustomException("话题名已存在");
+            }
             return Insertable(model).ExecuteReturnEntity();
         }
 
