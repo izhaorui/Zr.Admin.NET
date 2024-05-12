@@ -11,7 +11,7 @@ namespace ZR.ServiceCore.Services
         PagedInfo<SysUserMsgDto> GetList(SysUserMsgQueryDto parm);
 
         SysUserMsg GetInfo(long MsgId);
-        int ReadMsg(long userId, long msgId);
+        int ReadMsg(long userId, long msgId, UserMsgType msgType);
 
         SysUserMsg AddSysUserMsg(SysUserMsg parm);
         SysUserMsg AddSysUserMsg(long userId, string content, UserMsgType msgType);

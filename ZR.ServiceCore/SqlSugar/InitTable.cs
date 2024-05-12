@@ -5,7 +5,6 @@ using ZR.Model.Models;
 using ZR.Model.Public;
 using ZR.Model.System;
 using ZR.Model.System.Generate;
-using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {

@@ -91,9 +91,8 @@ namespace ZR.Service.Content
             predicate = predicate.And(m => m.Status == "1");
             predicate = predicate.And(m => m.IsPublic == 1);
             predicate = predicate.And(m => m.AuditStatus == AuditStatusEnum.Passed);
-            //predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
             predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Article);
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
+            //predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
             predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
 
             if (parm.CategoryId != null)

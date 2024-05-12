@@ -50,12 +50,13 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="userId"></param>
         /// <param name="msgId"></param>
+        /// <param name="msgType"></param>
         /// <returns></returns>
-        public int ReadMsg(long userId, long msgId)
+        public int ReadMsg(long userId, long msgId, UserMsgType msgType)
         {
             if (msgId == 0)
             {
-                return Update(f => f.UserId == userId, it => new SysUserMsg() { IsRead = 1 });
+                return Update(f => f.UserId == userId && f.MsgType == msgType, it => new SysUserMsg() { IsRead = 1 });
             }
             return Update(f => f.UserId == userId && f.MsgId == msgId, it => new SysUserMsg() { IsRead = 1 });
         }

@@ -50,6 +50,37 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
+        /// 查询我的未读消息数
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        [HttpGet("myMsgNum")]
+        public IActionResult QueryMyUnReadMsg([FromQuery] SysUserMsgQueryDto parm)
+        {
+            parm.UserId = HttpContext.GetUId();
+            var response = _SysUserMsgService
+                .Queryable()
+                .Where(f => f.IsRead == 0 && f.UserId == parm.UserId)
+                .WithCache(60 * 10)
+                .ToList();
+            var data = from a in response
+                       group a by new { a.MsgType } into grp
+                       select new
+                       {
+                           msgType = grp.Key.MsgType,
+                           num = grp.Count(),
+                           d = 3
+                       };
+            var lastSysMsgInfo = _SysUserMsgService
+                .Queryable()
+                .Where(f => f.MsgType == UserMsgType.SYSTEM)
+                .OrderByDescending(x => x.MsgId)
+                .First();
+
+            return SUCCESS(new { data, lastSysMsgInfo });
+        }
+
+        /// <summary>
         /// 查询用户系统消息详情
         /// </summary>
         /// <param name="MsgId"></param>
@@ -98,13 +129,14 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 已读消息
         /// </summary>
         /// <param name="msgId"></param>
+        /// <param name="msgType"></param>
         /// <returns></returns>
-        [HttpPost("read/{msgId}")]
+        [HttpPost("read/{msgId}/{msgType}")]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult ReadMsg([FromRoute] long msgId)
+        public IActionResult ReadMsg([FromRoute] long msgId, [FromRoute] UserMsgType msgType)
         {
             var userId = HttpContext.GetUId();
-            var response = _SysUserMsgService.ReadMsg(userId, msgId);
+            var response = _SysUserMsgService.ReadMsg(userId, msgId, msgType);
 
             return SUCCESS(response);
         }
