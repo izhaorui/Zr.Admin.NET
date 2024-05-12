@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     ///<summary>
     ///计划任务

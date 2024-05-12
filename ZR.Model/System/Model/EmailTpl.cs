@@ -1,6 +1,6 @@
 ﻿using ZR.Model.System;
 
-namespace ZR.ServiceCore.Model
+namespace ZR.Model.Models
 {
     /// <summary>
     /// 邮件发送模板

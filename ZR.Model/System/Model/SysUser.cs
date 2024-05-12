@@ -1,6 +1,4 @@
-﻿using MiniExcelLibs.Attributes;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     /// <summary>
     /// 用户表

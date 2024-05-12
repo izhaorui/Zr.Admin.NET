@@ -1,4 +1,4 @@
-﻿namespace ZR.ServiceCore.Model
+﻿namespace ZR.Model.Models
 {
     /// <summary>
     /// 短信验证码记录

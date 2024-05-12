@@ -1,9 +1,4 @@
-
-using MiniExcelLibs.Attributes;
-using System.ComponentModel.DataAnnotations;
-using ZR.Model;
-
-namespace ZR.ServiceCore.Model.Dto
+namespace ZR.Model.Dto
 {
     /// <summary>
     /// 用户在线时长查询对象

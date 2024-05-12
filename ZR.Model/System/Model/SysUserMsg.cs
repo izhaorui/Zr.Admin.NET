@@ -1,5 +1,4 @@
-
-using ZR.Infrastructure.Enums;
+using ZR.Model.System;
 
 namespace ZR.Model
 {
@@ -51,5 +50,14 @@ namespace ZR.Model
         /// 是否删除 
         /// </summary>
         public int IsDelete { get; set; }
+        /// <summary>
+        /// 来源用户
+        /// </summary>
+        public long FromUserid { get; set; }
+        /// <summary>
+        /// 关联用户
+        /// </summary>
+        [Navigate(NavigateType.OneToOne, nameof(FromUserid), nameof(SysUser.UserId))]//变量名不要等类名 
+        public SysUser User { get; set; }
     }
 }

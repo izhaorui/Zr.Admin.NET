@@ -1,6 +1,6 @@
 using ZR.Model;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
+using ZR.Model.Dto;
+using ZR.Model.Models;
 
 namespace ZR.ServiceCore.Monitor.IMonitorService
 {

@@ -17,7 +17,7 @@ namespace ZR.Model.Content
         /// <summary>
         /// 文章标题
         /// </summary>
-        [SugarColumn(ColumnDescription = "文章标题", Length = 254, ExtendedAttribute = EntityConstant.NOTNULL)]
+        [SugarColumn(ColumnDescription = "文章标题", Length = 254, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string Title { get; set; }
         /// <summary>
         /// 发布时间
@@ -37,12 +37,12 @@ namespace ZR.Model.Content
         /// <summary>
         /// 作者名
         /// </summary>
-        [SugarColumn(ColumnDescription = "作者名", Length = 20, ExtendedAttribute = EntityConstant.NOTNULL)]
+        [SugarColumn(ColumnDescription = "作者名", Length = 20, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string AuthorName { get; set; }
         /// <summary>
         /// 发布者用户id
         /// </summary>
-        [SugarColumn(ColumnDescription = "发布者用户id", ExtendedAttribute = EntityConstant.NOTNULL)]
+        [SugarColumn(ColumnDescription = "发布者用户id", ExtendedAttribute = ProteryConstant.NOTNULL)]
         public long UserId { get; set; }
         /// <summary>
         /// 文章状态 1、发布 2、草稿

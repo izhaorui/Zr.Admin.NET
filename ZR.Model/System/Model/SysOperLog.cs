@@ -1,6 +1,4 @@
-﻿using MiniExcelLibs.Attributes;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     [SugarTable("sys_oper_log", "操作日志表")]
     [Tenant("0")]

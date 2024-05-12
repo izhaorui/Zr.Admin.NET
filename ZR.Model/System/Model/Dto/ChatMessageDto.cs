@@ -1,4 +1,4 @@
-﻿namespace ZR.ServiceCore.Model.Dto
+﻿namespace ZR.Model.Dto
 {
     public class ChatMessageDto
     {

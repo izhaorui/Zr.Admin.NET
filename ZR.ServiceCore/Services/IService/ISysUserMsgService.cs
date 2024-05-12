@@ -1,6 +1,5 @@
-using ZR.Infrastructure.Enums;
 using ZR.Model;
-using ZR.ServiceCore.Model.Dto;
+using ZR.Model.Dto;
 
 namespace ZR.ServiceCore.Services
 {

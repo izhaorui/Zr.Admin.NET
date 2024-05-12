@@ -13,7 +13,7 @@
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true, ColumnName = "category_id")]
         public int CategoryId { get; set; }
 
-        [SugarColumn(ColumnDescription = "目录名", Length = 20, ExtendedAttribute = EntityConstant.NOTNULL)]
+        [SugarColumn(ColumnDescription = "目录名", Length = 20, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string Name { get; set; }
         [SugarColumn(ColumnDescription = "图标")]
         public string Icon { get; set; }

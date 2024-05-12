@@ -1,8 +1,8 @@
 ﻿using Infrastructure;
 using SqlSugar.IOC;
 using ZR.Model;
+using ZR.Model.Models;
 using ZR.Model.System;
-using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {

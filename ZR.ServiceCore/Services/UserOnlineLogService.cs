@@ -1,9 +1,9 @@
 using Infrastructure.Attribute;
 using ZR.Model;
+using ZR.Model.Dto;
+using ZR.Model.Models;
 using ZR.Model.System;
 using ZR.Repository;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
 using ZR.ServiceCore.Monitor.IMonitorService;
 
 namespace ZR.ServiceCore.Monitor

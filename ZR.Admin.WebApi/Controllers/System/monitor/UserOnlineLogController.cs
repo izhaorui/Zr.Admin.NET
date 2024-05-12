@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
-using ZR.ServiceCore.Model.Dto;
+using ZR.Model.Dto;
 using ZR.ServiceCore.Monitor.IMonitorService;
 
 //创建时间：2024-03-27

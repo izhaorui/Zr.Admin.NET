@@ -1,4 +1,4 @@
-﻿namespace ZR.ServiceCore.Model
+﻿namespace ZR.Model.Models
 {
     /// <summary>
     /// 邮件发送记录

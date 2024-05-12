@@ -1,6 +1,6 @@
 using ZR.Model;
 using ZR.Model.Dto;
-using ZR.ServiceCore.Model;
+using ZR.Model.Models;
 
 namespace ZR.ServiceCore.Services
 {

@@ -167,7 +167,7 @@ namespace ZR.ServiceCore.Services
                 // 新增用户与岗位管理
                 UserPostService.InsertUserPost(user);
                 ChangeUser(user);
-                UserMsgService.AddSysUserMsg(user.UserId, "你的资料已被修改", Infrastructure.Enums.UserMsgType.SYSTEM);
+                UserMsgService.AddSysUserMsg(user.UserId, "你的资料已被修改", UserMsgType.SYSTEM);
             });
             return result.IsSuccess ? 1 : 0;
         }

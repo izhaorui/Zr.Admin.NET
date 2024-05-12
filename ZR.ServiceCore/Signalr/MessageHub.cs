@@ -5,7 +5,8 @@ using Mapster;
 using Microsoft.AspNetCore.SignalR;
 using System.Web;
 using UAParser;
-using ZR.ServiceCore.Model.Dto;
+using ZR.Model.Dto;
+using ZR.Model.Models;
 using ZR.ServiceCore.Monitor.IMonitorService;
 using ZR.ServiceCore.Services;
 
@@ -134,7 +135,7 @@ namespace ZR.ServiceCore.Signalr
                 {
                     userInfo.TodayOnlineTime += user?.OnlineTime ?? 0;
 
-                    UserOnlineLogService.AddUserOnlineLog(new Model.UserOnlineLog()
+                    UserOnlineLogService.AddUserOnlineLog(new UserOnlineLog()
                     {
                         UserId = user.Userid,
                         AddTime = DateTime.Now,

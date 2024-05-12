@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using ZR.Infrastructure.Helper;
 using ZR.Model;
 using ZR.Model.Dto;
+using ZR.Model.Models;
 using ZR.Repository;
 using ZR.ServiceCore.Model;
 

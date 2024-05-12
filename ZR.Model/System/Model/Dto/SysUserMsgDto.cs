@@ -1,9 +1,6 @@
+using ZR.Model.Content.Dto;
 
-using MiniExcelLibs.Attributes;
-using System.ComponentModel.DataAnnotations;
-using ZR.Model;
-
-namespace ZR.ServiceCore.Model.Dto
+namespace ZR.Model.Dto
 {
     /// <summary>
     /// 用户系统消息查询对象
@@ -13,6 +10,7 @@ namespace ZR.ServiceCore.Model.Dto
         public long? UserId { get; set; }
         public int? IsRead { get; set; }
         public long? ClassifyId { get; set; }
+        public UserMsgType? MsgType { get; set; }
     }
 
     /// <summary>
@@ -58,9 +56,10 @@ namespace ZR.ServiceCore.Model.Dto
         [ExcelColumnName("是否删除")]
         public int? IsDelete { get; set; }
 
-
-
+        public UserDto User { get; set; }
+        [JsonIgnore]
         [ExcelColumn(Name = "是否已读")]
         public string IsReadLabel { get; set; }
+        public string ImgUrl { get; set; }
     }
 }

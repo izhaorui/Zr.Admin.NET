@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using MiniExcelLibs;
 using ZR.Admin.WebApi.Filters;
+using ZR.Model.Dto;
 using ZR.Model.System;
 using ZR.Service.IService;
 using ZR.ServiceCore.Model.Dto;
@@ -80,16 +81,17 @@ namespace ZR.Admin.WebApi.Controllers
         /// 存储文件
         /// </summary>
         /// <param name="uploadDto">自定义文件名</param>
+        /// <param name="file"></param>
         /// <param name="storeType">上传类型1、保存到本地 2、保存到阿里云</param>
         /// <returns></returns>
         [HttpPost()]
         [Verify]
         [ActionPermissionFilter(Permission = "common")]
-        public async Task<IActionResult> UploadFile([FromForm] UploadDto uploadDto, StoreType storeType = StoreType.LOCAL)
+        public async Task<IActionResult> UploadFile([FromForm] UploadDto uploadDto, IFormFile file, StoreType storeType = StoreType.LOCAL)
         {
-            if (uploadDto?.File == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
-            SysFile file = new();
-            IFormFile formFile = uploadDto.File;
+            if (file == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
+            SysFile sysfile = new();
+            IFormFile formFile = file;
             string fileExt = Path.GetExtension(formFile.FileName);//文件后缀
             double fileSize = Math.Round(formFile.Length / 1024.0, 2);//文件大小KB
 
@@ -113,7 +115,7 @@ namespace ZR.Admin.WebApi.Controllers
                     {
                         uploadDto.FileDir = OptionsSetting.Upload.LocalSavePath;
                     }
-                    file = await SysFileService.SaveFileToLocal(savePath, uploadDto.FileName, uploadDto.FileDir, HttpContext.GetName(), formFile);
+                    sysfile = await SysFileService.SaveFileToLocal(savePath, uploadDto.FileName, uploadDto.FileDir, HttpContext.GetName(), formFile);
                     break;
                 case StoreType.REMOTE:
                     break;
@@ -127,14 +129,14 @@ namespace ZR.Admin.WebApi.Controllers
                     {
                         return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + AlimaxContentLength + " MB");
                     }
-                    file = new(formFile.FileName, uploadDto.FileName, fileExt, fileSize + "kb", uploadDto.FileDir, HttpContext.GetName())
+                    sysfile = new(formFile.FileName, uploadDto.FileName, fileExt, fileSize + "kb", uploadDto.FileDir, HttpContext.GetName())
                     {
                         StoreType = (int)StoreType.ALIYUN,
                         FileType = formFile.ContentType
                     };
-                    file = await SysFileService.SaveFileToAliyun(file, formFile);
+                    sysfile = await SysFileService.SaveFileToAliyun(sysfile, formFile);
 
-                    if (file.Id <= 0) { return ToResponse(ApiResult.Error("阿里云连接失败")); }
+                    if (sysfile.Id <= 0) { return ToResponse(ApiResult.Error("阿里云连接失败")); }
                     break;
                 case StoreType.TENCENT:
                     break;
@@ -145,9 +147,9 @@ namespace ZR.Admin.WebApi.Controllers
             }
             return SUCCESS(new
             {
-                url = file.AccessUrl,
-                fileName = file.FileName,
-                fileId = file.Id.ToString()
+                url = sysfile.AccessUrl,
+                fileName = sysfile.FileName,
+                fileId = sysfile.Id.ToString()
             });
         }
 

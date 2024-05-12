@@ -1,5 +1,5 @@
 
-namespace ZR.ServiceCore.Model
+namespace ZR.Model.Models
 {
     /// <summary>
     /// 用户在线时长

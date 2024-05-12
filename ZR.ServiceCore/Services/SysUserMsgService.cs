@@ -1,8 +1,9 @@
 using Infrastructure.Attribute;
-using ZR.Infrastructure.Enums;
+using Mapster;
 using ZR.Model;
+using ZR.Model.Content.Dto;
+using ZR.Model.Dto;
 using ZR.Repository;
-using ZR.ServiceCore.Model.Dto;
 
 namespace ZR.ServiceCore.Services
 {
@@ -21,11 +22,27 @@ namespace ZR.ServiceCore.Services
         {
             var predicate = QueryExp(parm);
 
-            var response = Queryable()
-                .Where(predicate.ToExpression())
-                .ToPage<SysUserMsg, SysUserMsgDto>(parm);
+            if (parm.MsgType == UserMsgType.COMMENT || parm.MsgType == UserMsgType.PRAISE)
+            {
+                return Queryable()
+                    .Where(predicate.ToExpression())
+                    .Includes(x => x.User)
+                    .Select((it) => new SysUserMsgDto()
+                    {
+                        User = it.User.Adapt<UserDto>()
+                    }, true)
+               .ToPage(parm);
+            }
+            else
+            {
+                return Queryable()
+                    .Where(predicate.ToExpression())
+                    .Select(it => new SysUserMsgDto()
+                    {
 
-            return response;
+                    }, true)
+               .ToPage(parm);
+            }
         }
 
         /// <summary>
@@ -121,6 +138,7 @@ namespace ZR.ServiceCore.Services
 
             predicate = predicate.AndIF(parm.UserId != null, it => it.UserId == parm.UserId);
             predicate = predicate.AndIF(parm.IsRead != null, it => it.IsRead == parm.IsRead);
+            predicate = predicate.AndIF(parm.MsgType != null, it => it.MsgType == parm.MsgType);
             //predicate = predicate.AndIF(parm.ClassifyId != null, it => it.ClassifyId == parm.ClassifyId);
             return predicate;
         }
