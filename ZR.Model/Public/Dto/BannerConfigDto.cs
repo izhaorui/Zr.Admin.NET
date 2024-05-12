@@ -50,7 +50,7 @@ namespace ZR.Model.Public.Dto
 
         [ExcelColumn(Name = "点击次数")]
         [ExcelColumnName("点击次数")]
-        public int? ClicksNumber { get; set; }
+        public int ClicksNumber { get; set; }
 
         [Required(ErrorMessage = "是否显示不能为空")]
         [ExcelColumn(Name = "是否显示")]
