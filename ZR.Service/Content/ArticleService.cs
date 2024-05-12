@@ -32,8 +32,8 @@ namespace ZR.Service.Content
         /// <param name="sysConfigService"></param>
         /// <param name="userMsgService"></param>
         public ArticleService(
-            IArticleCategoryService categoryService, 
-            IArticleTopicService topicService, 
+            IArticleCategoryService categoryService,
+            IArticleTopicService topicService,
             ISysConfigService sysConfigService,
             ISysUserMsgService userMsgService)
         {
@@ -129,7 +129,7 @@ namespace ZR.Service.Content
                 Context.ThenMapper(response.Result, item =>
                 {
                     item.IsPraise = Context.Queryable<ArticlePraise>()
-                    .Where(f => f.UserId == parm.UserId && f.ArticleId == item.Cid && f.IsDelete == 0)
+                    .Where(f => f.UserId == parm.UserId && f.IsDelete == 0)
                     .SetContext(scl => scl.ArticleId, () => item.Cid, item).Any() ? 1 : 0;
                 });
             }
@@ -147,7 +147,7 @@ namespace ZR.Service.Content
             var predicate = Expressionable.Create<Article>();
             predicate = predicate.And(m => m.Status == "1");
             predicate = predicate.And(m => m.IsPublic == 1);
-            predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Monent); 
+            predicate = predicate.And(m => m.ArticleType == ArticleTypeEnum.Monent);
             predicate = predicate.And(m => m.AuditStatus == AuditStatusEnum.Passed);
             predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
             predicate = predicate.AndIF(parm.CategoryId != null, m => m.CategoryId == parm.CategoryId);
@@ -436,7 +436,7 @@ namespace ZR.Service.Content
                        };
             foreach (var item in data)
             {
-                _userMsgService.AddSysUserMsg(item.userid, "您发布的内容已通过审核", Infrastructure.Enums.UserMsgType.SYSTEM);
+                _userMsgService.AddSysUserMsg(item.userid, "您发布的内容已通过审核", UserMsgType.SYSTEM);
             }
 
             return result;
@@ -482,7 +482,7 @@ namespace ZR.Service.Content
                 {
                     content += $"原因：{reason}";
                 }
-                _userMsgService.AddSysUserMsg(item.userid, content, Infrastructure.Enums.UserMsgType.SYSTEM);
+                _userMsgService.AddSysUserMsg(item.userid, content, UserMsgType.SYSTEM);
             }
 
             return result;

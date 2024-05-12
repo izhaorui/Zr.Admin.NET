@@ -17,17 +17,19 @@ namespace ZR.Service.Content
         private IEmailLogService EmailLogService;
         private IArticleService ArticleService;
         private ISysConfigService SysConfigService;
-
+        private ISysUserMsgService UserMsgService;
         public ArticleCommentService(
             ISysUserService userService,
             IEmailLogService emailLogService,
             IArticleService articleService,
-            ISysConfigService sysConfigService)
+            ISysConfigService sysConfigService,
+            ISysUserMsgService sysUserMsgService)
         {
             this.UserService = userService;
             EmailLogService = emailLogService;
             ArticleService = articleService;
             SysConfigService = sysConfigService;
+            UserMsgService = sysUserMsgService;
         }
 
         /// <summary>
@@ -124,7 +126,22 @@ namespace ZR.Service.Content
             {
                 throw new CustomException(ResultCode.PHONE_BIND, "请绑定手机号");
             }
-
+            var contentInfo = ArticleService.GetById(message.TargetId);
+            switch (contentInfo.CommentSwitch)
+            {
+                case Model.Enum.CommentSwitchEnum.ALL:
+                    break;
+                case Model.Enum.CommentSwitchEnum.FANS:
+                    break;
+                case Model.Enum.CommentSwitchEnum.SELF:
+                    if (message.UserId != contentInfo.UserId)
+                    {
+                        throw new CustomException("仅作者才能评论");
+                    }
+                    break;
+                default:
+                    break;
+            }
             var ipInfo = HttpContextExtension.GetIpInfo(message.UserIP);
             message.Location = ipInfo;
             message.AddTime = DateTime.Now;
@@ -151,10 +168,15 @@ namespace ZR.Service.Content
             var targetInfo = GetFirst(f => f.CommentId == message.TargetId);
             if (targetInfo != null && targetInfo.UserId != message.UserId)
             {
-                //TODO IM消息
-
+                //IM消息
+                UserMsgService.AddSysUserMsg(targetInfo.UserId, message.Content, UserMsgType.COMMENT);
             }
-
+            if (message.UserId != contentInfo?.UserId)
+            {
+                //给作者发送IM消息
+                UserMsgService.AddSysUserMsg(contentInfo.UserId, message.Content, UserMsgType.COMMENT);
+            }
+            
             return result;
         }
 

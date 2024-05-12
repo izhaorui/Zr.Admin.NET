@@ -1,6 +1,7 @@
 ﻿using Infrastructure.Attribute;
 using ZR.Model.Content;
 using ZR.Service.Content.IService;
+using ZR.ServiceCore.Services;
 
 namespace ZR.Service.Content
 {
@@ -8,10 +9,17 @@ namespace ZR.Service.Content
     public class ArticlePraiseService : BaseService<ArticlePraise>, IArticlePraiseService
     {
         private IArticleService _articleService;
+        private ISysUserMsgService _sysUserMsgService;
 
-        public ArticlePraiseService(IArticleService articleService)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="articleService"></param>
+        /// <param name="userMsgService"></param>
+        public ArticlePraiseService(IArticleService articleService, ISysUserMsgService userMsgService)
         {
             _articleService = articleService;
+            _sysUserMsgService = userMsgService;
         }
 
         /// <summary>
@@ -32,7 +40,18 @@ namespace ZR.Service.Content
                     Insertable(dto).ExecuteReturnSnowflakeId();
                     result = _articleService.PraiseArticle(dto.ArticleId);
                     isPraise = 1;
-                    //TODO 消息通知
+
+                    if (dto.UserId != dto.ToUserId)
+                    {
+                        _sysUserMsgService.AddSysUserMsg(new SysUserMsg()
+                        {
+                            FromUserid = dto.UserId,
+                            UserId = dto.ToUserId,
+                            Content = "赞了你的内容",
+                            MsgType = UserMsgType.PRAISE,
+                            TargetId = dto.ArticleId,
+                        });
+                    }
                 }
                 else
                 {
