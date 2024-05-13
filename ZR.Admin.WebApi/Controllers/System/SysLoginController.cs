@@ -1,12 +1,13 @@
 ﻿using Lazy.Captcha.Core;
 using Microsoft.AspNetCore.Mvc;
+using System.Drawing;
 using ZR.Admin.WebApi.Filters;
-using ZR.Infrastructure.Helper;
 using ZR.Model.Models;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.ServiceCore.Model;
+using ZR.Model.System.Vo;
 using ZR.ServiceCore.Model.Dto;
+using ZR.ServiceCore.Services;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -129,6 +130,20 @@ namespace ZR.Admin.WebApi.Controllers.System
             var menus = sysMenuService.SelectMenuTreeByUserId(uid);
 
             return SUCCESS(sysMenuService.BuildMenus(menus));
+        }
+
+        /// <summary>
+        /// 获取路由信息
+        /// </summary>
+        /// <returns></returns>
+        [Verify]
+        [HttpGet("getAppRouters")]
+        public IActionResult GetAppRouters()
+        {
+            long uid = HttpContext.GetUId();
+            var perms = permissionService.GetMenuPermission(new SysUser() { UserId = uid });
+            
+            return SUCCESS(sysMenuService.GetAppMenus(perms));
         }
 
         /// <summary>
@@ -296,7 +311,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 UserIP = dto.LoginIP,
                 Location = location,
             });
-            
+
             return SUCCESS(1);
         }
 

@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
-
-namespace ZR.Model.System.Vo
+﻿namespace ZR.Model.System.Vo
 {
     /// <summary>
     /// 路由展示
@@ -39,7 +36,14 @@ namespace ZR.Model.System.Vo
         public string TitleKey { get; set; } = string.Empty;
         public string Link { get; set; } = string.Empty;
         public int IsNew { get; set; }
-
+        /// <summary>
+        /// icon颜色
+        /// </summary>
+        public string IconColor { get; set; }
+        /// <summary>
+        /// 权限字符
+        /// </summary>
+        public string Permi { get; set; }
         public Meta(string title, string icon)
         {
             Title = title;

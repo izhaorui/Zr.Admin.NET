@@ -1,3 +1,4 @@
+using Infrastructure;
 using Infrastructure.Attribute;
 using ZR.Common;
 using ZR.Model.System;
@@ -717,6 +718,127 @@ namespace ZR.ServiceCore.Services
                 .ToStorage();
             x.AsInsertable.ExecuteCommand();//插入可插入部分;
             x.AsUpdateable.ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 获取移动端工作台菜单
+        /// </summary>
+        /// <param name="perms"></param>
+        /// <returns></returns>
+        public List<RouterVo> GetAppMenus(List<string> perms)
+        {
+            var router = new List<RouterVo>
+            {
+                new()
+                {
+                    Meta = new Meta("演示功能", ""){ IconColor = "#2389da"},
+                    Children = new List<RouterVo>()
+                {
+                    new()
+                    {
+                        Path = "/pages/demo/index",
+                        Meta = new Meta("功能演示", "bookmark")
+                    },
+                     new()
+                    {
+                        Path = "/pages/demo/table/table",
+                        Meta = new Meta("列表表格", "grid")
+                    },
+                     new()
+                    {
+                        Path = "/pages/demo/table/table2",
+                        Meta = new Meta("水平表格", "list")
+                    }
+                }
+                },
+
+                new()
+                {
+                    Meta = new Meta("系统管理", ""){ IconColor = "#ff7d00"},
+                    Children = new List<RouterVo>()
+                {
+                    new()
+                    {
+                        Path = "/pages/system/sysConfig/sysConfig",
+                        Meta = new Meta("系统配置", "setting"){ Permi = "system:config:list"},
+                    },
+                     new()
+                    {
+                        Path = "/pages/monitor/tasks/index",
+                        Meta = new Meta("任务管理", "hourglass-half-fill"){Permi = "monitor:job:list"}
+                    },
+                     new()
+                    {
+                        Path = "/pages/monitor/onlineuser",
+                        Meta = new Meta("在线用户", "grid"){ Permi = "admin"}
+                    },
+                      new()
+                    {
+                        Path = "/pages/system/user/user",
+                        Meta = new Meta("用户管理", "account"){ Permi = "system:user:list" }
+                    },
+                       new()
+                    {
+                        Path = "/pages/monitor/server",
+                        Meta = new Meta("系统监控", "play-right"){ Permi = "monitor:server:list"}
+                    },
+                       new()
+                    {
+                        Path = "/pages/notice/index",
+                        Meta = new Meta("通知公告", "volume")
+                    }
+                }
+                },
+
+                new()
+                {
+                    Meta = new Meta("日志管理", ""){ IconColor = "#8a8a8a"},
+                    Children = new List<RouterVo>()
+                {
+                    new()
+                    {
+                        Path = "/pages/monitor/logininfo",
+                        Meta = new Meta("登录日志", "clock")
+                    },
+                     new()
+                    {
+                        Path = "/pages/monitor/operlog",
+                        Meta = new Meta("操作日志", "file-text"){ Permi = "monitor:operlog:list" }
+                    }
+                }
+                },
+            };
+            if (perms.Contains(GlobalConstant.AdminPerm))
+            {
+                return router;
+            }
+            var newRouter = new List<RouterVo>();
+            foreach (var item in router)
+            {
+                RouterVo routerVo = new()
+                {
+                    Children = new List<RouterVo>()
+                };
+                for (var i = 0; i < item.Children.Count; i++)
+                {
+                    var chd = item.Children[i];
+                    if (chd.Meta.Permi != null && perms.Contains(chd.Meta.Permi))
+                    {
+                        routerVo.Children.Add(chd);
+                    }
+                    else if (chd.Meta.Permi == null)
+                    {
+                        routerVo.Children.Add(chd);
+                    }
+                }
+
+                if (routerVo.Children != null && routerVo.Children.Count > 0)
+                {
+                    routerVo.Meta = item.Meta;
+                    newRouter.Add(routerVo);
+                }
+            }
+            return newRouter;
         }
     }
 }

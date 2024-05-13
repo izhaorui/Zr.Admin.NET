@@ -163,7 +163,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <returns></returns>
         [HttpDelete("del/{id}")]
         [ActionPermissionFilter(Permission = "common")]
-        public IActionResult Delete(int id = 0)
+        public IActionResult Delete(long id = 0)
         {
             var userId = HttpContext.GetUId();
             var info = _ArticleService.GetId(id);
