@@ -12,7 +12,7 @@ public class JsonModelBinder:IModelBinder
 
     public JsonModelBinder(IModelBinder fallbackBinder)
     {
-        _fallbackBinder = fallbackBinder ?? throw new ArgumentNullException(nameof(fallbackBinder));
+        _fallbackBinder = fallbackBinder;
     }
 
     public async Task BindModelAsync(ModelBindingContext bindingContext)
@@ -37,7 +37,13 @@ public class JsonModelBinder:IModelBinder
             }
         }
 
-        // Use fallback binder for non-JSON requests
-        await _fallbackBinder.BindModelAsync(bindingContext);
+        if (_fallbackBinder != null)
+        {
+            await _fallbackBinder.BindModelAsync(bindingContext);
+        }
+        else
+        {
+            bindingContext.Result = ModelBindingResult.Failed();
+        }
     }
 }
