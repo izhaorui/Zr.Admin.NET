@@ -1,7 +1,8 @@
 ﻿using Infrastructure;
 using SqlSugar.IOC;
+using ZR.Model;
+using ZR.Model.Models;
 using ZR.Model.System;
-using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -43,13 +44,16 @@ namespace ZR.ServiceCore.SqlSugar
             //获取当前用户的信息
             var user = JwtUtil.GetLoginUser(App.HttpContext);
             if (user == null) return;
-            //管理员不过滤
-            if (user.RoleIds.Any(f => f.Equals(GlobalConstant.AdminRole))) return;
+            
             var db = DbScoped.SugarScope.GetConnectionScope(configId);
-            var expUser = Expressionable.Create<SysUser>();
+            var expUser = Expressionable.Create<SysUser>().And(it => it.DelFlag == 0);
             var expRole = Expressionable.Create<SysRole>();
             var expLoginlog = Expressionable.Create<SysLogininfor>();
-            expUser.And(it => it.DelFlag == 0);
+            var expSysMsg = Expressionable.Create<SysUserMsg>().And(it => it.IsDelete == 0);
+            
+            db.QueryFilter.AddTableFilter(expSysMsg.ToExpression());
+            //管理员不过滤
+            if (user.RoleIds.Any(f => f.Equals(GlobalConstant.AdminRole))) return;
 
             foreach (var role in user.Roles.OrderBy(f => f.DataScope))
             {

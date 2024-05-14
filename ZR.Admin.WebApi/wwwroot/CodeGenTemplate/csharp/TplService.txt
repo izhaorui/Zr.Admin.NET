@@ -1,11 +1,9 @@
 ﻿using Infrastructure.Attribute;
 using Infrastructure.Extensions;
-using ${options.BaseNamespace}Model;
-using ${options.DtosNamespace};
+using ${options.DtosNamespace}.${options.SubNamespace}.Dto;
 using ${options.ModelsNamespace}.${options.SubNamespace};
 using ${options.RepositoriesNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
-using System.Linq;
 $if(genTable.TplCategory == "tree")
 using System.Collections.Generic;
 $end

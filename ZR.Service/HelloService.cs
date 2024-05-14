@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using SqlSugar.IOC;
+using ZR.Model.Content;
 using ZR.Model.System;
 using ZR.Repository;
 using ZR.Service.IService;

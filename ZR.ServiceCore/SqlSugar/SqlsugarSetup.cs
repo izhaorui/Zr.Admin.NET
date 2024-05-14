@@ -35,7 +35,15 @@ namespace ZR.ServiceCore.SqlSugar
                 });
             }
             SugarIocServices.AddSqlSugar(iocList);
-            ICacheService cache = new SqlSugarCache();
+            ICacheService cache;
+            if (options.RedisServer.DbCache)
+            {
+                cache = new SqlSugarRedisCache();
+            }
+            else
+            {
+                cache = new SqlSugarCache();
+            }
             SugarIocServices.ConfigurationSugar(db =>
             {
                 var u = App.User;

@@ -1,8 +1,10 @@
 ﻿using SqlSugar.IOC;
+using ZR.Model;
+using ZR.Model.Content;
 using ZR.Model.Models;
+using ZR.Model.Public;
 using ZR.Model.System;
 using ZR.Model.System.Generate;
-using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -25,7 +27,6 @@ namespace ZR.ServiceCore.SqlSugar
             //建库：如果不存在创建数据库存在不会重复创建 
             db.DbMaintenance.CreateDatabase();// 注意 ：Oracle和个别国产库需不支持该方法，需要手动建库 
 
-            //27个表,建议先使用下面方法初始化表，方便排查问题
             db.CodeFirst.InitTables(typeof(SysUser));
             db.CodeFirst.InitTables(typeof(SysRole));
             db.CodeFirst.InitTables(typeof(SysDept));
@@ -45,18 +46,20 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(CommonLang));
             db.CodeFirst.InitTables(typeof(GenTable));
             db.CodeFirst.InitTables(typeof(GenTableColumn));
-            db.CodeFirst.InitTables(typeof(Article));
-            db.CodeFirst.InitTables(typeof(ArticleCategory));
-            db.CodeFirst.InitTables(typeof(ArticleBrowsingLog));
             db.CodeFirst.InitTables(typeof(SysDictData));
             db.CodeFirst.InitTables(typeof(SysDictType));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
             db.CodeFirst.InitTables(typeof(EmailTpl));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));
             db.CodeFirst.InitTables(typeof(EmailLog));
+            db.CodeFirst.InitTables(typeof(Article));
+            db.CodeFirst.InitTables(typeof(ArticleCategory));
+            db.CodeFirst.InitTables(typeof(ArticleBrowsingLog));
             db.CodeFirst.InitTables(typeof(ArticlePraise));
             db.CodeFirst.InitTables(typeof(ArticleComment));
             db.CodeFirst.InitTables(typeof(ArticleTopic));
+            db.CodeFirst.InitTables(typeof(BannerConfig));
+            db.CodeFirst.InitTables(typeof(SysUserMsg));
             //db.CodeFirst.InitTables(typeof(UserOnlineLog));
         }
         public static void InitNewTb()

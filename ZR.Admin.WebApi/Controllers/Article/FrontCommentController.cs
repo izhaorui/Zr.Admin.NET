@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
-using ZR.ServiceCore.Model;
-using ZR.ServiceCore.Model.Dto;
-using ZR.ServiceCore.Services.IBusinessService;
+using ZR.Model.Content;
+using ZR.Model.Content.Dto;
+using ZR.Service.Content.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -16,9 +16,17 @@ namespace ZR.Admin.WebApi.Controllers
     public class FrontCommentController : BaseController
     {
         private readonly IArticleCommentService messageService;
-        public FrontCommentController(IArticleCommentService messageService)
+        private readonly IArticleService articleService;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="messageService"></param>
+        /// <param name="articleService"></param>
+        public FrontCommentController(
+            IArticleCommentService messageService, IArticleService articleService)
         {
             this.messageService = messageService;
+            this.articleService = articleService;
         }
 
         /// <summary>
@@ -29,6 +37,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpGet("list")]
         public IActionResult QueryList([FromQuery] MessageQueryDto parm)
         {
+            parm.PageSize = 10;
             PagedInfo<ArticleCommentDto>? response;
             //查询二级评论
             if (parm.CommentId > 0)
@@ -71,9 +80,9 @@ namespace ZR.Admin.WebApi.Controllers
         [Verify]
         public IActionResult Praise([FromBody] ArticleCommentDto dto)
         {
-            if(dto == null || dto.CommentId <= 0) return ToResponse(ResultCode.PARAM_ERROR);
+            if (dto == null || dto.CommentId <= 0) return ToResponse(ResultCode.PARAM_ERROR);
             //var uid = HttpContextExtension.GetUId(HttpContext);
-            
+
             return SUCCESS(messageService.PraiseMessage(dto.CommentId));
         }
 
@@ -85,7 +94,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpDelete("delete/{mid}")]
         [ActionPermissionFilter(Permission = "common")]
         [Verify]
-        public IActionResult Delete(string mid)
+        public IActionResult Delete(long mid)
         {
             var uid = HttpContextExtension.GetUId(HttpContext);
             if (uid <= 0) { return ToResponse(ResultCode.DENY); }
@@ -104,6 +113,22 @@ namespace ZR.Admin.WebApi.Controllers
             PagedInfo<ArticleCommentDto> response = messageService.GetMyMessageList(parm);
 
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 评论置顶
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("top")]
+        [Verify]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult Top([FromBody] ArticleCommentDto parm)
+        {
+            var uid = HttpContextExtension.GetUId(HttpContext);
+            if (uid <= 0) { return ToResponse(ResultCode.DENY); }
+            var contentInfo = articleService.GetArticle(parm.TargetId, uid);
+            if (contentInfo == null) { return ToResponse(ResultCode.CUSTOM_ERROR, "操作失败"); }
+            return SUCCESS(messageService.TopMessage(parm.CommentId, parm.Top));
         }
     }
 }

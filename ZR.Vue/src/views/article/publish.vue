@@ -150,7 +150,7 @@ export default {
             updateArticle(this.form).then((res) => {
               if (res.code == 200) {
                 this.msgSuccess('修改文章成功')
-                this.$tab.closeOpenPage({ path: '/tool/article/index' })
+                this.$tab.closeOpenPage({ path: '/article/index' })
               } else {
                 this.msgError('修改文章失败')
               }
@@ -159,7 +159,7 @@ export default {
             addArticle(this.form).then((res) => {
               if (res.code == 200) {
                 this.msgSuccess('发布文章成功')
-                this.$tab.closeOpenPage({ path: '/tool/article/index' })
+                this.$tab.closeOpenPage({ path: '/article/index' })
               } else {
                 this.msgError('发布文章失败')
               }

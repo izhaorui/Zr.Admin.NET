@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model.Dto;
-using ZR.Model.System;
+using ZR.Model.Content;
+using ZR.Model.Content.Dto;
+using ZR.Service.Content.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -54,6 +55,7 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="CategoryId"></param>
         /// <returns></returns>
         [HttpGet("{CategoryId}")]
+        [AllowAnonymous]
         //[ActionPermissionFilter(Permission = "articlecategory:query")]
         public IActionResult GetArticleCategory(int CategoryId)
         {

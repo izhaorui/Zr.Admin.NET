@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model.System;
-using ZR.Model.System.Dto;
+using ZR.Model.Content;
+using ZR.Model.Content.Dto;
+using ZR.Service.Content.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -42,6 +43,37 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 内容批量审核通过
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("pass/{ids}")]
+        [ActionPermissionFilter(Permission = "article:audit")]
+        [Log(Title = "内容审核", BusinessType = BusinessType.UPDATE)]
+        public IActionResult PassedMonents(string ids)
+        {
+            long[] idsArr = Tools.SpitLongArrary(ids);
+            if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"审核通过失败Id 不能为空")); }
+
+            return ToResponse(_ArticleService.Passed(idsArr));
+        }
+
+        /// <summary>
+        /// 内容批量审核拒绝
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("reject/{ids}")]
+        [ActionPermissionFilter(Permission = "article:audit")]
+        [Log(Title = "内容审核", BusinessType = BusinessType.UPDATE)]
+        public IActionResult RejectMonents(string ids, string reason = "")
+        {
+            long[] idsArr = Tools.SpitLongArrary(ids);
+            if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"審核拒绝失败Id 不能为空")); }
+
+            int result = _ArticleService.Reject(reason, idsArr);
+            return ToResponse(result);
+        }
+
+        /// <summary>
         /// 查询我的文章列表
         /// </summary>
         /// <returns></returns>
@@ -64,7 +96,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             long userId = HttpContext.GetUId();
             var model = _ArticleService.GetArticle(id, userId);
-            
+
             ApiResult apiResult = ApiResult.Success(model);
 
             return ToResponse(apiResult);
@@ -84,6 +116,7 @@ namespace ZR.Admin.WebApi.Controllers
             addModel.UserId = HttpContext.GetUId();
             addModel.UserIP = HttpContext.GetClientUserIp();
             addModel.Location = HttpContextExtension.GetIpInfo(addModel.UserIP);
+            addModel.AuditStatus = Model.Enum.AuditStatusEnum.Passed;
 
             return SUCCESS(_ArticleService.InsertReturnIdentity(addModel));
         }

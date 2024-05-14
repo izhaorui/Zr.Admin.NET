@@ -2,7 +2,7 @@ $if(null != genTable.SubTableName && "" != genTable.SubTableName)
 using ${subTableOptions.ModelsNamespace}.${subTableOptions.SubNamespace};
 $end
 
-namespace ${options.DtosNamespace}
+namespace ${options.DtosNamespace}.${options.SubNamespace}.Dto
 {
     /// <summary>
     /// ${genTable.FunctionName}查询对象

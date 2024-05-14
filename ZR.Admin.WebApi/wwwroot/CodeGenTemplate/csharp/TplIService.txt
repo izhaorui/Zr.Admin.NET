@@ -1,5 +1,4 @@
-﻿using ${options.BaseNamespace}Model;
-using ${options.DtosNamespace};
+﻿using ${options.DtosNamespace}.${options.SubNamespace}.Dto;
 using ${options.ModelsNamespace}.${options.SubNamespace};
 
 namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service

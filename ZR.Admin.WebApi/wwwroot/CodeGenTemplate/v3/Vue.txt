@@ -251,7 +251,6 @@ $end
     </el-drawer>
 $end
 
-    <!-- 添加或修改${genTable.functionName}对话框 -->
     <el-dialog :title="title" :lock-scroll="false" v-model="open" ${if(sub)}:fullscreen="fullScreen"$end>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
@@ -909,8 +908,6 @@ function rowClick(row) {
     }
   })
 }
-
 $end
-
 handleQuery()
 </script>

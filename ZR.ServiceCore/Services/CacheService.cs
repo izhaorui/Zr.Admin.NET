@@ -60,12 +60,25 @@ namespace ZR.ServiceCore.Services
             return 0;
         }
 
+        /// <summary>
+        /// 缓存手机验证码
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="val"></param>
+        /// <returns></returns>
         public static object SetPhoneCode(string key, string val)
         {
             var ck = CK_phoneSmsCode + key;
 
             return CacheHelper.SetCache(ck, val, 10);
         }
+
+        /// <summary>
+        /// 校验手机验证码是否正确
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="val"></param>
+        /// <returns></returns>
         public static bool CheckPhoneCode(string key, string val)
         {
             var ck = CK_phoneSmsCode + key;
@@ -76,6 +89,17 @@ namespace ZR.ServiceCore.Services
                 return true;
             }
             return false;
+        }
+        /// <summary>
+        /// 缓存手机验证码
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public static void RemovePhoneCode(string key)
+        {
+            var ck = CK_phoneSmsCode + key;
+
+            CacheHelper.Remove(ck);
         }
     }
 }
