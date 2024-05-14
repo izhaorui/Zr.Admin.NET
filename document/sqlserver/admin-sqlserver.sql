@@ -299,6 +299,11 @@ GO
 CREATE TABLE sys_user_role  (
   user_id bigint NOT NULL ,  -- '用户ID',
   role_id bigint NOT NULL ,  -- '角色ID',
+  create_by varchar(64)  NULL DEFAULT '' , -- '创建者',
+  create_time datetime NULL DEFAULT NULL , -- '创建时间',
+  update_by varchar(64)  NULL DEFAULT '' , -- '更新者',
+  update_time datetime NULL DEFAULT NULL , -- '更新时间',
+  remark varchar(500)  NULL DEFAULT NULL , -- '备注',
 )
 go
 alter table sys_user_role add primary key(user_id,role_id)
@@ -356,6 +361,13 @@ CREATE TABLE dbo.articleCategory  (
   name varchar(20) NOT NULL ,  -- '目录名',
   create_time datetime NULL DEFAULT NULL ,  -- '创建时间',
   parentId int NULL DEFAULT 0 ,  -- '父级ID',
+  icon nvarchar(200) NULL,
+  orderNum int NULL,
+  bgImg nvarchar(max) NULL,
+  introduce nvarchar(200) NULL,
+  categoryType int NULL,
+  articleNum int NULL,
+  joinNum int NULL,
 )
 GO
 
@@ -559,3 +571,17 @@ CREATE TABLE [dbo].[smsCode_log](
 	[Location] [VARCHAR](255) NULL,
 	[SendType] [INT] NULL
 )
+IF OBJECT_ID(N'article_topic',N'U') is not NULL DROP TABLE dbo.article_topic
+GO
+CREATE TABLE [dbo].[article_topic](
+	[topicId] [int] IDENTITY(1,1) PRIMARY KEY NOT NULL,
+	[topicName] [varchar](20) NOT NULL,
+	[topicDescription] [varchar](500) NULL,
+	[joinNum] [int] NULL,
+	[viewNum] [int] NULL, 
+	[addTime] [datetime] NULL,
+	[topicType] [int] NULL,  
+) 
+GO
+ 
+ 
