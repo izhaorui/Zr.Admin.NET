@@ -47,5 +47,9 @@ namespace ZR.Model.System
         /// 结束时间
         /// </summary>
         public DateTime? EndTime { get; set; }
+        /// <summary>
+        /// 弹出提示
+        /// </summary>
+        public int Popup { get; set; }
     }
 }

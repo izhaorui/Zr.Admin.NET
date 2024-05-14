@@ -51,6 +51,7 @@ namespace ZR.Model.System.Dto
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
         public string Publisher { get; set; }
+        public int Popup { get; set; }
     }
 
     /// <summary>

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using SqlSugar;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
