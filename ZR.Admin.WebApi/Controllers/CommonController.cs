@@ -4,8 +4,6 @@ using MiniExcelLibs;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.Dto;
 using ZR.Model.System;
-using ZR.Service.IService;
-using ZR.ServiceCore.Model.Dto;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -14,7 +12,6 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Route("[controller]/[action]")]
     [ApiExplorerSettings(GroupName = "sys")]
-    //[Produces("application/json")]
     public class CommonController : BaseController
     {
         private OptionsSetting OptionsSetting;
@@ -22,18 +19,16 @@ namespace ZR.Admin.WebApi.Controllers
 
         private IWebHostEnvironment WebHostEnvironment;
         private ISysFileService SysFileService;
-        private IHelloService HelloService;
+
 
         public CommonController(
             IOptions<OptionsSetting> options,
             IWebHostEnvironment webHostEnvironment,
-            ISysFileService fileService,
-            IHelloService helloService)
+            ISysFileService fileService)
         {
             WebHostEnvironment = webHostEnvironment;
             SysFileService = fileService;
             OptionsSetting = options.Value;
-            HelloService = helloService;
         }
 
         /// <summary>
@@ -46,18 +41,6 @@ namespace ZR.Admin.WebApi.Controllers
         {
             return Ok("看到这里页面说明你已经成功启动了本项目:)\n\n" +
                 "如果觉得项目有用，打赏作者喝杯咖啡作为奖励\n☛☛http://www.izhaorui.cn/vip\n");
-        }
-
-        /// <summary>
-        /// hello
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        [Route("/hello")]
-        [HttpGet]
-        public IActionResult Hello(string name)
-        {
-            return Ok(HelloService.SayHello(name));
         }
 
         /// <summary>

@@ -5,3 +5,4 @@ global using Newtonsoft.Json;
 global using ZR.ServiceCore;
 global using ZR.Model;
 global using System.Linq;
+global using ZR.Common.DynamicApiSimple;

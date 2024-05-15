@@ -1,8 +1,12 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Model;
+using Microsoft.AspNetCore.Mvc;
 using SqlSugar.IOC;
+using ZR.Admin.WebApi.Filters;
 using ZR.Model.Content;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 using ZR.Repository;
 using ZR.Service.IService;
 using ZR.ServiceCore.Services;
@@ -10,10 +14,10 @@ using ZR.ServiceCore.Services;
 namespace ZR.Service
 {
     /// <summary>
-    /// 注意：下面的AppService不要漏了
+    /// 动态api示例，继承IDynamicApi，使用看swagger生成的地址
     /// </summary>
     [AppService(ServiceType = typeof(IHelloService), ServiceLifetime = LifeTime.Transient)]
-    public class HelloService : BaseService<ArticleCategory>, IHelloService
+    public class HelloService : BaseService<ArticleCategory>, IHelloService, IDynamicApi
     {
         /// <summary>
         /// 引用User服务
@@ -38,7 +42,7 @@ namespace ZR.Service
             //构造函数式使用
             var user = JsonConvert.SerializeObject(userService.GetFirst(f => f.UserId == 1));
             Console.WriteLine(user);
-
+            
             var postService = App.GetRequiredService<ISysPostService>();
             Console.WriteLine(JsonConvert.SerializeObject(postService.GetId(1)));
 
@@ -55,6 +59,23 @@ namespace ZR.Service
             Context.Queryable<SysUser>().First(f => f.UserId == 1);
 
             return "Hello:" + name;
+        }
+
+        /// <summary>
+        /// 返回json内容
+        /// </summary>
+        /// <param name="userDto"></param>
+        /// <returns></returns>
+        [Verify]
+        public ApiResult SayHello2([FromBody]SysUserDto userDto)
+        {
+            var user = userService.GetFirst(f => f.UserId == 2);
+            return new ApiResult(100, "success", user);
+        }
+
+        public ApiResult SayHello3()
+        {
+            throw new CustomException("自定义异常");
         }
     }
 }

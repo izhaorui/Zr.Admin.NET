@@ -118,19 +118,28 @@ namespace ZR.Admin.WebApi.Extensions
                     }
                 });
 
-                //判断接口归于哪个分组
-                c.DocInclusionPredicate((docName, apiDescription) =>
+                try
                 {
-                    if (docName == "v1")
+                    //判断接口归于哪个分组
+                    c.DocInclusionPredicate((docName, apiDescription) =>
                     {
-                        //当分组为NoGroup时，只要没加特性的都属于这个组
-                        return string.IsNullOrEmpty(apiDescription.GroupName);
-                    }
-                    else
-                    {
-                        return apiDescription.GroupName == docName;
-                    }
-                });
+                        if (docName == "v1")
+                        {
+                            //当分组为NoGroup时，只要没加特性的都属于这个组
+                            return string.IsNullOrEmpty(apiDescription.GroupName);
+                        }
+                        else
+                        {
+                            return apiDescription.GroupName == docName;
+                        }
+                    });
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+
             });
         }
     }
