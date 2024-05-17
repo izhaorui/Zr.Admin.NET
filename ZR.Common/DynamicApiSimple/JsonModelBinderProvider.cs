@@ -13,7 +13,7 @@ public class JsonModelBinderProvider : IModelBinderProvider
             throw new ArgumentNullException(nameof(context));
         }
 
-        if (context.Metadata.IsComplexType)
+        if (context.Metadata is { IsComplexType: true, IsCollectionType: false })
         {
             var fallbackBinder = new ComplexTypeModelBinderProvider().GetBinder(context);
             return new JsonModelBinder(fallbackBinder);
