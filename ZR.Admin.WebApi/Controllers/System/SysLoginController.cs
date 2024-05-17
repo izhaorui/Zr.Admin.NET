@@ -1,13 +1,10 @@
 ﻿using Lazy.Captcha.Core;
 using Microsoft.AspNetCore.Mvc;
-using System.Drawing;
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.Models;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Model.System.Vo;
 using ZR.ServiceCore.Model.Dto;
-using ZR.ServiceCore.Services;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {

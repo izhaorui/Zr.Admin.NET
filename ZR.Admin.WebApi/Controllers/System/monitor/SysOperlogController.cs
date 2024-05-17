@@ -2,7 +2,6 @@
 using ZR.Admin.WebApi.Filters;
 using ZR.Model.System.Dto;
 
-
 namespace ZR.Admin.WebApi.Controllers.monitor
 {
     /// <summary>

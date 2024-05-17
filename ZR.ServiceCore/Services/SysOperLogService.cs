@@ -41,6 +41,7 @@ namespace ZR.ServiceCore.Services
             exp.AndIF(sysOper.BusinessType != null, it => it.BusinessType == sysOper.BusinessType);
             exp.AndIF(sysOper.Status != null, it => it.Status == sysOper.Status);
             exp.AndIF(sysOper.OperParam != null, it => it.OperParam.Contains(sysOper.OperParam));
+            exp.AndIF(sysOper.BusinessTypes != null, it => sysOper.BusinessTypes.Contains(it.BusinessType));
 
             return Queryable()
                 .Where(exp.ToExpression())
