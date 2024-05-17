@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Infrastructure.Helper;
+using JinianNet.JNTemplate.Nodes;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
@@ -104,7 +105,7 @@ class ApiConvention : IApplicationModelConvention
     {
         foreach (var selector in action.Selectors)
         {
-            var template = new Microsoft.AspNetCore.Mvc.RouteAttribute(GetRouteTemplate(action));
+            var template = new Microsoft.AspNetCore.Mvc.RouteAttribute(GetRouteTemplate(action,selector));
             selector.AttributeRouteModel = new AttributeRouteModel(template);
             if (selector.ActionConstraints.OfType<HttpMethodActionConstraint>().FirstOrDefault()?.HttpMethods?.FirstOrDefault() == null)
                 selector.ActionConstraints.Add(new HttpMethodActionConstraint(new[] { GetHttpMethod(action) }));
@@ -112,7 +113,7 @@ class ApiConvention : IApplicationModelConvention
         }
     }
 
-    private string GetRouteTemplate(ActionModel action)
+    private string GetRouteTemplate(ActionModel action,SelectorModel selectorModel=null)
     {
         var routeTemplate = new StringBuilder();
         var names = action.Controller.ControllerType.Namespace.Split('.');
@@ -126,17 +127,35 @@ class ApiConvention : IApplicationModelConvention
         if (controllerName.EndsWith("Service"))
             controllerName = controllerName[0..^7];
 
-        routeTemplate.Append($"api/{controllerName}");
-
-        // Action
-        var actionName = action.ActionName;
-        if (actionName.EndsWith("Async") || actionName.EndsWith("async"))
-            actionName = actionName[..^"Async".Length];
-
-        if (!string.IsNullOrEmpty(actionName))
+        if (selectorModel is { AttributeRouteModel: not null })
         {
-            routeTemplate.Append($"/{RemoveHttpMethodPrefix(actionName)}");
+            if (!string.IsNullOrWhiteSpace(selectorModel.AttributeRouteModel?.Template))
+            {
+                if (selectorModel.AttributeRouteModel.Template.StartsWith("/"))
+                {
+                    routeTemplate.Append(selectorModel.AttributeRouteModel.Template);
+                }
+                else
+                {
+                    routeTemplate.Append($"{BaseRoute}/{controllerName}/{selectorModel.AttributeRouteModel.Template}");
+                }
+            }
         }
+        else
+        {
+            routeTemplate.Append($"{BaseRoute}/{controllerName}");
+
+            // Action
+            var actionName = action.ActionName;
+            if (actionName.EndsWith("Async") || actionName.EndsWith("async"))
+                actionName = actionName[..^"Async".Length];
+
+            if (!string.IsNullOrEmpty(actionName))
+            {
+                routeTemplate.Append($"/{RemoveHttpMethodPrefix(actionName)}");
+            }
+        }
+        
 
         return routeTemplate.ToString();
     }
@@ -167,6 +186,7 @@ class ApiConvention : IApplicationModelConvention
         return result;
     }
     internal static Dictionary<string, string> Methods { get; private set; }
+    internal static string BaseRoute { get; private set; } = "api";
     static ApiConvention()
     {
         Methods = new Dictionary<string, string>()
