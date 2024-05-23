@@ -31,7 +31,7 @@
 ## 🍟 概述
 
 - 本项目适合有一定 NetCore 和 vue 基础的开发人员
-- 基于.NET5/.NET7 实现的通用权限管理平台（RBAC 模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
+- 基于.NET5/.NET7/.NET8 实现的通用权限管理平台（RBAC 模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
 - 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让 web 开发更快速、简单高效（从此告别 996），解决 70%的重复工作，专注您的业务，轻松开发从现在开始！
 - 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
 - 七牛云通用云产品优惠券：[点我进入](https://s.qiniu.com/FzEfay)。
@@ -51,8 +51,7 @@
 
 - 官方文档：http://www.izhaorui.cn/doc
 - 加入群聊：[立即加入](http://www.izhaorui.cn/doc/contact.html)
-- Vue3.x 版本体验：[http://demo.izhaorui.cn/vue3](http://demo.izhaorui.cn/vue3)
-- Vue2.x 版本体验：[http://demo.izhaorui.cn/admin](http://demo.izhaorui.cn/admin)
+- web 端体验：[http://demo.izhaorui.cn/vue3](http://demo.izhaorui.cn/vue3)
 - Uniapp 版本体验(vue2)：[http://demo.izhaorui.cn/h5](http://demo.izhaorui.cn/h5)
 - Uniapp 版本体验(vue3)：[http://demo.izhaorui.cn/uplus](http://demo.izhaorui.cn/uplus)
 - 账号密码：admin/123456，普通用户 user/123456
@@ -67,10 +66,12 @@
 
 ## 💒 代码仓库
 
-| 仓库           | Github                                                 | Gitee                                               |
-| -------------- | ------------------------------------------------------ | --------------------------------------------------- |
-| Net7           | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore) |
-| Vue3(推荐使用) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)    |
+| 仓库           | Github                                                 | Gitee                                                          |
+| -------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
+| Net7           | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore)            |
+| Net8           |                                                        | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net8/) |
+| web前端vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)               |
+| 移动端         | [联系作者](http://www.izhaorui.cn/vip/)                | [联系作者](http://www.izhaorui.cn/vip/)                        |
 
 ## 🍁 前端技术
 
@@ -188,7 +189,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 	</tr>
 </table>
 
-## 📱 移动端演示图
+## 📱 移动端(vue2)
 
 <table>
     <tr>
@@ -213,23 +214,34 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
     </tr>
 		<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a12.png"/></td>
-				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/1.PNG"/></td>
+    </tr>
+</table>
+
+## 📱 移动端(vue3)
+
+<table>
+		<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/12.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/13.png"/></td>
     </tr>
 		<tr>
-        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a12.png"/></td>
-				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/1.PNG"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/14.png"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/15.png"/></td>
     </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/16.png"/></td>
+    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/17.png"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/18.png"/></td>
+    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/19.png"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/21.jpg"/></td>
+    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/22.jpg"/></td>
+    </tr>    
 		<tr>
-        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/2.PNG"/></td>
-				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/3.PNG"/></td>
-    </tr>
-    <tr>
-        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/4.PNG"/></td>
-    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/5.PNG"/></td>
-    </tr>
-    <tr>
-        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/6.PNG"/></td>
-    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/7.PNG"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/23.jpg"/></td>
     </tr>
 
 </table>
