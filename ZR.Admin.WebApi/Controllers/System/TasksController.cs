@@ -87,7 +87,6 @@ namespace ZR.Admin.WebApi.Controllers
             }
             //从 Dto 映射到 实体
             var tasksQz = parm.Adapt<SysTasks>().ToCreate(HttpContext);
-            tasksQz.Create_by = HttpContext.GetName();
             tasksQz.ID = SnowFlakeSingle.Instance.NextId().ToString();
 
             return SUCCESS(_tasksQzService.AddTasks(tasksQz));
@@ -125,8 +124,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"该任务正在运行中，请先停止在更新");
             }
-            var model = parm.Adapt<SysTasks>();
-            model.Update_by = HttpContextExtension.GetName(HttpContext);
+            var model = parm.Adapt<SysTasks>().ToUpdate(HttpContext);
             int response = _tasksQzService.UpdateTasks(model);
             if (response > 0)
             {
