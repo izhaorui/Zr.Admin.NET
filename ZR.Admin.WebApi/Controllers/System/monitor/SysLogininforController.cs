@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using ZR.Admin.WebApi.Filters;
-using ZR.Model;
 using ZR.Model.System;
-
+using ZR.Model.System.Dto;
 
 namespace ZR.Admin.WebApi.Controllers.monitor
 {
@@ -25,13 +24,27 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         /// <summary>
         /// 查询登录日志
         /// </summary>
-        /// <param name="sysLogininfoDto"></param>
-        /// <param name="pagerInfo"></param>
+        /// <param name="param"></param>
         /// <returns></returns>
         [HttpGet("list")]
-        public IActionResult LoignLogList([FromQuery] SysLogininfor sysLogininfoDto, [FromQuery] PagerInfo pagerInfo)
+        [ActionPermissionFilter(Permission = "monitor:logininfor:list")]
+        public IActionResult LoignLogList([FromQuery] SysLogininfoQueryDto param)
         {
-            var list = sysLoginService.GetLoginLog(sysLogininfoDto, pagerInfo);
+            var list = sysLoginService.GetLoginLog(param);
+
+            return SUCCESS(list);
+        }
+        
+        /// <summary>
+        /// 查询我的登录日志
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        [HttpGet("mylist")]
+        public IActionResult QueryMyLoignLogList([FromQuery] SysLogininfoQueryDto param)
+        {
+            param.UserId = HttpContext.GetUId();
+            var list = sysLoginService.GetLoginLog(param);
 
             return SUCCESS(list);
         }

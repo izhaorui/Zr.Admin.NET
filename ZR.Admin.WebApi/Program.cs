@@ -6,6 +6,7 @@ using SqlSugar;
 using System.Text.Json;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Common.Cache;
+using ZR.Common.DynamicApiSimple.Extens;
 using ZR.Infrastructure.WebExtensions;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
@@ -15,8 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 //builder.Logging.ClearProviders();
 builder.Host.UseNLog();
 
+builder.Services.AddDynamicApi();
 // Add services to the container.
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

@@ -43,6 +43,7 @@ namespace ZR.ServiceCore.Services
             logininfor.Status = "1";
             logininfor.LoginTime = DateTime.Now;
             logininfor.Ipaddr = loginBody.LoginIP;
+            logininfor.ClientId = loginBody.ClientId;
 
             ClientInfo clientInfo = httpContextAccessor.HttpContext.GetClientInfo();
             logininfor.Browser = clientInfo.ToString();
@@ -54,6 +55,7 @@ namespace ZR.ServiceCore.Services
                 AddLoginInfo(logininfor);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
+            logininfor.UserId = user.UserId;
             if (user.Status == 1)
             {
                 logininfor.Msg = "该用户已禁用";
@@ -67,6 +69,7 @@ namespace ZR.ServiceCore.Services
             SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
             return user;
         }
+
         /// <summary>
         /// 登录验证
         /// </summary>
@@ -98,25 +101,27 @@ namespace ZR.ServiceCore.Services
             SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
             return user;
         }
+
         /// <summary>
         /// 查询登录日志
         /// </summary>
         /// <param name="logininfoDto"></param>
-        /// <param name="pager">分页</param>
         /// <returns></returns>
-        public PagedInfo<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager)
+        public PagedInfo<SysLogininfor> GetLoginLog(SysLogininfoQueryDto logininfoDto)
         {
             var exp = Expressionable.Create<SysLogininfor>();
 
             exp.AndIF(logininfoDto.BeginTime == null, it => it.LoginTime >= DateTime.Now.ToShortDateString().ParseToDateTime());
             exp.AndIF(logininfoDto.BeginTime != null, it => it.LoginTime >= logininfoDto.BeginTime && it.LoginTime <= logininfoDto.EndTime);
+            exp.AndIF(logininfoDto.UserId != null, it => it.UserId == logininfoDto.UserId);
+            exp.AndIF(logininfoDto.Status.IfNotEmpty(), f => f.Status == logininfoDto.Status);
             exp.AndIF(logininfoDto.Ipaddr.IfNotEmpty(), f => f.Ipaddr == logininfoDto.Ipaddr);
             exp.AndIF(logininfoDto.UserName.IfNotEmpty(), f => f.UserName.Contains(logininfoDto.UserName));
-            exp.AndIF(logininfoDto.Status.IfNotEmpty(), f => f.Status == logininfoDto.Status);
+
             var query = Queryable().Where(exp.ToExpression())
             .OrderBy(it => it.InfoId, OrderByType.Desc);
 
-            return query.ToPage(pager);
+            return query.ToPage(logininfoDto);
         }
 
         /// <summary>
@@ -166,7 +171,7 @@ namespace ZR.ServiceCore.Services
             //如果是查询当月那么 time就是 DateTime.Now
             var days = (time.AddMonths(1) - time).Days;//获取当月天数
             var dayArray = Enumerable.Range(1, days).Select(it => Convert.ToDateTime(time.ToString("yyyy-MM-" + it))).ToList();//转成时间数组
-           
+
             var queryableLeft = Context.Reportable(dayArray)
                 .ToQueryable<DateTime>();
 

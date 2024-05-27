@@ -12,6 +12,7 @@ namespace ZR.Model.System.Dto
         /// 业务类型 0=其它,1=新增,2=修改,3=删除,4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据
         /// </summary>
         public int? BusinessType { get; set; }
+        public int[] BusinessTypes { get; set; }
         /// <summary>
         /// 状态
         /// </summary>

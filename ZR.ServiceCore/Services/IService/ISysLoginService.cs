@@ -25,11 +25,7 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 查询操作日志
         /// </summary>
-        /// <param name="logininfoDto"></param>
-        /// <param name="pager">分页</param>
-        /// <returns></returns>
-        public PagedInfo<SysLogininfor> GetLoginLog(SysLogininfor logininfoDto, PagerInfo pager);
-
+        PagedInfo<SysLogininfor> GetLoginLog(SysLogininfoQueryDto logininfoDto);
         /// <summary>
         /// 记录登录日志
         /// </summary>

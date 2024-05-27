@@ -19,7 +19,7 @@ namespace ZR.ServiceCore.SqlSugar
         public static void InitDb(bool init)
         {
             var db = DbScoped.SugarScope;
-            //TODO 可在此处单独更新某个表的结构
+            //可在此处单独更新某个表的结构，无视配置
             //例如：db.CodeFirst.InitTables(typeof(EmailLog));
             
 

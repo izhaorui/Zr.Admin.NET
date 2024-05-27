@@ -333,6 +333,11 @@ DROP TABLE IF EXISTS `sys_user_role`;
 CREATE TABLE `sys_user_role`  (
   `user_id` bigint(20) NOT NULL COMMENT '用户ID',
   `role_id` bigint(20) NOT NULL COMMENT '角色ID',
+  `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '创建者',
+  `create_time` datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '更新者',
+  `update_time` datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`user_id`, `role_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户和角色关联表' ROW_FORMAT = Dynamic;
 
@@ -370,6 +375,13 @@ CREATE TABLE `articleCategory`  (
   `name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '目录名',
   `create_time` datetime(6) NULL DEFAULT NULL COMMENT '创建时间',
   `parentId` int(10) UNSIGNED NULL DEFAULT 0 COMMENT '父级ID',
+  `icon` varchar(200) NULL,
+  `orderNum` int(10) NULL,
+  `bgImg` varchar(max) NULL,
+  `introduce` varchar(200) NULL,
+  `categoryType` int(10) NULL,
+  `articleNum` int(10) NULL,
+  `joinNum` int(10) NULL,
   PRIMARY KEY (`category_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
@@ -592,3 +604,15 @@ CREATE TABLE `smsCode_log`  (
   `Location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '地理位置',
   PRIMARY KEY (`Id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '短信验证码记录' ROW_FORMAT = Dynamic;
+
+DROP TABLE IF EXISTS `article_topic`;
+ CREATE TABLE `article_topic` (
+  `topicId` int NOT NULL,
+  `topicName` varchar(20) NOT NULL,
+  `topicDescription` text,
+  `joinNum` int DEFAULT NULL,
+  `viewNum` int DEFAULT NULL,
+  `addTime` datetime DEFAULT NULL,
+  `topicType` int DEFAULT NULL,
+  PRIMARY KEY (`topicId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

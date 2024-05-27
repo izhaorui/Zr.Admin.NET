@@ -48,7 +48,7 @@ namespace ZR.Model.Content.Dto
 
         public string Status { get; set; }
 
-        public string FmtType { get; set; }
+        public string EditorType { get; set; }
 
         public string Tags { get; set; }
 
@@ -78,7 +78,7 @@ namespace ZR.Model.Content.Dto
         /// <summary>
         /// 内容类型
         /// </summary>
-        public int ArticleType { get; set; }
+        public ArticleTypeEnum ArticleType { get; set; }
         /// <summary>
         /// 点赞数
         /// </summary>

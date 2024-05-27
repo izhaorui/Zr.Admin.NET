@@ -54,5 +54,24 @@
         public DateTime? BeginTime { get; set; }
         [SugarColumn(IsIgnore = true)]
         public DateTime? EndTime { get; set; }
+        /// <summary>
+        /// 客户端id
+        /// </summary>
+        public string ClientId { get; set; }
+        public long UserId { get; set; }
+
+        [SugarColumn(IsIgnore = true)]
+        public string Position
+        {
+            get
+            {
+                var temp_location = LoginLocation.Split("-")?[0];
+                if (temp_location == "0")
+                {
+                    return "IP未知";
+                }
+                return temp_location;
+            }
+        }
     }
 }

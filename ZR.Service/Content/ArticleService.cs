@@ -247,7 +247,6 @@ namespace ZR.Service.Content
                 UpdateTime = DateTime.Now,
                 CoverUrl = model.CoverUrl,
                 CategoryId = model.CategoryId,
-                FmtType = model.FmtType,
                 IsPublic = model.IsPublic,
                 AbstractText = model.AbstractText,
             });

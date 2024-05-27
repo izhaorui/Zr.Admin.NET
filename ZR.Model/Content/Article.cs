@@ -17,7 +17,7 @@ namespace ZR.Model.Content
         /// <summary>
         /// 文章标题
         /// </summary>
-        [SugarColumn(ColumnDescription = "文章标题", Length = 254, ExtendedAttribute = ProteryConstant.NOTNULL)]
+        [SugarColumn(ColumnDescription = "文章标题", Length = 254)]
         public string Title { get; set; }
         /// <summary>
         /// 发布时间
@@ -52,8 +52,8 @@ namespace ZR.Model.Content
         /// <summary>
         /// 编辑器类型 markdown,html
         /// </summary>
-        [SugarColumn(ColumnDescription = "编辑器类型markdown,html", ColumnName = "fmt_type", Length = 20, IsNullable = true)]
-        public string FmtType { get; set; }
+        [SugarColumn(ColumnDescription = "编辑器类型markdown,html", ColumnName = "editorType", Length = 20, IsNullable = true)]
+        public string EditorType { get; set; }
         /// <summary>
         /// 文章标签eg：Net5,java
         /// </summary>
