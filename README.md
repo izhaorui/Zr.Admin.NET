@@ -1,5 +1,5 @@
 <h2 align="center"> ZR.Admin.NET后台管理系统</h2>
-<h4 align="center">基于.Net5 + vue2.x/vue3.x/uniapp前后端分离的.net快速开发框架</h4>
+<h4 align="center">基于.Net8 + vue2.x/vue3.x/uniapp前后端分离的.net快速开发框架</h4>
 
 <!-- <p align="center">
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
@@ -66,12 +66,12 @@
 
 ## 💒 代码仓库
 
-| 仓库                | Github                                                 | Gitee                                                          |
-| ------------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
-| net7(主分支)        | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore)            |
-| net8                |                                                        | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net8/) |
-| web 前端 vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)               |
-| 移动端              | [联系作者](http://www.izhaorui.cn/vip/)                | [联系作者](http://www.izhaorui.cn/vip/)                        |
+| 仓库                | Github                                                          | Gitee                                                          |
+| ------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
+| net7                | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)           | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore)            |
+| net8                | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET/tree/net8) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net8/) |
+| web 前端 vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3)          | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)               |
+| 移动端              | [联系作者](http://www.izhaorui.cn/vip/)                         | [联系作者](http://www.izhaorui.cn/vip/)                        |
 
 ## 🍁 前端技术
 
@@ -79,7 +79,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 
 ## 🍀 后端技术
 
-- 核心框架：.Net7.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
+- 核心框架：.Net8.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
 - 定时计划任务：Quartz.Net 组件，支持执行程序集或者 http 网络请求
 - 安全支持：过滤器(数据权限过滤)、Sql 注入、请求伪造
 - 日志管理：NLog、登录日志、操作日志、定时任务日志
@@ -87,10 +87,10 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 - 接口限流：支持接口限流，避免恶意请求导致服务层压力过大
 - 代码生成：高效率开发，代码生成器可以一键生成所有前后端代码
 - 数据字典：支持数据字典，可以方便对一些状态进行管理
-- 分库分表：使用 orm sqlsugar 可以很轻松的实现分库分库性能优越
+- 分库分表：使用 orm `sqlSugar` 可以很轻松的实现分库分库性能优越
 - 多 租 户：支持多租户功能(多数据库源)
-- 缓存数据：内置内存缓存和 Redis
-- signalR：使用 signalr 管理用户在线状态
+- 缓存数据：内置内存缓存和 `Redis`
+- signalR：使用 `signalr` 管理用户在线状态
 
 ## 🍖 内置功能
 
@@ -102,12 +102,12 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 6. 字典管理：对系统中经常使用的一些较为固定的数据进行维护。
 7. 操作日志：系统正常操作日志记录和查询；系统异常信息日志记录和查询。
 8. 登录日志：系统登录日志记录查询包含登录异常。
-9. 系统接口：使用 swagger 生成相关 api 接口文档。
+9. 系统接口：使用 `swagger` 生成相关 api 接口文档。
 10. 服务监控：监视当前系统 CPU、内存、磁盘、堆栈等相关信息。
 11. 在线构建器：拖动表单元素生成相应的 VUE 代码(仅支持 vue2)。
-12. 任务系统：基于 Quartz.NET，可以在线（添加、修改、删除、手动执行）任务调度包含执行结果日志。
+12. 任务系统：基于 `Quartz.NET`，可以在线（添加、修改、删除、手动执行）任务调度包含执行结果日志。
 13. 文章管理：可以写文章记录。
-14. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、.sql、uniapp 等)支持下载，自定义配置前端展示控件、让开发更快捷高效（史上最强）。
+14. 代码生成：可以一键生成前后端代码(.cs、.vue、.js、.sql、uniapp 等)支持下载，自定义配置前端展示控件、让开发更快捷高效。
 15. 参数管理：对系统动态配置常用参数。
 16. 发送邮件：可以对多个用户进行发送邮件。
 17. 文件管理：可以进行上传文件管理，目前支持上传到本地、阿里云。
