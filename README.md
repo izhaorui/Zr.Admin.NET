@@ -1,5 +1,5 @@
 <h2 align="center"> ZR.Admin.NET后台管理系统</h2>
-<h4 align="center">基于.Net7 + vue2.x/vue3.x/uniapp前后端分离的.net快速开发框架</h4>
+<h4 align="center">基于.Net5 + vue2.x/vue3.x/uniapp前后端分离的.net快速开发框架</h4>
 
 <!-- <p align="center">
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
@@ -66,12 +66,12 @@
 
 ## 💒 代码仓库
 
-| 仓库           | Github                                                 | Gitee                                                          |
-| -------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
-| Net7           | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore)            |
-| Net8           |                                                        | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net8/) |
-| web前端vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)               |
-| 移动端         | [联系作者](http://www.izhaorui.cn/vip/)                | [联系作者](http://www.izhaorui.cn/vip/)                        |
+| 仓库                | Github                                                 | Gitee                                                          |
+| ------------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
+| net7(主分支)        | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore)            |
+| net8                |                                                        | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net8/) |
+| web 前端 vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)               |
+| 移动端              | [联系作者](http://www.izhaorui.cn/vip/)                | [联系作者](http://www.izhaorui.cn/vip/)                        |
 
 ## 🍁 前端技术
 
@@ -125,15 +125,15 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/kj.png)
 
 ```
-├─ZR.Service                ->[你的业务服务层类库]：提供WebApi接口调用；
-├─ZR.ServiceCore            ->[系统服务层类库]：提供WebApi接口调用；
+├─ZR.Service                ->[你的业务服务层类库]：提供自己业务数据Api接口调用；
+├─ZR.ServiceCore            ->[系统服务层类库]：提供系统Api接口；
 ├─ZR.Repository             ->[仓库层类库]：方便提供有执行存储过程的操作；
-├─ZR.Model                	->[实体层类库]：提供项目中的数据库表、数据传输对象；
+├─ZR.Model                	->[实体层类库]：自己业务库表、数据传输对象；
 ├─ZR.Admin.WebApi           ->[webapi接口]：为Vue版或其他三方系统提供接口服务。
 ├─ZR.Tasks               		->[定时任务类库]：提供项目定时任务实现功能；
 ├─ZR.CodeGenerator          ->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
 ├─ZR.Vue               			->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。
-├─document               		->[文档]：数据库脚本
+├─document               		->[文档]：数据库脚本(弃用)
 ```
 
 ## 🍎 演示图
