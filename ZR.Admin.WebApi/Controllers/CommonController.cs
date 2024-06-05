@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using MiniExcelLibs;
 using ZR.Admin.WebApi.Filters;
+using ZR.Infrastructure.IPTools;
 using ZR.Model.Dto;
 using ZR.Model.System;
 
@@ -41,6 +42,21 @@ namespace ZR.Admin.WebApi.Controllers
         {
             return Ok("看到这里页面说明你已经成功启动了本项目:)\n\n" +
                 "如果觉得项目有用，打赏作者喝杯咖啡作为奖励\n☛☛http://www.izhaorui.cn/vip\n");
+        }
+
+        /// <summary>
+        /// 查询IP信息
+        /// </summary>
+        /// <returns></returns>
+        [Route("/ip")]
+        [HttpGet]
+        public IActionResult IPInfo(string ip)
+        {
+            if(ip.IsEmpty()) return ToResponse(ResultCode.CUSTOM_ERROR, "IP异常");
+
+            var region = IpTool.GetRegion(ip);
+
+            return SUCCESS(region);
         }
 
         /// <summary>

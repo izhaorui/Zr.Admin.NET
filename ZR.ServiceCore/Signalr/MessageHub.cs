@@ -1,10 +1,10 @@
 ﻿using Infrastructure;
 using Infrastructure.Model;
-using IPTools.Core;
 using Mapster;
 using Microsoft.AspNetCore.SignalR;
 using System.Web;
 using UAParser;
+using ZR.Infrastructure.IPTools;
 using ZR.Model.Dto;
 using ZR.Model.Models;
 using ZR.ServiceCore.Monitor.IMonitorService;

@@ -1,5 +1,4 @@
-﻿using IPTools.Core;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using UAParser;
+using ZR.Infrastructure.IPTools;
 
 namespace Infrastructure.Extensions
 {
