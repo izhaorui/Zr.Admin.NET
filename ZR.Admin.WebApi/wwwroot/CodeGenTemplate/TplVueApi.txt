@@ -7,9 +7,9 @@ import { downFile } from '@/utils/request'
 $end
 
 /**
-* ${genTable.functionName}分页查询
-* @param {查询条件} data
-*/
+ * ${genTable.functionName}分页查询
+ * @param {查询条件} data
+ */
 export function list${genTable.BusinessName}(query) {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}/list',
@@ -25,9 +25,9 @@ $end
 
 $if(genTable.TplCategory == "tree")
 /**
-* ${genTable.functionName}tree查询
-* @param {查询条件} data
-*/
+ * ${genTable.functionName}tree查询
+ * @param {查询条件} data
+ */
 export function treelist${genTable.BusinessName}(query) {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}/treelist',
@@ -38,9 +38,9 @@ export function treelist${genTable.BusinessName}(query) {
 $end
 $if(replaceDto.ShowBtnAdd)
 /**
-* 新增${genTable.functionName}
-* @param data
-*/
+ * 新增${genTable.functionName}
+ * @param data
+ */
 export function add${genTable.BusinessName}(data) {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}',
@@ -51,9 +51,9 @@ export function add${genTable.BusinessName}(data) {
 $end
 $if(replaceDto.ShowBtnEdit)
 /**
-* 修改${genTable.functionName}
-* @param data
-*/
+ * 修改${genTable.functionName}
+ * @param data
+ */
 export function update${genTable.BusinessName}(data) {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}',
@@ -63,9 +63,9 @@ export function update${genTable.BusinessName}(data) {
 }
 $end
 /**
-* 获取${genTable.functionName}详情
-* @param {Id}
-*/
+ * 获取${genTable.functionName}详情
+ * @param {Id}
+ */
 export function get${genTable.BusinessName}(id) {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}/' + id,
@@ -75,9 +75,9 @@ export function get${genTable.BusinessName}(id) {
 
 $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
 /**
-* 删除${genTable.functionName}
-* @param {主键} pid
-*/
+ * 删除${genTable.functionName}
+ * @param {主键} pid
+ */
 export function del${genTable.BusinessName}(pid) {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}/delete/' + pid,
