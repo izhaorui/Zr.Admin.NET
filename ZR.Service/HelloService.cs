@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar.IOC;
 using ZR.Admin.WebApi.Filters;
@@ -76,6 +77,17 @@ namespace ZR.Service
         public ApiResult SayHello3()
         {
             throw new CustomException("自定义异常");
+        }
+
+        /// <summary>
+        /// 返回json内容
+        /// </summary>
+        /// <param name="userDto"></param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        public ApiResult SayHelloJson([FromBody] SysUserDto userDto)
+        {
+            return new ApiResult(100, "success", userDto);
         }
     }
 }

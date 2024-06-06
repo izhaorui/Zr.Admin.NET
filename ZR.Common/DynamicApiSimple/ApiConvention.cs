@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Infrastructure.Helper;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Infrastructure.Helper;
-using JinianNet.JNTemplate.Nodes;
-using Microsoft.AspNetCore.Mvc.ActionConstraints;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 namespace ZR.Common.DynamicApiSimple;
 

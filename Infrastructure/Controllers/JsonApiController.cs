@@ -3,20 +3,21 @@ using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using System.Web;
+using textJson = System.Text.Json;
 
 namespace Infrastructure.Controllers
 {
     /// <summary>
-    /// web层通用数据处理
+    /// System.Text.Json 序列化保留
     /// </summary>
     //[ApiController]
-    public class BaseController : ControllerBase
+    public class JsonApiController : ControllerBase
     {
         public static string TIME_FORMAT_FULL = "yyyy-MM-dd HH:mm:ss";
 
@@ -28,8 +29,9 @@ namespace Infrastructure.Controllers
         /// <returns></returns>
         protected IActionResult SUCCESS(object data, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
         {
-            string jsonStr = GetJsonStr(GetApiResult(data != null ? ResultCode.SUCCESS : ResultCode.NO_DATA, data), timeFormatStr);
-            return Content(jsonStr, "application/json");
+            //string jsonStr = GetJsonStr(GetApiResult(data != null ? ResultCode.SUCCESS : ResultCode.NO_DATA, data), timeFormatStr);
+            //return Content(jsonStr, "application/json");
+            return Ok(GetApiResult(data != null ? ResultCode.SUCCESS : ResultCode.NO_DATA, data));
         }
 
         /// <summary>
@@ -39,16 +41,18 @@ namespace Infrastructure.Controllers
         /// <returns></returns>
         protected IActionResult ToResponse(ApiResult apiResult)
         {
-            string jsonStr = GetJsonStr(apiResult, TIME_FORMAT_FULL);
+            //string jsonStr = GetJsonStr(apiResult, TIME_FORMAT_FULL);
 
-            return Content(jsonStr, "application/json");
+            //return Content(jsonStr, "application/json");
+            return Ok(apiResult);
         }
 
         protected IActionResult ToResponse(long rows, string timeFormatStr = "yyyy-MM-dd HH:mm:ss")
         {
             string jsonStr = GetJsonStr(ToJson(rows), timeFormatStr);
 
-            return Content(jsonStr, "application/json");
+            //return Content(jsonStr, "application/json");
+            return Ok(ToJson(rows));
         }
 
         protected IActionResult ToResponse(ResultCode resultCode, string msg = "")
@@ -134,14 +138,25 @@ namespace Infrastructure.Controllers
             {
                 timeFormatStr = TIME_FORMAT_FULL;
             }
-            var serializerSettings = new JsonSerializerSettings
+            //var serializerSettings = new JsonSerializerSettings
+            //{
+            //    // 设置为驼峰命名
+            //    ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            //    DateFormatString = timeFormatStr
+            //};
+            //return JsonConvert.SerializeObject(apiResult, Formatting.Indented, serializerSettings);
+            var options = new textJson.JsonSerializerOptions
             {
-                // 设置为驼峰命名
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                DateFormatString = timeFormatStr
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                PropertyNamingPolicy = textJson.JsonNamingPolicy.CamelCase,// 设置为驼峰命名
+                //DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+                WriteIndented = true,
+                //Converters = { new LongToStringConverter() }
             };
 
-            return JsonConvert.SerializeObject(apiResult, Formatting.Indented, serializerSettings);
+            //options.Converters.Add(new ValueToStringConverter());
+            string responseResult = textJson.JsonSerializer.Serialize(apiResult, options);
+            return responseResult;
         }
         #endregion
 

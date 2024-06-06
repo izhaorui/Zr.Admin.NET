@@ -18,5 +18,6 @@ namespace ZR.Service.IService
         string SayHello(string name);
         ApiResult SayHello2([FromBody] SysUserDto userDto);
         ApiResult SayHello3();
+        ApiResult SayHelloJson([FromBody] SysUserDto userDto);
     }
 }
