@@ -1,4 +1,23 @@
-﻿{
+{
+  "profiles": {
+    "ZR.Admin.WebApi": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:8888"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "https://+:443;http://+:80"
+      },
+      "publishAllPorts": true,
+      "useSSL": true
+    }
+  },
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "iisSettings": {
     "windowsAuthentication": false,
@@ -6,17 +25,6 @@
     "iisExpress": {
       "applicationUrl": "http://localhost:63521",
       "sslPort": 44395
-    }
-  },
-  "profiles": {
-    "ZR.Admin.WebApi": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchUrl": "",
-      "applicationUrl": "http://localhost:8888",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
     }
   }
 }
