@@ -4,6 +4,8 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<UserSecretsId>ab105cb4-b03c-419a-bd44-303b90114268</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;1591,8603,8602,8604,8600,8618</NoWarn>
@@ -16,11 +18,12 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.7" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.12" />
-		<PackageReference Include="NLog.Web.AspNetCore" Version="5.3.8" />
+		<PackageReference Include="NLog.Web.AspNetCore" Version="5.3.11" />
 		<PackageReference Include="Mapster" Version="7.4.0" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.7" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -28,7 +31,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="ip2region.db">
+		<None Update="ip2region.xdb">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 		<Content Update="wwwroot\Generatecode\**\*">

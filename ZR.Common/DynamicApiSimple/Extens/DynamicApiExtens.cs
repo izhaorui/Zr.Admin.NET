@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using System.Linq;
 using System.Reflection;
 
@@ -35,8 +36,10 @@ namespace ZR.Common.DynamicApiSimple.Extens
                 options.SerializerSettings.DateFormatString = TIME_FORMAT_FULL;
                 options.SerializerSettings.Converters.Add(new IsoDateTimeConverter
                 {
-                    DateTimeFormat = TIME_FORMAT_FULL
+                    DateTimeFormat = TIME_FORMAT_FULL,
                 });
+                // 设置为驼峰命名
+                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             });
 
             services.Configure<MvcOptions>(o =>

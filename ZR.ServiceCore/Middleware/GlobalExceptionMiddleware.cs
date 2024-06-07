@@ -1,12 +1,12 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Model;
-using IPTools.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using NLog;
 using System.Text.Encodings.Web;
 using ZR.Common;
+using ZR.Infrastructure.IPTools;
 using ZR.Model.System;
 using ZR.ServiceCore.Services;
 using textJson = System.Text.Json;

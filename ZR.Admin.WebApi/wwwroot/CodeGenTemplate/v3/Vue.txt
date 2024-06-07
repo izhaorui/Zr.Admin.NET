@@ -289,7 +289,12 @@ $if(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
 $elseif(column.HtmlType == "datetime" || column.HtmlType == "month")
           <el-col :lg="${options.ColNum}">
             <el-form-item label="${labelName}" prop="${columnName}">
-              <el-date-picker v-model="form.${columnName}" type="datetime" :teleported="false" placeholder="选择日期时间"${column.DisabledStr}></el-date-picker>
+              <el-date-picker
+                v-model="form.${columnName}"
+                type="datetime"
+                placeholder="选择日期时间"${column.DisabledStr}
+                value-format="YYYY-MM-DD HH:mm:ss">
+              </el-date-picker>
             </el-form-item>
           </el-col>
 $elseif(column.HtmlType == "imageUpload")
@@ -496,10 +501,24 @@ const columns = ref([
 $set(index = 0)
 $foreach(column in genTable.Columns)
 $set(index = index + 1)
+$set(showToolTipHtml = "")
+$set(type = "")
+$set(align = "center")
+$if(column.CsharpType == "string" || column.HtmlType == "datetime")
+$set(showToolTipHtml = " ,showOverflowTooltip: true")
+$end
+$if(column.HtmlType == "imageUpload")
+$set(type = "img")
+$set(align = "center")
+$elseif(column.HtmlType == "checkbox" || column.HtmlType.Contains("select") || column.HtmlType == "radio")
+$set(type = "dict")
+$set(align = "center")
+$end
 $if(column.IsList)
-  { visible: ${if(index < 9)}true${else}false${end}, prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' },
+  { visible: ${if(index < 9)}true${else}false${end}, align: '${align}', type: '${type}', prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' ${showToolTipHtml} $if(column.DictType != "") ,dictType: '${column.DictType}'$end },
 $end
 $end
+  //{ visible: false, prop: 'actions', label: '操作', type: 'slot', width: '160' }
 ])
 const total = ref(0)
 const dataList = ref([])

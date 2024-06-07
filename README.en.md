@@ -1,5 +1,5 @@
 <h2 align="center"> ZR.Admin.NET Back-end management system</h2>
-<h4 align="center">base .Net7 + vue2.x/vue3.x/uniapp Front-end and back-end separation of .NET rapid development framework</h4>
+<h4 align="center">base .Net8 + vue2.x/vue3.x/uniapp Front-end and back-end separation of .NET rapid development framework</h4>
 
 <div style="text-align:center">
 
@@ -41,7 +41,6 @@ If it helps you, you can click "Star" in the upper right corner to collect it, s
 - Official documentation：http://www.izhaorui.cn/doc
 - Join a group chat：[立即加入](http://www.izhaorui.cn/doc/contact.html)
 - Vue3.x experience：[http://www.izhaorui.cn/vue3](http://www.izhaorui.cn/vue3)
-- Vue2.x experience：[http://www.izhaorui.cn/admin](http://www.izhaorui.cn/admin)
 - Uniapp experience：[http://www.izhaorui.cn/h5](http://www.izhaorui.cn/h5)
 - account/password：admin/123456
 
@@ -57,8 +56,11 @@ Since it is a personal project, the funds are limited, and the experience server
 
 | repository | Github                                                      | Gitee                                                    |
 | ---------- | ----------------------------------------------------------- | -------------------------------------------------------- |
-| Net7       | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET)  | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
+| net7       | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET)  | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
+| net8                | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET/tree/net8) | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore/tree/net8/) |
 | Vue3(Hot)  | [Clone/Download](https://github.com/izhaorui/ZR.Admin.Vue3) | [Clone/Download](https://gitee.com/izory/ZRAdmin-vue)    |
+| mobile              | [contact author](http://www.izhaorui.cn/vip/)                         | [contact author](http://www.izhaorui.cn/vip/)                        |
+
 
 ## 🍁 Front-end technology
 
@@ -167,7 +169,7 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 	</tr>
 </table>
 
-## 📱 Mobile Storyplate
+## 📱 Mobile Storyplate(vue2)
 
 <table>
     <tr>
@@ -192,6 +194,34 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
     </tr>
 		<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a12.png"/></td>
+    </tr>
+</table>
+
+## 📱 Mobile Storyplate(vue3)
+
+<table>
+		<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/12.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/13.png"/></td>
+    </tr>
+		<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/14.png"/></td>
+				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/15.png"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/16.png"/></td>
+    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/17.png"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/18.png"/></td>
+    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/19.png"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/21.jpg"/></td>
+    		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/22.jpg"/></td>
+    </tr>    
+		<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/23.jpg"/></td>
     </tr>
 
 </table>

@@ -3,7 +3,6 @@ using SqlSugar.IOC;
 using ZR.Common;
 using ZR.Model.Content;
 using ZR.Model.System;
-using ZR.ServiceCore.Model;
 
 namespace ZR.ServiceCore.Services
 {
@@ -279,6 +278,7 @@ namespace ZR.ServiceCore.Services
                 db.DbMaintenance.TruncateTable<SysDictType>();
                 db.DbMaintenance.TruncateTable<SysDictData>();
                 db.DbMaintenance.TruncateTable<SysNotice>();
+                db.DbMaintenance.TruncateTable<SysUserRole>();
             }
 
             var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();

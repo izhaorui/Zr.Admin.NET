@@ -1,12 +1,12 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Model;
-using IPTools.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using NLog;
+using ZR.Infrastructure.IPTools;
 using ZR.Model.System;
 using ZR.ServiceCore.Services;
 
