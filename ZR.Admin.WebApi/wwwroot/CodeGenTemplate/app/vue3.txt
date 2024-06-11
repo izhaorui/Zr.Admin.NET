@@ -1,0 +1,331 @@
+﻿<template>
+  <view class="container">
+    <view class="search-bar">
+      总：{{total}}
+
+      <view class="right">
+$if(replaceDto.ShowBtnAdd)
+        <view class="iconfont margin-right" v-if="checkPermi(['${replaceDto.PermissionPrefix}:add'])" @click="handleAdd">新增</view>
+$end
+        <view class="iconfont icon-filter icon" @click="show = true">筛选 </view>
+      </view>
+    </view>
+    <u-gap height="5"></u-gap>
+
+    <view class="info-item" v-for="(item,index) in dataList" :key="index">
+$foreach(column in genTable.Columns)
+$set(labelName = column.ColumnComment)
+$set(columnName = column.CsharpFieldFl)
+$if(column.IsList == true)
+
+$if(column.HtmlType == "imageUpload")
+      <view class="info-line">
+        <text class="label-name">${labelName}</text>
+        <imagePreview :src="item.${columnName}"></imagePreview>
+      </view>
+$elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.HtmlType == "radio")
+      <view class="info-line">
+        <text class="label-name">${labelName}</text>
+$if(column.HtmlType == "checkbox")
+        <dictTag :options="$if(column.DictType != "")options.${column.DictType}$else options.${column.CsharpFieldFl}Options$end" :value="item.${columnName} ? item.${columnName}.split(',') : []" />
+$else
+        <dictTag :options="$if(column.DictType != "")options.${column.DictType}$else options.${column.CsharpFieldFl}Options$end" :value="item.${columnName}" />
+$end
+      </view>
+$else
+      <view class="info-line">
+        <text class="label-name">${labelName}</text>
+        <text>{{item.${columnName}}}</text>
+      </view>
+$end
+$end
+$end
+      <view class="info-btn-wrap justify-end">
+$if(replaceDto.ShowBtnView)
+        <view class="tag-item">
+          <u-tag text="详情" plain shape="circle" type="info" icon="eye" @click="handleView(item)"
+            v-if="checkPermi(['${replaceDto.PermissionPrefix}:query'])"></u-tag>
+        </view>
+$end
+$if(replaceDto.ShowBtnEdit)
+        <view class="tag-item">
+          <u-tag text="编辑" plain shape="circle" icon="edit-pen" @click="handleEdit(item)"
+            v-if="checkPermi(['${replaceDto.PermissionPrefix}:edit'])"></u-tag>
+        </view>
+$end
+$if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
+        <view class="tag-item">
+          <u-tag text="删除" class="tag-item" plain shape="circle" type="error" icon="trash"
+            v-if="checkPermi(['userinfo:delete'])" @click="handleDelete(item)"></u-tag>
+        </view>
+$end
+      </view>
+      <u-line dashed></u-line>
+    </view>
+    <view class="page-footer">
+      <u-empty mode="list" :marginTop="140" v-if="total == 0"></u-empty>
+      <uni-pagination v-else show-icon="true" :total="total" :pageSize="queryParams.pageSize"
+        :current="queryParams.pageNum" @change="getData"></uni-pagination>
+      <view class="text-grey padding text-center"> 共 {{ total }}条数据 </view>
+    </view>
+
+    <u-popup :show="show" mode="bottom" @close="show = false" @open="show = true">
+      <view class="search-form">
+        <view class="search-title">搜索</view>
+        <up-form labelPosition="left" :model="queryParams" labelWidth="100px" ref="uForm">
+          <up-form-item label="排序字段" prop="sort" borderBottom>
+            <uni-data-select v-model="queryParams.sort" :clear="true" :localdata="sortOptions"
+              format="{label}"></uni-data-select>
+          </up-form-item>
+
+          <up-form-item label="排序方式" prop="sortType" borderBottom ref="item1">
+            <u-radio-group v-model="queryParams.sortType">
+              <u-radio label="升序" name="asc" :customStyle="{marginRight: '20px'}"></u-radio>
+              <u-radio label="倒序" name="desc"></u-radio>
+            </u-radio-group>
+          </up-form-item>
+          <u-gap height="30"></u-gap>
+$foreach(column in genTable.Columns)
+$set(labelName = "")
+$set(columnName = "")
+$if(column.IsQuery == true)
+$set(columnName = column.CsharpFieldFl)
+$if(column.ColumnComment != "")
+    $set(labelName = column.ColumnComment)
+$else
+    $set(labelName = column.CsharpFieldFl)
+$end
+
+$if(column.HtmlType == "datetime")
+          <up-form-item label="时间查询">
+            <uni-datetime-picker :border="false" v-model="dateRange${column.CsharpField}" type="daterange" />
+          </up-form-item>
+$elseif(column.HtmlType == "radio" || column.HtmlType == "select")
+          <up-form-item label="${labelName}" prop="${column.CsharpFieldFl}" borderBottom ref="item2">
+            <view class="tag-wrap">            
+              <view class="tag-item">
+                <u-tag text="全部" :plain="null != queryParams.${column.CsharpFieldFl}" name="" @click="queryParams.${column.CsharpFieldFl} = null">
+                </u-tag>
+              </view>
+              <view class="tag-item" v-for="(item, index) in $if(column.DictType != "")options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="index">
+                <u-tag :text="item.label" :plain="item.value != queryParams.${column.CsharpFieldFl}" :name="item.value"
+                  @click="${column.CsharpFieldFl}Select(item)">
+                </u-tag>
+              </view>
+            </view>
+          </up-form-item>
+$else
+          <up-form-item label="${labelName}" prop="${column.CsharpFieldFl}" borderBottom ref="item1">
+            <u--input v-model="queryParams.${column.CsharpFieldFl}" border="none" placeholder="请输入${labelName}"></u--input>
+          </up-form-item>
+$end
+$end
+$end
+        </up-form>
+
+        <view class="btn-group">
+          <u-button text="重置" icon="reload" :customStyle="{marginRight: '10px'}" shape="circle" type="success"
+            @click="resetQuery"></u-button>
+          <u-button text="搜索" icon="search" shape="circle" type="primary" @click="handleQuery"></u-button>
+        </view>
+      </view>
+    </u-popup>
+    <u-back-top :scroll-top="scrollTop" :bottom="180"></u-back-top>
+  </view>
+</template>
+
+<script setup>
+  import {
+    checkPermi
+  } from '@/utils/permission.js'
+  import {
+    list${genTable.BusinessName},
+$if(replaceDto.ShowBtnDelete)
+    del${genTable.BusinessName},
+$end
+  } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+  
+  import {
+    getCurrentInstance,
+    reactive,
+    ref,
+    toRefs
+  } from 'vue';
+  const {
+    proxy
+  } = getCurrentInstance()
+
+  import {
+    onPullDownRefresh,
+    onShow
+  } from '@dcloudio/uni-app'
+
+  const queryParams = reactive({
+    pageNum: 1,
+    pageSize: 20,
+    sort: '${genTable.Options.SortField}',
+    sortType: '${genTable.Options.SortType}',
+$foreach(item in genTable.Columns)
+$if(item.IsQuery == true)
+    ${item.CsharpFieldFl}: undefined,
+$end
+$end
+  })
+
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "datetime" || item.HtmlType == "datePicker") && item.IsQuery == true)
+  // ${item.ColumnComment}时间范围
+  const dateRange${item.CsharpField} = ref([])
+$end
+$end
+
+$set(index = 0)
+  var dictParams = [
+$foreach(item in dicts)
+$if(item.DictType != "")
+  '${item.DictType}',
+$set(index = index + 1)
+$end
+$end
+  ]
+
+$if(index > 0)
+  proxy.getDicts(dictParams).then((response) => {
+    response.data.forEach((element) => {
+      state.options[element.dictType] = element.list
+    })
+  })
+$end
+  const scrollTop = ref(0)
+  const state = reactive({
+    dataList: [],
+    total: 0,
+    show: false,
+    loading: false,
+    options: {
+$foreach(column in dicts)
+$if(column.HtmlType == "radio" || column.HtmlType.Contains("select") || column.HtmlType == "checkbox")
+     //$if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ label: '标签', value: '0'}
+$if(column.DictType != "")     ${column.DictType}$else     ${column.CsharpFieldFl}Options$end: [],
+$end
+$end
+    },
+    // 排序集合 格式 eg:{ label: '名称', value: 'userId'}
+    sortOptions: [
+$foreach(column in genTable.Columns)
+$if(column.IsSort)
+    {
+      label: '${column.ColumnComment}',
+      value: '${column.CsharpFieldFl}'
+    },
+$end
+$end
+    ]
+  })
+
+  const { 
+    options,    
+    dataList,    
+    total,    
+    show,    
+    loading,
+    sortOptions
+  } = toRefs(state)
+
+  function getList() {
+    uni.showLoading({
+      title: 'loading...'
+    })
+    state.loading = true
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "datetime" || item.HtmlType == "datePicker") && item.IsQuery == true)
+    proxy.addDateRange(queryParams, dateRange${item.CsharpField}.value, '${item.CsharpField}');
+$end
+$end
+    list${genTable.BusinessName}(queryParams).then(res => {
+      if (res.code == 200) {
+        dataList.value = [...dataList.value, ...res.data.result]
+        total.value = res.data.totalNum;
+        state.loaing = false
+      }
+    }).finally(() => {
+      uni.hideLoading()
+    })
+  }
+$if(replaceDto.ShowBtnAdd)
+  function handleAdd() {
+    proxy.${tab}tab.navigateTo('./edit?opertype=1')
+  }
+$end
+$if(replaceDto.ShowBtnEdit)
+  function handleEdit(e) {
+    proxy.${tab}tab.navigateTo('./edit?opertype=2&${replaceDto.FistLowerPk}=' + e.id)
+  }
+
+$end
+$if(replaceDto.ShowBtnView)
+  function handleView(e) {
+    proxy.${tab}tab.navigateTo('./edit?opertype=3&${replaceDto.FistLowerPk}=' + e.id)
+  }
+
+$end
+$if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
+  function handleDelete(row) {
+    const Ids = row.${replaceDto.FistLowerPk};
+        
+    proxy.${modal}modal.confirm('你确定要删除吗?').then(() => {
+      return del${genTable.BusinessName}(Ids);
+    })
+    .then(() => {
+      handleQuery()
+      proxy.${modal}modal.msgSuccess("删除成功");
+    })
+  }
+$end
+  function resetQuery() {
+    proxy.${refs}refs.uForm.resetFields()
+$foreach(column in genTable.Columns)
+$if(column.HtmlType == "datetime" && column.IsQuery == true)
+    dateRange${column.CsharpField}.value = []
+$end
+$end
+  }
+
+  function handleQuery(refresh) {
+    queryParams.pageNum = 1;
+    dataList.value = []
+    state.show = false
+    if (refresh) {
+      uni.startPullDownRefresh();
+    }
+
+    getList()
+  }
+      
+  function getData(e) {
+    queryParams.pageNum = e.current
+    getList()
+  }
+
+  onPullDownRefresh(() => {
+    uni.stopPullDownRefresh()
+    handleQuery(true)
+  })
+$foreach(column in genTable.Columns)
+$if(column.IsQuery == true)
+$if(column.HtmlType == "radio" || column.HtmlType == "select")
+  function ${column.CsharpFieldFl}Select(e) {
+    queryParams.${column.CsharpFieldFl} = e.value
+  }
+$end
+$end
+$end
+  function onPageScroll(e) {
+    scrollTop.value = e.scrollTop;
+  }
+  getList()
+</script>
+
+<style lang="scss" scoped>
+  @import "@/static/scss/page.scss";
+</style>

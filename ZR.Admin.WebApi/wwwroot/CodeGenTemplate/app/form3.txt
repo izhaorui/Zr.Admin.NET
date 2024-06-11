@@ -1,0 +1,245 @@
+﻿<template>
+  <view class="edit-wrap">
+    <view class="edit-form">
+    <up-form labelPosition="left" :model="form" labelWidth="90px" :rules="rules" ref="uFormRef">
+$foreach(column in genTable.Columns)
+$set(columnName = column.CsharpFieldFl)
+$set(value = "item.value")
+$set(number = "")
+$set(labelName = column.ColumnComment)
+$if(column.CsharpType == "int" || column.CsharpType == "long")
+    $set(value = "parseInt(item.value)")
+    $set(number = ".number")
+$end
+
+$if(column.IsPK || column.IsIncrement)
+$if(column.IsPK && column.IsIncrement == false && replaceDto.useSnowflakeId == false)
+      <up-form-item label="${labelName}" prop="${columnName}">
+        <up-input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="opertype != 1"></up-input>
+      </up-form-item>
+$else
+      <up-form-item label="${labelName}" prop="${columnName}" v-if="opertype != 1">
+        <up-input type="number" v-model.number="form.${columnName}" placeholder="请输入${labelName}" :disabled="true"/>
+      </up-form-item>
+$end
+$else
+$if(column.HtmlType == "radio" || column.HtmlType == "selectRadio")
+      <up-form-item label="${labelName}" prop="${columnName}">
+        <u-radio-group v-model="form.${columnName}">
+          <u-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}${column.CsharpFieldFl}Options$end" :name="${value}" class="margin-right-xl" :label="item.label"></u-radio>
+        </u-radio-group>
+      </up-form-item>
+$elseif(column.HtmlType == "checkbox")
+      <up-form-item label="${labelName}" prop="${columnName}">
+      <view class="">
+        <u-checkbox-group v-model="form.${columnName}Checked">
+          <u-checkbox :customStyle="{marginRight: '20px', marginBottom: '15px'}" v-for="(item, index) in ${if(column.DictType != "")}options.${column.DictType}${else}${column.CsharpFieldFl}Options$end" :key="index"
+            :label="item.label" :name="${value}">
+          </u-checkbox>
+        </u-checkbox-group>
+        </view>
+      </up-form-item>
+$elseif(column.HtmlType == "inputNumber" || column.HtmlType == "customInput")
+      <up-form-item label="${labelName}" prop="${columnName}">
+        <u-number-box v-model="form.${columnName}"></u-number-box>
+      </up-form-item>
+$elseif(column.HtmlType == "datetime" || column.HtmlType == "month")
+      <up-form-item label="${labelName}" prop="${columnName}">
+        <uni-datetime-picker v-model="form.${columnName}" />
+      </up-form-item>
+$elseif(column.HtmlType == "textarea")
+      <up-form-item label="${labelName}" prop="${columnName}">
+        <u--textarea v-model="form.${columnName}" placeholder="请输入内容" count ></u--textarea>
+      </up-form-item>
+$elseif(column.HtmlType == "imageUpload" || column.HtmlType == "fileUpload")
+      <up-form-item label="${labelName}" prop="${columnName}">
+        <uploadImage v-model="form.${columnName}"></uploadImage>
+      </up-form-item>
+$elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
+      <up-form-item label="${labelName}" prop="${columnName}">
+        <u-radio-group v-model="form.${columnName}">
+          <u-radio v-for="item in ${if(column.DictType != "")}options.${column.DictType}${else}${column.CsharpFieldFl}Options$end" :name="${value}" class="margin-right-xl" :label="item.label"></u-radio>
+        </u-radio-group>
+      </up-form-item>
+$else
+      <up-form-item label="${labelName}" prop="${columnName}">
+        <up-input v-model${number}="form.${columnName}" placeholder="请输入${labelName}" ${column.DisabledStr}/>
+      </up-form-item>
+$end
+$end
+$end
+      </up-form>
+    </view>
+
+    <view class="form-footer">
+      <view class="btn_wrap">
+        <view class="btn-item">
+          <u-button text="取消" shape="circle" type="info" @click="handleCancel"></u-button>
+        </view>
+        <view class="btn-item" v-if="props.opertype != 3">
+          <u-button text="确定" shape="circle" type="primary" @click="submit"></u-button>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  import {
+    get${genTable.BusinessName},
+$if(replaceDto.ShowBtnAdd) 
+    add${genTable.BusinessName},
+$end
+$if(replaceDto.ShowBtnEdit) 
+    update${genTable.BusinessName},
+$end
+  } from '@/api/${tool.FirstLowerCase(genTable.ModuleName)}/${genTable.BusinessName.ToLower()}.js'
+
+  import {
+    getCurrentInstance,
+    reactive,
+    ref,
+    toRefs
+  } from 'vue';
+  const {
+    proxy
+  } = getCurrentInstance()
+
+  $set(index = 0)
+  var dictParams = [
+$foreach(item in dicts)
+$if(item.DictType != "")
+  '${item.DictType}',
+$set(index = index + 1)
+$end
+$end
+  ]
+
+$if(index > 0)
+  proxy.getDicts(dictParams).then((response) => {
+    response.data.forEach((element) => {
+      state.options[element.dictType] = element.list
+    })
+  })
+$end
+  const state = reactive({
+    form: {
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+      ${item.CsharpFieldFl}Checked: [],
+$else
+      $item.CsharpFieldFl: undefined,
+$end
+$end
+      },
+      rules: {
+$foreach(column in genTable.Columns)
+$if(column.IsRequired && column.IsIncrement == false)
+          ${column.CsharpFieldFl}: {
+            required: true, 
+            message: "${column.ColumnComment}不能为空", 
+            trigger: [ 'change', 'blur' ],
+$if(column.CsharpType == "int" || column.CsharpType == "long")            type: "number"$end 
+          },
+$end
+$end
+        },
+    options: {
+$foreach(column in dicts)
+$if(column.HtmlType == "radio" || column.HtmlType.Contains("select") || column.HtmlType == "checkbox")
+     //$if(column.ColumnComment != "") ${column.ColumnComment} $else ${column.CsharpFieldFl}$end选项列表 格式 eg:{ label: '标签', value: '0'}
+$if(column.DictType != "")     ${column.DictType}$else     ${column.CsharpFieldFl}Options$end: [],
+$end
+$end
+    },
+  })
+  const { 
+    form,    
+    rules,
+    options
+  } = toRefs(state)
+  const opertype = ref(0)
+  // 表单引用  
+  const uFormRef = ref(null)
+  
+  setTimeout(() => {
+    proxy.${refs}refs.uFormRef.setRules(state.rules)
+  }, 300)
+
+  function reset(){
+      form.value = {
+$foreach(item in genTable.Columns)
+$if((item.HtmlType == "checkbox"))
+        ${item.CsharpFieldFl}Checked: [],
+$else
+        $item.CsharpFieldFl: undefined,
+$end
+$end
+    }
+  }
+
+  function submit() {
+    uFormRef.value.validate().then(res => {
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+      form.value.${item.CsharpFieldFl} = form.value.${item.CsharpFieldFl}Checked.toString();
+$end
+$end
+      if (form.value.${replaceDto.FistLowerPk} != undefined && props.opertype == 2) {
+        update${genTable.BusinessName}(form.value).then((res) => {
+          proxy.${modal}modal.msgSuccess("修改成功")
+          setTimeout(() => {
+            handleCancel()
+          }, 1000)
+        })
+      } else {
+        add${genTable.BusinessName}(form.value).then((res) => {
+          proxy.${modal}modal.msgSuccess("新增成功")
+        })
+      }
+    }).catch(errors => {
+      proxy.${modal}modal.msg('表单校验失败')
+    })
+  }
+
+  function handleCancel() {
+    uni.redirectTo({
+      url: './index'
+    })
+  }
+
+  const props = defineProps({
+    id: String,
+    opertype: String,
+  })
+      
+  if (props.id) {
+    get${genTable.BusinessName}(props.id).then(res => {
+      const {
+        code,
+        data
+      } = res
+      if (code == 200) {
+        form.value = {
+          ...data,
+$foreach(item in genTable.Columns)
+$if(item.HtmlType == "checkbox")
+          ${item.CsharpFieldFl}Checked: data.${item.CsharpFieldFl} ? data.${item.CsharpFieldFl}.split(',') : [],
+$end
+$end
+        }
+      }
+    })
+  } else {
+    reset()
+  }
+</script>
+
+<style lang="scss" scoped>
+  @import "@/static/scss/page.scss";
+
+  .btn-wrap {
+    margin: 150rpx auto 0 auto;
+    width: 80%
+  }
+</style>
