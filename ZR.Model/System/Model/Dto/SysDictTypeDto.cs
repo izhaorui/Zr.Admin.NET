@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ZR.Model.System.Dto
+﻿namespace ZR.Model.System.Dto
 {
     public class SysDictTypeDto
     {
@@ -24,5 +22,6 @@ namespace ZR.Model.System.Dto
         /// 自定义sql
         /// </summary>
         public string CustomSql { get; set; }
+        public string Remark { get; set; }
     }
 }
