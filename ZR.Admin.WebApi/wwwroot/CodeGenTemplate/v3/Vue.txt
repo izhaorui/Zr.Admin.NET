@@ -569,7 +569,7 @@ $set(index = 0)
 var dictParams = [
 $foreach(item in dicts)
 $if(item.DictType != "")
-  { dictType: "${item.DictType}" },
+  "${item.DictType}",
 $set(index = index + 1)
 $end
 $end
