@@ -111,7 +111,6 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <param name="dictCode"></param>
         /// <returns></returns>
-        [AllowAnonymous]
         [HttpGet("info/{dictCode}")]
         public IActionResult GetInfo(long dictCode)
         {
