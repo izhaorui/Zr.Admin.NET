@@ -54,7 +54,7 @@ namespace ZR.CodeGenerator.Model
         public string GenType { get; set; }
         public string GenPath { get; set; } = "";
         /// <summary>
-        /// vue代码路径
+        /// vue存储路径
         /// </summary>
         public string VueParentPath { get; set; }
         /// <summary>

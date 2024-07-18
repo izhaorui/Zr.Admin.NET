@@ -51,9 +51,9 @@ $if(genTable.TplCategory == "tree")
 $foreach(column in genTable.Columns)
 $if(column.IsQuery)
 $if(column.CsharpType == "string")
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${tool.QueryExp(column.CsharpField, column.QueryType)};
 $elseif(column.CsharpType == "int" || column.CsharpType == "long")
-            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${tool.QueryExp(column.CsharpField, column.QueryType)};
 $end
 $end
 $end
@@ -209,7 +209,7 @@ $if(column.IsQuery)
 $if(column.HtmlType == "selectMulti")
             predicate = predicate.AndIF(parm.${column.CsharpField} != null, it => parm.${column.CsharpField}.Contains(it.${column.CsharpField}));
 $elseif(column.CsharpType == "string")
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.${column.CsharpField}), ${tool.QueryExp(column.CsharpField, column.QueryType)};
 $elseif(column.CsharpType == "DateTime")
 $if(column.HtmlType == "month")
             DateTime monthEnd = Convert.ToDateTime(parm.${column.CsharpField}).AddMonths(1);
@@ -220,7 +220,7 @@ $else
             predicate = predicate.AndIF(parm.End${column.CsharpField} != null, it => it.${column.CsharpField} <= parm.End${column.CsharpField});
 $end
 $elseif(column.CsharpType == "int" || column.CsharpType == "long")
-            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${codeTool.QueryExp(column.CsharpField, column.QueryType)};
+            predicate = predicate.AndIF(parm.${column.CsharpField} != null, ${tool.QueryExp(column.CsharpField, column.QueryType)};
 $end
 $end
 $end

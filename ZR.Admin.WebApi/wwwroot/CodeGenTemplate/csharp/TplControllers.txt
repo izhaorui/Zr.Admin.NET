@@ -110,7 +110,7 @@ $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
         /// 删除${genTable.FunctionName}
         /// </summary>
         /// <returns></returns>
-        [HttpDelete("delete/{ids}")]
+        [HttpPost("delete/{ids}")]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:delete")]
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete${replaceDto.ModelTypeName}([FromRoute]string ids)
@@ -150,7 +150,7 @@ $if(replaceDto.ShowBtnTruncate)
         /// <returns></returns>
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.CLEAN)]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:delete")]
-        [HttpDelete("clean")]
+        [HttpPost("clean")]
         public IActionResult Clear()
         {
             if (!HttpContextExtension.IsAdmin(HttpContext))

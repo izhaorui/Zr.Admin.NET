@@ -119,13 +119,36 @@ namespace Infrastructure.Model
 
     public class CodeGen
     {
+        /// <summary>
+        /// 是否显示移动端代码生成
+        /// </summary>
         public bool ShowApp { get; set; }
+        /// <summary>
+        /// 是否自动去除前缀
+        /// </summary>
         public bool AutoPre { get; set; }
+        /// <summary>
+        /// vue前端生成路径
+        /// </summary>
         public string VuePath { get; set; }
+        /// <summary>
+        /// 作者
+        /// </summary>
         public string Author { get; set; }
         public string TablePrefix { get; set; }
+        /// <summary>
+        /// 模块名，默认值：business
+        /// </summary>
         public string ModuleName { get; set; }
         public int FrontTpl { get; set; }
+        /// <summary>
+        /// unipap vue版本号可选值2/3
+        /// </summary>
+        public int UniappVersion { get; set; } = 2;
+        /// <summary>
+        /// unipap前端存储路径
+        /// </summary>
+        public string UniappPath { get; set; }
         public CsharpTypeArr CsharpTypeArr { get; set; }
     }
 

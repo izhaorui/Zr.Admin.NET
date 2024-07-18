@@ -81,7 +81,7 @@ $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
 export function del${genTable.BusinessName}(pid) {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}/delete/' + pid,
-    method: 'delete'
+    method: 'POST'
   })
 }
 $end
@@ -90,7 +90,7 @@ $if(replaceDto.ShowBtnTruncate)
 export function clear${genTable.BusinessName}() {
   return request({
     url: '${genTable.ModuleName}/${genTable.BusinessName}/clean',
-    method: 'delete'
+    method: 'POST'
   })
 }
 $end

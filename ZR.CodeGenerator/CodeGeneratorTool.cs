@@ -33,6 +33,10 @@ namespace ZR.CodeGenerator
             {
                 dto.VueParentPath = genOptions.VuePath;
             }
+            if (genOptions.UniappPath.IsNotEmpty())
+            {
+                dto.AppVuePath = genOptions.UniappPath;
+            }
             dto.GenOptions = GenerateOption(dto.GenTable);
             if (dto.GenTable.SubTable != null)
             {
@@ -95,8 +99,8 @@ namespace ZR.CodeGenerator
             GenerateSql(dto);
             if (genOptions.ShowApp)
             {
-                GenerateAppVueViews(replaceDto, dto);
-                GenerateAppVueFormViews(replaceDto, dto);
+                GenerateAppVueViews(replaceDto, dto, genOptions.UniappVersion);
+                GenerateAppVueFormViews(replaceDto, dto, genOptions.UniappVersion);
                 GenerateAppJs(dto);
             }
             dto.ReplaceDto = replaceDto;
@@ -303,9 +307,11 @@ namespace ZR.CodeGenerator
         /// 列表页面
         /// </summary>
         /// <param name="generateDto"></param>
-        private static void GenerateAppVueViews(ReplaceDto replaceDto, GenerateDto generateDto)
+        /// <param name="replaceDto"></param>
+        /// <param name="uniappVersion"></param>
+        private static void GenerateAppVueViews(ReplaceDto replaceDto, GenerateDto generateDto, int uniappVersion)
         {
-            var fileName = Path.Combine("app", "vue2.txt");
+            var fileName = Path.Combine("app", $"vue{uniappVersion}.txt");
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
 
             tpl.Set("options", generateDto.GenTable?.Options);
@@ -314,9 +320,10 @@ namespace ZR.CodeGenerator
             var fullPath = Path.Combine(generateDto.AppVuePath, "pages", generateDto.GenTable.ModuleName.FirstLowerCase(), $"{replaceDto.ViewFileName.FirstLowerCase()}", "index.vue");
             generateDto.GenCodes.Add(new GenCode(20, "uniapp页面", fullPath, result));
         }
-        private static void GenerateAppVueFormViews(ReplaceDto replaceDto, GenerateDto generateDto)
+
+        private static void GenerateAppVueFormViews(ReplaceDto replaceDto, GenerateDto generateDto, int uniappVersion)
         {
-            var fileName = Path.Combine("app", "form.txt");
+            var fileName = Path.Combine("app", uniappVersion == 3 ? "form3.txt" : "form.txt");
             var tpl = JnHelper.ReadTemplate(CodeTemplateDir, fileName);
 
             tpl.Set("options", generateDto.GenTable?.Options);
@@ -611,7 +618,6 @@ namespace ZR.CodeGenerator
                 options.Data.Set("genSubTable", dto.GenTable?.SubTable);
                 options.Data.Set("showCustomInput", showCustomInput);
                 options.Data.Set("tool", new CodeGeneratorTool());
-                options.Data.Set("codeTool", new CodeGenerateTemplate());
                 options.Data.Set("dicts", dicts.DistinctBy(x => x.DictType));
                 options.Data.Set("sub", dto.GenTable.SubTable != null && dto.GenTable.SubTableName.IsNotEmpty());
                 options.EnableCache = true;
@@ -632,6 +638,38 @@ namespace ZR.CodeGenerator
         public static bool CheckTree(GenTable genTable, string csharpField)
         {
             return (genTable.TplCategory.Equals("tree", StringComparison.OrdinalIgnoreCase) && genTable?.Options?.TreeParentCode != null && csharpField.Equals(genTable?.Options?.TreeParentCode));
+        }
+        public static string QueryExp(string propertyName, string queryType)
+        {
+            if (queryType.Equals("EQ"))
+            {
+                return $"it => it.{propertyName} == parm.{propertyName})";
+            }
+            if (queryType.Equals("GTE"))
+            {
+                return $"it => it.{propertyName} >= parm.{propertyName})";
+            }
+            if (queryType.Equals("GT"))
+            {
+                return $"it => it.{propertyName} > parm.{propertyName})";
+            }
+            if (queryType.Equals("LT"))
+            {
+                return $"it => it.{propertyName} < parm.{propertyName})";
+            }
+            if (queryType.Equals("LTE"))
+            {
+                return $"it => it.{propertyName} <= parm.{propertyName})";
+            }
+            if (queryType.Equals("NE"))
+            {
+                return $"it => it.{propertyName} != parm.{propertyName})";
+            }
+            if (queryType.Equals("LIKE"))
+            {
+                return $"it => it.{propertyName}.Contains(parm.{propertyName}))";
+            }
+            return $"it => it.{propertyName} == parm.{propertyName})";
         }
         #endregion
     }

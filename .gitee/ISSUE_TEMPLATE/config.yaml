@@ -12,7 +12,7 @@ body:
     attributes:
       label: 这个问题是否已经存在？
       options:
-        - label: 我已经搜索过现有的问题 (https://gitee.com/../../issues)
+        - label: 我已经搜索过现有的问题 (https://gitee.com/izory/ZrAdminNetCore/issues)
           required: true
   - type: checkboxes
     attributes:
@@ -84,5 +84,5 @@ contact_links:
     url: http://www.izhaorui.cn/doc/
     about: 官方文档
   - name: ♥️ VIP 服务 ♥️
-    url: https://www.izhaorui.cn/doc/support.html
+    url: https://www.izhaorui.cn/vip
     about: 支持作者
