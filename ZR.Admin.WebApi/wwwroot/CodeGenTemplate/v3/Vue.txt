@@ -339,7 +339,7 @@ $elseif(column.HtmlType == "slider")
           </el-col>
 $elseif(column.HtmlType == "select" || column.HtmlType == "selectMulti")
           <el-col :lg="${options.ColNum}">
-            <el-form-item label="${labelName}" prop="${columnName}">
+            <el-form-item label="${labelName}" prop="${columnName}$if(column.HtmlType == "selectMulti")Checked$end">
               <el-select v-model="form.${columnName}$if(column.HtmlType == "selectMulti")Checked$end" $if(column.HtmlType == "selectMulti")multiple$end placeholder="请选择${labelName}"${column.DisabledStr}>
                 <el-option
                   v-for="item in $if(column.DictType != "")options.${column.DictType}${else}options.${column.CsharpFieldFl}Options$end" 
@@ -662,7 +662,7 @@ $foreach(column in genTable.Columns)
 $if(column.IsRequired && column.IsPk && replaceDto.useSnowflakeId)
     ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end }],
 $elseif(column.IsRequired && column.IsIncrement == false)
-    ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
+    ${column.CsharpFieldFl}$if(column.HtmlType == "selectMulti")Checked$end: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.htmlType == "select")"change"$else"blur"$end
     $if(column.CsharpType == "int" || column.CsharpType == "long"), type: "number" $end }],
 $end
 $end
