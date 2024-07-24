@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using MiniExcelLibs;
 using ZR.Admin.WebApi.Filters;
 using ZR.Infrastructure.IPTools;
 using ZR.Model.Dto;
 using ZR.Model.System;
+using ZR.ServiceCore.Resources;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -20,9 +22,10 @@ namespace ZR.Admin.WebApi.Controllers
 
         private IWebHostEnvironment WebHostEnvironment;
         private ISysFileService SysFileService;
-
+        private readonly IStringLocalizer<SharedResource> _localizer;
 
         public CommonController(
+            IStringLocalizer<SharedResource> stringLocalizer,
             IOptions<OptionsSetting> options,
             IWebHostEnvironment webHostEnvironment,
             ISysFileService fileService)
@@ -30,6 +33,7 @@ namespace ZR.Admin.WebApi.Controllers
             WebHostEnvironment = webHostEnvironment;
             SysFileService = fileService;
             OptionsSetting = options.Value;
+            _localizer = stringLocalizer;
         }
 
         /// <summary>
@@ -40,7 +44,9 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            return Ok("看到这里页面说明你已经成功启动了本项目:)\n\n" +
+            var hello = _localizer["hello"].Value;
+
+            return Ok($"{hello}看到这里页面说明你已经成功启动了本项目:)\n\n" +
                 "如果觉得项目有用，打赏作者喝杯咖啡作为奖励\n☛☛http://www.izhaorui.cn/vip\n");
         }
 

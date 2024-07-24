@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Localization;
 using UAParser;
 using ZR.Common;
 using ZR.Model;
@@ -8,6 +9,7 @@ using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
 using ZR.ServiceCore.Model.Dto;
+using ZR.ServiceCore.Resources;
 
 namespace ZR.ServiceCore.Services
 {
@@ -19,11 +21,16 @@ namespace ZR.ServiceCore.Services
     {
         private readonly ISysUserService SysUserService;
         private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly IStringLocalizer<SharedResource> _localizer;
 
-        public SysLoginService(ISysUserService sysUserService, IHttpContextAccessor httpContextAccessor)
+        public SysLoginService(
+            ISysUserService sysUserService, 
+            IHttpContextAccessor httpContextAccessor,
+            IStringLocalizer<SharedResource> localizer)
         {
             SysUserService = sysUserService;
             this.httpContextAccessor = httpContextAccessor;
+            _localizer = localizer;
         }
 
         /// <summary>
@@ -51,14 +58,14 @@ namespace ZR.ServiceCore.Services
 
             if (user == null || user.UserId <= 0)
             {
-                logininfor.Msg = "用户名或密码错误";
+                logininfor.Msg = _localizer["login_pwd_error"].Value;
                 AddLoginInfo(logininfor);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
             logininfor.UserId = user.UserId;
             if (user.Status == 1)
             {
-                logininfor.Msg = "该用户已禁用";
+                logininfor.Msg = _localizer["login_user_disabled"].Value;//該用戶已禁用
                 AddLoginInfo(logininfor);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
@@ -90,7 +97,7 @@ namespace ZR.ServiceCore.Services
 
             if (user.Status == 1)
             {
-                logininfor.Msg = "该用户已禁用";
+                logininfor.Msg = _localizer["login_user_disabled"].Value;
                 AddLoginInfo(logininfor);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
