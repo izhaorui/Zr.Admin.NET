@@ -24,6 +24,13 @@ namespace ZR.Admin.WebApi.Controllers
         private ISysFileService SysFileService;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stringLocalizer"></param>
+        /// <param name="options"></param>
+        /// <param name="webHostEnvironment"></param>
+        /// <param name="fileService"></param>
         public CommonController(
             IStringLocalizer<SharedResource> stringLocalizer,
             IOptions<OptionsSetting> options,
@@ -45,7 +52,6 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Index()
         {
             var hello = _localizer["hello"].Value;
-
             return Ok($"{hello}看到这里页面说明你已经成功启动了本项目:)\n\n" +
                 "如果觉得项目有用，打赏作者喝杯咖啡作为奖励\n☛☛http://www.izhaorui.cn/vip\n");
         }
@@ -58,7 +64,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpGet]
         public IActionResult IPInfo(string ip)
         {
-            if(ip.IsEmpty()) return ToResponse(ResultCode.CUSTOM_ERROR, "IP异常");
+            if (ip.IsEmpty()) return ToResponse(ResultCode.CUSTOM_ERROR, "IP异常");
 
             var region = IpTool.GetRegion(ip);
 

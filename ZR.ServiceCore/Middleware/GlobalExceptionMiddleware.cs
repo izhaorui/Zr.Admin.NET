@@ -23,7 +23,18 @@ namespace ZR.ServiceCore.Middleware
         private readonly ISysOperLogService SysOperLogService;
 
         static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private readonly textJson.JsonSerializerOptions options = new()
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            PropertyNamingPolicy = textJson.JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="next"></param>
+        /// <param name="sysOperLog"></param>
         public GlobalExceptionMiddleware(RequestDelegate next, ISysOperLogService sysOperLog)
         {
             this.next = next;
@@ -69,14 +80,14 @@ namespace ZR.ServiceCore.Middleware
                 logLevel = LogLevel.Error;
                 context.Response.StatusCode = 500;
             }
-            var options = new textJson.JsonSerializerOptions
-            {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                PropertyNamingPolicy = textJson.JsonNamingPolicy.CamelCase,
-                WriteIndented = true
-            };
 
             ApiResult apiResult = new(code, msg);
+#if DEBUG
+            if (logLevel == LogLevel.Error)
+            {
+                apiResult.Add("error", "请在issue里面寻找答案或者官方文档查看常见问题：https://gitee.com/izory/ZrAdminNetCore/issues");
+            }
+#endif
             string responseResult = textJson.JsonSerializer.Serialize(apiResult, options);
             string ip = HttpContextExtension.GetClientUserIp(context);
             var ip_info = IpTool.Search(ip);
