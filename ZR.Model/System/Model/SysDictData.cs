@@ -1,6 +1,4 @@
-﻿using SqlSugar;
-
-namespace ZR.Model.System
+﻿namespace ZR.Model.System
 {
     /// <summary>
     /// 字典数据表
@@ -57,5 +55,13 @@ namespace ZR.Model.System
         /// 多语言翻译key值
         /// </summary>
         public string LangKey { get; set; } = string.Empty;
+        /// <summary>
+        /// 扩展1
+        /// </summary>
+        public string Extend1 { get; set; }
+        /// <summary>
+        /// 扩展2
+        /// </summary>
+        public string Extend2 { get; set; }
     }
 }

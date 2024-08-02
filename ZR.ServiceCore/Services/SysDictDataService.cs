@@ -105,7 +105,9 @@ namespace ZR.ServiceCore.Services
                 Status = dict.Status,
                 CssClass = dict.CssClass,
                 ListClass = dict.ListClass,
-                LangKey = dict.LangKey
+                LangKey = dict.LangKey,
+                Extend1 = dict.Extend1,
+                Extend2 = dict.Extend2,
             });
 
             CacheHelper.Remove($"SelectDictDataByCode_{dict.DictCode}");
