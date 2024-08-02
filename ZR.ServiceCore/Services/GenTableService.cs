@@ -145,17 +145,14 @@ namespace ZR.ServiceCore.Services
                     column.HtmlType = prevColumn.HtmlType;
                     column.Update_time = DateTime.Now;
                     column.Update_by = genTable.Update_by;
+                    column.ColumnComment = prevColumn.ColumnComment;
+                    column.Remark = prevColumn.Remark;
 
                     if (column.IsList)
                     {
                         column.DictType = prevColumn.DictType;
                         column.QueryType = prevColumn.QueryType;
                     }
-                    //不同步列说明
-                    //if (column.ColumnComment.IsEmpty())
-                    //{
-                    //    column.ColumnComment = prevColumn.ColumnComment;
-                    //}
                     updateColumns.Add(column);
                 }
             }
