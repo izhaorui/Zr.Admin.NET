@@ -8,8 +8,7 @@
 -->
 <template>
   <div class="app-container">
-    <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
-    <el-form :model="queryParams" size="small" label-position="right" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" 
+    <el-form :model="queryParams" size="small" label-position="right" inline ref="queryForm" label-width="100px" v-show="showSearch" 
       @submit.native.prevent>
       ${replaceDto.VueQueryFormHtml}
       <el-form-item>
@@ -17,7 +16,6 @@
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
-    <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
 $if(replaceDto.ShowBtnAdd)
       <el-col :span="1.5">
@@ -63,7 +61,7 @@ $end
 
     <!-- 添加或修改${genTable.functionName}对话框 -->
     <el-dialog :title="title" :lock-scroll="false" :visible.sync="open" >
-      <el-form ref="form" :model="form" :rules="rules" :label-width="formLabelWidth">
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
         ${replaceDto.VueViewFormHtml}
         </el-row>
@@ -137,7 +135,7 @@ $end
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
       // ${item.ColumnComment}选项列表 格式 eg:{ dictLabel: '标签', dictValue: '0'}
-      ${item.CsharpFieldFl}Options: [],
+      $if(item.DictType != "")${item.DictType}$else${item.CsharpFieldFl}Options$end: [],
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围
       dateRange${item.CsharpField}: [],
@@ -145,13 +143,8 @@ $elseif(item.HtmlType == "customInput")
       editIndex: -1,
 $end
 $end
-      // 数据列表
       dataList: [],
-      // 总记录数
       total: 0,
-      // 提交按钮是否显示
-      btnSubmitVisible: true,
-      // 表单校验
       rules: {
 $foreach(column in genTable.Columns)
 $if(column.IsRequired && column.IsIncrement == false)
@@ -169,9 +162,9 @@ $end
 
 $set(index = 0)
     var dictParams = [
-$foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
-      { dictType: "${item.DictType}", columnName: "${item.CsharpFieldFl}Options" },
+$foreach(item in dicts)
+$if(item.DictType != "")
+      "${item.DictType}",
 $set(index = index + 1)
 $end
 $end
@@ -179,7 +172,7 @@ $end
 $if(index > 0)
     this.getDicts(dictParams).then((response) => {
       response.data.forEach((element) => {
-        this[element.columnName] = element.list;
+        this[element.dictType] = element.list;
       });
     });
 $end
@@ -304,12 +297,6 @@ $if(replaceDto.UploadFile == 1)
     },
 $end
 $foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
-    // ${item.ColumnComment}字典翻译
-    ${item.CsharpFieldFl}Format(row, column) {
-      return this.selectDictLabel(this.${item.CsharpFieldFl}Options, row.${item.CsharpFieldFl});
-    },
-$end
 $if(item.HtmlType == "customInput")
     // 显示编辑排序
     editCurrRow(rowId, str) {
@@ -341,8 +328,6 @@ $if(item.HtmlType == "checkbox")
           this.form.${item.CsharpFieldFl} = this.form.${item.CsharpFieldFl}Checked.toString();
 $end
 $end
-          console.log(JSON.stringify(this.form));
-          
           if (this.form.${replaceDto.FistLowerPk} != undefined && this.opertype === 2) {
             update${genTable.BusinessName}(this.form)
               .then((res) => {
@@ -350,9 +335,6 @@ $end
                 this.open = false;
                 this.getList();
             })
-            .catch((err) => {
-                //TODO 错误逻辑
-              });
           } else {
             add${genTable.BusinessName}(this.form)
               .then((res) => {
@@ -360,9 +342,6 @@ $end
                 this.open = false;
                 this.getList();
             })
-            .catch((err) => {
-                //TODO 错误逻辑
-              });
           }
         }
       });

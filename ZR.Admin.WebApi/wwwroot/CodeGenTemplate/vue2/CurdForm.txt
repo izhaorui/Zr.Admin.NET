@@ -65,7 +65,7 @@ $elseif(column.HtmlType == "radio")
           <el-col :lg="12">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-radio-group v-model="form.${columnName}">
-                <el-radio v-for="item in ${columnName}Options" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
+                <el-radio v-for="item in ${if(column.DictType != "")}${column.DictType}${else}${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="${value}">{{item.dictLabel}}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -85,7 +85,7 @@ $elseif(column.HtmlType == "select")
           <el-col :lg="12">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-select v-model="form.${columnName}" placeholder="请选择${labelName}">
-                <el-option v-for="item in ${columnName}Options" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
+                <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="${value}"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -93,7 +93,7 @@ $elseif(column.HtmlType == "checkbox")
           <el-col :lg="24">
             <el-form-item label="${labelName}" prop="${columnName}">
               <el-checkbox-group v-model="form.${columnName}Checked">
-                <el-checkbox v-for="item in ${columnName}Options" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
+                <el-checkbox v-for="item in $if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictValue">{{item.dictLabel}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-col>

@@ -32,9 +32,9 @@ $elseif(column.HtmlType == "checkbox" || column.HtmlType == "select" || column.H
       <el-table-column prop="${columnName}" label="${labelName}" align="center">
         <template slot-scope="scope">
 $if(column.HtmlType == "checkbox")
-          <dict-tag :options="${columnName}Options" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
+          <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName} ? scope.row.${columnName}.split(',') : []" />
 $else
-          <dict-tag :options="${columnName}Options" :value="scope.row.${columnName}" />
+          <dict-tag :options="$if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" />
 $end
         </template>
       </el-table-column>

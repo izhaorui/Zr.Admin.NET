@@ -1,14 +1,10 @@
 ﻿<!--
  * @Descripttion: (${genTable.functionName}/${genTable.tableName})
- * @version: (1.0)
  * @Author: (${replaceDto.Author})
  * @Date: (${replaceDto.AddTime})
- * @LastEditors: (${replaceDto.Author})
- * @LastEditTime: (${replaceDto.AddTime})
 -->
 <template>
   <div class="app-container">
-    <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" size="small" label-position="right" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" 
       @submit.native.prevent>
       ${replaceDto.VueQueryFormHtml}
@@ -17,7 +13,6 @@
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
-    <!-- 工具区域 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['${replaceDto.PermissionPrefix}:export']">导出</el-button>
@@ -44,7 +39,7 @@ ${replaceDto.VueViewListHtml}
 $foreach(item in genTable.Columns)
         <el-form-item label="$if(item.ColumnComment == "")${item.CsharpField}${else}${item.ColumnComment}${end}">
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
-          <dict-tag :options="${item.CsharpFieldFl}Options" :value="form.${item.CsharpFieldFl}" />
+          <dict-tag :options="$if(item.DictType != "") ${item.DictType} $else ${item.CsharpFieldFl}Options$end" :value="form.${item.CsharpFieldFl}" />
 $elseif(item.HtmlType == "imageUpload")
           <el-image fit="contain" :src="form.${item.CsharpFieldFl}" :preview-src-list="[form.${item.CsharpFieldFl}]">
             <div slot="error"><i class="el-icon-picture" /></div>
@@ -112,18 +107,14 @@ $end
 $foreach(item in genTable.Columns)
 $if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox"))
       // ${item.ColumnComment}选项列表
-      ${item.CsharpFieldFl}Options: [],
+      $if(item.DictType != "")${item.DictType}$else${item.CsharpFieldFl}Options$end: [],
 $elseif(item.HtmlType == "datetime" && item.IsQuery == true)
       //${item.ColumnComment}时间范围
       dateRange${item.CsharpField}: [],
 $end
 $end
-      // 数据列表
       dataList: [],
-      // 总记录数
-      total: 0,
-      // 提交按钮是否显示
-      btnSubmitVisible: true,
+      total: 0
     };
   },
   created() {
@@ -132,9 +123,9 @@ $end
 
 $set(index = 0)
     var dictParams = [
-$foreach(item in genTable.Columns)
-$if((item.HtmlType == "radio" || item.HtmlType == "select" || item.HtmlType == "checkbox") && item.DictType != "")
-      { dictType: "${item.DictType}", columnName: "${item.CsharpFieldFl}Options" },
+$foreach(item in dicts)
+$if(item.DictType != "")
+      "${item.DictType}",
 $set(index = index + 1)
 $end
 $end
@@ -142,7 +133,7 @@ $end
 $if(index > 0)
     this.getDicts(dictParams).then((response) => {
       response.data.forEach((element) => {
-        this[element.columnName] = element.list;
+        this[element.dictType] = element.list;
       });
     });
 $end

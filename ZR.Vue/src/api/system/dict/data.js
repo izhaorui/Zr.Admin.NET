@@ -5,7 +5,7 @@ export function listData(query) {
   return request({
     url: '/system/dict/data/list',
     method: 'get',
-    params: query
+    params: query,
   })
 }
 
@@ -13,22 +13,29 @@ export function listData(query) {
 export function getData(dictCode) {
   return request({
     url: '/system/dict/data/info/' + dictCode,
-    method: 'get'
+    method: 'get',
   })
 }
 
 // 根据字典类型查询字典数据信息
 export function getDicts(dictType) {
-  if (typeof (dictType) === "object") {
+  if (typeof dictType === 'object') {
+    var data = dictType.map((x) => {
+      if (typeof x === 'object') {
+        return x.dictType
+      } else {
+        return x
+      }
+    })
     return request({
-      url: '/system/dict/data/types',
-      data: dictType,
-      method: 'post'
+      url: '/system/dict/data/dicts',
+      data: data,
+      method: 'post',
     })
   } else {
     return request({
       url: '/system/dict/data/type/' + dictType,
-      method: 'get'
+      method: 'get',
     })
   }
 }
@@ -38,7 +45,7 @@ export function addData(data) {
   return request({
     url: '/system/dict/data',
     method: 'post',
-    data: data
+    data: data,
   })
 }
 
@@ -47,7 +54,7 @@ export function updateData(data) {
   return request({
     url: '/system/dict/data',
     method: 'put',
-    data: data
+    data: data,
   })
 }
 
@@ -55,7 +62,7 @@ export function updateData(data) {
 export function delData(dictCode) {
   return request({
     url: '/system/dict/data/' + dictCode,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
@@ -64,6 +71,6 @@ export function exportData(query) {
   return request({
     url: '/system/dict/data/export',
     method: 'get',
-    params: query
+    params: query,
   })
 }

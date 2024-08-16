@@ -21,7 +21,7 @@ $if(column.HtmlType == "datetime")
 $elseif(column.HtmlType == "select" || column.HtmlType == "radio")
       <el-form-item label="${labelName}" prop="${columnName}">
         <el-select v-model="queryParams.${columnName}" placeholder="请选择${labelName}">
-          <el-option v-for="item in ${columnName}Options" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
+          <el-option v-for="item in $if(column.DictType != "") ${column.DictType} $else ${column.CsharpFieldFl}Options$end" :key="item.dictValue" :label="item.dictLabel" :value="item.dictValue"></el-option>
         </el-select>
       </el-form-item>
 $else
