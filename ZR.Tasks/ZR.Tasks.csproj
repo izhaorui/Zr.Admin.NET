@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NLog" Version="5.3.2" />
+    <PackageReference Include="NLog" Version="5.3.4" />
     <PackageReference Include="Quartz" Version="3.9.0" />
     <PackageReference Include="Quartz.Serialization.Json" Version="3.9.0" />
   </ItemGroup>
