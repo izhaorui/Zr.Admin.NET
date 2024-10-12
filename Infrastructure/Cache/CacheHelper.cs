@@ -127,24 +127,57 @@ namespace ZR.Common
         /// 获取所有缓存键
         /// </summary>
         /// <returns></returns>
+        //public static List<string> GetCacheKeys()
+        //{
+        //    const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        //    //var entries = Cache.GetType().GetField("_entries", flags).GetValue(Cache);
+
+        //    //.net7需要这样写 
+        //    var coherentState = Cache.GetType().GetField("_coherentState", flags).GetValue(Cache);
+        //    var entries = coherentState.GetType().GetField("_entries", flags).GetValue(coherentState);
+
+        //    var keys = new List<string>();
+        //    if (entries is not IDictionary cacheItems) return keys;
+        //    foreach (DictionaryEntry cacheItem in cacheItems)
+        //    {
+        //        keys.Add(cacheItem.Key.ToString());
+        //        //Console.WriteLine("缓存key=" +cacheItem.Key);
+        //    }
+        //    return keys;
+        //}
         public static List<string> GetCacheKeys()
         {
-            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-            //var entries = Cache.GetType().GetField("_entries", flags).GetValue(Cache);
-
-            //.net7需要这样写 
-            var coherentState = Cache.GetType().GetField("_coherentState", flags).GetValue(Cache);
-            var entries = coherentState.GetType().GetField("_entries", flags).GetValue(coherentState);
-
             var keys = new List<string>();
-            if (entries is not IDictionary cacheItems) return keys;
-            foreach (DictionaryEntry cacheItem in cacheItems)
+            // 获取缓存字段
+            var cacheField = typeof(MemoryCache).GetProperty("_entries", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (cacheField == null)
             {
-                keys.Add(cacheItem.Key.ToString());
-                //Console.WriteLine("缓存key=" +cacheItem.Key);
+                return keys;
+                //throw new Exception("无法获取 MemoryCache 中的 'EntriesCollection' 属性。");
             }
+
+            // 获取缓存值
+            var cacheEntries = cacheField.GetValue(Cache) as dynamic;
+            if (cacheEntries == null)
+            {
+                return keys;
+                //throw new Exception("缓存中没有任何条目。");
+            }
+
+            var cacheItems = new Dictionary<string, object>();
+
+            foreach (var cacheEntry in cacheEntries)
+            {
+                object cacheItem = cacheEntry.GetType().GetProperty("Value").GetValue(cacheEntry, null);
+                ICacheEntry entry = (ICacheEntry)cacheItem;
+                cacheItems.Add(entry.Key.ToString(), entry.Value);
+                keys.Add(entry.Key.ToString());
+                Console.WriteLine("缓存key=" + entry.Key.ToString());
+            }
+
             return keys;
         }
+
     }
 }
 

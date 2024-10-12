@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using UAParser;
 using ZR.Infrastructure.IPTools;
 
@@ -191,6 +192,29 @@ namespace Infrastructure.Extensions
             {
                 buffer?.Dispose();
             }
+            return body;
+        }
+
+        /// <summary>
+        /// 获取body请求参数（异步）
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static async Task<string> GetBodyAsync(this HttpContext context)
+        {
+            // 允许多次读取请求体
+            context.Request.EnableBuffering();
+
+            // 重置请求体流的位置，确保从头读取
+            context.Request.Body.Position = 0;
+
+            // 读取请求体内容
+            using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
+            var body = await reader.ReadToEndAsync();
+
+            // 读取完成后将流位置重置为0，确保后续操作可以继续读取
+            context.Request.Body.Position = 0;
+
             return body;
         }
 

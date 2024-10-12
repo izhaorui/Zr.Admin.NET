@@ -79,9 +79,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [AllowAnonymous]
         [HttpPost("dicts")]
-        public IActionResult GetDictTypes()
+        public async Task<IActionResult> GetDictTypes()
         {
-            var data = HttpContext.GetBody();
+            var data = await HttpContext.GetBodyAsync();
             return SUCCESS(GetDicts(JsonConvert.DeserializeObject<string[]>(data)));
         }
 
