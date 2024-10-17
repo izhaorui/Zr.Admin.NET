@@ -1,20 +1,23 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
-using System.Collections;
 using System.Reflection;
 
+//不改命名空间，要修改很多地方
 namespace ZR.Common
 {
     public class CacheHelper
     {
         public static MemoryCache Cache { get; set; }
+        private static readonly List<string> _keys;
         static CacheHelper()
         {
             Cache = new MemoryCache(new MemoryCacheOptions
             {
                 //SizeLimit = 1024
             });
+            _keys = [];
         }
 
         /// <summary>
@@ -75,6 +78,10 @@ namespace ZR.Common
         /// <param name="Timeout">过期时间（秒）</param>
         public static void SetCaches(string CacheKey, object objObject, int Timeout)
         {
+            if (!_keys.Contains(CacheKey))
+            {
+                _keys.Add(CacheKey);
+            }
             Cache.Set(CacheKey, objObject, DateTime.Now.AddSeconds(Timeout));
         }
 
@@ -107,6 +114,7 @@ namespace ZR.Common
         /// <param name="key">key</param>
         public static void Remove(string key)
         {
+            _keys.Remove(key);
             Cache.Remove(key);
         }
 
@@ -147,37 +155,14 @@ namespace ZR.Common
         //}
         public static List<string> GetCacheKeys()
         {
-            var keys = new List<string>();
-            // 获取缓存字段
-            var cacheField = typeof(MemoryCache).GetProperty("_entries", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (cacheField == null)
-            {
-                return keys;
-                //throw new Exception("无法获取 MemoryCache 中的 'EntriesCollection' 属性。");
-            }
-
-            // 获取缓存值
-            var cacheEntries = cacheField.GetValue(Cache) as dynamic;
-            if (cacheEntries == null)
-            {
-                return keys;
-                //throw new Exception("缓存中没有任何条目。");
-            }
-
-            var cacheItems = new Dictionary<string, object>();
-
-            foreach (var cacheEntry in cacheEntries)
-            {
-                object cacheItem = cacheEntry.GetType().GetProperty("Value").GetValue(cacheEntry, null);
-                ICacheEntry entry = (ICacheEntry)cacheItem;
-                cacheItems.Add(entry.Key.ToString(), entry.Value);
-                keys.Add(entry.Key.ToString());
-                Console.WriteLine("缓存key=" + entry.Key.ToString());
-            }
-
-            return keys;
+            return new List<string>(_keys);
         }
 
+        // 销毁缓存
+        public void Dispose()
+        {
+            Cache.Dispose();
+        }
     }
 }
 
