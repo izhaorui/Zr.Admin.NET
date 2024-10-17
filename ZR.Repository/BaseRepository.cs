@@ -88,7 +88,11 @@ namespace ZR.Repository
         /// <returns></returns>
         public int Update(T entity, Expression<Func<T, object>> expression, bool ignoreAllNull = false)
         {
-            return Context.Updateable(entity).UpdateColumns(expression).IgnoreColumns(ignoreAllNull).ExecuteCommand();
+            return Context.Updateable(entity)
+                .UpdateColumns(expression)
+                .IgnoreColumns(ignoreAllNull)
+                .RemoveDataCache()
+                .ExecuteCommand();
         }
 
         /// <summary>
