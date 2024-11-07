@@ -10,20 +10,14 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 文章话题
     /// </summary>
+    /// <param name="ArticleTopicService">
+    /// 文章话题接口
+    /// </param>
     [Verify]
     [ApiExplorerSettings(GroupName = "article")]
     [Route("article/ArticleTopic")]
-    public class ArticleTopicController : BaseController
+    public class ArticleTopicController(IArticleTopicService ArticleTopicService) : BaseController
     {
-        /// <summary>
-        /// 文章话题接口
-        /// </summary>
-        private readonly IArticleTopicService _ArticleTopicService;
-
-        public ArticleTopicController(IArticleTopicService ArticleTopicService)
-        {
-            _ArticleTopicService = ArticleTopicService;
-        }
 
         /// <summary>
         /// 查询文章话题列表
@@ -34,7 +28,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "articletopic:list")]
         public IActionResult QueryArticleTopic([FromQuery] ArticleTopicQueryDto parm)
         {
-            var response = _ArticleTopicService.GetList(parm);
+            var response = ArticleTopicService.GetList(parm);
             return SUCCESS(response);
         }
 
@@ -47,7 +41,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "articletopic:query")]
         public IActionResult GetArticleTopic(long TopicId)
         {
-            var response = _ArticleTopicService.GetInfo(TopicId);
+            var response = ArticleTopicService.GetInfo(TopicId);
             
             var info = response.Adapt<ArticleTopicDto>();
             return SUCCESS(info);
@@ -64,7 +58,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var modal = parm.Adapt<ArticleTopic>().ToCreate(HttpContext);
 
-            var response = _ArticleTopicService.AddArticleTopic(modal);
+            var response = ArticleTopicService.AddArticleTopic(modal);
 
             return SUCCESS(response);
         }
@@ -79,7 +73,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult UpdateArticleTopic([FromBody] ArticleTopicDto parm)
         {
             var modal = parm.Adapt<ArticleTopic>().ToUpdate(HttpContext);
-            var response = _ArticleTopicService.UpdateArticleTopic(modal);
+            var response = ArticleTopicService.UpdateArticleTopic(modal);
 
             return ToResponse(response);
         }
@@ -95,7 +89,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var idArr = Tools.SplitAndConvert<long>(ids);
 
-            return ToResponse(_ArticleTopicService.Delete(idArr));
+            return ToResponse(ArticleTopicService.Delete(idArr));
         }
 
         /// <summary>
@@ -109,7 +103,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             parm.PageNum = 1;
             parm.PageSize = 100000;
-            var list = _ArticleTopicService.ExportList(parm).Result;
+            var list = ArticleTopicService.ExportList(parm).Result;
             if (list == null || list.Count <= 0)
             {
                 return ToResponse(ResultCode.FAIL, "没有要导出的数据");

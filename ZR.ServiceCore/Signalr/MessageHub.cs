@@ -18,8 +18,8 @@ namespace ZR.ServiceCore.Signalr
     public class MessageHub : Hub
     {
         //创建用户集合，用于存储所有链接的用户数据
-        public static readonly List<OnlineUsers> onlineClients = new();
-        public static List<OnlineUsers> users = new();
+        public static readonly List<OnlineUsers> onlineClients = [];
+        public static List<OnlineUsers> users = [];
         //private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly ISysNoticeService SysNoticeService;
         private readonly ISysUserService UserService;

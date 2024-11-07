@@ -13,17 +13,12 @@ namespace ZR.Admin.WebApi.Controllers
     [Verify]
     [Route("system/CommonLang")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class CommonLangController : BaseController
+    public class CommonLangController(ICommonLangService CommonLangService) : BaseController
     {
         /// <summary>
         /// 多语言配置接口
         /// </summary>
-        private readonly ICommonLangService _CommonLangService;
-
-        public CommonLangController(ICommonLangService CommonLangService)
-        {
-            _CommonLangService = CommonLangService;
-        }
+        private readonly ICommonLangService _CommonLangService = CommonLangService;
 
         /// <summary>
         /// 查询多语言配置列表

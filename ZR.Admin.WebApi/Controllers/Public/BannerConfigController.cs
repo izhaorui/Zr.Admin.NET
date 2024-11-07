@@ -10,19 +10,13 @@ namespace ZR.Admin.WebApi.Controllers.Public
     /// <summary>
     /// 广告管理
     /// </summary>
+    /// <param name="bannerConfigService">
+    /// 广告管理接口
+    /// </param>
     [Verify]
     [Route("public/BannerConfig")]
-    public class BannerConfigController : BaseController
+    public class BannerConfigController(IBannerConfigService bannerConfigService) : BaseController
     {
-        /// <summary>
-        /// 广告管理接口
-        /// </summary>
-        private readonly IBannerConfigService _BannerConfigService;
-
-        public BannerConfigController(IBannerConfigService BannerConfigService)
-        {
-            _BannerConfigService = BannerConfigService;
-        }
 
         /// <summary>
         /// 查询广告管理列表
@@ -33,7 +27,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         [ActionPermissionFilter(Permission = "bannerconfig:list")]
         public IActionResult QueryBannerConfig([FromQuery] BannerConfigQueryDto parm)
         {
-            var response = _BannerConfigService.GetList(parm);
+            var response = bannerConfigService.GetList(parm);
             return SUCCESS(response);
         }
 
@@ -46,7 +40,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         [ActionPermissionFilter(Permission = "bannerconfig:query")]
         public IActionResult GetBannerConfig(int Id)
         {
-            var response = _BannerConfigService.GetInfo(Id);
+            var response = bannerConfigService.GetInfo(Id);
 
             var info = response.Adapt<BannerConfigDto>();
             return SUCCESS(info);
@@ -63,7 +57,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         {
             var modal = parm.Adapt<BannerConfig>().ToCreate(HttpContext);
 
-            var response = _BannerConfigService.AddBannerConfig(modal);
+            var response = bannerConfigService.AddBannerConfig(modal);
 
             return SUCCESS(response);
         }
@@ -78,7 +72,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         public IActionResult UpdateBannerConfig([FromBody] BannerConfigDto parm)
         {
             var modal = parm.Adapt<BannerConfig>();
-            var response = _BannerConfigService.UpdateBannerConfig(modal);
+            var response = bannerConfigService.UpdateBannerConfig(modal);
 
             return ToResponse(response);
         }
@@ -94,7 +88,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         {
             var idArr = Tools.SplitAndConvert<int>(ids);
 
-            return ToResponse(_BannerConfigService.Delete(idArr, "删除广告管理"));
+            return ToResponse(bannerConfigService.Delete(idArr, "删除广告管理"));
         }
 
         /// <summary>
@@ -108,7 +102,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         {
             parm.PageNum = 1;
             parm.PageSize = 100000;
-            var list = _BannerConfigService.ExportList(parm).Result;
+            var list = bannerConfigService.ExportList(parm).Result;
             if (list == null || list.Count <= 0)
             {
                 return ToResponse(ResultCode.FAIL, "没有要导出的数据");
@@ -129,7 +123,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         public IActionResult ChangeSort(int id = 0, int value = 0)
         {
             if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-            var response = _BannerConfigService.Update(w => w.Id == id, it => new BannerConfig()
+            var response = bannerConfigService.Update(w => w.Id == id, it => new BannerConfig()
             {
                 SortId = value,
             });
@@ -146,7 +140,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         [AllowAnonymous]
         public IActionResult QueryBannerList([FromQuery] BannerConfigQueryDto parm)
         {
-            var response = _BannerConfigService.GetBannerList(parm);
+            var response = bannerConfigService.GetBannerList(parm);
             return SUCCESS(new { list = response });
         }
     }

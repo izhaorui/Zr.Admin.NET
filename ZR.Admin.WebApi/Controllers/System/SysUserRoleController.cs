@@ -11,18 +11,9 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/userRole")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysUserRoleController : BaseController
+    public class SysUserRoleController(
+        ISysUserRoleService sysUserRoleService) : BaseController
     {
-        private readonly ISysUserRoleService SysUserRoleService;
-        private readonly ISysUserService UserService;
-
-        public SysUserRoleController(
-            ISysUserRoleService sysUserRoleService,
-            ISysUserService userService)
-        {
-            SysUserRoleService = sysUserRoleService;
-            UserService = userService;
-        }
 
         /// <summary>
         /// 根据角色编号获取已分配的用户
@@ -33,7 +24,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:roleusers:list")]
         public IActionResult GetList([FromQuery] RoleUserQueryDto roleUserQueryDto)
         {
-            var list = SysUserRoleService.GetSysUsersByRoleId(roleUserQueryDto);
+            var list = sysUserRoleService.GetSysUsersByRoleId(roleUserQueryDto);
 
             return SUCCESS(list, TIME_FORMAT_FULL);
         }
@@ -47,7 +38,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "添加角色用户", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] RoleUsersCreateDto roleUsersCreateDto)
         {
-            var response = SysUserRoleService.InsertRoleUser(roleUsersCreateDto);
+            var response = sysUserRoleService.InsertRoleUser(roleUsersCreateDto);
 
             return SUCCESS(response);
         }
@@ -62,7 +53,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "删除角色用户", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete([FromBody] RoleUsersCreateDto roleUsersCreateDto)
         {
-            return SUCCESS(SysUserRoleService.DeleteRoleUserByUserIds(roleUsersCreateDto.RoleId, roleUsersCreateDto.UserIds));
+            return SUCCESS(sysUserRoleService.DeleteRoleUserByUserIds(roleUsersCreateDto.RoleId, roleUsersCreateDto.UserIds));
         }
 
         /// <summary>
@@ -79,7 +70,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             // 获取未添加用户
-            var list = SysUserRoleService.GetExcludedSysUsersByRoleId(roleUserQueryDto);
+            var list = sysUserRoleService.GetExcludedSysUsersByRoleId(roleUserQueryDto);
 
             return SUCCESS(list, TIME_FORMAT_FULL);
         }

@@ -9,20 +9,14 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 用户在线时长
     /// </summary>
+    /// <param name="UserOnlineLogService">
+    /// 用户在线时长接口
+    /// </param>
     [Verify]
     [ApiExplorerSettings(GroupName = "sys")]
     [Route("monitor/UserOnlineLog")]
-    public class UserOnlineLogController : BaseController
+    public class UserOnlineLogController(IUserOnlineLogService UserOnlineLogService) : BaseController
     {
-        /// <summary>
-        /// 用户在线时长接口
-        /// </summary>
-        private readonly IUserOnlineLogService _UserOnlineLogService;
-
-        public UserOnlineLogController(IUserOnlineLogService UserOnlineLogService)
-        {
-            _UserOnlineLogService = UserOnlineLogService;
-        }
 
         /// <summary>
         /// 查询用户在线时长列表
@@ -33,7 +27,7 @@ namespace ZR.Admin.WebApi.Controllers
         //[ActionPermissionFilter(Permission = "useronlinelog:list")]
         public IActionResult QueryUserOnlineLog([FromQuery] UserOnlineLogQueryDto parm)
         {
-            var response = _UserOnlineLogService.GetList(parm);
+            var response = UserOnlineLogService.GetList(parm);
             return SUCCESS(response);
         }
 
@@ -48,7 +42,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var idArr = Tools.SplitAndConvert<long>(ids);
 
-            return ToResponse(_UserOnlineLogService.Delete(idArr));
+            return ToResponse(UserOnlineLogService.Delete(idArr));
         }
 
         /// <summary>
@@ -62,7 +56,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             parm.PageNum = 1;
             parm.PageSize = 100000;
-            var list = _UserOnlineLogService.ExportList(parm).Result;
+            var list = UserOnlineLogService.ExportList(parm).Result;
             if (list == null || list.Count <= 0)
             {
                 return ToResponse(ResultCode.FAIL, "没有要导出的数据");

@@ -14,24 +14,12 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/user")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysUserController : BaseController
+    public class SysUserController(
+        ISysUserService userService,
+        ISysRoleService roleService,
+        ISysPostService postService,
+        ISysUserPostService userPostService) : BaseController
     {
-        private readonly ISysUserService UserService;
-        private readonly ISysRoleService RoleService;
-        private readonly ISysPostService PostService;
-        private readonly ISysUserPostService UserPostService;
-
-        public SysUserController(
-            ISysUserService userService,
-            ISysRoleService roleService,
-            ISysPostService postService,
-            ISysUserPostService userPostService)
-        {
-            UserService = userService;
-            RoleService = roleService;
-            PostService = postService;
-            UserPostService = userPostService;
-        }
 
         /// <summary>
         /// 用户管理 -> 获取用户
@@ -42,7 +30,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysUserQueryDto user, PagerInfo pager)
         {
-            var list = UserService.SelectUserList(user, pager);
+            var list = userService.SelectUserList(user, pager);
 
             return SUCCESS(list);
         }
@@ -58,17 +46,17 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult GetInfo(int userId)
         {
             Dictionary<string, object> dic = new();
-            var roles = RoleService.SelectRoleAll();
+            var roles = roleService.SelectRoleAll();
             dic.Add("roles", roles);
             //dic.Add("roles", SysUser.IsAdmin(userId) ? roles : roles.FindAll(f => !f.IsAdmin()));
-            dic.Add("posts", PostService.GetAll());
+            dic.Add("posts", postService.GetAll());
 
             //编辑
             if (userId > 0)
             {
-                SysUser sysUser = UserService.SelectUserById(userId);
+                SysUser sysUser = userService.SelectUserById(userId);
                 dic.Add("user", sysUser);
-                dic.Add("postIds", UserPostService.GetUserPostsByUserId(userId));
+                dic.Add("postIds", userPostService.GetUserPostsByUserId(userId));
                 dic.Add("roleIds", sysUser.RoleIds);
             }
 
@@ -87,14 +75,14 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var user = parm.Adapt<SysUser>().ToCreate(HttpContext);
             if (user == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-            if (UserConstants.NOT_UNIQUE.Equals(UserService.CheckUserNameUnique(user.UserName)))
+            if (UserConstants.NOT_UNIQUE.Equals(userService.CheckUserNameUnique(user.UserName)))
             {
                 return ToResponse(ApiResult.Error($"新增用户 '{user.UserName}'失败，登录账号已存在"));
             }
 
             user.Password = NETCore.Encrypt.EncryptProvider.Md5(user.Password);
 
-            return SUCCESS(UserService.InsertUser(user));
+            return SUCCESS(userService.InsertUser(user));
         }
 
         /// <summary>
@@ -110,7 +98,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             var user = parm.Adapt<SysUser>().ToUpdate(HttpContext);
             if (user == null || user.UserId <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
-            int upResult = UserService.UpdateUser(user);
+            int upResult = userService.UpdateUser(user);
 
             return ToResponse(upResult);
         }
@@ -127,7 +115,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (user == null) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
 
-            int result = UserService.ChangeUserStatus(user);
+            int result = userService.ChangeUserStatus(user);
             return ToResponse(result);
         }
 
@@ -143,7 +131,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (userid <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
             if (userid == 1) return ToResponse(ResultCode.FAIL, "不能删除管理员账号");
-            int result = UserService.DeleteUser(userid);
+            int result = userService.DeleteUser(userid);
 
             return ToResponse(result);
         }
@@ -160,7 +148,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             //密码md5
             sysUser.Password = NETCore.Encrypt.EncryptProvider.Md5(sysUser.Password);
 
-            int result = UserService.ResetPwd(sysUser.UserId, sysUser.Password);
+            int result = userService.ResetPwd(sysUser.UserId, sysUser.Password);
             return ToResponse(result);
         }
 
@@ -180,7 +168,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 users = stream.Query<SysUser>(startCell: "A2").ToList();
             }
 
-            return SUCCESS(UserService.ImportUsers(users));
+            return SUCCESS(userService.ImportUsers(users));
         }
 
         /// <summary>
@@ -206,7 +194,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:export")]
         public IActionResult UserExport([FromQuery] SysUserQueryDto user)
         {
-            var list = UserService.SelectUserList(user, new PagerInfo(1, 10000));
+            var list = userService.SelectUserList(user, new PagerInfo(1, 10000));
 
             var result = ExportExcelMini(list.Result, "user", "用户列表");
             return ExportExcel(result.Item2, result.Item1);

@@ -12,17 +12,12 @@ namespace ZR.Admin.WebApi.Controllers
     [Verify]
     [Route("tool/file")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysFileController : BaseController
+    public class SysFileController(ISysFileService SysFileService) : BaseController
     {
         /// <summary>
         /// 文件存储接口
         /// </summary>
-        private readonly ISysFileService _SysFileService;
-
-        public SysFileController(ISysFileService SysFileService)
-        {
-            _SysFileService = SysFileService;
-        }
+        private readonly ISysFileService _SysFileService = SysFileService;
 
         /// <summary>
         /// 查询文件存储列表

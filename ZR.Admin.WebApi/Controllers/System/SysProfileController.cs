@@ -12,30 +12,14 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/user/profile")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysProfileController : BaseController
+    public class SysProfileController(
+        ISysUserService userService,
+        ISysRoleService roleService,
+        ISysUserPostService postService,
+        ISysDeptService deptService,
+        ISysFileService sysFileService,
+        IWebHostEnvironment hostEnvironment) : BaseController
     {
-        private readonly ISysUserService UserService;
-        private readonly ISysRoleService RoleService;
-        private readonly ISysUserPostService UserPostService;
-        private readonly ISysDeptService DeptService;
-        private readonly ISysFileService FileService;
-        private IWebHostEnvironment hostEnvironment;
-
-        public SysProfileController(
-            ISysUserService userService,
-            ISysRoleService roleService,
-            ISysUserPostService postService,
-            ISysDeptService deptService,
-            ISysFileService sysFileService,
-            IWebHostEnvironment hostEnvironment)
-        {
-            UserService = userService;
-            RoleService = roleService;
-            UserPostService = postService;
-            DeptService = deptService;
-            FileService = sysFileService;
-            this.hostEnvironment = hostEnvironment;
-        }
 
         /// <summary>
         /// 个人中心用户信息获取
@@ -45,11 +29,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Profile()
         {
             long userId = HttpContext.GetUId();
-            var user = UserService.SelectUserById(userId);
+            var user = userService.SelectUserById(userId);
 
-            var roles = RoleService.SelectUserRoleNames(userId);
-            var postGroup = UserPostService.GetPostsStrByUserId(userId);
-            var deptInfo = DeptService.GetFirst(f => f.DeptId == user.DeptId);
+            var roles = roleService.SelectUserRoleNames(userId);
+            var postGroup = postService.GetPostsStrByUserId(userId);
+            var deptInfo = deptService.GetFirst(f => f.DeptId == user.DeptId);
             user.DeptName = deptInfo?.DeptName ?? "-";
 
             return SUCCESS(new { user, roles, postGroup }, TIME_FORMAT_FULL);
@@ -70,7 +54,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
             var user = userDto.Adapt<SysUser>().ToUpdate(HttpContext);
 
-            int result = UserService.ChangeUser(user);
+            int result = userService.ChangeUser(user);
             return ToResponse(result);
         }
 
@@ -84,7 +68,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult UpdatePwd(string oldPassword, string newPassword)
         {
             long userId = HttpContext.GetUId();
-            SysUser user = UserService.GetFirst(f => f.UserId == userId);
+            SysUser user = userService.GetFirst(f => f.UserId == userId);
             string oldMd5 = NETCore.Encrypt.EncryptProvider.Md5(oldPassword);
             string newMd5 = NETCore.Encrypt.EncryptProvider.Md5(newPassword);
 
@@ -96,7 +80,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ApiResult.Error("新密码不能和旧密码相同"));
             }
-            if (UserService.ResetPwd(userId, newMd5) > 0)
+            if (userService.ResetPwd(userId, newMd5) > 0)
             {
                 //TODO 更新缓存
 
@@ -119,9 +103,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             long userId = HttpContext.GetUId();
             if (formFile == null) throw new CustomException("请选择文件");
 
-            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, "", "avatar", HttpContext.GetName(), formFile);
+            SysFile file = await sysFileService.SaveFileToLocal(hostEnvironment.WebRootPath, "", "avatar", HttpContext.GetName(), formFile);
 
-            UserService.UpdatePhoto(new SysUser() { Avatar = file.AccessUrl, UserId = userId });
+            userService.UpdatePhoto(new SysUser() { Avatar = file.AccessUrl, UserId = userId });
             return SUCCESS(new { imgUrl = file.AccessUrl });
         }
     }

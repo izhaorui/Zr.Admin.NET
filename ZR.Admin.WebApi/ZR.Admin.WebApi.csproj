@@ -15,12 +15,15 @@
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.7" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.12" />
-		<PackageReference Include="NLog.Web.AspNetCore" Version="5.3.8" />
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
+		<PackageReference Include="JinianNet.JNTemplate" Version="2.4.2" />
+		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.9" />
+		<PackageReference Include="MiniExcel" Version="1.34.2" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.2" />
+		<PackageReference Include="NLog.Web.AspNetCore" Version="5.3.14" />
 		<PackageReference Include="Mapster" Version="7.4.0" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.7" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -7,25 +7,16 @@ using ZR.Service.Content.IService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="ArticleService"></param>
     [Verify]
     [Route("moment")]
     [ApiExplorerSettings(GroupName = "article")]
-    public class MomentsController : BaseController
+    public class MomentsController(
+        IArticleService ArticleService) : BaseController
     {
-        /// <summary>
-        /// 动态接口
-        /// </summary>
-        private readonly IArticleService _ArticleService;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="ArticleService"></param>
-        public MomentsController(
-            IArticleService ArticleService)
-        {
-            _ArticleService = ArticleService;
-        }
 
         /// <summary>
         /// 查询我的
@@ -36,7 +27,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             parm.UserId = HttpContext.GetUId();
             parm.ArticleType = 2;
-            var response = _ArticleService.GetMyList(parm);
+            var response = ArticleService.GetMyList(parm);
 
             return SUCCESS(response);
         }
@@ -53,9 +44,9 @@ namespace ZR.Admin.WebApi.Controllers
             parm.ArticleType = 2;
             if (parm.TabId == 100)
             {
-                return SUCCESS(_ArticleService.GetFollowMonentList(parm));
+                return SUCCESS(ArticleService.GetFollowMonentList(parm));
             }
-            return SUCCESS(_ArticleService.GetMonentList(parm));
+            return SUCCESS(ArticleService.GetMonentList(parm));
         }
 
         /// <summary>
@@ -70,7 +61,7 @@ namespace ZR.Admin.WebApi.Controllers
             var addModel = parm.Adapt<Article>().ToCreate(context: HttpContext);
             addModel.Tags = parm.TopicName;
 
-            return SUCCESS(_ArticleService.PublishMonent(addModel));
+            return SUCCESS(ArticleService.PublishMonent(addModel));
         }
 
         /// <summary>
@@ -82,7 +73,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var userId = HttpContext.GetUId();
 
-            var monentNum = _ArticleService.Queryable()
+            var monentNum = ArticleService.Queryable()
                 .Count(f => f.UserId == userId && f.ArticleType == ArticleTypeEnum.Monent);
 
             return SUCCESS(new { monentNum, commentNum = 0 });

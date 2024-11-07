@@ -17,18 +17,11 @@ namespace ZR.ServiceCore.Middleware
     /// 全局异常处理中间件
     /// 调用 app.UseMiddlewareGlobalExceptionMiddleware>();
     /// </summary>
-    public class GlobalExceptionMiddleware
+    public class GlobalExceptionMiddleware(RequestDelegate next, ISysOperLogService sysOperLog)
     {
-        private readonly RequestDelegate next;
-        private readonly ISysOperLogService SysOperLogService;
+        private readonly ISysOperLogService SysOperLogService = sysOperLog;
 
         static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
-        public GlobalExceptionMiddleware(RequestDelegate next, ISysOperLogService sysOperLog)
-        {
-            this.next = next;
-            this.SysOperLogService = sysOperLog;
-        }
 
         public async Task Invoke(HttpContext context)
         {

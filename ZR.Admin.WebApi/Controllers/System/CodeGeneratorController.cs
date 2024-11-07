@@ -17,28 +17,15 @@ namespace ZR.Admin.WebApi.Controllers
     [Verify]
     [Route("tool/gen")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class CodeGeneratorController : BaseController
+    public class CodeGeneratorController(
+        IGenTableService genTableService,
+        IGenTableColumnService genTableColumnService,
+        IWebHostEnvironment webHostEnvironment,
+        IOptions<OptionsSetting> options,
+        ISysMenuService sysMenuService) : BaseController
     {
-        private readonly CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
-        private readonly IGenTableService GenTableService;
-        private readonly IGenTableColumnService GenTableColumnService;
-        private readonly ISysMenuService SysMenuService;
-        private readonly IWebHostEnvironment WebHostEnvironment;
-        private readonly OptionsSetting OptionsSetting;
-
-        public CodeGeneratorController(
-            IGenTableService genTableService,
-            IGenTableColumnService genTableColumnService,
-            IWebHostEnvironment webHostEnvironment,
-            IOptions<OptionsSetting> options,
-            ISysMenuService sysMenuService)
-        {
-            GenTableService = genTableService;
-            GenTableColumnService = genTableColumnService;
-            WebHostEnvironment = webHostEnvironment;
-            SysMenuService = sysMenuService;
-            OptionsSetting = options.Value;
-        }
+        private readonly CodeGeneraterService _CodeGeneraterService = new();
+        private readonly OptionsSetting OptionsSetting = options.Value;
 
         /// <summary>
         /// 获取所有数据库的信息
@@ -86,7 +73,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult GetGenTable(string? tableName, PagerInfo pagerInfo)
         {
             //查询原表数据，部分字段映射到代码生成表字段
-            var rows = GenTableService.GetGenTables(new GenTable() { TableName = tableName }, pagerInfo);
+            var rows = genTableService.GetGenTables(new GenTable() { TableName = tableName }, pagerInfo);
 
             return SUCCESS(rows, "MM月dd日 HH:mm");
         }
@@ -100,8 +87,8 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:gen:query")]
         public IActionResult GetColumnList(long tableId)
         {
-            var tableInfo = GenTableService.GetGenTableInfo(tableId);
-            var tables = GenTableService.GetGenTableAll();
+            var tableInfo = genTableService.GetGenTableInfo(tableId);
+            var tables = genTableService.GetGenTableAll();
             return SUCCESS(new { info = tableInfo, tables });
         }
 
@@ -114,7 +101,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:gen:query")]
         public IActionResult GetTableColumnList(long tableId)
         {
-            var tableColumns = GenTableColumnService.GenTableColumns(tableId);
+            var tableColumns = genTableColumnService.GenTableColumns(tableId);
 
             return SUCCESS(new { columns = tableColumns });
         }
@@ -130,7 +117,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             long[] tableId = Tools.SpitLongArrary(tableIds);
 
-            int result = GenTableService.DeleteGenTableByIds(tableId);
+            int result = genTableService.DeleteGenTableByIds(tableId);
             return SUCCESS(result);
         }
 
@@ -164,7 +151,7 @@ namespace ZR.Admin.WebApi.Controllers
                 };
 
                 GenTable genTable = CodeGeneratorTool.InitTable(initTableDto);
-                genTable.TableId = GenTableService.ImportGenTable(genTable);
+                genTable.TableId = genTableService.ImportGenTable(genTable);
                 if (OptionsSetting.CodeGenDbConfig.DbType == 3)
                 {
                     seqs = _CodeGeneraterService.GetAllOracleSeqs(table.Name);
@@ -174,8 +161,8 @@ namespace ZR.Admin.WebApi.Controllers
                     //保存列信息
                     List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(dto.DbName, table.Name);
                     List<GenTableColumn> genTableColumns = CodeGeneratorTool.InitGenTableColumn(genTable, dbColumnInfos, seqs, OptionsSetting.CodeGen);
-                    GenTableColumnService.DeleteGenTableColumnByTableName(table.Name);
-                    GenTableColumnService.InsertGenTableColumn(genTableColumns);
+                    genTableColumnService.DeleteGenTableColumnByTableName(table.Name);
+                    genTableColumnService.InsertGenTableColumn(genTableColumns);
                     genTable.Columns = genTableColumns;
                     result++;
                 }
@@ -203,12 +190,12 @@ namespace ZR.Admin.WebApi.Controllers
 
             //将前端额外参数转成字符串存入Options中
             genTable.Options = genTableDto.Params.Adapt<CodeOptions>();
-            DbResult<bool> result = GenTableService.UseTran(() =>
+            DbResult<bool> result = genTableService.UseTran(() =>
             {
-                int rows = GenTableService.UpdateGenTable(genTable);
+                int rows = genTableService.UpdateGenTable(genTable);
                 if (rows > 0)
                 {
-                    GenTableColumnService.UpdateGenTableColumn(genTable.Columns);
+                    genTableColumnService.UpdateGenTableColumn(genTable.Columns);
                 }
             });
 
@@ -230,7 +217,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
             }
-            var genTableInfo = GenTableService.GetGenTableInfo(dto.TableId);
+            var genTableInfo = genTableService.GetGenTableInfo(dto.TableId);
 
             dto.DbType = OptionsSetting.CodeGenDbConfig.DbType;
             dto.GenTable = genTableInfo;
@@ -257,7 +244,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
 
             dto.DbType = OptionsSetting.CodeGenDbConfig.DbType;
-            dto.GenTable = GenTableService.GetGenTableInfo(dto.TableId);
+            dto.GenTable = genTableService.GetGenTableInfo(dto.TableId);
             //生成压缩包
             string zipReturnFileName = $"ZrAdmin.NET-{dto.GenTable.TableName}-{DateTime.Now:MMddHHmmss}.zip";
 
@@ -265,17 +252,17 @@ namespace ZR.Admin.WebApi.Controllers
             CodeGeneratorTool.Generate(dto);
             if (dto.GenTable.Options.GenerateMenu)
             {
-                SysMenuService.AddSysMenu(dto.GenTable, dto.ReplaceDto.PermissionPrefix, dto.ReplaceDto.ShowBtnEdit, dto.ReplaceDto.ShowBtnExport, dto.ReplaceDto.ShowBtnImport);
+                sysMenuService.AddSysMenu(dto.GenTable, dto.ReplaceDto.PermissionPrefix, dto.ReplaceDto.ShowBtnEdit, dto.ReplaceDto.ShowBtnExport, dto.ReplaceDto.ShowBtnImport);
             }
             if (dto.GenTable.GenType == "1")//自定义路径
             {
                 var genPath = dto.GenTable.GenPath;
                 string parentPath;
-                string tempPath = WebHostEnvironment.ContentRootPath;
+                string tempPath = webHostEnvironment.ContentRootPath;
 
                 if (ComputerHelper.IsUnix())
                 {
-                    parentPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
+                    parentPath = Path.Combine(webHostEnvironment.WebRootPath, "Generatecode");
                 }
                 else
                 {
@@ -287,7 +274,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
             else
             {
-                dto.ZipPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode");
+                dto.ZipPath = Path.Combine(webHostEnvironment.WebRootPath, "Generatecode");
                 dto.GenCodePath = Path.Combine(dto.ZipPath, DateTime.Now.ToString("yyyyMMdd"));
             }
 
@@ -317,7 +304,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult SynchDb(string tableName, long tableId = 0)
         {
             if (string.IsNullOrEmpty(tableName) || tableId <= 0) throw new CustomException("参数错误");
-            GenTable table = GenTableService.GetGenTableInfo(tableId);
+            GenTable table = genTableService.GetGenTableInfo(tableId);
             if (table == null) { throw new CustomException("同步数据失败，原表结构不存在"); }
             table.Update_by = HttpContext.GetName();
 
@@ -325,7 +312,7 @@ namespace ZR.Admin.WebApi.Controllers
             List<DbColumnInfo> dbColumnInfos = _CodeGeneraterService.GetColumnInfo(table.DbName, tableName);
             List<GenTableColumn> dbTableColumns = CodeGeneratorTool.InitGenTableColumn(table, dbColumnInfos, codeGen: codeGen);
 
-            bool result = GenTableService.SynchDb(tableId, table, dbTableColumns);
+            bool result = genTableService.SynchDb(tableId, table, dbTableColumns);
             return SUCCESS(result);
         }
     }

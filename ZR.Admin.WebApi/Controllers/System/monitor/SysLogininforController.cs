@@ -12,14 +12,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     [Verify]
     [Route("/monitor/logininfor")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysLogininforController : BaseController
+    public class SysLogininforController(ISysLoginService sysLoginService) : BaseController
     {
-        private ISysLoginService sysLoginService;
-
-        public SysLogininforController(ISysLoginService sysLoginService)
-        {
-            this.sysLoginService = sysLoginService;
-        }
 
         /// <summary>
         /// 查询登录日志

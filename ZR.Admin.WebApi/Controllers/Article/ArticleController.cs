@@ -12,22 +12,9 @@ namespace ZR.Admin.WebApi.Controllers
     [Verify]
     [Route("article")]
     [ApiExplorerSettings(GroupName = "article")]
-    public class ArticleController : BaseController
+    public class ArticleController(
+            IArticleService articleService): BaseController
     {
-        /// <summary>
-        /// 文章接口
-        /// </summary>
-        private readonly IArticleService _ArticleService;
-        private readonly IArticleCategoryService _ArticleCategoryService;
-
-        public ArticleController(
-            IArticleService ArticleService,
-            IArticleCategoryService articleCategoryService)
-        {
-            _ArticleService = ArticleService;
-            _ArticleCategoryService = articleCategoryService;
-            _ArticleService = ArticleService;
-        }
 
         /// <summary>
         /// 查询文章列表
@@ -37,7 +24,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "system:article:list")]
         public IActionResult Query([FromQuery] ArticleQueryDto parm)
         {
-            var response = _ArticleService.GetList(parm);
+            var response = articleService.GetList(parm);
 
             return SUCCESS(response);
         }
@@ -54,7 +41,7 @@ namespace ZR.Admin.WebApi.Controllers
             long[] idsArr = Tools.SpitLongArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"审核通过失败Id 不能为空")); }
 
-            return ToResponse(_ArticleService.Passed(idsArr));
+            return ToResponse(articleService.Passed(idsArr));
         }
 
         /// <summary>
@@ -69,7 +56,7 @@ namespace ZR.Admin.WebApi.Controllers
             long[] idsArr = Tools.SpitLongArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"審核拒绝失败Id 不能为空")); }
 
-            int result = _ArticleService.Reject(reason, idsArr);
+            int result = articleService.Reject(reason, idsArr);
             return ToResponse(result);
         }
 
@@ -81,7 +68,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult QueryMyList([FromQuery] ArticleQueryDto parm)
         {
             parm.UserId = HttpContext.GetUId();
-            var response = _ArticleService.GetMyList(parm);
+            var response = articleService.GetMyList(parm);
 
             return SUCCESS(response);
         }
@@ -95,7 +82,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Get(int id)
         {
             long userId = HttpContext.GetUId();
-            var model = _ArticleService.GetArticle(id, userId);
+            var model = articleService.GetArticle(id, userId);
 
             ApiResult apiResult = ApiResult.Success(model);
 
@@ -118,7 +105,7 @@ namespace ZR.Admin.WebApi.Controllers
             addModel.Location = HttpContextExtension.GetIpInfo(addModel.UserIP);
             addModel.AuditStatus = Model.Enum.AuditStatusEnum.Passed;
 
-            return SUCCESS(_ArticleService.InsertReturnIdentity(addModel));
+            return SUCCESS(articleService.InsertReturnIdentity(addModel));
         }
 
         /// <summary>
@@ -132,7 +119,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             parm.AuthorName = HttpContext.GetName();
             var modal = parm.Adapt<Article>().ToUpdate(HttpContext);
-            var response = _ArticleService.UpdateArticle(modal);
+            var response = articleService.UpdateArticle(modal);
 
             return SUCCESS(response);
         }
@@ -146,7 +133,7 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "置顶文章", BusinessType = BusinessType.UPDATE)]
         public IActionResult Top([FromBody] Article parm)
         {
-            var response = _ArticleService.TopArticle(parm);
+            var response = articleService.TopArticle(parm);
 
             return SUCCESS(response);
         }
@@ -160,7 +147,7 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "是否公开", BusinessType = BusinessType.UPDATE)]
         public IActionResult ChangePublic([FromBody] Article parm)
         {
-            var response = _ArticleService.ChangeArticlePublic(parm);
+            var response = articleService.ChangeArticlePublic(parm);
 
             return SUCCESS(response);
         }
@@ -174,7 +161,7 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "文章删除", BusinessType = BusinessType.DELETE)]
         public IActionResult Delete(int id = 0)
         {
-            var response = _ArticleService.Delete(id);
+            var response = articleService.Delete(id);
             return SUCCESS(response);
         }
     }

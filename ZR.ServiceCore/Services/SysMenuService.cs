@@ -13,14 +13,9 @@ namespace ZR.ServiceCore.Services
     /// 菜单
     /// </summary>
     [AppService(ServiceType = typeof(ISysMenuService), ServiceLifetime = LifeTime.Transient)]
-    public class SysMenuService : BaseService<SysMenu>, ISysMenuService
+    public class SysMenuService(ISysRoleService SysRoleService) : BaseService<SysMenu>, ISysMenuService
     {
-        public ISysRoleService SysRoleService;
-
-        public SysMenuService(ISysRoleService sysRoleService)
-        {
-            SysRoleService = sysRoleService;
-        }
+  
 
         /// <summary>
         /// 获取所有菜单数（菜单管理）

@@ -11,17 +11,12 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// </summary>
     [Verify]
     [Route("SysUserMsg")]
-    public class SysUserMsgController : BaseController
+    public class SysUserMsgController(ISysUserMsgService SysUserMsgService) : BaseController
     {
         /// <summary>
         /// 用户系统消息接口
         /// </summary>
-        private readonly ISysUserMsgService _SysUserMsgService;
-
-        public SysUserMsgController(ISysUserMsgService SysUserMsgService)
-        {
-            _SysUserMsgService = SysUserMsgService;
-        }
+        private readonly ISysUserMsgService _SysUserMsgService = SysUserMsgService;
 
         /// <summary>
         /// 查询用户系统消息列表

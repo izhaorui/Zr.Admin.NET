@@ -15,18 +15,10 @@ namespace ZR.Admin.WebApi.Controllers
     [Verify]
     [Route("system/Tasks")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class TasksController : BaseController
+    public class TasksController(
+        ISysTasksQzService sysTasksQzService,
+        ITaskSchedulerServer taskScheduler) : BaseController
     {
-        private ISysTasksQzService _tasksQzService;
-        private ITaskSchedulerServer _schedulerServer;
-
-        public TasksController(
-            ISysTasksQzService sysTasksQzService,
-            ITaskSchedulerServer taskScheduler)
-        {
-            _tasksQzService = sysTasksQzService;
-            _schedulerServer = taskScheduler;
-        }
 
         /// <summary>
         /// 查询计划任务列表
@@ -36,7 +28,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "monitor:job:list")]
         public IActionResult ListTask([FromQuery] TasksQueryDto parm)
         {
-            var response = _tasksQzService.SelectTaskList(parm);
+            var response = sysTasksQzService.SelectTaskList(parm);
             return SUCCESS(response, TIME_FORMAT_FULL);
         }
 
@@ -50,7 +42,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (!string.IsNullOrEmpty(id))
             {
-                return SUCCESS(_tasksQzService.GetId(id));
+                return SUCCESS(sysTasksQzService.GetId(id));
             }
             return SUCCESS(0);
         }
@@ -65,7 +57,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Create([FromBody] TasksCreateDto parm)
         {
             //判断是否已经存在
-            if (_tasksQzService.Any(m => m.Name == parm.Name))
+            if (sysTasksQzService.Any(m => m.Name == parm.Name))
             {
                 throw new CustomException($"添加 {parm.Name} 失败，该用任务存在，不能重复！");
             }
@@ -90,7 +82,7 @@ namespace ZR.Admin.WebApi.Controllers
             tasksQz.Create_by = HttpContext.GetName();
             tasksQz.ID = SnowFlakeSingle.Instance.NextId().ToString();
 
-            return SUCCESS(_tasksQzService.AddTasks(tasksQz));
+            return SUCCESS(sysTasksQzService.AddTasks(tasksQz));
         }
 
         /// <summary>
@@ -103,7 +95,7 @@ namespace ZR.Admin.WebApi.Controllers
         public async Task<IActionResult> Update([FromBody] TasksCreateDto parm)
         {
             //判断是否已经存在
-            if (_tasksQzService.Any(m => m.Name == parm.Name && m.ID != parm.ID))
+            if (sysTasksQzService.Any(m => m.Name == parm.Name && m.ID != parm.ID))
             {
                 throw new CustomException($"更新 {parm.Name} 失败，该用任务存在，不能重复！");
             }
@@ -115,7 +107,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"cron表达式不正确");
             }
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == parm.ID);
+            var tasksQz = sysTasksQzService.GetFirst(m => m.ID == parm.ID);
             if (string.IsNullOrEmpty(parm.ApiUrl) && parm.TaskType == 2)
             {
                 throw new CustomException($"api地址不能为空");
@@ -127,10 +119,10 @@ namespace ZR.Admin.WebApi.Controllers
             }
             var model = parm.Adapt<SysTasks>();
             model.Update_by = HttpContextExtension.GetName(HttpContext);
-            int response = _tasksQzService.UpdateTasks(model);
+            int response = sysTasksQzService.UpdateTasks(model);
             if (response > 0)
             {
-                var respon = await _schedulerServer.UpdateTaskScheduleAsync(tasksQz);
+                var respon = await taskScheduler.UpdateTaskScheduleAsync(tasksQz);
             }
 
             return SUCCESS(response);
@@ -150,17 +142,17 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("删除任务 Id 不能为空");
             }
 
-            if (!_tasksQzService.Any(m => m.ID == id))
+            if (!sysTasksQzService.Any(m => m.ID == id))
             {
                 throw new CustomException("任务不存在");
             }
 
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
-            var taskResult = await _schedulerServer.DeleteTaskScheduleAsync(tasksQz);
+            var tasksQz = sysTasksQzService.GetFirst(m => m.ID == id);
+            var taskResult = await taskScheduler.DeleteTaskScheduleAsync(tasksQz);
 
             if (taskResult.IsSuccess())
             {
-                _tasksQzService.Delete(id);
+                sysTasksQzService.Delete(id);
             }
             return ToResponse(taskResult);
         }
@@ -179,18 +171,18 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("启动任务 Id 不能为空");
             }
 
-            if (!_tasksQzService.Any(m => m.ID == id))
+            if (!sysTasksQzService.Any(m => m.ID == id))
             {
                 throw new CustomException("任务不存在");
             }
 
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
-            var taskResult = await _schedulerServer.AddTaskScheduleAsync(tasksQz);
+            var tasksQz = sysTasksQzService.GetFirst(m => m.ID == id);
+            var taskResult = await taskScheduler.AddTaskScheduleAsync(tasksQz);
 
             if (taskResult.IsSuccess())
             {
                 tasksQz.IsStart = 1;
-                _tasksQzService.Update(tasksQz);
+                sysTasksQzService.Update(tasksQz);
             }
 
             return ToResponse(taskResult);
@@ -210,18 +202,18 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("停止任务 Id 不能为空");
             }
 
-            if (!_tasksQzService.Any(m => m.ID == id))
+            if (!sysTasksQzService.Any(m => m.ID == id))
             {
                 throw new CustomException("任务不存在");
             }
 
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
-            var taskResult = await _schedulerServer.DeleteTaskScheduleAsync(tasksQz);//await _schedulerServer.PauseTaskScheduleAsync(tasksQz);
+            var tasksQz = sysTasksQzService.GetFirst(m => m.ID == id);
+            var taskResult = await taskScheduler.DeleteTaskScheduleAsync(tasksQz);//await _schedulerServer.PauseTaskScheduleAsync(tasksQz);
 
             if (taskResult.IsSuccess())
             {
                 tasksQz.IsStart = 0;
-                _tasksQzService.Update(tasksQz);
+                sysTasksQzService.Update(tasksQz);
             }
 
             return ToResponse(taskResult);
@@ -237,13 +229,13 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "执行任务", BusinessType = BusinessType.OTHER)]
         public async Task<IActionResult> Run(string id)
         {
-            var result = await _tasksQzService.IsAnyAsync(m => m.ID == id);
+            var result = await sysTasksQzService.IsAnyAsync(m => m.ID == id);
             if (!result)
             {
                 throw new CustomException("任务不存在");
             }
-            var tasksQz = await _tasksQzService.GetFirstAsync(m => m.ID == id);
-            var taskResult = await _schedulerServer.RunTaskScheduleAsync(tasksQz);
+            var tasksQz = await sysTasksQzService.GetFirstAsync(m => m.ID == id);
+            var taskResult = await taskScheduler.RunTaskScheduleAsync(tasksQz);
 
             return ToResponse(taskResult);
         }
@@ -257,7 +249,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "monitor:job:export")]
         public IActionResult Export()
         {
-            var list = _tasksQzService.GetAll();
+            var list = sysTasksQzService.GetAll();
 
             string sFileName = ExportExcel(list, "monitorjob", "定时任务");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });

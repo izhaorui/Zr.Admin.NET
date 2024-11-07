@@ -13,18 +13,10 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/role")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysRoleController : BaseController
+    public class SysRoleController(
+        ISysRoleService sysRoleService,
+        ISysMenuService sysMenuService) : BaseController
     {
-        private readonly ISysRoleService sysRoleService;
-        private readonly ISysMenuService sysMenuService;
-
-        public SysRoleController(
-            ISysRoleService sysRoleService,
-            ISysMenuService sysMenuService)
-        {
-            this.sysRoleService = sysRoleService;
-            this.sysMenuService = sysMenuService;
-        }
 
         /// <summary>
         /// 获取系统角色管理

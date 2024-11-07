@@ -12,36 +12,16 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// 登录
     /// </summary>
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysLoginController : BaseController
+    public class SysLoginController(
+        ISysMenuService sysMenuService,
+        ISysUserService sysUserService,
+        ISysLoginService sysLoginService,
+        ISysPermissionService permissionService,
+        ISysConfigService configService,
+        ISysRoleService sysRoleService,
+        ISmsCodeLogService smsCodeLogService,
+        ICaptcha captcha) : BaseController
     {
-        private readonly ISysUserService sysUserService;
-        private readonly ISysMenuService sysMenuService;
-        private readonly ISysLoginService sysLoginService;
-        private readonly ISysPermissionService permissionService;
-        private readonly ICaptcha SecurityCodeHelper;
-        private readonly ISysConfigService sysConfigService;
-        private readonly ISysRoleService roleService;
-        private readonly ISmsCodeLogService smsCodeLogService;
-
-        public SysLoginController(
-            ISysMenuService sysMenuService,
-            ISysUserService sysUserService,
-            ISysLoginService sysLoginService,
-            ISysPermissionService permissionService,
-            ISysConfigService configService,
-            ISysRoleService sysRoleService,
-            ISmsCodeLogService smsCodeLogService,
-            ICaptcha captcha)
-        {
-            SecurityCodeHelper = captcha;
-            this.sysMenuService = sysMenuService;
-            this.sysUserService = sysUserService;
-            this.sysLoginService = sysLoginService;
-            this.permissionService = permissionService;
-            this.sysConfigService = configService;
-            this.smsCodeLogService = smsCodeLogService;
-            roleService = sysRoleService;
-        }
 
         /// <summary>
         /// 登录
@@ -55,8 +35,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             if (loginBody == null) { throw new CustomException("请求参数错误"); }
             loginBody.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
-            SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
-            if (sysConfig?.ConfigValue != "off" && !SecurityCodeHelper.Validate(loginBody.Uuid, loginBody.Code))
+            SysConfig sysConfig = configService.GetSysConfigByKey("sys.account.captchaOnOff");
+            if (sysConfig?.ConfigValue != "off" && !captcha.Validate(loginBody.Uuid, loginBody.Code))
             {
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
@@ -65,7 +45,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
             var user = sysLoginService.Login(loginBody, new SysLogininfor() { LoginLocation = location });
 
-            List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
+            List<SysRole> roles = sysRoleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
 
@@ -152,9 +132,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             string uuid = Guid.NewGuid().ToString().Replace("-", "");
 
-            SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
+            SysConfig sysConfig = configService.GetSysConfigByKey("sys.account.captchaOnOff");
             var captchaOff = sysConfig?.ConfigValue ?? "0";
-            var info = SecurityCodeHelper.Generate(uuid, 60);
+            var info = captcha.Generate(uuid, 60);
             var obj = new { captchaOff, uuid, img = info.Base64 };// File(stream, "image/png")
 
             return SUCCESS(obj);
@@ -170,13 +150,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "注册", BusinessType = BusinessType.INSERT)]
         public IActionResult Register([FromBody] RegisterDto dto)
         {
-            SysConfig config = sysConfigService.GetSysConfigByKey("sys.account.register");
+            SysConfig config = configService.GetSysConfigByKey("sys.account.register");
             if (config?.ConfigValue != "true")
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "当前系统没有开启注册功能！");
             }
-            SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
-            if (sysConfig?.ConfigValue != "off" && !SecurityCodeHelper.Validate(dto.Uuid, dto.Code))
+            SysConfig sysConfig = configService.GetSysConfigByKey("sys.account.captchaOnOff");
+            if (sysConfig?.ConfigValue != "off" && !captcha.Validate(dto.Uuid, dto.Code))
             {
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
@@ -334,7 +314,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
             var user = sysLoginService.PhoneLogin(loginBody, new SysLogininfor() { LoginLocation = location }, info);
 
-            List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
+            List<SysRole> roles = sysRoleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
 

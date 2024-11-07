@@ -13,14 +13,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     [Verify]
     [Route("monitor/online")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysUserOnlineController : BaseController
+    public class SysUserOnlineController(IHubContext<MessageHub> hubContext) : BaseController
     {
-        private readonly IHubContext<MessageHub> HubContext;
-
-        public SysUserOnlineController(IHubContext<MessageHub> hubContext)
-        {
-            HubContext = hubContext;
-        }
 
         /// <summary>
         /// 获取在线用户列表
@@ -48,7 +42,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         {
             if (dto == null) { return ToResponse(ResultCode.PARAM_ERROR); }
             
-            await HubContext.Clients.Client(dto.ConnnectionId)
+            await hubContext.Clients.Client(dto.ConnnectionId)
                 .SendAsync(HubsConstant.ForceUser, new { dto.Reason, dto.Time });
             
             //var expirTime = DateTimeHelper.GetUnixTimeSeconds(DateTime.Now.AddMinutes(dto.Time));
@@ -68,7 +62,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         {
             if (dto == null) { return ToResponse(ResultCode.PARAM_ERROR); }
 
-            await HubContext.Clients.All.SendAsync(HubsConstant.ForceUser, new { dto.Reason });
+            await hubContext.Clients.All.SendAsync(HubsConstant.ForceUser, new { dto.Reason });
 
             return SUCCESS(1);
         }

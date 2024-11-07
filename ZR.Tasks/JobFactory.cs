@@ -5,18 +5,13 @@ using System;
 
 namespace ZR.Tasks
 {
-    public class JobFactory : IJobFactory
+    /// <param name="serviceProvider">
+    /// 注入反射获取依赖对象
+    /// </param>
+    public class JobFactory(IServiceProvider serviceProvider) : IJobFactory
     {
         private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        /// <summary>
-        /// 注入反射获取依赖对象
-        /// </summary>
-        private readonly IServiceProvider _serviceProvider;
-        public JobFactory(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider;
-        }
         /// <summary>
         /// 实现接口Job
         /// </summary>
@@ -27,7 +22,7 @@ namespace ZR.Tasks
         {
             try
             {
-                var serviceScope = _serviceProvider.CreateScope();
+                var serviceScope = serviceProvider.CreateScope();
                 var job = serviceScope.ServiceProvider.GetService(bundle.JobDetail.JobType) as IJob;
                 return job;
 

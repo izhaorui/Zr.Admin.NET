@@ -12,17 +12,9 @@ namespace ZR.Admin.WebApi.Controllers
     [Verify]
     [Route("monitor/SqlDiffLog")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SqlDiffLogController : BaseController
+    public class SqlDiffLogController(ISqlDiffLogService sqlDiffLogService) : BaseController
     {
-        /// <summary>
-        /// 数据差异日志接口
-        /// </summary>
-        private readonly ISqlDiffLogService _SqlDiffLogService;
-
-        public SqlDiffLogController(ISqlDiffLogService SqlDiffLogService)
-        {
-            _SqlDiffLogService = SqlDiffLogService;
-        }
+   
 
         /// <summary>
         /// 查询数据差异日志列表
@@ -33,7 +25,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "sqldifflog:list")]
         public IActionResult QuerySqlDiffLog([FromQuery] SqlDiffLogQueryDto parm)
         {
-            var response = _SqlDiffLogService.GetList(parm);
+            var response = sqlDiffLogService.GetList(parm);
             return SUCCESS(response);
         }
 
@@ -49,7 +41,7 @@ namespace ZR.Admin.WebApi.Controllers
             long[] idsArr = Tools.SpitLongArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
-            var response = _SqlDiffLogService.Delete(idsArr);
+            var response = sqlDiffLogService.Delete(idsArr);
 
             return ToResponse(response);
         }
@@ -65,7 +57,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             parm.PageNum = 1;
             parm.PageSize = 100000;
-            var list = _SqlDiffLogService.GetList(parm).Result;
+            var list = sqlDiffLogService.GetList(parm).Result;
             if (list == null || list.Count <= 0)
             {
                 return ToResponse(ResultCode.FAIL, "没有要导出的数据");

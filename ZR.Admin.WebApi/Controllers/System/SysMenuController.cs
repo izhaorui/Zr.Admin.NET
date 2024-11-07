@@ -12,21 +12,11 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("/system/menu")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysMenuController : BaseController
+    public class SysMenuController(
+        ISysRoleService sysRoleService,
+        ISysMenuService sysMenuService,
+        ISysRoleMenuService sysRoleMenuService) : BaseController
     {
-        private readonly ISysRoleService sysRoleService;
-        private readonly ISysMenuService sysMenuService;
-        private readonly ISysRoleMenuService sysRoleMenuService;
-
-        public SysMenuController(
-            ISysRoleService sysRoleService,
-            ISysMenuService sysMenuService,
-            ISysRoleMenuService sysRoleMenuService)
-        {
-            this.sysRoleService = sysRoleService;
-            this.sysMenuService = sysMenuService;
-            this.sysRoleMenuService = sysRoleMenuService;
-        }
 
         /// <summary>
         /// 获取菜单树列表

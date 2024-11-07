@@ -24,13 +24,12 @@ namespace ZR.Admin.WebApi.Extensions
                     if (referer.Contains(GlobalConstant.DevApiProxy))
                         url = referer[..(referer.IndexOf(GlobalConstant.DevApiProxy, StringComparison.InvariantCulture) + GlobalConstant.DevApiProxy.Length - 1)];
                     swaggerDoc.Servers =
-                        new List<OpenApiServer>
-                        {
+                        [
                             new OpenApiServer
                             {
                                 Url = url
                             }
-                        };
+                        ];
                 });
             });
             app.UseSwaggerUI(c =>
