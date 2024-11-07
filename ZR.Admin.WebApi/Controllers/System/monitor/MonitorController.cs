@@ -12,16 +12,10 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     /// </summary>
     [ApiExplorerSettings(GroupName = "sys")]
     [Verify]
-    public class MonitorController : BaseController
+    public class MonitorController(IOptions<OptionsSetting> options, IWebHostEnvironment hostEnvironment) : BaseController
     {
-        private OptionsSetting Options;
-        private IWebHostEnvironment HostEnvironment;
+        private OptionsSetting Options = options.Value;
         private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-        public MonitorController(IOptions<OptionsSetting> options, IWebHostEnvironment hostEnvironment)
-        {
-            this.HostEnvironment = hostEnvironment;
-            this.Options = options.Value;
-        }
 
         /// <summary>
         /// 获取缓存监控数据
@@ -61,9 +55,9 @@ namespace ZR.Admin.WebApi.Controllers.monitor
                 sys = new { cpuNum, computerName, osName, osArch, serverIP, runTime = sysRunTime },
                 app = new
                 {
-                    name = HostEnvironment.EnvironmentName,
-                    rootPath = HostEnvironment.ContentRootPath,
-                    webRootPath = HostEnvironment.WebRootPath,
+                    name = hostEnvironment.EnvironmentName,
+                    rootPath = hostEnvironment.ContentRootPath,
+                    webRootPath = hostEnvironment.WebRootPath,
                     version,
                     appRAM,
                     startTime,

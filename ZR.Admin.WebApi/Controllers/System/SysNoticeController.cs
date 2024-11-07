@@ -14,19 +14,12 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/notice")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysNoticeController : BaseController
+    public class SysNoticeController(ISysNoticeService SysNoticeService, IHubContext<MessageHub> hubContext) : BaseController
     {
         /// <summary>
         /// 通知公告表接口
         /// </summary>
-        private readonly ISysNoticeService _SysNoticeService;
-        private readonly IHubContext<MessageHub> _hubContext;
-
-        public SysNoticeController(ISysNoticeService SysNoticeService, IHubContext<MessageHub> hubContext)
-        {
-            _SysNoticeService = SysNoticeService;
-            _hubContext = hubContext;
-        }
+        private readonly ISysNoticeService _SysNoticeService = SysNoticeService;
 
         /// <summary>
         /// 查询通知公告表列表(移动端用)
@@ -112,7 +105,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             var response = _SysNoticeService.GetFirst(x => x.NoticeId == NoticeId);
             if (response != null && response.Status == 0)
             {
-                _hubContext.Clients.All.SendAsync(HubsConstant.ReceiveNotice, response.NoticeTitle, response.NoticeContent);
+                hubContext.Clients.All.SendAsync(HubsConstant.ReceiveNotice, response.NoticeTitle, response.NoticeContent);
             }
             return SUCCESS(response);
         }

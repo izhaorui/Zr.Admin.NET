@@ -10,14 +10,8 @@ namespace ZR.Admin.WebApi.Controllers.monitor
     [Verify]
     [Route("/monitor/operlog")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysOperlogController : BaseController
+    public class SysOperlogController(ISysOperLogService sysOperLogService) : BaseController
     {
-        private ISysOperLogService sysOperLogService;
-
-        public SysOperlogController(ISysOperLogService sysOperLogService)
-        {
-            this.sysOperLogService = sysOperLogService;
-        }
 
         /// <summary>
         /// 查询操作日志

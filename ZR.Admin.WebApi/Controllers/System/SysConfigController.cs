@@ -12,17 +12,9 @@ namespace ZR.Admin.WebApi.Controllers
     [Verify]
     [Route("system/config")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysConfigController : BaseController
+    public class SysConfigController(ISysConfigService sysConfigService) : BaseController
     {
-        /// <summary>
-        /// 参数配置接口
-        /// </summary>
-        private readonly ISysConfigService _SysConfigService;
-
-        public SysConfigController(ISysConfigService SysConfigService)
-        {
-            _SysConfigService = SysConfigService;
-        }
+       
 
         /// <summary>
         /// 查询参数配置列表
@@ -40,7 +32,7 @@ namespace ZR.Admin.WebApi.Controllers
             predicate = predicate.AndIF(!parm.BeginTime.IsEmpty(), m => m.Create_time >= parm.BeginTime);
             predicate = predicate.AndIF(!parm.BeginTime.IsEmpty(), m => m.Create_time <= parm.EndTime);
 
-            var response = _SysConfigService.GetPages(predicate.ToExpression(), parm);
+            var response = sysConfigService.GetPages(predicate.ToExpression(), parm);
 
             return SUCCESS(response);
         }
@@ -54,7 +46,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "system:config:query")]
         public IActionResult GetSysConfig(int ConfigId)
         {
-            var response = _SysConfigService.GetId(ConfigId);
+            var response = sysConfigService.GetId(ConfigId);
 
             return SUCCESS(response);
         }
@@ -68,7 +60,7 @@ namespace ZR.Admin.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult GetConfigKey(string configKey)
         {
-            var response = _SysConfigService.Queryable().First(f => f.ConfigKey == configKey);
+            var response = sysConfigService.Queryable().First(f => f.ConfigKey == configKey);
 
             return SUCCESS(response?.ConfigValue);
         }
@@ -88,7 +80,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
             var model = parm.Adapt<SysConfig>().ToCreate(HttpContext);
 
-            return SUCCESS(_SysConfigService.Insert(model, it => new
+            return SUCCESS(sysConfigService.Insert(model, it => new
             {
                 it.ConfigName,
                 it.ConfigKey,
@@ -115,7 +107,7 @@ namespace ZR.Admin.WebApi.Controllers
             }
             var model = parm.Adapt<SysConfig>().ToUpdate(HttpContext);
 
-            var response = _SysConfigService.Update(w => w.ConfigId == model.ConfigId, it => new SysConfig()
+            var response = sysConfigService.Update(w => w.ConfigId == model.ConfigId, it => new SysConfig()
             {
                 ConfigName = model.ConfigName,
                 ConfigKey = model.ConfigKey,
@@ -140,9 +132,9 @@ namespace ZR.Admin.WebApi.Controllers
         {
             int[] idsArr = Tools.SpitIntArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
-            int sysCount = _SysConfigService.Count(s => s.ConfigType == "Y" && idsArr.Contains(s.ConfigId));
+            int sysCount = sysConfigService.Count(s => s.ConfigType == "Y" && idsArr.Contains(s.ConfigId));
             if (sysCount > 0) { return ToResponse(ApiResult.Error($"删除失败Id： 系统内置参数不能删除！")); }
-            var response = _SysConfigService.Delete(idsArr);
+            var response = sysConfigService.Delete(idsArr);
 
             return SUCCESS(response);
         }

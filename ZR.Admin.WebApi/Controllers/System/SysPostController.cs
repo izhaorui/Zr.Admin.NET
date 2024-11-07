@@ -13,13 +13,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/post")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysPostController : BaseController
+    public class SysPostController(ISysPostService postService) : BaseController
     {
-        private readonly ISysPostService PostService;
-        public SysPostController(ISysPostService postService)
-        {
-            PostService = postService;
-        }
 
         /// <summary>
         /// 岗位列表查询
@@ -34,7 +29,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             predicate = predicate.AndIF(dto.PostName.IfNotEmpty(), it => it.PostName.Contains(dto.PostName));
             predicate = predicate.AndIF(dto.PostCode.IfNotEmpty(), it => it.PostCode.Contains(dto.PostCode));
 
-            var list = PostService.Queryable()
+            var list = postService.Queryable()
              .Where(predicate.ToExpression())
                 .Select((it) => new SysPostDto
                 {
@@ -54,7 +49,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:post:query")]
         public IActionResult Query(long postId = 0)
         {
-            return SUCCESS(PostService.GetId(postId));
+            return SUCCESS(postService.GetId(postId));
         }
 
         /// <summary>
@@ -67,17 +62,17 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "岗位添加", BusinessType = BusinessType.INSERT)]
         public IActionResult Add([FromBody] SysPost post)
         {
-            if (UserConstants.NOT_UNIQUE.Equals(PostService.CheckPostNameUnique(post)))
+            if (UserConstants.NOT_UNIQUE.Equals(postService.CheckPostNameUnique(post)))
             {
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位名已存在");
             }
-            if (UserConstants.NOT_UNIQUE.Equals(PostService.CheckPostCodeUnique(post)))
+            if (UserConstants.NOT_UNIQUE.Equals(postService.CheckPostCodeUnique(post)))
             {
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
             post.ToCreate(HttpContext);
 
-            return ToResponse(PostService.Add(post));
+            return ToResponse(postService.Add(post));
         }
 
         /// <summary>
@@ -90,16 +85,16 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "岗位编辑", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] SysPost post)
         {
-            if (UserConstants.NOT_UNIQUE.Equals(PostService.CheckPostNameUnique(post)))
+            if (UserConstants.NOT_UNIQUE.Equals(postService.CheckPostNameUnique(post)))
             {
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位名已存在");
             }
-            if (UserConstants.NOT_UNIQUE.Equals(PostService.CheckPostCodeUnique(post)))
+            if (UserConstants.NOT_UNIQUE.Equals(postService.CheckPostCodeUnique(post)))
             {
                 throw new CustomException($"修改岗位{post.PostName}失败，岗位编码已存在");
             }
             post.ToUpdate(HttpContext);
-            return ToResponse(PostService.Update(post));
+            return ToResponse(postService.Update(post));
         }
 
         /// <summary>
@@ -113,7 +108,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Delete(string id)
         {
             int[] ids = Tools.SpitIntArrary(id);
-            return ToResponse(PostService.Delete(ids));
+            return ToResponse(postService.Delete(ids));
         }
 
         /// <summary>
@@ -122,7 +117,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("optionselect")]
         public IActionResult Optionselect()
         {
-            List<SysPost> posts = PostService.GetAll();
+            List<SysPost> posts = postService.GetAll();
             return SUCCESS(posts);
         }
 
@@ -135,7 +130,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:post:export")]
         public IActionResult Export()
         {
-            var list = PostService.GetAll();
+            var list = postService.GetAll();
 
             var result = ExportExcelMini(list, "post", "岗位列表");
             return ExportExcel(result.Item2, result.Item1);

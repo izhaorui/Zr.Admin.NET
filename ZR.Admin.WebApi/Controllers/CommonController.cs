@@ -12,24 +12,13 @@ namespace ZR.Admin.WebApi.Controllers
     /// </summary>
     [Route("[controller]/[action]")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class CommonController : BaseController
+    public class CommonController(
+        IOptions<OptionsSetting> options,
+        IWebHostEnvironment webHostEnvironment,
+        ISysFileService fileService) : BaseController
     {
-        private OptionsSetting OptionsSetting;
+        private OptionsSetting OptionsSetting = options.Value;
         private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
-        private IWebHostEnvironment WebHostEnvironment;
-        private ISysFileService SysFileService;
-
-
-        public CommonController(
-            IOptions<OptionsSetting> options,
-            IWebHostEnvironment webHostEnvironment,
-            ISysFileService fileService)
-        {
-            WebHostEnvironment = webHostEnvironment;
-            SysFileService = fileService;
-            OptionsSetting = options.Value;
-        }
 
         /// <summary>
         /// home
@@ -88,17 +77,17 @@ namespace ZR.Admin.WebApi.Controllers
             }
             else if (uploadDto.FileNameType == 3)
             {
-                uploadDto.FileName = SysFileService.HashFileName();
+                uploadDto.FileName = fileService.HashFileName();
             }
             switch (storeType)
             {
                 case StoreType.LOCAL:
-                    string savePath = Path.Combine(WebHostEnvironment.WebRootPath);
+                    string savePath = Path.Combine(webHostEnvironment.WebRootPath);
                     if (uploadDto.FileDir.IsEmpty())
                     {
                         uploadDto.FileDir = OptionsSetting.Upload.LocalSavePath;
                     }
-                    sysfile = await SysFileService.SaveFileToLocal(savePath, uploadDto.FileName, uploadDto.FileDir, HttpContext.GetName(), formFile);
+                    sysfile = await fileService.SaveFileToLocal(savePath, uploadDto.FileName, uploadDto.FileDir, HttpContext.GetName(), formFile);
                     break;
                 case StoreType.REMOTE:
                     break;
@@ -117,7 +106,7 @@ namespace ZR.Admin.WebApi.Controllers
                         StoreType = (int)StoreType.ALIYUN,
                         FileType = formFile.ContentType
                     };
-                    sysfile = await SysFileService.SaveFileToAliyun(sysfile, formFile);
+                    sysfile = await fileService.SaveFileToAliyun(sysfile, formFile);
 
                     if (sysfile.Id <= 0) { return ToResponse(ApiResult.Error("阿里云连接失败")); }
                     break;
@@ -153,7 +142,7 @@ namespace ZR.Admin.WebApi.Controllers
             var tempPath = path;
             if (fileId > 0)
             {
-                var fileInfo = SysFileService.GetById(fileId);
+                var fileInfo = fileService.GetById(fileId);
                 if (fileInfo != null)
                 {
                     tempPath = fileInfo.FileUrl;
@@ -162,7 +151,7 @@ namespace ZR.Admin.WebApi.Controllers
             string fullPath = tempPath;
             if (tempPath.StartsWith("/"))
             {
-                fullPath = Path.Combine(WebHostEnvironment.WebRootPath, tempPath.ReplaceFirst("/", ""));
+                fullPath = Path.Combine(webHostEnvironment.WebRootPath, tempPath.ReplaceFirst("/", ""));
             }
             string fileName = Path.GetFileName(fullPath);
             return DownFile(fullPath, fileName);
@@ -178,11 +167,11 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(BusinessType = BusinessType.INSERT, Title = "初始化数据")]
         public IActionResult InitSeedData(bool clean = false)
         {
-            if (!WebHostEnvironment.IsDevelopment())
+            if (!webHostEnvironment.IsDevelopment())
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败，请在开发模式下初始化");
             }
-            var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
+            var path = Path.Combine(webHostEnvironment.WebRootPath, "data.xlsx");
             SeedDataService seedDataService = new();
             var result = seedDataService.InitSeedData(path, clean);
             Console.ForegroundColor = ConsoleColor.Red;
@@ -206,11 +195,11 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(BusinessType = BusinessType.INSERT, Title = "初始化数据")]
         public IActionResult UpdateSeedData()
         {
-            if (!WebHostEnvironment.IsDevelopment())
+            if (!webHostEnvironment.IsDevelopment())
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "导入数据失败，请在开发模式下初始化");
             }
-            var path = Path.Combine(WebHostEnvironment.WebRootPath, "data.xlsx");
+            var path = Path.Combine(webHostEnvironment.WebRootPath, "data.xlsx");
             SeedDataService seedDataService = new();
 
             var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "notice").ToList();

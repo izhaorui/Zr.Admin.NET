@@ -9,20 +9,14 @@ namespace ZR.Admin.WebApi.Controllers.System.monitor
     /// <summary>
     /// 短信验证码记录
     /// </summary>
+    /// <param name="SmscodeLogService">
+    /// 短信验证码记录接口
+    /// </param>
     [Verify]
     [Route("system/SmscodeLog")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SmsCodeLogController : BaseController
+    public class SmsCodeLogController(ISmsCodeLogService SmscodeLogService) : BaseController
     {
-        /// <summary>
-        /// 短信验证码记录接口
-        /// </summary>
-        private readonly ISmsCodeLogService _SmscodeLogService;
-
-        public SmsCodeLogController(ISmsCodeLogService SmscodeLogService)
-        {
-            _SmscodeLogService = SmscodeLogService;
-        }
 
         /// <summary>
         /// 查询短信验证码记录列表
@@ -33,7 +27,7 @@ namespace ZR.Admin.WebApi.Controllers.System.monitor
         [ActionPermissionFilter(Permission = "smscodelog:list")]
         public IActionResult QuerySmscodeLog([FromQuery] SmscodeLogQueryDto parm)
         {
-            var response = _SmscodeLogService.GetList(parm);
+            var response = SmscodeLogService.GetList(parm);
             return SUCCESS(response);
         }
 
@@ -49,7 +43,7 @@ namespace ZR.Admin.WebApi.Controllers.System.monitor
             long[] idsArr = Tools.SpitLongArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
-            var response = _SmscodeLogService.Delete(idsArr);
+            var response = SmscodeLogService.Delete(idsArr);
 
             return ToResponse(response);
         }
@@ -65,7 +59,7 @@ namespace ZR.Admin.WebApi.Controllers.System.monitor
         {
             parm.PageNum = 1;
             parm.PageSize = 100000;
-            var list = _SmscodeLogService.GetList(parm).Result;
+            var list = SmscodeLogService.GetList(parm).Result;
             if (list == null || list.Count <= 0)
             {
                 return ToResponse(ResultCode.FAIL, "没有要导出的数据");

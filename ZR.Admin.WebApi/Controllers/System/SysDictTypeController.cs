@@ -14,14 +14,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/dict/type")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysDictTypeController : BaseController
+    public class SysDictTypeController(ISysDictService sysDictService) : BaseController
     {
-        private readonly ISysDictService SysDictService;
-
-        public SysDictTypeController(ISysDictService sysDictService)
-        {
-            SysDictService = sysDictService;
-        }
 
         /// <summary>
         /// 查询
@@ -33,7 +27,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysDictType dict, [FromQuery] PagerInfo pagerInfo)
         {
-            var list = SysDictService.SelectDictTypeList(dict, pagerInfo);
+            var list = sysDictService.SelectDictTypeList(dict, pagerInfo);
 
             return SUCCESS(list, TIME_FORMAT_FULL);
         }
@@ -47,7 +41,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dict:query")]
         public IActionResult GetInfo(long dictId = 0)
         {
-            return SUCCESS(SysDictService.GetInfo(dictId));
+            return SUCCESS(sysDictService.GetInfo(dictId));
         }
 
         /// <summary>
@@ -61,13 +55,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Add([FromBody] SysDictTypeDto dto)
         {
             SysDictType dict = dto.Adapt<SysDictType>();
-            if (UserConstants.NOT_UNIQUE.Equals(SysDictService.CheckDictTypeUnique(dict)))
+            if (UserConstants.NOT_UNIQUE.Equals(sysDictService.CheckDictTypeUnique(dict)))
             {
                 return ToResponse(ApiResult.Error($"新增字典'{dict.DictName}'失败，字典类型已存在"));
             }
             dict.Create_by = HttpContext.GetName();
             dict.Create_time = DateTime.Now;
-            return SUCCESS(SysDictService.InsertDictType(dict));
+            return SUCCESS(sysDictService.InsertDictType(dict));
         }
 
         /// <summary>
@@ -82,13 +76,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Edit([FromBody] SysDictTypeDto dto)
         {
             SysDictType dict = dto.Adapt<SysDictType>();
-            if (UserConstants.NOT_UNIQUE.Equals(SysDictService.CheckDictTypeUnique(dict)))
+            if (UserConstants.NOT_UNIQUE.Equals(sysDictService.CheckDictTypeUnique(dict)))
             {
                 return ToResponse(ApiResult.Error($"修改字典'{dict.DictName}'失败，字典类型已存在"));
             }
             //设置添加人
             dict.Update_by = HttpContext.GetName();
-            return SUCCESS(SysDictService.UpdateDictType(dict));
+            return SUCCESS(sysDictService.UpdateDictType(dict));
         }
 
         /// <summary>
@@ -102,7 +96,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             long[] idss = Tools.SpitLongArrary(ids);
 
-            return SUCCESS(SysDictService.DeleteDictTypeByIds(idss));
+            return SUCCESS(sysDictService.DeleteDictTypeByIds(idss));
         }
 
         /// <summary>
@@ -114,7 +108,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dict:export")]
         public IActionResult Export()
         {
-            var list = SysDictService.GetAll();
+            var list = sysDictService.GetAll();
 
             string sFileName = ExportExcel(list, "sysdictType", "字典");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });

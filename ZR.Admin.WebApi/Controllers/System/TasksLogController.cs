@@ -14,14 +14,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("/monitor/jobLog")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class TasksLogController : BaseController
+    public class TasksLogController(ISysTasksLogService tasksLogService) : BaseController
     {
-        private readonly ISysTasksLogService tasksLogService;
-
-        public TasksLogController(ISysTasksLogService tasksLogService)
-        {
-            this.tasksLogService = tasksLogService;
-        }
 
         /// <summary>
         /// 查询日志

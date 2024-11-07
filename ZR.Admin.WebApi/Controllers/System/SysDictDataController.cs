@@ -13,16 +13,8 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/dict/data")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysDictDataController : BaseController
+    public class SysDictDataController(ISysDictService sysDictService, ISysDictDataService sysDictDataService) : BaseController
     {
-        private readonly ISysDictDataService SysDictDataService;
-        private readonly ISysDictService SysDictService;
-
-        public SysDictDataController(ISysDictService sysDictService, ISysDictDataService sysDictDataService)
-        {
-            SysDictService = sysDictService;
-            SysDictDataService = sysDictDataService;
-        }
 
         /// <summary>
         /// 搜索
@@ -34,11 +26,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysDictData dictData, [FromQuery] PagerInfo pagerInfo)
         {
-            var list = SysDictDataService.SelectDictDataList(dictData, pagerInfo);
+            var list = sysDictDataService.SelectDictDataList(dictData, pagerInfo);
 
             if (dictData.DictType.StartsWith("sql_"))
             {
-                var result = SysDictService.SelectDictDataByCustomSql(dictData.DictType);
+                var result = sysDictService.SelectDictDataByCustomSql(dictData.DictType);
 
                 list.Result.AddRange(result.Adapt<List<SysDictData>>());
                 list.TotalNum += result.Count;
@@ -55,7 +47,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("type/{dictType}")]
         public IActionResult DictType(string dictType)
         {
-            return SUCCESS(SysDictDataService.SelectDictDataByType(dictType));
+            return SUCCESS(sysDictDataService.SelectDictDataByType(dictType));
         }
 
         /// <summary>
@@ -67,7 +59,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPost("types")]
         public IActionResult DictTypes([FromBody] List<SysdictDataParamDto> dto)
         {
-            var list = SysDictDataService.SelectDictDataByTypes(dto.Select(f => f.DictType).ToArray());
+            var list = sysDictDataService.SelectDictDataByTypes(dto.Select(f => f.DictType).ToArray());
             var dataVos = GetDicts(dto.Select(f => f.DictType).ToArray());
 
             return SUCCESS(dataVos);
@@ -88,7 +80,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private List<SysdictDataParamDto> GetDicts([FromBody]string[] dicts)
         {
             List<SysdictDataParamDto> dataVos = new();
-            var list = SysDictDataService.SelectDictDataByTypes(dicts);
+            var list = sysDictDataService.SelectDictDataByTypes(dicts);
 
             foreach (var dic in dicts)
             {
@@ -99,7 +91,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 };
                 if (dic.StartsWith("cus_") || dic.StartsWith("sql_"))
                 {
-                    vo.List.AddRange(SysDictService.SelectDictDataByCustomSql(dic));
+                    vo.List.AddRange(sysDictService.SelectDictDataByCustomSql(dic));
                 }
                 dataVos.Add(vo);
             }
@@ -115,7 +107,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("info/{dictCode}")]
         public IActionResult GetInfo(long dictCode)
         {
-            return SUCCESS(SysDictDataService.SelectDictDataById(dictCode));
+            return SUCCESS(sysDictDataService.SelectDictDataById(dictCode));
         }
 
         /// <summary>
@@ -130,7 +122,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             dict.Create_by = HttpContext.GetName();
             dict.Create_time = DateTime.Now;
-            return SUCCESS(SysDictDataService.InsertDictData(dict));
+            return SUCCESS(sysDictDataService.InsertDictData(dict));
         }
 
         /// <summary>
@@ -144,7 +136,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Edit([FromBody] SysDictData dict)
         {
             dict.Update_by = HttpContext.GetName();
-            return SUCCESS(SysDictDataService.UpdateDictData(dict));
+            return SUCCESS(sysDictDataService.UpdateDictData(dict));
         }
 
         /// <summary>
@@ -159,7 +151,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             long[] dictCodes = Common.Tools.SpitLongArrary(dictCode);
 
-            return SUCCESS(SysDictDataService.DeleteDictDataByIds(dictCodes));
+            return SUCCESS(sysDictDataService.DeleteDictDataByIds(dictCodes));
         }
     }
 }

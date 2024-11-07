@@ -12,16 +12,9 @@ namespace ZR.Admin.WebApi.Controllers.System
     [Verify]
     [Route("system/dept")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class SysDeptController : BaseController
+    public class SysDeptController(ISysDeptService deptService
+            , ISysUserService userService) : BaseController
     {
-        public ISysDeptService DeptService;
-        public ISysUserService UserService;
-        public SysDeptController(ISysDeptService deptService
-            , ISysUserService userService)
-        {
-            DeptService = deptService;
-            UserService = userService;
-        }
 
         /// <summary>
         /// 获取部门列表
@@ -31,7 +24,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list")]
         public IActionResult List([FromQuery] SysDeptQueryDto dept)
         {
-            return SUCCESS(DeptService.GetList(dept));
+            return SUCCESS(deptService.GetList(dept));
         }
 
         /// <summary>
@@ -42,7 +35,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("list/exclude/{deptId}")]
         public IActionResult ExcludeChild(long deptId)
         {
-            var depts = DeptService.GetList(new SysDeptQueryDto());
+            var depts = deptService.GetList(new SysDeptQueryDto());
 
             for (int i = 0; i < depts.Count; i++)
             {
@@ -64,9 +57,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("treeselect")]
         public IActionResult TreeSelect(SysDeptQueryDto dept)
         {
-            var depts = DeptService.GetSysDepts(dept);
+            var depts = deptService.GetSysDepts(dept);
 
-            return SUCCESS(DeptService.BuildDeptTreeSelect(depts), TIME_FORMAT_FULL);
+            return SUCCESS(deptService.BuildDeptTreeSelect(depts), TIME_FORMAT_FULL);
         }
 
         /// <summary>
@@ -78,12 +71,12 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("roleDeptTreeselect/{roleId}")]
         public IActionResult RoleMenuTreeselect(int roleId)
         {
-            var depts = DeptService.GetSysDepts(new SysDeptQueryDto());
-            var checkedKeys = DeptService.SelectRoleDepts(roleId);
+            var depts = deptService.GetSysDepts(new SysDeptQueryDto());
+            var checkedKeys = deptService.SelectRoleDepts(roleId);
             return SUCCESS(new
             {
                 checkedKeys,
-                depts = DeptService.BuildDeptTreeSelect(depts),
+                depts = deptService.BuildDeptTreeSelect(depts),
             });
         }
 
@@ -95,7 +88,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dept:query")]
         public IActionResult GetInfo(long deptId)
         {
-            var info = DeptService.GetFirst(f => f.DeptId == deptId);
+            var info = deptService.GetFirst(f => f.DeptId == deptId);
             return SUCCESS(info);
         }
 
@@ -109,12 +102,12 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dept:add")]
         public IActionResult Add([FromBody] SysDept dept)
         {
-            if (UserConstants.NOT_UNIQUE.Equals(DeptService.CheckDeptNameUnique(dept)))
+            if (UserConstants.NOT_UNIQUE.Equals(deptService.CheckDeptNameUnique(dept)))
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, $"新增部门{dept.DeptName}失败，部门名称已存在");
             }
             dept.Create_by = HttpContext.GetName();
-            return ToResponse(DeptService.InsertDept(dept));
+            return ToResponse(deptService.InsertDept(dept));
         }
 
         /// <summary>
@@ -127,7 +120,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dept:update")]
         public IActionResult Update([FromBody] SysDept dept)
         {
-            if (UserConstants.NOT_UNIQUE.Equals(DeptService.CheckDeptNameUnique(dept)))
+            if (UserConstants.NOT_UNIQUE.Equals(deptService.CheckDeptNameUnique(dept)))
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, $"修改部门{dept.DeptName}失败，部门名称已存在");
             }
@@ -136,7 +129,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ResultCode.CUSTOM_ERROR, $"修改部门{dept.DeptName}失败，上级部门不能是自己");
             }
             dept.Update_by = HttpContext.GetName();
-            return ToResponse(DeptService.UpdateDept(dept));
+            return ToResponse(deptService.UpdateDept(dept));
         }
 
         /// <summary>
@@ -148,16 +141,16 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "部门管理", BusinessType = BusinessType.DELETE)]
         public IActionResult Remove(long deptId)
         {
-            if (DeptService.Queryable().Count(it => it.ParentId == deptId && it.DelFlag == 0) > 0)
+            if (deptService.Queryable().Count(it => it.ParentId == deptId && it.DelFlag == 0) > 0)
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, $"存在下级部门，不允许删除");
             }
-            if (UserService.Queryable().Count(it => it.DeptId == deptId && it.DelFlag == 0) > 0)
+            if (userService.Queryable().Count(it => it.DeptId == deptId && it.DelFlag == 0) > 0)
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, $"部门存在用户，不允许删除");
             }
 
-            return SUCCESS(DeptService.Delete(deptId));
+            return SUCCESS(deptService.Delete(deptId));
         }
     }
 }

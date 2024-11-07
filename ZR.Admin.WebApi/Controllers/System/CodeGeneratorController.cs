@@ -24,7 +24,7 @@ namespace ZR.Admin.WebApi.Controllers
         IOptions<OptionsSetting> options,
         ISysMenuService sysMenuService) : BaseController
     {
-        private readonly CodeGeneraterService _CodeGeneraterService = new CodeGeneraterService();
+        private readonly CodeGeneraterService _CodeGeneraterService = new();
         private readonly OptionsSetting OptionsSetting = options.Value;
 
         /// <summary>
