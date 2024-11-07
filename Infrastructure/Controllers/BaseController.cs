@@ -1,6 +1,7 @@
 ﻿using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
 using Newtonsoft.Json;
@@ -72,7 +73,7 @@ namespace Infrastructure.Controllers
             }
             var stream = System.IO.File.OpenRead(path);  //创建文件流
 
-            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
             return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
         }
 
@@ -89,7 +90,7 @@ namespace Infrastructure.Controllers
                 return NotFound();
             }
             var stream = System.IO.File.OpenRead(path);  //创建文件流
-            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
             return File(stream, "application/octet-stream", HttpUtility.UrlEncode(fileName));
         }
 

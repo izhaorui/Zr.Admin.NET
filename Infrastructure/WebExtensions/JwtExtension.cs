@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -27,7 +28,7 @@ namespace ZR.Infrastructure.WebExtensions
                         if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
                         {
                             Console.WriteLine("jwt过期了");
-                            context.Response.Headers.Add("Token-Expired", "true");
+                            context.Response.Headers.Append("Token-Expired", "true");
                         }
 
                         return Task.CompletedTask;
