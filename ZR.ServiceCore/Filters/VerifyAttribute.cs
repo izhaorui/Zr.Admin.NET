@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -55,10 +56,10 @@ namespace ZR.Admin.WebApi.Filters
                     //移动端不加下面这个获取不到自定义Header
                     if (osType != null)
                     {
-                        context.HttpContext.Response.Headers.Add("Access-Control-Expose-Headers", "X-Refresh-Token");
+                        context.HttpContext.Response.Headers.Append("Access-Control-Expose-Headers", "X-Refresh-Token");
                     }
                     logger.Info($"刷新token,userName={loginUser.UserName},token={newToken}");
-                    context.HttpContext.Response.Headers.Add("X-Refresh-Token", newToken);
+                    context.HttpContext.Response.Headers.Append("X-Refresh-Token", newToken);
                 }
             }
             if (loginUser == null || !isAuthed)

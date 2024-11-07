@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -17,13 +17,19 @@
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.7" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.12" />
-		<PackageReference Include="NLog.Web.AspNetCore" Version="5.3.11" />
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
+		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.9" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+		<PackageReference Include="MimeKit" Version="4.8.0" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.170" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.2" />
+		<PackageReference Include="NLog.Web.AspNetCore" Version="5.3.14" />
 		<PackageReference Include="Mapster" Version="7.4.0" />
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.0" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 	</ItemGroup>
 
 	<ItemGroup>

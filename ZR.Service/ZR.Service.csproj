@@ -1,13 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1591</NoWarn>
 	</PropertyGroup>
+	<ItemGroup>
+	  <PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
+	  <PackageReference Include="MimeKit" Version="4.8.0" />
+	  <PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.170" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.0" />
+	  <PackageReference Include="System.Text.Json" Version="8.0.5" />
+	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
 	</ItemGroup>
