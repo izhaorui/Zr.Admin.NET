@@ -11,15 +11,10 @@ using ZR.ServiceCore.Services;
 namespace ZR.Tasks.TaskScheduler
 {
     [AppService(ServiceType = typeof(Job_SqlExecute), ServiceLifetime = LifeTime.Scoped)]
-    public class Job_SqlExecute : JobBase, IJob
+    public class Job_SqlExecute(ISysTasksQzService tasksQzService) : JobBase, IJob
     {
-        private readonly ISysTasksQzService tasksQzService;
         private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public Job_SqlExecute(ISysTasksQzService tasksQzService)
-        {
-            this.tasksQzService = tasksQzService;
-        }
         public async Task Execute(IJobExecutionContext context)
         {
             await ExecuteJob(context, async () => await Run(context));

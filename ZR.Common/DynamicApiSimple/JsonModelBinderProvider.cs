@@ -15,7 +15,7 @@ public class JsonModelBinderProvider : IModelBinderProvider
 
         if (context.Metadata is { IsComplexType: true, IsCollectionType: false })
         {
-            var fallbackBinder = new ComplexTypeModelBinderProvider().GetBinder(context);
+            var fallbackBinder = new ComplexObjectModelBinderProvider().GetBinder(context);
             return new JsonModelBinder(fallbackBinder);
         }
 

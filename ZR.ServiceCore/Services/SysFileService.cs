@@ -16,16 +16,10 @@ namespace ZR.ServiceCore.Services
     /// 文件管理
     /// </summary>
     [AppService(ServiceType = typeof(ISysFileService), ServiceLifetime = LifeTime.Transient)]
-    public class SysFileService : BaseService<SysFile>, ISysFileService
+    public class SysFileService( IOptions<OptionsSetting> options) : BaseService<SysFile>, ISysFileService
     {
         private string domainUrl = AppSettings.GetConfig("ALIYUN_OSS:domainUrl");
-        private readonly ISysConfigService SysConfigService;
-        private OptionsSetting OptionsSetting;
-        public SysFileService(ISysConfigService sysConfigService, IOptions<OptionsSetting> options)
-        {
-            SysConfigService = sysConfigService;
-            OptionsSetting = options.Value;
-        }
+        private OptionsSetting OptionsSetting = options.Value;
 
         /// <summary>
         /// 存储本地

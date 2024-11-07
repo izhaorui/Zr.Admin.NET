@@ -15,16 +15,8 @@ namespace ZR.ServiceCore.Services
     /// 登录
     /// </summary>
     [AppService(ServiceType = typeof(ISysLoginService), ServiceLifetime = LifeTime.Transient)]
-    public class SysLoginService : BaseService<SysLogininfor>, ISysLoginService
+    public class SysLoginService(ISysUserService sysUserService, IHttpContextAccessor httpContextAccessor) : BaseService<SysLogininfor>, ISysLoginService
     {
-        private readonly ISysUserService SysUserService;
-        private readonly IHttpContextAccessor httpContextAccessor;
-
-        public SysLoginService(ISysUserService sysUserService, IHttpContextAccessor httpContextAccessor)
-        {
-            SysUserService = sysUserService;
-            this.httpContextAccessor = httpContextAccessor;
-        }
 
         /// <summary>
         /// 登录验证
@@ -38,7 +30,7 @@ namespace ZR.ServiceCore.Services
             {
                 loginBody.Password = NETCore.Encrypt.EncryptProvider.Md5(loginBody.Password);
             }
-            SysUser user = SysUserService.Login(loginBody);
+            SysUser user = sysUserService.Login(loginBody);
             logininfor.UserName = loginBody.Username;
             logininfor.Status = "1";
             logininfor.LoginTime = DateTime.Now;
@@ -66,7 +58,7 @@ namespace ZR.ServiceCore.Services
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor);
-            SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
+            sysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
             return user;
         }
 
@@ -98,7 +90,7 @@ namespace ZR.ServiceCore.Services
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor);
-            SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
+            sysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
             return user;
         }
 
