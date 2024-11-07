@@ -1,15 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>1701;1702;1591;1570</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MiniExcel" Version="1.32.1" />
+		<PackageReference Include="MiniExcel" Version="1.34.2" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.157" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.170" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 	</ItemGroup>
 </Project>
