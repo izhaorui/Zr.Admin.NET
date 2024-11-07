@@ -12,17 +12,9 @@ namespace ZR.Admin.WebApi.Controllers.Email
     [Verify]
     [Route("system/EmailTpl")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class EmailTplController : BaseController
+    public class EmailTplController(IEmailTplService emailTplService) : BaseController
     {
-        /// <summary>
-        /// 邮件模板接口
-        /// </summary>
-        private readonly IEmailTplService _EmailTplService;
-
-        public EmailTplController(IEmailTplService EmailTplService)
-        {
-            _EmailTplService = EmailTplService;
-        }
+       
 
         /// <summary>
         /// 查询邮件模板列表
@@ -33,7 +25,7 @@ namespace ZR.Admin.WebApi.Controllers.Email
         [ActionPermissionFilter(Permission = "tool:emailtpl:list")]
         public IActionResult QueryEmailTpl([FromQuery] EmailTplQueryDto parm)
         {
-            var response = _EmailTplService.GetList(parm);
+            var response = emailTplService.GetList(parm);
             return SUCCESS(response);
         }
 
@@ -45,7 +37,7 @@ namespace ZR.Admin.WebApi.Controllers.Email
         [HttpGet("{Id}")]
         public IActionResult GetEmailTpl(int Id)
         {
-            var response = _EmailTplService.GetInfo(Id);
+            var response = emailTplService.GetInfo(Id);
 
             var info = response.Adapt<EmailTpl>();
             return SUCCESS(info);
@@ -62,7 +54,7 @@ namespace ZR.Admin.WebApi.Controllers.Email
         {
             var modal = parm.Adapt<EmailTpl>().ToCreate(HttpContext);
 
-            var response = _EmailTplService.AddEmailTpl(modal);
+            var response = emailTplService.AddEmailTpl(modal);
 
             return SUCCESS(response);
         }
@@ -77,7 +69,7 @@ namespace ZR.Admin.WebApi.Controllers.Email
         public IActionResult UpdateEmailTpl([FromBody] EmailTplDto parm)
         {
             var modal = parm.Adapt<EmailTpl>().ToUpdate(HttpContext);
-            var response = _EmailTplService.UpdateEmailTpl(modal);
+            var response = emailTplService.UpdateEmailTpl(modal);
 
             return ToResponse(response);
         }
@@ -94,7 +86,7 @@ namespace ZR.Admin.WebApi.Controllers.Email
             int[] idsArr = Tools.SpitIntArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
-            var response = _EmailTplService.Delete(idsArr);
+            var response = emailTplService.Delete(idsArr);
 
             return ToResponse(response);
         }

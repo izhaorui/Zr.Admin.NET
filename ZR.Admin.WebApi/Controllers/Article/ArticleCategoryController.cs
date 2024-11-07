@@ -9,19 +9,13 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 文章目录Controller
     /// </summary>
+    /// <param name="ArticleCategoryService">
+    /// 文章目录接口
+    /// </param>
     [Route("article/ArticleCategory")]
     [ApiExplorerSettings(GroupName = "article")]
-    public class ArticleCategoryController : BaseController
+    public class ArticleCategoryController(IArticleCategoryService ArticleCategoryService) : BaseController
     {
-        /// <summary>
-        /// 文章目录接口
-        /// </summary>
-        private readonly IArticleCategoryService _ArticleCategoryService;
-
-        public ArticleCategoryController(IArticleCategoryService ArticleCategoryService)
-        {
-            _ArticleCategoryService = ArticleCategoryService;
-        }
 
         /// <summary>
         /// 查询文章目录列表
@@ -32,7 +26,7 @@ namespace ZR.Admin.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult QueryArticleCategory([FromQuery] ArticleCategoryQueryDto parm)
         {
-            var response = _ArticleCategoryService.GetList(parm);
+            var response = ArticleCategoryService.GetList(parm);
             return SUCCESS(response);
         }
 
@@ -45,7 +39,7 @@ namespace ZR.Admin.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult QueryTreeArticleCategory([FromQuery] ArticleCategoryQueryDto parm)
         {
-            var response = _ArticleCategoryService.GetTreeList(parm);
+            var response = ArticleCategoryService.GetTreeList(parm);
             return SUCCESS(response);
         }
 
@@ -59,7 +53,7 @@ namespace ZR.Admin.WebApi.Controllers
         //[ActionPermissionFilter(Permission = "articlecategory:query")]
         public IActionResult GetArticleCategory(int CategoryId)
         {
-            var response = _ArticleCategoryService.GetFirst(x => x.CategoryId == CategoryId);
+            var response = ArticleCategoryService.GetFirst(x => x.CategoryId == CategoryId);
 
             return SUCCESS(response);
         }
@@ -73,7 +67,7 @@ namespace ZR.Admin.WebApi.Controllers
         //[ActionPermissionFilter(Permission = "articlecategory:query")]
         public IActionResult GetArticleCategoryByType(int categoryType)
         {
-            var response = _ArticleCategoryService.GetFirst(x => x.CategoryType == categoryType);
+            var response = ArticleCategoryService.GetFirst(x => x.CategoryType == categoryType);
 
             return SUCCESS(response);
         }
@@ -89,7 +83,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult AddArticleCategory([FromBody] ArticleCategoryDto parm)
         {
             var modal = parm.Adapt<ArticleCategory>().ToCreate(HttpContext);
-            var response = _ArticleCategoryService.AddArticleCategory(modal);
+            var response = ArticleCategoryService.AddArticleCategory(modal);
 
             return ToResponse(response);
         }
@@ -105,7 +99,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult UpdateArticleCategory([FromBody] ArticleCategoryDto parm)
         {
             var modal = parm.Adapt<ArticleCategory>().ToUpdate(HttpContext);
-            var response = _ArticleCategoryService.Update(modal);
+            var response = ArticleCategoryService.Update(modal);
 
             return ToResponse(response);
         }
@@ -122,7 +116,7 @@ namespace ZR.Admin.WebApi.Controllers
             int[] idsArr = Tools.SpitIntArrary(ids);
             if (idsArr.Length <= 0) { return ToResponse(ApiResult.Error($"删除失败Id 不能为空")); }
 
-            var response = _ArticleCategoryService.Delete(idsArr);
+            var response = ArticleCategoryService.Delete(idsArr);
 
             return ToResponse(response);
         }
@@ -137,7 +131,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Export([FromQuery] ArticleCategoryQueryDto parm)
         {
             parm.PageSize = 10000;
-            var list = _ArticleCategoryService.GetList(parm).Result;
+            var list = ArticleCategoryService.GetList(parm).Result;
 
             string sFileName = ExportExcel(list, "ArticleCategory", "文章目录");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
@@ -150,7 +144,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpGet("CategoryList")]
         public IActionResult CategoryList()
         {
-            var response = _ArticleCategoryService.GetAll();
+            var response = ArticleCategoryService.GetAll();
             return SUCCESS(response);
         }
 
@@ -166,7 +160,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult ChangeSort(int id = 0, int value = 0)
         {
             if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-            var response =  _ArticleCategoryService.Update(w => w.CategoryId == id, it => new ArticleCategory ()
+            var response =  ArticleCategoryService.Update(w => w.CategoryId == id, it => new ArticleCategory ()
             {
                 CategoryId = id,
                 OrderNum = value

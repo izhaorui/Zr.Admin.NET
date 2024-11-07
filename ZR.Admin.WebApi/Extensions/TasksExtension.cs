@@ -18,7 +18,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// <exception cref="ArgumentNullException"></exception>
         public static void AddTaskSchedulers(this IServiceCollection services)
         {
-            if (services == null) throw new ArgumentNullException(nameof(services));
+            ArgumentNullException.ThrowIfNull(services);
 
             //添加Quartz服务
             services.AddSingleton<IJobFactory, JobFactory>();

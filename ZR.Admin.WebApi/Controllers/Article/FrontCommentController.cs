@@ -10,24 +10,17 @@ namespace ZR.Admin.WebApi.Controllers
     /// <summary>
     /// 评论
     /// </summary>
+    /// <remarks>
+    /// 
+    /// </remarks>
+    /// <param name="messageService"></param>
+    /// <param name="articleService"></param>
     [Route("front/comment")]
     [ApiExplorerSettings(GroupName = "article")]
     [ApiController]
-    public class FrontCommentController : BaseController
+    public class FrontCommentController(
+        IArticleCommentService messageService, IArticleService articleService) : BaseController
     {
-        private readonly IArticleCommentService messageService;
-        private readonly IArticleService articleService;
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="messageService"></param>
-        /// <param name="articleService"></param>
-        public FrontCommentController(
-            IArticleCommentService messageService, IArticleService articleService)
-        {
-            this.messageService = messageService;
-            this.articleService = articleService;
-        }
 
         /// <summary>
         /// 查询评论列表

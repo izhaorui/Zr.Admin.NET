@@ -14,20 +14,15 @@ namespace ZR.Admin.WebApi.Controllers.Email
     [Verify]
     [Route("system/EmailLog")]
     [ApiExplorerSettings(GroupName = "sys")]
-    public class EmailLogController : BaseController
+    public class EmailLogController(
+        IEmailLogService EmailLogService,
+        IOptions<OptionsSetting> options) : BaseController
     {
         /// <summary>
         /// 邮件发送记录接口
         /// </summary>
-        private readonly IEmailLogService _EmailLogService;
-        private OptionsSetting OptionsSetting;
-        public EmailLogController(
-            IEmailLogService EmailLogService,
-            IOptions<OptionsSetting> options)
-        {
-            _EmailLogService = EmailLogService;
-            OptionsSetting = options.Value;
-        }
+        private readonly IEmailLogService _EmailLogService = EmailLogService;
+        private OptionsSetting OptionsSetting = options.Value;
 
         /// <summary>
         /// 查询邮件发送记录列表
