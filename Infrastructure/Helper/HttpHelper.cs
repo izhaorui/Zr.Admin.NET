@@ -18,6 +18,7 @@ namespace Infrastructure
         /// <returns></returns>
         public static string HttpPost(string url, string postData = null, string contentType = null, int timeOut = 30, Dictionary<string, string> headers = null)
         {
+            Console.WriteLine($"【{DateTime.Now}】Post请求{url}");
             postData ??= "";
             using HttpClient client = new HttpClient();
             client.Timeout = new TimeSpan(0, 0, timeOut);
@@ -65,10 +66,10 @@ namespace Infrastructure
         /// </summary>
         /// <param name="url"></param>
         /// <param name="headers"></param>
-        /// <param name="contentType"></param>
         /// <returns></returns>
         public static string HttpGet(string url, Dictionary<string, string> headers = null)
         {
+            Console.WriteLine($"【{DateTime.Now}】Get请求{url}");
             using HttpClient client = new HttpClient();
             if (headers != null)
             {
