@@ -12,10 +12,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="AspectCore.Abstractions" Version="2.4.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.2" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="UAParser" Version="3.1.47" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
 		<PackageReference Include="JinianNet.JNTemplate" Version="2.4.2" />
 		<PackageReference Include="MiniExcel" Version="1.34.2" />
 		<PackageReference Include="CSRedisCore" Version="3.8.803" />
