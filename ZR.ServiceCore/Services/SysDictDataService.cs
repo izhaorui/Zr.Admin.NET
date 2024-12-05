@@ -115,6 +115,16 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
+        /// 更改状态
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public int UpdateStatus(SysDictData data)
+        {
+            return Update(data, it => new { it.Status }, f => f.DictCode == data.DictCode);
+        }
+
+        /// <summary>
         /// 批量删除字典数据信息
         /// </summary>
         /// <param name="dictCodes"></param>

@@ -15,5 +15,7 @@ namespace ZR.ServiceCore.Services
         public int DeleteDictDataByIds(long[] dictCodes);
         int UpdateDictDataType(string old_dictType, string new_dictType);
         List<SysDictDataDto> SelectDictDataByCustomSql(SysDictType sysDictType);
+
+        int UpdateStatus(SysDictData dto);
     }
 }

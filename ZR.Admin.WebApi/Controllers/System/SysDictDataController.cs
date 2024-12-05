@@ -4,6 +4,7 @@ using ZR.Admin.WebApi.Filters;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.ServiceCore.Services;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -144,6 +145,21 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             dict.Update_by = HttpContext.GetName();
             return SUCCESS(SysDictDataService.UpdateDictData(dict));
+        }
+
+        /// <summary>
+        /// 修改字典数据状态
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPut("changeStatus")]
+        [Log(Title = "修改字典数据状态", BusinessType = BusinessType.UPDATE)]
+        [ActionPermissionFilter(Permission = "system:dict:edit")]
+        public IActionResult ChangeStatus([FromBody] SysDictData dto)
+        {
+            int result = SysDictDataService.UpdateStatus(dto);
+
+            return ToResponse(result);
         }
 
         /// <summary>
