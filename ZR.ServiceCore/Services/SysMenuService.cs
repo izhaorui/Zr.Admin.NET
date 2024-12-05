@@ -319,7 +319,7 @@ namespace ZR.ServiceCore.Services
             int parentId = menu.ParentId != null ? (int)menu.ParentId : 0;
 
             var list = Queryable()
-                .WithCache(60 * 10)
+                //.WithCache(60 * 10)
                 .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
                 .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible)
                 .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status)
