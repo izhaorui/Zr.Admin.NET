@@ -6,7 +6,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.14.1" />
-		<PackageReference Include="MailKit" Version="4.8.0" />
+		<PackageReference Include="MailKit" Version="4.9.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.10" />
 	</ItemGroup>
 
