@@ -56,8 +56,7 @@ Since it is a personal project, the funds are limited, and the experience server
 
 | repository | Github                                                      | Gitee                                                    |
 | ---------- | ----------------------------------------------------------- | -------------------------------------------------------- |
-| net7       | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET)  | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
-| net8                | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET/tree/net8) | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore/tree/net8/) |
+| net8                | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET/tree/net8) | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
 | Vue3(Hot)  | [Clone/Download](https://github.com/izhaorui/ZR.Admin.Vue3) | [Clone/Download](https://gitee.com/izory/ZRAdmin-vue)    |
 | mobile              | [contact author](http://www.izhaorui.cn/vip/)                         | [contact author](http://www.izhaorui.cn/vip/)                        |
 

@@ -68,8 +68,7 @@
 
 | 仓库                | Github                                                          | Gitee                                                          |
 | ------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
-| net7                | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)           | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore)            |
-| net8                | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET/tree/net8) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore/tree/net8/) |
+| net8                | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET/tree/net8) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore) |
 | web 前端 vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3)          | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)               |
 | 移动端              | [联系作者](http://www.izhaorui.cn/vip/)                         | [联系作者](http://www.izhaorui.cn/vip/)                        |
 
