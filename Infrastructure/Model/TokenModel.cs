@@ -6,9 +6,22 @@ namespace Infrastructure.Model
 {
     public class TokenModel
     {
+        /// <summary>
+        /// 用户id
+        /// </summary>
         public long UserId { get; set; }
+        /// <summary>
+        /// 部门id
+        /// </summary>
         public long DeptId { get; set; }
+        /// <summary>
+        /// 登录用户名
+        /// </summary>
         public string UserName { get; set; }
+        /// <summary>
+        /// 用户昵称
+        /// </summary>
+        public string NickName { get; set; }
         /// <summary>
         /// 角色集合
         /// </summary>
@@ -21,10 +34,6 @@ namespace Infrastructure.Model
         /// Jwt过期时间
         /// </summary>
         public DateTime ExpireTime { get; set; }
-        /// <summary>
-        /// 权限集合
-        /// </summary>
-        //public List<string> Permissions { get; set; } = new List<string>();
         public TokenModel()
         {
         }
@@ -35,6 +44,7 @@ namespace Infrastructure.Model
             UserName = info.UserName;
             DeptId = info.DeptId;
             Roles = roles;
+            NickName = info.NickName;
             RoleIds = roles.Select(f => f.RoleKey).ToList();
         }
     }

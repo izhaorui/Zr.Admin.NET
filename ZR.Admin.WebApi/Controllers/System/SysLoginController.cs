@@ -82,11 +82,6 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPost("logout")]
         public IActionResult LogOut()
         {
-            //Task.Run(async () =>
-            //{
-            //    //注销登录的用户，相当于ASP.NET中的FormsAuthentication.SignOut  
-            //    await HttpContext.SignOutAsync();
-            //}).Wait();
             var userid = HttpContext.GetUId();
             var name = HttpContext.GetName();
 
