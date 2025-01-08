@@ -47,10 +47,10 @@ namespace ZR.ServiceCore.Services
         }
         public List<SysDictDataDto> SelectDictDataByTypes(string[] dictTypes)
         {
-            string CK = $"SelectDictDataByTypes_{dictTypes}";
+            //string CK = $"SelectDictDataByTypes_{dictTypes}";
 
             var list = Queryable()
-            .WithCache(CK, 60 * 30)
+            //.WithCache(CK, 60 * 30)
             .Where(f => f.Status == "0" && dictTypes.Contains(f.DictType))
             .OrderBy(it => it.DictSort)
             .Select((it) => new SysDictDataDto()
