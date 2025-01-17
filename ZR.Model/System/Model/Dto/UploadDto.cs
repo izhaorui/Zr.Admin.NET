@@ -14,5 +14,6 @@
         /// 文件名生成类型 1 原文件名 2 自定义 3 自动生成
         /// </summary>
         public int FileNameType { get; set; }
+        public string ClassifyType { get; set; }
     }
 }

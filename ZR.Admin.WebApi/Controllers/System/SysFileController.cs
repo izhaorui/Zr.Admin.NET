@@ -39,6 +39,7 @@ namespace ZR.Admin.WebApi.Controllers
             predicate = predicate.AndIF(parm.EndCreate_time != null, it => it.Create_time <= parm.EndCreate_time);
             predicate = predicate.AndIF(parm.StoreType != null, m => m.StoreType == parm.StoreType);
             predicate = predicate.AndIF(parm.FileId != null, m => m.Id == parm.FileId);
+            predicate = predicate.AndIF(parm.ClassifyType != null, m => m.ClassifyType == parm.ClassifyType);
 
             var response = _SysFileService.GetPages(predicate.ToExpression(), parm, x => x.Id, OrderByType.Desc);
             return SUCCESS(response);
@@ -56,6 +57,22 @@ namespace ZR.Admin.WebApi.Controllers
             var response = _SysFileService.GetFirst(x => x.Id == Id);
 
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 更新
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut]
+        [ActionPermissionFilter(Permission = "tool:file:edit")]
+        [Log(Title = "文件存储", BusinessType = BusinessType.UPDATE)]
+        public IActionResult UpdateFile([FromBody] SysFileDto parm)
+        {
+            var modal = parm.Adapt<SysFile>().ToUpdate(HttpContext);
+            modal.ClassifyType ??= "";
+            var response = _SysFileService.UpdateFile(modal);
+
+            return ToResponse(response);
         }
 
         /// <summary>

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ZR.Model.System.Dto
+﻿namespace ZR.Model.System.Dto
 {
     /// <summary>
     /// 文件存储输入对象
@@ -52,6 +50,7 @@ namespace ZR.Model.System.Dto
         /// 访问路径
         /// </summary>
         public string AccessUrl { get; set; }
+        public string ClassifyType { get; set; }
 
         public SysFileDto() { }
         public SysFileDto(string originFileName, string fileName, string ext, string fileSize, string storePath, string accessUrl, string create_by)
@@ -68,6 +67,10 @@ namespace ZR.Model.System.Dto
     }
     public class SysFileQueryDto : PagerInfo
     {
+        /// <summary>
+        /// 分类
+        /// </summary>
+        public string ClassifyType { get; set; }
         public DateTime? BeginCreate_time { get; set; }
         public DateTime? EndCreate_time { get; set; }
         public int? StoreType { get; set; }

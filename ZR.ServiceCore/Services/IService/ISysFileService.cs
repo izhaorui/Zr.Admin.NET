@@ -17,7 +17,7 @@ namespace ZR.ServiceCore.Services
         /// <param name="userName"></param>
         /// <returns>文件对象</returns>
         Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile);
-
+        Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, string classifyType, IFormFile formFile);
         Task<SysFile> SaveFileToAliyun(SysFile file, IFormFile formFile);
         /// <summary>
         /// 按时间来创建文件夹
@@ -33,5 +33,7 @@ namespace ZR.ServiceCore.Services
         /// <param name="str">文件名，不包括扩展名</param>
         /// <returns></returns>
         string HashFileName(string str = null);
+
+        int UpdateFile(SysFile parm);
     }
 }

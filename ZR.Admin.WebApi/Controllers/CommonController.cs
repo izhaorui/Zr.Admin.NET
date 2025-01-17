@@ -143,7 +143,8 @@ namespace ZR.Admin.WebApi.Controllers
                     sysfile = new(formFile.FileName, uploadDto.FileName, fileExt, fileSize + "kb", uploadDto.FileDir, HttpContext.GetName())
                     {
                         StoreType = (int)StoreType.ALIYUN,
-                        FileType = formFile.ContentType
+                        FileType = formFile.ContentType,
+                        ClassifyType = uploadDto.ClassifyType
                     };
                     sysfile = await SysFileService.SaveFileToAliyun(sysfile, formFile);
 

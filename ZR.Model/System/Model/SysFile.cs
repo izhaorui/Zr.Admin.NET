@@ -54,7 +54,10 @@
         /// 访问路径
         /// </summary>
         public string AccessUrl { get; set; }
-
+        /// <summary>
+        /// 分类
+        /// </summary>
+        public string ClassifyType { get; set; }
         public SysFile() { }
         public SysFile(string originFileName, string fileName, string ext, string fileSize, string storePath, string create_by)
         {

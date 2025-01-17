@@ -34,9 +34,10 @@ namespace ZR.ServiceCore.Services
         /// <param name="rootPath">存储根目录</param>
         /// <param name="fileName">自定文件名</param>
         /// <param name="formFile">上传的文件流</param>
+        /// <param name="clasifyType">分类类型</param>
         /// <param name="userName"></param>
         /// <returns></returns>
-        public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
+        public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, string clasifyType, IFormFile formFile)
         {
             string fileExt = Path.GetExtension(formFile.FileName);
             fileName = (fileName.IsEmpty() ? HashFileName() : fileName) + fileExt;
@@ -63,10 +64,15 @@ namespace ZR.ServiceCore.Services
                 StoreType = (int)StoreType.LOCAL,
                 FileType = formFile.ContentType,
                 FileUrl = finalFilePath.Replace("\\", "/"),
-                AccessUrl = fullUrl.AbsoluteUri
+                AccessUrl = fullUrl.AbsoluteUri,
+                ClassifyType = clasifyType
             };
             file.Id = await InsertFile(file);
             return file;
+        }
+        public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
+        {
+            return await SaveFileToLocal(rootPath, fileName, fileDir, userName, string.Empty, formFile);
         }
 
         /// <summary>
@@ -106,7 +112,8 @@ namespace ZR.ServiceCore.Services
             {
                 timeDir = Path.Combine(storePath, timeDir);
             }
-            return timeDir;
+            Console.WriteLine("文件存储目录" + timeDir);
+            return timeDir.Replace("\\", "/");
         }
 
         public string HashFileName(string str = null)
@@ -115,12 +122,22 @@ namespace ZR.ServiceCore.Services
             {
                 str = Guid.NewGuid().ToString().ToLower();
             }
-            return BitConverter.ToString(MD5.HashData(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "");
+            return BitConverter.ToString(MD5.HashData(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "").ToLower();
         }
 
         public Task<long> InsertFile(SysFile file)
         {
             return Insertable(file).ExecuteReturnSnowflakeIdAsync();//单条插入返回雪花ID;
+        }
+
+        /// <summary>
+        /// 修改文件存储表
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public int UpdateFile(SysFile model)
+        {
+            return Update(model, t => new { t.ClassifyType, }, true);
         }
     }
 }
