@@ -42,7 +42,10 @@ namespace Infrastructure
         public CustomException(ResultCode resultCode, string msg, object errorMsg) : base(msg)
         {
             Code = (int)resultCode;
-            LogMsg = errorMsg.ToString();
+            if (errorMsg != null)
+            {
+                LogMsg = errorMsg.ToString();
+            }
         }
     }
 }
