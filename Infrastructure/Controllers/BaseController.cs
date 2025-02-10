@@ -1,6 +1,7 @@
 ﻿using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
 using Newtonsoft.Json;
@@ -71,7 +72,7 @@ namespace Infrastructure.Controllers
             }
             var stream = System.IO.File.OpenRead(path);  //创建文件流
 
-            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
             return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
         }
 
@@ -88,7 +89,7 @@ namespace Infrastructure.Controllers
                 return NotFound();
             }
             var stream = System.IO.File.OpenRead(path);  //创建文件流
-            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
             return File(stream, "application/octet-stream", HttpUtility.UrlEncode(fileName));
         }
 
@@ -168,7 +169,7 @@ namespace Infrastructure.Controllers
         protected (string, string) ExportExcelMini<T>(List<T> list, string sheetName, string fileName)
         {
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
-            string sFileName = $"{fileName}{DateTime.Now:MM-dd-HHmmss}.xlsx";
+            string sFileName = $"{fileName}_{DateTime.Now:MMdd-HHmmss}.xlsx";
             string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
 
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
