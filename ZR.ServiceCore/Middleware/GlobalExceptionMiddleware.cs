@@ -75,8 +75,14 @@ namespace ZR.ServiceCore.Middleware
             }
             else
             {
+                var q1 = "Exception has been thrown by the target of an invocation";
+                var an1 = string.Empty;
+                if (ex.Message.Contains(q1))
+                {
+                    an1 = $"====请查看issue：https://gitee.com/izory/ZrAdminNetCore/issues/I6S4DZ";
+                }
                 msg = "服务器好像出了点问题，请联系系统管理员...";
-                error = $"{ex.Message}";
+                error = $"异常原因：{ex.Message}{an1}";
                 logLevel = LogLevel.Error;
                 context.Response.StatusCode = 500;
             }
