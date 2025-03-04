@@ -66,16 +66,17 @@
         /// 菜单类型（菜单）
         /// </summary>
         public static string TYPE_MENU = "C";
+        public static string TYPE_MENUS = "C,L";
 
         /// <summary>
         /// 菜单类型（按钮）
         /// </summary>
         public static string TYPE_BUTTON = "F";
 
-        ///// <summary>
-        ///// 菜单类型（链接）
-        ///// </summary>
-        //public static string TYPE_LINK = "L";
+        /// <summary>
+        /// 菜单类型（链接）
+        /// </summary>
+        public static string TYPE_LINK = "L";
 
         /// <summary>
         /// Layout组件标识

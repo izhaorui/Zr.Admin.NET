@@ -188,7 +188,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public List<SysMenu> SelectMenuTreeByUserId(long userId)
         {
-            MenuQueryDto dto = new() { Status = "0", MenuTypeIds = "M,C" };
+            MenuQueryDto dto = new() { Status = "0", MenuTypeIds = "M,C,L" };
             if (SysRoleService.IsAdmin(userId))
             {
                 return SelectTreeMenuList(dto);
@@ -547,7 +547,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public bool IsMeunFrame(SysMenu menu)
         {
-            return menu.ParentId == 0 && UserConstants.TYPE_MENU.Equals(menu.MenuType)
+            return menu.ParentId == 0 && UserConstants.TYPE_MENUS.Contains(menu.MenuType)
                 && menu.IsFrame.Equals(UserConstants.NO_FRAME);
         }
 

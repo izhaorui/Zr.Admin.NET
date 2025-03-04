@@ -22,7 +22,7 @@
         /// 路由地址
         /// </summary>
         [ExcelColumn(Name = "路由地址")] 
-        public string Path { get; set; } = "#";
+        public string Path { get; set; } = "";
 
         /// <summary>
         /// 组件路径
