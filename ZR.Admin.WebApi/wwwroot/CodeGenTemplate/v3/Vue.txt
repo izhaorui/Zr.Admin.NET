@@ -47,8 +47,6 @@ $elseif(column.HtmlType == "datePicker")
           style="width: 200px"
           v-model="dateRange${column.CsharpField}" 
           type="daterange"
-          start-placeholder="Start date"
-          end-placeholder="End date"
           value-format="YYYY-MM-DD HH:mm:ss"
           :default-time="defaultTime">
         </el-date-picker>
