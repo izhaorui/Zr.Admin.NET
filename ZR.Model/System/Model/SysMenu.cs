@@ -86,6 +86,10 @@
         [SugarColumn(ColumnName = "menuName_key")]
         public string MenuNameKey { get; set; }
         /// <summary>
+        /// 路由参数
+        /// </summary>
+        public string Query { get; set; }
+        /// <summary>
         /// 子菜单
         /// </summary>
         [SugarColumn(IsIgnore = true)]

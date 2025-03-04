@@ -1,9 +1,4 @@
-﻿using MiniExcelLibs.Attributes;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-
-namespace ZR.Model.System.Dto
+﻿namespace ZR.Model.System.Dto
 {
     public class MenuDto
     {
@@ -74,6 +69,10 @@ namespace ZR.Model.System.Dto
         /// 菜单图标
         /// </summary>
         public string Icon { get; set; } = string.Empty;
+        /// <summary>
+        /// 路由参数
+        /// </summary>
+        public string Query { get; set; }
         /// <summary>
         /// 翻译key
         /// </summary>

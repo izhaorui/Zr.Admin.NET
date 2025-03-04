@@ -130,12 +130,12 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Verify]
         [HttpGet("getAppRouters")]
-        public IActionResult GetAppRouters()
+        public IActionResult GetAppRouters(int v = 0)
         {
             long uid = HttpContext.GetUId();
             var perms = permissionService.GetMenuPermission(new SysUser() { UserId = uid });
-            
-            return SUCCESS(sysMenuService.GetAppMenus(perms));
+
+            return SUCCESS(sysMenuService.GetAppMenus(perms, v));
         }
 
         /// <summary>

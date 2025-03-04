@@ -376,6 +376,7 @@ namespace ZR.ServiceCore.Services
             {
                 RouterVo router = new()
                 {
+                    Query = menu.Query,
                     Hidden = "1".Equals(menu.Visible),
                     Name = GetRouteName(menu),
                     Path = GetRoutePath(menu),
@@ -397,6 +398,7 @@ namespace ZR.ServiceCore.Services
                     List<RouterVo> childrenList = new();
                     RouterVo children = new()
                     {
+                        Query = menu.Query,
                         Path = menu.Path,
                         Component = menu.Component,
                         Name = string.IsNullOrEmpty(menu.Path) ? "" : menu.Path.ToLower(),
@@ -412,6 +414,7 @@ namespace ZR.ServiceCore.Services
                     List<RouterVo> childrenList = new();
                     RouterVo children = new();
                     string routerPath = InnerLinkReplaceEach(menu.Path);
+                    children.Query = menu.Query;
                     children.Path = routerPath;
                     children.Component = UserConstants.INNER_LINK;
                     children.Name = routerPath.ToLower();
@@ -724,32 +727,41 @@ namespace ZR.ServiceCore.Services
         /// 获取移动端工作台菜单
         /// </summary>
         /// <param name="perms"></param>
+        /// <param name="v"></param>
         /// <returns></returns>
-        public List<RouterVo> GetAppMenus(List<string> perms)
+        public List<RouterVo> GetAppMenus(List<string> perms, int v)
         {
+            var demoList = new List<RouterVo>(){
+                new()
+                {
+                    Path = "/pages/demo/index",
+                    Meta = new Meta("功能演示", "bookmark")
+                },
+                    new()
+                {
+                    Path = "/pages/demo/table/table",
+                    Meta = new Meta("列表表格", "grid")
+                },
+                    new()
+                {
+                    Path = "/pages/demo/table/table2",
+                    Meta = new Meta("水平表格", "list")
+                }
+            };
+            //if (v >= 1)
+            //{
+            //    demoList.Add(new RouterVo
+            //    {
+            //        Path = "/pages/dashboard/index",
+            //        Meta = new Meta("控制台", "list")
+            //    });
+            //}
             var router = new List<RouterVo>
             {
                 new()
                 {
                     Meta = new Meta("演示功能", ""){ IconColor = "#2389da"},
-                    Children = new List<RouterVo>()
-                {
-                    new()
-                    {
-                        Path = "/pages/demo/index",
-                        Meta = new Meta("功能演示", "bookmark")
-                    },
-                     new()
-                    {
-                        Path = "/pages/demo/table/table",
-                        Meta = new Meta("列表表格", "grid")
-                    },
-                     new()
-                    {
-                        Path = "/pages/demo/table/table2",
-                        Meta = new Meta("水平表格", "list")
-                    }
-                }
+                    Children = demoList
                 },
 
                 new()
