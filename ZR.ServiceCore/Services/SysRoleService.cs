@@ -193,8 +193,8 @@ namespace ZR.ServiceCore.Services
                 var addMenuIds = newMenus.Where(c => !arr_c.Contains(c)).ToArray();
 
                 RoleMenuService.DeleteRoleMenuByRoleIdMenuIds(sysRoleDto.RoleId, delMenuIds);
-                sysRoleDto.MenuIds = addMenuIds.ToList();
-                sysRoleDto.DelMenuIds = delMenuIds.ToList();
+                sysRoleDto.MenuIds = [.. addMenuIds];
+                sysRoleDto.DelMenuIds = [.. delMenuIds];
                 InsertRoleMenu(sysRoleDto);
                 Console.WriteLine($"减少了{delMenuIds.Length},增加了{addMenuIds.Length}菜单");
             });
@@ -202,7 +202,6 @@ namespace ZR.ServiceCore.Services
         }
 
         #region Service
-
 
         /// <summary>
         /// 批量新增角色菜单信息

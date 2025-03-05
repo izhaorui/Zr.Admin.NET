@@ -156,10 +156,23 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ApiResult.Error($"新增菜单'{menu.MenuName}'失败，地址必须以http(s)://开头"));
             }
-
+            var uid = HttpContext.GetUId();
             menu.Create_by = HttpContext.GetName();
             long result = sysMenuService.AddMenu(menu);
-
+            if (result > 0)
+            {
+                var userRoles = sysRoleService.SelectUserRoles(uid);
+                var roleId = userRoles.FirstOrDefault();
+                if (!sysRoleService.IsAdmin(uid) && roleId >0)
+                {
+                    sysRoleService.InsertRoleMenu(new SysRoleDto
+                    {
+                        Create_by = menu.Create_by,
+                        RoleId = roleId,
+                        MenuIds = [result]
+                    });
+                }         
+            }
             return ToResponse(result);
         }
 
