@@ -15,6 +15,7 @@
 	<ItemGroup>
 		<PackageReference Include="NETCore.Encrypt" Version="2.1.1" />
 		<PackageReference Include="NLog" Version="5.3.4" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
 	</ItemGroup>
 
 </Project>

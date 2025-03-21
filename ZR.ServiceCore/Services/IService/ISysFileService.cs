@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using ZR.Model.Dto;
 using ZR.Model.System;
 
 namespace ZR.ServiceCore.Services
@@ -8,17 +9,24 @@ namespace ZR.ServiceCore.Services
         Task<long> InsertFile(SysFile file);
 
         /// <summary>
-        /// 上传文件
+        /// 上传文件到本地
         /// </summary>
-        /// <param name="fileDir"></param>
-        /// <param name="fileName"></param>
         /// <param name="formFile"></param>
         /// <param name="rootPath"></param>
         /// <param name="userName"></param>
+        /// <param name="dto"></param>
         /// <returns>文件对象</returns>
-        Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile);
-        Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, string classifyType, IFormFile formFile);
-        Task<SysFile> SaveFileToAliyun(SysFile file, IFormFile formFile);
+        Task<SysFile> SaveFileToLocal(string rootPath, UploadDto dto, string userName, IFormFile formFile);
+        
+        /// <summary>
+        /// 上传文件到阿里云
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="dto"></param>
+        /// <param name="formFile"></param>
+        /// <returns></returns>
+        Task<SysFile> SaveFileToAliyun(SysFile file, UploadDto dto, IFormFile formFile);
+        
         /// <summary>
         /// 按时间来创建文件夹
         /// </summary>

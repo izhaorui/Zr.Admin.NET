@@ -118,8 +118,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             long userId = HttpContext.GetUId();
             if (formFile == null) throw new CustomException("请选择文件");
-
-            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, "", "avatar", HttpContext.GetName(), "avatar", formFile);
+            Model.Dto.UploadDto dto = new()
+            {
+                FileDir = "avatar",
+                ClassifyType = "avatar",
+                UserName = HttpContext.GetName()
+            };
+            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, dto, dto.UserName, formFile);
 
             UserService.UpdatePhoto(new SysUser() { Avatar = file.AccessUrl, UserId = userId });
             return SUCCESS(new { imgUrl = file.AccessUrl });

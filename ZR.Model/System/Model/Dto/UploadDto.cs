@@ -15,5 +15,10 @@
         /// </summary>
         public int FileNameType { get; set; }
         public string ClassifyType { get; set; }
+        /// <summary>
+        /// 压缩质量0-100之间
+        /// </summary>
+        public int Quality { get; set; }
+        public string UserName { get; set; }
     }
 }

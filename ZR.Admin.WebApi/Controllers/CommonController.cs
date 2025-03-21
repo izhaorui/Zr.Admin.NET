@@ -126,7 +126,7 @@ namespace ZR.Admin.WebApi.Controllers
                     {
                         uploadDto.FileDir = OptionsSetting.Upload.LocalSavePath;
                     }
-                    sysfile = await SysFileService.SaveFileToLocal(savePath, uploadDto.FileName, uploadDto.FileDir, HttpContext.GetName(), formFile);
+                    sysfile = await SysFileService.SaveFileToLocal(savePath, uploadDto, HttpContext.GetName(), formFile);
                     break;
                 case StoreType.REMOTE:
                     break;
@@ -146,7 +146,7 @@ namespace ZR.Admin.WebApi.Controllers
                         FileType = formFile.ContentType,
                         ClassifyType = uploadDto.ClassifyType
                     };
-                    sysfile = await SysFileService.SaveFileToAliyun(sysfile, formFile);
+                    sysfile = await SysFileService.SaveFileToAliyun(sysfile, uploadDto, formFile);
 
                     if (sysfile.Id <= 0) { return ToResponse(ApiResult.Error("阿里云连接失败")); }
                     break;

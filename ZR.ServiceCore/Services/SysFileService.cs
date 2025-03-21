@@ -4,10 +4,13 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using ZR.Common;
+using ZR.Model.Dto;
 using ZR.Model.System;
 
 namespace ZR.ServiceCore.Services
@@ -30,15 +33,16 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 存储本地
         /// </summary>
-        /// <param name="fileDir">存储文件夹</param>
         /// <param name="rootPath">存储根目录</param>
-        /// <param name="fileName">自定文件名</param>
         /// <param name="formFile">上传的文件流</param>
         /// <param name="clasifyType">分类类型</param>
         /// <param name="userName"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
-        public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, string clasifyType, IFormFile formFile)
+        public async Task<SysFile> SaveFileToLocal(string rootPath, UploadDto dto, string userName, string clasifyType, IFormFile formFile)
         {
+            var fileName = dto.FileName;
+            var fileDir = dto.FileDir;
             string fileExt = Path.GetExtension(formFile.FileName);
             fileName = (fileName.IsEmpty() ? HashFileName() : fileName) + fileExt;
 
@@ -50,10 +54,21 @@ namespace ZR.ServiceCore.Services
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(finalFilePath));
             }
+            // 常见的图片扩展名
+            var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
 
-            using (var stream = new FileStream(finalFilePath, FileMode.Create))
+            // 检查扩展名是否在图片扩展名列表中
+            bool isImageByExtension = imageExtensions.Contains(fileExt);
+            if (dto.Quality > 0 && isImageByExtension)
             {
-                await formFile.CopyToAsync(stream);
+                await SaveCompressedImageAsync(formFile, finalFilePath);
+            }
+            else
+            {
+                using (var stream = new FileStream(finalFilePath, FileMode.Create))
+                {
+                    await formFile.CopyToAsync(stream);
+                }
             }
             string uploadUrl = OptionsSetting.Upload.UploadUrl;
             string accessPath = string.Concat(filePath.Replace("\\", "/"), "/", fileName);
@@ -70,23 +85,39 @@ namespace ZR.ServiceCore.Services
             file.Id = await InsertFile(file);
             return file;
         }
-        public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
+        //public async Task<SysFile> SaveFileToLocal(string rootPath, string fileName, string fileDir, string userName, IFormFile formFile)
+        //{
+        //    return await SaveFileToLocal(rootPath, fileName, fileDir, userName, string.Empty, formFile);
+        //}
+        public async Task<SysFile> SaveFileToLocal(string rootPath, UploadDto dto, string userName, IFormFile formFile)
         {
-            return await SaveFileToLocal(rootPath, fileName, fileDir, userName, string.Empty, formFile);
+            return await SaveFileToLocal(rootPath, dto, userName, dto.ClassifyType, formFile);
         }
-
         /// <summary>
         /// 上传文件到阿里云
         /// </summary>
         /// <param name="file"></param>
+        /// <param name="dto"></param>
         /// <param name="formFile"></param>
         /// <returns></returns>
-        public async Task<SysFile> SaveFileToAliyun(SysFile file, IFormFile formFile)
+        public async Task<SysFile> SaveFileToAliyun(SysFile file, UploadDto dto, IFormFile formFile)
         {
             file.FileName = (file.FileName.IsEmpty() ? HashFileName() : file.FileName) + file.FileExt;
             file.StorePath = GetdirPath(file.StorePath);
             string finalPath = Path.Combine(file.StorePath, file.FileName);
-            HttpStatusCode statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), finalPath, "");
+            HttpStatusCode statusCode;
+            if (dto.Quality > 0)
+            {
+                // 压缩图片
+                using var stream = new MemoryStream();
+                await CompressImageAsync(formFile, stream, dto.Quality);
+                stream.Position = 0;
+                statusCode = AliyunOssHelper.PutObjectFromFile(stream, finalPath, "");
+            }
+            else
+            {
+                statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), finalPath, "");
+            }
             if (statusCode != HttpStatusCode.OK) return file;
 
             file.StorePath = file.StorePath;
@@ -138,6 +169,45 @@ namespace ZR.ServiceCore.Services
         public int UpdateFile(SysFile model)
         {
             return Update(model, t => new { t.ClassifyType, }, true);
+        }
+
+        /// <summary>
+        /// 压缩图片
+        /// </summary>
+        /// <param name="formFile"></param>
+        /// <param name="finalFilePath"></param>
+        /// <param name="quality"></param>
+        /// <returns></returns>
+        public static async Task SaveCompressedImageAsync(IFormFile formFile, string finalFilePath, int quality = 75)
+        {
+            using (var image = await Image.LoadAsync(formFile.OpenReadStream()))
+            {
+                // 进行压缩和调整大小（可选）
+                //image.Mutate(x => x.Resize(new ResizeOptions
+                //{
+                //    Mode = ResizeMode.Max,
+                //    Size = new Size(1920, 1080) // 限制最大尺寸，避免超大图片
+                //}));
+
+                // 保存为压缩的 JPEG
+                var encoder = new JpegEncoder { Quality = quality }; // 质量参数控制压缩程度
+
+                await using (var stream = new FileStream(finalFilePath, FileMode.Create))
+                {
+                    await image.SaveAsync(stream, encoder);
+                }
+            }
+        }
+        private async Task CompressImageAsync(IFormFile file, Stream outputStream, int quality)
+        {
+            // 加载图片
+            using var image = await Image.LoadAsync(file.OpenReadStream());
+
+            // 设置 JPEG 编码器并指定质量
+            var encoder = new JpegEncoder { Quality = quality };
+
+            // 保存压缩后的图片到输出流
+            await image.SaveAsync(outputStream, encoder);
         }
     }
 }
