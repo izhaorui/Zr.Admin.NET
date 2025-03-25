@@ -748,14 +748,14 @@ namespace ZR.ServiceCore.Services
                     Meta = new Meta("水平表格", "list")
                 }
             };
-            //if (v >= 1)
-            //{
-            //    demoList.Add(new RouterVo
-            //    {
-            //        Path = "/pages/dashboard/index",
-            //        Meta = new Meta("控制台", "list")
-            //    });
-            //}
+            if (v >= 1)
+            {
+                demoList.Add(new RouterVo
+                {
+                    Path = "/pages/dashboard/index",
+                    Meta = new Meta("控制台", "list")
+                });
+            }
             var router = new List<RouterVo>
             {
                 new()

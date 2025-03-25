@@ -30,11 +30,11 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         [HttpGet("list")]
         public IActionResult Index([FromQuery] PagerInfo parm)
         {
-            var result = MessageHub.onlineClients
+            var result = MessageHub.OnlineClients.Values
                 .OrderByDescending(f => f.LoginTime)
                 .Skip(parm.PageNum - 1).Take(parm.PageSize);
 
-            return SUCCESS(new { result, totalNum = MessageHub.onlineClients.Count });
+            return SUCCESS(new { result, totalNum = MessageHub.OnlineClients.Values.Count });
         }
 
         /// <summary>

@@ -5,6 +5,7 @@ using ZR.Model.Models;
 using ZR.Model.System;
 using ZR.Repository;
 using ZR.ServiceCore.Monitor.IMonitorService;
+using ZR.ServiceCore.Signalr;
 
 namespace ZR.ServiceCore.Monitor
 {
@@ -40,12 +41,21 @@ namespace ZR.ServiceCore.Monitor
         /// 添加用户在线时长
         /// </summary>
         /// <param name="model"></param>
+        /// <param name="user"></param>
         /// <returns></returns>
-        public UserOnlineLog AddUserOnlineLog(UserOnlineLog model)
+        public async Task<UserOnlineLog> AddUserOnlineLog(UserOnlineLog model, OnlineUsers user)
         {
+            model.UserId = user.Userid;
+            model.Location = user?.Location;
+            model.OnlineTime = user.OnlineTime;
+            model.UserIP = user.UserIP;
+            model.Platform = user.Platform;
+            model.Remark = user.Browser;
+            model.LoginTime = user.LoginTime;
+            model.AddTime = DateTime.Now;
             if (model.OnlineTime >= 0.5)
             {
-                Insertable(model).ExecuteReturnSnowflakeId();
+                await Insertable(model).ExecuteReturnSnowflakeIdAsync();
             }
             return model;
         }

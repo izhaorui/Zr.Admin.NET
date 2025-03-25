@@ -1,6 +1,7 @@
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.Models;
+using ZR.ServiceCore.Signalr;
 
 namespace ZR.ServiceCore.Monitor.IMonitorService
 {
@@ -11,7 +12,7 @@ namespace ZR.ServiceCore.Monitor.IMonitorService
     {
         PagedInfo<UserOnlineLogDto> GetList(UserOnlineLogQueryDto parm);
 
-        UserOnlineLog AddUserOnlineLog(UserOnlineLog parm);
+        Task<UserOnlineLog> AddUserOnlineLog(UserOnlineLog parm, OnlineUsers onlineUsers);
 
         PagedInfo<UserOnlineLogDto> ExportList(UserOnlineLogQueryDto parm);
     }
