@@ -5,7 +5,7 @@
 
 [![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
 [![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
-[![Change log](https://img.shields.io/badge/ChangeLog-20240105-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+[![Change log](https://img.shields.io/badge/ChangeLog-20250327-yellow)](http://www.izhaorui.cn/doc/changelog.html)
 
 [![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)

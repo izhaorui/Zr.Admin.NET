@@ -12,7 +12,7 @@
 
 [![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
 [![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
-[![更新日志](https://img.shields.io/badge/更新日志-20240105-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+[![更新日志](https://img.shields.io/badge/更新日志-20250327-yellow)](http://www.izhaorui.cn/doc/changelog.html)
 
 [![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)
