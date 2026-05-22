@@ -72,6 +72,10 @@ namespace Infrastructure.Model
         /// Reids配置
         /// </summary>
         public RedisServerConfig RedisServer { get; set; }
+        /// <summary>
+        /// AI 配置
+        /// </summary>
+        public AiOptions AiOptions { get; set; }
     }
     /// <summary>
     /// 发送邮件数据配置
@@ -216,6 +220,88 @@ namespace Infrastructure.Model
         public string[] Float { get; set; }
         public string[] Decimal { get; set; }
         public string[] Bool { get; set; }
+    }
+
+    public class AiOptions
+    {
+        /// <summary>
+        /// 是否启用 AI
+        /// </summary>
+        public bool Enable { get; set; }
+
+        /// <summary>
+        /// 提供商：openai / deepseek / qwen
+        /// </summary>
+        public string Provider { get; set; } = "openai";
+
+        /// <summary>
+        /// OpenAI 兼容接口基地址，如 https://api.openai.com
+        /// </summary>
+        public string BaseUrl { get; set; }
+
+        /// <summary>
+        /// 聊天接口路径，默认 /v1/chat/completions
+        /// </summary>
+        public string ChatEndpoint { get; set; } = "/v1/chat/completions";
+
+        /// <summary>
+        /// 模型名称，如 gpt-4o-mini / deepseek-chat / qwen-turbo
+        /// </summary>
+        public string Model { get; set; }
+
+        /// <summary>
+        /// API Key
+        /// </summary>
+        public string ApiKey { get; set; }
+
+        /// <summary>
+        /// 系统提示词
+        /// </summary>
+        public string SystemPrompt { get; set; }
+
+        /// <summary>
+        /// 温度参数
+        /// </summary>
+        public double Temperature { get; set; } = 0.7;
+
+        /// <summary>
+        /// 最大输出 token
+        /// </summary>
+        public int MaxTokens { get; set; } = 1024;
+
+        /// <summary>
+        /// 请求超时秒
+        /// </summary>
+        public int TimeoutSeconds { get; set; } = 60;
+
+        /// <summary>
+        /// 提供商配置列表（用于不同provider使用不同ApiKey）
+        /// </summary>
+        public List<AiProviderOptions> Providers { get; set; }
+    }
+
+    public class AiProviderOptions
+    {
+        /// <summary>
+        /// provider标识，如 openai/deepseek/qwen
+        /// </summary>
+        public string Provider { get; set; }
+
+        public string BaseUrl { get; set; }
+
+        public string ChatEndpoint { get; set; }
+
+        public string Model { get; set; }
+
+        public string ApiKey { get; set; }
+
+        public string SystemPrompt { get; set; }
+
+        public double? Temperature { get; set; }
+
+        public int? MaxTokens { get; set; }
+
+        public int? TimeoutSeconds { get; set; }
     }
 
     public class RedisServerConfig
