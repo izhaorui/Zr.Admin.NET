@@ -1,7 +1,6 @@
 <template>
   <div class="app-container">
     <el-row :gutter="24">
-      <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
       <el-form :model="form" label-position="right" ref="form" size="mini" label-width="100px" :rules="rules" @submit.native.prevent>
         <el-col :lg="12">
           <el-form-item label="文章标题" prop="title">
@@ -111,7 +110,7 @@ export default {
     getCategoryTreeselect() {
       listArticleCategoryTree().then((res) => {
         if (res.code == 200) {
-          this.categoryOptions = res.data
+          this.categoryOptions = [{ categoryId: 0, name: '未分类' }, ...res.data]
         }
       })
     },

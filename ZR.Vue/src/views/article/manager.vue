@@ -1,7 +1,6 @@
 <template>
   <div class="app-container">
     <el-row :gutter="24">
-      <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
       <el-form :model="queryParams" label-position="left" inline ref="queryForm" v-show="showSearch" @submit.native.prevent>
         <el-col :span="6">
           <el-form-item label="文章标题" prop="title">
@@ -139,8 +138,9 @@ export default {
     },
     // 详情
     handleView(row) {
-      var link = `${this.previewUrl}${row.cid}`
-      window.open(link)
+      // var link = `${this.previewUrl}${row.cid}`
+      // window.open(link)
+      this.msgSuccess('自行实现')
     },
     handleImport() {},
     handleExport() {},

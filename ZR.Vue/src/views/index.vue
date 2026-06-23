@@ -114,9 +114,9 @@
           <div class="body">
             <p>
               <i class="el-icon-user-solid"></i>QQ群：<a
-                href="https://qm.qq.com/cgi-bin/qm/qr?k=Y__-fTGo_K2UIo3nWz7QnvS8LoRfPWKm&authKey=/ldXxiuolv80PF4yC8VtLk/TvAYbIhm2LKP8YVHCxAk+x2I+iqPAM1H/IsxQ+0gC&noverify=0"
+                href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=B2syyxTFH1HjZheGtL-90LjSSDWb9svI&authKey=%2BNf%2FbM4or9At66M%2FRw7Uzgd3KkC%2Bc1ToXUOy9XCvktnl0912h1zhU9WCTvDoLdZH&noverify=0&group_code=1026662023"
                 target="_black"
-                >191349103</a
+                >1026662023</a
               >
             </p>
           </div>
