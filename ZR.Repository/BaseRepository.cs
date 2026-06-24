@@ -352,6 +352,21 @@ namespace ZR.Repository
             return page;
         }
 
+        public static async Task<PagedInfo<T>> ToPageAsync<T>(this ISugarQueryable<T> source, PagerInfo parm)
+        {
+            var page = new PagedInfo<T>();
+            RefAsync<int> total = 0;
+            page.PageSize = parm.PageSize;
+            page.PageIndex = parm.PageNum;
+            if (parm.Sort.IsNotEmpty())
+            {
+                source.OrderByPropertyName(parm.Sort, parm.SortType.Contains("desc") ? OrderByType.Desc : OrderByType.Asc);
+            }
+            page.Result = await source.ToPageListAsync(parm.PageNum, parm.PageSize, total);
+            page.TotalNum = total;
+            return page;
+        }
+
         /// <summary>
         /// 转指定实体类Dto
         /// </summary>
@@ -373,6 +388,23 @@ namespace ZR.Repository
             var result = source
                 //.OrderByIF(parm.Sort.IsNotEmpty(), $"{parm.Sort.ToSqlFilter()} {(!string.IsNullOrWhiteSpace(parm.SortType) && parm.SortType.Contains("desc") ? "desc" : "asc")}")
                 .ToPageList(parm.PageNum, parm.PageSize, ref total);
+
+            page.TotalNum = total;
+            page.Result = result.Adapt<List<T2>>();
+            return page;
+        }
+
+        public static async Task<PagedInfo<T2>> ToPageAsync<T, T2>(this ISugarQueryable<T> source, PagerInfo parm)
+        {
+            var page = new PagedInfo<T2>();
+            RefAsync<int> total = 0;
+            page.PageSize = parm.PageSize;
+            page.PageIndex = parm.PageNum;
+            if (parm.Sort.IsNotEmpty())
+            {
+                source.OrderByPropertyName(parm.Sort, parm.SortType.Contains("desc") ? OrderByType.Desc : OrderByType.Asc);
+            }
+            var result = await source.ToPageListAsync(parm.PageNum, parm.PageSize, total);
 
             page.TotalNum = total;
             page.Result = result.Adapt<List<T2>>();

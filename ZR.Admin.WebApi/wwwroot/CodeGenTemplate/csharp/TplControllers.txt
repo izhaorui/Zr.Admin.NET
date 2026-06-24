@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using ${options.DtosNamespace}.${options.SubNamespace}.Dto;
 using ${options.ModelsNamespace}.${options.SubNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
+$if(replaceDto.ShowBtnExport)
+using System.Threading.Tasks;
+$end
 $if(replaceDto.ShowBtnImport)
 using MiniExcelLibs;
 $end
@@ -127,15 +130,16 @@ $if(replaceDto.ShowBtnExport)
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
         [HttpGet("export")]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:export")]
-        public IActionResult Export([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
+        public async Task<IActionResult> Export([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
         {
-            var list = _${replaceDto.ModelTypeName}Service.ExportList(parm).Result;
+            var pageData = await _${replaceDto.ModelTypeName}Service.ExportListAsync(parm);
+            var list = pageData?.Result;
             if (list == null || list.Count <= 0)
             {
                 return ToResponse(ResultCode.FAIL, "没有要导出的数据");
             }
-            var result = ExportExcelMini(list, "${genTable.FunctionName}", "${genTable.FunctionName}");
-            return ExportExcel(result.Item2, result.Item1);
+            var result = await ExportExcelMiniAsync(list, "${genTable.FunctionName}", "${genTable.FunctionName}");
+            return await ExportExcelAsync(result.Item2, result.Item1);
         }
 
 $end

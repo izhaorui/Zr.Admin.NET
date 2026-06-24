@@ -1,5 +1,8 @@
 ﻿using ${options.DtosNamespace}.${options.SubNamespace}.Dto;
 using ${options.ModelsNamespace}.${options.SubNamespace};
+$if(replaceDto.ShowBtnExport)
+using System.Threading.Tasks;
+$end
 
 namespace ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service
 {
@@ -29,7 +32,7 @@ $if(replaceDto.ShowBtnImport)
 $end
 
 $if(replaceDto.ShowBtnExport)
-        PagedInfo<${replaceDto.ModelTypeName}Dto> ExportList(${replaceDto.ModelTypeName}QueryDto parm);
+        Task<PagedInfo<${replaceDto.ModelTypeName}Dto>> ExportListAsync(${replaceDto.ModelTypeName}QueryDto parm);
 $end
     }
 }

@@ -78,6 +78,28 @@ namespace Infrastructure.Controllers
         }
 
         /// <summary>
+        /// 异步导出Excel（使用异步文件流）
+        /// </summary>
+        /// <param name="path">完整文件路径</param>
+        /// <param name="fileName">带扩展文件名</param>
+        /// <returns></returns>
+        protected async Task<IActionResult> ExportExcelAsync(string path, string fileName)
+        {
+            if (!Path.Exists(path))
+            {
+                throw new CustomException(fileName + "文件不存在");
+            }
+            // 使用异步文件流打开文件，允许异步IO
+            var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
+
+            // 确保方法为真正的异步方法，避免编译器警告
+            await Task.Yield();
+
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
+            return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", HttpUtility.UrlEncode(fileName));
+        }
+
+        /// <summary>
         /// 下载文件
         /// </summary>
         /// <param name="path"></param>

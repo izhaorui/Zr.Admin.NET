@@ -7,6 +7,9 @@ using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespa
 $if(genTable.TplCategory == "tree")
 using System.Collections.Generic;
 $end
+$if(replaceDto.ShowBtnExport)
+using System.Threading.Tasks;
+$end
 
 namespace ${options.ServicesNamespace}.${options.SubNamespace}
 {
@@ -175,13 +178,13 @@ $if(replaceDto.ShowBtnExport)
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
-        public PagedInfo<${replaceDto.ModelTypeName}Dto> ExportList(${replaceDto.ModelTypeName}QueryDto parm)
+        public async Task<PagedInfo<${replaceDto.ModelTypeName}Dto>> ExportListAsync(${replaceDto.ModelTypeName}QueryDto parm)
         {
             parm.PageNum = 1;
             parm.PageSize = 100000;
             var predicate = QueryExp(parm);
 
-            var response = Queryable()
+            var response = await Queryable()
                 .Where(predicate.ToExpression())
                 .Select((it) => new ${replaceDto.ModelTypeName}Dto()
                 {
@@ -191,7 +194,7 @@ $if(column.DictType != "")
 $end
 $end
                 }, true)
-                .ToPage(parm);
+                .ToPageAsync(parm);
 
             return response;
         }
