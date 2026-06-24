@@ -30,10 +30,25 @@ namespace ZR.ServiceCore.Services
         {
             if (menu.ParentId != null)
             {
-                return GetMenusByMenuId(menu.ParentId.ParseToInt(), userId);
+                var query = new MenuQueryDto
+                {
+                    MenuName = menu.MenuName,
+                    Visible = menu.Visible,
+                    Status = menu.Status,
+                    MenuTypeIds = menu.MenuTypeIds
+                };
+
+                var menuList = SelectMenuList(query, userId);
+                var parentId = menu.ParentId.Value;
+                var children = menuList.Where(x => x.ParentId == parentId).OrderBy(x => x.OrderNum).ToList();
+                foreach (var child in children)
+                {
+                    RecursionFn(menuList, child);
+                }
+                return children;
             }
-            List<SysMenu> menuList = BuildMenuTree(SelectMenuList(menu, userId));
-            return menuList;
+
+            return BuildMenuTree(SelectMenuList(menu, userId));
         }
 
         /// <summary>
@@ -312,6 +327,9 @@ namespace ZR.ServiceCore.Services
                 .Where((c, j) => c.Status == "0")
                 .WhereIF(!string.IsNullOrEmpty(sysMenu.MenuName), (c, j) => c.MenuName.Contains(sysMenu.MenuName))
                 .WhereIF(!string.IsNullOrEmpty(sysMenu.Visible), (c, j) => c.Visible == sysMenu.Visible)
+                .WhereIF(!string.IsNullOrEmpty(sysMenu.Status), (c, j) => c.Status == sysMenu.Status)
+                .WhereIF(!string.IsNullOrEmpty(sysMenu.MenuTypeIds), (c, j) => sysMenu.MenuTypeIdArr.Contains(c.MenuType))
+                .WhereIF(sysMenu.ParentId != null, (c, j) => c.ParentId == sysMenu.ParentId)
                 .OrderBy((c, j) => new { c.ParentId, c.OrderNum })
                 .Select(c => c)
                 .ToList();
@@ -494,7 +512,7 @@ namespace ZR.ServiceCore.Services
             {
                 routerName = menu.RouteName;
             }
-            // 非外链并且是一级目录（类型为目录）
+            // Non-empty external links and top-level directories (type: directory)
             if (IsMeunFrame(menu))
             {
                 routerName = string.Empty;
@@ -510,18 +528,18 @@ namespace ZR.ServiceCore.Services
         public string GetRoutePath(SysMenu menu)
         {
             string routerPath = menu.Path;
-            // 内链打开外网方式
+            // Internal links open external network methods
             if (menu.ParentId != 0 && IsInnerLink(menu))
             {
                 routerPath = InnerLinkReplaceEach(routerPath);
             }
-            // 非外链并且是一级目录（类型为目录）
+            // Non-empty external links and top-level directories (type: directory)
             if (0 == menu.ParentId && UserConstants.TYPE_DIR.Equals(menu.MenuType)
                 && UserConstants.NO_FRAME.Equals(menu.IsFrame))
             {
                 routerPath = "/" + menu.Path;
             }
-            else if (IsMeunFrame(menu))// 非外链并且是一级目录（类型为菜单）
+            else if (IsMeunFrame(menu))// Non-empty external links and top-level directories (type: menu)
             {
                 routerPath = "/";
             }
