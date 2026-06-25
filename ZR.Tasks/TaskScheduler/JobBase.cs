@@ -138,7 +138,9 @@ namespace ZR.Tasks
                     logModel.IsManual = Convert.ToInt32(isManualObj);
                 }
             }
-            catch { }
+            catch
+            {
+            }
 
             logModel.TriggerSource = mergedData.GetString("TriggerSource");
             logModel = await tasksLogService.AddTaskLog(job.Key.Name, logModel);

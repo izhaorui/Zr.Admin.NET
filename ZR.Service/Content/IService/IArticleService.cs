@@ -7,11 +7,6 @@ namespace ZR.Service.Content.IService
     {
         PagedInfo<ArticleDto> GetList(ArticleQueryDto parm);
         PagedInfo<ArticleDto> GetMyList(ArticleQueryDto parm);
-        /// <summary>
-        /// 修改文章管理
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
         public int UpdateArticle(Article model);
         PagedInfo<ArticleDto> GetArticleList(ArticleQueryDto parm);
         List<ArticleDto> GetNewArticleList();
@@ -28,5 +23,8 @@ namespace ZR.Service.Content.IService
         ArticleDto GetArticle(long cid, long userId);
         int Passed(long[] idsArr);
         int Reject(string reason, long[] idsArr);
+
+        List<ArticleExportDto> ExportList(ArticleQueryDto parm);
+        int ImportArticle(List<ArticleImportDto> list);
     }
 }

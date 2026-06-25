@@ -47,7 +47,7 @@ namespace ZR.Model.Content
         /// <summary>
         /// 文章状态 1、发布 2、草稿
         /// </summary>
-        [SugarColumn(ColumnDescription = "文章状态 1、发布 2、草稿", Length = 20)]
+        [SugarColumn(ColumnDescription = "文章状态0下线 1、发布 2、草稿", Length = 20)]
         public string Status { get; set; }
         /// <summary>
         /// 编辑器类型 markdown,html
@@ -120,7 +120,7 @@ namespace ZR.Model.Content
         /// </summary>
         public CommentSwitchEnum CommentSwitch { get; set; }
         /// <summary>
-        /// 审核状态 0、待审核 1、通过 2、拒绝
+        /// 审核状态 0、待审核 1、通过 2、驳回
         /// </summary>
         public AuditStatusEnum AuditStatus { get; set; }
     }

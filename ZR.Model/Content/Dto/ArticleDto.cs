@@ -148,6 +148,74 @@ namespace ZR.Model.Content.Dto
         public AuditStatusEnum? AuditStatus { get; set; }
         public CommentSwitchEnum? CommentSwitch { get; set; }
     }
+
+    /// <summary>
+    /// 文章导入对象（Excel）
+    /// </summary>
+    public class ArticleImportDto
+    {
+        [ExcelColumn(Width = 18, Name = "标题")]
+        [ExcelColumnName("标题")]
+        public string Title { get; set; }
+
+        [ExcelColumn(Width = 18, Name = "摘要")]
+        [ExcelColumnName("摘要")]
+        public string AbstractText { get; set; }
+
+        [ExcelColumn(Width = 14, Name = "是否公开 1是 0否")]
+        [ExcelColumnName("是否公开 1是 0否")]
+        public string IsPublic { get; set; }
+
+        [ExcelColumn(Width = 30, Name = "内容")]
+        [ExcelColumnName("内容")]
+        public string Content { get; set; }
+
+        [ExcelColumn(Ignore = true)]
+        public int? ArticleType { get; set; }
+
+        [ExcelColumn(Width = 15, Name = "编辑器类型")]
+        [ExcelColumnName("编辑器类型")]
+        public string EditorType { get; set; }
+    }
+
+    /// <summary>
+    /// 文章导出对象（Excel）
+    /// </summary>
+    public class ArticleExportDto
+    {
+        public long Cid { get; set; }
+
+        [ExcelColumn(Name = "标题", Width = 20)]
+        public string Title { get; set; }
+
+        [ExcelColumn(Name = "内容", Width = 50)]
+        public string Content { get; set; }
+
+        [ExcelColumn(Name = "作者")]
+        public string AuthorName { get; set; }
+        public string Status { get; set; }
+        public int CategoryId { get; set; }
+
+
+        [ExcelColumn(Name = "目录名")]
+        public string CategoryName { get; set; }
+        public string Tags { get; set; }
+
+
+        [ExcelColumn(Name = "是否公开")]
+        public int IsPublic { get; set; }
+
+        [ExcelColumn(Name = "是否置顶")]
+        public int IsTop { get; set; }
+
+        [ExcelColumn(Name = "文章类型")]
+        public ArticleTypeEnum ArticleType { get; set; }
+        public AuditStatusEnum AuditStatus { get; set; }
+
+        [ExcelColumn(Name = "创建时间")]
+        public DateTime? CreateTime { get; set; }
+    }
+
     public class ArticleUser
     {
         public string Avatar { get; set; } = string.Empty;

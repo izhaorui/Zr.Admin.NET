@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MiniExcelLibs;
 using ZR.Model.Content;
 using ZR.Model.Content.Dto;
 using ZR.Service.Content.IService;
 
-namespace ZR.Admin.WebApi.Controllers
+namespace ZR.Admin.WebApi.Controllers.Content
 {
     /// <summary>
     /// 内容管理
@@ -169,6 +170,68 @@ namespace ZR.Admin.WebApi.Controllers
         {
             var response = _ArticleService.Delete(id);
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 导出文章
+        /// </summary>
+        [HttpGet("export")]
+        [ActionPermissionFilter(Permission = "system:article:export")]
+        [Log(Title = "文章导出", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
+        public IActionResult Export([FromQuery] ArticleQueryDto parm)
+        {
+            parm.PageNum = 1;
+            parm.PageSize = 100000;
+            var list = _ArticleService.ExportList(parm);
+            if (list == null || list.Count <= 0)
+            {
+                return ToResponse(ResultCode.FAIL, "没有要导出的数据");
+            }
+
+            var result = ExportExcelMini(list, "article", "文章内容");
+            return ExportExcel(result.Item2, result.Item1);
+        }
+
+        /// <summary>
+        /// 导入文章
+        /// </summary>
+        [HttpPost("importData")]
+        [Consumes("multipart/form-data")]
+        [ActionPermissionFilter(Permission = "system:article:import")]
+        [Log(Title = "文章导入", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false)]
+        public IActionResult ImportData(IFormFile file)
+        {
+            if (file == null || file.Length <= 0)
+            {
+                return ToResponse(ResultCode.FAIL, "请上传导入文件");
+            }
+
+            List<ArticleImportDto> list;
+            using (var stream = file.OpenReadStream())
+            {
+                list = stream.Query<ArticleImportDto>(startCell: "A1")
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Title) || !string.IsNullOrWhiteSpace(x.Content))
+                    .ToList();
+            }
+
+            if (list.Count <= 0)
+            {
+                return ToResponse(ResultCode.FAIL, "导入失败：未读取到有效数据，请使用系统模板并从第2行开始填写");
+            }
+
+            return SUCCESS(_ArticleService.ImportArticle(list));
+        }
+
+        /// <summary>
+        /// 文章导入模板下载
+        /// </summary>
+        [HttpGet("importTemplate")]
+        [ActionPermissionFilter(Permission = "system:article:import")]
+        [Log(Title = "文章导入模板", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
+        public IActionResult ImportTemplateExcel()
+        {
+            var result = DownloadImportTemplate(new List<ArticleImportDto>() { }, "article");
+            return ExportExcel(result.Item2, result.Item1);
         }
     }
 }

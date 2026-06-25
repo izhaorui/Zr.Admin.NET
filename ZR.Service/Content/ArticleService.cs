@@ -13,9 +13,6 @@ using ZR.ServiceCore.Services;
 
 namespace ZR.Service.Content
 {
-    /// <summary>
-    /// 
-    /// </summary>
     [AppService(ServiceType = typeof(IArticleService), ServiceLifetime = LifeTime.Transient)]
     public class ArticleService : BaseService<Article>, IArticleService
     {
@@ -23,12 +20,6 @@ namespace ZR.Service.Content
         private readonly IArticleTopicService _topicService;
         private readonly ISysUserMsgService _userMsgService;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="categoryService"></param>
-        /// <param name="topicService"></param>
-        /// <param name="userMsgService"></param>
         public ArticleService(
             IArticleCategoryService categoryService,
             IArticleTopicService topicService,
@@ -56,6 +47,8 @@ namespace ZR.Service.Content
             predicate = predicate.AndIF(parm.ArticleType != null, m => (int)m.ArticleType == parm.ArticleType);
             predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
             predicate = predicate.AndIF(parm.AuditStatus != null, m => m.AuditStatus == parm.AuditStatus);
+            predicate = predicate.AndIF(parm.BeginTime != null, m => m.CreateTime >= parm.BeginTime);
+            predicate = predicate.AndIF(parm.EndTime != null, m => m.CreateTime <= parm.EndTime);
 
             if (parm.CategoryId != null)
             {
@@ -496,5 +489,97 @@ namespace ZR.Service.Content
             return result;
         }
 
+        /// <summary>
+        /// 导出文章列表
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public List<ArticleExportDto> ExportList(ArticleQueryDto parm)
+        {
+            var predicate = Expressionable.Create<Article>();
+
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), m => m.Title.Contains(parm.Title));
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.AbstractText), m => m.AbstractText.Contains(parm.AbstractText));
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Status), m => m.Status == parm.Status);
+            predicate = predicate.AndIF(parm.IsPublic != null, m => m.IsPublic == parm.IsPublic);
+            predicate = predicate.AndIF(parm.IsTop != null, m => m.IsTop == parm.IsTop);
+            predicate = predicate.AndIF(parm.ArticleType != null, m => (int)m.ArticleType == parm.ArticleType);
+            predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
+            predicate = predicate.AndIF(parm.AuditStatus != null, m => m.AuditStatus == parm.AuditStatus);
+            predicate = predicate.AndIF(parm.BeginTime != null, m => m.CreateTime >= parm.BeginTime);
+            predicate = predicate.AndIF(parm.EndTime != null, m => m.CreateTime <= parm.EndTime);
+
+            if (parm.CategoryId != null)
+            {
+                var allChildCategory = Context.Queryable<ArticleCategory>()
+                    .ToChildList(m => m.ParentId, parm.CategoryId);
+                var categoryIdList = allChildCategory.Select(x => x.CategoryId).ToArray();
+                predicate = predicate.And(m => categoryIdList.Contains(m.CategoryId));
+            }
+
+            var list = Queryable()
+                .Includes(x => x.CategoryNav)
+                .Where(predicate.ToExpression())
+                .OrderByDescending(m => m.Cid)
+                .ToList();
+
+            return list.Select(x => new ArticleExportDto
+            {
+                Cid = x.Cid,
+                Title = x.Title,
+                Content = x.Content,
+                AuthorName = x.AuthorName,
+                Status = x.Status,
+                CategoryId = x.CategoryId,
+                CategoryName = x.CategoryNav?.Name,
+                Tags = x.Tags,
+                IsPublic = x.IsPublic,
+                IsTop = x.IsTop,
+                ArticleType = x.ArticleType,
+                AuditStatus = x.AuditStatus,
+                CreateTime = x.CreateTime
+            }).ToList();
+        }
+
+        /// <summary>
+        /// 导入文章
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public int ImportArticle(List<ArticleImportDto> list)
+        {
+            if (list == null || list.Count <= 0)
+            {
+                return 0;
+            }
+
+            int successCount = 0;
+            foreach (var item in list)
+            {
+                if (item.Title.IsEmpty() || item.Content.IsEmpty())
+                {
+                    continue;
+                }
+
+                var entity = new Article
+                {
+                    Title = item.Title,
+                    Content = item.Content,
+                    Status = "2",
+                    CategoryId = 0,
+                    IsPublic = item.IsPublic == "是" ? 1 : 0,
+                    ArticleType = item.ArticleType.HasValue ? (ArticleTypeEnum)item.ArticleType.Value : ArticleTypeEnum.Article,
+                    AbstractText = item.AbstractText,
+                    CommentSwitch = CommentSwitchEnum.ALL,
+                    CreateTime = DateTime.Now,
+                    EditorType = item.EditorType ?? "html",
+                };
+
+                Publish(entity);
+                successCount++;
+            }
+
+            return successCount;
+        }
     }
 }
