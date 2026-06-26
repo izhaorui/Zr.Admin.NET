@@ -63,7 +63,8 @@ namespace ZR.CodeGenerator
                 ViewFileName = dto.GenTable.BusinessName.FirstUpperCase(),
                 OperBtnStyle = dto.GenTable.Options.OperBtnStyle,
                 UseSnowflakeId = dto.GenTable.Options.UseSnowflakeId,
-                EnableLog = dto.GenTable.Options.EnableLog
+                EnableLog = dto.GenTable.Options.EnableLog,
+                EnableColumns = dto.GenTable.Options.EnableColumns
             };
             var columns = dto.GenTable.Columns;
 

@@ -141,5 +141,9 @@
         /// 前端模板 1、element ui 2、element plus
         /// </summary>
         public int FrontTpl { get; set; } = 2;
+        /// <summary>
+        /// 启用显隐列
+        /// </summary>
+        public bool EnableColumns { get; set; } = true;
     }
 }

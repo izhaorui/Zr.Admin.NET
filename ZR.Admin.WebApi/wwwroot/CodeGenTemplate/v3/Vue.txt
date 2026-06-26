@@ -133,7 +133,7 @@ $if(replaceDto.ShowBtnExport)
         </el-button>
       </el-col>
 $end
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" $if(replaceDto.EnableColumns) :columns="columns"$end></right-toolbar>
     </el-row>
 
     <el-table
@@ -167,7 +167,7 @@ $set(showToolTipHtml = " :show-overflow-tooltip=\"true\"")
 $end
 $if(column.IsList == true)
 $if(column.HtmlType == "customInput" && column.IsPk == false)
-      <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center" v-if="columns.showColumn('${columnName}')">
+      <el-table-column prop="${columnName}" label="${labelName}" width="90" sortable align="center"$if(replaceDto.EnableColumns) v-if="columns.showColumn('${columnName}')"$end>
         <template #default="scope">
           <span v-show="editIndex != scope.$${index}index" @click="editCurrRow(scope.$${index}index)">{{scope.row.${columnName}}}</span>
           <el-input
@@ -178,21 +178,21 @@ $if(column.HtmlType == "customInput" && column.IsPk == false)
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "imageUpload")
-      <el-table-column prop="${columnName}" label="${labelName}" align="center" v-if="columns.showColumn('${columnName}')">
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"$if(replaceDto.EnableColumns) v-if="columns.showColumn('${columnName}')"$end>
         <template #default="scope">
           <ImagePreview :src="scope.row.${columnName}"></ImagePreview>
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "checkbox" || column.HtmlType.Contains("select") || column.HtmlType == "radio")
-      <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr} v-if="columns.showColumn('${columnName}')">
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${column.sortStr}$if(replaceDto.EnableColumns) v-if="columns.showColumn('${columnName}')"$end>
         <template #default="scope">
           <dict-tag :options="$if(column.DictType != "") options.${column.DictType} $else options.${column.CsharpFieldFl}Options$end" :value="scope.row.${columnName}" $if(column.HtmlType == "checkbox" || column.HtmlType == "selectMulti")split=","$end />
         </template>
       </el-table-column>
 $elseif(column.HtmlType == "datetime")
-      <el-table-column prop="${columnName}" label="${labelName}" :show-overflow-tooltip="true" ${column.sortStr} v-if="columns.showColumn('${columnName}')"/>
+      <el-table-column prop="${columnName}" label="${labelName}" :show-overflow-tooltip="true" ${column.sortStr}$if(replaceDto.EnableColumns) v-if="columns.showColumn('${columnName}')"$end/>
 $else
-      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml}${column.sortStr} v-if="columns.showColumn('${columnName}')"/>
+      <el-table-column prop="${columnName}" label="${labelName}" align="center"${showToolTipHtml}${column.sortStr}$if(replaceDto.EnableColumns) v-if="columns.showColumn('${columnName}')"$end/>
 $end
 $end
 $end
@@ -430,7 +430,6 @@ $elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio" || column
                   :key="item.dictValue" 
                   :label="item.dictLabel" 
                   :value="${value}"></el-option>
-              </el-select>
             </template>
           </el-table-column>
 $elseif(column.HtmlType == "switch")
@@ -497,6 +496,7 @@ $if(item.IsQuery == true)
 $end
 $end
 })
+$if(replaceDto.EnableColumns)
 const columns = ref([
 $set(index = 0)
 $foreach(column in genTable.Columns)
@@ -515,11 +515,12 @@ $set(type = "dict")
 $set(align = "center")
 $end
 $if(column.IsList)
-  { visible: ${if(index < 9)}true${else}false${end}, type: '${type}', prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' ${showToolTipHtml} $if(column.DictType != "") ,dictType: '${column.DictType}'$end },
+  { visible: ${if(index < 9)}true${else}false${end}, prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' ${showToolTipHtml} $if(column.DictType != "") ,dictType: '${column.DictType}'$end },
 $end
 $end
   //{ visible: false, prop: 'actions', label: '操作', type: 'slot', width: '160' }
 ])
+$end
 const total = ref(0)
 const dataList = ref([])
 const defaultTime = ref([new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)])

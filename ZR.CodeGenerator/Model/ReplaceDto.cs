@@ -79,5 +79,9 @@ namespace ZR.CodeGenerator.Model
         /// </summary>
         public bool UseSnowflakeId { get; set; }
         public bool EnableLog { get; set; }
+        /// <summary>
+        /// 是否启用显隐列
+        /// </summary>
+        public bool EnableColumns { get; set; }
     }
 }
