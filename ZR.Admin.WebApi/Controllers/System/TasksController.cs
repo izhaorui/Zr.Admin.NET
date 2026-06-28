@@ -3,7 +3,6 @@ using Quartz;
 using SqlSugar;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-
 using ZR.Tasks;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -24,6 +23,33 @@ namespace ZR.Admin.WebApi.Controllers
         {
             _tasksQzService = sysTasksQzService;
             _schedulerServer = taskScheduler;
+        }
+
+        private string CurrentTenantId => App.GetCurrentTenantId();
+
+        private void EnsureTaskAccess(SysTasks task)
+        {
+            if (task == null)
+            {
+                throw new CustomException("任务不存在");
+            }
+
+            if (HttpContext.IsAdmin())
+            {
+                return;
+            }
+
+            if (!string.Equals(task.TenantId, CurrentTenantId, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new CustomException("无权访问当前租户任务");
+            }
+        }
+
+        private SysTasks GetTaskById(string id)
+        {
+            var task = _tasksQzService.GetFirst(m => m.ID == id);
+            EnsureTaskAccess(task);
+            return task;
         }
 
         /// <summary>
@@ -58,7 +84,7 @@ namespace ZR.Admin.WebApi.Controllers
         {
             if (!string.IsNullOrEmpty(id))
             {
-                return SUCCESS(_tasksQzService.GetId(id));
+                return SUCCESS(GetTaskById(id));
             }
             return SUCCESS(0);
         }
@@ -73,7 +99,7 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult Create([FromBody] TasksCreateDto parm)
         {
             //判断是否已经存在
-            if (_tasksQzService.Any(m => m.Name == parm.Name))
+            if (_tasksQzService.Any(m => m.TenantId == CurrentTenantId && m.Name == parm.Name))
             {
                 throw new CustomException($"添加 {parm.Name} 失败，该用任务存在，不能重复！");
             }
@@ -97,6 +123,7 @@ namespace ZR.Admin.WebApi.Controllers
             var tasksQz = parm.Adapt<SysTasks>().ToCreate(HttpContext);
             tasksQz.Create_by = HttpContext.GetName();
             tasksQz.ID = SnowFlakeSingle.Instance.NextId().ToString();
+            tasksQz.TenantId = CurrentTenantId;
 
             return SUCCESS(_tasksQzService.AddTasks(tasksQz));
         }
@@ -111,7 +138,7 @@ namespace ZR.Admin.WebApi.Controllers
         public async Task<IActionResult> Update([FromBody] TasksCreateDto parm)
         {
             //判断是否已经存在
-            if (_tasksQzService.Any(m => m.Name == parm.Name && m.ID != parm.ID))
+            if (_tasksQzService.Any(m => m.TenantId == CurrentTenantId && m.Name == parm.Name && m.ID != parm.ID))
             {
                 throw new CustomException($"更新 {parm.Name} 失败，该用任务存在，不能重复！");
             }
@@ -123,7 +150,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"cron表达式不正确");
             }
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == parm.ID);
+            var tasksQz = GetTaskById(parm.ID);
             if (string.IsNullOrEmpty(parm.ApiUrl) && parm.TaskType == 2)
             {
                 throw new CustomException($"api地址不能为空");
@@ -134,6 +161,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException($"该任务正在运行中，请先停止在更新");
             }
             var model = parm.Adapt<SysTasks>();
+            model.TenantId = tasksQz.TenantId;
             model.Update_by = HttpContextExtension.GetName(HttpContext);
             int response = _tasksQzService.UpdateTasks(model);
             if (response > 0)
@@ -158,12 +186,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("删除任务 Id 不能为空");
             }
 
-            if (!_tasksQzService.Any(m => m.ID == id))
-            {
-                throw new CustomException("任务不存在");
-            }
-
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
+            var tasksQz = GetTaskById(id);
             var taskResult = await _schedulerServer.DeleteTaskScheduleAsync(tasksQz);
 
             if (taskResult.IsSuccess())
@@ -187,12 +210,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("启动任务 Id 不能为空");
             }
 
-            if (!_tasksQzService.Any(m => m.ID == id))
-            {
-                throw new CustomException("任务不存在");
-            }
-
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
+            var tasksQz = GetTaskById(id);
             var taskResult = await _schedulerServer.AddTaskScheduleAsync(tasksQz);
 
             if (taskResult.IsSuccess())
@@ -218,12 +236,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("停止任务 Id 不能为空");
             }
 
-            if (!_tasksQzService.Any(m => m.ID == id))
-            {
-                throw new CustomException("任务不存在");
-            }
-
-            var tasksQz = _tasksQzService.GetFirst(m => m.ID == id);
+            var tasksQz = GetTaskById(id);
             var taskResult = await _schedulerServer.DeleteTaskScheduleAsync(tasksQz);//await _schedulerServer.PauseTaskScheduleAsync(tasksQz);
 
             if (taskResult.IsSuccess())
@@ -266,7 +279,9 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "monitor:job:export")]
         public IActionResult Export()
         {
-            var list = _tasksQzService.GetAll();
+            var list = HttpContext.IsAdmin()
+                ? _tasksQzService.GetAll()
+                : _tasksQzService.GetAll().Where(f => f.TenantId == CurrentTenantId).ToList();
 
             string sFileName = ExportExcel(list, "monitorjob", "定时任务");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });

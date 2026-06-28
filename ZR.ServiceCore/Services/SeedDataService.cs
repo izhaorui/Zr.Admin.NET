@@ -1,5 +1,6 @@
 ﻿using MiniExcelLibs;
 using SqlSugar.IOC;
+using Infrastructure;
 using ZR.Common;
 using ZR.Model.Content;
 using ZR.Model.System;
@@ -52,7 +53,7 @@ namespace ZR.ServiceCore.Services
                 .WhereColumns(it => it.MenuId)//如果不是主键可以这样实现（多字段it=>new{it.x1,it.x2}）
                 .ToStorage();
             var result = x.AsInsertable.OffIdentity().ExecuteCommand();//插入可插入部分;
-            
+
             string msg = $"[菜单数据] 插入{x.InsertList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
         }
@@ -256,6 +257,41 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
+        /// 租户数据
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public (string, object, object) InitTenantData(List<SysTenant> data)
+        {
+            data ??= [];
+            data = data.Where(x => !string.IsNullOrWhiteSpace(x.TenantId)).ToList();
+
+            var mainDb = App.Configuration["MainDb"] ?? "0";
+            if (!data.Any(x => string.Equals(x.TenantId, mainDb, StringComparison.OrdinalIgnoreCase)))
+            {
+                data.Add(new SysTenant
+                {
+                    TenantId = mainDb,
+                    TenantName = "默认租户",
+                    Status = 0,
+                    DelFlag = 0,
+                    Remark = "种子初始化自动补齐"
+                });
+            }
+
+            var db = DbScoped.SugarScope;
+            var x = db.Storageable(data)
+                .WhereColumns(it => it.TenantId)
+                .ToStorage();
+
+            x.AsInsertable.ExecuteCommand();
+            x.AsUpdateable.ExecuteCommand();
+
+            string msg = $"[租户数据] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
+            return (msg, x.ErrorList, x.IgnoreList);
+        }
+
+        /// <summary>
         /// 初始化种子数据
         /// </summary>
         /// <param name="path"></param>
@@ -279,6 +315,7 @@ namespace ZR.ServiceCore.Services
                 db.DbMaintenance.TruncateTable<SysDictData>();
                 db.DbMaintenance.TruncateTable<SysNotice>();
                 db.DbMaintenance.TruncateTable<SysUserRole>();
+                db.DbMaintenance.TruncateTable<SysTenant>();
             }
 
             var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
@@ -332,6 +369,18 @@ namespace ZR.ServiceCore.Services
             var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "notice").ToList();
             var result12 = InitNoticeData(sysNotice);
             result.Add(result12.Item1);
+
+            List<SysTenant> sysTenant = [];
+            try
+            {
+                sysTenant = MiniExcel.Query<SysTenant>(path, sheetName: "tenant").ToList();
+            }
+            catch
+            {
+                // data.xlsx 里无 tenant sheet 时，自动回落到默认租户。
+            }
+            var result14 = InitTenantData(sysTenant);
+            result.Add(result14.Item1);
 
             return result;
         }

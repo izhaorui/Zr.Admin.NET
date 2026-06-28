@@ -21,6 +21,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysConfigService sysConfigService;
         private readonly ISysRoleService roleService;
         private readonly ISmsCodeLogService smsCodeLogService;
+        private readonly ISysTenantService sysTenantService;
 
         public SysLoginController(
             ISysMenuService sysMenuService,
@@ -30,7 +31,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysConfigService configService,
             ISysRoleService sysRoleService,
             ISmsCodeLogService smsCodeLogService,
-            ICaptcha captcha)
+            ICaptcha captcha,
+            ISysTenantService sysTenantService)
         {
             SecurityCodeHelper = captcha;
             this.sysMenuService = sysMenuService;
@@ -40,6 +42,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.sysConfigService = configService;
             this.smsCodeLogService = smsCodeLogService;
             roleService = sysRoleService;
+            this.sysTenantService = sysTenantService;
         }
 
         /// <summary>
@@ -54,6 +57,10 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Login([FromBody] LoginBodyDto loginBody)
         {
             if (loginBody == null) { throw new CustomException("请求参数错误"); }
+
+            sysTenantService.CheckTenant(loginBody.TenantId);
+            using var tenantScope = TenantContext.Change(loginBody.TenantId);
+
             loginBody.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
             SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
             if (sysConfig?.ConfigValue != "off" && !SecurityCodeHelper.Validate(loginBody.Uuid, loginBody.Code))
@@ -74,7 +81,6 @@ namespace ZR.Admin.WebApi.Controllers.System
                 TenantId = loginBody.TenantId,
                 Permissions = permissions,
             };
-            //CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }
 

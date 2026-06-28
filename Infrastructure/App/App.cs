@@ -36,7 +36,7 @@ namespace Infrastructure
         /// <summary>
         /// 获取Web主机环境
         /// </summary>
-        public static IWebHostEnvironment WebHostEnvironment => InternalApp.WebHostEnvironment; 
+        public static IWebHostEnvironment WebHostEnvironment => InternalApp.WebHostEnvironment;
         /// <summary>
         /// 获取全局配置
         /// </summary>
@@ -109,9 +109,57 @@ namespace Infrastructure
         /// <returns></returns>
         public static string GetCurrentTenantId()
         {
+            if (!string.IsNullOrWhiteSpace(TenantContext.CurrentTenantId))
+            {
+                return TenantContext.CurrentTenantId;
+            }
+
+            var itemId = HttpContext?.Items?["TenantId"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(itemId))
+            {
+                return itemId;
+            }
+
             var headerId = HttpContext?.Request?.Headers["tenantId"].ToString();
+            if (!string.IsNullOrWhiteSpace(headerId))
+            {
+                return headerId;
+            }
+
             var claimId = User?.Claims.FirstOrDefault(f => f.Type == ClaimTypes.PrimaryGroupSid)?.Value;
-            return !string.IsNullOrEmpty(headerId) ? headerId : (claimId ?? "tenant0");
+            if (!string.IsNullOrWhiteSpace(claimId))
+            {
+                return claimId;
+            }
+
+            return Configuration["MainDb"] ?? "0";
+        }
+
+        /// <summary>
+        /// 是否启用多租户。
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsTenantEnabled()
+        {
+            var useTenant = Configuration["UseTenant"];
+            if (string.IsNullOrWhiteSpace(useTenant))
+            {
+                return false;
+            }
+
+            if (bool.TryParse(useTenant, out var boolValue))
+            {
+                return boolValue;
+            }
+
+            if (int.TryParse(useTenant, out var intValue))
+            {
+                return intValue == 1;
+            }
+
+            return string.Equals(useTenant, "on", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(useTenant, "yes", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(useTenant, "enabled", StringComparison.OrdinalIgnoreCase);
         }
 
     }

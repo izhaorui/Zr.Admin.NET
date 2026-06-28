@@ -1,4 +1,5 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -20,6 +21,7 @@ namespace ZR.ServiceCore.Services
         public PagedInfo<SysTasks> SelectTaskList(TasksQueryDto parm)
         {
             var predicate = Expressionable.Create<SysTasks>();
+            var tenantId = App.GetCurrentTenantId();
 
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.QueryText),
                 m => m.Name.Contains(parm.QueryText) ||
@@ -27,6 +29,7 @@ namespace ZR.ServiceCore.Services
                 m.AssemblyName.Contains(parm.QueryText));
             predicate.AndIF(parm.TaskType != null, m => m.TaskType == parm.TaskType);
             predicate.AndIF(parm.IsStart != null, m => m.IsStart == parm.IsStart);
+            predicate.AndIF(App.HttpContext?.IsAdmin() != true, m => m.TenantId == tenantId);
 
             return Queryable().Where(predicate.ToExpression())
                 .ToPage(parm);
@@ -93,3 +96,4 @@ namespace ZR.ServiceCore.Services
         }
     }
 }
+

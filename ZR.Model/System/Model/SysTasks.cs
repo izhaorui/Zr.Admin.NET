@@ -130,6 +130,13 @@
         public string LastErrorMsg { get; set; }
 
         /// <summary>
+        /// 所属租户
+        /// </summary>
+        [Display(Name = "所属租户")]
+        [SugarColumn(Length = 64, ExtendedAttribute = ProteryConstant.NOTNULL)]
+        public string TenantId { get; set; }
+
+        /// <summary>
         /// api执行地址
         /// </summary>
         public string ApiUrl { get; set; }

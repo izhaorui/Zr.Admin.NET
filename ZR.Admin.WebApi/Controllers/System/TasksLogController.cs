@@ -20,6 +20,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.tasksLogService = tasksLogService;
         }
 
+        private string CurrentTenantId => App.GetCurrentTenantId();
+
         /// <summary>
         /// 查询日志
         /// </summary>
@@ -37,6 +39,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             predicate = predicate.AndIF(queryDto.JobGroup.IfNotEmpty(), m => m.JobGroup == queryDto.JobGroup);
             predicate = predicate.AndIF(queryDto.Status.IfNotEmpty(), m => m.Status == queryDto.Status);
             predicate = predicate.AndIF(queryDto.JobId.IfNotEmpty(), m => m.JobId == queryDto.JobId);
+            predicate = predicate.AndIF(HttpContext.IsAdmin() != true, m => m.TenantId == CurrentTenantId);
 
             var response = tasksLogService.GetPages(predicate.ToExpression(), pager, m => m.CreateTime, OrderByType.Desc);
 
@@ -55,7 +58,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             long[] jobIdArr = Tools.SpitLongArrary(jobIds);
 
-            int result = tasksLogService.Delete(jobIdArr);
+            int result = HttpContext.IsAdmin()
+                ? tasksLogService.Delete(jobIdArr)
+                : tasksLogService.Deleteable().Where(f => jobIdArr.Contains(f.JobLogId) && f.TenantId == CurrentTenantId).ExecuteCommand();
 
             return ToResponse(result);
         }
@@ -69,7 +74,14 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "清空任务日志", BusinessType = BusinessType.CLEAN)]
         public IActionResult Clean()
         {
-            tasksLogService.DeleteTable();
+            if (HttpContext.IsAdmin())
+            {
+                tasksLogService.DeleteTable();
+            }
+            else
+            {
+                tasksLogService.Deleteable().Where(f => f.TenantId == CurrentTenantId).ExecuteCommand();
+            }
             return SUCCESS(1);
         }
 
@@ -82,7 +94,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "PRIV_JOBLOG_EXPORT")]
         public IActionResult Export()
         {
-            var list = tasksLogService.GetAll();
+            var list = HttpContext.IsAdmin()
+                ? tasksLogService.GetAll()
+                : tasksLogService.GetAll().Where(f => f.TenantId == CurrentTenantId).ToList();
 
             string sFileName = ExportExcel(list, "jobLog", "定时任务日志");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });

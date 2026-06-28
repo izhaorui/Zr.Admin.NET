@@ -1,4 +1,5 @@
 ﻿using SqlSugar.IOC;
+using Infrastructure;
 using ZR.Model;
 using ZR.Model.Content;
 using ZR.Model.Models;
@@ -46,6 +47,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(SysUserPost));
             db.CodeFirst.InitTables(typeof(SysTasks));
             db.CodeFirst.InitTables(typeof(SysTasksLog));
+            db.CodeFirst.InitTables(typeof(SysTenant));
             db.CodeFirst.InitTables(typeof(CommonLang));
             db.CodeFirst.InitTables(typeof(GenTable));
             db.CodeFirst.InitTables(typeof(GenTableColumn));
@@ -64,6 +66,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(BannerConfig));
             db.CodeFirst.InitTables(typeof(SysUserMsg));
             db.CodeFirst.InitTables(typeof(SysFileGroup));
+            EnsureDefaultTenant(db);
             //db.CodeFirst.InitTables(typeof(SocialFans));
             //db.CodeFirst.InitTables(typeof(SocialFansInfo));
             //db.CodeFirst.InitTables(typeof(UserOnlineLog));
@@ -76,6 +79,32 @@ namespace ZR.ServiceCore.SqlSugar
             {
                 db.CodeFirst.InitTables(typeof(UserOnlineLog));
             }
+
+            var t2 = db.DbMaintenance.IsAnyTable("sys_tenant");
+            if (!t2)
+            {
+                db.CodeFirst.InitTables(typeof(SysTenant));
+            }
+            EnsureDefaultTenant(db);
+        }
+
+        private static void EnsureDefaultTenant(SqlSugarScope db)
+        {
+            var mainDb = App.Configuration["MainDb"] ?? "0";
+            var hasMainTenant = db.Queryable<SysTenant>().Any(x => x.DelFlag == 0 && x.TenantId == mainDb);
+            if (hasMainTenant)
+            {
+                return;
+            }
+
+            db.Insertable(new SysTenant
+            {
+                TenantId = mainDb,
+                TenantName = "默认租户",
+                Status = 0,
+                DelFlag = 0,
+                Remark = "系统初始化自动创建"
+            }).ExecuteCommand();
         }
     }
 }

@@ -153,6 +153,7 @@ app.UseRouting();
 app.UseCors("Policy");//要放在app.UseEndpoints前。
 //app.UseHttpsRedirection();
 
+app.UseMiddleware<TenantResolveMiddleware>();
 //启用认证中间件（必须在 UseAuthorization 之前）
 app.UseAuthentication();
 //把 Jwt 校验后创建的 ClaimsPrincipal 挂到 HttpContext.Use

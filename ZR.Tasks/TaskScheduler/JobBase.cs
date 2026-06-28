@@ -24,13 +24,13 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="context">作业上下文</param>
         /// <param name="job">业务逻辑方法</param>
-        public Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task> job)
+        public async Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task> job)
         {
-            return ExecuteInternal(context, async () =>
+            return await ExecuteJobInternal(context, async () =>
             {
                 await job();
                 return SuccessMessage;
-            });
+            }, preserveQuartzException: false);
         }
 
         /// <summary>
@@ -38,18 +38,26 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="context">作业上下文</param>
         /// <param name="job">业务逻辑方法</param>
-        public Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task<string>> job)
+        public async Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task<string>> job)
         {
-            return ExecuteInternal(context, job);
+            return await ExecuteJobInternal(context, job, preserveQuartzException: true);
         }
 
-        private async Task<SysTasksLog> ExecuteInternal(IJobExecutionContext context, Func<Task<string>> job)
+        private async Task<SysTasksLog> ExecuteJobInternal(
+            IJobExecutionContext context,
+            Func<Task<string>> job,
+            bool preserveQuartzException)
         {
             var stopwatch = Stopwatch.StartNew();
-            var status = 0;
-            var logMsg = SuccessMessage;
+            int status = 0;
+            string logMsg;
+            string tenantId = context.MergedJobDataMap.GetString("TenantId");
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                logger.Warn("任务执行时未携带 TenantId，任务可能在默认/空租户上下文中运行");
+            }
             Exception jobException = null;
-
+            using var tenantScope = TenantContext.Change(tenantId);
             try
             {
                 var result = await job();
@@ -73,21 +81,23 @@ namespace ZR.Tasks
                 Elapsed = stopwatch.Elapsed.TotalMilliseconds,
                 Status = status.ToString(),
                 JobMessage = logMsg,
-                Exception = jobException?.ToString(),
-                ServerName = Environment.MachineName
+                TenantId = tenantId
             };
 
             await RecordTaskLog(context, logModel);
 
             if (jobException != null)
             {
-                throw jobException is JobExecutionException quartzEx
-                    ? quartzEx
-                    : new JobExecutionException(jobException)
-                    {
-                        // 仅立即重试一次，避免持续失败导致无限重试
-                        RefireImmediately = context.RefireCount < 1
-                    };
+                if (preserveQuartzException && jobException is JobExecutionException quartzEx)
+                {
+                    throw quartzEx;
+                }
+
+                throw new JobExecutionException(jobException)
+                {
+                    // 仅立即重试一次，避免持续失败导致无限重试
+                    RefireImmediately = context.RefireCount < 1
+                };
             }
 
             return logModel;
@@ -122,7 +132,7 @@ namespace ZR.Tasks
             logModel.Operator = mergedData.GetString("UserName");
             try
             {
-                var isManualObj = mergedData.ContainsKey("IsManual") ? mergedData.Get("IsManual") : null;
+                var isManualObj = mergedData.ContainsKey("IsManual") ? mergedData["IsManual"] : null;
                 if (isManualObj != null)
                 {
                     logModel.IsManual = Convert.ToInt32(isManualObj);

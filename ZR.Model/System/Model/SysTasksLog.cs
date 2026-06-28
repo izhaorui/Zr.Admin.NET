@@ -47,6 +47,12 @@
         public string InvokeTarget { get; set; }
 
         /// <summary>
+        /// 所属租户
+        /// </summary>
+        [SugarColumn(Length = 64)]
+        public string TenantId { get; set; }
+
+        /// <summary>
         /// 创建时间
         /// </summary>
         public DateTime CreateTime { get; set; }

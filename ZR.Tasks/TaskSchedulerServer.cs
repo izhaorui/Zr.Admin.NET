@@ -161,6 +161,7 @@ namespace ZR.Tasks
                 // 标记为系统调度的任务
                 job.JobDataMap.Add("IsManual", 0);
                 job.JobDataMap.Add("TriggerSource", "cron");
+                job.JobDataMap.Add("TenantId", tasksQz.TenantId);
 
                 ITrigger trigger;
 
@@ -301,7 +302,8 @@ namespace ZR.Tasks
                     { "UserName", string.IsNullOrWhiteSpace(operatorName) ? "system" : operatorName },
                     { "TraceId", App.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("N") },
                     { "IsManual", 1 },
-                    { "TriggerSource", "manual" }
+                    { "TriggerSource", "manual" },
+                    { "TenantId", tasksQz.TenantId }
                 };
                 await _scheduler.Result.TriggerJob(jobKey, manualData);
 
@@ -348,6 +350,7 @@ namespace ZR.Tasks
                 // 一次性触发标记为手动执行
                 job.JobDataMap.Add("IsManual", 1);
                 job.JobDataMap.Add("TriggerSource", "manual");
+                job.JobDataMap.Add("TenantId", tasksQz.TenantId);
 
                 ITrigger trigger = TriggerBuilder.Create()
                     .WithIdentity(triggerKey)

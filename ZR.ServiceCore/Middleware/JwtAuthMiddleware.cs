@@ -1,6 +1,5 @@
 ﻿using Infrastructure;
 using Infrastructure.Model;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -59,50 +58,24 @@ namespace ZR.ServiceCore.Middleware
                 return;
             }
 
-            TokenModel loginUser = JwtUtil.GetLoginUser(context);
+            string ip = HttpContextExtension.GetClientUserIp(context);
+            string url = context.Request.Path;
+            string osType = context.Request.Headers["os"];
 
-            if (loginUser != null)
+            var loginUser = JwtUtil.GetLoginUser(context);
+            if (loginUser == null)
             {
-                // 尝试刷新 Token（刷新失败在方法内记录，不影响主流程）
-                await TryRefreshTokenAsync(context, loginUser);
-
-                // 挂载到 context.User
-                var identity = new ClaimsIdentity(JwtUtil.AddClaims(loginUser), JwtBearerDefaults.AuthenticationScheme);
-                context.User = new ClaimsPrincipal(identity);
-
-                // 让后续异常交给全局异常中间件处理
-                await _next(context);
+                string msg = $"请求访问[{url}]失败，Token无效或未登录";
+                _logger.LogWarning("{Message}, ip={Ip}", msg, ip);
+                await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, msg));
+                return;
             }
-            else
-            {
-                string ip = HttpContextExtension.GetClientUserIp(context);
-                string msg = $"请求访问[{path}]失败，Token无效或未登录，IP:{ip}";
-                _logger.LogWarning(msg);
 
-                await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, "Token无效或未登录"));
-            }
-        }
-
-        /// <summary>
-        /// 尝试刷新 Token
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="loginUser"></param>
-        /// <returns></returns>
-        private async Task TryRefreshTokenAsync(HttpContext context, TokenModel loginUser)
-        {
-            // 使用 UTC 对齐，确保与 JwtSecurityToken.ValidTo 对比一致
             var now = DateTime.UtcNow;
-            var expireUtc = loginUser.ExpireTime.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(loginUser.ExpireTime, DateTimeKind.Utc)
-                : loginUser.ExpireTime.ToUniversalTime();
-
-            var ts = expireUtc - now;
-
-            // Token 即将过期但还未过期时才刷新
-            if (ts.TotalMinutes > 0 && ts.TotalMinutes < TOKEN_REFRESH_THRESHOLD_MINUTES)
+            var ts = loginUser.ExpireTime - now;
+            if (ts.TotalMinutes <= TOKEN_REFRESH_THRESHOLD_MINUTES)
             {
-                var cacheKey = $"token_refresh_{loginUser.UserId}";
+                var cacheKey = $"token_{loginUser.UserId}";
 
                 // 使用缓存防止并发刷新
                 if (!CacheHelper.Exists(cacheKey))
@@ -114,29 +87,26 @@ namespace ZR.ServiceCore.Middleware
 
                         var newToken = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
 
-                        // 设置响应头允许前端读取自定义 Header
-                        string osType = context.Request.Headers["os"];
-                        if (!string.IsNullOrEmpty(osType) || context.Request.Headers.ContainsKey("Origin"))
+                        if (!string.IsNullOrEmpty(osType))
                         {
-                            // 如果已有该 Header，避免重复追加 (防止多次刷新时重复)
-                            if (!context.Response.Headers.ContainsKey("Access-Control-Expose-Headers"))
-                            {
-                                context.Response.Headers.Append("Access-Control-Expose-Headers", "X-Refresh-Token");
-                            }
+                            context.Response.Headers.Append("Access-Control-Expose-Headers", "X-Refresh-Token");
                         }
-                        // 覆盖而不是多次追加
-                        context.Response.Headers["X-Refresh-Token"] = newToken;
-                        _logger.LogInformation($"刷新Token成功: UserId={loginUser.UserId}, UserName={loginUser.UserName}, 剩余时间={ts.TotalMinutes:F2}分钟");
+
+                        context.Response.Headers.Append("X-Refresh-Token", newToken);
+                        _logger.LogInformation($"刷新Token: {loginUser.UserName}");
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, $"刷新Token失败: UserId={loginUser.UserId}, UserName={loginUser.UserName}");
-                        // 刷新失败时移除缓存锁，允许下次重试
-                        CacheHelper.Remove(cacheKey);
+                        _logger.LogWarning(ex, "刷新Token失败: {UserName}", loginUser.UserName);
                     }
                 }
             }
-            await Task.CompletedTask;
+
+            // 挂载 context.User，确保后续业务层可读取 claims。
+            var identity = new ClaimsIdentity(JwtUtil.AddClaims(loginUser), "jwt");
+            context.User = new ClaimsPrincipal(identity);
+
+            await _next(context);
         }
     }
 }
