@@ -29,20 +29,14 @@ namespace ZR.ServiceCore.Middleware
         /// <returns></returns>
         public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            string msg = string.Empty;
-            var values = context.ModelState.Values;
-            foreach (var item in values)
-            {
-                foreach (var err in item.Errors)
-                {
-                    if (!string.IsNullOrEmpty(msg))
-                    {
-                        msg += " | ";
-                    }
+            var messages = context.ModelState.Values
+                .SelectMany(x => x.Errors)
+                .Select(x => x.ErrorMessage)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList();
 
-                    msg += err.ErrorMessage;
-                }
-            }
+            string msg = string.Join(" | ", messages);
             if (!string.IsNullOrEmpty(msg))
             {
                 logger.Info($"请求参数错误,{msg}");

@@ -35,13 +35,9 @@ $set(labelName = item.ColumnComment)
 $else
 $set(labelName = item.CsharpField)
 $end
-$if(item.IsRequired)
-        [Required(ErrorMessage = "${item.ColumnComment}不能为空")]
-$end
 $if(replaceDto.ShowBtnExport)
 $if(item.IsExport)
         [ExcelColumn(Name = "$labelName"$if(item.CsharpType == "DateTime"), Format = "yyyy-MM-dd HH:mm:ss", Width = 20$end)]
-        [ExcelColumnName("$labelName")]
 $else
         [ExcelIgnore]
 $end
@@ -72,5 +68,30 @@ $if(column.IsExport)
         public string ${column.CsharpField}Label { get; set; }
 $end
 $end
+    }
+
+    /// <summary>
+    /// ${genTable.FunctionName}FluentValidation验证器
+    /// </summary>
+    public class ${replaceDto.ModelTypeName}DtoValidator : AbstractValidator<${replaceDto.ModelTypeName}Dto>
+    {
+        public ${replaceDto.ModelTypeName}DtoValidator()
+        {
+$foreach(item in genTable.Columns)
+$if(item.IsRequired)
+$set(vLabelName = "")
+$if(item.ColumnComment != "")
+$set(vLabelName = item.ColumnComment)
+$else
+$set(vLabelName = item.CsharpField)
+$end
+$if(item.CsharpType == "string")
+            RuleFor(x => x.$item.CsharpField).NotEmpty().WithMessage("$vLabelName不能为空");
+$else
+            RuleFor(x => x.$item.CsharpField).NotNull().WithMessage("$vLabelName不能为空");
+$end
+$end
+$end
+        }
     }
 }

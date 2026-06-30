@@ -1,4 +1,6 @@
 using AspNetCoreRateLimit;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Infrastructure.Converter;
 using IP2Region.Net.Abstractions;
 using IP2Region.Net.XDB;
@@ -13,6 +15,7 @@ using ZR.Common.Cache;
 using ZR.Common.DynamicApiSimple.Extens;
 using ZR.Infrastructure.IPTools;
 using ZR.Infrastructure.WebExtensions;
+using ZR.Model;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
 using ZR.Mall;
@@ -26,6 +29,17 @@ builder.Host.UseNLog();
 builder.Services.AddDynamicApi();
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation(options =>
+{
+    // Keep Microsoft DataAnnotations validation for backward compatibility.
+    options.DisableDataAnnotationsValidation = false;
+});
+builder.Services.AddValidatorsFromAssemblies(new[]
+{
+    typeof(Program).Assembly,
+    typeof(PagerInfo).Assembly,
+    typeof(InitMallTable).Assembly
+});
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
