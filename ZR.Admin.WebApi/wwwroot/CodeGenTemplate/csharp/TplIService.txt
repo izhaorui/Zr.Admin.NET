@@ -34,5 +34,9 @@ $end
 $if(replaceDto.ShowBtnExport)
         Task<PagedInfo<${replaceDto.ModelTypeName}Dto>> ExportListAsync(${replaceDto.ModelTypeName}QueryDto parm);
 $end
+
+$if(replaceDto.EnableSoftDelete)
+        int SoftDelete${replaceDto.ModelTypeName}(${replaceDto.PKType}[] ids);
+$end
     }
 }

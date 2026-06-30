@@ -51,6 +51,10 @@ $if(genTable.TplCategory == "tree")
         {
             var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
 
+$if(replaceDto.EnableSoftDelete)
+            predicate = predicate.And(it => it.${replaceDto.SoftDeleteField} == ${replaceDto.SoftDeleteNormalValue});
+$end
+
 $foreach(column in genTable.Columns)
 $if(column.IsQuery)
 $if(column.CsharpType == "string")
@@ -81,6 +85,9 @@ $if(null != genTable.SubTableName && "" != genTable.SubTableName)
                 .Includes(x => x.${genTable.SubTable.ClassName}Nav) //填充子对象
 $end
                 .Where(x => x.${replaceDto.PKName} == ${replaceDto.PKName})
+$if(replaceDto.EnableSoftDelete)
+                .Where(x => x.${replaceDto.SoftDeleteField} == ${replaceDto.SoftDeleteNormalValue})
+$end
                 .First();
 
             return response;
@@ -93,6 +100,9 @@ $end
         /// <returns></returns>
         public ${replaceDto.ModelTypeName} Add${replaceDto.ModelTypeName}(${replaceDto.ModelTypeName} model)
         {
+    $if(replaceDto.EnableSoftDelete)
+            model.${replaceDto.SoftDeleteField} = ${replaceDto.SoftDeleteNormalValue};
+    $end
 $if(null != genTable.SubTableName && "" != genTable.SubTableName)
             return Context.InsertNav(model).Include(s1 => s1.${genTable.SubTable.ClassName}Nav).ExecuteReturnEntity();
 $else
@@ -209,6 +219,10 @@ $end
         {
             var predicate = Expressionable.Create<${replaceDto.ModelTypeName}>();
 
+$if(replaceDto.EnableSoftDelete)
+            predicate = predicate.And(it => it.${replaceDto.SoftDeleteField} == ${replaceDto.SoftDeleteNormalValue});
+$end
+
 $foreach(column in genTable.Columns)
 $if(column.IsQuery)
 $if(column.HtmlType == "selectMulti")
@@ -231,5 +245,26 @@ $end
 $end
             return predicate;
         }
+
+$if(replaceDto.EnableSoftDelete)
+        /// <summary>
+        /// 软删除${genTable.FunctionName}
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public int SoftDelete${replaceDto.ModelTypeName}(${replaceDto.PKType}[] ids)
+        {
+            if (ids == null || ids.Length == 0)
+            {
+                return 0;
+            }
+
+            return Update(w => ids.Contains(w.${replaceDto.PKName}) && w.${replaceDto.SoftDeleteField} == ${replaceDto.SoftDeleteNormalValue},
+                it => new ${replaceDto.ModelTypeName}()
+                {
+                    ${replaceDto.SoftDeleteField} = ${replaceDto.SoftDeleteDeletedValue}
+                });
+        }
+$end
     }
 }

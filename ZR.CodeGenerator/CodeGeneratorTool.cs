@@ -75,6 +75,15 @@ namespace ZR.CodeGenerator
             replaceDto.SelectMulti = columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_SELECT_MULTI)) ? 1 : 0;
             replaceDto.ShowEditor = columns.Any(f => f.HtmlType.Equals(GenConstants.HTML_EDITOR)) ? 1 : 0;
             replaceDto.FistLowerPk = replaceDto.PKName.FirstLowerCase();
+            var softDeleteColumn = GetSoftDeleteColumn(columns);
+            if (softDeleteColumn != null)
+            {
+                replaceDto.EnableSoftDelete = true;
+                replaceDto.SoftDeleteField = softDeleteColumn.CsharpField;
+                replaceDto.SoftDeleteFieldType = softDeleteColumn.CsharpType;
+                replaceDto.SoftDeleteNormalValue = GetSoftDeleteFlagValue(softDeleteColumn, false);
+                replaceDto.SoftDeleteDeletedValue = GetSoftDeleteFlagValue(softDeleteColumn, true);
+            }
             InitJntTemplate(dto, replaceDto);
 
             GenerateModels(replaceDto, dto);
@@ -671,6 +680,55 @@ namespace ZR.CodeGenerator
                 return $"it => it.{propertyName}.Contains(parm.{propertyName}))";
             }
             return $"it => it.{propertyName} == parm.{propertyName})";
+        }
+
+        private static GenTableColumn GetSoftDeleteColumn(List<GenTableColumn> columns)
+        {
+            if (columns == null || columns.Count == 0)
+            {
+                return null;
+            }
+
+            string[] candidates =
+            {
+                "DelFlag",
+                "IsDelete",
+                "IsDeleted",
+                "DeleteFlag",
+                "Deleted"
+            };
+
+            foreach (var name in candidates)
+            {
+                var found = columns.FirstOrDefault(x => x.CsharpField.Equals(name, StringComparison.OrdinalIgnoreCase));
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private static string GetSoftDeleteFlagValue(GenTableColumn column, bool deleted)
+        {
+            if (column == null)
+            {
+                return deleted ? "1" : "0";
+            }
+
+            var field = column.CsharpField ?? string.Empty;
+            if (field.Equals("DelFlag", StringComparison.OrdinalIgnoreCase))
+            {
+                return deleted ? "2" : "0";
+            }
+
+            if (column.CsharpType.Equals("bool", StringComparison.OrdinalIgnoreCase))
+            {
+                return deleted ? "true" : "false";
+            }
+
+            return deleted ? "1" : "0";
         }
         #endregion
     }

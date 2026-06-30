@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using ${options.DtosNamespace}.${options.SubNamespace}.Dto;
 using ${options.ModelsNamespace}.${options.SubNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
-$if(replaceDto.ShowBtnExport)
-using System.Threading.Tasks;
-$end
 $if(replaceDto.ShowBtnImport)
 using MiniExcelLibs;
 $end
@@ -117,8 +114,11 @@ $if(replaceDto.ShowBtnDelete || replaceDto.ShowBtnMultiDel)
         public IActionResult Delete${replaceDto.ModelTypeName}([FromRoute]string ids)
         {
             var idArr = Tools.SplitAndConvert<${replaceDto.PKType}>(ids);
-
+$if(replaceDto.EnableSoftDelete)
+            return ToResponse(_${replaceDto.ModelTypeName}Service.SoftDelete${replaceDto.ModelTypeName}(idArr));
+$else
             return ToResponse(_${replaceDto.ModelTypeName}Service.Delete(idArr$if(replaceDto.enableLog), "删除${genTable.FunctionName}"$end));
+$end
         }
 
 $end

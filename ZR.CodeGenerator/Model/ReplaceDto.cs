@@ -83,5 +83,30 @@ namespace ZR.CodeGenerator.Model
         /// 是否启用显隐列
         /// </summary>
         public bool EnableColumns { get; set; }
+
+        /// <summary>
+        /// 是否启用软删除
+        /// </summary>
+        public bool EnableSoftDelete { get; set; }
+
+        /// <summary>
+        /// 软删除字段名（如 DelFlag/IsDelete）
+        /// </summary>
+        public string SoftDeleteField { get; set; }
+
+        /// <summary>
+        /// 软删除字段类型
+        /// </summary>
+        public string SoftDeleteFieldType { get; set; }
+
+        /// <summary>
+        /// 正常数据标记值（如 0）
+        /// </summary>
+        public string SoftDeleteNormalValue { get; set; }
+
+        /// <summary>
+        /// 已删除标记值（如 1/2）
+        /// </summary>
+        public string SoftDeleteDeletedValue { get; set; }
     }
 }
