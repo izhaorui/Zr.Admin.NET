@@ -7,9 +7,6 @@ using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespa
 $if(genTable.TplCategory == "tree")
 using System.Collections.Generic;
 $end
-$if(replaceDto.ShowBtnExport)
-using System.Threading.Tasks;
-$end
 
 namespace ${options.ServicesNamespace}.${options.SubNamespace}
 {
@@ -151,9 +148,11 @@ $if(replaceDto.ShowBtnImport)
         /// <summary>
         /// 导入${genTable.FunctionName}
         /// </summary>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public (string, object, object) Import${replaceDto.ModelTypeName}(List<${replaceDto.ModelTypeName}> list)
+        public (string, object, object) Import${replaceDto.ModelTypeName}(List<${replaceDto.ModelTypeName}> list, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var x = Context.Storageable(list)
                 .SplitInsert(it => !it.Any())
 $foreach(column in genTable.Columns)
@@ -178,6 +177,7 @@ $end
                 Console.WriteLine("忽略" + item.StorageMessage);
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             return (msg, x.ErrorList, x.IgnoreList);
         }
 
@@ -187,9 +187,11 @@ $if(replaceDto.ShowBtnExport)
         /// 导出${genTable.FunctionName}
         /// </summary>
         /// <param name="parm"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<PagedInfo<${replaceDto.ModelTypeName}Dto>> ExportListAsync(${replaceDto.ModelTypeName}QueryDto parm)
+        public async Task<PagedInfo<${replaceDto.ModelTypeName}Dto>> ExportListAsync(${replaceDto.ModelTypeName}QueryDto parm, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             parm.PageNum = 1;
             parm.PageSize = 100000;
             var predicate = QueryExp(parm);
@@ -206,6 +208,7 @@ $end
                 }, true)
                 .ToPageAsync(parm);
 
+            cancellationToken.ThrowIfCancellationRequested();
             return response;
         }
 
@@ -234,7 +237,7 @@ $if(column.HtmlType == "month")
             DateTime monthEnd = Convert.ToDateTime(parm.${column.CsharpField}).AddMonths(1);
             predicate = predicate.AndIF(parm.${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.${column.CsharpField} && it.${column.CsharpField} < monthEnd);
 $else
-            predicate = predicate.AndIF(parm.Begin${column.CsharpField} == null, it => it.${column.CsharpField} >= DateTime.Now.ToShortDateString().ParseToDateTime());
+            //predicate = predicate.AndIF(parm.Begin${column.CsharpField} == null, it => it.${column.CsharpField} >= DateTime.Now.ToShortDateString().ParseToDateTime());
             predicate = predicate.AndIF(parm.Begin${column.CsharpField} != null, it => it.${column.CsharpField} >= parm.Begin${column.CsharpField});
             predicate = predicate.AndIF(parm.End${column.CsharpField} != null, it => it.${column.CsharpField} <= parm.End${column.CsharpField});
 $end

@@ -515,7 +515,7 @@ $set(type = "dict")
 $set(align = "center")
 $end
 $if(column.IsList)
-  { visible: ${if(index < 9)}true${else}false${end}, prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' ${showToolTipHtml} $if(column.DictType != "") ,dictType: '${column.DictType}'$end },
+  { visible: ${if(index < 9)}true${else}false${end}, prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' $if(column.DictType != "") ,dictType: '${column.DictType}'$end },
 $end
 $end
   //{ visible: false, prop: 'actions', label: '操作', type: 'slot', width: '160' }

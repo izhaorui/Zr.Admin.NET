@@ -682,6 +682,35 @@ namespace ZR.CodeGenerator
             return $"it => it.{propertyName} == parm.{propertyName})";
         }
 
+        public static int GetStringColumnMaxLength(string columnType)
+        {
+            if (columnType.IsEmpty())
+            {
+                return 0;
+            }
+
+            var normalized = columnType.Trim().ToLowerInvariant();
+            if (!GenConstants.COLUMNTYPE_STR.Any(x => normalized.StartsWith(x.ToLowerInvariant())))
+            {
+                return 0;
+            }
+
+            int startIndex = normalized.IndexOf('(');
+            int endIndex = normalized.IndexOf(')');
+            if (startIndex < 0 || endIndex <= startIndex + 1)
+            {
+                return 0;
+            }
+
+            var lengthText = normalized[(startIndex + 1)..endIndex].Split(',', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            return int.TryParse(lengthText, out int length) ? length : 0;
+        }
+
+        public static bool HasStringMaxLength(string columnType)
+        {
+            return GetStringColumnMaxLength(columnType) > 0;
+        }
+
         private static GenTableColumn GetSoftDeleteColumn(List<GenTableColumn> columns)
         {
             if (columns == null || columns.Count == 0)

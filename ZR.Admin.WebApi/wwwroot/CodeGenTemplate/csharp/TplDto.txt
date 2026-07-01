@@ -78,7 +78,6 @@ $end
         public ${replaceDto.ModelTypeName}DtoValidator()
         {
 $foreach(item in genTable.Columns)
-$if(item.IsRequired)
 $set(vLabelName = "")
 $if(item.ColumnComment != "")
 $set(vLabelName = item.ColumnComment)
@@ -86,10 +85,40 @@ $else
 $set(vLabelName = item.CsharpField)
 $end
 $if(item.CsharpType == "string")
+$if(item.IsRequired)
             RuleFor(x => x.$item.CsharpField).NotEmpty().WithMessage("$vLabelName不能为空");
-$else
+$end
+$if(tool.HasStringMaxLength(item.ColumnType))
+            RuleFor(x => x.$item.CsharpField).MaximumLength($tool.GetStringColumnMaxLength(item.ColumnType)).WithMessage("$vLabelName长度不能超过$tool.GetStringColumnMaxLength(item.ColumnType)个字符");
+$end
+$elseif(item.htmlType == "selectMulti")
+$if(item.IsRequired)
+            RuleFor(x => x.$item.CsharpField).NotNull().NotEmpty().WithMessage("$vLabelName不能为空");
+$end
+$elseif(item.CsharpType == "DateTime")
+$if(item.IsRequired)
             RuleFor(x => x.$item.CsharpField).NotNull().WithMessage("$vLabelName不能为空");
 $end
+$elseif(item.IsRequired)
+            RuleFor(x => x.$item.CsharpField).NotNull().WithMessage("$vLabelName不能为空");
+$end
+$end
+        }
+    }
+
+        /// <summary>
+        /// ${genTable.FunctionName}查询条件验证器
+        /// </summary>
+    public class ${replaceDto.ModelTypeName}QueryDtoValidator : AbstractValidator<${replaceDto.ModelTypeName}QueryDto>
+    {
+        public ${replaceDto.ModelTypeName}QueryDtoValidator()
+        {
+$foreach(item in genTable.Columns)
+$if(item.IsQuery && item.htmlType.StartsWith("date"))
+            RuleFor(x => x.End${item.CsharpField})
+                .GreaterThanOrEqualTo(x => x.Begin${item.CsharpField})
+                .When(x => x.Begin${item.CsharpField} != null && x.End${item.CsharpField} != null)
+                .WithMessage("$item.ColumnComment开始时间不能大于结束时间");
 $end
 $end
         }

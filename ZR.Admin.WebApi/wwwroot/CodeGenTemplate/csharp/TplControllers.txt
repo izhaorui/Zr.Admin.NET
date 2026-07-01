@@ -126,13 +126,14 @@ $if(replaceDto.ShowBtnExport)
         /// <summary>
         /// 导出${genTable.FunctionName}
         /// </summary>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         [Log(Title = "${genTable.FunctionName}", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
         [HttpGet("export")]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:export")]
-        public async Task<IActionResult> Export([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
+        public async Task<IActionResult> Export([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm, CancellationToken cancellationToken)
         {
-            var pageData = await _${replaceDto.ModelTypeName}Service.ExportListAsync(parm);
+            var pageData = await _${replaceDto.ModelTypeName}Service.ExportListAsync(parm, cancellationToken);
             var list = pageData?.Result;
             if (list == null || list.Count <= 0)
             {
@@ -166,20 +167,23 @@ $if(replaceDto.ShowBtnImport)
         /// 导入
         /// </summary>
         /// <param name="file"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         [HttpPost("importData")]
         [Consumes("multipart/form-data")]
         [Log(Title = "${genTable.FunctionName}导入", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false)]
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:import")]
-        public IActionResult ImportData(IFormFile file)
+        public IActionResult ImportData(IFormFile file, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             List<${replaceDto.ModelTypeName}Dto> list = new();
             using (var stream = file.OpenReadStream())
             {
                 list = stream.Query<${replaceDto.ModelTypeName}Dto>(startCell: "A1").ToList();
             }
 
-            return SUCCESS(_${replaceDto.ModelTypeName}Service.Import${replaceDto.ModelTypeName}(list.Adapt<List<${replaceDto.ModelTypeName}>>()));
+            cancellationToken.ThrowIfCancellationRequested();
+            return SUCCESS(_${replaceDto.ModelTypeName}Service.Import${replaceDto.ModelTypeName}(list.Adapt<List<${replaceDto.ModelTypeName}>>(), cancellationToken));
         }
 
         /// <summary>
