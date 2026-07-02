@@ -480,6 +480,7 @@ import Editor from '@/components/Editor'
 $end
 $if(replaceDto.ShowBtnImport)
 import importData from '@/components/ImportData'
+import { buildImportResultHtml } from '@/utils/ruoyi'
 $end
 const { proxy } = getCurrentInstance()
 const ids = ref([])
@@ -858,13 +859,9 @@ $end
 $if(replaceDto.ShowBtnImport)
 // 导入数据成功处理
 const handleFileSuccess = (response) => {
-  const { item1, item2 } = response.data
-  var error = ''
-  item2.forEach((item) => {
-    error += item.storageMessage + ','
-  })
-  proxy.${alert}alert(item1 + '<p>' + error + '</p>', '导入结果', {
-    dangerouslyUseHTMLString: true
+  proxy.${alert}alert(buildImportResultHtml(response), '导入结果', {
+    dangerouslyUseHTMLString: true,
+    customClass: 'import-result-dialog',
   })
   getList()
 }

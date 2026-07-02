@@ -150,7 +150,7 @@ $if(replaceDto.ShowBtnImport)
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public (string, object, object) Import${replaceDto.ModelTypeName}(List<${replaceDto.ModelTypeName}> list, CancellationToken cancellationToken = default)
+    public ImportResultDto Import${replaceDto.ModelTypeName}(List<${replaceDto.ModelTypeName}> list, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var x = Context.Storageable(list)
@@ -164,21 +164,33 @@ $end
                 .ToStorage();
             var result = x.AsInsertable.ExecuteCommand();//插入可插入部分;
 
-            string msg = $"插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误数据{x.ErrorList.Count} 不计算数据{x.IgnoreList.Count} 删除数据{x.DeleteList.Count} 总共{x.TotalList.Count}";                    
-            Console.WriteLine(msg);
+            var importResult = new ImportResultDto
+            {
+                TotalCount = x.TotalList.Count,
+                SuccessCount = result,
+                InsertCount = x.InsertList.Count,
+                UpdateCount = x.UpdateList.Count,
+                FailedCount = x.ErrorList.Count,
+                IgnoreCount = x.IgnoreList.Count,
+                Summary = $"插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误数据{x.ErrorList.Count} 不计算数据{x.IgnoreList.Count} 删除数据{x.DeleteList.Count} 总共{x.TotalList.Count}"
+            };
 
-            //输出错误信息               
-            foreach (var item in x.ErrorList)
-            {
-                Console.WriteLine("错误" + item.StorageMessage);
-            }
-            foreach (var item in x.IgnoreList)
-            {
-                Console.WriteLine("忽略" + item.StorageMessage);
-            }
+            const int detailLimit = 20;
+            importResult.ErrorDetails = x.ErrorList.Take(detailLimit)
+                .Select(item => new ImportResultDetailDto
+                {
+                    StorageMessage = item.StorageMessage,
+                    Record = item.Item
+                }).ToList();
+            importResult.IgnoreDetails = x.IgnoreList.Take(detailLimit)
+                .Select(item => new ImportResultDetailDto
+                {
+                    StorageMessage = item.StorageMessage,
+                    Record = item.Item
+                }).ToList();
 
             cancellationToken.ThrowIfCancellationRequested();
-            return (msg, x.ErrorList, x.IgnoreList);
+            return importResult;
         }
 
 $end

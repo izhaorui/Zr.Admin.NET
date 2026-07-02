@@ -183,7 +183,8 @@ $if(replaceDto.ShowBtnImport)
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            return SUCCESS(_${replaceDto.ModelTypeName}Service.Import${replaceDto.ModelTypeName}(list.Adapt<List<${replaceDto.ModelTypeName}>>(), cancellationToken));
+            var result = _${replaceDto.ModelTypeName}Service.Import${replaceDto.ModelTypeName}(list.Adapt<List<${replaceDto.ModelTypeName}>>(), cancellationToken);
+            return SUCCESS(result);
         }
 
         /// <summary>
