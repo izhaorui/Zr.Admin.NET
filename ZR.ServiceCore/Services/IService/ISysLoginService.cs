@@ -14,6 +14,15 @@ namespace ZR.ServiceCore.Services
         /// <param name="logininfor"></param>
         /// <returns></returns>
         public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor);
+
+        /// <summary>
+        /// 生成异地登录提醒
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="currentLoginIp"></param>
+        /// <returns></returns>
+        string GetAbnormalLoginNotice(SysUser user, string currentLoginIp);
+
         /// <summary>
         /// 手机号登录
         /// </summary>

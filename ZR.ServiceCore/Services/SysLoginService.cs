@@ -6,6 +6,7 @@ using UAParser;
 using ZR.Common;
 using ZR.Infrastructure.Constant;
 using ZR.Infrastructure.Helper;
+using ZR.Infrastructure.IPTools;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -22,15 +23,18 @@ namespace ZR.ServiceCore.Services
     public class SysLoginService : BaseService<SysLogininfor>, ISysLoginService
     {
         private readonly ISysUserService SysUserService;
+        private readonly ISysUserMsgService sysUserMsgService;
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
         public SysLoginService(
             ISysUserService sysUserService, 
+            ISysUserMsgService sysUserMsgService,
             IHttpContextAccessor httpContextAccessor,
             IStringLocalizer<SharedResource> localizer)
         {
             SysUserService = sysUserService;
+            this.sysUserMsgService = sysUserMsgService;
             this.httpContextAccessor = httpContextAccessor;
             _localizer = localizer;
         }
@@ -208,6 +212,58 @@ namespace ZR.ServiceCore.Services
                     it.WeekName = Tools.GetWeekByDate(it.Date);//相当于ToList循环赋值
                 }).ToList();
             return list;
+        }
+
+        public string GetAbnormalLoginNotice(SysUser user, string currentLoginIp)
+        {
+            if (user == null || user.UserId <= 0)
+            {
+                return string.Empty;
+            }
+
+            var currentLocation = NormalizeLoginLocation(GetLocationByIp(currentLoginIp));
+            var previousLocation = NormalizeLoginLocation(GetLocationByIp(user.LoginIP));
+
+            if (previousLocation.IsEmpty() || currentLocation.IsEmpty())
+            {
+                return string.Empty;
+            }
+
+            if (string.Equals(previousLocation, currentLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            var content = $"检测到您的账号发生异地登录。账号：{user.UserName}；本次地点：{currentLocation}；上次地点：{previousLocation}；登录IP：{currentLoginIp}。如非本人操作，请立即修改密码。";
+            sysUserMsgService.AddSysUserMsg(user.UserId, content, UserMsgType.SYSTEM);
+            return content;
+        }
+
+        private static string GetLocationByIp(string ip)
+        {
+            if (ip.IsEmpty())
+            {
+                return string.Empty;
+            }
+
+            var ipInfo = IpTool.Search(ip);
+            return $"{ipInfo?.Province}-{ipInfo?.City}-{ipInfo?.NetworkOperator}";
+        }
+
+        private static string NormalizeLoginLocation(string location)
+        {
+            if (location.IsEmpty())
+            {
+                return string.Empty;
+            }
+
+            var segments = location
+                .Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(segment => !segment.Equals("0", StringComparison.OrdinalIgnoreCase))
+                .Take(2)
+                .ToArray();
+
+            return segments.Length == 0 ? string.Empty : string.Join("-", segments);
         }
 
     }

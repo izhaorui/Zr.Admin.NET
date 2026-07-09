@@ -71,6 +71,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             sysLoginService.CheckLockUser(loginBody.Username);
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
             var user = sysLoginService.Login(loginBody, new SysLogininfor() { LoginLocation = location });
+            string abnormalNotice = sysLoginService.GetAbnormalLoginNotice(user, loginBody.LoginIP);
 
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
@@ -81,7 +82,11 @@ namespace ZR.Admin.WebApi.Controllers.System
                 TenantId = loginBody.TenantId,
                 Permissions = permissions,
             };
-            return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
+            var token = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
+            ApiResult apiResult = new((int)ResultCode.SUCCESS, "success", token);
+            apiResult.Put("notice", abnormalNotice);
+            
+            return ToResponse(apiResult);
         }
 
         /// <summary>
