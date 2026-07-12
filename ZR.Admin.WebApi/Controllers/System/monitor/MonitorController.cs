@@ -35,6 +35,7 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         /// </summary>
         /// <returns></returns>
         [HttpGet("monitor/server")]
+        [ActionPermissionFilter("monitor:server:list")]
         //[AllowAnonymous]
         public IActionResult Server()
         {

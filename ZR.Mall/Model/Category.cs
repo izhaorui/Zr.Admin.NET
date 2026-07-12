@@ -4,7 +4,7 @@
     /// 商城目录
     /// </summary>
     [SugarTable("mms_category", "商城目录")]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class Category
     {
         /// <summary>

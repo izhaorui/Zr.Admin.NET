@@ -4,7 +4,7 @@
     /// 订单项
     /// </summary>
     [SugarTable("oms_order_item", "订单项")]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class OMSOrderItem
     {
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]

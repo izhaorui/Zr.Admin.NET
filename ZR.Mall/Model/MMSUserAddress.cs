@@ -4,7 +4,7 @@
     /// 收货地址表
     /// </summary>
     [SugarTable("mms_address")]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class MMSUserAddress
     {
         [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]

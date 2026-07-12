@@ -5,7 +5,7 @@
     /// </summary>
     [SugarTable("sys_tasks_log", "任务日志表")]
     [Tenant("0")]
-    public class SysTasksLog
+    public class SysTasksLog : IMainDbEntity
     {
         /// <summary>
         /// 日志Id

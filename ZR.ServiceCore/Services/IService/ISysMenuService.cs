@@ -29,9 +29,19 @@ namespace ZR.ServiceCore.Services
 
         List<SysMenu> SelectMenuTreeByUserId(long userId);
 
+        /// <summary>
+        /// 多租户模式：通过 TenantMenu 桥接表获取租户可见菜单
+        /// </summary>
+        List<SysMenu> SelectMenuTreeByUserIdForTenant(long userId, string tenantId);
+
         //List<SysMenu> SelectMenuPermsListByUserId(long userId);
 
         List<string> SelectMenuPermsByUserId(long userId);
+
+        /// <summary>
+        /// 多租户模式：按套餐菜单过滤后的权限字符串
+        /// </summary>
+        List<string> SelectMenuPermsByUserIdForTenant(long userId, string tenantId);
 
         //bool CheckMenuExistRole(long menuId);
 

@@ -16,16 +16,66 @@ namespace ZR.Admin.WebApi.Controllers
     {
         private ISysTasksQzService _tasksQzService;
         private ITaskSchedulerServer _schedulerServer;
+        private readonly ISysTenantService _sysTenantService;
 
         public TasksController(
             ISysTasksQzService sysTasksQzService,
-            ITaskSchedulerServer taskScheduler)
+            ITaskSchedulerServer taskScheduler,
+            ISysTenantService sysTenantService)
         {
             _tasksQzService = sysTasksQzService;
             _schedulerServer = taskScheduler;
+            _sysTenantService = sysTenantService;
         }
 
         private string CurrentTenantId => App.GetCurrentTenantId();
+
+        private bool IsMainTenant()
+        {
+            var mainDb = App.MainDbConfigId;
+            return string.Equals(CurrentTenantId, mainDb, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private string ResolveTenantExpression(string tenantExpression)
+        {
+            if (!App.IsTenantEnabled())
+            {
+                return string.IsNullOrWhiteSpace(tenantExpression) ? CurrentTenantId : tenantExpression.Trim();
+            }
+
+            if (!IsMainTenant())
+            {
+                return CurrentTenantId;
+            }
+
+            if (string.IsNullOrWhiteSpace(tenantExpression))
+            {
+                return CurrentTenantId;
+            }
+
+            var expr = tenantExpression.Trim();
+            if (expr == "*")
+            {
+                return expr;
+            }
+
+            var parts = expr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (parts.Count == 0)
+            {
+                return CurrentTenantId;
+            }
+
+            foreach (var tenantId in parts)
+            {
+                _sysTenantService.CheckTenant(tenantId);
+            }
+
+            return string.Join(",", parts);
+        }
 
         private void EnsureTaskAccess(SysTasks task)
         {
@@ -98,8 +148,10 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "添加任务", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] TasksCreateDto parm)
         {
+            var tenantExpression = ResolveTenantExpression(parm.TenantId);
+
             //判断是否已经存在
-            if (_tasksQzService.Any(m => m.TenantId == CurrentTenantId && m.Name == parm.Name))
+            if (_tasksQzService.Any(m => m.TenantId == tenantExpression && m.Name == parm.Name))
             {
                 throw new CustomException($"添加 {parm.Name} 失败，该用任务存在，不能重复！");
             }
@@ -123,7 +175,7 @@ namespace ZR.Admin.WebApi.Controllers
             var tasksQz = parm.Adapt<SysTasks>().ToCreate(HttpContext);
             tasksQz.Create_by = HttpContext.GetName();
             tasksQz.ID = SnowFlakeSingle.Instance.NextId().ToString();
-            tasksQz.TenantId = CurrentTenantId;
+            tasksQz.TenantId = tenantExpression;
 
             return SUCCESS(_tasksQzService.AddTasks(tasksQz));
         }
@@ -137,8 +189,10 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "修改任务", BusinessType = BusinessType.UPDATE)]
         public async Task<IActionResult> Update([FromBody] TasksCreateDto parm)
         {
+            var tenantExpression = ResolveTenantExpression(parm.TenantId);
+
             //判断是否已经存在
-            if (_tasksQzService.Any(m => m.TenantId == CurrentTenantId && m.Name == parm.Name && m.ID != parm.ID))
+            if (_tasksQzService.Any(m => m.TenantId == tenantExpression && m.Name == parm.Name && m.ID != parm.ID))
             {
                 throw new CustomException($"更新 {parm.Name} 失败，该用任务存在，不能重复！");
             }
@@ -161,7 +215,7 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException($"该任务正在运行中，请先停止在更新");
             }
             var model = parm.Adapt<SysTasks>();
-            model.TenantId = tasksQz.TenantId;
+            model.TenantId = tenantExpression;
             model.Update_by = HttpContextExtension.GetName(HttpContext);
             int response = _tasksQzService.UpdateTasks(model);
             if (response > 0)
@@ -258,13 +312,8 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "执行任务", BusinessType = BusinessType.OTHER)]
         public async Task<IActionResult> Run(string id)
         {
-            var result = await _tasksQzService.IsAnyAsync(m => m.ID == id);
-            if (!result)
-            {
-                throw new CustomException("任务不存在");
-            }
+            var tasksQz = GetTaskById(id);
             var userName = HttpContext.GetName();
-            var tasksQz = await _tasksQzService.GetFirstAsync(m => m.ID == id);
             var taskResult = await _schedulerServer.RunTaskScheduleAsync(tasksQz, userName);
 
             return ToResponse(taskResult);

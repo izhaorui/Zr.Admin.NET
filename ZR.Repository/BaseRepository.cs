@@ -22,15 +22,12 @@ namespace ZR.Repository
         public ITenant itenant = null;//多租户事务
         public BaseRepository(ISqlSugarClient context = null) : base(context)
         {
-            //是否启用多租户
-            var tenantConfig = App.Configuration["UseTenant"];
             // 如果实现了公共数据库接口，则访问主库（ConfigId = "0"）
-            if (tenantConfig != null && tenantConfig == "1")
+            if (App.IsTenantEnabled())
             {
                 if (typeof(IMainDbEntity).IsAssignableFrom(typeof(T)))
                 {
-                    var mainDb = App.Configuration["MainDb"];
-                    Context = DbScoped.SugarScope.GetConnectionScope(mainDb); // 主库
+                    Context = DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId); // 主库
                 }
                 else
                 {
@@ -48,19 +45,61 @@ namespace ZR.Repository
             }
             else
             {
-                //通过特性拿到ConfigId
-                var configId = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
-                if (configId != null)
+                //通过 [Tenant] 特性拿到 ConfigId，支持配置 key 引用
+                // [Tenant("MallDb")] → App.Configuration["MallDb"] ?? "MallDb" → "1"
+                // [Tenant("1")]      → App.Configuration["1"] ?? "1"          → "1"（向后兼容）
+                var tenantAttr = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
+                if (tenantAttr != null)
                 {
-                    Context = DbScoped.SugarScope.GetConnectionScope(configId);//根据类传入的ConfigId自动选择
+                    var resolved = App.Configuration[tenantAttr.ParseToString()] ?? tenantAttr;
+                    Context = DbScoped.SugarScope.GetConnectionScope(resolved);
                 }
                 else
                 {
-                    Context = context ?? DbScoped.SugarScope.GetConnectionScope(0);//没有默认db0
+                    Context = context ?? DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);//没有默认db0
                 }
             }
             //Context = DbScoped.SugarScope.GetConnectionScopeWithAttr<T>();
             itenant = DbScoped.SugarScope;//设置租户接口
+        }
+
+        /// <summary>
+        /// 解析租户数据库连接：优先使用传入租户ID，其次使用当前请求租户；未启用多租户或租户无效时回退到当前Context。
+        /// </summary>
+        protected ISqlSugarClient ResolveTenantDb(string tenantId = null)
+        {
+            if (!App.IsTenantEnabled())
+            {
+                return Context;
+            }
+
+            var targetTenantId = string.IsNullOrWhiteSpace(tenantId)
+                ? App.GetCurrentTenantId()
+                : tenantId.Trim();
+
+            if (string.IsNullOrWhiteSpace(targetTenantId))
+            {
+                return Context;
+            }
+
+            var configs = App.OptionsSetting?.DbConfigs;
+            var hasDbConfig = configs != null && configs.Exists(x =>
+                string.Equals(x.ConfigId, targetTenantId, StringComparison.OrdinalIgnoreCase));
+
+            if (!hasDbConfig)
+            {
+                return Context;
+            }
+
+            return DbScoped.SugarScope.GetConnectionScope(targetTenantId);
+        }
+
+        /// <summary>
+        /// 解析主库连接（MainDb配置不存在时默认0）。
+        /// </summary>
+        protected ISqlSugarClient ResolveMainDb()
+        {
+            return DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);
         }
 
         #region add

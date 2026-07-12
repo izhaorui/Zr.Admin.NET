@@ -5,7 +5,7 @@
     /// </summary>
     [Tenant("0")]
     [SugarTable("sys_dict_data", "字典数据表")]
-    public class SysDictData : SysBase, IMainDbEntity
+    public class SysDictData : SysBase
     {
         /// <summary>
         /// 字典编码

@@ -53,13 +53,18 @@ namespace Infrastructure
         }
 
         /// <summary>
+        /// 当前可用的服务提供器：请求期间使用 HttpContext.RequestServices，非请求场景回退到根容器
+        /// </summary>
+        private static IServiceProvider CurrentServiceProvider => HttpContext?.RequestServices ?? ServiceProvider;
+
+        /// <summary>
         /// 获取请求生命周期的服务
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
         public static object GetService(Type type)
         {
-            return ServiceProvider.GetService(type);
+            return CurrentServiceProvider.GetService(type);
         }
 
         /// <summary>
@@ -80,7 +85,7 @@ namespace Infrastructure
         /// <returns></returns>
         public static object GetRequiredService(Type type)
         {
-            return ServiceProvider.GetRequiredService(type);
+            return CurrentServiceProvider.GetRequiredService(type);
         }
 
         /// <summary>
@@ -132,8 +137,19 @@ namespace Infrastructure
                 return claimId;
             }
 
-            return Configuration["MainDb"] ?? "0";
+            return MainDbConfigId;
         }
+
+        /// <summary>
+        /// 主库 ConfigId（多租户架构中存放租户、套餐等共享数据），默认 "0"。
+        /// </summary>
+        public static string MainDbConfigId => Configuration["MainDb"] ?? "0";
+
+        /// <summary>
+        /// 商城库 ConfigId（非SaaS模式下商城实体使用此 ConfigId），默认 "1"。
+        /// 在 appsettings.json 中通过 "MallDb" 配置项指定。
+        /// </summary>
+        public static string MallDbConfigId => Configuration["MallDb"] ?? "0";
 
         /// <summary>
         /// 是否启用多租户。
@@ -141,7 +157,8 @@ namespace Infrastructure
         /// <returns></returns>
         public static bool IsTenantEnabled()
         {
-            var useTenant = Configuration["UseTenant"];
+            var useTenant = Configuration["TenantSettings:UseTenant"];
+            //Console.WriteLine($"是否启用多租户: {useTenant}");
             if (string.IsNullOrWhiteSpace(useTenant))
             {
                 return false;

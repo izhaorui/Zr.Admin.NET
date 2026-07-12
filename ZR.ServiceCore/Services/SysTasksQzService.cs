@@ -92,6 +92,7 @@ namespace ZR.ServiceCore.Services
                 ApiUrl = parm.ApiUrl,
                 SqlText = parm.SqlText,
                 RequestMethod = parm.RequestMethod,
+                TenantId = parm.TenantId,
             });
         }
     }

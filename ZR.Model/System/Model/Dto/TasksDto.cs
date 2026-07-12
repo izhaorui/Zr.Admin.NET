@@ -105,5 +105,12 @@
         /// 网络请求方式
         /// </summary>
         public string RequestMethod { get; set; }
+
+        /// <summary>
+        /// 目标租户表达式。
+        /// 单租户: tenant_a；多租户: tenant_a,tenant_b；全部租户: *。
+        /// 非主租户提交时会被后端忽略并回落为当前租户。
+        /// </summary>
+        public string TenantId { get; set; }
     }
 }

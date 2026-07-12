@@ -39,8 +39,9 @@ namespace ZR.ServiceCore.Services
         /// 记录登录日志
         /// </summary>
         /// <param name="sysLogininfor"></param>
+        /// <param name="tenantId">租户ID，多租户模式下写入对应租户库</param>
         /// <returns></returns>
-        public void AddLoginInfo(SysLogininfor sysLogininfor);
+        public void AddLoginInfo(SysLogininfor sysLogininfor, string tenantId = null);
 
         /// <summary>
         /// 清空登录日志

@@ -1,4 +1,5 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
 using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
@@ -12,6 +13,7 @@ namespace ZR.ServiceCore.Services
     [AppService(ServiceType = typeof(ISysDictDataService), ServiceLifetime = LifeTime.Transient)]
     public class SysDictDataService : BaseService<SysDictData>, ISysDictDataService
     {
+        private static string TCacheKey(string suffix) => $"{App.GetCurrentTenantId()}:{suffix}";
         /// <summary>
         /// 查询字典数据
         /// </summary>
@@ -35,7 +37,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public List<SysDictData> SelectDictDataByType(string dictType)
         {
-            string CK = $"SelectDictDataByType_{dictType}";
+            string CK = TCacheKey($"SelectDictDataByType_{dictType}");
 
             var list = Queryable()
                 .WithCache(CK, 60 * 10)
@@ -69,7 +71,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public SysDictData SelectDictDataById(long dictCode)
         {
-            string CK = $"SelectDictDataByCode_{dictCode}";
+            string CK = TCacheKey($"SelectDictDataByCode_{dictCode}");
             if (CacheHelper.GetCache(CK) is not SysDictData list)
             {
                 list = GetFirst(f => f.DictCode == dictCode);
@@ -110,7 +112,7 @@ namespace ZR.ServiceCore.Services
                 Extend2 = dict.Extend2,
             });
 
-            CacheHelper.Remove($"SelectDictDataByCode_{dict.DictCode}");
+            CacheHelper.Remove(TCacheKey($"SelectDictDataByCode_{dict.DictCode}"));
             return result;
         }
 

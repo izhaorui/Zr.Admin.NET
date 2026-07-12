@@ -18,7 +18,7 @@ using ZR.Infrastructure.WebExtensions;
 using ZR.Model;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
-using ZR.Mall;
+
 //using SQLitePCL;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,7 +38,7 @@ builder.Services.AddValidatorsFromAssemblies(new[]
 {
     typeof(Program).Assembly,
     typeof(PagerInfo).Assembly,
-    typeof(InitMallTable).Assembly
+    typeof(ZR.Mall.Model.Product).Assembly
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -119,7 +119,6 @@ InternalApp.WebHostEnvironment = app.Environment;
 IpTool.Configure(app.Services.GetRequiredKeyedService<ISearcher>("IP2Region.Net"));
 //初始化db
 builder.Services.AddDb(app.Environment);
-builder.Services.InitDb(app.Environment);
 var workId = builder.Configuration["workId"].ParseToInt();
 if (app.Environment.IsDevelopment())
 {
@@ -172,6 +171,8 @@ app.UseMiddleware<TenantResolveMiddleware>();
 app.UseAuthentication();
 //把 Jwt 校验后创建的 ClaimsPrincipal 挂到 HttpContext.Use
 app.UseMiddleware<JwtAuthMiddleware>();
+//租户套餐功能开关拦截
+app.UseMiddleware<TenantFeatureMiddleware>();
 app.UseAuthorization();
 
 //开启缓存
@@ -179,7 +180,7 @@ app.UseResponseCaching();
 if (builder.Environment.IsProduction())
 {
     //恢复/启动任务
-    app.UseAddTaskSchedulers();
+    await app.UseAddTaskSchedulers();
 }
 //初始化字典数据
 app.UseInit();

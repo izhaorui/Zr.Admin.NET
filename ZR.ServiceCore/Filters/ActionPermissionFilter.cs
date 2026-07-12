@@ -23,6 +23,7 @@ namespace ZR.ServiceCore.Middleware
         /// </summary>
         public string RolePermi { get; set; } = string.Empty;
         private bool HasPermi { get; set; }
+
         public ActionPermissionFilter() { }
         public ActionPermissionFilter(string permission)
         {
@@ -39,6 +40,22 @@ namespace ZR.ServiceCore.Middleware
         public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             TokenModel info = JwtUtil.GetLoginUser(context.HttpContext);
+
+            if (App.IsTenantEnabled() && !string.IsNullOrWhiteSpace(Permission))
+            {
+                var mainDb = App.MainDbConfigId;
+                var tenantId = App.GetCurrentTenantId();
+                var isMainTenant = string.Equals(tenantId, mainDb, StringComparison.OrdinalIgnoreCase);
+
+                // 非主租户不允许访问平台菜单能力，前缀列表从 appsettings.json 的 TenantSettings:PlatformMenuPermPrefixes 读取
+                if (!isMainTenant && TenantFeaturePolicy.IsPlatformMenuPermission(Permission))
+                {
+                    var apiResult = ApiResult.Error(ResultCode.FORBIDDEN, "当前租户不允许访问平台级能力，请切换主租户");
+                    context.HttpContext.Response.StatusCode = 403;
+                    context.Result = new JsonResult(apiResult) { StatusCode = 403 };
+                    return Task.CompletedTask;
+                }
+            }
 
             if (info != null && info?.UserId > 0)
             {

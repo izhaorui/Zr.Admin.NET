@@ -9,3 +9,4 @@ namespace ZR.ServiceCore.Services
         public List<string> GetMenuPermission(SysUserDto user);
     }
 }
+

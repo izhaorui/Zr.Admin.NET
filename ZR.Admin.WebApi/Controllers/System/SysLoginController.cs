@@ -74,7 +74,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             string abnormalNotice = sysLoginService.GetAbnormalLoginNotice(user, loginBody.LoginIP);
 
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
-            //权限集合 eg *:*:*,system:user:list
+            //权限集合 eg *:*:*,system:user:list（按套餐菜单过滤）
             List<string> permissions = permissionService.GetMenuPermission(new SysUserDto() { UserId = user.UserId });
 
             TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>())
@@ -114,11 +114,12 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             long userId = HttpContext.GetUId();
             var user = sysUserService.SelectUserById(userId);
+            var tenantId = App.GetCurrentTenantId();
 
             //前端校验按钮权限使用
             //角色集合 eg: admin,yunying,common
             List<string> roles = permissionService.GetRolePermission(user);
-            //权限集合 eg *:*:*,system:user:list
+            //权限集合 eg *:*:*,system:user:list（按套餐菜单过滤）
             List<string> permissions = permissionService.GetMenuPermission(user);
             user.WelcomeContent = GlobalConstant.WelcomeMessages[new Random().Next(0, GlobalConstant.WelcomeMessages.Length)];
             user.Password = string.Empty;
@@ -133,6 +134,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             });
         }
 
+
+
         /// <summary>
         /// 获取路由信息
         /// </summary>
@@ -141,7 +144,32 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult GetRouters()
         {
             long uid = HttpContext.GetUId();
-            var menus = sysMenuService.SelectMenuTreeByUserId(uid);
+            List<SysMenu> menus;
+
+            if (App.IsTenantEnabled())
+            {
+                var tenantId = App.GetCurrentTenantId();
+                var mainDb = App.MainDbConfigId;
+                var isMainTenant = string.Equals(tenantId, mainDb, StringComparison.OrdinalIgnoreCase);
+
+                if (isMainTenant)
+                {
+                    // 主租户：直接查主库菜单
+                    menus = sysMenuService.SelectMenuTreeByUserId(uid);
+                }
+                else
+                {
+                    // 普通租户：按套餐菜单过滤
+                    menus = sysMenuService.SelectMenuTreeByUserIdForTenant(uid, tenantId);
+
+                    // 过滤平台专属菜单
+                    menus = TenantFeaturePolicy.FilterPlatformMenusForNonMainTenant(menus, false);
+                }
+            }
+            else
+            {
+                menus = sysMenuService.SelectMenuTreeByUserId(uid);
+            }
 
             return SUCCESS(sysMenuService.BuildMenus(menus));
         }
@@ -157,6 +185,22 @@ namespace ZR.Admin.WebApi.Controllers.System
             var perms = permissionService.GetMenuPermission(new SysUserDto() { UserId = uid });
 
             return SUCCESS(sysMenuService.GetAppMenus(perms, v));
+        }
+
+        /// <summary>
+        /// 获取多租户信息（登录页使用：是否启用多租户 + 可选租户列表）
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("tenantInfo")]
+        [AllowAnonymous]
+        public IActionResult TenantInfo()
+        {
+            var useTenant = App.IsTenantEnabled();
+            var tenants = useTenant
+                ? sysTenantService.GetLoginTenantList()
+                : new List<TenantLoginInfoDto>();
+
+            return SUCCESS(new { useTenant, tenants });
         }
 
         /// <summary>
@@ -303,6 +347,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             //{
             //    return ToResponse(ResultCode.CUSTOM_ERROR, "验证码错误");
             //}
+            sysTenantService.CheckTenant(dto.TenantId);
             if (dto.SendType == 0)
             {
                 var info = sysUserService.GetFirst(f => f.Phonenumber == dto.PhoneNum) ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "该手机号不存在", false);
@@ -348,6 +393,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "短信验证码错误");
             }
+            sysTenantService.CheckTenant(loginBody.TenantId);
             var info = sysUserService.GetFirst(f => f.Phonenumber == loginBody.PhoneNum) ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "该手机号不存在", false);
             var infoModel = info.Adapt<SysUserDto>();
             sysLoginService.CheckLockUser(info.UserName);
@@ -355,7 +401,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             var user = sysLoginService.PhoneLogin(loginBody, new SysLogininfor() { LoginLocation = location }, infoModel);
 
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
-            //权限集合 eg *:*:*,system:user:list
+            //权限集合 eg *:*:*,system:user:list（按套餐菜单过滤）
             List<string> permissions = permissionService.GetMenuPermission(user);
 
             TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>())

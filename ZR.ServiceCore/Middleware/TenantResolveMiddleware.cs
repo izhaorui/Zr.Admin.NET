@@ -32,6 +32,13 @@ namespace ZR.ServiceCore.Middleware
             var endpoint = context.GetEndpoint();
             var allowAnonymous = endpoint?.Metadata?.GetMetadata<AllowAnonymousAttribute>() != null;
 
+            // 匿名接口跳过租户一致性校验（无认证用户，tokenTenantId 必然为空，无需校验）
+            if (allowAnonymous)
+            {
+                await _next(context);
+                return;
+            }
+
             var headerTenantId = context.Request.Headers["tenantId"].ToString();
             var tokenTenantId = context.User?.FindFirstValue(ClaimTypes.PrimaryGroupSid);
 
@@ -46,7 +53,8 @@ namespace ZR.ServiceCore.Middleware
             {
                 var path = context.Request.Path.Value ?? string.Empty;
                 _logger.LogWarning("租户不一致，请求被拒绝: path={Path}, headerTenant={HeaderTenant}, tokenTenant={TokenTenant}", path, headerTenantId, tokenTenantId);
-                await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, "租户信息不匹配"));
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.FORBIDDEN, "租户信息不匹配"));
                 return;
             }
 
@@ -60,12 +68,6 @@ namespace ZR.ServiceCore.Middleware
                 {
                     context.Request.Headers["tenantId"] = resolvedTenantId;
                 }
-            }
-
-            if (allowAnonymous)
-            {
-                await _next(context);
-                return;
             }
 
             await _next(context);

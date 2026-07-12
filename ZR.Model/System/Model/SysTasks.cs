@@ -5,7 +5,7 @@
     ///</summary>
     [SugarTable("sys_tasks", "计划任务表")]
     [Tenant("0")]
-    public class SysTasks : SysBase
+    public class SysTasks : SysBase, IMainDbEntity
     {
         public SysTasks()
         {

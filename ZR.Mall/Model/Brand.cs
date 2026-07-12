@@ -4,7 +4,7 @@
     /// 商品品牌
     /// </summary>
     [SugarTable("mms_brand", "品牌表")]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class Brand
     {
         [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]

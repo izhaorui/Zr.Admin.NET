@@ -6,7 +6,7 @@ namespace ZR.Mall.Model
     /// 规格模板
     /// </summary>
     [SugarTable("mms_spec_template")]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class SpecTemplate : SysBase
     {
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]

@@ -6,7 +6,7 @@ namespace ZR.Mall.Model
     /// 商品库存
     /// </summary>
     [SugarTable("mms_skus", "商品库存sku")]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class Skus
     {
         /// <summary>

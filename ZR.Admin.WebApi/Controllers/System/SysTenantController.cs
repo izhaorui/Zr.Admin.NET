@@ -32,6 +32,147 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
+        /// 查询套餐列表。
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("plan/list")]
+        [ActionPermissionFilter(Permission = "system:tenant:list")]
+        public IActionResult PlanList()
+        {
+            return SUCCESS(_sysTenantService.GetTenantPlanList());
+        }
+
+        /// <summary>
+        /// 获取套餐详情。
+        /// </summary>
+        [HttpGet("plan/{id}")]
+        [ActionPermissionFilter(Permission = "system:tenant:list")]
+        public IActionResult PlanDetail(long id)
+        {
+            var plan = _sysTenantService.GetPlanById(id);
+            if (plan == null)
+                return ToResponse(ResultCode.FAIL, "套餐不存在");
+            return SUCCESS(plan);
+        }
+
+        /// <summary>
+        /// 新增套餐。
+        /// </summary>
+        [HttpPost("plan")]
+        [ActionPermissionFilter(Permission = "system:tenant:update")]
+        [Log(Title = "套餐管理", BusinessType = BusinessType.INSERT)]
+        public IActionResult AddPlan([FromBody] SysTenantPlan plan)
+        {
+            if (plan == null)
+                return ToResponse(ResultCode.FAIL, "请求参数不能为空");
+            var id = _sysTenantService.InsertPlan(plan);
+            return SUCCESS(new { id });
+        }
+
+        /// <summary>
+        /// 编辑套餐。
+        /// </summary>
+        [HttpPut("plan")]
+        [ActionPermissionFilter(Permission = "system:tenant:update")]
+        [Log(Title = "套餐管理", BusinessType = BusinessType.UPDATE)]
+        public IActionResult EditPlan([FromBody] SysTenantPlan plan)
+        {
+            if (plan == null)
+                return ToResponse(ResultCode.FAIL, "请求参数不能为空");
+            _sysTenantService.UpdatePlan(plan);
+            return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 删除套餐。
+        /// </summary>
+        [HttpDelete("plan/{id}")]
+        [ActionPermissionFilter(Permission = "system:tenant:update")]
+        [Log(Title = "套餐管理", BusinessType = BusinessType.DELETE)]
+        public IActionResult DeletePlan(long id)
+        {
+            _sysTenantService.DeletePlan(id);
+            return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 查询租户当前套餐。
+        /// </summary>
+        /// <param name="tenantId"></param>
+        /// <returns></returns>
+        [HttpGet("plan/current")]
+        [ActionPermissionFilter(Permission = "system:tenant:list")]
+        public IActionResult CurrentPlan(string tenantId)
+        {
+            return SUCCESS(_sysTenantService.GetCurrentTenantPlan(tenantId));
+        }
+
+        /// <summary>
+        /// 查询租户套餐用量面板。
+        /// </summary>
+        /// <param name="tenantId"></param>
+        /// <returns></returns>
+        [HttpGet("plan/usage")]
+        [ActionPermissionFilter(Permission = "system:tenant:list")]
+        public IActionResult Usage(string tenantId)
+        {
+            return SUCCESS(_sysTenantService.GetTenantUsageDashboard(tenantId));
+        }
+
+        /// <summary>
+        /// 查询租户到期提醒。
+        /// </summary>
+        /// <param name="withinDays"></param>
+        /// <returns></returns>
+        [HttpGet("expire/reminders")]
+        [ActionPermissionFilter(Permission = "system:tenant:list")]
+        public IActionResult ExpireReminders(int withinDays = 30)
+        {
+            return SUCCESS(_sysTenantService.GetTenantExpireReminders(withinDays));
+        }
+
+        /// <summary>
+        /// 分配租户套餐。
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("plan/assign")]
+        [ActionPermissionFilter(Permission = "system:tenant:update")]
+        [Log(Title = "租户套餐分配", BusinessType = BusinessType.UPDATE)]
+        public IActionResult AssignPlan([FromBody] TenantPlanAssignDto dto)
+        {
+            if (dto == null)
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            return SUCCESS(_sysTenantService.AssignTenantPlan(dto, HttpContext.GetName()));
+        }
+
+        /// <summary>
+        /// 当前租户查看本租户信息（到期时间、套餐用量等）
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("my")]
+        [ActionPermissionFilter(Permission = "tenant:my")]
+        public IActionResult My()
+        {
+            if (!App.IsTenantEnabled())
+            {
+                return ToResponse(ResultCode.FAIL, "多租户未启用");
+            }
+
+            var tenantId = App.GetCurrentTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return ToResponse(ResultCode.FAIL, "无法获取当前租户标识");
+            }
+
+            var dashboard = _sysTenantService.GetTenantUsageDashboard(tenantId);
+            return SUCCESS(dashboard);
+        }
+
+        /// <summary>
         /// 查询租户详情
         /// </summary>
         /// <param name="id"></param>
@@ -71,6 +212,25 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             return SUCCESS(_sysTenantService.Insert(model));
+        }
+
+        /// <summary>
+        /// 租户开通（自动编排：建档 + 可选初始化）。
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("provision")]
+        [ActionPermissionFilter(Permission = "system:tenant:add")]
+        [Log(Title = "租户开通", BusinessType = BusinessType.INSERT)]
+        public IActionResult Provision([FromBody] TenantProvisionDto dto)
+        {
+            if (dto == null)
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            var response = _sysTenantService.ProvisionTenant(dto, HttpContext.GetName());
+            return SUCCESS(response);
         }
 
         /// <summary>
@@ -129,7 +289,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ApiResult.Error("租户不存在"));
             }
 
-            if (string.Equals(model.TenantId, App.Configuration["MainDb"] ?? "0", StringComparison.OrdinalIgnoreCase) && status == 1)
+            if (string.Equals(model.TenantId, App.MainDbConfigId, StringComparison.OrdinalIgnoreCase) && status == 1)
             {
                 return ToResponse(ApiResult.Error("默认租户不允许停用"));
             }
@@ -137,6 +297,78 @@ namespace ZR.Admin.WebApi.Controllers.System
             model.Status = status;
             model = model.ToUpdate(HttpContext);
             return SUCCESS(_sysTenantService.Update(model, it => new { it.Status, it.Update_by, it.Update_time }));
+        }
+
+        /// <summary>
+        /// 租户初始化（数据库连通与基础表初始化）。
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("initialize")]
+        [ActionPermissionFilter(Permission = "system:tenant:update")]
+        [Log(Title = "租户初始化", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Initialize([FromBody] TenantInitializeDto dto)
+        {
+            if (dto == null)
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            var response = _sysTenantService.InitializeTenant(dto);
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 租户停服。
+        /// </summary>
+        /// <param name="tenantId"></param>
+        /// <param name="remark"></param>
+        /// <returns></returns>
+        [HttpPost("suspend")]
+        [ActionPermissionFilter(Permission = "system:tenant:update")]
+        [Log(Title = "租户停服", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Suspend(string tenantId, string? remark = null)
+        {
+            var response = _sysTenantService.SuspendTenant(tenantId, HttpContext.GetName(), remark);
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 租户续费。
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("renew")]
+        [ActionPermissionFilter(Permission = "system:tenant:update")]
+        [Log(Title = "租户续费", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Renew([FromBody] TenantRenewDto dto)
+        {
+            if (dto == null)
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            var response = _sysTenantService.RenewTenant(dto, HttpContext.GetName());
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 租户删除（默认停服保留，可选删除记录）。
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [HttpPost("decommission")]
+        [ActionPermissionFilter(Permission = "system:tenant:remove")]
+        [Log(Title = "租户删除", BusinessType = BusinessType.DELETE)]
+        public IActionResult Decommission([FromBody] TenantDecommissionDto dto)
+        {
+            if (dto == null)
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            var response = _sysTenantService.DecommissionTenant(dto, HttpContext.GetName());
+            return SUCCESS(response);
         }
 
         /// <summary>
@@ -155,7 +387,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ApiResult.Error("删除失败，ID不能为空"));
             }
 
-            var mainDb = App.Configuration["MainDb"] ?? "0";
+            var mainDb = App.MainDbConfigId;
             var hasMainTenant = _sysTenantService.Queryable().Any(x => idArr.Contains(x.Id) && x.TenantId == mainDb && x.DelFlag == 0);
             if (hasMainTenant)
             {

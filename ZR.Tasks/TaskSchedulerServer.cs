@@ -1,5 +1,4 @@
 ﻿using Infrastructure;
-using Infrastructure.Extensions;
 using Infrastructure.Model;
 using NLog;
 using Quartz;
@@ -8,9 +7,9 @@ using Quartz.Impl.Triggers;
 using Quartz.Spi;
 using System;
 using System.Collections.Specialized;
-using System.Reflection;
 using System.Threading.Tasks;
 using ZR.Model.System;
+using ZR.Tasks.TaskScheduler;
 
 namespace ZR.Tasks
 {
@@ -141,27 +140,19 @@ namespace ZR.Tasks
 
                 #endregion
 
-                #region 通过反射获取程序集类型和类   
-
-                Assembly assembly = Assembly.Load(new AssemblyName(tasksQz.AssemblyName));
-                Type jobType = assembly.GetType(tasksQz.AssemblyName + "." + tasksQz.ClassName);
-
-                #endregion
                 //2、开启调度器。判断任务调度是否开启
                 if (!_scheduler.Result.IsStarted)
                 {
                     await StartTaskScheduleAsync();
                 }
 
-                //3、创建任务。传入反射出来的执行程序集
-                IJobDetail job = new JobDetailImpl(tasksQz.ID, tasksQz.JobGroup, jobType);
-                job.JobDataMap.Add("JobParam", tasksQz.JobParams);
+                // 3、统一使用分发器，运行时按租户展开执行。
+                IJobDetail job = new JobDetailImpl(tasksQz.ID, tasksQz.JobGroup, typeof(Job_Dispatcher));
+                job.JobDataMap.Add("TaskId", tasksQz.ID);
                 job.JobDataMap.Add("UserName", "system");
-                job.JobDataMap.Add("TraceId", App.HttpContext?.TraceIdentifier ?? System.Guid.NewGuid().ToString("N"));
-                // 标记为系统调度的任务
+                job.JobDataMap.Add("TraceId", App.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("N"));
                 job.JobDataMap.Add("IsManual", 0);
                 job.JobDataMap.Add("TriggerSource", "cron");
-                job.JobDataMap.Add("TenantId", tasksQz.TenantId);
 
                 ITrigger trigger;
 
@@ -180,14 +171,9 @@ namespace ZR.Tasks
 
                 // 5、将触发器和任务器绑定到调度器中
                 await _scheduler.Result.ScheduleJob(job, trigger);
-                //任务没有启动、暂停任务
-                //if (!tasksQz.IsStart)
-                //{
-                //    _scheduler.Result.PauseJob(jobKey).Wait();
-                //}
-                //按新的trigger重新设置job执行
                 await _scheduler.Result.ResumeTrigger(trigger.Key);
-                return ApiResult.Success($"启动计划任务:【{tasksQz.Name}】成功！");
+
+                return ApiResult.Success($"启动计划任务:【{tasksQz.Name}】成功");
             }
             catch (Exception ex)
             {
@@ -253,9 +239,6 @@ namespace ZR.Tasks
             try
             {
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
-
-                //await _scheduler.Result.ScheduleJob()
-
                 await _scheduler.Result.DeleteJob(jobKey);
                 return ApiResult.Success($"删除计划任务:【{tasksQz.Name}】成功");
             }
@@ -278,16 +261,12 @@ namespace ZR.Tasks
             {
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
                 bool exists = await _scheduler.Result.CheckExists(jobKey);
+
+                // Run 只负责立即执行一次，不启动/恢复正式调度；
+                // 如需启动任务，请调用 StartTaskScheduleAsync/AddTaskScheduleAsync。
                 if (!exists)
                 {
-                    if (tasksQz.IsStart == 1)
-                    {
-                        await AddTaskScheduleAsync(tasksQz);
-                    }
-                    else
-                    {
-                        return await RunTaskOnceAsync(tasksQz, operatorName);
-                    }
+                    return await RunTaskOnceAsync(tasksQz, operatorName);
                 }
 
                 var triggers = await _scheduler.Result.GetTriggersOfJob(jobKey);
@@ -299,11 +278,11 @@ namespace ZR.Tasks
                 // 手动立即执行时，覆盖本次触发的执行人和标记
                 var manualData = new JobDataMap
                 {
+                    { "TaskId", tasksQz.ID },
                     { "UserName", string.IsNullOrWhiteSpace(operatorName) ? "system" : operatorName },
                     { "TraceId", App.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("N") },
                     { "IsManual", 1 },
-                    { "TriggerSource", "manual" },
-                    { "TenantId", tasksQz.TenantId }
+                    { "TriggerSource", "manual" }
                 };
                 await _scheduler.Result.TriggerJob(jobKey, manualData);
 
@@ -330,19 +309,13 @@ namespace ZR.Tasks
                     await StartTaskScheduleAsync();
                 }
 
-                Assembly assembly = Assembly.Load(new AssemblyName(tasksQz.AssemblyName));
-                Type jobType = assembly.GetType(tasksQz.AssemblyName + "." + tasksQz.ClassName);
-                if (jobType == null)
-                {
-                    return ApiResult.Error(500, $"未找到任务类型: {tasksQz.AssemblyName}.{tasksQz.ClassName}");
-                }
-
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
                 TriggerKey triggerKey = new TriggerKey($"{tasksQz.ID}_once_{Guid.NewGuid():N}", tasksQz.JobGroup);
 
-                IJobDetail job = JobBuilder.Create(jobType)
+                IJobDetail job = JobBuilder.Create<Job_Dispatcher>()
                     .WithIdentity(jobKey)
-                    .UsingJobData("JobParam", tasksQz.JobParams ?? string.Empty)
+                    .StoreDurably(false)
+                    .UsingJobData("TaskId", tasksQz.ID)
                     .Build();
 
                 job.JobDataMap.Add("UserName", operatorName);
@@ -350,13 +323,12 @@ namespace ZR.Tasks
                 // 一次性触发标记为手动执行
                 job.JobDataMap.Add("IsManual", 1);
                 job.JobDataMap.Add("TriggerSource", "manual");
-                job.JobDataMap.Add("TenantId", tasksQz.TenantId);
 
                 ITrigger trigger = TriggerBuilder.Create()
                     .WithIdentity(triggerKey)
                     .ForJob(jobKey)
                     .StartNow()
-                    .WithSimpleSchedule(x => x.WithIntervalInSeconds(1).WithRepeatCount(0))
+                    .WithSimpleSchedule(x => x.WithRepeatCount(0).WithMisfireHandlingInstructionFireNow())
                     .Build();
 
                 await _scheduler.Result.ScheduleJob(job, trigger);
@@ -384,8 +356,7 @@ namespace ZR.Tasks
                     //防止创建时存在数据问题 先移除，然后在执行创建操作
                     await _scheduler.Result.DeleteJob(jobKey);
                 }
-                //await AddTaskScheduleAsync(tasksQz);
-                return ApiResult.Success("修改计划成功");
+                return await AddTaskScheduleAsync(tasksQz);
             }
             catch (Exception ex)
             {

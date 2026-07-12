@@ -4,7 +4,7 @@ namespace ZR.Mall.Model
     /// 商品规格
     /// </summary>
     [SugarTable("mms_product_spec", "商品规格")]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class ProductSpec
     {
         /// <summary>

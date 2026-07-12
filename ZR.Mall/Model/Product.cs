@@ -7,7 +7,7 @@ namespace ZR.Mall.Model
     /// 商品管理
     /// </summary>
     [SugarTable("mms_product", "商品管理")]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class Product : SysBase
     {
         /// <summary>

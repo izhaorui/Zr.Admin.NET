@@ -30,18 +30,18 @@ namespace ZR.Admin.WebApi.Extensions
         /// </summary>
         /// <param name="app"></param>
         /// <returns></returns>
-        public static IApplicationBuilder UseAddTaskSchedulers(this IApplicationBuilder app)
+        public static async Task<IApplicationBuilder> UseAddTaskSchedulers(this IApplicationBuilder app)
         {
             ITaskSchedulerServer _schedulerServer = app.ApplicationServices.GetRequiredService<ITaskSchedulerServer>();
 
-            var tasks = DbScoped.SugarScope.Queryable<SysTasks>()
+            var tasks = await DbScoped.SugarScope.Queryable<SysTasks>()
                 .Where(m => m.IsStart == 1).ToListAsync();
 
             //程序启动后注册所有定时任务
-            foreach (var task in tasks.Result)
+            foreach (var task in tasks)
             {
-                var result = _schedulerServer.AddTaskScheduleAsync(task);
-                if (result.Result.IsSuccess())
+                var result = await _schedulerServer.AddTaskScheduleAsync(task);
+                if (result.IsSuccess())
                 {
                     Console.WriteLine($"注册任务[{task.Name}]ID：{task.ID}成功");
                 }
@@ -57,7 +57,7 @@ namespace ZR.Admin.WebApi.Extensions
         /// <returns></returns>
         public static IApplicationBuilder UseInit(this IApplicationBuilder app)
         {
-            var mainDb = App.Configuration["mainDb"];
+            var mainDb = App.MainDbConfigId;
             //var tenantId = App.GetCurrentTenantId();
             //Console.WriteLine("初始化字典数据...");
             var db = DbScoped.SugarScope.GetConnection(mainDb);

@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using ZR.Model.System.Dto;
+using ZR.ServiceCore.Middleware;
 
 namespace ZR.ServiceCore.Services
 {
@@ -12,13 +13,16 @@ namespace ZR.ServiceCore.Services
     {
         private readonly ISysRoleService SysRoleService;
         private readonly ISysMenuService SysMenuService;
+        private readonly ISysTenantPlanMenuService PlanMenuService;
 
         public SysPermissionService(
             ISysRoleService sysRoleService,
-            ISysMenuService sysMenuService)
+            ISysMenuService sysMenuService,
+            ISysTenantPlanMenuService planMenuService)
         {
             SysRoleService = sysRoleService;
             SysMenuService = sysMenuService;
+            PlanMenuService = planMenuService;
         }
 
         /// <summary>
@@ -43,6 +47,7 @@ namespace ZR.ServiceCore.Services
 
         /// <summary>
         /// 获取菜单数据权限
+        /// 多租户非主租户时按套餐菜单权限取交集过滤
         /// </summary>
         /// <param name="user">用户信息</param>
         /// <returns>菜单权限信息</returns>
@@ -58,6 +63,19 @@ namespace ZR.ServiceCore.Services
             {
                 perms.AddRange(SysMenuService.SelectMenuPermsByUserId(user.UserId));
             }
+
+            // 多租户非主租户按套餐菜单权限过滤
+            if (App.IsTenantEnabled() && !perms.Contains(GlobalConstant.AdminPerm))
+            {
+                var tenantId = App.GetCurrentTenantId();
+                var isMainTenant = string.Equals(tenantId, App.MainDbConfigId, StringComparison.OrdinalIgnoreCase);
+                if (!isMainTenant && !string.IsNullOrWhiteSpace(tenantId))
+                {
+                    var planPerms = PlanMenuService.GetPermsByTenantId(tenantId);
+                    perms = perms.Intersect(planPerms, StringComparer.OrdinalIgnoreCase).ToList();
+                }
+            }
+
             return perms;
         }
     }

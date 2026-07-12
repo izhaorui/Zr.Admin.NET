@@ -2,6 +2,7 @@
 using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
+using SqlSugar.IOC;
 using UAParser;
 using ZR.Common;
 using ZR.Infrastructure.Constant;
@@ -65,20 +66,20 @@ namespace ZR.ServiceCore.Services
             if (user == null || user.UserId <= 0)
             {
                 logininfor.Msg = _localizer["login_pwd_error"].Value;
-                AddLoginInfo(logininfor);
+                AddLoginInfo(logininfor, loginBody.TenantId);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
             logininfor.UserId = user.UserId;
             if (user.Status == 1)
             {
                 logininfor.Msg = _localizer["login_user_disabled"].Value;//該用戶已禁用
-                AddLoginInfo(logininfor);
+                AddLoginInfo(logininfor, loginBody.TenantId);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
 
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
-            AddLoginInfo(logininfor);
+            AddLoginInfo(logininfor, loginBody.TenantId);
             SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
             return user;
         }
@@ -104,13 +105,13 @@ namespace ZR.ServiceCore.Services
             if (user.Status == 1)
             {
                 logininfor.Msg = _localizer["login_user_disabled"].Value;
-                AddLoginInfo(logininfor);
+                AddLoginInfo(logininfor, loginBody.TenantId);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
 
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
-            AddLoginInfo(logininfor);
+            AddLoginInfo(logininfor, loginBody.TenantId);
             SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
             return user;
         }
@@ -122,6 +123,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public PagedInfo<SysLogininfor> GetLoginLog(SysLogininfoQueryDto logininfoDto)
         {
+            var db = ResolveTenantDb();
             var exp = Expressionable.Create<SysLogininfor>();
 
             exp.AndIF(logininfoDto.BeginTime == null, it => it.LoginTime >= DateTime.Now.ToShortDateString().ParseToDateTime());
@@ -131,8 +133,8 @@ namespace ZR.ServiceCore.Services
             exp.AndIF(logininfoDto.Ipaddr.IfNotEmpty(), f => f.Ipaddr == logininfoDto.Ipaddr);
             exp.AndIF(logininfoDto.UserName.IfNotEmpty(), f => f.UserName.Contains(logininfoDto.UserName));
 
-            var query = Queryable().Where(exp.ToExpression())
-            .OrderBy(it => it.InfoId, OrderByType.Desc);
+            var query = db.Queryable<SysLogininfor>().Where(exp.ToExpression())
+                .OrderBy(it => it.InfoId, OrderByType.Desc);
 
             var list = query.ToPage(logininfoDto);
             foreach (var item in list.Result)
@@ -149,10 +151,12 @@ namespace ZR.ServiceCore.Services
         /// 记录登录日志
         /// </summary>
         /// <param name="sysLogininfor"></param>
+        /// <param name="tenantId">租户ID，多租户模式下写入对应租户库</param>
         /// <returns></returns>
-        public void AddLoginInfo(SysLogininfor sysLogininfor)
+        public void AddLoginInfo(SysLogininfor sysLogininfor, string tenantId = null)
         {
-            Insert(sysLogininfor);
+            var db = ResolveTenantDb(tenantId);
+            db.Insertable(sysLogininfor).ExecuteCommand();
         }
 
         /// <summary>
@@ -187,17 +191,18 @@ namespace ZR.ServiceCore.Services
 
         public List<StatiLoginLogDto> GetStatiLoginlog()
         {
+            var db = ResolveTenantDb();
             var time = DateTime.Now;
 
             //如果是查询当月那么 time就是 DateTime.Now
             var days = (time.AddMonths(1) - time).Days;//获取当月天数
             var dayArray = Enumerable.Range(1, days).Select(it => Convert.ToDateTime(time.ToString("yyyy-MM-" + it))).ToList();//转成时间数组
 
-            var queryableLeft = Context.Reportable(dayArray)
+            var queryableLeft = db.Reportable(dayArray)
                 .ToQueryable<DateTime>();
 
-            var queryableRight = Context.Queryable<SysLogininfor>();
-            var list = Context.Queryable(queryableLeft, queryableRight, JoinType.Left, (x1, x2)
+            var queryableRight = db.Queryable<SysLogininfor>();
+            var list = db.Queryable(queryableLeft, queryableRight, JoinType.Left, (x1, x2)
                  => x2.LoginTime.ToString("yyyy-MM-dd") == x1.ColumnName.ToString("yyyy-MM-dd"))
                 .GroupBy((x1, x2) => x1.ColumnName)
                 .Where((x1, x2) => x1.ColumnName >= DateTime.Now.AddDays(-7) && x1.ColumnName <= DateTime.Now)

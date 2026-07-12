@@ -18,17 +18,20 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysRoleService RoleService;
         private readonly ISysPostService PostService;
         private readonly ISysUserPostService UserPostService;
+        private readonly ISysTenantService TenantService;
 
         public SysUserController(
             ISysUserService userService,
             ISysRoleService roleService,
             ISysPostService postService,
-            ISysUserPostService userPostService)
+            ISysUserPostService userPostService,
+            ISysTenantService tenantService)
         {
             UserService = userService;
             RoleService = roleService;
             PostService = postService;
             UserPostService = userPostService;
+            TenantService = tenantService;
         }
 
         /// <summary>
@@ -90,6 +93,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ApiResult.Error($"新增用户 '{user.UserName}'失败，登录账号已存在"));
             }
+
+            TenantService.EnsureTenantUserQuotaForAdd(App.GetCurrentTenantId());
 
             user.Password = NETCore.Encrypt.EncryptProvider.Md5(user.Password);
 
@@ -178,6 +183,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 users = stream.Query<SysUser>(startCell: "A2").ToList();
             }
+
+            TenantService.EnsureTenantUserQuotaForAdd(App.GetCurrentTenantId(), users.Count);
 
             return SUCCESS(UserService.ImportUsers(users));
         }

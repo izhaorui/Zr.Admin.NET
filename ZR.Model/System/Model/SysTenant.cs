@@ -26,6 +26,24 @@ namespace ZR.Model.System
         public string TenantName { get; set; }
 
         /// <summary>
+        /// 企业名称
+        /// </summary>
+        [SugarColumn(Length = 200)]
+        public string CompanyName { get; set; }
+
+        /// <summary>
+        /// 联系人
+        /// </summary>
+        [SugarColumn(Length = 50)]
+        public string ContactName { get; set; }
+
+        /// <summary>
+        /// 联系电话
+        /// </summary>
+        [SugarColumn(Length = 50)]
+        public string ContactPhone { get; set; }
+
+        /// <summary>
         /// 状态：0正常 1停用
         /// </summary>
         [SugarColumn(DefaultValue = "0")]

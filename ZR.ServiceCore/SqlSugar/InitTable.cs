@@ -8,6 +8,8 @@ using ZR.Model.social;
 using ZR.Model.System;
 using ZR.Model.System.Generate;
 using ZR.Model.System.Model;
+using ZR.ServiceCore.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -48,6 +50,9 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(SysTasks));
             db.CodeFirst.InitTables(typeof(SysTasksLog));
             db.CodeFirst.InitTables(typeof(SysTenant));
+            db.CodeFirst.InitTables(typeof(SysTenantPlan));
+            db.CodeFirst.InitTables(typeof(SysTenantPlanBinding));
+            db.CodeFirst.InitTables(typeof(SysTenantPlanMenu));
             db.CodeFirst.InitTables(typeof(CommonLang));
             db.CodeFirst.InitTables(typeof(GenTable));
             db.CodeFirst.InitTables(typeof(GenTableColumn));
@@ -67,6 +72,18 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(SysUserMsg));
             db.CodeFirst.InitTables(typeof(SysFileGroup));
             EnsureDefaultTenant(db);
+
+            // 调度各业务模块的非SaaS初始化（如商城、内容等）
+            // 模块自行判断 InitDb/IsDevelopment 条件，无需在此重复检查
+            var moduleInitializers = InternalApp.ServiceProvider?.GetServices<ITenantModuleInitializer>();
+            if (moduleInitializers != null)
+            {
+                foreach (var mi in moduleInitializers)
+                {
+                    mi.InitializeNonSaaS();
+                }
+            }
+
             //db.CodeFirst.InitTables(typeof(SocialFans));
             //db.CodeFirst.InitTables(typeof(SocialFansInfo));
             //db.CodeFirst.InitTables(typeof(UserOnlineLog));
@@ -85,12 +102,29 @@ namespace ZR.ServiceCore.SqlSugar
             {
                 db.CodeFirst.InitTables(typeof(SysTenant));
             }
+
+            var t3 = db.DbMaintenance.IsAnyTable("sys_tenant_plan");
+            if (!t3)
+            {
+                db.CodeFirst.InitTables(typeof(SysTenantPlan));
+            }
+
+            var t4 = db.DbMaintenance.IsAnyTable("sys_tenant_plan_binding");
+            if (!t4)
+            {
+                db.CodeFirst.InitTables(typeof(SysTenantPlanBinding));
+            }
+            var t5 = db.DbMaintenance.IsAnyTable("sys_tenant_plan_menu");
+            if (!t5)
+            {
+                db.CodeFirst.InitTables(typeof(SysTenantPlanMenu));
+            }
             EnsureDefaultTenant(db);
         }
 
         private static void EnsureDefaultTenant(SqlSugarScope db)
         {
-            var mainDb = App.Configuration["MainDb"] ?? "0";
+            var mainDb = App.MainDbConfigId;
             var hasMainTenant = db.Queryable<SysTenant>().Any(x => x.DelFlag == 0 && x.TenantId == mainDb);
             if (hasMainTenant)
             {

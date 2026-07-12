@@ -8,7 +8,7 @@ namespace ZR.Mall.Model
     /// </summary>
     [SugarTable("oms_order", "订单表")]
     [SugarIndex("index_orderNo", nameof(OrderNo), OrderByType.Asc, true)]
-    [Tenant("1")]
+    [Tenant("MallDb")]
     public class OMSOrder
     {
         /// <summary>

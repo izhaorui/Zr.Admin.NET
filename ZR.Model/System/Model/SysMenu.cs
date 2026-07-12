@@ -5,7 +5,7 @@
     /// </summary>
     [SugarTable("sys_menu", "系统菜单表")]
     [Tenant("0")]
-    public class SysMenu : SysBase
+    public class SysMenu : SysBase, IMainDbEntity
     {
         /// <summary>
         /// 菜单ID

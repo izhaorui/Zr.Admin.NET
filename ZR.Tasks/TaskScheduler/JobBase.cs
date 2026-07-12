@@ -48,6 +48,8 @@ namespace ZR.Tasks
             Func<Task<string>> job,
             bool preserveQuartzException)
         {
+            var dispatcherMode = context.MergedJobDataMap.ContainsKey("DispatcherMode") &&
+                Convert.ToBoolean(context.MergedJobDataMap["DispatcherMode"]);
             var stopwatch = Stopwatch.StartNew();
             int status = 0;
             string logMsg;
@@ -57,7 +59,11 @@ namespace ZR.Tasks
                 logger.Warn("任务执行时未携带 TenantId，任务可能在默认/空租户上下文中运行");
             }
             Exception jobException = null;
-            using var tenantScope = TenantContext.Change(tenantId);
+            IDisposable tenantScope = null;
+            if (!dispatcherMode)
+            {
+                tenantScope = TenantContext.Change(tenantId);
+            }
             try
             {
                 var result = await job();
@@ -74,6 +80,7 @@ namespace ZR.Tasks
             finally
             {
                 stopwatch.Stop();
+                tenantScope?.Dispose();
             }
 
             var logModel = new SysTasksLog
@@ -84,7 +91,10 @@ namespace ZR.Tasks
                 TenantId = tenantId
             };
 
-            await RecordTaskLog(context, logModel);
+            if (!dispatcherMode)
+            {
+                await RecordTaskLog(context, logModel);
+            }
 
             if (jobException != null)
             {
