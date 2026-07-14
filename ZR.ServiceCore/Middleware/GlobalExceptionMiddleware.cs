@@ -91,7 +91,7 @@ namespace ZR.ServiceCore.Middleware
 #if DEBUG
             if (logLevel == LogLevel.Error)
             {
-                apiResult.Add("error", "请在issue里面寻找答案或者官方文档查看常见问题：https://gitee.com/izory/ZrAdminNetCore/issues");
+                apiResult.Add("error", error);
             }
 #endif
             string responseResult = textJson.JsonSerializer.Serialize(apiResult, JsonOptions);
