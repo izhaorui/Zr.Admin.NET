@@ -18,13 +18,15 @@
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
-		<PackageReference Include="Lazy.Captcha.Core" Version="2.0.9" />
+
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="10.0.1" />
 		<PackageReference Include="NLog.Web.AspNetCore" Version="6.0.4" />
 		<PackageReference Include="Mapster" Version="10.0.7" />
+		<PackageReference Include="FluentValidation" Version="11.11.0" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+		<PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Mvc" Version="2.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,6 +1,6 @@
 using AspNetCoreRateLimit;
 using FluentValidation;
-using FluentValidation.AspNetCore;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Infrastructure.Converter;
 using IP2Region.Net.Abstractions;
 using IP2Region.Net.XDB;
@@ -32,7 +32,7 @@ builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation(options =>
 {
     // Keep Microsoft DataAnnotations validation for backward compatibility.
-    options.DisableDataAnnotationsValidation = false;
+    options.DisableBuiltInModelValidation = false;
 });
 builder.Services.AddValidatorsFromAssemblies(new[]
 {
@@ -56,7 +56,7 @@ builder.Services.AddCors(builder.Configuration);
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
 //普通验证码
-builder.Services.AddCaptcha(builder.Configuration);
+builder.Services.AddCaptchaProvider();
 // 读取额外配置文件（iprate.json 要在注册限流服务之前加载）
 builder.Configuration.AddJsonFile("iprate.json");
 //IPRatelimit
