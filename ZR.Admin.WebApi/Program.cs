@@ -18,6 +18,7 @@ using ZR.Infrastructure.WebExtensions;
 using ZR.Model;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
+using Infrastructure.Captcha;
 
 //using SQLitePCL;
 

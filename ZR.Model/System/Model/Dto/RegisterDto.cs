@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ZR.Model.System.Dto
+﻿namespace ZR.Model.System.Dto
 {
     public class RegisterDto
     {

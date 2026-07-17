@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -14,11 +14,12 @@ namespace Infrastructure.Helper
         /// <returns></returns>
         public static IEnumerable<Assembly> GetAssemblies()
         {
-            var compilationLibrary = DependencyContext.Default
-              .CompileLibraries
-              .Where(x => !x.Serviceable && x.Type == "project")
-              .ToList();
-            return compilationLibrary.Select(p => Assembly.Load(new AssemblyName(p.Name)));
+            var basePath = AppContext.BaseDirectory;
+            // 从入口程序集名称推断项目前缀（如 ZR.Admin.WebApi -> ZR）
+            // 这样即使项目类库被整体重命名（如改为 Foo.Model、Foo.Service），也能自动适配
+            var entryAssembly = Assembly.GetEntryAssembly();
+            var prefix = entryAssembly?.GetName()?.Name?.Split('.')?.FirstOrDefault() ?? "ZR";
+            return Directory.GetFiles(basePath, $"{prefix}*.dll").Select(Assembly.LoadFrom);
         }
 
         /// <summary>
