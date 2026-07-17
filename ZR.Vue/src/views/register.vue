@@ -108,7 +108,7 @@ export default {
   methods: {
     getCode() {
       getCodeImg().then((res) => {
-        this.codeUrl = 'data:image/gif;base64,' + res.data.img
+        this.codeUrl = res.data.img
         this.registerForm.uuid = res.data.uuid
         this.$forceUpdate()
       })

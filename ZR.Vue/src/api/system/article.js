@@ -11,7 +11,7 @@ export function listArticle(query) {
 // 查询最新列表
 export function listNewArticle(query) {
   return request({
-    url: '/Article/newList',
+    url: '/front/Article/newList',
     method: 'get',
     params: query,
   })

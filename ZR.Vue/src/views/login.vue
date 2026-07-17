@@ -99,7 +99,7 @@ export default {
     getCode() {
       // this.loginForm.code = "";
       getCodeImg().then((res) => {
-        this.codeUrl = 'data:image/gif;base64,' + res.data.img
+        this.codeUrl = res.data.img
         this.loginForm.uuid = res.data.uuid
         this.showCaptcha = res.data.captchaOff
         this.$forceUpdate()

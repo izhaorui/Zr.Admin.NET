@@ -1,4 +1,4 @@
-﻿using Lazy.Captcha.Core;
+﻿using Infrastructure.Captcha;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Model.Models;
 using ZR.Model.System;
@@ -17,7 +17,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysMenuService sysMenuService;
         private readonly ISysLoginService sysLoginService;
         private readonly ISysPermissionService permissionService;
-        private readonly ICaptcha SecurityCodeHelper;
+        private readonly ICaptchaProvider captchaProvider;
         private readonly ISysConfigService sysConfigService;
         private readonly ISysRoleService roleService;
         private readonly ISmsCodeLogService smsCodeLogService;
@@ -32,11 +32,11 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysConfigService configService,
             ISysRoleService sysRoleService,
             ISmsCodeLogService smsCodeLogService,
-            ICaptcha captcha,
+            ICaptchaProvider captchaProvider,
             ISysTenantService sysTenantService,
             ISysDeptService sysDeptService)
         {
-            SecurityCodeHelper = captcha;
+            this.captchaProvider = captchaProvider;
             this.sysMenuService = sysMenuService;
             this.sysUserService = sysUserService;
             this.sysLoginService = sysLoginService;
@@ -66,7 +66,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             loginBody.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
             SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
-            if (sysConfig?.ConfigValue != "off" && !SecurityCodeHelper.Validate(loginBody.Uuid, loginBody.Code))
+            if (sysConfig?.ConfigValue != "off" && !captchaProvider.Validate(loginBody.Uuid, loginBody.Code))
             {
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
@@ -220,8 +220,8 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
             var captchaOff = sysConfig?.ConfigValue ?? "0";
-            var info = SecurityCodeHelper.Generate(uuid, 60);
-            var obj = new { captchaOff, uuid, img = info.Base64 };// File(stream, "image/png")
+            var info = captchaProvider.Generate(uuid, 60);
+            var obj = new { captchaOff, uuid, img = info.DataUrl };
 
             return SUCCESS(obj);
         }
@@ -242,7 +242,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ResultCode.CUSTOM_ERROR, "当前系统没有开启注册功能！");
             }
             SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
-            if (sysConfig?.ConfigValue != "off" && !SecurityCodeHelper.Validate(dto.Uuid, dto.Code))
+            if (sysConfig?.ConfigValue != "off" && !captchaProvider.Validate(dto.Uuid, dto.Code))
             {
                 return ToResponse(ResultCode.CAPTCHA_ERROR, "验证码错误");
             }
@@ -348,7 +348,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             dto.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
             var uid = HttpContext.GetUId();
             //SysConfig sysConfig = sysConfigService.GetSysConfigByKey("sys.account.captchaOnOff");
-            //if (!SecurityCodeHelper.Validate(dto.Uuid, dto.Code, false))
+            //if (!captchaProvider.Validate(dto.Uuid, dto.Code, false))
             //{
             //    return ToResponse(ResultCode.CUSTOM_ERROR, "验证码错误");
             //}
