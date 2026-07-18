@@ -21,18 +21,28 @@ namespace ZR.Admin.WebApi.Controllers.monitor
         }
 
         /// <summary>
-        /// 获取在线用户列表
+        /// 获取在线用户列表（多租户模式下按当前租户过滤）
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
         [HttpGet("list")]
         public IActionResult Index([FromQuery] PagerInfo parm)
         {
-            var result = MessageHub.OnlineClients.Values
-                .OrderByDescending(f => f.LoginTime)
-                .Skip(parm.PageNum - 1).Take(parm.PageSize);
+            var query = MessageHub.OnlineClients.Values.AsEnumerable();
 
-            return SUCCESS(new { result, totalNum = MessageHub.OnlineClients.Values.Count });
+            if (App.IsTenantEnabled())
+            {
+                var currentTenantId = App.GetCurrentTenantId();
+                query = query.Where(u => string.Equals(u.TenantId, currentTenantId, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var filtered = query.OrderByDescending(f => f.LoginTime).ToList();
+
+            var result = filtered
+                .Skip((parm.PageNum - 1) * parm.PageSize)
+                .Take(parm.PageSize);
+
+            return SUCCESS(new { result, totalNum = filtered.Count });
         }
 
         /// <summary>

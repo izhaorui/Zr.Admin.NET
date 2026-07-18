@@ -54,6 +54,10 @@
         /// </summary>
         public string ClientId { get; set; }
         /// <summary>
+        /// 租户标识（多租户模式下区分不同租户的在线用户）
+        /// </summary>
+        public string TenantId { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         public OnlineUsers()

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Model.System.Dto;
 
-namespace ZR.Admin.WebApi.Controllers.System
+namespace ZR.Admin.WebApi.Controllers.System.tenant
 {
     /// <summary>
     /// 套餐菜单管理

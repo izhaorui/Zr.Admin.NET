@@ -288,6 +288,44 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
+        /// 多租户模式：角色分配菜单时获取当前操作者可分配的菜单树（含 F 按钮）
+        /// 可分配菜单 = 当前用户角色菜单 ∩ 租户套餐菜单
+        /// </summary>
+        public List<SysMenu> SelectMenuTreeForRoleAssign(long userId, string tenantId)
+        {
+            var mdb = MainDb();
+            var planMenuIds = PlanMenuService.GetMenuIdsByTenantId(tenantId);
+            if (planMenuIds.Count == 0) return new List<SysMenu>();
+
+            List<long> allowedMenuIds;
+            if (SysRoleService.IsAdmin(userId))
+            {
+                allowedMenuIds = planMenuIds;
+            }
+            else
+            {
+                var roleIds = SysRoleService.SelectUserRoles(userId);
+                var roleMenuIds = TenantDb().Queryable<SysRoleMenu>()
+                    .Where(r => roleIds.Contains(r.Role_id))
+                    .Select(s => s.Menu_id)
+                    .Distinct()
+                    .ToList();
+                allowedMenuIds = roleMenuIds.Intersect(planMenuIds).ToList();
+            }
+
+            if (allowedMenuIds.Count == 0) return new List<SysMenu>();
+
+            var menus = mdb.Queryable<SysMenu>()
+                .Where(m => allowedMenuIds.Contains(m.MenuId))
+                .Where(m => m.Status == "0")
+                .OrderBy(m => new { m.ParentId, m.OrderNum })
+                .ToList();
+
+            return menus;
+        }
+
+
+        /// <summary>
         /// 查询精确到按钮的操作权限
         /// 多租户模式下按套餐菜单过滤（角色菜单 ∩ 套餐菜单）
         /// </summary>

@@ -34,6 +34,13 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         List<SysMenu> SelectMenuTreeByUserIdForTenant(long userId, string tenantId);
 
+        /// <summary>
+        /// 多租户模式：角色分配菜单时获取当前操作者可分配的菜单树（含 F 按钮）
+        /// 可分配菜单 = 当前用户角色菜单 ∩ 租户套餐菜单
+        /// </summary>
+        List<SysMenu> SelectMenuTreeForRoleAssign(long userId, string tenantId);
+
+
         //List<SysMenu> SelectMenuPermsListByUserId(long userId);
 
         List<string> SelectMenuPermsByUserId(long userId);

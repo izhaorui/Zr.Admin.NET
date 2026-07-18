@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -14,16 +16,20 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysRoleService sysRoleService;
         private readonly ISysMenuService sysMenuService;
         private readonly ISysRoleMenuService sysRoleMenuService;
+        private readonly ISysTenantPlanMenuService sysTenantPlanMenuService;
 
         public SysMenuController(
             ISysRoleService sysRoleService,
             ISysMenuService sysMenuService,
-            ISysRoleMenuService sysRoleMenuService)
+            ISysRoleMenuService sysRoleMenuService,
+            ISysTenantPlanMenuService sysTenantPlanMenuService)
         {
             this.sysRoleService = sysRoleService;
             this.sysMenuService = sysMenuService;
             this.sysRoleMenuService = sysRoleMenuService;
+            this.sysTenantPlanMenuService = sysTenantPlanMenuService;
         }
+
 
         /// <summary>
         /// 获取菜单树列表
@@ -84,14 +90,31 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult RoleMenuTreeselect(int roleId)
         {
             long userId = HttpContext.GetUId();
-            var menus = sysMenuService.SelectMenuList(new MenuQueryDto(), userId);
-            var checkedKeys = sysRoleService.SelectUserRoleMenus(roleId);
+            List<SysMenu> menus;
+            List<long> checkedKeys;
+
+            if (App.IsTenantEnabled())
+            {
+                var tenantId = App.GetCurrentTenantId();
+                menus = sysMenuService.SelectMenuTreeForRoleAssign(userId, tenantId);
+                var planMenuIds = new HashSet<long>(sysTenantPlanMenuService.GetMenuIdsByTenantId(tenantId));
+                checkedKeys = sysRoleService.SelectUserRoleMenus(roleId)
+                    .Where(planMenuIds.Contains)
+                    .ToList();
+            }
+            else
+            {
+                menus = sysMenuService.SelectMenuList(new MenuQueryDto(), userId);
+                checkedKeys = sysRoleService.SelectUserRoleMenus(roleId);
+            }
+
             return SUCCESS(new
             {
                 checkedKeys,
                 menus = sysMenuService.BuildMenuTreeSelect(menus),
             });
         }
+
 
         /// <summary>
         /// 修改菜单

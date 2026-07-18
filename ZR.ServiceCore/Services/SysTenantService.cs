@@ -6,9 +6,11 @@ using System.Text;
 using ZR.Model;
 using ZR.Model.Content;
 using ZR.Model.Models;
+using ZR.Model.social;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Model;
+using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Middleware;
 
 namespace ZR.ServiceCore.Services
@@ -201,8 +203,8 @@ namespace ZR.ServiceCore.Services
             db.CodeFirst.InitTables(typeof(SysUserPost));
             db.CodeFirst.InitTables(typeof(SysTasks));
             db.CodeFirst.InitTables(typeof(SysTasksLog));
-            db.CodeFirst.InitTables(typeof(SysDictData));
-            db.CodeFirst.InitTables(typeof(SysDictType));
+            // 注意：SysDictType / SysDictData 是主库实体（IMainDbEntity），不在租户库建表
+            db.CodeFirst.InitTables(typeof(SysTenantDictData));
             db.CodeFirst.InitTables(typeof(SysConfig));
             db.CodeFirst.InitTables(typeof(SysFile));
             db.CodeFirst.InitTables(typeof(SysFileGroup));
@@ -216,6 +218,8 @@ namespace ZR.ServiceCore.Services
             db.CodeFirst.InitTables(typeof(ArticleComment));
             db.CodeFirst.InitTables(typeof(ArticleTopic));
             db.CodeFirst.InitTables(typeof(ArticleUserCircles));
+            db.CodeFirst.InitTables(typeof(SocialFans));
+            db.CodeFirst.InitTables(typeof(SocialFansInfo));
 
             // 调用各业务模块的租户级表初始化器（如商城、内容等），由模块自己决定需要创建哪些表
             foreach (var initializer in _moduleInitializers)
@@ -421,6 +425,7 @@ namespace ZR.ServiceCore.Services
 
             return plans.Select(x => new TenantPlanDto
             {
+                Id = x.Id,
                 PlanCode = x.PlanCode,
                 PlanName = x.PlanName,
                 MaxUsers = x.MaxUsers,
@@ -447,11 +452,6 @@ namespace ZR.ServiceCore.Services
 
         public long InsertPlan(SysTenantPlan plan)
         {
-            if (string.IsNullOrWhiteSpace(plan.PlanCode))
-                throw new CustomException("套餐编码不能为空");
-            if (string.IsNullOrWhiteSpace(plan.PlanName))
-                throw new CustomException("套餐名称不能为空");
-
             var exists = Context.Queryable<SysTenantPlan>()
                 .Any(x => x.PlanCode == plan.PlanCode && x.DelFlag == 0);
             if (exists)
@@ -465,8 +465,6 @@ namespace ZR.ServiceCore.Services
         {
             if (plan == null || plan.Id <= 0)
                 throw new CustomException("无效的套餐ID");
-            if (string.IsNullOrWhiteSpace(plan.PlanName))
-                throw new CustomException("套餐名称不能为空");
 
             var existing = GetPlanById(plan.Id);
             if (existing == null)
@@ -796,46 +794,31 @@ namespace ZR.ServiceCore.Services
                 return;
             }
 
-            var plans = GetDefaultPlans().Select(p => new SysTenantPlan
+            // 首次运行时写入默认套餐，之后可通过后台管理系统自行维护
+            var plans = new List<SysTenantPlan>
             {
-                PlanCode = p.PlanCode,
-                PlanName = p.PlanName,
-                MaxUsers = p.MaxUsers,
-                Status = 0,
-                IsDefault = p.IsDefault,
-                Sort = p.Sort,
-                DelFlag = 0,
-                Remark = "系统默认套餐",
-                Create_time = DateTime.Now
-            }).ToList();
+                new() { PlanCode = "free", PlanName = "免费版", MaxUsers = 5, IsDefault = 1, Sort = 10, Status = 0, DelFlag = 0, Remark = "系统默认套餐", Create_time = DateTime.Now },
+                new() { PlanCode = "pro", PlanName = "专业版", MaxUsers = 100, IsDefault = 0, Sort = 20, Status = 0, DelFlag = 0, Remark = "系统默认套餐", Create_time = DateTime.Now }
+            };
             Context.Insertable(plans).ExecuteCommand();
         }
 
         /// <summary>
-        /// 从配置中读取默认套餐列表，如果未配置则使用硬编码兜底值
+        /// 获取默认套餐的 PlanCode（查数据库 IsDefault=1，无则取第一个，兜底返回 free）
         /// </summary>
-        private static List<DefaultTenantPlanConfig> GetDefaultPlans()
+        private string GetDefaultPlanCode()
         {
-            var config = App.OptionsSetting?.DefaultTenantPlans;
-            if (config != null && config.Count > 0)
-                return config.Values.ToList();
+            var plan = Context.Queryable<SysTenantPlan>()
+                .Where(x => x.DelFlag == 0 && x.IsDefault == 1)
+                .OrderBy(x => x.Sort)
+                .First();
+            if (plan != null) return plan.PlanCode;
 
-            // 配置缺失时使用硬编码兜底，保证系统可用
-            return new List<DefaultTenantPlanConfig>
-            {
-                new() { PlanCode = "free", PlanName = "免费版", MaxUsers = 5, IsDefault = 1, Sort = 10 },
-                new() { PlanCode = "pro", PlanName = "专业版", MaxUsers = 100, IsDefault = 0, Sort = 20 }
-            };
-        }
-
-
-        /// <summary>
-        /// 获取默认套餐的 PlanCode（取配置中 IsDefault=1 的第一个套餐，没有则取第一个套餐）
-        /// </summary>
-        private static string GetDefaultPlanCode()
-        {
-            var plans = GetDefaultPlans();
-            return plans.FirstOrDefault(p => p.IsDefault == 1)?.PlanCode ?? plans.FirstOrDefault()?.PlanCode ?? "free";
+            plan = Context.Queryable<SysTenantPlan>()
+                .Where(x => x.DelFlag == 0)
+                .OrderBy(x => x.Sort)
+                .First();
+            return plan?.PlanCode ?? "free";
         }
 
         private SysTenantPlanBinding ResolveActiveTenantPlanBinding(string tenantId)
@@ -908,8 +891,6 @@ namespace ZR.ServiceCore.Services
             var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
             sysUser.ForEach(x => x.Password = "E10ADC3949BA59ABBE56E057F20F883E");
             var sysUserRole = MiniExcel.Query<SysUserRole>(path, sheetName: "user_role").ToList();
-            var sysDictType = MiniExcel.Query<SysDictType>(path, sheetName: "dict_type").ToList();
-            var sysDictData = MiniExcel.Query<SysDictData>(path, sheetName: "dict_data").ToList();
             var sysConfig = MiniExcel.Query<SysConfig>(path, sheetName: "config").ToList();
 
             var filteredMenus = sysMenu
@@ -955,16 +936,7 @@ namespace ZR.ServiceCore.Services
                 userRoleStore.AsInsertable.ExecuteCommand();
                 logs.Add($"用户角色:{userRoleStore.InsertList.Count}");
 
-                var dictTypeStore = targetDb.Storageable(sysDictType)
-                    .WhereColumns(it => it.DictType).ToStorage();
-                dictTypeStore.AsInsertable.ExecuteCommand();
-                logs.Add($"字典类型:{dictTypeStore.InsertList.Count}");
-
-                var dictDataStore = targetDb.Storageable(sysDictData)
-                    .WhereColumns(it => new { it.DictType, it.DictValue }).ToStorage();
-                dictDataStore.AsInsertable.ExecuteCommand();
-                logs.Add($"字典数据:{dictDataStore.InsertList.Count}");
-
+                // 注意：SysDictType / SysDictData 是主库实体（IMainDbEntity），租户库不保存副本
                 var configStore = targetDb.Storageable(sysConfig)
                     .WhereColumns(it => it.ConfigKey).ToStorage();
                 configStore.AsInsertable.ExecuteCommand();

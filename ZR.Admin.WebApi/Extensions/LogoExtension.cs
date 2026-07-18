@@ -11,6 +11,7 @@ public static class LogoExtension
         var contentTpl = JnHelper.ReadTemplate("", "logo.txt");
         var content = contentTpl?.Render();
         var url = AppSettings.GetConfig("urls");
+        var useTenant = AppSettings.GetConfig("TenantSettings:UseTenant");
 
         var UploadOptions = AppSettings.Get<Upload>("Upload");
         Console.WriteLine(content);
@@ -21,6 +22,7 @@ public static class LogoExtension
         logger.Debug("📱移动端体验：http://demo.izhaorui.cn/h5");
         logger.Debug($"Swagger地址：{url}/swagger/index.html");
         logger.Debug($"初始化种子数据地址：{url}/common/InitSeedData");
+        logger.Debug($"多租户是否启动：{useTenant}");
         logger.Debug($"本地上传地址：{UploadOptions?.UploadUrl}-{UploadOptions?.LocalSavePath}");
     }
 }

@@ -62,6 +62,7 @@ namespace ZR.ServiceCore.Signalr
                 var name = HttpContextExtension.GetName(context);
                 var ip = HttpContextExtension.GetClientUserIp(context);
                 var device = HttpContextExtension.GetClientInfo(context).ToString();
+                var tenantId = App.GetCurrentTenantId();
                 var qs = HttpUtility.ParseQueryString(HttpContextExtension.GetQueryString(context));
                 var from = qs.Get("from") ?? "web";
                 var clientId = qs.Get("clientId");
@@ -74,10 +75,17 @@ namespace ZR.ServiceCore.Signalr
                     Location = ipInfo?.City,
                     Uuid = uuid,
                     Platform = from,
-                    ClientId = clientId ?? Context.ConnectionId
+                    ClientId = clientId ?? Context.ConnectionId,
+                    TenantId = tenantId
                 };
 
                 OnlineClients[Context.ConnectionId] = onlineUser;
+
+                // 多租户模式下将连接加入租户分组，广播仅推送到同租户客户端
+                if (App.IsTenantEnabled() && !string.IsNullOrWhiteSpace(tenantId))
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, GetTenantGroup(tenantId));
+                }
 
                 // 更新用户今日在线缓存
                 var userCache = Users.GetOrAdd(userId, _ => new OnlineUsers { Userid = userId, Name = name, LoginTime = DateTime.Now });
@@ -85,7 +93,7 @@ namespace ZR.ServiceCore.Signalr
 
                 // 推送通知 & 在线人数
                 await Clients.Caller.SendAsync(HubsConstant.MoreNotice, BuildNoticeResult());
-                await BroadcastOnlineUsersAsync();
+                await BroadcastOnlineUsersAsync(tenantId);
             }
             catch (Exception ex)
             {
@@ -110,8 +118,8 @@ namespace ZR.ServiceCore.Signalr
                         user);
                 }
 
-                await Clients.All.SendAsync(HubsConstant.OnlineNum,
-                    new { num = OnlineClients.Count, OnlineClients, leaveUser = user });
+                var tenantId = user.TenantId;
+                await BroadcastOnlineUsersAsync(tenantId, user);
             }
             catch (Exception ex)
             {
@@ -136,10 +144,11 @@ namespace ZR.ServiceCore.Signalr
                 var context = App.HttpContext;
                 long userId = HttpContextExtension.GetUId(context);
                 var fromUser = await _userService.GetByIdAsync(userId);
+                var tenantId = App.GetCurrentTenantId();
 
-                // 目标用户的所有连接 + 发送者自己
+                // 目标用户的所有连接 + 发送者自己（多租户模式下限制同租户）
                 var toConnections = OnlineClients.Values
-                    .Where(u => u.Userid == toUserId)
+                    .Where(u => u.Userid == toUserId && (string.IsNullOrWhiteSpace(tenantId) || string.Equals(u.TenantId, tenantId, StringComparison.OrdinalIgnoreCase)))
                     .Select(u => u.ConnnectionId)
                     .ToList();
                 toConnections.Add(Context.ConnectionId);
@@ -188,8 +197,10 @@ namespace ZR.ServiceCore.Signalr
             if (!singleLogin) return;
 
             long userId = HttpContextExtension.GetUId(App.HttpContext);
+            var tenantId = App.GetCurrentTenantId();
             var otherConnections = OnlineClients.Values
-                .Where(u => u.Userid == userId && u.ConnnectionId != Context.ConnectionId)
+                .Where(u => u.Userid == userId && u.ConnnectionId != Context.ConnectionId
+                    && (string.IsNullOrWhiteSpace(tenantId) || string.Equals(u.TenantId, tenantId, StringComparison.OrdinalIgnoreCase)))
                 .Select(u => u.ConnnectionId)
                 .ToList();
 
@@ -213,12 +224,47 @@ namespace ZR.ServiceCore.Signalr
         }
 
         /// <summary>
-        /// 广播在线人数
+        /// 获取租户 SignalR 分组名
         /// </summary>
-        private Task BroadcastOnlineUsersAsync()
+        private static string GetTenantGroup(string tenantId)
         {
-            return Clients.All.SendAsync(HubsConstant.OnlineNum,
-                new { num = OnlineClients.Count, OnlineClients });
+            return string.IsNullOrWhiteSpace(tenantId) ? "all" : $"tenant_{tenantId}";
+        }
+
+        /// <summary>
+        /// 过滤指定租户的在线客户端
+        /// </summary>
+        private static IEnumerable<OnlineUsers> FilterOnlineClientsByTenant(string tenantId)
+        {
+            if (!App.IsTenantEnabled() || string.IsNullOrWhiteSpace(tenantId))
+                return OnlineClients.Values;
+
+            return OnlineClients.Values
+                .Where(u => string.Equals(u.TenantId, tenantId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// 广播在线人数（按租户隔离，仅推送给同租户客户端）
+        /// </summary>
+        private async Task BroadcastOnlineUsersAsync(string tenantId, OnlineUsers leaveUser = null)
+        {
+            var filteredClients = FilterOnlineClientsByTenant(tenantId).ToList();
+            var payload = new
+            {
+                num = filteredClients.Count,
+                OnlineClients = filteredClients,
+                leaveUser
+            };
+
+            if (App.IsTenantEnabled())
+            {
+                var group = GetTenantGroup(tenantId);
+                await Clients.Group(group).SendAsync(HubsConstant.OnlineNum, payload);
+            }
+            else
+            {
+                await Clients.All.SendAsync(HubsConstant.OnlineNum, payload);
+            }
         }
 
         /// <summary>

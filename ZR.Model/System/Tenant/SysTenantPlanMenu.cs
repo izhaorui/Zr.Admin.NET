@@ -1,4 +1,4 @@
-namespace ZR.Model.System
+namespace ZR.Model.System.Tenant
 {
     /// <summary>
     /// 套餐菜单配置（主库存储）

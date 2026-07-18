@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using ZR.Model.System;
+using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Services;
 
 namespace ZR.Tasks.TaskScheduler

@@ -19,6 +19,12 @@ namespace ZR.Admin.WebApi.Controllers.System
             SysDictService = sysDictService;
         }
 
+        private bool IsMainTenant()
+        {
+            if (!App.IsTenantEnabled()) return true;
+            return string.Equals(App.GetCurrentTenantId(), App.MainDbConfigId, StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// 查询
         /// </summary>
@@ -56,6 +62,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPost("edit")]
         public IActionResult Add([FromBody] SysDictTypeDto dto)
         {
+            if (!IsMainTenant()) return ToResponse(ApiResult.Error("仅平台管理员可操作字典类型"));
+
             SysDictType dict = dto.Adapt<SysDictType>();
             if (UserConstants.NOT_UNIQUE.Equals(SysDictService.CheckDictTypeUnique(dict)))
             {
@@ -77,6 +85,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpPut]
         public IActionResult Edit([FromBody] SysDictTypeDto dto)
         {
+            if (!IsMainTenant()) return ToResponse(ApiResult.Error("仅平台管理员可操作字典类型"));
+
             SysDictType dict = dto.Adapt<SysDictType>();
             if (UserConstants.NOT_UNIQUE.Equals(SysDictService.CheckDictTypeUnique(dict)))
             {
@@ -96,6 +106,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpDelete("{ids}")]
         public IActionResult Remove(string ids)
         {
+            if (!IsMainTenant()) return ToResponse(ApiResult.Error("仅平台管理员可操作字典类型"));
+
             long[] idss = Tools.SpitLongArrary(ids);
 
             return SUCCESS(SysDictService.DeleteDictTypeByIds(idss));
@@ -110,6 +122,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dict:export")]
         public IActionResult Export()
         {
+            if (!IsMainTenant()) return ToResponse(ApiResult.Error("仅平台管理员可操作字典类型"));
+
             var list = SysDictService.GetAll();
             var result = ExportExcelMini(list, "sysdictType", "字典");
             return ExportExcel(result.Item2, result.Item1);

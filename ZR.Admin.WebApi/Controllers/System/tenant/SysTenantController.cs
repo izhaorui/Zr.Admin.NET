@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Tenant;
 
-namespace ZR.Admin.WebApi.Controllers.System
+namespace ZR.Admin.WebApi.Controllers.System.tenant
 {
     /// <summary>
     /// 租户管理
@@ -32,94 +33,6 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 查询套餐列表。
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("plan/list")]
-        [ActionPermissionFilter(Permission = "system:tenant:list")]
-        public IActionResult PlanList()
-        {
-            return SUCCESS(_sysTenantService.GetTenantPlanList());
-        }
-
-        /// <summary>
-        /// 获取套餐详情。
-        /// </summary>
-        [HttpGet("plan/{id}")]
-        [ActionPermissionFilter(Permission = "system:tenant:list")]
-        public IActionResult PlanDetail(long id)
-        {
-            var plan = _sysTenantService.GetPlanById(id);
-            if (plan == null)
-                return ToResponse(ResultCode.FAIL, "套餐不存在");
-            return SUCCESS(plan);
-        }
-
-        /// <summary>
-        /// 新增套餐。
-        /// </summary>
-        [HttpPost("plan")]
-        [ActionPermissionFilter(Permission = "system:tenant:update")]
-        [Log(Title = "套餐管理", BusinessType = BusinessType.INSERT)]
-        public IActionResult AddPlan([FromBody] SysTenantPlan plan)
-        {
-            if (plan == null)
-                return ToResponse(ResultCode.FAIL, "请求参数不能为空");
-            var id = _sysTenantService.InsertPlan(plan);
-            return SUCCESS(new { id });
-        }
-
-        /// <summary>
-        /// 编辑套餐。
-        /// </summary>
-        [HttpPut("plan")]
-        [ActionPermissionFilter(Permission = "system:tenant:update")]
-        [Log(Title = "套餐管理", BusinessType = BusinessType.UPDATE)]
-        public IActionResult EditPlan([FromBody] SysTenantPlan plan)
-        {
-            if (plan == null)
-                return ToResponse(ResultCode.FAIL, "请求参数不能为空");
-            _sysTenantService.UpdatePlan(plan);
-            return SUCCESS(1);
-        }
-
-        /// <summary>
-        /// 删除套餐。
-        /// </summary>
-        [HttpDelete("plan/{id}")]
-        [ActionPermissionFilter(Permission = "system:tenant:update")]
-        [Log(Title = "套餐管理", BusinessType = BusinessType.DELETE)]
-        public IActionResult DeletePlan(long id)
-        {
-            _sysTenantService.DeletePlan(id);
-            return SUCCESS(1);
-        }
-
-        /// <summary>
-        /// 查询租户当前套餐。
-        /// </summary>
-        /// <param name="tenantId"></param>
-        /// <returns></returns>
-        [HttpGet("plan/current")]
-        [ActionPermissionFilter(Permission = "system:tenant:list")]
-        public IActionResult CurrentPlan(string tenantId)
-        {
-            return SUCCESS(_sysTenantService.GetCurrentTenantPlan(tenantId));
-        }
-
-        /// <summary>
-        /// 查询租户套餐用量面板。
-        /// </summary>
-        /// <param name="tenantId"></param>
-        /// <returns></returns>
-        [HttpGet("plan/usage")]
-        [ActionPermissionFilter(Permission = "system:tenant:list")]
-        public IActionResult Usage(string tenantId)
-        {
-            return SUCCESS(_sysTenantService.GetTenantUsageDashboard(tenantId));
-        }
-
-        /// <summary>
         /// 查询租户到期提醒。
         /// </summary>
         /// <param name="withinDays"></param>
@@ -129,24 +42,6 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult ExpireReminders(int withinDays = 30)
         {
             return SUCCESS(_sysTenantService.GetTenantExpireReminders(withinDays));
-        }
-
-        /// <summary>
-        /// 分配租户套餐。
-        /// </summary>
-        /// <param name="dto"></param>
-        /// <returns></returns>
-        [HttpPost("plan/assign")]
-        [ActionPermissionFilter(Permission = "system:tenant:update")]
-        [Log(Title = "租户套餐分配", BusinessType = BusinessType.UPDATE)]
-        public IActionResult AssignPlan([FromBody] TenantPlanAssignDto dto)
-        {
-            if (dto == null)
-            {
-                throw new CustomException("请求参数错误");
-            }
-
-            return SUCCESS(_sysTenantService.AssignTenantPlan(dto, HttpContext.GetName()));
         }
 
         /// <summary>

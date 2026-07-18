@@ -1,4 +1,4 @@
-namespace ZR.Model.System
+namespace ZR.Model.System.Tenant
 {
     /// <summary>
     /// 租户套餐绑定。

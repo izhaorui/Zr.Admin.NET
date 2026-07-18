@@ -114,7 +114,6 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             long userId = HttpContext.GetUId();
             var user = sysUserService.SelectUserById(userId);
-            var tenantId = App.GetCurrentTenantId();
 
             //前端校验按钮权限使用
             //角色集合 eg: admin,yunying,common

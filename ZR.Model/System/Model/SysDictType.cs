@@ -6,7 +6,7 @@
     [SugarTable("sys_dict_type", "字典类型表")]
     [SugarIndex("index_dict_type", nameof(DictType), OrderByType.Asc, true)]
     [Tenant("0")]
-    public class SysDictType : SysBase
+    public class SysDictType : SysBase, IMainDbEntity
     {
         /// <summary>
         /// 字典主键

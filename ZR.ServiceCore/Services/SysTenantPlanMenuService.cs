@@ -3,6 +3,8 @@ using Infrastructure.Attribute;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Tenant;
+using ZR.ServiceCore.Middleware;
 
 namespace ZR.ServiceCore.Services
 {
@@ -98,6 +100,8 @@ namespace ZR.ServiceCore.Services
             var allMenus = Context.Queryable<SysMenu>()
                 .Where(m => m.Status == "0" && new[] { "M", "C", "L", "F" }.Contains(m.MenuType))
                 .OrderBy(m => new { m.ParentId, m.OrderNum })
+                .ToList()
+                .Where(m => !TenantFeaturePolicy.IsPlatformMenu(m))
                 .ToList();
 
             var selectedSet = new HashSet<long>(menuIds);
@@ -119,6 +123,9 @@ namespace ZR.ServiceCore.Services
                 OrderNum = m.OrderNum,
                 Status = m.Status
             }).ToList();
+
+            // 过滤平台菜单后，移除没有子节点的空目录（递归剪枝）
+            list = PruneEmptyDirectories(list);
 
             var tree = BuildTree(list);
             // 容器节点（含子节点）的勾选状态由其子节点决定，不应单独标记为已选。
@@ -188,6 +195,30 @@ namespace ZR.ServiceCore.Services
         #endregion
 
         #region 私有方法
+
+        /// <summary>
+        /// 递归移除没有子节点的空目录（M/C 类型），用于过滤平台菜单后清理空壳目录
+        /// </summary>
+        private static List<TenantMenuDto> PruneEmptyDirectories(List<TenantMenuDto> list)
+        {
+            var changed = true;
+            while (changed)
+            {
+                changed = false;
+                var emptyDirIds = list
+                    .Where(m => (m.MenuType == "M" || m.MenuType == "C")
+                                && !list.Any(c => c.ParentId == m.MenuId))
+                    .Select(m => m.MenuId)
+                    .ToHashSet();
+
+                if (emptyDirIds.Count > 0)
+                {
+                    list = list.Where(m => !emptyDirIds.Contains(m.MenuId)).ToList();
+                    changed = true;
+                }
+            }
+            return list;
+        }
 
         private List<TenantMenuDto> BuildTree(List<TenantMenuDto> list)
         {

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -14,13 +15,16 @@ namespace ZR.Admin.WebApi.Controllers.System
     {
         private readonly ISysRoleService sysRoleService;
         private readonly ISysMenuService sysMenuService;
+        private readonly ISysTenantPlanMenuService sysTenantPlanMenuService;
 
         public SysRoleController(
             ISysRoleService sysRoleService,
-            ISysMenuService sysMenuService)
+            ISysMenuService sysMenuService,
+            ISysTenantPlanMenuService sysTenantPlanMenuService)
         {
             this.sysRoleService = sysRoleService;
             this.sysMenuService = sysMenuService;
+            this.sysTenantPlanMenuService = sysTenantPlanMenuService;
         }
 
         /// <summary>
@@ -121,6 +125,13 @@ namespace ZR.Admin.WebApi.Controllers.System
             SysRole sysRole = sysRoleDto.Adapt<SysRole>();
             sysRoleDto.Create_by = HttpContext.GetName();
             sysRoleService.CheckRoleAllowed(sysRole);
+
+            // 多租户模式：仅允许保存套餐范围内的菜单，防止越权写入套餐外菜单
+            if (App.IsTenantEnabled())
+            {
+                var planMenuIds = new HashSet<long>(sysTenantPlanMenuService.GetMenuIdsByTenantId(App.GetCurrentTenantId()));
+                sysRoleDto.MenuIds = sysRoleDto.MenuIds.Where(planMenuIds.Contains).ToList();
+            }
 
             bool result = sysRoleService.AuthDataScope(sysRoleDto);
 

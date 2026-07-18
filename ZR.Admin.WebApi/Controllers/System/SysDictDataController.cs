@@ -154,6 +154,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:dict:edit")]
         public IActionResult ChangeStatus([FromBody] SysDictData dto)
         {
+            dto.Update_by = HttpContext.GetName();
             int result = SysDictDataService.UpdateStatus(dto);
 
             return ToResponse(result);

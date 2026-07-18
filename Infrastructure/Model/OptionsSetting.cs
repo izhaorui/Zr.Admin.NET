@@ -49,10 +49,6 @@ namespace Infrastructure.Model
         /// Reids配置
         /// </summary>
         public RedisServerConfig RedisServer { get; set; }
-        /// <summary>
-        /// 默认租户套餐配置
-        /// </summary>
-        public Dictionary<string, DefaultTenantPlanConfig> DefaultTenantPlans { get; set; }
     }
     /// <summary>
     /// 发送邮件数据配置
@@ -182,16 +178,5 @@ namespace Infrastructure.Model
         public bool DbCache { get; set; }
     }
 
-    /// <summary>
-    /// 默认租户套餐配置
-    /// </summary>
-    public class DefaultTenantPlanConfig
-    {
-        public string PlanCode { get; set; }
-        public string PlanName { get; set; }
-        public int MaxUsers { get; set; }
-        public int IsDefault { get; set; }
-        public int Sort { get; set; }
-    }
 }
 

@@ -1,4 +1,4 @@
-namespace ZR.Model.System
+namespace ZR.Model.System.Tenant
 {
     /// <summary>
     /// 套餐定义。

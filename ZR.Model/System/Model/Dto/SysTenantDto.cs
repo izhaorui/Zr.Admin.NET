@@ -99,12 +99,13 @@ namespace ZR.Model.System.Dto
         public string Message { get; set; }
         public List<TenantLifecycleStep> Steps { get; set; } = new();
     }
-
+    
     /// <summary>
     /// 套餐定义输出。
     /// </summary>
     public class TenantPlanDto
     {
+        public long Id { get; set; }
         public string PlanCode { get; set; }
         public string PlanName { get; set; }
         public int MaxUsers { get; set; }
@@ -143,38 +144,6 @@ namespace ZR.Model.System.Dto
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public bool IsExpired { get; set; }
-    }
-
-    /// <summary>
-    /// 套餐功能能力矩阵项（已废弃，保留兼容）。
-    /// </summary>
-    public class TenantFeatureMatrixItemDto
-    {
-        public string FeatureCode { get; set; }
-        public string PermissionPrefixes { get; set; }
-        public string IncludedPlanCodes { get; set; }
-        public string IncludedPlanNames { get; set; }
-    }
-
-    /// <summary>
-    /// 历史套餐功能补齐结果（已废弃，保留兼容）。
-    /// </summary>
-    public class TenantPlanFeatureBackfillResultDto
-    {
-        public int UpdatedCount { get; set; }
-        public List<TenantPlanFeatureBackfillItemDto> Items { get; set; } = new();
-    }
-
-    /// <summary>
-    /// 单套餐补齐明细（已废弃，保留兼容）。
-    /// </summary>
-    public class TenantPlanFeatureBackfillItemDto
-    {
-        public string PlanCode { get; set; }
-        public string PlanName { get; set; }
-        public string OldFeatureFlags { get; set; }
-        public string NewFeatureFlags { get; set; }
-        public bool Updated { get; set; }
     }
 
     /// <summary>

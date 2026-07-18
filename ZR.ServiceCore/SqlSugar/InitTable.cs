@@ -10,6 +10,7 @@ using ZR.Model.System.Generate;
 using ZR.Model.System.Model;
 using ZR.ServiceCore.Services;
 using Microsoft.Extensions.DependencyInjection;
+using ZR.Model.System.Tenant;
 
 namespace ZR.ServiceCore.SqlSugar
 {
