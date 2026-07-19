@@ -71,6 +71,8 @@ namespace ZR.ServiceCore.Services
             {
                 throw new CustomException($"名称[{model.GroupName}]已存在");
             }
+            // INSERT 不经全局过滤，需手动填入租户ID
+            model.TenantId = App.GetCurrentTenantId();
             return Insertable(model).ExecuteReturnEntity();
         }
 

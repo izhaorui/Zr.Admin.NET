@@ -3,6 +3,7 @@ using SqlSugar.IOC;
 using ZR.Model;
 using ZR.Model.Models;
 using ZR.Model.System;
+using ZR.Model.System.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -64,6 +65,23 @@ namespace ZR.ServiceCore.SqlSugar
             var expDept = Expressionable.Create<SysDept>();
             
             db.QueryFilter.AddTableFilter(expSysMsg.ToExpression());
+
+            // SysFile / SysFileGroup 多租户隔离（主库 + TenantId 行级过滤）
+            var expSysFile = Expressionable.Create<SysFile>();
+            var expSysFileGroup = Expressionable.Create<SysFileGroup>();
+            if (currentTenantId == App.MainDbConfigId)
+            {
+                expSysFile.And(it => it.TenantId == null || it.TenantId == currentTenantId);
+                expSysFileGroup.And(it => it.TenantId == null || it.TenantId == currentTenantId);
+            }
+            else
+            {
+                expSysFile.And(it => it.TenantId == currentTenantId);
+                expSysFileGroup.And(it => it.TenantId == currentTenantId);
+            }
+            db.QueryFilter.AddTableFilter(expSysFile.ToExpression());
+            db.QueryFilter.AddTableFilter(expSysFileGroup.ToExpression());
+
             //管理员不过滤
             if (user.RoleKeys.Any(f => f.Equals(GlobalConstant.AdminRole))) return;
 

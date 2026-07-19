@@ -1,8 +1,7 @@
 ﻿namespace ZR.Model.System
 {
-    [Tenant("0")]
     [SugarTable("sys_file", "文件存储表")]
-    public class SysFile
+    public class SysFile : IMainDbEntity
     {
         /// <summary>
         /// 文件id
@@ -62,6 +61,11 @@
         /// 分类
         /// </summary>
         public string ClassifyType { get; set; }
+        /// <summary>
+        /// 租户ID（多租户隔离）
+        /// </summary>
+        [SugarColumn(Length = 64, IsNullable = true)]
+        public string TenantId { get; set; }
         public SysFile() { }
         public SysFile(string originFileName, string fileName, string ext, string fileSize, string storePath, string create_by)
         {

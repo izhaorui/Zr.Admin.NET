@@ -4,8 +4,7 @@ namespace ZR.Model.System.Model
     /// 文件分组
     /// </summary>
     [SugarTable("sys_file_group")]
-    [Tenant(0)]
-    public class SysFileGroup
+    public class SysFileGroup : IMainDbEntity
     {
         /// <summary>
         /// id 
@@ -39,6 +38,12 @@ namespace ZR.Model.System.Model
         /// </summary>
         [SugarColumn(InsertServerTime = true)]
         public DateTime? AddTime { get; set; }
+
+        /// <summary>
+        /// 租户ID（多租户隔离）
+        /// </summary>
+        [SugarColumn(Length = 64, IsNullable = true)]
+        public string TenantId { get; set; }
 
         [SugarColumn(IsIgnore = true)]
         public List<SysFileGroup> Children { get; set; }

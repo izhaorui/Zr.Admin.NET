@@ -162,6 +162,8 @@ namespace ZR.ServiceCore.Services
 
         public async Task<long> InsertFile(SysFile file)
         {
+            // INSERT 不经全局过滤，需手动填入租户ID
+            file.TenantId = App.GetCurrentTenantId();
             return await Insertable(file).ExecuteReturnSnowflakeIdAsync();//单条插入返回雪花ID;
         }
 

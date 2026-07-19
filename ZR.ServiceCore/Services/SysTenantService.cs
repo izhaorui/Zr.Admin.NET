@@ -9,7 +9,6 @@ using ZR.Model.Models;
 using ZR.Model.social;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Model.System.Model;
 using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Middleware;
 
@@ -203,11 +202,8 @@ namespace ZR.ServiceCore.Services
             db.CodeFirst.InitTables(typeof(SysUserPost));
             db.CodeFirst.InitTables(typeof(SysTasks));
             db.CodeFirst.InitTables(typeof(SysTasksLog));
-            // 注意：SysDictType / SysDictData 是主库实体（IMainDbEntity），不在租户库建表
             db.CodeFirst.InitTables(typeof(SysTenantDictData));
             db.CodeFirst.InitTables(typeof(SysConfig));
-            db.CodeFirst.InitTables(typeof(SysFile));
-            db.CodeFirst.InitTables(typeof(SysFileGroup));
             db.CodeFirst.InitTables(typeof(UserOnlineLog));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));
