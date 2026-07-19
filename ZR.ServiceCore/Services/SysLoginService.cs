@@ -2,7 +2,6 @@
 using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
-using SqlSugar.IOC;
 using UAParser;
 using ZR.Common;
 using ZR.Infrastructure.Constant;

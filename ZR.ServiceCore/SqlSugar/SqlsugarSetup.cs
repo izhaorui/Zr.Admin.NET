@@ -49,7 +49,7 @@ namespace ZR.ServiceCore.SqlSugar
                 var user = App.User;
                 if (user != null)
                 {
-                    DataPermi.FilterData("0");
+                    DataPermi.FilterData(App.MainDbConfigId);
                 }
                 
                 iocList.ForEach(iocConfig =>

@@ -784,7 +784,7 @@ namespace ZR.ServiceCore.Services
                 }).ExecuteCommand();
             }
 
-            //// 4) 授权给所有角色（个人功能对全员可见）
+            //// 6) 授权给所有角色（个人功能对全员可见）
             //var allMenuIds = db.Queryable<SysMenu>()
             //    .Where(x => x.MenuId == officeMenu.MenuId || x.MenuId == todoMenu.MenuId || x.ParentId == todoMenu.MenuId)
             //    .Select(x => x.MenuId)

@@ -49,7 +49,18 @@ namespace ZR.ServiceCore.SqlSugar
             var expUser = Expressionable.Create<SysUser>().And(it => it.DelFlag == 0);//有and下面用and
             var expRole = Expressionable.Create<SysRole>();
             var expLoginlog = Expressionable.Create<SysLogininfor>();
-            var expSysMsg = Expressionable.Create<SysUserMsg>().And(it => it.IsDelete == 0);
+            var currentTenantId = App.GetCurrentTenantId();
+            var expSysMsg = Expressionable.Create<SysUserMsg>()
+                .And(it => it.IsDelete == 0);
+            // 多租户隔离：主租户兼容旧数据(TenantId=null)，子租户严格匹配
+            if (currentTenantId == App.MainDbConfigId)
+            {
+                expSysMsg.And(it => it.TenantId == null || it.TenantId == currentTenantId);
+            }
+            else
+            {
+                expSysMsg.And(it => it.TenantId == currentTenantId);
+            }
             var expDept = Expressionable.Create<SysDept>();
             
             db.QueryFilter.AddTableFilter(expSysMsg.ToExpression());

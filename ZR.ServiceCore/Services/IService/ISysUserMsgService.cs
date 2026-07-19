@@ -19,5 +19,20 @@ namespace ZR.ServiceCore.Services
 
 
         PagedInfo<SysUserMsgDto> ExportList(SysUserMsgQueryDto parm);
+
+        ///// <summary>
+        ///// 未读消息数
+        ///// </summary>
+        //int UnreadCount(long userId);
+
+        /// <summary>
+        /// 删除消息（软删除，置 IsDelete=1）
+        /// </summary>
+        int DeleteByIds(long[] ids, long userId);
+
+        /// <summary>
+        /// 当前用户全部消息标记为已读
+        /// </summary>
+        int ReadAll(long userId);
     }
 }

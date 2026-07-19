@@ -48,7 +48,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
-        /// 查询我的未读消息数
+        /// 查询我的未读消息数（租户由 DataPermi 全局过滤）
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
@@ -135,6 +135,20 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             var userId = HttpContext.GetUId();
             var response = _SysUserMsgService.ReadMsg(userId, msgId, msgType);
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 当前用户全部消息标记为已读
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("readAll")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult ReadAllMsg()
+        {
+            var userId = HttpContext.GetUId();
+            var response = _SysUserMsgService.ReadAll(userId);
 
             return SUCCESS(response);
         }

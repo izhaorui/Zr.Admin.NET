@@ -208,7 +208,6 @@ namespace ZR.ServiceCore.Services
             db.CodeFirst.InitTables(typeof(SysConfig));
             db.CodeFirst.InitTables(typeof(SysFile));
             db.CodeFirst.InitTables(typeof(SysFileGroup));
-            db.CodeFirst.InitTables(typeof(SysUserMsg));
             db.CodeFirst.InitTables(typeof(UserOnlineLog));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));

@@ -3,11 +3,10 @@ using ZR.Model.System;
 namespace ZR.Model
 {
     /// <summary>
-    /// 用户系统消息
+    /// 用户系统消息（多租户：统一存主库，按 TenantId 隔离）
     /// </summary>
     [SugarTable("sys_user_msg")]
-    [Tenant(0)]
-    public class SysUserMsg
+    public class SysUserMsg : IMainDbEntity
     {
         /// <summary>
         /// 消息ID 
@@ -59,5 +58,11 @@ namespace ZR.Model
         /// </summary>
         [Navigate(NavigateType.OneToOne, nameof(FromUserid), nameof(SysUser.UserId))]//变量名不要等类名 
         public SysUser User { get; set; }
+
+        /// <summary>
+        /// 租户ID（多租户隔离标识）
+        /// </summary>
+        [SugarColumn(Length = 64, IsNullable = true)]
+        public string TenantId { get; set; }
     }
 }
