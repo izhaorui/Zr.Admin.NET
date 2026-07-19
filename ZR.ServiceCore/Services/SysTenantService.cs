@@ -200,10 +200,7 @@ namespace ZR.ServiceCore.Services
             db.CodeFirst.InitTables(typeof(SysRoleDept));
             db.CodeFirst.InitTables(typeof(SysUserRole));
             db.CodeFirst.InitTables(typeof(SysUserPost));
-            db.CodeFirst.InitTables(typeof(SysTasks));
-            db.CodeFirst.InitTables(typeof(SysTasksLog));
             db.CodeFirst.InitTables(typeof(SysTenantDictData));
-            db.CodeFirst.InitTables(typeof(SysConfig));
             db.CodeFirst.InitTables(typeof(UserOnlineLog));
             db.CodeFirst.InitTables(typeof(SqlDiffLog));
             db.CodeFirst.InitTables(typeof(SmsCodeLog));
@@ -886,7 +883,6 @@ namespace ZR.ServiceCore.Services
             var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
             sysUser.ForEach(x => x.Password = "E10ADC3949BA59ABBE56E057F20F883E");
             var sysUserRole = MiniExcel.Query<SysUserRole>(path, sheetName: "user_role").ToList();
-            var sysConfig = MiniExcel.Query<SysConfig>(path, sheetName: "config").ToList();
 
             var filteredMenus = sysMenu
                 .Where(m => !TenantFeaturePolicy.IsPlatformMenuPermission(m.Perms))
@@ -931,11 +927,7 @@ namespace ZR.ServiceCore.Services
                 userRoleStore.AsInsertable.ExecuteCommand();
                 logs.Add($"用户角色:{userRoleStore.InsertList.Count}");
 
-                // 注意：SysDictType / SysDictData 是主库实体（IMainDbEntity），租户库不保存副本
-                var configStore = targetDb.Storageable(sysConfig)
-                    .WhereColumns(it => it.ConfigKey).ToStorage();
-                configStore.AsInsertable.ExecuteCommand();
-                logs.Add($"系统参数:{configStore.InsertList.Count}");
+                // 注意：SysDictType / SysDictData / SysConfig / SysTasks / SysTasksLog 是主库实体（IMainDbEntity），租户库不保存副本
 
                 targetDb.Ado.CommitTran();
 
