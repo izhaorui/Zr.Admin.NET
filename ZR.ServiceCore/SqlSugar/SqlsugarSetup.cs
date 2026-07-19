@@ -2,7 +2,6 @@
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using SqlSugar.IOC;
 using ZR.Common;
 using ZR.Model;
@@ -72,13 +71,14 @@ namespace ZR.ServiceCore.SqlSugar
                 });
             });
 
-            if (environment.IsDevelopment())
-            {
-                InitTable.InitDb(options.InitDb);
+            // 存量库迁移：补加多租户隔离列 TenantId（幂等，所有环境执行，避免过滤器运行时报"未知列"）
+            // 新装库由 CodeFirst 自动建列，此处仅对缺列的存量库补列；表/列不存在则跳过，异常仅告警不中断。
+            //InitTable.MigrateTenantColumns();
 
-                InitTable.InitNewTb();
-            }
+            //初始化表和种子数据
+            InitTable.RunInitDb(environment);
         }
+
 
         /// <summary>
         /// 数据库Aop设置

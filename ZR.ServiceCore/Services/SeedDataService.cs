@@ -314,7 +314,6 @@ namespace ZR.ServiceCore.Services
             var sysDictData = MiniExcel.Query<SysDictData>(path, sheetName: "dict_data").ToList();
             var sysDept = MiniExcel.Query<SysDept>(path, sheetName: "dept").ToList();
             var sysArticleCategory = MiniExcel.Query<ArticleCategory>(path, sheetName: "article_category").ToList();
-            var sysArticleTopic = MiniExcel.Query<ArticleTopic>(path, sheetName: "article_topic").ToList();
             var sysNotice = MiniExcel.Query<SysNotice>(path, sheetName: "notice").ToList();
 
             List<SysTenant> sysTenant = [];
@@ -361,7 +360,6 @@ namespace ZR.ServiceCore.Services
                 result.Add(InitDictData(sysDictData).Item1);
                 result.Add(InitDeptData(sysDept).Item1);
                 result.Add(InitArticleCategoryData(sysArticleCategory).Item1);
-                result.Add(InitArticleTopicData(sysArticleTopic).Item1);
                 result.Add(InitNoticeData(sysNotice).Item1);
                 result.Add(InitTenantData(sysTenant).Item1);
                 result.Add(EnsureTenantMenuSeedData());
@@ -805,7 +803,7 @@ namespace ZR.ServiceCore.Services
             //    }
             //}
 
-            return $"[个人待办菜单] 菜单与权限补齐完成个";
+            return $"[个人待办菜单]";
         }
     }
 }

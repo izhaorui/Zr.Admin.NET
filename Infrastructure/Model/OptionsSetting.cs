@@ -16,9 +16,13 @@ namespace Infrastructure.Model
         /// </summary>
         public bool DemoMode { get; set; }
         /// <summary>
-        /// 初始化db
+        /// 初始化db（建表）。设为 true 启动时会自动建表，并自动导入种子数据
         /// </summary>
         public bool InitDb { get; set; }
+        /// <summary>
+        /// 是否在 InitDb 建表后自动导入种子数据（data.xlsx）。默认 true，无需手动调用 InitSeedData 接口
+        /// </summary>
+        public bool InitSeed { get; set; } = true;
         public string[] InitTables { get; set; }
         /// <summary>
         /// 邮箱配置
