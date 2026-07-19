@@ -5,7 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SqlSugar.IOC;
 using ZR.Common;
+using ZR.Model;
+using ZR.Model.Models;
 using ZR.Model.System;
+using ZR.Model.System.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -46,15 +49,26 @@ namespace ZR.ServiceCore.SqlSugar
             }
             SugarIocServices.ConfigurationSugar(db =>
             {
-                var user = App.User;
-                if (user != null)
-                {
-                    DataPermi.FilterData(App.MainDbConfigId);
-                }
-                
                 iocList.ForEach(iocConfig =>
                 {
                     SetSugarAop(db, iocConfig, cache);
+
+                    var conn = db.GetConnectionScope(iocConfig.ConfigId);
+
+                    // 角色数据权限（租户库表，DataPermi）：全局动态过滤器，每次查询按当前登录用户过滤
+                    conn.QueryFilter.AddTableFilter<SysUser>(DataPermi.SysUserFilter());
+                    conn.QueryFilter.AddTableFilter<SysDept>(DataPermi.SysDeptFilter());
+                    conn.QueryFilter.AddTableFilter<SysRole>(DataPermi.SysRoleFilter());
+                    conn.QueryFilter.AddTableFilter<SysLogininfor>(DataPermi.SysLogininforFilter());
+                    conn.QueryFilter.AddTableFilter<UserOnlineLog>(DataPermi.UserOnlineLogFilter());
+
+                    // 租户隔离（主库共享实体，TenantFilter）：仅主库连接且 SaaS 模式下注册
+                    if (iocConfig.ConfigId == App.MainDbConfigId && App.IsTenantEnabled())
+                    {
+                        conn.QueryFilter.AddTableFilter<SysUserMsg>(TenantFilter.SysUserMsgTenantFilter());
+                        conn.QueryFilter.AddTableFilter<SysFile>(TenantFilter.SysFileTenantFilter());
+                        conn.QueryFilter.AddTableFilter<SysFileGroup>(TenantFilter.SysFileGroupTenantFilter());
+                    }
                 });
             });
 
@@ -79,27 +93,21 @@ namespace ZR.ServiceCore.SqlSugar
             string configId = config.ConfigId;
             db.GetConnectionScope(configId).Aop.OnLogExecuting = (sql, pars) =>
             {
-                if (showDbLog)
-                {
-                    string log = $"【config={configId}】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
-                    if (sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                    {
-                        logger.Info(log);
-                    }
-                    else if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-                    {
-                        logger.Warn(log);
-                    }
-                    else if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("TRUNCATE", StringComparison.OrdinalIgnoreCase))
-                    {
-                        logger.Error(log);
-                    }
-                    else
-                    {
-                        log = $"【config={configId}】dbo.{sql} {string.Join(", ", pars.Select(x => x.ParameterName + " = " + GetParsValue(x)))};\n";
-                        logger.Info(log);
-                    }
-                }
+                if (!showDbLog) return;
+
+                var cmd = sql.TrimStart();
+                string log = $"【config={configId}】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
+                if (cmd.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+                    logger.Info(log);
+                else if (cmd.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase) ||
+                         cmd.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase))
+                    logger.Info(log);
+                else if (cmd.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase) ||
+                         cmd.StartsWith("TRUNCATE", StringComparison.OrdinalIgnoreCase))
+                    logger.Warn(log);
+                else
+                    logger.Info(log);
+
             };
             db.GetConnectionScope(configId).Aop.OnError = (ex) =>
             {

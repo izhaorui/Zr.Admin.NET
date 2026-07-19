@@ -242,13 +242,11 @@ namespace ZR.ServiceCore.Services
             return list.Where(p => p.ParentId == dept.DeptId).ToList();
         }
 
-        #region 角色部门
+        #region 角色部门 + 数据权限预计算
 
         /// <summary>
         /// 根据角色获取菜单id
         /// </summary>
-        /// <param name="roleId"></param>
-        /// <returns></returns>
         public List<SysRoleDept> SelectRoleDeptByRoleId(long roleId)
         {
             return RoleDeptRepository.SelectRoleDeptByRoleId(roleId);
@@ -257,13 +255,43 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 获取角色部门id集合
         /// </summary>
-        /// <param name="roleId"></param>
-        /// <returns></returns>
         public List<long> SelectRoleDepts(long roleId)
         {
             var list = SelectRoleDeptByRoleId(roleId);
-
             return list.Select(x => x.DeptId).Distinct().ToList();
+        }
+
+        /// <summary>
+        /// 批量获取多个角色的自定义部门 ID（CUSTOM 数据权限预计算）
+        /// </summary>
+        public List<long> SelectRoleDeptsBatch(List<long> roleIds)
+        {
+            return RoleDeptRepository.GetList(rd => roleIds.Contains(rd.RoleId))
+                .Select(rd => rd.DeptId)
+                .Distinct()
+                .ToList();
+        }
+
+        /// <summary>
+        /// 获取指定部门的所有子部门 ID（含自身），基于 ParentId 递归，用于登录时预计算 DEPT_CHILD。
+        /// 清除全局 QueryFilter（避免循环依赖：SysDeptFilter 依赖本方法的计算结果）。
+        /// </summary>
+        public List<long> GetChildDeptIds(long deptId)
+        {
+            var allDepts = Context.Queryable<SysDept>().ClearFilter().Where(d => d.DelFlag == 0).ToList();
+            var result = new List<long>();
+            CollectChildDeptIds(allDepts, deptId, result);
+            return result;
+        }
+
+        private static void CollectChildDeptIds(List<SysDept> allDepts, long parentId, List<long> result)
+        {
+            result.Add(parentId);
+            var children = allDepts.Where(d => d.ParentId == parentId).ToList();
+            foreach (var child in children)
+            {
+                CollectChildDeptIds(allDepts, child.DeptId, result);
+            }
         }
 
         /// <summary>

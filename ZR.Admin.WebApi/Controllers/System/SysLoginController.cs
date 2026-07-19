@@ -22,6 +22,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysRoleService roleService;
         private readonly ISmsCodeLogService smsCodeLogService;
         private readonly ISysTenantService sysTenantService;
+        private readonly ISysDeptService deptService;
 
         public SysLoginController(
             ISysMenuService sysMenuService,
@@ -32,7 +33,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysRoleService sysRoleService,
             ISmsCodeLogService smsCodeLogService,
             ICaptcha captcha,
-            ISysTenantService sysTenantService)
+            ISysTenantService sysTenantService,
+            ISysDeptService sysDeptService)
         {
             SecurityCodeHelper = captcha;
             this.sysMenuService = sysMenuService;
@@ -43,6 +45,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.smsCodeLogService = smsCodeLogService;
             roleService = sysRoleService;
             this.sysTenantService = sysTenantService;
+            deptService = sysDeptService;
         }
 
         /// <summary>
@@ -81,6 +84,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 TenantId = loginBody.TenantId,
                 Permissions = permissions,
+                ScopeType = ComputeScopeType(roles),
             };
             var token = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
             ApiResult apiResult = new((int)ResultCode.SUCCESS, "success", token);
@@ -102,6 +106,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             var name = HttpContext.GetName();
 
             CacheService.RemoveUserPerms(GlobalConstant.UserPermKEY + userid);
+            CacheService.RemoveDataScopeDeptIds(userid);
             return SUCCESS(new { name, id = userid });
         }
 
@@ -123,6 +128,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             user.WelcomeContent = GlobalConstant.WelcomeMessages[new Random().Next(0, GlobalConstant.WelcomeMessages.Length)];
             user.Password = string.Empty;
             CacheService.SetUserPerms(GlobalConstant.UserPermKEY + userId, permissions);
+            // 数据权限部门 ID 缓存（与权限缓存统一管理，前端登录/刷新后自动刷新）
+            var userRoles = roleService.SelectUserRoleListByUserId(userId);
+            CacheService.SetDataScopeDeptIds(userId, ComputeDataScopeDeptIds(userRoles, user.DeptId));
             return SUCCESS(new
             {
                 user = user.Adapt<SysUserDto>(),
@@ -132,8 +140,6 @@ namespace ZR.Admin.WebApi.Controllers.System
                 isPasswordExpired = CheckPasswordExpire(user.PwdUpdateTime)
             });
         }
-
-
 
         /// <summary>
         /// 获取路由信息
@@ -407,8 +413,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 TenantId = loginBody.TenantId,
                 Permissions = permissions,
+                ScopeType = ComputeScopeType(roles),
             };
-            //CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }
 
@@ -463,10 +469,60 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
+        /// 登录时预计算合并后的数据权限等级（取所有角色中最宽松的权限）
+        /// </summary>
+        private static int ComputeScopeType(List<SysRole> roles)
+        {
+            if (roles.Any(r => r.RoleKey == GlobalConstant.AdminRole || r.DataScope == (int)DataPermiEnum.All))
+                return (int)MergedScopeType.All;
+            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.DEPT_CHILD || r.DataScope == (int)DataPermiEnum.CUSTOM))
+                return (int)MergedScopeType.DeptList;
+            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.DEPT))
+                return (int)MergedScopeType.Dept;
+            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.SELF))
+                return (int)MergedScopeType.Self;
+            return (int)MergedScopeType.None;
+        }
+
+        /// <summary>
+        /// 登录时预计算用户数据权限部门集合（DEPT_CHILD + CUSTOM 并集），
+        /// 存入 JWT Token 后 QueryFilter 直接读缓存，避免每次查询 SQL EXISTS 子查询。
+        /// </summary>
+        private List<long> ComputeDataScopeDeptIds(List<SysRole> roles, long deptId)
+        {
+            var result = new HashSet<long>();
+
+            var isAdmin = roles.Any(r => r.RoleKey == GlobalConstant.AdminRole || r.DataScope == (int)DataPermiEnum.All);
+            var deptChildRoles = roles.Where(r => r.DataScope == (int)DataPermiEnum.DEPT_CHILD).ToList();
+            var customRoles = roles.Where(r => r.DataScope == (int)DataPermiEnum.CUSTOM).ToList();
+
+            // 非管理员始终包含自己的部门（避免空列表导致 SQL IN() 语法错误）
+            if (!isAdmin)
+            {
+                result.Add(deptId);
+            }
+            if (deptChildRoles.Any())
+            {
+                var childIds = deptService.GetChildDeptIds(deptId);
+                if (childIds != null) result.UnionWith(childIds);
+            }
+            if (customRoles.Any())
+            {
+                var roleIds = customRoles.Select(r => r.RoleId).ToList();
+                var customDeptIds = deptService.SelectRoleDeptsBatch(roleIds);
+                if (customDeptIds != null) result.UnionWith(customDeptIds);
+            }
+
+            // 调试：打印角色信息 + 计算结果
+            var roleInfo = string.Join("|", roles.Select(r => $"{r.RoleKey}:Scope={r.DataScope}"));
+            NLog.LogManager.GetCurrentClassLogger().Info($"[DataScope] deptId={deptId} roles=[{roleInfo}] DEPT_CHILD={deptChildRoles.Count} CUSTOM={customRoles.Count} DeptIds=[{string.Join(",", result)}]");
+
+            return result.ToList();
+        }
+
+        /// <summary>
         /// 检查密码是否提醒
         /// </summary>
-        /// <param name="pwdUpdateTime"></param>
-        /// <returns></returns>
         private bool InitPassword(DateTime? pwdUpdateTime)
         {
             var initPasswordModify = sysConfigService.GetSysConfigByKey("sys.account.initPasswordModify");

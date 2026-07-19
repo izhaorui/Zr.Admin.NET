@@ -43,6 +43,16 @@ namespace Infrastructure.Model
         /// 用户所有权限
         /// </summary>
         public List<string> Permissions { get; set; } = [];
+        /// <summary>
+        /// 登录时预计算：用户可访问的部门 ID 集合（DEPT_CHILD + CUSTOM 的并集）。
+        /// 不走 JWT 序列化（部门多时 JSON 过大），改为 DataPermi 内部 ConcurrentDictionary 缓存。
+        /// </summary>
+        [Newtonsoft.Json.JsonIgnore]
+        public List<long> DataScopeDeptIds { get; set; } = [];
+        /// <summary>
+        /// 登录时预计算：合并后的数据权限等级（取所有角色中最宽松的权限）
+        /// </summary>
+        public int ScopeType { get; set; }
         public TokenModel()
         {
         }
@@ -78,5 +88,42 @@ namespace Infrastructure.Model
         public long RoleId { get; set; }
         public string RoleKey { get; set; }
         public int DataScope { get; set; }
+    }
+
+    public enum DataPermiEnum
+    {
+        None = 0,
+        /// <summary>
+        /// 全部数据权限
+        /// </summary>
+        All = 1,
+        /// <summary>
+        /// 自定数据权限
+        /// </summary>
+        CUSTOM = 2,
+        /// <summary>
+        /// 部门数据权限
+        /// </summary>
+        DEPT = 3,
+        /// <summary>
+        /// 部门及以下数据权限
+        /// </summary>
+        DEPT_CHILD = 4,
+        /// <summary>
+        /// 仅本人数据权限
+        /// </summary>
+        SELF = 5
+    }
+
+    /// <summary>
+    /// 合并后的用户数据权限等级（登录时预计算，取所有角色中最宽松的权限）
+    /// </summary>
+    public enum MergedScopeType
+    {
+        None = 0,    // 无角色或无数据权限（非 HTTP 场景回退到此值）
+        Self = 1,    // 仅本人
+        Dept = 2,    // 本部门
+        DeptList = 3,// 指定部门列表（DEPT_CHILD ∪ CUSTOM 并集）
+        All = 4      // 全部数据（管理员 或 DataScope=All）
     }
 }

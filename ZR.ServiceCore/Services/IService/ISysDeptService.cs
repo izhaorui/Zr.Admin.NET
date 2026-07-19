@@ -19,6 +19,10 @@ namespace ZR.ServiceCore.Services
         List<SysRoleDept> SelectRoleDeptByRoleId(long roleId);
 
         List<long> SelectRoleDepts(long roleId);
+        /// <summary>批量获取多个角色的自定义部门 ID 集合</summary>
+        List<long> SelectRoleDeptsBatch(List<long> roleIds);
+        /// <summary>获取指定部门的所有子部门 ID（含自身），用于登录时预计算 DEPT_CHILD</summary>
+        List<long> GetChildDeptIds(long deptId);
         bool DeleteRoleDeptByRoleId(long roleId);
         int InsertRoleDepts(SysRole role);
     }

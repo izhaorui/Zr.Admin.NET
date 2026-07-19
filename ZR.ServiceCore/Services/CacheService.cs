@@ -18,18 +18,34 @@ namespace ZR.ServiceCore.Services
         public static List<string> GetUserPerms(string key)
         {
             return (List<string>)CacheHelper.GetCache(BuildTenantKey(key));
-            //return RedisServer.Cache.Get<List<string>>(key).ToList();
         }
 
         public static void SetUserPerms(string key, object data)
         {
             CacheHelper.SetCache(BuildTenantKey(key), data);
-            //RedisServer.Cache.Set(key, data);
         }
         public static void RemoveUserPerms(string key)
         {
             CacheHelper.Remove(BuildTenantKey(key));
-            //RedisServer.Cache.Del(key);
+        }
+        #endregion
+
+        #region 数据权限部门 ID 缓存（DEPT_CHILD + CUSTOM 并集，按租户+用户，TTL 2h）
+        private static readonly string DataScopeDeptIdsPrefix = "CACHE-DATASCOPE-DEPTIDS_";
+
+        public static void SetDataScopeDeptIds(long userId, List<long> ids)
+        {
+            CacheHelper.SetCache(BuildTenantKey(DataScopeDeptIdsPrefix + userId), ids, 120);
+        }
+
+        public static List<long> GetDataScopeDeptIds(long userId)
+        {
+            return CacheHelper.GetCache<List<long>>(BuildTenantKey(DataScopeDeptIdsPrefix + userId)) ?? [];
+        }
+
+        public static void RemoveDataScopeDeptIds(long userId)
+        {
+            CacheHelper.Remove(BuildTenantKey(DataScopeDeptIdsPrefix + userId));
         }
         #endregion
 
