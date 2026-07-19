@@ -72,6 +72,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(BannerConfig));
             db.CodeFirst.InitTables(typeof(SysUserMsg));
             db.CodeFirst.InitTables(typeof(SysFileGroup));
+            db.CodeFirst.InitTables(typeof(SysTodo));
             EnsureDefaultTenant(db);
 
             // 调度各业务模块的非SaaS初始化（如商城、内容等）

@@ -367,6 +367,7 @@ namespace ZR.ServiceCore.Services
                 result.Add(EnsureTenantMenuSeedData());
                 result.Add(EnsureTenantPlanMenuSeedData());
                 result.Add(EnsureTenantDictSeedData());
+                result.Add(EnsureTodoMenuSeedData());
 
                 db.Ado.CommitTran();
             }
@@ -689,6 +690,122 @@ namespace ZR.ServiceCore.Services
             x2.AsInsertable.ExecuteCommand();
 
             return $"[字典种子数据] 主租户写入字典类型{x1.InsertList.Count}条，字典数据{x2.InsertList.Count}条";
+        }
+
+        /// <summary>
+        /// 补齐个人待办菜单与按钮权限，并授权给所有角色（个人功能对全员可见）
+        /// </summary>
+        private string EnsureTodoMenuSeedData()
+        {
+            var db = DbScoped.SugarScope;
+            var now = DateTime.Now;
+
+            // 1) 保证一级目录"个人办公"存在
+            var officeMenu = db.Queryable<SysMenu>()
+                .Where(x => x.MenuType == "M" && x.Path == "personal")
+                .First();
+            if (officeMenu == null)
+            {
+                officeMenu = new SysMenu
+                {
+                    MenuName = "个人办公",
+                    ParentId = 0,
+                    OrderNum = 50,
+                    Path = "personal",
+                    Component = null,
+                    IsCache = "0",
+                    IsFrame = "0",
+                    MenuType = "M",
+                    Visible = "0",
+                    Status = "0",
+                    Perms = string.Empty,
+                    Icon = "list",
+                    Create_by = "system",
+                    Create_time = now
+                };
+                officeMenu.MenuId = db.Insertable(officeMenu).ExecuteReturnIdentity();
+            }
+
+            // 2) 保证"个人待办"菜单存在
+            var todoMenu = db.Queryable<SysMenu>()
+                .Where(x => x.MenuType == "C" && x.Perms == "system:todo:list")
+                .First();
+            if (todoMenu == null)
+            {
+                todoMenu = new SysMenu
+                {
+                    MenuName = "个人待办",
+                    ParentId = officeMenu.MenuId,
+                    OrderNum = 1,
+                    Path = "todo",
+                    Component = "system/todo/index",
+                    IsCache = "0",
+                    IsFrame = "0",
+                    MenuType = "C",
+                    Visible = "0",
+                    Status = "0",
+                    Perms = "system:todo:list",
+                    Icon = "ele-Bell",
+                    Create_by = "system",
+                    Create_time = now
+                };
+                todoMenu.MenuId = db.Insertable(todoMenu).ExecuteReturnIdentity();
+            }
+
+            // 3) 补齐按钮权限
+            var buttonSeed = new List<(string Name, string Perms, int OrderNum)>
+            {
+                ("查询", "system:todo:query", 1),
+                ("新增", "system:todo:add", 2),
+                ("修改", "system:todo:edit", 3),
+                ("删除", "system:todo:remove", 4)
+            };
+            foreach (var item in buttonSeed)
+            {
+                var exists = db.Queryable<SysMenu>()
+                    .Any(x => x.ParentId == todoMenu.MenuId && x.MenuType == "F" && x.Perms == item.Perms);
+                if (exists) continue;
+                db.Insertable(new SysMenu
+                {
+                    MenuName = item.Name,
+                    ParentId = todoMenu.MenuId,
+                    OrderNum = item.OrderNum,
+                    Path = string.Empty,
+                    Component = string.Empty,
+                    IsCache = "0",
+                    IsFrame = "0",
+                    MenuType = "F",
+                    Visible = "0",
+                    Status = "0",
+                    Perms = item.Perms,
+                    Icon = "#",
+                    Create_by = "system",
+                    Create_time = now
+                }).ExecuteCommand();
+            }
+
+            //// 4) 授权给所有角色（个人功能对全员可见）
+            //var allMenuIds = db.Queryable<SysMenu>()
+            //    .Where(x => x.MenuId == officeMenu.MenuId || x.MenuId == todoMenu.MenuId || x.ParentId == todoMenu.MenuId)
+            //    .Select(x => x.MenuId)
+            //    .ToList();
+
+            //var roleIds = db.Queryable<SysRole>().Where(x => x.DelFlag == 0).Select(x => x.RoleId).ToList();
+            //foreach (var roleId in roleIds)
+            //{
+            //    foreach (var menuId in allMenuIds)
+            //    {
+            //        var has = db.Queryable<SysRoleMenu>().Any(x => x.Role_id == roleId && x.Menu_id == menuId);
+            //        if (has) continue;
+            //        db.Insertable(new SysRoleMenu
+            //        {
+            //            Role_id = roleId,
+            //            Menu_id = menuId
+            //        }).ExecuteCommand();
+            //    }
+            //}
+
+            return $"[个人待办菜单] 菜单与权限补齐完成个";
         }
     }
 }

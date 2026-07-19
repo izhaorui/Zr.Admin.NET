@@ -33,12 +33,14 @@ namespace ZR.ServiceCore.Signalr
         private readonly ISysNoticeService _sysNoticeService;
         private readonly ISysUserService _userService;
         private readonly IUserOnlineLogService _userOnlineLogService;
+        private readonly ISysTodoService _sysTodoService;
 
-        public MessageHub(ISysNoticeService noticeService, ISysUserService userService, IUserOnlineLogService userOnlineLogService)
+        public MessageHub(ISysNoticeService noticeService, ISysUserService userService, IUserOnlineLogService userOnlineLogService, ISysTodoService todoService)
         {
             _sysNoticeService = noticeService;
             _userService = userService;
             _userOnlineLogService = userOnlineLogService;
+            _sysTodoService = todoService;
         }
 
         #endregion
@@ -93,6 +95,21 @@ namespace ZR.ServiceCore.Signalr
 
                 // 推送通知 & 在线人数
                 await Clients.Caller.SendAsync(HubsConstant.MoreNotice, BuildNoticeResult());
+
+                // 待办提醒：仅推送当前用户未完成待办数（红点），列表由前端打开待办 tab 时查询，不写消息表
+                try
+                {
+                    var todoCount = _sysTodoService.GetTodoReminderCount(userId);
+                    if (todoCount > 0)
+                    {
+                        await Clients.Caller.SendAsync(HubsConstant.TodoReminder, todoCount);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteLine(ConsoleColor.Yellow, $"[OnConnectedAsync] TodoReminder Error: {ex.Message}");
+                }
+
                 await BroadcastOnlineUsersAsync(tenantId);
             }
             catch (Exception ex)
