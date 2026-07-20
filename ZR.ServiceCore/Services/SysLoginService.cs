@@ -132,7 +132,7 @@ namespace ZR.ServiceCore.Services
             exp.AndIF(logininfoDto.Ipaddr.IfNotEmpty(), f => f.Ipaddr == logininfoDto.Ipaddr);
             exp.AndIF(logininfoDto.UserName.IfNotEmpty(), f => f.UserName.Contains(logininfoDto.UserName));
 
-            var query = db.Queryable<SysLogininfor>().Where(exp.ToExpression())
+            var query = db.Queryable<SysLogininfor>().ApplyScope().Where(exp.ToExpression())
                 .OrderBy(it => it.InfoId, OrderByType.Desc);
 
             var list = query.ToPage(logininfoDto);
@@ -200,7 +200,7 @@ namespace ZR.ServiceCore.Services
             var queryableLeft = db.Reportable(dayArray)
                 .ToQueryable<DateTime>();
 
-            var queryableRight = db.Queryable<SysLogininfor>();
+            var queryableRight = db.Queryable<SysLogininfor>().ApplyScope();
             var list = db.Queryable(queryableLeft, queryableRight, JoinType.Left, (x1, x2)
                  => x2.LoginTime.ToString("yyyy-MM-dd") == x1.ColumnName.ToString("yyyy-MM-dd"))
                 .GroupBy((x1, x2) => x1.ColumnName)

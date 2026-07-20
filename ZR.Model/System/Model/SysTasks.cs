@@ -133,7 +133,7 @@
         /// 所属租户
         /// </summary>
         [Display(Name = "所属租户")]
-        [SugarColumn(Length = 64, ExtendedAttribute = ProteryConstant.NOTNULL)]
+        [SugarColumn(Length = 64, IsNullable = true)]
         public string TenantId { get; set; }
 
         /// <summary>

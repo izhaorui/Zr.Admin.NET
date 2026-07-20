@@ -49,7 +49,7 @@
         /// <summary>
         /// 所属租户
         /// </summary>
-        [SugarColumn(Length = 64)]
+        [SugarColumn(Length = 64, IsNullable = true)]
         public string TenantId { get; set; }
 
         /// <summary>

@@ -387,7 +387,9 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public SysUser Login(LoginBodyDto user)
         {
-            return GetFirst(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower() && it.DelFlag == 0);
+            return Context.Queryable<SysUser>()
+                .Where(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower() && it.DelFlag == 0)
+                .First();
         }
 
         /// <summary>

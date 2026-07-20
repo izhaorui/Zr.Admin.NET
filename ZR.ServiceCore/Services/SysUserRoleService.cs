@@ -92,7 +92,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public PagedInfo<SysUser> GetExcludedSysUsersByRoleId(RoleUserQueryDto roleUserQueryDto)
         {
-            var query = Context.Queryable<SysUser>()
+            var query = Context.Queryable<SysUser>().ApplyScope()
                 .Where(it => it.DelFlag == 0)
                 .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == it.UserId && s.RoleId == roleUserQueryDto.RoleId).NotAny())
                 .WhereIF(roleUserQueryDto.UserName.IsNotEmpty(), it => it.UserName.Contains(roleUserQueryDto.UserName));

@@ -263,12 +263,33 @@ namespace ZR.Repository
 
         public bool Any(Expression<Func<T, bool>> expression)
         {
-            return Context.Queryable<T>().Where(expression).Any();
+            return Queryable().Where(expression).Any();
         }
 
         public ISugarQueryable<T> Queryable()
         {
-            return Context.Queryable<T>();
+            var query = Context.Queryable<T>();
+            return ApplyScopeIfNeeded(query);
+        }
+
+        private static ISugarQueryable<T> ApplyScopeIfNeeded(ISugarQueryable<T> query)
+        {
+            return DataScopeExtensions.TryApplyScope(query, out var result) ? result : query;
+        }
+
+        public override T GetFirst(Expression<Func<T, bool>> whereExpression)
+        {
+            return Queryable().Where(whereExpression).First();
+        }
+
+        public override int Count(Expression<Func<T, bool>> whereExpression)
+        {
+            return Queryable().Where(whereExpression).Count();
+        }
+
+        public override List<T> GetList(Expression<Func<T, bool>> whereExpression)
+        {
+            return Queryable().Where(whereExpression).ToList();
         }
 
         public List<T> SqlQueryToList(string sql, object obj = null)
@@ -283,7 +304,7 @@ namespace ZR.Repository
         /// <returns>泛型实体</returns>
         public T GetId(object pkValue)
         {
-            return Context.Queryable<T>().InSingle(pkValue);
+            return Queryable().InSingle(pkValue);
         }
         /// <summary>
         /// 根据条件查询分页数据
@@ -293,7 +314,7 @@ namespace ZR.Repository
         /// <returns></returns>
         public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm)
         {
-            var source = Context.Queryable<T>().Where(where);
+            var source = Queryable().Where(where);
 
             return source.ToPage(parm);
         }
@@ -308,8 +329,7 @@ namespace ZR.Repository
         /// <returns></returns>
         public PagedInfo<T> GetPages(Expression<Func<T, bool>> where, PagerInfo parm, Expression<Func<T, object>> order, OrderByType orderEnum = OrderByType.Asc)
         {
-            var source = Context
-                .Queryable<T>()
+            var source = Queryable()
                 .Where(where)
                 .OrderByIF(orderEnum == OrderByType.Asc, order, OrderByType.Asc)
                 .OrderByIF(orderEnum == OrderByType.Desc, order, OrderByType.Desc);
@@ -328,7 +348,7 @@ namespace ZR.Repository
         /// <returns></returns>
         public List<T> GetAll(bool useCache = false, int cacheSecond = 3600)
         {
-            return Context.Queryable<T>().WithCacheIF(useCache, cacheSecond).ToList();
+            return Queryable().WithCacheIF(useCache, cacheSecond).ToList();
         }
 
         #endregion query

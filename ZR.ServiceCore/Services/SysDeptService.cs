@@ -278,7 +278,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public List<long> GetChildDeptIds(long deptId)
         {
-            var allDepts = Context.Queryable<SysDept>().ClearFilter().Where(d => d.DelFlag == 0).ToList();
+            var allDepts = Context.Queryable<SysDept>().Where(d => d.DelFlag == 0).ToList();
             var result = new List<long>();
             CollectChildDeptIds(allDepts, deptId, result);
             return result;

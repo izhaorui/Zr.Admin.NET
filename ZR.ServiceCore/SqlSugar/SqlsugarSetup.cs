@@ -8,6 +8,7 @@ using ZR.Model;
 using ZR.Model.Models;
 using ZR.Model.System;
 using ZR.Model.System.Model;
+using ZR.Repository;
 
 namespace ZR.ServiceCore.SqlSugar
 {
@@ -54,13 +55,6 @@ namespace ZR.ServiceCore.SqlSugar
 
                     var conn = db.GetConnectionScope(iocConfig.ConfigId);
 
-                    // 角色数据权限（租户库表，DataPermi）：全局动态过滤器，每次查询按当前登录用户过滤
-                    conn.QueryFilter.AddTableFilter<SysUser>(DataPermi.SysUserFilter());
-                    conn.QueryFilter.AddTableFilter<SysDept>(DataPermi.SysDeptFilter());
-                    conn.QueryFilter.AddTableFilter<SysRole>(DataPermi.SysRoleFilter());
-                    conn.QueryFilter.AddTableFilter<SysLogininfor>(DataPermi.SysLogininforFilter());
-                    conn.QueryFilter.AddTableFilter<UserOnlineLog>(DataPermi.UserOnlineLogFilter());
-
                     // 租户隔离（主库共享实体，TenantFilter）：仅主库连接且 SaaS 模式下注册
                     if (iocConfig.ConfigId == App.MainDbConfigId && App.IsTenantEnabled())
                     {
@@ -71,9 +65,16 @@ namespace ZR.ServiceCore.SqlSugar
                 });
             });
 
+            // 注册 BaseRepository 自动附加的数据权限过滤器（替代已移除的全局 AddTableFilter）
+            DataScopeExtensions.RegisterScopeFilter<SysUser>(q => q.ApplyScope());
+            DataScopeExtensions.RegisterScopeFilter<SysDept>(q => q.ApplyScope());
+            DataScopeExtensions.RegisterScopeFilter<SysRole>(q => q.ApplyScope());
+            DataScopeExtensions.RegisterScopeFilter<SysLogininfor>(q => q.ApplyScope());
+            DataScopeExtensions.RegisterScopeFilter<UserOnlineLog>(q => q.ApplyScope());
+
             // 存量库迁移：补加多租户隔离列 TenantId（幂等，所有环境执行，避免过滤器运行时报"未知列"）
             // 新装库由 CodeFirst 自动建列，此处仅对缺列的存量库补列；表/列不存在则跳过，异常仅告警不中断。
-            //InitTable.MigrateTenantColumns();
+            InitTable.MigrateTenantColumns();
 
             //初始化表和种子数据
             InitTable.RunInitDb(environment);
