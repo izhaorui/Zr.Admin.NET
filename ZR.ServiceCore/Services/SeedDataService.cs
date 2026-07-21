@@ -365,7 +365,7 @@ namespace ZR.ServiceCore.Services
                 result.Add(EnsureTenantMenuSeedData());
                 result.Add(EnsureTenantPlanMenuSeedData());
                 result.Add(EnsureTenantDictSeedData());
-                result.Add(EnsureTodoMenuSeedData());
+                result.Add(EnsureDailyScheduleMenuSeedData());
 
                 db.Ado.CommitTran();
             }
@@ -693,7 +693,7 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 补齐个人待办菜单与按钮权限，并授权给所有角色（个人功能对全员可见）
         /// </summary>
-        private string EnsureTodoMenuSeedData()
+        private string EnsureDailyScheduleMenuSeedData()
         {
             var db = DbScoped.SugarScope;
             var now = DateTime.Now;
@@ -724,49 +724,49 @@ namespace ZR.ServiceCore.Services
                 officeMenu.MenuId = db.Insertable(officeMenu).ExecuteReturnIdentity();
             }
 
-            // 2) 保证"个人待办"菜单存在
-            var todoMenu = db.Queryable<SysMenu>()
-                .Where(x => x.MenuType == "C" && x.Perms == "system:todo:list")
+            // 2) 保证"日程管理"菜单存在
+            var scheduleMenu = db.Queryable<SysMenu>()
+                .Where(x => x.MenuType == "C" && x.Perms == "dailyschedule:list")
                 .First();
-            if (todoMenu == null)
+            if (scheduleMenu == null)
             {
-                todoMenu = new SysMenu
+                scheduleMenu = new SysMenu
                 {
-                    MenuName = "个人待办",
+                    MenuName = "日程管理",
                     ParentId = officeMenu.MenuId,
                     OrderNum = 1,
-                    Path = "todo",
-                    Component = "system/todo/index",
+                    Path = "dailyschedule",
+                    Component = "system/dailyschedule/index",
                     IsCache = "0",
                     IsFrame = "0",
                     MenuType = "C",
                     Visible = "0",
                     Status = "0",
-                    Perms = "system:todo:list",
+                    Perms = "dailyschedule:list",
                     Icon = "ele-Bell",
                     Create_by = "system",
                     Create_time = now
                 };
-                todoMenu.MenuId = db.Insertable(todoMenu).ExecuteReturnIdentity();
+                scheduleMenu.MenuId = db.Insertable(scheduleMenu).ExecuteReturnIdentity();
             }
 
             // 3) 补齐按钮权限
             var buttonSeed = new List<(string Name, string Perms, int OrderNum)>
             {
-                ("查询", "system:todo:query", 1),
-                ("新增", "system:todo:add", 2),
-                ("修改", "system:todo:edit", 3),
-                ("删除", "system:todo:remove", 4)
+                ("查询", "dailyschedule:query", 1),
+                ("新增", "dailyschedule:add", 2),
+                ("修改", "dailyschedule:edit", 3),
+                ("删除", "dailyschedule:remove", 4)
             };
             foreach (var item in buttonSeed)
             {
                 var exists = db.Queryable<SysMenu>()
-                    .Any(x => x.ParentId == todoMenu.MenuId && x.MenuType == "F" && x.Perms == item.Perms);
+                    .Any(x => x.ParentId == scheduleMenu.MenuId && x.MenuType == "F" && x.Perms == item.Perms);
                 if (exists) continue;
                 db.Insertable(new SysMenu
                 {
                     MenuName = item.Name,
-                    ParentId = todoMenu.MenuId,
+                    ParentId = scheduleMenu.MenuId,
                     OrderNum = item.OrderNum,
                     Path = string.Empty,
                     Component = string.Empty,
@@ -784,7 +784,7 @@ namespace ZR.ServiceCore.Services
 
             //// 6) 授权给所有角色（个人功能对全员可见）
             //var allMenuIds = db.Queryable<SysMenu>()
-            //    .Where(x => x.MenuId == officeMenu.MenuId || x.MenuId == todoMenu.MenuId || x.ParentId == todoMenu.MenuId)
+            //    .Where(x => x.MenuId == officeMenu.MenuId || x.MenuId == scheduleMenu.MenuId || x.ParentId == scheduleMenu.MenuId)
             //    .Select(x => x.MenuId)
             //    .ToList();
 
@@ -803,7 +803,7 @@ namespace ZR.ServiceCore.Services
             //    }
             //}
 
-            return $"[个人待办菜单]";
+            return $"[日程管理菜单]";
         }
     }
 }

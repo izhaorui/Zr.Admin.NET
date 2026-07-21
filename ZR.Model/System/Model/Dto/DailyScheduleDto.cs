@@ -3,23 +3,23 @@ using System;
 namespace ZR.Model.System.Dto
 {
     /// <summary>
-    /// 个人待办新增/编辑对象
+    /// 日程新增/编辑对象
     /// </summary>
-    public class SysTodoDto
+    public class DailyScheduleDto
     {
         /// <summary>
-        /// 待办ID（编辑时必传）
+        /// 日程ID（编辑时必传）
         /// </summary>
         public long Id { get; set; }
 
         /// <summary>
-        /// 待办标题
+        /// 日程标题
         /// </summary>
-        [Required(ErrorMessage = "待办标题不能为空")]
+        [Required(ErrorMessage = "日程标题不能为空")]
         public string Title { get; set; }
 
         /// <summary>
-        /// 待办内容
+        /// 日程内容
         /// </summary>
         public string Content { get; set; }
 
@@ -40,9 +40,9 @@ namespace ZR.Model.System.Dto
     }
 
     /// <summary>
-    /// 个人待办查询对象
+    /// 日程查询对象
     /// </summary>
-    public class SysTodoQueryDto : PagerInfo
+    public class DailyScheduleQueryDto : PagerInfo
     {
         /// <summary>
         /// 关键词（标题/内容模糊匹配）
@@ -71,12 +71,12 @@ namespace ZR.Model.System.Dto
     }
 
     /// <summary>
-    /// 个人待办状态切换对象
+    /// 日程状态切换对象
     /// </summary>
-    public class SysTodoStatusDto
+    public class DailyScheduleStatusDto
     {
         /// <summary>
-        /// 待办ID
+        /// 日程ID
         /// </summary>
         public long Id { get; set; }
 
@@ -87,12 +87,12 @@ namespace ZR.Model.System.Dto
     }
 
     /// <summary>
-    /// 个人待办统计结果
+    /// 日程统计结果
     /// </summary>
-    public class SysTodoStatsDto
+    public class DailyScheduleStatsDto
     {
         /// <summary>
-        /// 总待办数
+        /// 总日程数
         /// </summary>
         public int Total { get; set; }
 

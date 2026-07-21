@@ -33,14 +33,14 @@ namespace ZR.ServiceCore.Signalr
         private readonly ISysNoticeService _sysNoticeService;
         private readonly ISysUserService _userService;
         private readonly IUserOnlineLogService _userOnlineLogService;
-        private readonly ISysTodoService _sysTodoService;
+        private readonly IDailyScheduleService _dailyScheduleService;
 
-        public MessageHub(ISysNoticeService noticeService, ISysUserService userService, IUserOnlineLogService userOnlineLogService, ISysTodoService todoService)
+        public MessageHub(ISysNoticeService noticeService, ISysUserService userService, IUserOnlineLogService userOnlineLogService, IDailyScheduleService dailyScheduleService)
         {
             _sysNoticeService = noticeService;
             _userService = userService;
             _userOnlineLogService = userOnlineLogService;
-            _sysTodoService = todoService;
+            _dailyScheduleService = dailyScheduleService;
         }
 
         #endregion
@@ -96,18 +96,18 @@ namespace ZR.ServiceCore.Signalr
                 // 推送通知 & 在线人数
                 await Clients.Caller.SendAsync(HubsConstant.MoreNotice, BuildNoticeResult());
 
-                // 待办提醒：仅推送当前用户未完成待办数（红点），列表由前端打开待办 tab 时查询，不写消息表
+                // 日程提醒：仅推送当前用户未完成日程数（红点），列表由前端打开日程 tab 时查询，不写消息表
                 try
                 {
-                    var todoCount = _sysTodoService.GetTodoReminderCount(userId);
-                    if (todoCount > 0)
+                    var scheduleCount = _dailyScheduleService.GetScheduleReminderCount(userId);
+                    if (scheduleCount > 0)
                     {
-                        await Clients.Caller.SendAsync(HubsConstant.TodoReminder, todoCount);
+                        await Clients.Caller.SendAsync(HubsConstant.DailyScheduleReminder, scheduleCount);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.WriteLine(ConsoleColor.Yellow, $"[OnConnectedAsync] TodoReminder Error: {ex.Message}");
+                    Log.WriteLine(ConsoleColor.Yellow, $"[OnConnectedAsync] DailyScheduleReminder Error: {ex.Message}");
                 }
 
                 await BroadcastOnlineUsersAsync(tenantId);

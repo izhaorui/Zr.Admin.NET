@@ -73,7 +73,7 @@ namespace ZR.ServiceCore.SqlSugar
             db.CodeFirst.InitTables(typeof(BannerConfig));
             db.CodeFirst.InitTables(typeof(SysUserMsg));
             db.CodeFirst.InitTables(typeof(SysFileGroup));
-            db.CodeFirst.InitTables(typeof(SysTodo));
+            db.CodeFirst.InitTables(typeof(DailySchedule));
             EnsureDefaultTenant(db);
 
             // 调度各业务模块的非SaaS初始化（如商城、内容等）
@@ -154,7 +154,8 @@ namespace ZR.ServiceCore.SqlSugar
         public static void MigrateTenantColumns()
         {
             var mainDb = DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);
-            var tables = new[] { "sys_user_msg", "sys_file", "sys_file_group" };
+
+            var tables = new[] { "sys_user_msg", "sys_file", "sys_file_group", "sys_tasks", "sys_tasks_log" };
             foreach (var table in tables)
             {
                 AddTenantIdColumnIfMissing(mainDb, table);

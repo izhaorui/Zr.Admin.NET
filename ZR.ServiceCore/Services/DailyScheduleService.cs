@@ -1,27 +1,22 @@
 using Infrastructure.Attribute;
-using Mapster;
-using SqlSugar;
 using ZR.Model;
-using System;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
-using ZR.Repository;
 
 namespace ZR.ServiceCore.Services
 {
     /// <summary>
-    /// 个人待办Service业务层处理（数据按当前登录用户隔离）
+    /// 日程管理Service业务层处理（数据按当前登录用户隔离）
     /// </summary>
-    [AppService(ServiceType = typeof(ISysTodoService), ServiceLifetime = LifeTime.Transient)]
-    public class SysTodoService : BaseService<SysTodo>, ISysTodoService
+    [AppService(ServiceType = typeof(IDailyScheduleService), ServiceLifetime = LifeTime.Transient)]
+    public class DailyScheduleService : BaseService<DailySchedule>, IDailyScheduleService
     {
-
         /// <summary>
         /// 分页查询（统一追加 UserId 过滤）
         /// </summary>
-        public PagedInfo<SysTodo> GetPages(SysTodoQueryDto parm, long userId)
+        public PagedInfo<DailySchedule> GetPages(DailyScheduleQueryDto parm, long userId)
         {
-            var predicate = Expressionable.Create<SysTodo>();
+            var predicate = Expressionable.Create<DailySchedule>();
             predicate = predicate.And(m => m.UserId == userId);
             predicate = predicate.AndIF(!parm.KeyWord.IsEmpty(), m => m.Title.Contains(parm.KeyWord) || m.Content.Contains(parm.KeyWord));
             predicate = predicate.AndIF(!parm.Status.IsEmpty(), m => m.Status == parm.Status);
@@ -35,7 +30,7 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 查询详情（校验归属用户，越权返回 null）
         /// </summary>
-        public SysTodo GetById(long id, long userId)
+        public DailySchedule GetById(long id, long userId)
         {
             return Queryable().First(m => m.Id == id && m.UserId == userId);
         }
@@ -43,7 +38,7 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 新增
         /// </summary>
-        public int AddSysTodo(SysTodo model)
+        public int AddDailySchedule(DailySchedule model)
         {
             return Insert(model, it => new
             {
@@ -63,9 +58,9 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 更新（按当前用户隔离）
         /// </summary>
-        public int UpdateSysTodo(SysTodo model)
+        public int UpdateDailySchedule(DailySchedule model)
         {
-            return Update(w => w.Id == model.Id && w.UserId == model.UserId, it => new SysTodo()
+            return Update(w => w.Id == model.Id && w.UserId == model.UserId, it => new DailySchedule()
             {
                 Title = model.Title,
                 Content = model.Content,
@@ -80,7 +75,7 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 删除（按当前用户隔离）
         /// </summary>
-        public int DeleteSysTodo(long id, long userId)
+        public int DeleteDailySchedule(long id, long userId)
         {
             return Deleteable().Where(w => w.Id == id && w.UserId == userId).ExecuteCommand();
         }
@@ -91,7 +86,7 @@ namespace ZR.ServiceCore.Services
         public int ChangeStatus(long id, string status, long userId)
         {
             DateTime? finishTime = status == "1" ? DateTime.Now : (DateTime?)null;
-            return Update(w => w.Id == id && w.UserId == userId, it => new SysTodo()
+            return Update(w => w.Id == id && w.UserId == userId, it => new DailySchedule()
             {
                 Status = status,
                 FinishTime = finishTime
@@ -101,12 +96,12 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 统计（按当前用户隔离）
         /// </summary>
-        public SysTodoStatsDto GetStats(long userId)
+        public DailyScheduleStatsDto GetStats(long userId)
         {
             var q = Queryable().Where(m => m.UserId == userId);
             var today = DateTime.Today;
 
-            return new SysTodoStatsDto
+            return new DailyScheduleStatsDto
             {
                 Total = q.Count(),
                 Undone = q.Count(m => m.Status == "0"),
@@ -116,18 +111,18 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 未完成待办数（Status=0），用于消息中心待办 tab 红点。
+        /// 未完成日程数（Status=0），用于消息中心日程 tab 红点。
         /// </summary>
-        public int GetTodoReminderCount(long userId)
+        public int GetScheduleReminderCount(long userId)
         {
             return Queryable().Count(t => t.UserId == userId && t.Status == "0");
         }
 
         /// <summary>
-        /// 未完成待办列表（Status=0），按 DueTime 升序（无截止时间排后）、Priority 降序。
-        /// 供消息中心待办 tab 打开时查询，不写消息、不标记已提醒。
+        /// 未完成日程列表（Status=0），按 DueTime 升序（无截止时间排后）、Priority 降序。
+        /// 供消息中心日程 tab 打开时查询，不写消息、不标记已提醒。
         /// </summary>
-        public List<SysTodo> GetReminderTodos(long userId)
+        public List<DailySchedule> GetReminderSchedules(long userId)
         {
             return Queryable()
                 .Where(t => t.UserId == userId && t.Status == "0")
