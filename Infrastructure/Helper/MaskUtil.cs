@@ -38,6 +38,19 @@
         }
 
         /// <summary>
+        /// 邮箱脱敏（保留首字符与完整域名，如 zhangsan@example.com -> z****@example.com）
+        /// </summary>
+        public static string MaskEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains('@')) return email;
+            var atIndex = email.IndexOf('@');
+            var name = email[..atIndex];
+            var domain = email[(atIndex + 1)..];
+            if (name.Length <= 1) return email;
+            return name[0] + "****@" + domain;
+        }
+
+        /// <summary>
         /// 脱敏 IP 地址（支持 IPv4 和 IPv6）
         /// </summary>
         public static string MaskIp(string ip)

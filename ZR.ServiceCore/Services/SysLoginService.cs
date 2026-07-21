@@ -136,13 +136,9 @@ namespace ZR.ServiceCore.Services
                 .OrderBy(it => it.InfoId, OrderByType.Desc);
 
             var list = query.ToPage(logininfoDto);
-            foreach (var item in list.Result)
-            {
-                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealIP))
-                {
-                    item.Ipaddr = MaskUtil.MaskIp(item.Ipaddr);
-                }
-            }
+            list.Result.MaskField(
+                HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealIP),
+                it => it.Ipaddr, (it, v) => it.Ipaddr = v, MaskUtil.MaskIp);
             return list;
         }
 

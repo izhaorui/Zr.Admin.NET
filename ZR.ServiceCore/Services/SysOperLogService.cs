@@ -51,13 +51,9 @@ namespace ZR.ServiceCore.Services
                 .Where(exp.ToExpression())
                 .OrderBy(x => x.OperId, OrderByType.Desc)
                 .ToPage(sysOper);
-            foreach (var item in list.Result)
-            {
-                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealIP))
-                {
-                    item.OperIp = MaskUtil.MaskIp(item.OperIp);
-                }
-            }
+            list.Result.MaskField(
+                HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealIP),
+                it => it.OperIp, (it, v) => it.OperIp = v, MaskUtil.MaskIp);
             return list;
         }
 

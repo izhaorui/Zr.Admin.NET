@@ -66,17 +66,12 @@ namespace ZR.ServiceCore.Services
                     DeptName = dept.DeptName,
                 });
             var list = query.ToPage(pager);
-            foreach (var item in list.Result)
-            {
-                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealPhone))
-                {
-                    item.Phonenumber = MaskUtil.MaskPhone(item.Phonenumber);
-                }
-                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewEmail))
-                {
-                    item.Email = MaskUtil.MaskPhone(item.Email);
-                }
-            }
+            list.Result.MaskField(
+                HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealPhone),
+                it => it.Phonenumber, (it, v) => it.Phonenumber = v, MaskUtil.MaskPhone);
+            list.Result.MaskField(
+                HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewEmail),
+                it => it.Email, (it, v) => it.Email = v, MaskUtil.MaskEmail);
 
             return list;
         }
@@ -98,14 +93,12 @@ namespace ZR.ServiceCore.Services
                 user.Roles = RoleService.SelectUserRoleListByUserId(userId);
                 user.RoleIds = user.Roles.Select(x => x.RoleId).ToArray();
 
-                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealPhone))
-                {
-                    user.Phonenumber = MaskUtil.MaskPhone(userModel.Phonenumber);
-                }
-                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewEmail))
-                {
-                    user.Email = MaskUtil.MaskPhone(user.Email);
-                }
+                user.MaskField(
+                    HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealPhone),
+                    it => it.Phonenumber, (it, v) => it.Phonenumber = v, MaskUtil.MaskPhone);
+                user.MaskField(
+                    HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewEmail),
+                    it => it.Email, (it, v) => it.Email = v, MaskUtil.MaskEmail);
             }
             return user;
         }
