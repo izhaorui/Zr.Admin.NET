@@ -1,60 +1,78 @@
 using Infrastructure;
-using Infrastructure.Model;
-using ZR.ServiceCore.Services;
+using SqlSugar.IOC;
+using ZR.Model;
+using ZR.Model.Models;
+using ZR.Model.System;
+using ZR.Model.System.Model;
 
 namespace ZR.ServiceCore.SqlSugar
 {
-    /// <summary>
-    /// 角色数据权限 —— 辅助方法集。
-    /// 全局 QueryFilter 逻辑已迁移至 <see cref="ZR.Repository.DataScopeExtensions"/>。
-    /// 此文件保留基础方法供自定义扩展使用（如其他开发者在此添加新的 Expression 过滤器）。
-    ///
-    /// <para>租户隔离过滤器已拆分到 <see cref="TenantFilter"/>。</para>
-    /// </summary>
-    public static class DataPermi
+    public enum DataPermiEnum
     {
-        #region 当前登录用户（HttpContext.Items 缓存，同请求内避免重复 JWT 解析）
-
-        private const string LoginUserCacheKey = "__DataPermi_LoginUser";
-
-        private static TokenModel GetLoginUser()
+        None = 0,
+        /// <summary>
+        /// 全部数据权限
+        /// </summary>
+        All = 1,
+        /// <summary>
+        /// 仅本人数据权限
+        /// </summary>
+        SELF = 5,
+        /// <summary>
+        /// 部门数据权限
+        /// </summary>
+        DEPT = 3,
+        /// <summary>
+        /// 自定数据权限
+        /// </summary>
+        CUSTOM = 2,
+        /// <summary>
+        /// 部门及以下数据权限
+        /// </summary>
+        DEPT_CHILD = 4
+    }
+    /// <summary>
+    /// 数据权限
+    /// </summary>
+    public class DataPermi
+    {
+        /// <summary>
+        /// 数据过滤
+        /// </summary>
+        /// <param name="configId">多库id</param>
+        [Obsolete("数据权限过滤已迁移至 ZR.Repository.DataScopeExtensions，请勿在新代码中使用；获取当前用户请走 HttpContext.GetCurrentUser()")]
+        public static void FilterData(string configId)
         {
-            var ctx = App.HttpContext;
-            if (ctx == null) return null;
+            //获取当前用户的信息
+            var user = App.HttpContext.GetCurrentUser();
+            if (user == null || user.RoleKeys == null) return;
 
-            if (ctx.Items.TryGetValue(LoginUserCacheKey, out var cached) && cached is TokenModel user)
-                return user;
+            var db = DbScoped.SugarScope.GetConnectionScope(configId);
 
-            user = JwtUtil.GetLoginUser(ctx);
-            if (user != null) ctx.Items[LoginUserCacheKey] = user;
-            return user;
+            //管理员不过滤
+            if (user.RoleKeys.Any(f => f.Equals(GlobalConstant.AdminRole))) return;
+
+            foreach (var role in user.Roles.OrderBy(f => f.DataScope))
+            {
+                var dataScope = (DataPermiEnum)role.DataScope;
+                if (DataPermiEnum.All.Equals(dataScope))//所有权限
+                {
+                    break;
+                }
+                else if (DataPermiEnum.CUSTOM.Equals(dataScope))//自定数据权限
+                {
+                }
+                else if (DataPermiEnum.DEPT.Equals(dataScope))//本部门数据
+                {
+                }
+                else if (DataPermiEnum.DEPT_CHILD.Equals(dataScope))//本部门及以下数据
+                {
+
+                }
+                else if (DataPermiEnum.SELF.Equals(dataScope))//仅本人数据
+                {
+                }
+            }
         }
-
-        public static long GetCurrentUserId() => GetLoginUser()?.UserId ?? 0;
-        public static long GetCurrentUserDeptId() => GetLoginUser()?.DeptId ?? 0;
-        public static string GetCurrentUserName() => GetLoginUser()?.UserName ?? string.Empty;
-
-        #endregion
-
-        #region 登录时预计算的权限缓存（ScopeType 存 JWT，DataScopeDeptIds 存服务端）
-
-        /// <summary>合并后的数据权限等级（登录时预计算，取所有角色中最宽松的权限）</summary>
-        internal static int GetScopeType() => GetLoginUser()?.ScopeType ?? (int)MergedScopeType.None;
-
-        /// <summary>是否为 All 权限（管理员 或 DataScope=全部）</summary>
-        internal static bool IsAllScope() => GetScopeType() == (int)MergedScopeType.All;
-
-        /// <summary>DEPT_CHILD + CUSTOM 部门 ID 并集（CacheService 缓存，按租户+用户，不走 JWT）</summary>
-        internal static IReadOnlyList<long> GetDataScopeDeptIds()
-        {
-            var userId = GetCurrentUserId();
-            if (userId <= 0) return [];
-            return CacheService.GetDataScopeDeptIds(userId);
-        }
-
-        /// <summary>用户拥有的角色 ID 列表（从 JWT Token 中读取，通常 1-3 个）</summary>
-        internal static List<long> GetCurrentUserRoleIds() => GetLoginUser()?.Roles?.Select(r => r.RoleId).ToList() ?? [];
-
-        #endregion
     }
 }

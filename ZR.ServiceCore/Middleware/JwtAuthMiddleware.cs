@@ -102,6 +102,9 @@ namespace ZR.ServiceCore.Middleware
                 }
             }
 
+            // 存入 HttpContext.Items，避免后续 DataPermi/DataScopeExtensions/GetCurrentUser 重复解析 JWT
+            context.Items[HttpContextExtension.CurrentUserCacheKey] = loginUser;
+
             // 挂载 context.User，确保后续业务层可读取 claims。
             var identity = new ClaimsIdentity(JwtUtil.AddClaims(loginUser), "jwt");
             context.User = new ClaimsPrincipal(identity);

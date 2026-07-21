@@ -80,7 +80,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             //权限集合 eg *:*:*,system:user:list（按套餐菜单过滤）
             List<string> permissions = permissionService.GetMenuPermission(new SysUserDto() { UserId = user.UserId });
 
-            TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>())
+            LoginUser loginUser = new(user.Adapt<LoginUser>(), roles.Adapt<List<Roles>>())
             {
                 TenantId = loginBody.TenantId,
                 Permissions = permissions,
@@ -321,7 +321,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             sysLoginService.CheckLockUser(name);
 
-            TokenModel tokenModel = JwtUtil.GetLoginUser(HttpContext);
+            LoginUser tokenModel = JwtUtil.GetLoginUser(HttpContext);
             if (CacheService.GetScanLogin(dto.Uuid) is not null)
             {
                 Dictionary<string, object> dict = new() { };
@@ -409,7 +409,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             //权限集合 eg *:*:*,system:user:list（按套餐菜单过滤）
             List<string> permissions = permissionService.GetMenuPermission(user);
 
-            TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>())
+            LoginUser loginUser = new(user.Adapt<LoginUser>(), roles.Adapt<List<Roles>>())
             {
                 TenantId = loginBody.TenantId,
                 Permissions = permissions,

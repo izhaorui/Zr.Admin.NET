@@ -22,7 +22,7 @@ namespace Infrastructure
         /// </summary>
         /// <param name="httpContext"></param>
         /// <returns></returns>
-        public static TokenModel GetLoginUser(HttpContext httpContext)
+        public static LoginUser GetLoginUser(HttpContext httpContext)
         {
             string token = httpContext.GetToken();
 
@@ -120,18 +120,18 @@ namespace Infrastructure
         /// </summary>
         /// <param name="jwtSecurityToken"></param>
         /// <returns></returns>
-        public static TokenModel? ValidateJwtToken(JwtSecurityToken jwtSecurityToken)
+        public static LoginUser? ValidateJwtToken(JwtSecurityToken jwtSecurityToken)
         {
             try
             {
                 if (jwtSecurityToken == null) return null;
                 IEnumerable<Claim> claims = jwtSecurityToken?.Claims;
-                TokenModel loginUser = null;
+                LoginUser loginUser = null;
 
                 var userData = claims.FirstOrDefault(x => x.Type == ClaimTypes.UserData)?.Value;
                 if (userData != null)
                 {
-                    loginUser = JsonConvert.DeserializeObject<TokenModel>(userData);
+                    loginUser = JsonConvert.DeserializeObject<LoginUser>(userData);
                     loginUser.ExpireTime = jwtSecurityToken.ValidTo;
                 }
                 return loginUser;
@@ -148,7 +148,7 @@ namespace Infrastructure
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public static List<Claim> AddClaims(TokenModel user)
+        public static List<Claim> AddClaims(LoginUser user)
         {
             var claims = new List<Claim>()
                 {

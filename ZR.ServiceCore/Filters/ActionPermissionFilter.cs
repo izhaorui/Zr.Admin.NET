@@ -39,7 +39,10 @@ namespace ZR.ServiceCore.Middleware
         /// <returns></returns>
         public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            TokenModel info = JwtUtil.GetLoginUser(context.HttpContext);
+            // 优先从 Items 读取，避免重复解析 JWT（JwtAuthMiddleware 已解析并存入）
+            LoginUser info = context.HttpContext.Items.TryGetValue(HttpContextExtension.CurrentUserCacheKey, out var cached) && cached is LoginUser user
+                ? user
+                : JwtUtil.GetLoginUser(context.HttpContext);
 
             if (App.IsTenantEnabled() && !string.IsNullOrWhiteSpace(Permission))
             {

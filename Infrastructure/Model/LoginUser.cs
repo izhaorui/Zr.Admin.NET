@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 
 namespace Infrastructure.Model
 {
-    public class TokenModel
+    public class LoginUser
     {
         /// <summary>
         /// 用户id
@@ -53,11 +53,11 @@ namespace Infrastructure.Model
         /// 登录时预计算：合并后的数据权限等级（取所有角色中最宽松的权限）
         /// </summary>
         public int ScopeType { get; set; }
-        public TokenModel()
+        public LoginUser()
         {
         }
 
-        public TokenModel(TokenModel info, List<Roles> roles)
+        public LoginUser(LoginUser info, List<Roles> roles)
         {
             UserId = info.UserId;
             UserName = info.UserName;

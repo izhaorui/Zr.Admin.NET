@@ -1,4 +1,5 @@
 using Infrastructure;
+using Infrastructure.Extensions;
 using Infrastructure.Model;
 using SqlSugar;
 using System;
@@ -41,20 +42,14 @@ namespace ZR.Repository
         #endregion
         #region 当前登录用户（HttpContext.Items 缓存，同请求内避免重复 JWT 解析）
 
-        private const string LoginUserCacheKey = "__DataPermi_LoginUser";
+        private const string LoginUserCacheKey = HttpContextExtension.CurrentUserCacheKey;
         private static readonly string DataScopeDeptIdsPrefix = "CACHE-DATASCOPE-DEPTIDS_";
 
-        private static TokenModel GetLoginUser()
+        private static LoginUser GetLoginUser()
         {
             var ctx = App.HttpContext;
             if (ctx == null) return null;
-
-            if (ctx.Items.TryGetValue(LoginUserCacheKey, out var cached) && cached is TokenModel user)
-                return user;
-
-            user = JwtUtil.GetLoginUser(ctx);
-            if (user != null) ctx.Items[LoginUserCacheKey] = user;
-            return user;
+            return ctx.Items.TryGetValue(LoginUserCacheKey, out var cached) && cached is LoginUser user ? user : null;
         }
 
         public static long GetCurrentUserId() => GetLoginUser()?.UserId ?? 0;

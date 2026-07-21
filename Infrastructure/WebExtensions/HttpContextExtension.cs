@@ -20,6 +20,10 @@ namespace Infrastructure.Extensions
     public static partial class HttpContextExtension
     {
         /// <summary>
+        /// HttpContext.Items 中缓存的当前登录用户 Key（JwtAuthMiddleware 写入，避免同请求内重复解析 JWT）
+        /// </summary>
+        public const string CurrentUserCacheKey = "__CurrentUser";
+        /// <summary>
         /// 是否是ajax请求
         /// </summary>
         /// <param name="request"></param>
@@ -79,8 +83,7 @@ namespace Infrastructure.Extensions
         /// <returns></returns>
         public static long GetUId(this HttpContext context)
         {
-            var uid = context.User.FindFirstValue(ClaimTypes.PrimarySid);
-            return !string.IsNullOrEmpty(uid) ? long.Parse(uid) : 0;
+            return GetCurrentUser(context)?.UserId ?? 0;
         }
 
         /// <summary>
@@ -90,8 +93,7 @@ namespace Infrastructure.Extensions
         /// <returns></returns>
         public static long GetDeptId(this HttpContext context)
         {
-            var deptId = context.User.FindFirstValue(ClaimTypes.GroupSid);
-            return !string.IsNullOrEmpty(deptId) ? long.Parse(deptId) : 0;
+            return GetCurrentUser(context)?.DeptId ?? 0;
         }
 
         /// <summary>
@@ -101,9 +103,7 @@ namespace Infrastructure.Extensions
         /// <returns></returns>
         public static string GetName(this HttpContext context)
         {
-            var uid = context.User?.Identity?.Name;
-
-            return uid;
+            return GetCurrentUser(context)?.UserName ?? string.Empty;
         }
 
         /// <summary>
@@ -281,12 +281,21 @@ namespace Infrastructure.Extensions
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static TokenModel GetCurrentUser(this HttpContext context)
+        public static LoginUser GetCurrentUser(this HttpContext context)
         {
-            var tokenModel = JwtUtil.GetLoginUser(context);
+            // 优先从 HttpContext.Items 获取（JwtAuthMiddleware 已解析并存入，避免重复解析 JWT）
+            if (context.Items.TryGetValue(CurrentUserCacheKey, out var cached) && cached is LoginUser tokenModel)
+            {
+                tokenModel.Permissions ??= (List<string>)CacheHelper.GetCache(GlobalConstant.UserPermKEY + tokenModel.UserId) ?? [];
+                return tokenModel;
+            }
+
+            // 回退：匿名/白名单等未经过 JwtAuthMiddleware 的场景，直接解析 JWT
+            tokenModel = JwtUtil.GetLoginUser(context);
             if (tokenModel != null)
             {
-                tokenModel.Permissions = (List<string>)CacheHelper.GetCache(GlobalConstant.UserPermKEY + tokenModel.UserId);
+                tokenModel.Permissions = (List<string>)CacheHelper.GetCache(GlobalConstant.UserPermKEY + tokenModel.UserId) ?? [];
+                context.Items[CurrentUserCacheKey] = tokenModel;
             }
             return tokenModel;
         }
