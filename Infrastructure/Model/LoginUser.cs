@@ -12,6 +12,10 @@ namespace Infrastructure.Model
         /// </summary>
         public long UserId { get; set; }
         /// <summary>
+        /// 单设备登录会话ID（每次登录重新生成，JWT 携带，用于多端互斥校验）
+        /// </summary>
+        public string SessionId { get; set; }
+        /// <summary>
         /// 部门id
         /// </summary>
         public long DeptId { get; set; }

@@ -1,4 +1,4 @@
-﻿using Infrastructure.Captcha;
+using Infrastructure.Captcha;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Model.Models;
 using ZR.Model.System;
@@ -86,6 +86,9 @@ namespace ZR.Admin.WebApi.Controllers.System
                 Permissions = permissions,
                 ScopeType = ComputeScopeType(roles),
             };
+            // 单设备登录：每次登录生成新会话ID并缓存，旧会话将被中间件判定失效
+            loginUser.SessionId = Guid.NewGuid().ToString("N");
+            CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
             var token = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
             ApiResult apiResult = new((int)ResultCode.SUCCESS, "success", token);
             apiResult.Put("notice", abnormalNotice);
@@ -107,6 +110,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             CacheService.RemoveUserPerms(GlobalConstant.UserPermKEY + userid);
             CacheService.RemoveDataScopeDeptIds(userid);
+            CacheService.RemoveUserSession(userid);
             return SUCCESS(new { name, id = userid });
         }
 
@@ -324,6 +328,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             LoginUser tokenModel = JwtUtil.GetLoginUser(HttpContext);
             if (CacheService.GetScanLogin(dto.Uuid) is not null)
             {
+                // 单设备登录：扫码登录视为一次新登录，生成新会话ID踢掉旧设备
+                tokenModel.SessionId = Guid.NewGuid().ToString("N");
+                CacheService.SetUserSession(tokenModel.UserId, tokenModel.SessionId);
                 Dictionary<string, object> dict = new() { };
                 dict.Add("status", "success");
                 dict.Add("token", JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(tokenModel)));
@@ -415,6 +422,9 @@ namespace ZR.Admin.WebApi.Controllers.System
                 Permissions = permissions,
                 ScopeType = ComputeScopeType(roles),
             };
+            // 单设备登录：手机号登录同样生成新会话ID
+            loginUser.SessionId = Guid.NewGuid().ToString("N");
+            CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }
 

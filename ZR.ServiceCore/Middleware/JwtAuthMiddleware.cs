@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using ZR.Common;
+using ZR.ServiceCore.Services;
 
 namespace ZR.ServiceCore.Middleware
 {
@@ -71,6 +72,19 @@ namespace ZR.ServiceCore.Middleware
                 return;
             }
 
+            // 单设备登录：校验当前 token 携带的会话ID是否仍为服务端有效会话，否则视为被新设备挤下线
+            if (_options.SingleLogin)
+            {
+                var cachedSession = CacheService.GetUserSession(loginUser.UserId);
+                if (!string.IsNullOrEmpty(cachedSession) && cachedSession != loginUser.SessionId)
+                {
+                    string msg = $"账号[{loginUser.UserName}]已在其他设备登录，当前会话已失效";
+                    _logger.LogWarning("{Message}, ip={Ip}", msg, ip);
+                    await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.FORCE_LOGOUT, msg));
+                    return;
+                }
+            }
+
             var now = DateTime.UtcNow;
             var ts = loginUser.ExpireTime - now;
             if (ts.TotalMinutes <= TOKEN_REFRESH_THRESHOLD_MINUTES)
@@ -94,6 +108,12 @@ namespace ZR.ServiceCore.Middleware
 
                         context.Response.Headers.Append("X-Refresh-Token", newToken);
                         _logger.LogInformation($"刷新Token: {loginUser.UserName}");
+
+                        // 刷新 token 时同步续期会话缓存，避免会话先于 token 失效导致误踢
+                        if (_options.SingleLogin)
+                        {
+                            CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
+                        }
                     }
                     catch (Exception ex)
                     {

@@ -44,6 +44,9 @@ namespace Infrastructure
         FORBIDDEN = 403,
 
         [Description("Bad Request")]
-        BAD_REQUEST = 400
+        BAD_REQUEST = 400,
+
+        [Description("账号已在其他设备登录")]
+        FORCE_LOGOUT = 480
     }
 }

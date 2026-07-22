@@ -1,4 +1,4 @@
-﻿using ZR.Common.Cache;
+﻿using Infrastructure.Cache;
 
 namespace ZR.ServiceCore.SqlSugar
 {

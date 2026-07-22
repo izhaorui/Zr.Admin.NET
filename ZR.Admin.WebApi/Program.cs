@@ -11,7 +11,7 @@ using SqlSugar;
 using System.Globalization;
 using System.Text.Json;
 using ZR.Admin.WebApi.Extensions;
-using ZR.Common.Cache;
+using  Infrastructure.Cache;
 using ZR.Common.DynamicApiSimple.Extens;
 using ZR.Infrastructure.IPTools;
 using ZR.Infrastructure.WebExtensions;

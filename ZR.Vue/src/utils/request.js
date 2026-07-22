@@ -62,6 +62,19 @@ service.interceptors.response.use(
       })
 
       return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
+    } else if (code == 480) {
+      // 单设备登录：账号在其他设备登录，当前会话被挤下线
+      MessageBox.confirm('您的账号已在其他设备登录，如非本人操作请及时修改密码', '账号被挤下线', {
+        confirmButtonText: '重新登录',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }).then(() => {
+        store.dispatch('LogOut').then(() => {
+          location.href = process.env.VUE_APP_ROUTER_PREFIX + 'index'
+        })
+      })
+
+      return Promise.reject('账号已在其他设备登录，当前会话已失效。')
     } else if (code == 0 || code == 1 || code == 110 || code == 101 || code == 403 || code == 500 || code == 429) {
       Message({
         message: msg,

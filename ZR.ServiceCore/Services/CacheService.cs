@@ -1,5 +1,7 @@
 ﻿using Infrastructure;
+using Infrastructure.Model;
 using ZR.Common;
+using Infrastructure.Cache;
 
 namespace ZR.ServiceCore.Services
 {
@@ -48,6 +50,39 @@ namespace ZR.ServiceCore.Services
             CacheHelper.Remove(BuildTenantKey(DataScopeDeptIdsPrefix + userId));
         }
         #endregion
+
+        #region 单设备登录会话缓存
+        private static readonly string UserSessionPrefix = "CACHE-USER-SESSION_";
+
+        /// <summary>
+        /// 记录用户当前有效会话ID（单设备登录用）。TTL 与 JWT 过期时间一致。
+        /// 底层后端由 CacheStore 按配置自动切换：Redis 走 RedisServer:Session 库，否则本地内存。
+        /// </summary>
+        public static void SetUserSession(long userId, string sessionId)
+        {
+            JwtSettings jwtSettings = new();
+            AppSettings.Bind("JwtSettings", jwtSettings);
+            CacheStore.For(CacheBackend.Session).Set(BuildTenantKey(UserSessionPrefix + userId), sessionId, jwtSettings.Expire);
+        }
+
+        /// <summary>
+        /// 获取用户当前有效会话ID，未登录/已失效返回 null
+        /// </summary>
+        public static string GetUserSession(long userId)
+        {
+            return CacheStore.For(CacheBackend.Session).Get<string>(BuildTenantKey(UserSessionPrefix + userId));
+        }
+
+        /// <summary>
+        /// 清除用户会话（注销时调用）
+        /// </summary>
+        public static void RemoveUserSession(long userId)
+        {
+            CacheStore.For(CacheBackend.Session).Remove(BuildTenantKey(UserSessionPrefix + userId));
+        }
+        #endregion
+
+
 
         public static object SetScanLogin(string key, Dictionary<string, object> val)
         {
