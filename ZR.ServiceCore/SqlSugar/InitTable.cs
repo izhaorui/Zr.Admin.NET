@@ -46,62 +46,6 @@ namespace ZR.ServiceCore.SqlSugar
         }
 
         /// <summary>
-        /// 多租户存量库迁移：自动扫描 IMainDbEntity 且含 TenantId 属性的实体，补加 TenantId 列。幂等，所有环境执行。
-        /// </summary>
-        public static void MigrateTenantColumns()
-        {
-            var mainDb = DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);
-
-            foreach (var tableName in GetMainDbSharedTenantTableNames())
-            {
-                AddTenantIdColumnIfMissing(mainDb, tableName);
-            }
-        }
-
-        /// <summary>
-        /// 扫描 ZR.Model 程序集中实现 IMainDbEntity 且含 TenantId 属性的实体，返回其 [SugarTable] 表名。
-        /// IMainDbEntity 是精确的"主库共享实体"契约，不会误扫用户业务实体。
-        /// </summary>
-        private static IEnumerable<string> GetMainDbSharedTenantTableNames()
-        {
-            return Assembly.Load("ZR.Model")
-                .GetTypes()
-                .Where(t => !t.IsAbstract && !t.IsInterface
-                    && typeof(IMainDbEntity).IsAssignableFrom(t)
-                    && t.GetProperty("TenantId") != null)
-                .Select(t => t.GetCustomAttribute<SugarTable>()?.TableName)
-                .Where(name => name != null);
-        }
-
-        private static void AddTenantIdColumnIfMissing(ISqlSugarClient db, string tableName)
-        {
-            try
-            {
-                if (!db.DbMaintenance.IsAnyTable(tableName, false)) return;
-                if (db.DbMaintenance.IsAnyColumn(tableName, "TenantId")) return;
-
-                var dataType = db.CurrentConnectionConfig.DbType == DbType.Oracle ? "VARCHAR2(64)" : "varchar(64)";
-
-                db.DbMaintenance.AddColumn(tableName, new DbColumnInfo
-                {
-                    DbColumnName = "TenantId",
-                    DataType = dataType,
-                    IsNullable = true
-                });
-
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"[迁移] 已为存量表 {tableName} 添加列 TenantId {dataType} NULL");
-                Console.ForegroundColor = ConsoleColor.White;
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"[迁移] 为表 {tableName} 添加 TenantId 列失败: {ex.Message}");
-                Console.ForegroundColor = ConsoleColor.White;
-            }
-        }
-
-        /// <summary>
         /// 开发环境初始化入口
         /// </summary>
         public static void RunInitDb(IWebHostEnvironment environment)

@@ -75,8 +75,8 @@ namespace ZR.ServiceCore.SqlSugar
             DataScopeExtensions.RegisterScopeFilter<UserOnlineLog>(q => q.ApplyScope());
 
             // 存量库迁移：补加多租户隔离列 TenantId（幂等，所有环境执行，避免过滤器运行时报"未知列"）
-            // 新装库由 CodeFirst 自动建列，此处仅对缺列的存量库补列；表/列不存在则跳过，异常仅告警不中断。
-            InitTable.MigrateTenantColumns();
+            // 实体来源与 DbMigrationService.Migrate 共用显式注册表；新装库由 CodeFirst 自动建列。
+            DbMigrationService.MigrateTenantColumns();
 
             //初始化表和种子数据
             InitTable.RunInitDb(environment);

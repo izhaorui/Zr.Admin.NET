@@ -53,8 +53,9 @@ namespace ZR.ServiceCore.Middleware
             var endpoint = context.GetEndpoint();
             var allowAnonymous = endpoint?.Metadata?.GetMetadata<AllowAnonymousAttribute>() != null;
 
-            if (allowAnonymous)
+            if (allowAnonymous || endpoint == null)
             {
+                Console.WriteLine($"断点访问被过滤path={path}");
                 await _next(context);
                 return;
             }

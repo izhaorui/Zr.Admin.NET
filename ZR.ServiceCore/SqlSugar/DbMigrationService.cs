@@ -2,7 +2,6 @@ using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using SqlSugar.IOC;
 using System.Reflection;
-using System.Text.Json;
 using ZR.Model;
 using ZR.Model.Content;
 using ZR.Model.Models;
@@ -223,6 +222,94 @@ namespace ZR.ServiceCore.SqlSugar
             PrintReport(report);
 
             return report;
+        }
+
+        /// <summary>
+        /// 多租户存量库补列：对显式注册表中实现 IMainDbEntity 且含 TenantId 属性的实体，
+        /// 幂等补加 TenantId 列。所有环境启动时执行（新装库由 CodeFirst 建列，此处只兜底存量库）。
+        /// 实体来源与 Migrate 一致：SystemEntityTypes + 配置 AdditionalTypes - [SkipMigration]。
+        /// </summary>
+        public static void MigrateTenantColumns()
+        {
+            var mainDb = DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);
+            var additionalTypes = App.OptionsSetting.DbMigration?.AdditionalTypes;
+            var entities = ResolveEntityTypes(SystemEntityTypes, additionalTypes, out _);
+
+            var addedColumns = new List<string>();
+            foreach (var tableName in entities
+                .Where(t => typeof(IMainDbEntity).IsAssignableFrom(t) && t.GetProperty("TenantId") != null)
+                .Select(t => t.GetCustomAttribute<SugarTable>()?.TableName)
+                .Where(name => name != null))
+            {
+                if (AddTenantIdColumnIfMissing(mainDb, tableName))
+                {
+                    addedColumns.Add(tableName);
+                }
+            }
+
+            // 有实际补列时记录到迁移历史（历史表不存在则静默跳过，不影响主流程）
+            if (addedColumns.Count > 0)
+            {
+                SaveTenantColumnHistory(mainDb, addedColumns);
+            }
+        }
+
+        /// <summary>
+        /// 幂等补加 TenantId 列，返回是否实际执行了 DDL
+        /// </summary>
+        private static bool AddTenantIdColumnIfMissing(ISqlSugarClient db, string tableName)
+        {
+            try
+            {
+                if (!db.DbMaintenance.IsAnyTable(tableName, false)) return false;
+                if (db.DbMaintenance.IsAnyColumn(tableName, "TenantId")) return false;
+
+                var dataType = db.CurrentConnectionConfig.DbType == DbType.Oracle ? "VARCHAR2(64)" : "varchar(64)";
+
+                db.DbMaintenance.AddColumn(tableName, new DbColumnInfo
+                {
+                    DbColumnName = "TenantId",
+                    DataType = dataType,
+                    IsNullable = true
+                });
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[DbMigration] 已为存量表 {tableName} 添加列 TenantId {dataType} NULL");
+                Console.ResetColor();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[DbMigration] 为表 {tableName} 添加 TenantId 列失败: {ex.Message}");
+                Console.ResetColor();
+                return false;
+            }
+        }
+
+        private static void SaveTenantColumnHistory(ISqlSugarClient db, List<string> tables)
+        {
+            try
+            {
+                if (!db.DbMaintenance.IsAnyTable("__db_migration_history", false)) return;
+
+                db.Insertable(new DbMigrationHistory
+                {
+                    BatchId = $"{DateTime.Now:yyyyMMddHHmmss}_tenantcol",
+                    Summary = $"存量库补 TenantId 列 {tables.Count} 张表",
+                    Details = System.Text.Json.JsonSerializer.Serialize(new { TenantIdColumnAdded = tables }),
+                    AppliedAt = DateTime.Now,
+                    NewTables = 0,
+                    NewColumns = tables.Count,
+                    Success = true
+                }).ExecuteCommand();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"[DbMigration] 记录 TenantId 补列历史失败: {ex.Message}");
+                Console.ResetColor();
+            }
         }
 
         /// <summary>
