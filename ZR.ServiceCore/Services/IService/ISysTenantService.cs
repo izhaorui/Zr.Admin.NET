@@ -58,6 +58,13 @@ namespace ZR.ServiceCore.Services
 		TenantLifecycleResult SuspendTenant(string tenantId, string operatorName, string remark = null);
 
 		/// <summary>
+		/// 过期租户自动停服：扫描已到期且仍在启用的租户，逐个停服。供定时任务调用。
+		/// </summary>
+		/// <param name="operatorName">操作人，默认 system（定时任务）</param>
+		/// <returns>实际停服的租户数量</returns>
+		int SuspendExpiredTenants(string operatorName = "system");
+
+		/// <summary>
 		/// 租户续费
 		/// </summary>
 		/// <param name="dto"></param>

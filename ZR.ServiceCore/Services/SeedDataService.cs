@@ -366,6 +366,7 @@ namespace ZR.ServiceCore.Services
                 result.Add(EnsureTenantPlanMenuSeedData());
                 result.Add(EnsureTenantDictSeedData());
                 result.Add(EnsureDailyScheduleMenuSeedData());
+                result.Add(EnsureSystemTasksSeedData());
 
                 db.Ado.CommitTran();
             }
@@ -804,6 +805,37 @@ namespace ZR.ServiceCore.Services
             //}
 
             return $"[日程管理菜单]";
+        }
+
+        /// <summary>
+        /// 确保系统内置定时任务存在（如租户到期自动停服）。幂等，仅在首次运行时写入。
+        /// 与租户菜单/字典等系统数据一致，通过代码而非 data.xlsx 维护。
+        /// </summary>
+        private string EnsureSystemTasksSeedData()
+        {
+            var mainTenantId = App.MainDbConfigId;
+            var db = DbScoped.SugarScope.GetConnectionScope(mainTenantId);
+
+            if (db.Queryable<SysTasks>().ClearFilter().Any(x => x.ID == "tenant_expire_suspend"))
+                return "[系统任务] 租户到期自动停服已存在，跳过";
+
+            db.Insertable(new SysTasks
+            {
+                ID = "20260725000001",
+                Name = "租户到期自动停服",
+                JobGroup = "system",
+                Cron = "0 0 2 * * ?",
+                AssemblyName = "ZR.ServiceCore",
+                ClassName = "Job_TenantExpireSuspend",
+                TriggerType = 1,
+                IntervalSecond = 0,
+                IsStart = 1,
+                TaskType = 1,
+                TenantId = mainTenantId,
+                Create_by = "system"
+            }).ExecuteCommand();
+
+            return "[系统任务] 写入租户到期自动停服";
         }
     }
 }

@@ -676,6 +676,35 @@ namespace ZR.ServiceCore.Services
                 .ToList();
         }
 
+        /// <summary>
+        /// 过期租户自动停服：扫描已到期且仍在启用的租户，逐个停服。供定时任务调用。
+        /// </summary>
+        /// <param name="operatorName">操作人，默认 system（定时任务）</param>
+        /// <returns>实际停服的租户数量</returns>
+        public int SuspendExpiredTenants(string operatorName = "system")
+        {
+            EnsureTenantFeatureEnabled();
+
+            var now = DateTime.Now;
+            var expired = Queryable()
+                .Where(x => x.DelFlag == 0 && x.Status == 0 && x.ExpireTime != null && x.ExpireTime < now)
+                .ToList();
+
+            var count = 0;
+            foreach (var tenant in expired)
+            {
+                if (string.Equals(tenant.TenantId, App.MainDbConfigId, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                SuspendTenant(tenant.TenantId, operatorName, "到期自动停服");
+                count++;
+            }
+
+            return count;
+        }
+
         public List<TenantExpireReminderDto> GetTenantExpireReminders(int withinDays = 30)
         {
             EnsureDefaultPlans();
