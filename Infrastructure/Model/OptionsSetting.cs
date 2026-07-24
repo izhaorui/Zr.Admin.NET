@@ -23,6 +23,8 @@ namespace Infrastructure.Model
         /// 是否在 InitDb 建表后自动导入种子数据（data.xlsx）。默认 true，无需手动调用 InitSeedData 接口
         /// </summary>
         public bool InitSeed { get; set; } = true;
+        /// <summary>数据库迁移配置（自动发现实体、差异检测、迁移历史）</summary>
+        public DbMigrationOptions DbMigration { get; set; } = new();
         public string[] InitTables { get; set; }
         /// <summary>
         /// 邮箱配置
@@ -180,6 +182,22 @@ namespace Infrastructure.Model
     {
         public int Open { get; set; }
         public bool DbCache { get; set; }
+    }
+
+    /// <summary>
+    /// 数据库迁移配置
+    /// </summary>
+    public class DbMigrationOptions
+    {
+        /// <summary>仅报告差异不实际执行（安全模式）。默认 false，即自动应用迁移</summary>
+        public bool ReportOnly { get; set; } = false;
+
+        /// <summary>
+        /// 额外需要迁移的实体类型（完全限定名，如 "ZR.Model.YourEntity, ZR.Model"）。
+        /// 系统实体注册表（37 个框架实体）始终会被迁移，此配置用于扩展用户自定义表。
+        /// 类型必须有 [SugarTable] 特性且未标记 [SkipMigration] 才会生效。
+        /// </summary>
+        public string[] AdditionalTypes { get; set; }
     }
 
 }
