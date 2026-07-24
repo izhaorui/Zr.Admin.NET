@@ -28,5 +28,21 @@ namespace ZR.ServiceCore.SqlSugar
             it.TenantId == App.GetCurrentTenantId()
             || (App.GetCurrentTenantId() == App.MainDbConfigId
                 && (it.TenantId == null || it.TenantId == App.MainDbConfigId));
+
+        /// <summary>
+        /// 计划任务 — 主库共享，主租户看全部，普通租户看自己的 + 通配 * 任务。
+        /// 逗号列表（t1,t2）的精确成员判定因 SqlSugar 表达式翻译限制，留在 EnsureTaskAccess 中处理。
+        /// </summary>
+        public static Expression<Func<SysTasks, bool>> SysTasksTenantFilter() => it =>
+            App.GetCurrentTenantId() == App.MainDbConfigId
+            || it.TenantId == App.GetCurrentTenantId()
+            || it.TenantId == "*";
+
+        /// <summary>
+        /// 任务日志 — 主库共享，主租户看全部，普通租户只看自己租户的执行记录。
+        /// </summary>
+        public static Expression<Func<SysTasksLog, bool>> SysTasksLogTenantFilter() => it =>
+            App.GetCurrentTenantId() == App.MainDbConfigId
+            || it.TenantId == App.GetCurrentTenantId();
     }
 }

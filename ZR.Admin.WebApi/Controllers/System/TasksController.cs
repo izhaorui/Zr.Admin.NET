@@ -89,10 +89,23 @@ namespace ZR.Admin.WebApi.Controllers
                 return;
             }
 
-            if (!string.Equals(task.TenantId, CurrentTenantId, StringComparison.OrdinalIgnoreCase))
+            // 允许通配 *（全部租户任务）、精确匹配、或逗号列表包含当前租户
+            if (string.Equals(task.TenantId, CurrentTenantId, StringComparison.OrdinalIgnoreCase)
+                || task.TenantId == "*")
             {
-                throw new CustomException("无权访问当前租户任务");
+                return;
             }
+
+            if (task.TenantId != null)
+            {
+                var parts = task.TenantId.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (parts.Contains(CurrentTenantId, StringComparer.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            throw new CustomException("无权访问当前租户任务");
         }
 
         private SysTasks GetTaskById(string id)
@@ -328,9 +341,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "monitor:job:export")]
         public IActionResult Export()
         {
-            var list = HttpContext.IsAdmin()
-                ? _tasksQzService.GetAll()
-                : _tasksQzService.GetAll().Where(f => f.TenantId == CurrentTenantId).ToList();
+            var list = _tasksQzService.GetAll();
 
             string sFileName = ExportExcel(list, "monitorjob", "定时任务");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });

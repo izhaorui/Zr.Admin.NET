@@ -21,7 +21,6 @@ namespace ZR.ServiceCore.Services
         public PagedInfo<SysTasks> SelectTaskList(TasksQueryDto parm)
         {
             var predicate = Expressionable.Create<SysTasks>();
-            var tenantId = App.GetCurrentTenantId();
 
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.QueryText),
                 m => m.Name.Contains(parm.QueryText) ||
@@ -29,7 +28,6 @@ namespace ZR.ServiceCore.Services
                 m.AssemblyName.Contains(parm.QueryText));
             predicate.AndIF(parm.TaskType != null, m => m.TaskType == parm.TaskType);
             predicate.AndIF(parm.IsStart != null, m => m.IsStart == parm.IsStart);
-            predicate.AndIF(App.HttpContext?.IsAdmin() != true, m => m.TenantId == tenantId);
 
             return Queryable().Where(predicate.ToExpression())
                 .ToPage(parm);

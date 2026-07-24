@@ -61,6 +61,8 @@ namespace ZR.ServiceCore.SqlSugar
                         conn.QueryFilter.AddTableFilter<SysUserMsg>(TenantFilter.SysUserMsgTenantFilter());
                         conn.QueryFilter.AddTableFilter<SysFile>(TenantFilter.SysFileTenantFilter());
                         conn.QueryFilter.AddTableFilter<SysFileGroup>(TenantFilter.SysFileGroupTenantFilter());
+                        conn.QueryFilter.AddTableFilter<SysTasks>(TenantFilter.SysTasksTenantFilter());
+                        conn.QueryFilter.AddTableFilter<SysTasksLog>(TenantFilter.SysTasksLogTenantFilter());
                     }
                 });
             });

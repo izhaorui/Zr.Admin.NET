@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SqlSugar.IOC;
+using System.Reflection;
+using ZR.Model;
 using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Services;
 
@@ -44,18 +46,31 @@ namespace ZR.ServiceCore.SqlSugar
         }
 
         /// <summary>
-        /// 多租户存量库迁移：为 sys_user_msg / sys_file / sys_file_group / sys_tasks / sys_tasks_log
-        /// 补加 TenantId 列。幂等，所有环境执行。
+        /// 多租户存量库迁移：自动扫描 IMainDbEntity 且含 TenantId 属性的实体，补加 TenantId 列。幂等，所有环境执行。
         /// </summary>
         public static void MigrateTenantColumns()
         {
             var mainDb = DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);
 
-            var tables = new[] { "sys_user_msg", "sys_file", "sys_file_group", "sys_tasks", "sys_tasks_log" };
-            foreach (var table in tables)
+            foreach (var tableName in GetMainDbSharedTenantTableNames())
             {
-                AddTenantIdColumnIfMissing(mainDb, table);
+                AddTenantIdColumnIfMissing(mainDb, tableName);
             }
+        }
+
+        /// <summary>
+        /// 扫描 ZR.Model 程序集中实现 IMainDbEntity 且含 TenantId 属性的实体，返回其 [SugarTable] 表名。
+        /// IMainDbEntity 是精确的"主库共享实体"契约，不会误扫用户业务实体。
+        /// </summary>
+        private static IEnumerable<string> GetMainDbSharedTenantTableNames()
+        {
+            return Assembly.Load("ZR.Model")
+                .GetTypes()
+                .Where(t => !t.IsAbstract && !t.IsInterface
+                    && typeof(IMainDbEntity).IsAssignableFrom(t)
+                    && t.GetProperty("TenantId") != null)
+                .Select(t => t.GetCustomAttribute<SugarTable>()?.TableName)
+                .Where(name => name != null);
         }
 
         private static void AddTenantIdColumnIfMissing(ISqlSugarClient db, string tableName)
@@ -65,18 +80,10 @@ namespace ZR.ServiceCore.SqlSugar
                 if (!db.DbMaintenance.IsAnyTable(tableName, false)) return;
                 if (db.DbMaintenance.IsAnyColumn(tableName, "TenantId")) return;
 
-                var dataType = db.CurrentConnectionConfig.DbType switch
-                {
-                    DbType.MySql => "varchar(64)",
-                    DbType.SqlServer => "varchar(64)",
-                    DbType.PostgreSQL => "varchar(64)",
-                    DbType.Oracle => "VARCHAR2(64)",
-                    _ => "varchar(64)"
-                };
+                var dataType = db.CurrentConnectionConfig.DbType == DbType.Oracle ? "VARCHAR2(64)" : "varchar(64)";
 
                 db.DbMaintenance.AddColumn(tableName, new DbColumnInfo
                 {
-                    TableName = tableName,
                     DbColumnName = "TenantId",
                     DataType = dataType,
                     IsNullable = true
