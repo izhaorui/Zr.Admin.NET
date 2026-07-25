@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using NLog;
 using System.Text.Encodings.Web;
+using System.Text.RegularExpressions;
 using ZR.Common;
 using ZR.Infrastructure.IPTools;
 using ZR.Model.System;
@@ -99,6 +100,8 @@ namespace ZR.ServiceCore.Middleware
             var ip_info = IpTool.Search(ip);
             string operLocation = ip_info == null ? string.Empty : $"{ip_info.Province} {ip_info.City}";
             string errorMessage = string.IsNullOrWhiteSpace(error) ? msg : error;
+            // 写入数据库操作日志 / 推送企业微信时做脱敏，避免泄露连接字符串、凭据及内网 IP
+            string safeErrorMessage = SanitizeErrorMessage(errorMessage);
 
             SysOperLog sysOperLog = new()
             {
@@ -107,7 +110,7 @@ namespace ZR.ServiceCore.Middleware
                 OperUrl = HttpContextExtension.GetRequestUrl(context),
                 RequestMethod = context.Request.Method,
                 JsonResult = responseResult,
-                ErrorMsg = errorMessage,
+                ErrorMsg = safeErrorMessage,
                 OperName = HttpContextExtension.GetName(context),
                 OperLocation = operLocation,
                 OperTime = DateTime.Now,
@@ -146,7 +149,7 @@ namespace ZR.ServiceCore.Middleware
                 $"\n> 操作地区：{sysOperLog.OperIp}({sysOperLog.OperLocation})" +
                 $"\n> 操作模块：{sysOperLog.Title}" +
                 $"\n> 操作地址：{sysOperLog.OperUrl}" +
-                $"\n> 错误信息：{msg}\n\n> {errorMessage}";
+                $"\n> 错误信息：{msg}\n\n> {safeErrorMessage}";
 
             try
             {
@@ -166,6 +169,27 @@ namespace ZR.ServiceCore.Middleware
             {
                 Logger.Error(noticeEx, "发送异常通知失败");
             }
+        }
+
+        /// <summary>
+        /// 脱敏异常信息：抹掉连接字符串中的敏感键值(密码/账号/库名等)、内网 IP，
+        /// 防止数据库连不上等异常将 Server=xxx;Password=xxx 或内网地址泄露到操作日志/通知中。
+        /// 服务端 NLog 仍记录完整信息用于排错。
+        /// </summary>
+        private static readonly Regex ConnStrKeyRegex = new(
+            @"(\b(?:Server|Data\s*Source|Address|Addr|Network\s*Address|Database|Initial\s*Catalog|User\s*ID|Uid|User|Password|Pwd|Integrated\s*Security)\s*=\s*)([^;""']+)",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex IpRegex = new(
+            @"\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b",
+            RegexOptions.Compiled);
+
+        private static string SanitizeErrorMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return message;
+            message = ConnStrKeyRegex.Replace(message, m => $"{m.Groups[1].Value}***");
+            message = IpRegex.Replace(message, "***.***.***.***");
+            return message;
         }
 
         public static Endpoint GetEndpoint(HttpContext context)
