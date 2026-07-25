@@ -21,11 +21,24 @@ namespace ZR.ServiceCore.Services
     public class SysTenantService : BaseService<SysTenant>, ISysTenantService
     {
         private readonly IEnumerable<ITenantModuleInitializer> _moduleInitializers;
+        private readonly ISysUserMsgService _sysUserMsgService;
 
         public SysTenantService(
-            IEnumerable<ITenantModuleInitializer> moduleInitializers)
+            IEnumerable<ITenantModuleInitializer> moduleInitializers,
+            ISysUserMsgService sysUserMsgService)
         {
             _moduleInitializers = moduleInitializers ?? Enumerable.Empty<ITenantModuleInitializer>();
+            _sysUserMsgService = sysUserMsgService;
+        }
+
+        /// <summary>
+        /// 向租户管理员推送系统消息。租户管理员约定为各租户库内 UserId=1 的管理员用户（租户权限初始化时建立）。
+        /// 显式传入 tenantId，确保后台定时任务（租户上下文兜底为主库）也能正确归属消息。
+        /// </summary>
+        private void SendTenantAdminMessage(string tenantId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(tenantId)) return;
+            _sysUserMsgService.AddSysUserMsg(1, content, UserMsgType.TENANT_NOTICE, tenantId);
         }
 
         public PagedInfo<SysTenant> GetPageList(SysTenantQueryDto parm)
@@ -288,6 +301,9 @@ namespace ZR.ServiceCore.Services
             tenant.Update_time = DateTime.Now;
             Update(tenant, it => new { it.Status, it.Remark, it.Update_by, it.Update_time });
 
+            var suspendReason = string.IsNullOrEmpty(remark) ? "" : $"，原因：{remark}";
+            SendTenantAdminMessage(normalizedTenantId, $"您的租户已暂停服务{suspendReason}，如有疑问请联系平台管理员。");
+
             AppendStep(result, "disable-login", true, "租户状态已切换为停用");
             result.Success = true;
             result.Message = "租户停服完成";
@@ -339,6 +355,8 @@ namespace ZR.ServiceCore.Services
             tenant.Update_by = operatorName;
             tenant.Update_time = DateTime.Now;
             Update(tenant, it => new { it.ExpireTime, it.Status, it.Remark, it.Update_by, it.Update_time });
+
+            SendTenantAdminMessage(tenantId, $"您的租户已续费成功，服务已恢复，到期时间更新为{newExpireTime:yyyy-MM-dd}。");
 
             AppendStep(result, "extend-expire-time", true, $"租户到期时间更新为{newExpireTime:yyyy-MM-dd HH:mm:ss}");
             AppendStep(result, "enable-tenant", true, "租户状态已恢复为可用");
@@ -587,6 +605,8 @@ namespace ZR.ServiceCore.Services
                 Create_by = operatorName,
                 Create_time = DateTime.Now
             }).ExecuteCommand();
+
+            SendTenantAdminMessage(tenantId, "您的租户套餐已变更，相关功能权限已同步更新。");
 
             return GetCurrentTenantPlan(tenantId);
         }

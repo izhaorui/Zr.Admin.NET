@@ -79,8 +79,11 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public SysUserMsg AddSysUserMsg(SysUserMsg model)
         {
-            // 自动填入当前租户ID，实现多租户隔离（INSERT 不经全局过滤，需手动填）
-            model.TenantId = App.GetCurrentTenantId();
+            // 仅当未显式指定租户时，自动填入当前租户ID（INSERT 不经全局过滤，需手动填）
+            if (string.IsNullOrEmpty(model.TenantId))
+            {
+                model.TenantId = App.GetCurrentTenantId();
+            }
             Insertable(model).ExecuteReturnSnowflakeId();
             if (model.UserId.HasValue)
             {
@@ -95,6 +98,19 @@ namespace ZR.ServiceCore.Services
                 UserId = userId,
                 Content = content,
                 MsgType = msgType
+            });
+        }
+        /// <summary>
+        /// 添加系统消息（显式指定租户ID），供后台任务等无租户上下文场景使用，确保消息正确落入目标租户。
+        /// </summary>
+        public SysUserMsg AddSysUserMsg(long userId, string content, UserMsgType msgType, string tenantId)
+        {
+            return AddSysUserMsg(new SysUserMsg()
+            {
+                UserId = userId,
+                Content = content,
+                MsgType = msgType,
+                TenantId = tenantId
             });
         }
 

@@ -160,6 +160,7 @@ namespace ZR.ServiceCore.Services
             {
                 throw new Exception("提交数据异常," + result.ErrorMessage, result.ErrorException);
             }
+            UserMsgService.AddSysUserMsg(sysUser.UserId, "您的账号已创建，请使用初始密码登录后及时修改", UserMsgType.SYSTEM);
             return sysUser;
         }
 
@@ -174,9 +175,10 @@ namespace ZR.ServiceCore.Services
             var roleIds = RoleService.SelectUserRoles(user.UserId);
             var diffArr = roleIds.Where(c => !((IList)dto.RoleIds).Contains(c)).ToArray();
             var diffArr2 = dto.RoleIds.Where(c => !((IList)roleIds).Contains(c)).ToArray();
+            var roleChanged = diffArr.Length > 0 || diffArr2.Length > 0;
             var result = UseTran(() =>
             {
-                if (diffArr.Length > 0 || diffArr2.Length > 0)
+                if (roleChanged)
                 {
                     //删除用户与角色关联
                     UserRoleService.DeleteUserRoleByUserId((int)user.UserId);
@@ -189,6 +191,10 @@ namespace ZR.ServiceCore.Services
                 UserPostService.InsertUserPost(user);
                 ChangeUser(user);
                 UserMsgService.AddSysUserMsg(user.UserId, "你的资料已被修改", UserMsgType.SYSTEM);
+                if (roleChanged)
+                {
+                    UserMsgService.AddSysUserMsg(user.UserId, "您的角色/权限已变更，如有疑问请联系管理员", UserMsgType.SYSTEM);
+                }
             });
             return result.IsSuccess ? 1 : 0;
         }
@@ -217,14 +223,19 @@ namespace ZR.ServiceCore.Services
         /// <param name="userid"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public int ResetPwd(long userid, string password)
+        public int ResetPwd(long userid, string password, string notifyContent = null)
         {
-            return Update(new SysUser()
+            var result = Update(new SysUser()
             {
                 UserId = userid,
                 Password = password,
                 PwdUpdateTime = DateTime.Now
             }, it => new { it.Password, it.PwdUpdateTime }, f => f.UserId == userid);
+            if (result > 0 && !string.IsNullOrEmpty(notifyContent))
+            {
+                UserMsgService.AddSysUserMsg(userid, notifyContent, UserMsgType.SYSTEM);
+            }
+            return result;
         }
 
         /// <summary>
@@ -235,7 +246,19 @@ namespace ZR.ServiceCore.Services
         public int ChangeUserStatus(SysUser user)
         {
             CheckUserAllowed(user);
-            return Update(user, it => new { it.Status }, f => f.UserId == user.UserId);
+            var result = Update(user, it => new { it.Status }, f => f.UserId == user.UserId);
+            if (result > 0)
+            {
+                if (user.Status == 1)
+                {
+                    UserMsgService.AddSysUserMsg(user.UserId, "您的账号已被管理员禁用", UserMsgType.SYSTEM);
+                }
+                else if (user.Status == 0)
+                {
+                    UserMsgService.AddSysUserMsg(user.UserId, "您的账号已恢复启用", UserMsgType.SYSTEM);
+                }
+            }
+            return result;
         }
 
         /// <summary>

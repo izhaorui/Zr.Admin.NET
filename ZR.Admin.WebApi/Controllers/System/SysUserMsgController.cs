@@ -9,6 +9,7 @@ namespace ZR.Admin.WebApi.Controllers.System
     /// 用户系统消息
     /// </summary>
     [Route("SysUserMsg")]
+    [ApiExplorerSettings(GroupName = "sys")]
     public class SysUserMsgController : BaseController
     {
         /// <summary>
@@ -40,6 +41,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="parm"></param>
         /// <returns></returns>
         [HttpGet("mylist")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult QueryMySysUserMsg([FromQuery] SysUserMsgQueryDto parm)
         {
             parm.UserId = HttpContext.GetUId();
@@ -53,13 +55,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="parm"></param>
         /// <returns></returns>
         [HttpGet("myMsgNum")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult QueryMyUnReadMsg([FromQuery] SysUserMsgQueryDto parm)
         {
             parm.UserId = HttpContext.GetUId();
             var response = _SysUserMsgService
                 .Queryable()
                 .Where(f => f.IsRead == 0 && f.UserId == parm.UserId)
-                .WithCache(60 * 10)
                 .ToList();
             var data = from a in response
                        group a by new { a.MsgType } into grp

@@ -180,6 +180,13 @@ namespace ZR.ServiceCore.Services
 
             if (lockTimeStamp > 0 && ts.TotalSeconds > 0)
             {
+                // 账号锁定提醒：登录态尚未建立，使用 ClearFilter 跨数据权限解析用户后发送系统消息
+                var userId = Context.Queryable<SysUser>().ClearFilter().Where(u => u.UserName == userName).Select(u => u.UserId).First();
+                if (userId > 0)
+                {
+                    var minutes = Math.Round(ts.TotalMinutes, 0);
+                    sysUserMsgService.AddSysUserMsg(userId, $"您的账号因多次登录失败已被锁定，剩余{minutes}分钟，解锁后请重试", UserMsgType.SYSTEM);
+                }
                 throw new CustomException(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
             }
         }
@@ -234,7 +241,7 @@ namespace ZR.ServiceCore.Services
                 return string.Empty;
             }
 
-            var content = $"检测到您的账号发生异地登录。账号：{user.UserName}；本次地点：{currentLocation}；上次地点：{previousLocation}；登录IP：{currentLoginIp}。如非本人操作，请立即修改密码。";
+            var content = $"⚠️ 账号异地登录提醒\n\n检测到您的账号发生异地登录，请确认是否为本人操作：\n\n账号：{user.UserName}\n本次地点：{currentLocation}\n上次地点：{previousLocation}\n登录 IP：{currentLoginIp}\n\n如非本人操作，请立即修改密码！";
             sysUserMsgService.AddSysUserMsg(user.UserId, content, UserMsgType.SYSTEM);
             return content;
         }

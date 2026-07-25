@@ -59,6 +59,14 @@ namespace ZR.ServiceCore.Middleware
                 return;
             }
 
+            // “common” 是“登录用户即可访问”的语义标记（见 ActionPermissionFilter），不参与租户套餐权限校验。
+            // 否则会被当成真实权限去套餐列表里匹配，而套餐权限中只有具体功能权限、不含 “common”，导致所有 common 接口被误拒。
+            if (string.Equals(permission, "common", StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(context);
+                return;
+            }
+
             var tenantId = App.GetCurrentTenantId();
             if (string.IsNullOrWhiteSpace(tenantId))
             {

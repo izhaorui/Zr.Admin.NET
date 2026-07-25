@@ -163,7 +163,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             //密码md5
             sysUser.Password = NETCore.Encrypt.EncryptProvider.Md5(sysUser.Password);
 
-            int result = UserService.ResetPwd(sysUser.UserId, sysUser.Password);
+            int result = UserService.ResetPwd(sysUser.UserId, sysUser.Password, "您的管理员已重置登录密码，请尽快登录并修改");
             return ToResponse(result);
         }
 

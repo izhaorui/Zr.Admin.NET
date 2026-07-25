@@ -51,7 +51,7 @@ namespace ZR.ServiceCore.Services
         /// <param name="userid"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public int ResetPwd(long userid, string password);
+        public int ResetPwd(long userid, string password, string notifyContent = null);
 
         public int ChangeUserStatus(SysUser user);
 

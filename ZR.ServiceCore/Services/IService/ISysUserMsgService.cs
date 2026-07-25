@@ -15,6 +15,10 @@ namespace ZR.ServiceCore.Services
 
         SysUserMsg AddSysUserMsg(SysUserMsg parm);
         SysUserMsg AddSysUserMsg(long userId, string content, UserMsgType msgType);
+        /// <summary>
+        /// 添加系统消息（显式指定租户ID），供后台任务等无租户上下文场景使用，确保消息正确落入目标租户。
+        /// </summary>
+        SysUserMsg AddSysUserMsg(long userId, string content, UserMsgType msgType, string tenantId);
         bool TruncateSysUserMsg();
 
 

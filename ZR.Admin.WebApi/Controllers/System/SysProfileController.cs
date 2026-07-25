@@ -93,7 +93,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ApiResult.Error("新密码不能和旧密码相同"));
             }
-            if (UserService.ResetPwd(userId, newMd5) > 0)
+            if (UserService.ResetPwd(userId, newMd5, "您的登录密码修改成功") > 0)
             {
                 //TODO 更新缓存
 
