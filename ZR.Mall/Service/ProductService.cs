@@ -1,3 +1,4 @@
+using SqlSugar.IOC;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -23,6 +24,7 @@ namespace ZR.Mall.Service
         {
             this.skusService = skusService;
             this.specService = shoppingProductSpecService;
+            // 不再固定 MallDb：同 OMSOrderService，恢复 BaseService 默认按租户路由。
         }
 
         /// <summary>

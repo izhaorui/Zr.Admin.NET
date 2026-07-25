@@ -39,6 +39,7 @@ namespace ZR.Mall.Controllers
         {
             var response = _OMSOrderService.GetList(parm);
             response.Extra.Add("NotDelivereOrder", _OMSOrderService.NotDelivereOrder());
+            response.Extra.Add("StatusStats", _OMSOrderService.GetOrderStatusStats());
             return SUCCESS(response);
         }
 
@@ -99,6 +100,33 @@ namespace ZR.Mall.Controllers
         {
             var modal = parm.Adapt<OMSOrder>().ToUpdate(HttpContext);
             var response = _OMSOrderService.UpdateOMSOrder(4, modal);
+
+            return ToResponse(response);
+        }
+
+        /// <summary>
+        /// 取消订单（仅待发货可取消，回补库存）
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("cancel/{id}")]
+        [ActionPermissionFilter(Permission = "oms:order:cancel")]
+        [Log(Title = "订单取消", BusinessType = BusinessType.UPDATE)]
+        public IActionResult CancelOMSOrder(long id)
+        {
+            var response = _OMSOrderService.CancelOrder(id);
+
+            return ToResponse(response);
+        }
+
+        /// <summary>
+        /// 批量取消订单：仅待付款/待发货可取消，其余状态自动跳过；返回成功取消的条数
+        /// </summary>
+        [HttpPost("cancel/batch")]
+        [ActionPermissionFilter(Permission = "oms:order:cancel")]
+        [Log(Title = "订单批量取消", BusinessType = BusinessType.UPDATE)]
+        public IActionResult CancelOMSOrders([FromBody] List<long> ids)
+        {
+            var response = _OMSOrderService.CancelOrders(ids);
 
             return ToResponse(response);
         }
@@ -224,6 +252,18 @@ namespace ZR.Mall.Controllers
                 failCount = resultList.Count(x => x.Status != "发货成功"),
                 result = resultList
             });
+        }
+
+        /// <summary>
+        /// 批量发货导入模板下载（仅表头：订单号/物流公司/物流单号）
+        /// </summary>
+        [HttpGet("importTemplate")]
+        [ActionPermissionFilter(Permission = "oms:order:ship")]
+        [Log(Title = "订单批量发货模板", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
+        public IActionResult ImportTemplate()
+        {
+            var result = DownloadImportTemplate(new List<DeliveryExpressDto>() { }, "order");
+            return ExportExcel(result.Item2, result.Item1);
         }
 
         /// <summary>

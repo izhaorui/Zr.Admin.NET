@@ -367,6 +367,7 @@ namespace ZR.ServiceCore.Services
                 result.Add(EnsureTenantDictSeedData());
                 result.Add(EnsureDailyScheduleMenuSeedData());
                 result.Add(EnsureSystemTasksSeedData());
+                result.Add(EnsureMallTasksSeedData());
 
                 db.Ado.CommitTran();
             }
@@ -836,6 +837,37 @@ namespace ZR.ServiceCore.Services
             }).ExecuteCommand();
 
             return "[系统任务] 写入租户到期自动停服";
+        }
+
+        /// <summary>
+        /// 确保商城系统内置定时任务存在（待付款超时自动取消）。幂等，仅首次写入。
+        /// 商城数据固定走 MallDb、与租户无关，TenantId 设为主库即可单次执行（OMSOrderService 内部已固定连接）。
+        /// </summary>
+        private string EnsureMallTasksSeedData()
+        {
+            var mainTenantId = App.MainDbConfigId;
+            var db = DbScoped.SugarScope.GetConnectionScope(mainTenantId);
+
+            if (db.Queryable<SysTasks>().ClearFilter().Any(x => x.ID == "mall_close_pending"))
+                return "[商城任务] 待付款超时自动取消已存在，跳过";
+
+            db.Insertable(new SysTasks
+            {
+                ID = "mall_close_pending",
+                Name = "商城待付款订单超时自动取消",
+                JobGroup = "mall",
+                Cron = "0 0/5 * * * ?",
+                AssemblyName = "ZR.Mall",
+                ClassName = "Job_ClosePendingOrder",
+                TriggerType = 1,
+                IntervalSecond = 0,
+                IsStart = 1,
+                TaskType = 1,
+                TenantId = mainTenantId,
+                Create_by = "system"
+            }).ExecuteCommand();
+
+            return "[商城任务] 写入待付款超时自动取消";
         }
     }
 }

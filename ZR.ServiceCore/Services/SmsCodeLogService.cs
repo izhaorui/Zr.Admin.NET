@@ -84,5 +84,33 @@ namespace ZR.ServiceCore.Services
 
             return model;
         }
+
+        /// <summary>
+        /// 发送通知类短信（如订单发货通知）。
+        /// 与 AddSmscodeLog 区别：不生成验证码、不做验证码频控、不写缓存；
+        /// 仅落库短信记录，真实发送待接入短信服务商（同 //TODO）。
+        /// </summary>
+        public SmsCodeLog SendSmsNotice(string phone, string content, int sendType = 6)
+        {
+            if (string.IsNullOrWhiteSpace(phone) || string.IsNullOrWhiteSpace(content))
+            {
+                return null;
+            }
+            // 跳过验证码频控：通知类短信不应被"请稍后再试"拦截
+            var model = new SmsCodeLog
+            {
+                SmsCode = string.Empty,
+                Userid = 0,
+                PhoneNum = phone.ParseToLong(),
+                SmsContent = content,
+                SendType = sendType,
+                UserIP = string.Empty,
+                Location = string.Empty
+            };
+            model.Id = Context.Insertable(model).ExecuteReturnSnowflakeId();
+            //TODO 发送短信
+
+            return model;
+        }
     }
 }

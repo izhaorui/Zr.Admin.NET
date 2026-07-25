@@ -23,9 +23,16 @@ namespace ZR.Mall.Model
         public string OrderNo { get; set; }
 
         /// <summary>
-        /// 用户ID 
+        /// 用户ID（游客/匿名下单时为 null，后期接入用户体系后绑定真实用户Id）
         /// </summary>
-        public long UserId { get; set; }
+        public long? UserId { get; set; }
+
+        /// <summary>
+        /// 游客下单手机号（身份锚点的一等公民列，用于 SQL 过滤查询订单，避免解析 AddressSnapshot JSON）。
+        /// 下单时与验证码配对写入，与 AddressSnapshot.Phone 同源。
+        /// </summary>
+        [SugarColumn(Length = 20, IsNullable = true)]
+        public string GuestPhone { get; set; }
 
         /// <summary>
         /// 赠送用户ID
