@@ -20,6 +20,11 @@
     <ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
     <ProjectReference Include="..\ZR.Model\ZR.Model.csproj" />
     <ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
+    <ProjectReference Include="..\ZR.Workflow\ZR.Workflow.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

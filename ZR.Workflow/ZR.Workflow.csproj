@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<NoWarn>1701;1702;1591;1570</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentValidation" Version="11.11.0" />
+		<ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
+		<ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
+	</ItemGroup>
+
+</Project>

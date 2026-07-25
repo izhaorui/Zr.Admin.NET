@@ -14,6 +14,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\ZR.CodeGenerator\ZR.CodeGenerator.csproj" />
 		<ProjectReference Include="..\ZR.Mall\ZR.Mall.csproj" />
+		<ProjectReference Include="..\ZR.Workflow\ZR.Workflow.csproj" />
 		<ProjectReference Include="..\ZR.Service\ZR.Service.csproj" />
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
 	</ItemGroup>

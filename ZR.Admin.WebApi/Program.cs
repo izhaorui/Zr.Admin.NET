@@ -40,7 +40,8 @@ builder.Services.AddValidatorsFromAssemblies(new[]
 {
     typeof(Program).Assembly,
     typeof(PagerInfo).Assembly,
-    typeof(ZR.Mall.Model.Product).Assembly
+    typeof(ZR.Mall.Model.Product).Assembly,
+    typeof(ZR.Workflow.Model.WfFlowDefinition).Assembly
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

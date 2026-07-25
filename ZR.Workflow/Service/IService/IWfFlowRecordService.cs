@@ -1,0 +1,12 @@
+using ZR.Workflow.Model.Dto;
+
+namespace ZR.Workflow.Service.IService
+{
+    /// <summary>
+    /// 审批记录服务
+    /// </summary>
+    public interface IWfFlowRecordService
+    {
+        PagedInfo<WfFlowRecordDto> GetList(WfFlowRecordQueryDto parm);
+    }
+}
