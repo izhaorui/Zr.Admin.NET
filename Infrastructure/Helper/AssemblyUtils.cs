@@ -52,10 +52,13 @@ namespace Infrastructure.Helper
         }
         public static bool IsDerivedFromGenericBaseRepository(this Type? type, Type genericBase)
         {
+            // 改用 FullName 比较，避免 GetGenericTypeByName 经 Assembly.LoadFrom 重复加载程序集
+            // 导致 genericBase 与运行时 Type 不是同一实例、引用相等(==)判断失败，进而误删所有 action。
+            var genericBaseFullName = genericBase.FullName;
             while (type != null && type != typeof(object))
             {
                 var cur = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
-                if (genericBase == cur)
+                if (genericBaseFullName != null && string.Equals(genericBaseFullName, cur.FullName, StringComparison.Ordinal))
                 {
                     return true;
                 }

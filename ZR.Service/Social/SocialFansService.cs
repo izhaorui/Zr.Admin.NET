@@ -15,6 +15,7 @@ namespace ZR.Service.Social
     /// 粉丝
     /// </summary>
     [AppService(ServiceType = typeof(ISocialFansService))]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class SocialFansService : BaseService<SocialFans>, ISocialFansService, IDynamicApi
     {
         /// <summary>

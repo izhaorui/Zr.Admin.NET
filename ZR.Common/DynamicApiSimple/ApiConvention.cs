@@ -126,21 +126,8 @@ class ApiConvention : IApplicationModelConvention
         if (controllerName.EndsWith("Service"))
             controllerName = controllerName[0..^7];
 
-        if (selectorModel is { AttributeRouteModel: not null })
-        {
-            if (!string.IsNullOrWhiteSpace(selectorModel.AttributeRouteModel?.Template))
-            {
-                if (selectorModel.AttributeRouteModel.Template.StartsWith("/"))
-                {
-                    routeTemplate.Append(selectorModel.AttributeRouteModel.Template);
-                }
-                else
-                {
-                    routeTemplate.Append($"{BaseRoute}/{controllerName}/{selectorModel.AttributeRouteModel.Template}");
-                }
-            }
-        }
-        else
+        // 拼接默认路由：BaseRoute/ControllerName/ActionName
+        void AppendDefaultRoute()
         {
             routeTemplate.Append($"{BaseRoute}/{controllerName}");
 
@@ -154,7 +141,31 @@ class ApiConvention : IApplicationModelConvention
                 routeTemplate.Append($"/{RemoveHttpMethodPrefix(actionName)}");
             }
         }
-        
+
+        if (selectorModel is { AttributeRouteModel: not null })
+        {
+            var template = selectorModel.AttributeRouteModel?.Template;
+            if (!string.IsNullOrWhiteSpace(template))
+            {
+                if (template.StartsWith("/"))
+                {
+                    routeTemplate.Append(template);
+                }
+                else
+                {
+                    routeTemplate.Append($"{BaseRoute}/{controllerName}/{template}");
+                }
+                return routeTemplate.ToString();
+            }
+
+            // 空模板（如 [HttpGet]、[HttpPost] 未指定路径）回退到默认路由，
+            // 避免路由退化成只剩命名空间段（原 bug：生成 /Social 而非 /Social/api/SocialFans/Action）
+            AppendDefaultRoute();
+        }
+        else
+        {
+            AppendDefaultRoute();
+        }
 
         return routeTemplate.ToString();
     }

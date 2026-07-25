@@ -243,6 +243,20 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 查询圈子内容列表（文章+动态混合）
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        [HttpGet("circleList")]
+        [AllowAnonymous]
+        public IActionResult GetCircleList([FromQuery] ArticleQueryDto parm)
+        {
+            parm.UserId = HttpContext.GetUId();
+            var response = _ArticleService.GetCircleList(parm);
+            return SUCCESS(response);
+        }
+
+        /// <summary>
         /// 发布文章
         /// </summary>
         /// <returns></returns>

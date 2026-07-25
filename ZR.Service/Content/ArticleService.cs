@@ -201,6 +201,60 @@ namespace ZR.Service.Content
         }
 
         /// <summary>
+        /// 查询圈子内容列表（文章+动态混合，按分类含子分类）
+        /// 用于圈子详情页，统一返回该圈子下所有公开且审核通过的内容，
+        /// 不限制内容类型，并补全点赞/评论数及当前用户是否点赞。
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public PagedInfo<ArticleDto> GetCircleList(ArticleQueryDto parm)
+        {
+            var predicate = Expressionable.Create<Article>();
+            predicate = predicate.And(m => m.Status == "1");
+            predicate = predicate.And(m => m.IsPublic == 1);
+            predicate = predicate.And(m => m.AuditStatus == AuditStatusEnum.Passed);
+            predicate = predicate.AndIF(parm.TopicId != null, m => m.TopicId == parm.TopicId);
+
+            if (parm.CategoryId != null)
+            {
+                var allChildCategory = Context.Queryable<ArticleCategory>()
+                    .ToChildList(m => m.ParentId, parm.CategoryId);
+                var categoryIdList = allChildCategory.Select(x => x.CategoryId).ToArray();
+                predicate = predicate.And(m => categoryIdList.Contains(m.CategoryId));
+            }
+
+            var response = Queryable()
+                .Includes(x => x.CategoryNav)
+                .LeftJoin<SysUser>((m, u) => m.UserId == u.UserId).Filter(null, true)
+                .Where(predicate.ToExpression())
+                .OrderByIF(parm.OrderBy == 1, m => new { m.PraiseNum, m.CommentNum }, OrderByType.Desc)
+                .OrderByIF(parm.OrderBy == 2, m => m.Cid, OrderByType.Desc)
+                .OrderBy(m => m.Cid, OrderByType.Desc)
+                .Select((m, u) => new ArticleDto()
+                {
+                    User = new ArticleUser()
+                    {
+                        Avatar = u.Avatar,
+                        NickName = u.NickName,
+                        Sex = u.Sex,
+                    },
+                }, true)
+                .ToPage(parm);
+
+            if (parm.UserId > 0)
+            {
+                Context.ThenMapper(response.Result, item =>
+                {
+                    item.IsPraise = Context.Queryable<ArticlePraise>()
+                    .Where(f => f.UserId == parm.UserId && f.IsDelete == 0)
+                    .SetContext(scl => scl.ArticleId, () => item.Cid, item).Any() ? 1 : 0;
+                });
+            }
+
+            return response;
+        }
+
+        /// <summary>
         /// 查询我的文章列表
         /// </summary>
         /// <param name="parm"></param>

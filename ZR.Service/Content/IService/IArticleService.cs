@@ -11,6 +11,10 @@ namespace ZR.Service.Content.IService
         PagedInfo<ArticleDto> GetArticleList(ArticleQueryDto parm);
         List<ArticleDto> GetNewArticleList();
         PagedInfo<ArticleDto> GetMonentList(ArticleQueryDto parm);
+        /// <summary>
+        /// 查询圈子内容列表（文章+动态混合，按分类含子分类）
+        /// </summary>
+        PagedInfo<ArticleDto> GetCircleList(ArticleQueryDto parm);
         int TopArticle(Article model);
         int ChangeComment(Article model);
         int ChangeArticlePublic(Article model);
