@@ -20,6 +20,13 @@ namespace ZR.Model.System.Tenant
         public string TenantId { get; set; }
 
         /// <summary>
+        /// 域名绑定：子域名标签（如 acme，对应 acme.shop.com）或租户自定义完整域名（如 acme.com）。
+        /// 用于按访问域名自动解析租户，为空表示未绑定（回退 token/主库）。
+        /// </summary>
+        [SugarColumn(Length = 200)]
+        public string Domain { get; set; }
+
+        /// <summary>
         /// 租户名称
         /// </summary>
         [SugarColumn(Length = 100)]

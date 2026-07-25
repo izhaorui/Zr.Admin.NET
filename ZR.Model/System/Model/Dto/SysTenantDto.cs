@@ -7,6 +7,10 @@ namespace ZR.Model.System.Dto
     {
         public long Id { get; set; }
         public string TenantId { get; set; }
+        /// <summary>
+        /// 域名绑定：子域名标签或完整自定义域名，用于按访问域名解析租户。
+        /// </summary>
+        public string Domain { get; set; }
         public string TenantName { get; set; }
         public string CompanyName { get; set; }
         public string ContactName { get; set; }
@@ -23,6 +27,10 @@ namespace ZR.Model.System.Dto
     {
         public string TenantId { get; set; }
         public string TenantName { get; set; }
+        /// <summary>
+        /// 域名绑定（子域名标签或完整域名），用于按域名查询租户。
+        /// </summary>
+        public string Domain { get; set; }
         public int? Status { get; set; }
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
@@ -31,9 +39,13 @@ namespace ZR.Model.System.Dto
     /// <summary>
     /// 租户开通请求。
     /// </summary>
-    public class TenantProvisionDto
+        public class TenantProvisionDto
     {
         public string TenantId { get; set; }
+        /// <summary>
+        /// 域名绑定（子域标签或完整自定义域名）。留空则默认等于 TenantId（即开即用）。
+        /// </summary>
+        public string Domain { get; set; }
         public string TenantName { get; set; }
         public string CompanyName { get; set; }
         public string ContactName { get; set; }

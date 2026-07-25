@@ -106,7 +106,14 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
                 return ToResponse(ApiResult.Error($"新增租户[{model.TenantId}]失败，租户标识已存在"));
             }
 
-            return SUCCESS(_sysTenantService.Insert(model));
+            if (UserConstants.NOT_UNIQUE.Equals(_sysTenantService.CheckDomainUnique(model.Domain, model.Id)))
+            {
+                return ToResponse(ApiResult.Error($"新增租户失败，域名绑定[{model.Domain}]已被其他租户占用"));
+            }
+
+            var result = _sysTenantService.Insert(model);
+            _sysTenantService.RemoveDomainMapCache();
+            return SUCCESS(result);
         }
 
         /// <summary>
@@ -153,10 +160,16 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
                 return ToResponse(ApiResult.Error($"修改租户[{model.TenantId}]失败，租户标识已存在"));
             }
 
+            if (UserConstants.NOT_UNIQUE.Equals(_sysTenantService.CheckDomainUnique(model.Domain, model.Id)))
+            {
+                return ToResponse(ApiResult.Error($"修改租户失败，域名绑定[{model.Domain}]已被其他租户占用"));
+            }
+
             var response = _sysTenantService.Update(w => w.Id == model.Id && w.DelFlag == 0, it => new SysTenant
             {
                 TenantName = model.TenantName,
                 TenantId = model.TenantId,
+                Domain = model.Domain,
                 Status = model.Status,
                 ExpireTime = model.ExpireTime,
                 Remark = model.Remark,
@@ -164,6 +177,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
                 Update_time = model.Update_time
             });
 
+            _sysTenantService.RemoveDomainMapCache();
             return SUCCESS(response);
         }
 

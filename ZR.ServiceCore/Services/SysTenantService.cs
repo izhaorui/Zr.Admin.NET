@@ -1,6 +1,7 @@
 using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Model;
+using ZR.Common;
 using MiniExcelLibs;
 using System.Text;
 using ZR.Model;
@@ -47,6 +48,7 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.And(x => x.DelFlag == 0);
             predicate = predicate.AndIF(!string.IsNullOrWhiteSpace(parm.TenantId), x => x.TenantId.Contains(parm.TenantId));
             predicate = predicate.AndIF(!string.IsNullOrWhiteSpace(parm.TenantName), x => x.TenantName.Contains(parm.TenantName));
+            predicate = predicate.AndIF(!string.IsNullOrWhiteSpace(parm.Domain), x => x.Domain.Contains(parm.Domain));
             predicate = predicate.AndIF(parm.Status != null, x => x.Status == parm.Status);
             predicate = predicate.AndIF(parm.BeginTime != null, x => x.Create_time >= parm.BeginTime);
             predicate = predicate.AndIF(parm.EndTime != null, x => x.Create_time <= parm.EndTime);
@@ -68,6 +70,56 @@ namespace ZR.ServiceCore.Services
         public SysTenant GetByTenantId(string tenantId)
         {
             return Queryable().First(x => x.TenantId == tenantId && x.DelFlag == 0);
+        }
+
+        private static readonly string TenantDomainMapCacheKey = "TENANT_DOMAIN_MAP";
+
+        /// <summary>
+        /// 获取域名→租户ID映射（平台级缓存，约 10 分钟）。键为租户 Domain 字段（小写），值为 TenantId。
+        /// 仅包含正常状态(Status=0)且已绑定域名的租户。供中间件按访问域名解析租户。
+        /// </summary>
+        public Dictionary<string, string> GetDomainTenantMap()
+        {
+            var map = CacheHelper.GetCache<Dictionary<string, string>>(TenantDomainMapCacheKey);
+            if (map != null)
+            {
+                return map;
+            }
+
+            var list = Queryable().Where(x => x.DelFlag == 0 && x.Status == 0).ToList();
+            map = list
+                .Where(x => !string.IsNullOrWhiteSpace(x.Domain))
+                .ToDictionary(x => x.Domain.Trim().ToLowerInvariant(), x => x.TenantId, StringComparer.OrdinalIgnoreCase);
+
+            CacheHelper.SetCache(TenantDomainMapCacheKey, map, 10);
+            return map;
+        }
+
+        /// <summary>
+        /// 清除域名→租户ID映射缓存。租户增改/停服/注销后调用，使下次请求即时重新加载。
+        /// </summary>
+        public void RemoveDomainMapCache()
+        {
+            CacheHelper.Remove(TenantDomainMapCacheKey);
+        }
+
+        /// <summary>
+        /// 校验域名(Domain)全局唯一。空域名视为允许（不绑定）。
+        /// </summary>
+        public string CheckDomainUnique(string domain, long excludeId)
+        {
+            if (string.IsNullOrWhiteSpace(domain))
+            {
+                return UserConstants.UNIQUE;
+            }
+
+            var info = Queryable().First(x => x.Domain == domain.Trim() && x.DelFlag == 0);
+            if (info != null && info.Id != excludeId)
+            {
+                return UserConstants.NOT_UNIQUE;
+            }
+
+            return UserConstants.UNIQUE;
         }
 
         public void CheckTenant(string tenantId)
@@ -119,6 +171,13 @@ namespace ZR.ServiceCore.Services
             result.TenantId = tenantId;
             AppendStep(result, "validate", true, "参数校验通过");
 
+            // 域名绑定：留空默认等于租户标识（即开即用）；提供则校验全局唯一
+            var domain = string.IsNullOrWhiteSpace(dto.Domain) ? tenantId : dto.Domain.Trim();
+            if (UserConstants.NOT_UNIQUE.Equals(CheckDomainUnique(domain, 0)))
+            {
+                throw new CustomException($"域名绑定[{domain}]已被其他租户占用");
+            }
+
             EnsureDbConfigExists(tenantId);
             AppendStep(result, "ensure-db-config", true, $"检测到租户数据库配置[{tenantId}]");
 
@@ -134,6 +193,7 @@ namespace ZR.ServiceCore.Services
                 CompanyName = dto.CompanyName,
                 ContactName = dto.ContactName,
                 ContactPhone = dto.ContactPhone,
+                Domain = domain,
                 Status = dto.EnableAfterInit ? 0 : 1,
                 ExpireTime = dto.ExpireTime,
                 DelFlag = 0,
@@ -143,6 +203,7 @@ namespace ZR.ServiceCore.Services
             };
 
             Insert(tenant);
+            RemoveDomainMapCache();
             AppendStep(result, "create-tenant", true, "租户记录创建成功");
 
             if (dto.InitializeNow)
@@ -300,6 +361,7 @@ namespace ZR.ServiceCore.Services
             tenant.Update_by = operatorName;
             tenant.Update_time = DateTime.Now;
             Update(tenant, it => new { it.Status, it.Remark, it.Update_by, it.Update_time });
+            RemoveDomainMapCache();
 
             var suspendReason = string.IsNullOrEmpty(remark) ? "" : $"，原因：{remark}";
             SendTenantAdminMessage(normalizedTenantId, $"您的租户已暂停服务{suspendReason}，如有疑问请联系平台管理员。");
@@ -411,7 +473,8 @@ namespace ZR.ServiceCore.Services
                 Update(tenant, it => new { it.Status, it.Remark, it.Update_by, it.Update_time });
                 AppendStep(result, "disable-tenant", true, "租户已停服（保留记录）");
             }
-            
+
+            RemoveDomainMapCache();
             result.Success = true;
             result.Message = "租户删除完成";
             return result;

@@ -179,5 +179,30 @@ namespace Infrastructure
                 || string.Equals(useTenant, "enabled", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// 租户根域名列表（如 shop.com）。子域名解析时据此剥离出子域标签（a.shop.com → a）。
+        /// 在 appsettings.json 的 TenantSettings:RootDomains 配置。
+        /// </summary>
+        public static string[] GetTenantRootDomains()
+        {
+            var arr = Configuration.GetSection("TenantSettings:RootDomains").Get<string[]>();
+            return arr ?? [];
+        }
+
+        /// <summary>
+        /// 保留子域名（如 www/admin/api/doc）。这些子域名不解析为租户，维持主库/原机制。
+        /// 未配置时返回默认值 www/admin/api/doc。
+        /// </summary>
+        public static string[] GetTenantReservedSubDomains()
+        {
+            var arr = Configuration.GetSection("TenantSettings:ReservedSubDomains").Get<string[]>();
+            if (arr != null && arr.Length > 0)
+            {
+                return arr;
+            }
+
+            return new[] { "www", "admin", "api", "doc" };
+        }
+
     }
 }

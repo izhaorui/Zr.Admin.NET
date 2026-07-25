@@ -34,6 +34,25 @@ namespace ZR.ServiceCore.Services
 		SysTenant GetByTenantId(string tenantId);
 
 		/// <summary>
+		/// 获取域名→租户ID映射（平台级缓存）。键为租户 Domain 字段（小写，子域标签或完整域名），值为 TenantId。
+		/// 供中间件按访问域名解析租户使用。
+		/// </summary>
+		Dictionary<string, string> GetDomainTenantMap();
+
+		/// <summary>
+		/// 清除域名→租户ID映射缓存（租户增改/停服/注销后调用）。
+		/// </summary>
+		void RemoveDomainMapCache();
+
+		/// <summary>
+		/// 校验域名(Domain)全局唯一。
+		/// </summary>
+		/// <param name="domain">待校验域名（子域标签或完整域名）</param>
+		/// <param name="excludeId">排除的租户主键（编辑自身时传入）</param>
+		/// <returns>UserConstants.UNIQUE / NOT_UNIQUE</returns>
+		string CheckDomainUnique(string domain, long excludeId);
+
+		/// <summary>
 		/// 租户开通
 		/// </summary>
 		/// <param name="dto"></param>
