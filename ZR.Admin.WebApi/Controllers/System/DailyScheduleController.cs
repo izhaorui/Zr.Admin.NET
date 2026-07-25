@@ -22,7 +22,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 查询日程列表
         /// </summary>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "dailyschedule:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult QueryDailySchedule([FromQuery] DailyScheduleQueryDto parm)
         {
             var userId = HttpContext.GetUId();
@@ -34,7 +34,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 查询统计（总/未完成/今日到期/已逾期）
         /// </summary>
         [HttpGet("stats")]
-        [ActionPermissionFilter(Permission = "dailyschedule:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult GetStats()
         {
             var userId = HttpContext.GetUId();
@@ -45,7 +45,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 查询当前用户未完成日程列表（供消息中心日程 tab 打开时拉取，不写消息）
         /// </summary>
         [HttpGet("reminders")]
-        [ActionPermissionFilter(Permission = "dailyschedule:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult GetReminders()
         {
             var userId = HttpContext.GetUId();
@@ -56,7 +56,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 查询详情
         /// </summary>
         [HttpGet("{id}")]
-        [ActionPermissionFilter(Permission = "dailyschedule:query")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult GetDailySchedule(long id)
         {
             var userId = HttpContext.GetUId();
@@ -68,7 +68,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 新增日程
         /// </summary>
         [HttpPost]
-        [ActionPermissionFilter(Permission = "dailyschedule:add")]
+        [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "日程新增", BusinessType = BusinessType.INSERT)]
         public IActionResult AddDailySchedule([FromBody] DailyScheduleDto parm)
         {
@@ -86,7 +86,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 修改日程
         /// </summary>
         [HttpPut]
-        [ActionPermissionFilter(Permission = "dailyschedule:edit")]
+        [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "日程修改", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdateDailySchedule([FromBody] DailyScheduleDto parm)
         {
@@ -104,7 +104,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 标记完成 / 取消完成
         /// </summary>
         [HttpPut("changeStatus")]
-        [ActionPermissionFilter(Permission = "dailyschedule:edit")]
+        [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "日程状态切换", BusinessType = BusinessType.UPDATE)]
         public IActionResult ChangeStatus([FromBody] DailyScheduleStatusDto parm)
         {
@@ -120,7 +120,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 删除日程
         /// </summary>
         [HttpDelete("{ids}")]
-        [ActionPermissionFilter(Permission = "dailyschedule:remove")]
+        [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "日程删除", BusinessType = BusinessType.DELETE)]
         public IActionResult DeleteDailySchedule(string ids)
         {
