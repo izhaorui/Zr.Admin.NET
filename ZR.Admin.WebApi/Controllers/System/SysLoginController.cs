@@ -135,13 +135,30 @@ namespace ZR.Admin.WebApi.Controllers.System
             // 数据权限部门 ID 缓存（与权限缓存统一管理，前端登录/刷新后自动刷新）
             var userRoles = roleService.SelectUserRoleListByUserId(userId);
             CacheService.SetDataScopeDeptIds(userId, ComputeDataScopeDeptIds(userRoles, user.DeptId));
+
+            // 登录后全局品牌信息（顶栏/侧边栏展示租户Logo等），无需额外请求
+            object tenant = null;
+            if (App.IsTenantEnabled())
+            {
+                var tid = App.GetCurrentTenantId();
+                if (!string.IsNullOrWhiteSpace(tid))
+                {
+                    var t = sysTenantService.GetByTenantId(tid);
+                    if (t != null)
+                    {
+                        tenant = new { t.TenantId, t.TenantName, t.Domain, t.Logo };
+                    }
+                }
+            }
+
             return SUCCESS(new
             {
                 user = user.Adapt<SysUserDto>(),
                 roles,
                 permissions,
                 isDefaultModifyPwd = InitPassword(user.PwdUpdateTime),
-                isPasswordExpired = CheckPasswordExpire(user.PwdUpdateTime)
+                isPasswordExpired = CheckPasswordExpire(user.PwdUpdateTime),
+                tenant
             });
         }
 
@@ -209,7 +226,23 @@ namespace ZR.Admin.WebApi.Controllers.System
                 ? sysTenantService.GetLoginTenantList()
                 : new List<TenantLoginInfoDto>();
 
-            return SUCCESS(new { useTenant, tenants });
+            // 登录页品牌化：按访问子域名解析出的当前租户（TenantResolveMiddleware 已写入 TenantContext.CurrentTenantId）。
+            // 用于登录页直接展示对应租户 Logo，无需登录即可获取。
+            object currentTenant = null;
+            if (useTenant)
+            {
+                var currentTenantId = App.GetCurrentTenantId();
+                if (!string.IsNullOrWhiteSpace(currentTenantId))
+                {
+                    var t = sysTenantService.GetByTenantId(currentTenantId);
+                    if (t != null)
+                    {
+                        currentTenant = new { t.TenantId, t.TenantName, t.Domain, t.Logo };
+                    }
+                }
+            }
+
+            return SUCCESS(new { useTenant, tenants, currentTenant });
         }
 
         /// <summary>

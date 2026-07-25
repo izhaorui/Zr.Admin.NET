@@ -39,6 +39,13 @@ namespace ZR.Model.System.Tenant
         public string CompanyName { get; set; }
 
         /// <summary>
+        /// 企业Logo图片地址（相对路径或完整URL），用于登录页/后台顶栏展示各自品牌。
+        /// 由前端 UploadImage 上传到文件服务后回填，为空表示使用系统默认Logo。
+        /// </summary>
+        [SugarColumn(Length = 500)]
+        public string Logo { get; set; }
+
+        /// <summary>
         /// 联系人
         /// </summary>
         [SugarColumn(Length = 50)]

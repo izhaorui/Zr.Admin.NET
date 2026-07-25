@@ -194,6 +194,7 @@ namespace ZR.ServiceCore.Services
                 ContactName = dto.ContactName,
                 ContactPhone = dto.ContactPhone,
                 Domain = domain,
+                Logo = dto.Logo,
                 Status = dto.EnableAfterInit ? 0 : 1,
                 ExpireTime = dto.ExpireTime,
                 DelFlag = 0,
@@ -730,6 +731,8 @@ namespace ZR.ServiceCore.Services
             {
                 TenantId = tenant.TenantId,
                 TenantName = tenant.TenantName,
+                Domain = tenant.Domain,
+                Logo = tenant.Logo,
                 CompanyName = tenant.CompanyName,
                 ContactName = tenant.ContactName,
                 ContactPhone = tenant.ContactPhone,
@@ -754,7 +757,9 @@ namespace ZR.ServiceCore.Services
                 .Select(x => new TenantLoginInfoDto
                 {
                     TenantId = x.TenantId,
-                    TenantName = x.TenantName
+                    TenantName = x.TenantName,
+                    Domain = x.Domain,
+                    Logo = x.Logo
                 })
                 .ToList();
         }

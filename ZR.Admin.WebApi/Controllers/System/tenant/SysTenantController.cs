@@ -170,6 +170,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
                 TenantName = model.TenantName,
                 TenantId = model.TenantId,
                 Domain = model.Domain,
+                Logo = model.Logo,
                 Status = model.Status,
                 ExpireTime = model.ExpireTime,
                 Remark = model.Remark,

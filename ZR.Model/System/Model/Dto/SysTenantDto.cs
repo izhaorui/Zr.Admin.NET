@@ -11,6 +11,10 @@ namespace ZR.Model.System.Dto
         /// 域名绑定：子域名标签或完整自定义域名，用于按访问域名解析租户。
         /// </summary>
         public string Domain { get; set; }
+        /// <summary>
+        /// 企业Logo图片地址（相对路径或完整URL）。
+        /// </summary>
+        public string Logo { get; set; }
         public string TenantName { get; set; }
         public string CompanyName { get; set; }
         public string ContactName { get; set; }
@@ -31,6 +35,10 @@ namespace ZR.Model.System.Dto
         /// 域名绑定（子域名标签或完整域名），用于按域名查询租户。
         /// </summary>
         public string Domain { get; set; }
+        /// <summary>
+        /// 企业Logo图片地址（用于按Logo查询租户，一般不作为筛选项）。
+        /// </summary>
+        public string Logo { get; set; }
         public int? Status { get; set; }
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
@@ -46,6 +54,10 @@ namespace ZR.Model.System.Dto
         /// 域名绑定（子域标签或完整自定义域名）。留空则默认等于 TenantId（即开即用）。
         /// </summary>
         public string Domain { get; set; }
+        /// <summary>
+        /// 企业Logo图片地址（相对路径或完整URL）。留空则不设置Logo。
+        /// </summary>
+        public string Logo { get; set; }
         public string TenantName { get; set; }
         public string CompanyName { get; set; }
         public string ContactName { get; set; }
@@ -169,6 +181,8 @@ namespace ZR.Model.System.Dto
         public string ContactName { get; set; }
         public string ContactPhone { get; set; }
         public int TenantStatus { get; set; }
+        public string Domain { get; set; }
+        public string Logo { get; set; }
         public DateTime? ExpireTime { get; set; }
         public int? DaysToExpire { get; set; }
         public bool ExpireSoon { get; set; }
@@ -188,6 +202,14 @@ namespace ZR.Model.System.Dto
     {
         public string TenantId { get; set; }
         public string TenantName { get; set; }
+        /// <summary>
+        /// 子域名标签或完整域名，登录页可用于按子域匹配当前租户。
+        /// </summary>
+        public string Domain { get; set; }
+        /// <summary>
+        /// 企业Logo图片地址（登录页品牌展示）。
+        /// </summary>
+        public string Logo { get; set; }
     }
 
     /// <summary>
