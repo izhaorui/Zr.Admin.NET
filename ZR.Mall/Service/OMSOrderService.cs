@@ -1,7 +1,7 @@
 using Infrastructure.Extensions;
-using SqlSugar.IOC;
 using ZR.Common;
 using ZR.Mall.Enum;
+using ZR.Model;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -17,11 +17,18 @@ namespace ZR.Mall.Service
     {
         private ISkusService _shopSkusService;
         private readonly ISmsCodeLogService _smsCodeLogService;
+        private readonly IOMSPaymentService _paymentService;
+        private readonly ISysUserMsgService _msgService;
+        private readonly IOMSOrderLogService _orderLogService;
 
-        public OMSOrderService(ISkusService shopSkusService, ISmsCodeLogService smsCodeLogService)
+        public OMSOrderService(ISkusService shopSkusService, ISmsCodeLogService smsCodeLogService, IOMSPaymentService paymentService,
+            ISysUserMsgService msgService, IOMSOrderLogService orderLogService)
         {
             _shopSkusService = shopSkusService;
             _smsCodeLogService = smsCodeLogService;
+            _paymentService = paymentService;
+            _msgService = msgService;
+            _orderLogService = orderLogService;
             // 不再固定 MallDb：商城实体按其 [Tenant("MallDb")] 属性（非多租户模式）或
             // 当前解析租户（多租户模式，含子域名解析的匿名请求）路由到对应库，
             // 由 BaseService 默认逻辑处理，保证匿名写入与登录读取落到同一租户库。
@@ -201,6 +208,7 @@ namespace ZR.Mall.Service
                         .SetColumns(s => new Skus
                         {
                             Stock = s.Stock - item.Quantity,
+                            LockStock = s.LockStock + item.Quantity,
                             SalesVolume = s.SalesVolume + item.Quantity,
                             Version = s.Version + 1
                         })
@@ -240,10 +248,9 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 模拟支付：待付款 → 待发货，记录支付时间。
-        /// 校验订单号+手机号双重匹配（游客无账号，手机号即身份锚点）。
+        /// 模拟支付（游客直接支付）：待付款 → 待发货，记录支付时间。
+        /// 校验订单号+手机号双重匹配（游客无账号，手机号即身份锚点）后调用 PayOrderByOrderNo。
         /// 幂等：已支付（待发货及之后）直接返回成功，不重复变更。
-        /// 后期接入真实支付（微信/支付宝）时，将此方法改为支付回调里调用即可，状态机不变。
         /// </summary>
         public OMSOrder PayOrder(string orderNo, string phone)
         {
@@ -252,7 +259,22 @@ namespace ZR.Mall.Service
             {
                 throw new CustomException("订单不存在或无权限");
             }
-            // 幂等：已支付直接返回
+            return PayOrderByOrderNo(orderNo);
+        }
+
+        /// <summary>
+        /// 按订单号完成支付（待付款 → 待发货），记录支付时间与支付方式/流水号。
+        /// 供游客直接支付（PayOrder 手机号鉴权后）与支付渠道异步回调（微信/支付宝 notify）调用。
+        /// 幂等 + 条件更新（防并发重复支付 / 支付与取消竞态）。状态机不变。
+        /// </summary>
+        public OMSOrder PayOrderByOrderNo(string orderNo, Enum.PayTypeEnum payType = Enum.PayTypeEnum.Mock, string transactionId = null, string callbackRaw = null)
+        {
+            var order = Queryable().First(x => x.OrderNo == orderNo && x.IsDelete == 0);
+            if (order == null)
+            {
+                throw new CustomException("订单不存在");
+            }
+            // 幂等：已支付直接返回（支付方式/流水号不覆盖，避免回调重复写入）
             if (order.OrderStatus == Enum.OrderStatusEnum.TobeShipped ||
                 order.OrderStatus == Enum.OrderStatusEnum.Shipped ||
                 order.OrderStatus == Enum.OrderStatusEnum.Completed)
@@ -270,7 +292,9 @@ namespace ZR.Mall.Service
                 .SetColumns(it => new OMSOrder
                 {
                     OrderStatus = Enum.OrderStatusEnum.TobeShipped,
-                    PayTime = dbDate
+                    PayTime = dbDate,
+                    PayType = (int)payType,
+                    TransactionId = transactionId
                 })
                 .Where(it => it.OrderNo == orderNo && it.OrderStatus == Enum.OrderStatusEnum.None && it.IsDelete == 0)
                 .ExecuteCommand();
@@ -280,6 +304,12 @@ namespace ZR.Mall.Service
             }
             order.OrderStatus = Enum.OrderStatusEnum.TobeShipped;
             order.PayTime = dbDate;
+            order.PayType = (int)payType;
+            order.TransactionId = transactionId;
+            // 写入/更新支付流水（订单快照仅保留最近一次支付，完整生命周期以 oms_payment 为准）
+            _paymentService.UpsertPaid(order, payType, transactionId, dbDate, callbackRaw);
+            _orderLogService.AddLog(order.Id, order.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.TobeShipped, "PAY", order.GuestPhone, "支付成功");
+            NotifyBuyer(order, "支付成功", $"您的订单({order.OrderNo})已支付成功，等待发货。");
             return order;
         }
 
@@ -349,7 +379,9 @@ namespace ZR.Mall.Service
                     .ToList();
                 foreach (var id in cancelled)
                 {
+                    var o = db.Queryable<OMSOrder>().First(x => x.Id == id);
                     RestoreStock(id);
+                    _orderLogService.AddLog(id, o?.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.Cancel, "EXPIRE", "system", "超时未支付自动关闭并回补库存");
                 }
                 closed = affected;
             });
@@ -377,6 +409,7 @@ namespace ZR.Mall.Service
                 throw new CustomException("仅待付款/待发货状态的订单可取消");
             }
 
+            var fromStatus = (int)order.OrderStatus;
             var tran = UseTran(() =>
             {
                 Update(x => x.Id == id, it => new OMSOrder
@@ -390,6 +423,8 @@ namespace ZR.Mall.Service
             {
                 throw new CustomException("取消订单失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
+            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Cancel, "CANCEL", null, "取消订单并回补库存");
+            NotifyBuyer(order, "订单已取消", $"您的订单({order.OrderNo})已取消，占用库存已释放。");
             return 1;
         }
 
@@ -416,12 +451,15 @@ namespace ZR.Mall.Service
                         continue; // 仅跳过不可取消的订单，不影响其余
                     }
 
+                    var fromStatus = (int)order.OrderStatus;
                     Update(x => x.Id == id, it => new OMSOrder
                     {
                         OrderStatus = Enum.OrderStatusEnum.Cancel,
                         CancelTime = dbDate
                     });
                     RestoreStock(order.Id);
+                    _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)OrderStatusEnum.Cancel, "CANCEL", null, "批量取消并回补库存");
+                    NotifyBuyer(order, "订单已取消", $"您的订单({order.OrderNo})已取消，占用库存已释放。");
                     count++;
                 }
             });
@@ -449,6 +487,7 @@ namespace ZR.Mall.Service
                 throw new CustomException("该订单状态不可退款");
             }
 
+            var fromStatus = (int)order.OrderStatus;
             var tran = UseTran(() =>
             {
                 Update(x => x.OrderNo == model.OrderNo, it => new OMSOrder
@@ -462,6 +501,8 @@ namespace ZR.Mall.Service
             {
                 throw new CustomException("退款失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
+            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Closed, "REFUND", null, "订单退款并回补库存");
+            NotifyBuyer(order, "订单已退款", $"您的订单({order.OrderNo})已退款，款项将原路退回，库存已回补。");
             return 1;
         }
 
@@ -473,10 +514,39 @@ namespace ZR.Mall.Service
             var items = Context.Queryable<OMSOrderItem>().Where(i => i.OrderId == orderId).ToList();
             foreach (var it in items)
             {
+                // 回补可售库存，并释放对应的锁定库存（IIF 防负：已发货出库释放过的保持 0）
                 Context.Updateable<Skus>()
-                    .SetColumns(s => new Skus { Stock = s.Stock + it.Quantity })
+                    .SetColumns(s => new Skus
+                    {
+                        Stock = s.Stock + it.Quantity,
+                        LockStock = SqlFunc.IIF(s.LockStock - it.Quantity < 0, 0, s.LockStock - it.Quantity)
+                    })
                     .Where(s => s.SkuId == it.SkuId)
                     .ExecuteCommand();
+            }
+        }
+
+        /// <summary>
+        /// 通知买家订单变化：有账号(userId)走站内信(IMessageNotifier 自动推送)，游客降级为短信。
+        /// 异常仅记录，不影响主流程。
+        /// </summary>
+        private void NotifyBuyer(OMSOrder order, string title, string content)
+        {
+            if (order == null) return;
+            try
+            {
+                if (order.UserId.HasValue)
+                {
+                    _msgService.AddSysUserMsg(order.UserId.Value, $"[{title}] {content}", UserMsgType.ORDER);
+                }
+                else if (!string.IsNullOrWhiteSpace(order.GuestPhone))
+                {
+                    _smsCodeLogService.SendSmsNotice(order.GuestPhone, $"[{title}] {content}", 6);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 买家通知失败(OrderNo={order.OrderNo}): {ex.Message}");
             }
         }
 
@@ -509,25 +579,26 @@ namespace ZR.Mall.Service
                 DeliveryStatus = DeliveryStatusEnum.Delivering, // 已发货
                 ShipTime = dbDate
             });
-            // 发货成功 → 短信通知买家（游客无账号，走短信；失败不阻断发货）
+            // 发货成功 → 释放锁定库存 + 写日志 + 通知买家（游客短信 / 有账号站内信）
             if (result > 0)
             {
                 try
                 {
-                    var phone = await Queryable()
-                        .Where(w => w.OrderNo == model.OrderNo)
-                        .Select(w => w.GuestPhone)
-                        .FirstAsync();
-                    if (!string.IsNullOrWhiteSpace(phone))
+                    var items = Context.Queryable<OMSOrderItem>().Where(i => i.OrderId == model.Id).ToList();
+                    foreach (var it in items)
                     {
-                        var content = $"您的订单({model.OrderNo})已发货，{model.DeliveryCompany} 运单号 {model.DeliveryNo}，请留意查收。";
-                        _smsCodeLogService.SendSmsNotice(phone, content, 6);
+                        Context.Updateable<Skus>()
+                            .SetColumns(s => new Skus { LockStock = SqlFunc.IIF(s.LockStock - it.Quantity < 0, 0, s.LockStock - it.Quantity) })
+                            .Where(s => s.SkuId == it.SkuId)
+                            .ExecuteCommand();
                     }
+                    _orderLogService.AddLog(model.Id, model.OrderNo, (int)OrderStatusEnum.TobeShipped, (int)OrderStatusEnum.Shipped, "DELIVERY", null, $"{model.DeliveryCompany} {model.DeliveryNo}");
+                    NotifyBuyer(model, "订单已发货", $"您的订单({model.OrderNo})已发货，{model.DeliveryCompany} 运单号 {model.DeliveryNo}，请留意查收。");
                 }
                 catch (System.Exception ex)
                 {
-                    // 通知异常仅记录，不影响发货结果
-                    Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 发货通知发送失败(OrderNo={model.OrderNo}): {ex.Message}");
+                    // 库存/通知异常仅记录，不影响发货结果
+                    Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 发货后处理失败(OrderNo={model.OrderNo}): {ex.Message}");
                 }
             }
             return result;

@@ -7,11 +7,12 @@
 		<NoWarn>1701;1702;1591;1570</NoWarn>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="FluentValidation" Version="11.11.0" />
-		<PackageReference Include="Quartz" Version="3.18.1" />
-		<ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
-		<ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="Quartz" Version="3.18.1" />
+    <PackageReference Include="SKIT.FlurlHttpClient.Wechat.TenpayV3" Version="3.16.0" />
+    <ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
+    <ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
+  </ItemGroup>
 
 </Project>

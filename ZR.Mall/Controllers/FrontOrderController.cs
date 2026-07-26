@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 using ZR.Common;
 using ZR.Mall.Model.Dto;
+using ZR.Mall.Payment;
 using ZR.Mall.Service.IService;
 using ZR.Model.Models;
 using ZR.ServiceCore.Services;
@@ -22,11 +23,15 @@ namespace ZR.Mall.Controllers
     {
         private readonly IOMSOrderService _OMSOrderService;
         private readonly ISmsCodeLogService _smsCodeLogService;
+        private readonly WechatPayService _wechatPayService;
+        private readonly IOMSPaymentService _paymentService;
 
-        public FrontOrderController(IOMSOrderService OMSOrderService, ISmsCodeLogService smsCodeLogService)
+        public FrontOrderController(IOMSOrderService OMSOrderService, ISmsCodeLogService smsCodeLogService, WechatPayService wechatPayService, IOMSPaymentService paymentService)
         {
             _OMSOrderService = OMSOrderService;
             _smsCodeLogService = smsCodeLogService;
+            _wechatPayService = wechatPayService;
+            _paymentService = paymentService;
         }
 
         /// <summary>
@@ -66,19 +71,77 @@ namespace ZR.Mall.Controllers
         }
 
         /// <summary>
-        /// 模拟支付（待付款 → 待发货）。
+        /// 发起支付。
         /// 鉴权：订单号 + 下单手机号双重匹配（订单号仅下单者可见，无需再发验证码，保证支付流程顺畅）。
-        /// 后期接入真实支付时，此接口改为发起支付，状态流转移到支付回调。
+        /// - WechatPay:Enabled=true：创建微信 H5 预付单，返回 h5Url，状态流转在微信异步回调（wechat/notify）完成。
+        /// - WechatPay:Enabled=false：保留模拟支付（开发/联调），直接 待付款 → 待发货。
         /// </summary>
         [HttpPost("pay")]
-        public IActionResult PayOrder([FromBody] FrontPayOrderDto dto)
+        public async Task<IActionResult> PayOrder([FromBody] FrontPayOrderDto dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.OrderNo) || string.IsNullOrWhiteSpace(dto.Phone))
             {
                 return ToResponse(ResultCode.PARAM_ERROR, "参数不完整");
             }
-            var order = _OMSOrderService.PayOrder(dto.OrderNo, dto.Phone);
-            return SUCCESS(new { order.OrderNo, order.OrderStatus, order.PayTime, order.PayAmount });
+            if (!_wechatPayService.Enabled)
+            {
+                // 模拟支付通道（开发环境）
+                var mockOrder = _OMSOrderService.PayOrder(dto.OrderNo, dto.Phone);
+                return SUCCESS(new { mockOrder.OrderNo, mockOrder.OrderStatus, mockOrder.PayType, mockOrder.PayTime, mockOrder.PayAmount });
+            }
+
+            // 真实支付：校验归属与状态后创建微信 H5 预付单
+            var order = _OMSOrderService.Queryable()
+                .Includes(x => x.Items)
+                .Where(x => x.OrderNo == dto.OrderNo && x.IsDelete == 0)
+                .First();
+            if (order == null || order.GuestPhone != dto.Phone)
+            {
+                return ToResponse(ResultCode.FAIL, "订单不存在或无权限");
+            }
+            if (order.OrderStatus != ZR.Mall.Enum.OrderStatusEnum.None)
+            {
+                return ToResponse(ResultCode.FAIL, "订单当前状态不可支付");
+            }
+            var desc = order.Items?.FirstOrDefault()?.ProductName ?? "商城订单";
+            if (order.Items?.Count > 1) desc += $" 等{order.Items.Count}件商品";
+            var ip = HttpContextExtension.GetClientUserIp(HttpContext);
+            var prepay = await _wechatPayService.CreateH5PayAsync(order.OrderNo, desc, order.PayAmount, ip);
+            // 记录预支付流水（状态=Prepay），支付成功回调时更新为 Paid
+            _paymentService.CreatePrepay(order, ZR.Mall.Enum.PayTypeEnum.Wechat, prepay.H5Url);
+            return SUCCESS(new { order.OrderNo, order.OrderStatus, order.PayAmount, prepay.H5Url });
+        }
+
+        /// <summary>
+        /// 微信支付结果异步回调（微信服务器调用，验签+解密后按订单号完成支付）。
+        /// 按微信规范：接收成功返回 200 {code:SUCCESS}；验签失败返回 400 FAIL 触发微信重推。
+        /// </summary>
+        [HttpPost("wechat/notify")]
+        public async Task<IActionResult> WechatPayNotify()
+        {
+            string timestamp = Request.Headers["Wechatpay-Timestamp"];
+            string nonce = Request.Headers["Wechatpay-Nonce"];
+            string signature = Request.Headers["Wechatpay-Signature"];
+            string serial = Request.Headers["Wechatpay-Serial"];
+            string body;
+            using (var reader = new StreamReader(Request.Body))
+            {
+                body = await reader.ReadToEndAsync();
+            }
+            try
+            {
+                var ok = _wechatPayService.HandleNotify(timestamp, nonce, signature, serial, body);
+                if (ok)
+                {
+                    return new JsonResult(new { code = "SUCCESS", message = "成功" });
+                }
+                return StatusCode(400, new { code = "FAIL", message = "验签失败" });
+            }
+            catch (Exception ex)
+            {
+                // 业务异常（如订单不存在）也返回 FAIL 让微信重推，便于排查
+                return StatusCode(500, new { code = "FAIL", message = ex.Message });
+            }
         }
 
         /// <summary>

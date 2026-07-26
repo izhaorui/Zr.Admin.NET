@@ -76,6 +76,20 @@ namespace ZR.Mall.Model
         public DateTime? PayTime { get; set; }
 
         /// <summary>
+        /// 支付类型：0->模拟支付；1->微信H5；2->支付宝（预留）。
+        /// 区分真实付款与开发联调的模拟单，用于对账与排查。默认 0。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0", IsNullable = true)]
+        public int? PayType { get; set; }
+
+        /// <summary>
+        /// 第三方支付流水号（微信 transaction_id；模拟支付为空）。
+        /// 微信退款/对账需凭此号，回调时写入。
+        /// </summary>
+        [SugarColumn(Length = 64, IsNullable = true)]
+        public string TransactionId { get; set; }
+
+        /// <summary>
         /// 取消时间 
         /// </summary>
         public DateTime? CancelTime { get; set; }

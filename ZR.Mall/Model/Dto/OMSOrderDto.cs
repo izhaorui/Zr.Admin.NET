@@ -43,6 +43,12 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "付款金额")]
         public decimal PayAmount { get; set; }
 
+        [ExcelColumn(Name = "支付方式")]
+        public int? PayType { get; set; }
+
+        [ExcelColumn(Name = "支付流水号")]
+        public string TransactionId { get; set; }
+
         [ExcelColumn(Name = "订单状态", Ignore = true)]
         public int? OrderStatus { get; set; }
 

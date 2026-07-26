@@ -94,7 +94,7 @@ namespace ZR.Mall.Controllers
         {
             var idArr = Tools.SplitAndConvert<long>(ids);
 
-            return ToResponse(_ShopBrandService.Delete(idArr, "删除品牌表"));
+            return ToResponse(_ShopBrandService.DeleteBrand(idArr));
         }
 
         /// <summary>

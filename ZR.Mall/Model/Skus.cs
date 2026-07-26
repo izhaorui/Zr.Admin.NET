@@ -28,10 +28,18 @@ namespace ZR.Mall.Model
         public decimal Price { get; set; }
 
         /// <summary>
-        /// 库存 
+        /// 库存（可售库存 = 总库存 - 锁定库存；下单即扣减可售，发货不重复扣）
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public int Stock { get; set; }
+
+        /// <summary>
+        /// 锁定库存：已下单（含已支付待发货）但未实际出库占用的库存量。
+        /// 下单 +qty，取消/超时回补 -qty，发货出库释放 -qty；始终 ≥ 0。
+        /// 用于区分“可售”与“已锁定（未出库）”，避免超卖与库存口径混乱。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int LockStock { get; set; }
 
         /// <summary>
         /// 销量

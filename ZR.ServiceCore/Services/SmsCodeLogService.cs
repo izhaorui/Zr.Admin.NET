@@ -1,5 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Org.BouncyCastle.Pqc.Crypto.Lms;
 using ZR.Infrastructure.Helper;
 using ZR.Model;
 using ZR.Model.Dto;
@@ -81,7 +82,7 @@ namespace ZR.ServiceCore.Services
             //TODO 发送验证码
 
             CacheService.SetPhoneCode(model.PhoneNum.ToString(), smsCode);
-
+            Console.WriteLine(smsContent);
             return model;
         }
 
@@ -109,7 +110,7 @@ namespace ZR.ServiceCore.Services
             };
             model.Id = Context.Insertable(model).ExecuteReturnSnowflakeId();
             //TODO 发送短信
-
+            
             return model;
         }
     }
