@@ -69,5 +69,31 @@ namespace ZR.Workflow.Controllers
             _engine.Reject(parm.TaskId, parm.Opinion, userName);
             return SUCCESS(1);
         }
+
+        /// <summary>
+        /// 转办
+        /// </summary>
+        [HttpPost("transfer")]
+        [ActionPermissionFilter(Permission = "workflow:task:transfer")]
+        [Log(Title = "转办", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Transfer([FromBody] WfTransferInput parm)
+        {
+            var userName = HttpContext.GetName();
+            _engine.Transfer(parm.TaskId, parm.TargetUser, parm.Opinion, userName);
+            return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 加签
+        /// </summary>
+        [HttpPost("addsign")]
+        [ActionPermissionFilter(Permission = "workflow:task:addsign")]
+        [Log(Title = "加签", BusinessType = BusinessType.UPDATE)]
+        public IActionResult AddSign([FromBody] WfAddSignInput parm)
+        {
+            var userName = HttpContext.GetName();
+            _engine.AddSign(parm.TaskId, parm.Users, parm.Opinion, userName);
+            return SUCCESS(1);
+        }
     }
 }

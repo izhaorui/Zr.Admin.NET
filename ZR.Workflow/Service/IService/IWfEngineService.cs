@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ZR.Workflow.Model;
 
 namespace ZR.Workflow.Service.IService
@@ -26,5 +27,15 @@ namespace ZR.Workflow.Service.IService
         /// 撤回（仅首节点未处理时）
         /// </summary>
         void Withdraw(long instanceId, string operatorName);
+
+        /// <summary>
+        /// 转办：将当前待办转移给其他用户处理
+        /// </summary>
+        void Transfer(long taskId, string targetUser, string opinion, string operatorName);
+
+        /// <summary>
+        /// 加签：在当前节点增加额外审批人
+        /// </summary>
+        void AddSign(long taskId, List<string> users, string opinion, string operatorName);
     }
 }

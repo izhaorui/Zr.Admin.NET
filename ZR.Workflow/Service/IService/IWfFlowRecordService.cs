@@ -8,5 +8,6 @@ namespace ZR.Workflow.Service.IService
     public interface IWfFlowRecordService
     {
         PagedInfo<WfFlowRecordDto> GetList(WfFlowRecordQueryDto parm);
+        PagedInfo<WfFlowRecordDto> GetCcList(WfFlowRecordQueryDto parm, string userName);
     }
 }

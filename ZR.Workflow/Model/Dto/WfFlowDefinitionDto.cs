@@ -33,6 +33,9 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>状态</summary>
         public int Status { get; set; } = 1;
 
+        /// <summary>表单字段定义（JSON）</summary>
+        public string FormItems { get; set; }
+
         /// <summary>节点配置</summary>
         public List<WfFlowNodeDto> Nodes { get; set; } = new();
     }

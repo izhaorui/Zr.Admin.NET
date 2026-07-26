@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ZR.Workflow.Model;
 using ZR.Workflow.Model.Dto;
 using ZR.Workflow.Service.IService;
@@ -231,6 +232,115 @@ namespace ZR.Workflow.Service
 
             if (!result.IsSuccess)
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "撤回失败", result.ErrorMessage);
+        }
+
+        /// <summary>
+        /// 转办：将当前待办转移给目标用户（节点不变，由目标用户接手）
+        /// </summary>
+        public void Transfer(long taskId, string targetUser, string opinion, string operatorName)
+        {
+            if (string.IsNullOrEmpty(targetUser)) throw new CustomException("请选择转办人");
+            if (targetUser == operatorName) throw new CustomException("不能转办给自己");
+
+            var task = Context.Queryable<WfFlowTask>().First(t => t.TaskId == taskId)
+                ?? throw new CustomException("审批任务不存在");
+            if (task.Status != (int)WfTaskStatus.Pending)
+                throw new CustomException("该任务已处理");
+            if (task.Assignee != operatorName)
+                throw new CustomException("无审批权限");
+
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == task.InstanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.Status != (int)WfInstanceStatus.Approval)
+                throw new CustomException("流程状态异常，无法转办");
+
+            var result = UseTran(() =>
+            {
+                Context.Updateable<WfFlowTask>()
+                    .SetColumns(t => new WfFlowTask
+                    {
+                        Assignee = targetUser,
+                        Opinion = opinion,
+                        Update_time = DateTime.Now,
+                        Update_by = operatorName
+                    })
+                    .Where(t => t.TaskId == taskId).ExecuteCommand();
+
+                Context.Insertable(new WfFlowRecord
+                {
+                    TaskId = taskId,
+                    InstanceId = instance.InstanceId,
+                    NodeId = task.NodeId,
+                    Operator = operatorName,
+                    Action = (int)WfAction.Transfer,
+                    Opinion = "转办给 " + targetUser + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion),
+                    Create_time = DateTime.Now,
+                    Create_by = operatorName
+                }).ExecuteCommand();
+            });
+
+            if (!result.IsSuccess)
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "转办失败", result.ErrorMessage);
+        }
+
+        /// <summary>
+        /// 加签：在当前审批节点追加额外审批人，新增待办纳入节点完成判定
+        /// </summary>
+        public void AddSign(long taskId, List<string> users, string opinion, string operatorName)
+        {
+            if (users == null || users.Count == 0) throw new CustomException("请选择加签人");
+
+            var task = Context.Queryable<WfFlowTask>().First(t => t.TaskId == taskId)
+                ?? throw new CustomException("审批任务不存在");
+            if (task.Status != (int)WfTaskStatus.Pending)
+                throw new CustomException("该任务已处理");
+            if (task.Assignee != operatorName)
+                throw new CustomException("无审批权限");
+
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == task.InstanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.Status != (int)WfInstanceStatus.Approval)
+                throw new CustomException("流程状态异常，无法加签");
+
+            var existing = Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == task.InstanceId && t.NodeId == task.NodeId)
+                .Select(t => t.Assignee)
+                .ToList();
+            var toAdd = users.Where(u => !string.IsNullOrEmpty(u) && !existing.Contains(u))
+                .Distinct().ToList();
+            if (toAdd.Count == 0) throw new CustomException("加签人已在该节点审批人中");
+
+            var result = UseTran(() =>
+            {
+                foreach (var u in toAdd)
+                {
+                    Context.Insertable(new WfFlowTask
+                    {
+                        InstanceId = task.InstanceId,
+                        NodeId = task.NodeId,
+                        NodeName = task.NodeName,
+                        Assignee = u,
+                        Status = (int)WfTaskStatus.Pending,
+                        Create_time = DateTime.Now,
+                        Create_by = operatorName
+                    }).ExecuteCommand();
+                }
+
+                Context.Insertable(new WfFlowRecord
+                {
+                    TaskId = taskId,
+                    InstanceId = instance.InstanceId,
+                    NodeId = task.NodeId,
+                    Operator = operatorName,
+                    Action = (int)WfAction.AddSign,
+                    Opinion = "加签：" + string.Join(",", toAdd) + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion),
+                    Create_time = DateTime.Now,
+                    Create_by = operatorName
+                }).ExecuteCommand();
+            });
+
+            if (!result.IsSuccess)
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "加签失败", result.ErrorMessage);
         }
 
         #region 内部流转辅助

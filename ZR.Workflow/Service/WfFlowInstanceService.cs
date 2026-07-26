@@ -1,3 +1,5 @@
+using SqlSugar;
+using ZR.Workflow.Enum;
 using ZR.Workflow.Model;
 using ZR.Workflow.Model.Dto;
 using ZR.Workflow.Service.IService;
@@ -78,6 +80,35 @@ namespace ZR.Workflow.Service
             instance.Create_by = userName;
             instance.Create_time = DateTime.Now;
             return _engine.Start(instance);
+        }
+
+        /// <summary>
+        /// 数据面板统计：聚合当前用户的待办/已办/我发起/抄送数量。
+        /// 全部为只读 Count，单次调用返回所有指标。
+        /// </summary>
+        public WfDashboardStatsDto GetDashboardStats(string userName)
+        {
+            var todoCount = Context.Queryable<WfFlowTask>()
+                .Count(t => t.Assignee == userName && t.Status == (int)WfTaskStatus.Pending);
+            var doneCount = Context.Queryable<WfFlowTask>()
+                .Count(t => t.Assignee == userName && t.Status == (int)WfTaskStatus.Done);
+            var myInProgress = Context.Queryable<WfFlowInstance>()
+                .Count(i => i.ApplyUser == userName && i.Status == (int)WfInstanceStatus.Approval);
+            var myCompleted = Context.Queryable<WfFlowInstance>()
+                .Count(i => i.ApplyUser == userName
+                    && (i.Status == (int)WfInstanceStatus.Approved || i.Status == (int)WfInstanceStatus.Rejected));
+            // 抄送记录：Opinion 标记为"抄送"，Operator 以逗号分隔存放被抄送人
+            var ccCount = Context.Queryable<WfFlowRecord>()
+                .Count(r => r.Opinion == "抄送"
+                    && SqlFunc.Contains(SqlFunc.MergeString(",", r.Operator, ","), "," + userName + ","));
+            return new WfDashboardStatsDto
+            {
+                TodoCount = todoCount,
+                DoneCount = doneCount,
+                MyInProgress = myInProgress,
+                MyCompleted = myCompleted,
+                CcCount = ccCount
+            };
         }
     }
 }

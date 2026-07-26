@@ -1,9 +1,5 @@
-using Infrastructure.Extensions;
-using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Common;
-using ZR.Workflow.Model.Dto;
-using ZR.Workflow.Service.IService;
 
 namespace ZR.Workflow.Controllers
 {
@@ -86,6 +82,19 @@ namespace ZR.Workflow.Controllers
             var idArr = Tools.SpitLongArrary(ids);
             var result = _service.Delete(idArr);
             return SUCCESS(result);
+        }
+
+        /// <summary>
+        /// 复制流程定义（含节点配置），生成停用状态的副本
+        /// </summary>
+        [HttpPost("copy/{flowId}")]
+        [ActionPermissionFilter(Permission = "workflow:definition:add")]
+        [Log(Title = "流程定义", BusinessType = BusinessType.INSERT)]
+        public IActionResult Copy(long flowId)
+        {
+            var userName = HttpContext.GetName();
+            var newId = _service.Copy(flowId, userName);
+            return SUCCESS(newId);
         }
     }
 }

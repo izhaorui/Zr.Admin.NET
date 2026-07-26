@@ -1,5 +1,3 @@
-using ZR.Model.System;
-
 namespace ZR.Workflow.Model
 {
     /// <summary>
@@ -37,5 +35,19 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(DefaultValue = "1")]
         public int Status { get; set; } = 1;
+
+        /// <summary>
+        /// 是否删除 0=未删 1=已删（软删除，保留节点/实例/任务/记录等历史数据）
+        /// </summary>
+        [SugarColumn(ColumnName = "is_delete", DefaultValue = "0")]
+        public int IsDelete { get; set; } = 0;
+
+        /// <summary>
+        /// 表单字段定义（JSON 数组，轻量动态表单；方案2 可替换为设计器 schema）
+        /// 结构示例：[{"field":"reason","label":"请假事由","type":"textarea","required":true,"options":""}]
+        /// type: input|textarea|number|date|select；select 的 options 为逗号分隔文本
+        /// </summary>
+        [SugarColumn(ColumnDataType = "nvarchar(max)", IsNullable = true)]
+        public string FormItems { get; set; }
     }
 }

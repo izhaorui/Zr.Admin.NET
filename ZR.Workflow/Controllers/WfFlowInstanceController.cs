@@ -1,8 +1,4 @@
-using Infrastructure.Extensions;
-using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
-using ZR.Workflow.Model.Dto;
-using ZR.Workflow.Service.IService;
 
 namespace ZR.Workflow.Controllers
 {
@@ -68,6 +64,16 @@ namespace ZR.Workflow.Controllers
             var userName = HttpContext.GetName();
             _engine.Withdraw(instanceId, userName);
             return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 数据面板统计（待办/已办/我发起/抄送）
+        /// </summary>
+        [HttpGet("dashboard")]
+        public IActionResult Dashboard()
+        {
+            var userName = HttpContext.GetName();
+            return SUCCESS(_service.GetDashboardStats(userName));
         }
     }
 }

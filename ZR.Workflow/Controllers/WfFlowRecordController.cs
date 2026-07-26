@@ -28,5 +28,16 @@ namespace ZR.Workflow.Controllers
         {
             return SUCCESS(_service.GetList(parm));
         }
+
+        /// <summary>
+        /// 抄送给我
+        /// </summary>
+        [HttpGet("cc")]
+        [ActionPermissionFilter(Permission = "workflow:record:cc")]
+        public IActionResult CcList([FromQuery] WfFlowRecordQueryDto parm)
+        {
+            var userName = HttpContext.GetName();
+            return SUCCESS(_service.GetCcList(parm, userName));
+        }
     }
 }

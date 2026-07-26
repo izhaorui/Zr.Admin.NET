@@ -13,5 +13,9 @@ namespace ZR.Workflow.Service.IService
         WfFlowDefinition Add(WfFlowDefinitionDto dto);
         int Update(WfFlowDefinitionDto dto);
         int Delete(long[] ids);
+        /// <summary>
+        /// 复制流程定义及其节点配置，生成一份停用状态的副本
+        /// </summary>
+        long Copy(long flowId, string userName);
     }
 }

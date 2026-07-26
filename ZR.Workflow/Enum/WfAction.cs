@@ -14,6 +14,8 @@ namespace ZR.Workflow.Enum
         /// <summary>转交</summary>
         Transfer = 3,
         /// <summary>撤回</summary>
-        Withdraw = 4
+        Withdraw = 4,
+        /// <summary>加签</summary>
+        AddSign = 5
     }
 }
