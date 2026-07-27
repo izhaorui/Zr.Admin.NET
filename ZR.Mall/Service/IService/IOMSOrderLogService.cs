@@ -17,5 +17,10 @@ namespace ZR.Mall.Service.IService
         /// 查询某订单的全部状态变更（按时间正序）
         /// </summary>
         List<OMSOrderLog> GetByOrder(long orderId);
+
+        /// <summary>
+        /// 按订单号查询全部状态变更（按时间正序）
+        /// </summary>
+        List<OMSOrderLog> GetByOrderNo(string orderNo);
     }
 }

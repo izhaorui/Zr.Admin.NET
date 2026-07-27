@@ -117,6 +117,14 @@ namespace ZR.ServiceCore.SqlSugar
         /// </summary>
         public static DbSchemaSnapshot GetDbSchema(SqlSugarScope db)
         {
+            return GetDbSchemaForConnection(db);
+        }
+
+        /// <summary>
+        /// 针对单个具体连接（如商城 MallDb 库）计算表/列快照，供差异预览使用。
+        /// </summary>
+        public static DbSchemaSnapshot GetDbSchemaForConnection(ISqlSugarClient db)
+        {
             var snapshot = new DbSchemaSnapshot();
             try
             {
@@ -178,7 +186,7 @@ namespace ZR.ServiceCore.SqlSugar
             // 4) ReportOnly 模式：对比实体模型与数据库实际结构，不执行 DDL
             if (reportOnly)
             {
-                ComputeEntityVsDbDiff(entities, beforeSchema, report);
+                ComputeEntityVsDbDiff(db, entities, beforeSchema, report);
                 report.Success = true;
                 PrintReport(report);
                 return report;
@@ -221,6 +229,23 @@ namespace ZR.ServiceCore.SqlSugar
             // 8) 打印报告
             PrintReport(report);
 
+            return report;
+        }
+
+        /// <summary>
+        /// 仅计算主库结构差异（不执行任何 DDL），供前端"同步结构"页面预览。
+        /// 等价于 ReportOnly 模式，但返回 MigrationReport 对象而非打印到控制台。
+        /// </summary>
+        public static MigrationReport Diff(SqlSugarScope db)
+        {
+            var report = new MigrationReport();
+            var options = App.OptionsSetting;
+            var additionalTypes = options.DbMigration?.AdditionalTypes;
+
+            var entities = ResolveEntityTypes(SystemEntityTypes, additionalTypes, out _);
+            var dbSchema = GetDbSchema(db);
+            ComputeEntityVsDbDiff(db, entities, dbSchema, report);
+            report.Success = true;
             return report;
         }
 
@@ -371,9 +396,11 @@ namespace ZR.ServiceCore.SqlSugar
         }
 
         /// <summary>
-        /// ReportOnly 模式：将实体模型与数据库实际结构对比，预测变更
+        /// ReportOnly 模式：将实体模型与数据库实际结构对比，预测变更。
+        /// 列名一律取自 SqlSugar 的权威映射（GetEntityInfo），避免手写 ToSnakeCase 与
+        /// 实际建表列名（属性原名）不一致导致误报大量"新增列"。
         /// </summary>
-        private static void ComputeEntityVsDbDiff(List<Type> entityTypes, DbSchemaSnapshot dbSchema, MigrationReport report)
+        private static void ComputeEntityVsDbDiff(ISqlSugarClient db, List<Type> entityTypes, DbSchemaSnapshot dbSchema, MigrationReport report)
         {
             foreach (var entityType in entityTypes)
             {
@@ -387,53 +414,23 @@ namespace ZR.ServiceCore.SqlSugar
                     continue;
                 }
 
-                var entityProps = entityType.GetProperties()
-                    .Where(p => p.CanWrite && p.GetCustomAttribute<SugarColumn>()?.IsIgnore != true)
-                    .ToList();
-
-                foreach (var prop in entityProps)
+                var entityInfo = db.EntityMaintenance.GetEntityInfo(entityType);
+                foreach (var col in entityInfo.Columns)
                 {
-                    var columnAttr = prop.GetCustomAttribute<SugarColumn>();
-                    if (columnAttr?.IsIgnore == true) continue;
-                    if (columnAttr == null && !IsSimpleType(prop.PropertyType)) continue;
+                    if (col.IsIgnore) continue;
 
-                    var colName = columnAttr?.ColumnName ?? ToSnakeCase(prop.Name);
-                    var normalizedColName = colName.ToLowerInvariant();
+                    var colName = col.DbColumnName;
+                    if (existingTable.Columns.Contains(colName.ToLowerInvariant())) continue;
 
-                    if (!existingTable.Columns.Contains(normalizedColName))
+                    var tc = report.NewColumns.FirstOrDefault(c => c.TableName == tableName);
+                    if (tc == null)
                     {
-                        var tc = report.NewColumns.FirstOrDefault(c => c.TableName == tableName);
-                        if (tc == null)
-                        {
-                            tc = new TableColumnChange { TableName = tableName };
-                            report.NewColumns.Add(tc);
-                        }
-                        tc.Columns.Add(colName);
+                        tc = new TableColumnChange { TableName = tableName };
+                        report.NewColumns.Add(tc);
                     }
+                    tc.Columns.Add(colName);
                 }
             }
-        }
-
-        private static bool IsSimpleType(Type type)
-        {
-            type = Nullable.GetUnderlyingType(type) ?? type;
-            return type.IsPrimitive || type.IsEnum
-                || type == typeof(string) || type == typeof(decimal)
-                || type == typeof(DateTime) || type == typeof(DateTimeOffset)
-                || type == typeof(Guid) || type == typeof(TimeSpan);
-        }
-
-        private static string ToSnakeCase(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return name;
-            var sb = new System.Text.StringBuilder();
-            for (int i = 0; i < name.Length; i++)
-            {
-                if (i > 0 && char.IsUpper(name[i]))
-                    sb.Append('_');
-                sb.Append(char.ToLowerInvariant(name[i]));
-            }
-            return sb.ToString();
         }
 
         private static void SaveMigrationHistory(SqlSugarScope db, string batchId, MigrationReport report)

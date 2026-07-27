@@ -6,6 +6,15 @@ namespace ZR.Mall.Model.Dto
     /// </summary>
     public class ShoppingSkusQueryDto : PagerInfo
     {
+        /// <summary>
+        /// 商品ID（按商品筛选）
+        /// </summary>
+        public long? ProductId { get; set; }
+
+        /// <summary>
+        /// 商品编码（按商品编码检索 SKU，业务上通常按编码定位具体商品）
+        /// </summary>
+        public string ProductCode { get; set; }
     }
 
     /// <summary>
@@ -17,6 +26,17 @@ namespace ZR.Mall.Model.Dto
 
         [Required(ErrorMessage = "商品ID不能为空")]
         public long ProductId { get; set; }
+
+        /// <summary>
+        /// 商品名称（列表 join 返回，用于表格展示，无需前端预载全量商品）
+        /// </summary>
+        public string ProductName { get; set; }
+
+        /// <summary>
+        /// 商品编码（列表 join 返回，用于按编码检索/展示）
+        /// </summary>
+        public string ProductCode { get; set; }
+
 
         [Required(ErrorMessage = "售卖价格不能为空")]
         public decimal Price { get; set; }

@@ -29,5 +29,16 @@ namespace ZR.Mall.Controllers
             var response = _paymentService.GetList(parm);
             return SUCCESS(response);
         }
+
+        /// <summary>
+        /// 查询支付流水详情（含预支付凭证与回调原文，便于排查/对账）
+        /// </summary>
+        [HttpGet("{id}")]
+        [ActionPermissionFilter(Permission = "oms:payment:list")]
+        public IActionResult GetPayment(long id)
+        {
+            var info = _paymentService.GetById(id);
+            return SUCCESS(info);
+        }
     }
 }

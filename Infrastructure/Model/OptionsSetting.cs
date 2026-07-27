@@ -23,6 +23,11 @@ namespace Infrastructure.Model
         /// 是否在 InitDb 建表后自动导入种子数据（data.xlsx）。默认 true，无需手动调用 InitSeedData 接口
         /// </summary>
         public bool InitSeed { get; set; } = true;
+        /// <summary>
+        /// 是否单独初始化商城模块（开发模式下建商城业务表 + 商城菜单种子）。独立于 InitDb，
+        /// 可在 InitDb=false 时单独设为 true 来只初始化商城（建表 + 商城菜单），不影响其他模块初始化。
+        /// </summary>
+        public bool InitMall { get; set; }
         /// <summary>数据库迁移配置（自动发现实体、差异检测、迁移历史）</summary>
         public DbMigrationOptions DbMigration { get; set; } = new();
         public string[] InitTables { get; set; }

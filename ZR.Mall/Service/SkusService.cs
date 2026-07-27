@@ -21,7 +21,14 @@ namespace ZR.Mall.Service
 
             var response = Queryable()
                 .Where(predicate.ToExpression())
-                .ToPage<Skus, SkusDto>(parm);
+                .LeftJoin<Product>((s, p) => s.ProductId == p.ProductId)
+                .WhereIF(!string.IsNullOrWhiteSpace(parm.ProductCode), (s, p) => p.ProductCode.Contains(parm.ProductCode))
+                .Select((s, p) => new SkusDto
+                {
+                    ProductName = p.ProductName,
+                    ProductCode = p.ProductCode
+                }, true)
+                .ToPage(parm);
 
             return response;
         }
@@ -68,6 +75,7 @@ namespace ZR.Mall.Service
         private static Expressionable<Skus> QueryExp(ShoppingSkusQueryDto parm)
         {
             var predicate = Expressionable.Create<Skus>();
+            predicate = predicate.AndIF(parm.ProductId.HasValue && parm.ProductId.Value > 0, x => x.ProductId == parm.ProductId.Value);
 
             return predicate;
         }

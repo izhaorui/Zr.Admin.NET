@@ -39,6 +39,8 @@ namespace ZR.ServiceCore.SqlSugar
                     var moduleInitializers = scope.ServiceProvider.GetServices<ITenantModuleInitializer>();
                     foreach (var mi in moduleInitializers)
                     {
+                        // 商城模块由 InitMall 单独控制，避免与全量初始化重复执行
+                        if (mi.ModuleName == "Mall") continue;
                         mi.InitializeNonSaaS();
                     }
                 }
@@ -50,64 +52,83 @@ namespace ZR.ServiceCore.SqlSugar
         /// </summary>
         public static void RunInitDb(IWebHostEnvironment environment)
         {
-            if (!environment.IsDevelopment()) return;
-
             var options = App.OptionsSetting;
-            if (!options.InitDb) return;
 
-            bool confirmed;
-            if (!Console.IsInputRedirected)
+            // 全量数据库初始化（仅 Development + InitDb=true，带交互确认）
+            if (environment.IsDevelopment() && options.InitDb)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("检测到 InitDb=true，将执行数据库初始化（自动迁移 + 种子数据）。");
-                Console.WriteLine("按 [回车] 确认执行，按其他键取消：");
+                bool confirmed;
+                if (!Console.IsInputRedirected)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("检测到 InitDb=true，将执行数据库初始化（自动迁移 + 种子数据）。");
+                    Console.WriteLine("按 [回车] 确认执行，按其他键取消：");
 
-                var input = ReadLineWithTimeout(TimeSpan.FromSeconds(30))?.Trim();
-                confirmed = string.IsNullOrEmpty(input);
-            }
-            else
-            {
-                Console.WriteLine("非交互环境，直接执行数据库初始化。");
-                confirmed = true;
-            }
+                    var input = ReadLineWithTimeout(TimeSpan.FromSeconds(30))?.Trim();
+                    confirmed = string.IsNullOrEmpty(input);
+                }
+                else
+                {
+                    Console.WriteLine("非交互环境，直接执行数据库初始化。");
+                    confirmed = true;
+                }
 
-            if (!confirmed)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("已取消初始化。如需正常启动请将 InitDb 改为 false。");
+                if (!confirmed)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("已取消初始化。如需正常启动请将 InitDb 改为 false。");
+                    Console.ResetColor();
+                    Environment.Exit(1);
+                }
+
+                try
+                {
+                    InitDb(options.InitDb, environment);
+                }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"数据库迁移失败：{ex.Message}");
+                    Console.WriteLine(ex.StackTrace);
+                    Console.ResetColor();
+                    Environment.Exit(1);
+                }
+
+                try
+                {
+                    InitSeedData(environment);
+                }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"初始化种子数据失败：{ex.Message}");
+                    Console.WriteLine(ex.StackTrace);
+                    Console.ResetColor();
+                    Environment.Exit(1);
+                }
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("==== 数据库初始化完成 ====");
                 Console.ResetColor();
-                Environment.Exit(1);
             }
 
-            try
+            // 商城模块独立初始化（所有环境，仅受 InitMall 开关控制，独立于 InitDb）
+            // 解除 Development 限制：保证非开发环境设 InitMall=true 也能自动补列（LockStock/PayType 等）
+            if (options.InitMall)
             {
-                InitDb(options.InitDb, environment);
+                try
+                {
+                    InitMall();
+                }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"商城模块初始化失败：{ex.Message}");
+                    Console.WriteLine(ex.StackTrace);
+                    Console.ResetColor();
+                    Environment.Exit(1);
+                }
             }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"数据库迁移失败：{ex.Message}");
-                Console.WriteLine(ex.StackTrace);
-                Console.ResetColor();
-                Environment.Exit(1);
-            }
-
-            try
-            {
-                InitSeedData(environment);
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"初始化种子数据失败：{ex.Message}");
-                Console.WriteLine(ex.StackTrace);
-                Console.ResetColor();
-                Environment.Exit(1);
-            }
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("==== 数据库初始化完成 ====");
-            Console.ResetColor();
         }
 
         private static string ReadLineWithTimeout(TimeSpan timeout)
@@ -160,6 +181,38 @@ namespace ZR.ServiceCore.SqlSugar
                 DelFlag = 0,
                 Remark = "系统初始化自动创建"
             }).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 单独初始化商城模块：建商城业务表（开发模式非SaaS）+ 商城菜单种子，独立于 InitDb。
+        /// 由 RunInitDb 在 InitMall=true 时调用，可在 InitDb=false 时单独建商城表与菜单。
+        /// </summary>
+        public static void InitMall()
+        {
+            // 1) 建商城业务表（非SaaS开发模式，建 MallDb 表）
+            if (InternalApp.ServiceProvider != null)
+            {
+                using var scope = InternalApp.ServiceProvider.CreateScope();
+                ITenantModuleInitializer mallInitializer = null;
+                foreach (var mi in scope.ServiceProvider.GetServices<ITenantModuleInitializer>())
+                {
+                    if (mi.ModuleName == "Mall")
+                    {
+                        mallInitializer = mi;
+                        break;
+                    }
+                }
+                mallInitializer?.InitializeNonSaaS();
+            }
+
+            // 2) 商城菜单种子 + 重新纳入默认套餐（使商城菜单对租户可见）
+            SeedDataService seedDataService = new();
+            var mallSeedResult = seedDataService.InitMallMenuSeedData();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("==== 商城模块初始化完成 ====");
+            foreach (var item in mallSeedResult)
+                Console.WriteLine(item);
+            Console.ResetColor();
         }
     }
 }

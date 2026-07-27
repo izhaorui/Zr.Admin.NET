@@ -39,5 +39,13 @@ namespace ZR.Mall.Service
                 .OrderBy(x => x.Id, OrderByType.Asc)
                 .ToList();
         }
+
+        public List<OMSOrderLog> GetByOrderNo(string orderNo)
+        {
+            return Queryable()
+                .Where(x => x.OrderNo == orderNo)
+                .OrderBy(x => x.Id, OrderByType.Asc)
+                .ToList();
+        }
     }
 }
