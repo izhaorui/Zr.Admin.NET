@@ -54,5 +54,17 @@ namespace ZR.Model.Dto
         [ExcelColumn(Name = "地理位置")]
         [ExcelColumnName("地理位置")]
         public string Location { get; set; }
+
+        [ExcelColumn(Name = "发送状态")]
+        [ExcelColumnName("发送状态")]
+        public int? SendStatus { get; set; }
+
+        [ExcelColumn(Name = "回执ID")]
+        [ExcelColumnName("回执ID")]
+        public string BizId { get; set; }
+
+        [ExcelColumn(Name = "失败原因")]
+        [ExcelColumnName("失败原因")]
+        public string ErrorMsg { get; set; }
     }
 }

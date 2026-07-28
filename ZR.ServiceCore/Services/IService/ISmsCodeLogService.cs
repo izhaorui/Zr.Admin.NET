@@ -1,6 +1,7 @@
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.Models;
+using ZR.ServiceCore.Sms;
 
 namespace ZR.ServiceCore.Services
 {
@@ -24,5 +25,9 @@ namespace ZR.ServiceCore.Services
         /// <param name="sendType">发送类型（默认 6=发货通知）</param>
         SmsCodeLog SendSmsNotice(string phone, string content, int sendType = 6);
 
+        /// <summary>
+        /// 通用短信发送（落库 + 通过 ISmsSender 统一抽象发送），支持直发内容或模板发送
+        /// </summary>
+        SmsSendResult SendSms(SmsMessage message);
     }
 }

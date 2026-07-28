@@ -43,5 +43,19 @@
         /// 1、登录 2、注册 3、找回密码
         /// </summary>
         public int SendType { get; set; }
+        /// <summary>
+        /// 发送状态 0待发送/发送中 1成功 2失败
+        /// </summary>
+        public int SendStatus { get; set; }
+        /// <summary>
+        /// 服务商回执ID（BizId/RequestId，用于查询发送状态）
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public string BizId { get; set; }
+        /// <summary>
+        /// 发送失败原因
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public string ErrorMsg { get; set; }
     }
 }

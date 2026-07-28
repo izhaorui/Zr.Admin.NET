@@ -36,6 +36,10 @@ namespace Infrastructure.Model
         /// </summary>
         public List<MailOptions> MailOptions { get; set; }
         /// <summary>
+        /// 短信配置
+        /// </summary>
+        public SmsOptions SmsOptions { get; set; }
+        /// <summary>
         /// 上传配置
         /// </summary>
         public Upload Upload { get; set; }
@@ -74,6 +78,29 @@ namespace Infrastructure.Model
         public bool UseSsl { get; set; }
         public string Signature { get; set; }
     }
+    /// <summary>
+    /// 短信服务配置
+    /// </summary>
+    public class SmsOptions
+    {
+        /// <summary>是否启用真实发送。false 时为模拟发送（仅记录日志），不影响业务流程</summary>
+        public bool Enabled { get; set; }
+        /// <summary>服务商：None/Aliyun/TencentCloud（对接时在 DefaultSmsSender 对应分支实现）</summary>
+        public string Provider { get; set; } = "None";
+        /// <summary>密钥ID（阿里云 AccessKeyId / 腾讯云 SecretId）</summary>
+        public string AccessKeyId { get; set; }
+        /// <summary>密钥Secret（阿里云 AccessKeySecret / 腾讯云 SecretKey）</summary>
+        public string AccessKeySecret { get; set; }
+        /// <summary>短信签名（如：ZRAdmin）</summary>
+        public string SignName { get; set; }
+        /// <summary>服务端点/地域（如阿里云 dysmsapi.aliyuncs.com、腾讯云 ap-guangzhou）</summary>
+        public string Endpoint { get; set; }
+        /// <summary>应用ID（腾讯云 SdkAppId 等，部分服务商需要）</summary>
+        public string SdkAppId { get; set; }
+        /// <summary>业务场景到模板编号映射（如 login→SMS_10001，方便按场景取模板）</summary>
+        public Dictionary<string, string> Templates { get; set; }
+    }
+
     /// <summary>
     /// 上传
     /// </summary>
