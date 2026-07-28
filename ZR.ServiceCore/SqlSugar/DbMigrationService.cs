@@ -64,6 +64,7 @@ namespace ZR.ServiceCore.SqlSugar
             typeof(SysUserMsg),
             typeof(SysFileGroup),
             typeof(DailySchedule),
+            typeof(UserOnlineLog),
         };
 
         /// <summary>
