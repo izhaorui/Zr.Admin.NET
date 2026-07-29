@@ -35,13 +35,42 @@ namespace ZR.ServiceCore.Services
         private static string GetDictKey(string dictType, string dictValue) => $"{dictType}|{dictValue}";
 
         /// <summary>
+        /// 已确认存在 sys_tenant_dict_data 表的租户连接（每个 ConfigId 只检查一次）
+        /// </summary>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> TenantDictTableEnsured = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
         /// 获取租户库连接
         /// </summary>
         private ISqlSugarClient TenantDb()
         {
             if (!App.IsTenantEnabled()) return Context;
             var tenantId = App.GetCurrentTenantId();
-            return DbScoped.SugarScope.GetConnectionScope(tenantId);
+            var db = DbScoped.SugarScope.GetConnectionScope(tenantId);
+            EnsureTenantDictTable(db, tenantId);
+            return db;
+        }
+
+        /// <summary>
+        /// 确保租户库存在 sys_tenant_dict_data 表（幂等自愈）。
+        /// 静态配置在 appsettings 中的租户连接未经过 InitTenantDb 建表流程，此处兜底补建。
+        /// </summary>
+        private static void EnsureTenantDictTable(ISqlSugarClient db, string tenantId)
+        {
+            if (string.IsNullOrWhiteSpace(tenantId) || TenantDictTableEnsured.ContainsKey(tenantId)) return;
+            try
+            {
+                if (!db.DbMaintenance.IsAnyTable("sys_tenant_dict_data", false))
+                {
+                    db.CodeFirst.InitTables(typeof(SysTenantDictData));
+                    Console.WriteLine($"[SysDictDataService] 租户库({tenantId})缺少 sys_tenant_dict_data，已自动建表");
+                }
+                TenantDictTableEnsured[tenantId] = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SysDictDataService] 检查/创建租户字典扩展表失败({tenantId}): {ex.Message}");
+            }
         }
 
         /// <summary>

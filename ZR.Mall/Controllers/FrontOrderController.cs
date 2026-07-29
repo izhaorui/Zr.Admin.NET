@@ -90,7 +90,7 @@ namespace ZR.Mall.Controllers
                 return SUCCESS(new { mockOrder.OrderNo, mockOrder.OrderStatus, mockOrder.PayType, mockOrder.PayTime, mockOrder.PayAmount });
             }
 
-            // 真实支付：校验归属与状态后创建微信 H5 预付单
+            // 真实支付：校验归属与状态后按通道创建微信预付单
             var order = _OMSOrderService.Queryable()
                 .Includes(x => x.Items)
                 .Where(x => x.OrderNo == dto.OrderNo && x.IsDelete == 0)
@@ -106,10 +106,65 @@ namespace ZR.Mall.Controllers
             var desc = order.Items?.FirstOrDefault()?.ProductName ?? "商城订单";
             if (order.Items?.Count > 1) desc += $" 等{order.Items.Count}件商品";
             var ip = HttpContextExtension.GetClientUserIp(HttpContext);
-            var prepay = await _wechatPayService.CreateH5PayAsync(order.OrderNo, desc, order.PayAmount, ip);
+
+            // 按通道选择预付单类型
+            var channel = string.IsNullOrEmpty(dto.Channel) ? "h5" : dto.Channel.ToLowerInvariant();
+            WechatPrepayResult prepay;
+            if (channel == "miniprogram")
+            {
+                prepay = await _wechatPayService.CreateJSApiPayAsync(order.OrderNo, desc, order.PayAmount, dto.OpenId);
+            }
+            else if (channel == "app")
+            {
+                prepay = await _wechatPayService.CreateAppPayAsync(order.OrderNo, desc, order.PayAmount);
+            }
+            else
+            {
+                prepay = await _wechatPayService.CreateH5PayAsync(order.OrderNo, desc, order.PayAmount, ip);
+            }
+
             // 记录预支付流水（状态=Prepay），支付成功回调时更新为 Paid
-            _paymentService.CreatePrepay(order, ZR.Mall.Enum.PayTypeEnum.Wechat, prepay.H5Url);
-            return SUCCESS(new { order.OrderNo, order.OrderStatus, order.PayAmount, prepay.H5Url });
+            _paymentService.CreatePrepay(order, ZR.Mall.Enum.PayTypeEnum.Wechat, prepay.H5Url ?? prepay.PrepayId);
+
+            // H5：返回跳转链接，由前端 window.location.href 跳转
+            if (!string.IsNullOrEmpty(prepay.H5Url))
+            {
+                return SUCCESS(new { order.OrderNo, order.OrderStatus, order.PayAmount, prepay.H5Url });
+            }
+            // 小程序/App：返回客户端调起支付所需的完整参数（含服务端签名的 paySign）
+            return SUCCESS(new
+            {
+                order.OrderNo,
+                order.OrderStatus,
+                order.PayAmount,
+                needClientPay = true,
+                channel = prepay.Channel,
+                payParams = new
+                {
+                    appId = prepay.AppId,
+                    partnerId = prepay.PartnerId,
+                    prepayId = prepay.PrepayId,
+                    nonceStr = prepay.NonceStr,
+                    timeStamp = prepay.TimeStamp,
+                    package = prepay.Package,
+                    signType = "RSA",
+                    paySign = prepay.PaySign
+                }
+            });
+        }
+
+        /// <summary>
+        /// 微信小程序：用 wx.login 返回的 code 换取用户 OpenId（匿名，供游客小程序支付补全 JSAPI 参数）。
+        /// </summary>
+        [HttpGet("wx/openid")]
+        public async Task<IActionResult> GetWxOpenId([FromQuery] string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return ToResponse(ResultCode.PARAM_ERROR, "code 不能为空");
+            }
+            var openId = await _wechatPayService.GetOpenIdAsync(code);
+            return SUCCESS(new { openId });
         }
 
         /// <summary>

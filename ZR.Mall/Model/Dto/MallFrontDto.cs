@@ -79,6 +79,18 @@ namespace ZR.Mall.Model.Dto
         /// </summary>
         [Required(ErrorMessage = "手机号不能为空")]
         public string Phone { get; set; }
+
+        /// <summary>
+        /// 支付通道：h5（默认，微信内/H5 浏览器跳转）/ miniProgram（微信小程序 JSAPI）/ app（App 原生支付）。
+        /// 真实支付（WechatPay:Enabled=true）时按此字段选择预付单类型；模拟支付忽略。
+        /// </summary>
+        public string Channel { get; set; } = "h5";
+
+        /// <summary>
+        /// 微信小程序支付所需的用户 OpenId（channel=miniProgram 时必填）。
+        /// 由前端通过 wx.login 换取后传入（见 shopping/front/order/wx-openid）。
+        /// </summary>
+        public string OpenId { get; set; }
     }
 
     /// <summary>

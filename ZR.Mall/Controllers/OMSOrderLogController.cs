@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using ZR.Mall.Model;
 using ZR.Mall.Service.IService;
 

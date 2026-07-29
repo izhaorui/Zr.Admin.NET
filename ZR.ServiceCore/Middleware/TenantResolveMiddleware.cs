@@ -51,6 +51,9 @@ namespace ZR.ServiceCore.Middleware
             var allowAnonymous = endpoint?.Metadata?.GetMetadata<AllowAnonymousAttribute>() != null;
 
             // 匿名接口：域名解析已完成（若有），无需 token 一致性校验。
+            // 多租户定位依赖前端在请求头统一携带 tenantId（见 src/utils/request.js），
+            // BaseRepository 在控制器/Service 构造时通过 GetCurrentTenantId() 读取该 header
+            // 即可正确绑定对应租户库；无需后端解析 body。
             if (allowAnonymous)
             {
                 await _next(context);

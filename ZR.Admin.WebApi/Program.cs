@@ -13,6 +13,7 @@ using System.Text.Json;
 using ZR.Admin.WebApi.Extensions;
 using  Infrastructure.Cache;
 using ZR.Common.DynamicApiSimple.Extens;
+using ZR.ServiceCore.Oss;
 using ZR.Infrastructure.IPTools;
 using ZR.Infrastructure.WebExtensions;
 using ZR.Model;
@@ -73,6 +74,17 @@ builder.Services.AddJwt();
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 //app服务注册
 builder.Services.AddAppService();
+// 对象存储(OSS)提供程序：根据配置 OptionsSetting.OssProvider 选择厂商，便于对接阿里云/腾讯云/七牛等
+builder.Services.AddSingleton<IOssProvider>(sp =>
+{
+    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OptionsSetting>>();
+    var provider = (options.Value.OssProvider ?? "Aliyun").Trim().ToLowerInvariant();
+    return provider switch
+    {
+        "aliyun" => new AliyunOssProvider(options),
+        _ => new AliyunOssProvider(options)
+    };
+});
 //开启计划任务
 builder.Services.AddTaskSchedulers();
 //请求大小限制

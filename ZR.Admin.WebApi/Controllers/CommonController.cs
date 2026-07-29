@@ -152,9 +152,9 @@ namespace ZR.Admin.WebApi.Controllers
                         ClassifyType = uploadDto.ClassifyType,
                         CategoryId = uploadDto.CategoryId,
                     };
-                    sysfile = await SysFileService.SaveFileToAliyun(sysfile, uploadDto, formFile);
+                    sysfile = await SysFileService.SaveFileToOss(sysfile, uploadDto, formFile);
 
-                    if (sysfile.Id <= 0) { return ToResponse(ApiResult.Error("阿里云连接失败")); }
+                    if (sysfile.Id <= 0) { return ToResponse(ApiResult.Error("oss连接失败")); }
                     break;
                 case StoreType.TENCENT:
                     break;

@@ -12,7 +12,7 @@ using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using ZR.Common;
+using ZR.ServiceCore.Oss;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.System;
@@ -28,8 +28,8 @@ namespace ZR.ServiceCore.Services
     [AppService(ServiceType = typeof(ISysFileService), ServiceLifetime = LifeTime.Transient)]
     public class SysFileService : BaseService<SysFile>, ISysFileService
     {
-        private string domainUrl = AppSettings.GetConfig("ALIYUN_OSS:domainUrl");
         private readonly ISysConfigService SysConfigService;
+        private readonly IOssProvider _ossProvider;
         private OptionsSetting OptionsSetting;
 
         private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -37,9 +37,10 @@ namespace ZR.ServiceCore.Services
             ".jpg", ".jpeg", ".png", ".gif", ".bmp"
         };
 
-        public SysFileService(ISysConfigService sysConfigService, IOptions<OptionsSetting> options)
+        public SysFileService(ISysConfigService sysConfigService, IOssProvider ossProvider, IOptions<OptionsSetting> options)
         {
             SysConfigService = sysConfigService;
+            _ossProvider = ossProvider;
             OptionsSetting = options.Value;
         }
 
@@ -102,13 +103,13 @@ namespace ZR.ServiceCore.Services
             return await SaveFileToLocal(rootPath, dto, userName, dto.ClassifyType, formFile);
         }
         /// <summary>
-        /// 上传文件到阿里云
+        /// 上传文件到对象存储(OSS)
         /// </summary>
         /// <param name="file"></param>
         /// <param name="dto"></param>
         /// <param name="formFile"></param>
         /// <returns></returns>
-        public async Task<SysFile> SaveFileToAliyun(SysFile file, UploadDto dto, IFormFile formFile)
+        public async Task<SysFile> SaveFileToOss(SysFile file, UploadDto dto, IFormFile formFile)
         {
             string fileExt = string.IsNullOrWhiteSpace(file.FileExt) ? Path.GetExtension(formFile.FileName) : file.FileExt;
             file.FileExt = fileExt;
@@ -120,13 +121,13 @@ namespace ZR.ServiceCore.Services
 
             await using (var uploadStream = await CreateUploadStreamAsync(formFile, dto.Quality, fileExt))
             {
-                statusCode = AliyunOssHelper.PutObjectFromFile(uploadStream, finalPath, "");
+                statusCode = await _ossProvider.UploadAsync(uploadStream, finalPath);
             }
 
             if (statusCode != HttpStatusCode.OK) return file;
 
             file.FileUrl = finalPath;
-            file.AccessUrl = CombineUrl(domainUrl, finalPath);
+            file.AccessUrl = _ossProvider.GetAccessUrl(finalPath);
             file.Id = await InsertFile(file);
 
             return file;
@@ -286,16 +287,6 @@ namespace ZR.ServiceCore.Services
                 segments
                     .Where(s => !string.IsNullOrWhiteSpace(s))
                     .Select(s => s.Trim().Trim('/', '\\')));
-        }
-
-        private static string CombineUrl(string baseUrl, string relativePath)
-        {
-            if (string.IsNullOrWhiteSpace(baseUrl))
-            {
-                return relativePath.Replace("\\", "/");
-            }
-
-            return $"{baseUrl.TrimEnd('/')}/{relativePath.TrimStart('/').Replace("\\", "/")}";
         }
 
         public PagedInfo<SysFileDto> GetSysFiles(SysFileQueryDto parm)

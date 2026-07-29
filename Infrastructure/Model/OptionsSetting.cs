@@ -44,6 +44,11 @@ namespace Infrastructure.Model
         /// </summary>
         public Upload Upload { get; set; }
         /// <summary>
+        /// 当前启用的对象存储(OSS)提供程序，可选：Aliyun / Tencent / Qiniu，默认 Aliyun
+        /// </summary>
+        public string OssProvider { get; set; } = "Aliyun";
+
+        /// <summary>
         /// 阿里云oss
         /// </summary>
         public ALIYUN_OSS ALIYUN_OSS { get; set; }

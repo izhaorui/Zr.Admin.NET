@@ -56,5 +56,16 @@ namespace ZR.Mall.Payment
         /// H5 支付场景的 Wap 站点地址（回跳/展示用）
         /// </summary>
         public string H5ReturnUrl { get; set; }
+
+        /// <summary>
+        /// 微信小程序 AppId（与 H5 的 AppId 通常是不同的应用）。不填则复用 AppId。
+        /// </summary>
+        public string MiniProgramAppId { get; set; }
+
+        /// <summary>
+        /// 微信小程序 AppSecret（换取用户 OpenId 用，见 shopping/front/order/wx-openid）。
+        /// 生产环境应通过密钥管理注入，勿明文提交。
+        /// </summary>
+        public string MiniProgramSecret { get; set; }
     }
 }

@@ -2,6 +2,7 @@ using Infrastructure.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Mall.Enum;
+using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
 
@@ -18,10 +19,12 @@ namespace ZR.Mall.Controllers
     public class FrontProductController : BaseController
     {
         private readonly IProductService _ShoppingProductService;
+        private readonly ICategoryService _CategoryService;
 
-        public FrontProductController(IProductService ShoppingProductService)
+        public FrontProductController(IProductService ShoppingProductService, ICategoryService categoryService)
         {
             _ShoppingProductService = ShoppingProductService;
+            _CategoryService = categoryService;
         }
 
         /// <summary>
@@ -48,6 +51,21 @@ namespace ZR.Mall.Controllers
                 return ToResponse(ResultCode.FAIL, "商品不存在或已下架");
             }
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 游客可见的商品分类列表（匿名），用于 C 端首页分类筛选。
+        /// 仅返回 ShowStatus=1（展示中）的分类，按 OrderNum 升序。
+        /// </summary>
+        [HttpGet("category/list")]
+        public IActionResult QueryFrontCategory()
+        {
+            var list = _CategoryService.GetAll()
+                .Where(c => c.ShowStatus == 1 && c.IsDelete == 0)
+                .OrderBy(c => c.OrderNum)
+                .Select(c => new { categoryId = c.CategoryId, name = c.Name, icon = c.Icon })
+                .ToList();
+            return SUCCESS(list);
         }
     }
 }
