@@ -29,5 +29,17 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>签类型 0=或签 1=会签</summary>
         public int SignType { get; set; } = 0;
+
+        /// <summary>条件字段（表单字段 key，如 amount），为空表示无条件</summary>
+        public string ConditionField { get; set; }
+
+        /// <summary>条件运算符 0=无 1=小于 2=小于等于 3=大于 4=大于等于 5=等于 6=不等于</summary>
+        public int ConditionOp { get; set; } = 0;
+
+        /// <summary>条件比较值</summary>
+        public string ConditionValue { get; set; }
+
+        /// <summary>并行分组号（>0 表示并行分支，同组并发并汇聚）</summary>
+        public int ParallelGroup { get; set; } = 0;
     }
 }

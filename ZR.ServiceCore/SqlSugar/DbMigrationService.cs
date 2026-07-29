@@ -206,7 +206,9 @@ namespace ZR.ServiceCore.SqlSugar
             {
                 try
                 {
-                    db.CodeFirst.InitTables(entityType);
+                    // CodeFirst.InitTables 对已存在的表不会 ALTER 加列，故用 EnsureEntitySchema
+                    // 同时处理"建新表"与"已有表补缺失列"两种场景（幂等，不删列/不改类型）。
+                    EnsureEntitySchema(db, entityType);
                 }
                 catch (Exception ex)
                 {
@@ -231,6 +233,103 @@ namespace ZR.ServiceCore.SqlSugar
             PrintReport(report);
 
             return report;
+        }
+
+        /// <summary>
+        /// 确保单个实体对应的表结构：表不存在则建表；表已存在则补齐实体模型中新增的列。
+        /// 幂等 —— 不会删除列，也不会修改已有列的类型/长度（避免破坏存量数据）。
+        /// 兼容 SQL Server / MySQL：列类型优先取 SqlSugar 按当前 DbType 推导的权威类型，
+        /// 兜底按 .NET 属性类型映射。NOT NULL 判定与 SqlsugarSetup.EntityService 约定一致。
+        /// </summary>
+        public static void EnsureEntitySchema(ISqlSugarClient db, Type entityType)
+        {
+            var entityInfo = db.EntityMaintenance.GetEntityInfo(entityType);
+            var tableName = entityInfo.DbTableName;
+
+            // 表不存在：直接建整套表（含所有列）
+            if (!db.DbMaintenance.IsAnyTable(tableName, false))
+            {
+                db.CodeFirst.InitTables(entityType);
+                return;
+            }
+
+            // 表已存在：拉取现有列，逐列补齐模型中存在但库中缺失的列
+            var existingColumns = db.DbMaintenance.GetColumnInfosByTableName(tableName, false)
+                .Select(c => c.DbColumnName.ToLowerInvariant())
+                .ToHashSet();
+
+            foreach (var col in entityInfo.Columns)
+            {
+                if (col.IsIgnore) continue;
+                if (existingColumns.Contains(col.DbColumnName.ToLowerInvariant())) continue;
+
+                var prop = entityType.GetProperty(col.PropertyName);
+                var sugarAttr = prop?.GetCustomAttribute<SugarColumn>();
+                var isNotNull = sugarAttr?.ExtendedAttribute?.ToString() == ProteryConstant.NOTNULL.ToString();
+
+                try
+                {
+                    // SqlSugar 对可空列无 DefaultValue 特性时会填充字符串 "NULL"，
+                    // 直接传给 AddColumn 会生成非法 SQL（"... DEFAULT NULL"），归一为空以跳过 DEFAULT 子句。
+                    var defaultValue = col.DefaultValue;
+                    if (string.IsNullOrWhiteSpace(defaultValue)
+                        || defaultValue.Trim().Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        defaultValue = null;
+                    }
+
+                    db.DbMaintenance.AddColumn(tableName, new DbColumnInfo
+                    {
+                        DbColumnName = col.DbColumnName,
+                        DataType = ResolveColumnDataType(db, col, prop),
+                        IsNullable = !isNotNull,
+                        DefaultValue = defaultValue
+                    });
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"[DbMigration] 表 {tableName} 已补列 {col.DbColumnName} {(isNotNull ? "NOT NULL" : "NULL")}");
+                    Console.ResetColor();
+                }
+                catch (Exception ex)
+                {
+                    // 单个列补列失败（如 NOT NULL 且无默认值、存量数据冲突）不中断其他表/列，
+                    // 打印提示交由人工处理，保证迁移整体可用。
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"[DbMigration] 表 {tableName} 补列 {col.DbColumnName} 失败: {ex.Message}");
+                    Console.ResetColor();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 解析某实体列对应的数据库列类型。优先使用 SqlSugar 按当前 DbType 推导的权威类型
+        /// （col.DataType 对 SQL Server 已是正确的 varchar(n)/bigint/datetime 等）；
+        /// 当该值为空（常见于 MySQL 未显式标注 ColumnDataType 的值类型）时，按 .NET 属性类型兜底映射。
+        /// </summary>
+        public static string ResolveColumnDataType(ISqlSugarClient db, EntityColumnInfo col, PropertyInfo prop)
+        {
+            if (!string.IsNullOrWhiteSpace(col.DataType)
+                && !col.DataType.Trim().Equals("NULL", StringComparison.OrdinalIgnoreCase))
+            {
+                return col.DataType;
+            }
+
+            var type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+            if (type == typeof(string))
+            {
+                var len = col.Length > 0 ? col.Length : 255;
+                return len > 2000 ? "text" : $"varchar({len})";
+            }
+            if (type == typeof(long)) return "bigint";
+            if (type == typeof(int)) return "int";
+            if (type == typeof(short) || type == typeof(byte)) return "smallint";
+            if (type == typeof(decimal))
+                return col.DecimalDigits > 0 ? $"decimal(18,{col.DecimalDigits})" : "decimal(18,2)";
+            if (type == typeof(double) || type == typeof(float)) return "double";
+            if (type == typeof(DateTime) || type == typeof(DateTimeOffset)) return "datetime";
+            if (type == typeof(bool) || type.IsEnum) return "int";
+            if (type == typeof(Guid)) return "char(36)";
+            return "varchar(255)";
         }
 
         /// <summary>

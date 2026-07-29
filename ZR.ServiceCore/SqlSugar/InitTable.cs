@@ -3,9 +3,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SqlSugar.IOC;
-using System.Reflection;
-using ZR.Model;
-using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Services;
 
 namespace ZR.ServiceCore.SqlSugar
@@ -29,8 +26,8 @@ namespace ZR.ServiceCore.SqlSugar
 
             if (report.Success)
             {
-                // 确保默认租户存在
-                EnsureDefaultTenant(db);
+                // 确保默认租户存在（收敛到种子数据 SeedDataService.EnsureDefaultTenant）
+                new SeedDataService().EnsureDefaultTenant();
 
                 // 调度各业务模块的非SaaS初始化（如商城、内容等）
                 if (InternalApp.ServiceProvider != null)
@@ -39,8 +36,8 @@ namespace ZR.ServiceCore.SqlSugar
                     var moduleInitializers = scope.ServiceProvider.GetServices<ITenantModuleInitializer>();
                     foreach (var mi in moduleInitializers)
                     {
-                        // 商城模块由 InitMall 单独控制，避免与全量初始化重复执行
-                        if (mi.ModuleName == "Mall") continue;
+                        // 已注册为独立模块的（商城/工作流）由各自开关控制，避免与全量初始化重复执行
+                        if (ModuleInitRunner.Contains(mi.ModuleName)) continue;
                         mi.InitializeNonSaaS();
                     }
                 }
@@ -116,18 +113,13 @@ namespace ZR.ServiceCore.SqlSugar
             // 解除 Development 限制：保证非开发环境设 InitMall=true 也能自动补列（LockStock/PayType 等）
             if (options.InitMall)
             {
-                try
-                {
-                    InitMall();
-                }
-                catch (Exception ex)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"商城模块初始化失败：{ex.Message}");
-                    Console.WriteLine(ex.StackTrace);
-                    Console.ResetColor();
-                    Environment.Exit(1);
-                }
+                ModuleInitRunner.Run("Mall");
+            }
+
+            // 工作流模块独立初始化（所有环境，仅受 InitWorkflow 开关控制，独立于 InitDb）
+            if (options.InitWorkflow)
+            {
+                ModuleInitRunner.Run("Workflow");
             }
         }
 
@@ -167,52 +159,5 @@ namespace ZR.ServiceCore.SqlSugar
             }
         }
 
-        private static void EnsureDefaultTenant(SqlSugarScope db)
-        {
-            var mainDb = App.MainDbConfigId;
-            var hasMainTenant = db.Queryable<SysTenant>().Any(x => x.DelFlag == 0 && x.TenantId == mainDb);
-            if (hasMainTenant) return;
-
-            db.Insertable(new SysTenant
-            {
-                TenantId = mainDb,
-                TenantName = "默认租户",
-                Status = 0,
-                DelFlag = 0,
-                Remark = "系统初始化自动创建"
-            }).ExecuteCommand();
-        }
-
-        /// <summary>
-        /// 单独初始化商城模块：建商城业务表（开发模式非SaaS）+ 商城菜单种子，独立于 InitDb。
-        /// 由 RunInitDb 在 InitMall=true 时调用，可在 InitDb=false 时单独建商城表与菜单。
-        /// </summary>
-        public static void InitMall()
-        {
-            // 1) 建商城业务表（非SaaS开发模式，建 MallDb 表）
-            if (InternalApp.ServiceProvider != null)
-            {
-                using var scope = InternalApp.ServiceProvider.CreateScope();
-                ITenantModuleInitializer mallInitializer = null;
-                foreach (var mi in scope.ServiceProvider.GetServices<ITenantModuleInitializer>())
-                {
-                    if (mi.ModuleName == "Mall")
-                    {
-                        mallInitializer = mi;
-                        break;
-                    }
-                }
-                mallInitializer?.InitializeNonSaaS();
-            }
-
-            // 2) 商城菜单种子 + 重新纳入默认套餐（使商城菜单对租户可见）
-            SeedDataService seedDataService = new();
-            var mallSeedResult = seedDataService.InitMallMenuSeedData();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("==== 商城模块初始化完成 ====");
-            foreach (var item in mallSeedResult)
-                Console.WriteLine(item);
-            Console.ResetColor();
-        }
     }
 }

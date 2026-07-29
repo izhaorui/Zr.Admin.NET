@@ -55,5 +55,29 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public int SignType { get; set; } = 0;
+
+        /// <summary>
+        /// 条件字段（表单字段 key，如 amount）。为空表示无条件，节点必经。
+        /// </summary>
+        [SugarColumn(Length = 100, IsNullable = true)]
+        public string ConditionField { get; set; }
+
+        /// <summary>
+        /// 条件运算符 0=无 1=小于 2=小于等于 3=大于 4=大于等于 5=等于 6=不等于
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int ConditionOp { get; set; } = 0;
+
+        /// <summary>
+        /// 条件比较值
+        /// </summary>
+        [SugarColumn(Length = 100, IsNullable = true)]
+        public string ConditionValue { get; set; }
+
+        /// <summary>
+        /// 并行分组号（>0 表示参与并行分支）。同组节点同时激活待办，全部完成后汇聚；0/NULL 表示非并行。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int ParallelGroup { get; set; } = 0;
     }
 }

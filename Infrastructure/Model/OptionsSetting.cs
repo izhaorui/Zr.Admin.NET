@@ -28,6 +28,11 @@ namespace Infrastructure.Model
         /// 可在 InitDb=false 时单独设为 true 来只初始化商城（建表 + 商城菜单），不影响其他模块初始化。
         /// </summary>
         public bool InitMall { get; set; }
+        /// <summary>
+        /// 是否单独初始化工作流模块（开发模式下建工作流业务表）。独立于 InitDb，
+        /// 可在 InitDb=false 时单独设为 true 来只初始化工作流（建表），不影响其他模块初始化。
+        /// </summary>
+        public bool InitWorkflow { get; set; }
         /// <summary>数据库迁移配置（自动发现实体、差异检测、迁移历史）</summary>
         public DbMigrationOptions DbMigration { get; set; } = new();
         public string[] InitTables { get; set; }

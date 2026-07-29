@@ -116,7 +116,7 @@ namespace ZR.Mall.Service
 				db.DbMaintenance.AddColumn(tableName, new DbColumnInfo
 				{
 					DbColumnName = col.DbColumnName,
-					DataType = GetMySqlDataType(col, prop),
+					DataType = DbMigrationService.ResolveColumnDataType(db, col, prop),
 					IsNullable = !isNotNull,
 					DefaultValue = defaultValue
 				});
@@ -128,36 +128,6 @@ namespace ZR.Mall.Service
 					Console.WriteLine($"[商城迁移] 表 {tableName} 补列 {col.DbColumnName} 失败: {ex.Message}");
 				}
 			}
-		}
-
-		/// <summary>
-		/// 根据实体列信息推导 MySQL 列类型。
-		/// GetEntityInfo 返回的 EntityColumnInfo.DataType 对未显式标注 ColumnDataType 的值类型
-		/// （int/decimal/long 等）为空，直接传给 AddColumn 会生成缺类型的非法 SQL。
-		/// 这里做兜底：显式 ColumnDataType 优先，否则按 .NET 属性类型映射 MySQL 类型。
-		/// </summary>
-		private static string GetMySqlDataType(EntityColumnInfo col, PropertyInfo prop)
-		{
-			if (!string.IsNullOrWhiteSpace(col.DataType)) return col.DataType;
-
-			var type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-			if (type == typeof(string))
-			{
-				var len = col.Length > 0 ? col.Length : 255;
-				return len > 2000 ? "text" : $"varchar({len})";
-			}
-			if (type == typeof(long)) return "bigint";
-			if (type == typeof(int)) return "int";
-			if (type == typeof(short) || type == typeof(byte)) return "smallint";
-			if (type == typeof(decimal))
-			{
-				return col.DecimalDigits > 0 ? $"decimal(18,{col.DecimalDigits})" : "decimal(18,2)";
-			}
-			if (type == typeof(double) || type == typeof(float)) return "double";
-			if (type == typeof(DateTime) || type == typeof(DateTimeOffset)) return "datetime";
-			if (type == typeof(bool) || type.IsEnum) return "int";
-			if (type == typeof(Guid)) return "char(36)";
-			return "varchar(255)";
 		}
 
 		/// <summary>

@@ -1,7 +1,3 @@
-using ZR.Workflow.Model;
-using ZR.Workflow.Model.Dto;
-using ZR.Workflow.Service.IService;
-
 namespace ZR.Workflow.Service
 {
     /// <summary>
@@ -135,6 +131,10 @@ namespace ZR.Workflow.Service
                         ApproverId = n.ApproverId,
                         NodeOrder = n.NodeOrder,
                         SignType = n.SignType,
+                        ConditionField = n.ConditionField,
+                        ConditionOp = n.ConditionOp,
+                        ConditionValue = n.ConditionValue,
+                        ParallelGroup = n.ParallelGroup,
                         Create_by = userName,
                         Create_time = DateTime.Now
                     }).ToList();
@@ -173,6 +173,10 @@ namespace ZR.Workflow.Service
                 ApproverId = n.ApproverId,
                 NodeOrder = n.NodeOrder,
                 SignType = n.SignType,
+                ConditionField = n.ConditionField,
+                ConditionOp = n.ConditionOp,
+                ConditionValue = n.ConditionValue,
+                ParallelGroup = n.ParallelGroup,
                 Create_by = userName,
                 Create_time = DateTime.Now
             }).ToList();

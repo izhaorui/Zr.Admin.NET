@@ -46,6 +46,7 @@ namespace ZR.Workflow.Service
                     Create_by = instance.ApplyUser
                 }).ExecuteCommand();
 
+                var formValues = ParseFormValues(instance);
                 if (firstNode == null)
                 {
                     instance.Status = (int)WfInstanceStatus.Approved;
@@ -53,7 +54,7 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, firstNode, allNodes);
+                    ArriveNode(instance, firstNode, allNodes, formValues);
                 }
             });
 
@@ -118,16 +119,8 @@ namespace ZR.Workflow.Service
                     .Where(t => t.InstanceId == instance.InstanceId && t.NodeId == node.NodeId && t.Status == (int)WfTaskStatus.Pending)
                     .ExecuteCommand();
 
-                var next = GetNextAuditNode(allNodes, node.NodeOrder);
-                if (next == null)
-                {
-                    instance.Status = (int)WfInstanceStatus.Approved;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
-                }
-                else
-                {
-                    ArriveNode(instance, next, allNodes);
-                }
+                var formValues = ParseFormValues(instance);
+                AdvanceToNext(instance, node, allNodes, formValues);
             });
 
             if (!result.IsSuccess)
@@ -387,10 +380,108 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 到达某节点：审批节点生成待办并等待；抄送节点跳过并继续；结束则通过
+        /// 到达某节点：按条件排他跳过；并行分组则同时激活组内节点(fork)；
+        /// 审批节点生成待办并等待；抄送节点生成抄送记录并继续；结束则通过。
         /// </summary>
-        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes)
+        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<string, string> formValues)
         {
+            // 排他跳过：条件不满足则顺延到下一节点（递归）；全部不满足则流程直接通过
+            if (!EvalCondition(node, formValues))
+            {
+                var next = GetNextAuditNode(allNodes, node.NodeOrder);
+                if (next == null)
+                {
+                    instance.Status = (int)WfInstanceStatus.Approved;
+                    Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
+                }
+                else
+                {
+                    ArriveNode(instance, next, allNodes, formValues);
+                }
+                return;
+            }
+
+            // 并行分支：首次到达该分组时，同时激活组内所有满足条件的节点
+            if (node.ParallelGroup > 0)
+            {
+                var groupNodes = allNodes.Where(n => n.ParallelGroup == node.ParallelGroup).ToList();
+                var groupNodeIds = groupNodes.Select(g => g.NodeId).ToList();
+                var groupActive = Context.Queryable<WfFlowTask>()
+                    .Any(t => t.InstanceId == instance.InstanceId && groupNodeIds.Contains(t.NodeId));
+                if (!groupActive)
+                {
+                    instance.CurrentNodeId = groupNodes.Min(g => g.NodeId);
+                    Context.Updateable(instance).UpdateColumns(i => new { i.CurrentNodeId }).ExecuteCommand();
+
+                    foreach (var g in groupNodes)
+                    {
+                        if (!EvalCondition(g, formValues)) continue; // 分支条件不满足：不生成待办，视为已完成(包容网关)
+                        if (g.NodeType == (int)WfNodeType.Cc)
+                        {
+                            var ccUsers = string.Join(",", ResolveApprovers(g));
+                            Context.Insertable(new WfFlowTask
+                            {
+                                InstanceId = instance.InstanceId,
+                                NodeId = g.NodeId,
+                                NodeName = g.NodeName,
+                                Assignee = ccUsers,
+                                Status = (int)WfTaskStatus.Skipped,
+                                Create_time = DateTime.Now,
+                                Create_by = instance.ApplyUser
+                            }).ExecuteCommand();
+                            Context.Insertable(new WfFlowRecord
+                            {
+                                InstanceId = instance.InstanceId,
+                                NodeId = g.NodeId,
+                                Operator = ccUsers,
+                                Action = (int)WfAction.Submit,
+                                Opinion = "抄送",
+                                Create_time = DateTime.Now,
+                                Create_by = instance.ApplyUser
+                            }).ExecuteCommand();
+                        }
+                        else
+                        {
+                            foreach (var approver in ResolveApprovers(g))
+                            {
+                                Context.Insertable(new WfFlowTask
+                                {
+                                    InstanceId = instance.InstanceId,
+                                    NodeId = g.NodeId,
+                                    NodeName = g.NodeName,
+                                    Assignee = approver,
+                                    Status = (int)WfTaskStatus.Pending,
+                                    Create_time = DateTime.Now,
+                                    Create_by = instance.ApplyUser
+                                }).ExecuteCommand();
+                            }
+                        }
+                    }
+
+                    // 分组内无任何待办（条件均不满足 / 全为抄送）：视为已完成，直接汇聚
+                    var hasPending = Context.Queryable<WfFlowTask>()
+                        .Any(t => t.InstanceId == instance.InstanceId && groupNodeIds.Contains(t.NodeId) && t.Status == (int)WfTaskStatus.Pending);
+                    if (!hasPending)
+                    {
+                        // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点
+                        var after = GetNextAuditNode(allNodes, groupNodes.Max(g => g.NodeOrder));
+                        if (after == null)
+                        {
+                            instance.Status = (int)WfInstanceStatus.Approved;
+                            Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
+                        }
+                        else
+                        {
+                            ArriveNode(instance, after, allNodes, formValues);
+                        }
+                    }
+                    return; // 等待组内审批完成（由 Approve 的并行 join 汇聚推进）
+                }
+                // 分组已激活：fork 已覆盖全部成员，避免重复生成
+                return;
+            }
+
+            // —— 非并行节点 ——
             if (node.NodeType == (int)WfNodeType.Cc)
             {
                 var ccUsers = string.Join(",", ResolveApprovers(node));
@@ -424,7 +515,7 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, next, allNodes);
+                    ArriveNode(instance, next, allNodes, formValues);
                 }
                 return;
             }
@@ -451,6 +542,86 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
+        /// 节点完成后推进：并行分组内需整组完成才汇聚到后续节点；否则取下一节点。
+        /// </summary>
+        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<string, string> formValues)
+        {
+            if (completedNode.ParallelGroup > 0)
+            {
+                var groupNodes = allNodes.Where(n => n.ParallelGroup == completedNode.ParallelGroup).ToList();
+                var groupDone = groupNodes.All(g => IsNodeComplete(instance.InstanceId, g));
+                if (!groupDone) return; // 等待组内其余分支
+                var after = GetNextAuditNode(allNodes, groupNodes.Max(g => g.NodeOrder));
+                if (after == null)
+                {
+                    instance.Status = (int)WfInstanceStatus.Approved;
+                    Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
+                }
+                else
+                {
+                    ArriveNode(instance, after, allNodes, formValues);
+                }
+                return;
+            }
+
+            var next = GetNextAuditNode(allNodes, completedNode.NodeOrder);
+            if (next == null)
+            {
+                instance.Status = (int)WfInstanceStatus.Approved;
+                Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
+            }
+            else
+            {
+                ArriveNode(instance, next, allNodes, formValues);
+            }
+        }
+
+        /// <summary>
+        /// 将 FormContent(JSON) 解析为 字段->值 字典（值均为字符串）。解析失败返回空字典。
+        /// </summary>
+        private Dictionary<string, string> ParseFormValues(WfFlowInstance instance)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(instance.FormContent)) return dict;
+            try
+            {
+                var kv = JsonConvert.DeserializeObject<Dictionary<string, string>>(instance.FormContent);
+                if (kv != null)
+                    foreach (var k in kv) dict[k.Key] = k.Value;
+            }
+            catch { /* 非 JSON：视为无条件 */ }
+            return dict;
+        }
+
+        /// <summary>
+        /// 评估节点条件：字段/运算符/值三者齐全才生效，任一缺失视为无条件（返回 true）。
+        /// 数值可解析时按数值比较，否则按字符串比较；字段缺失或无值视为条件不满足（保守跳过）。
+        /// </summary>
+        private bool EvalCondition(WfFlowNode node, Dictionary<string, string> formValues)
+        {
+            if (string.IsNullOrWhiteSpace(node.ConditionField)) return true;
+            if (node.ConditionOp == (int)WfConditionOp.None) return true;
+            if (string.IsNullOrWhiteSpace(node.ConditionValue)) return true;
+            if (!formValues.TryGetValue(node.ConditionField, out var raw) || string.IsNullOrWhiteSpace(raw))
+                return false;
+
+            var target = node.ConditionValue;
+            var leftOk = double.TryParse(raw, out var left);
+            var rightOk = double.TryParse(target, out var right);
+            var bothNum = leftOk && rightOk;
+            switch ((WfConditionOp)node.ConditionOp)
+            {
+                case WfConditionOp.Lt: return bothNum ? left < right : string.CompareOrdinal(raw, target) < 0;
+                case WfConditionOp.Le: return bothNum ? left <= right : string.CompareOrdinal(raw, target) <= 0;
+                case WfConditionOp.Gt: return bothNum ? left > right : string.CompareOrdinal(raw, target) > 0;
+                case WfConditionOp.Ge: return bothNum ? left >= right : string.CompareOrdinal(raw, target) >= 0;
+                case WfConditionOp.Eq: return string.Equals(raw, target, StringComparison.OrdinalIgnoreCase);
+                case WfConditionOp.Ne: return !string.Equals(raw, target, StringComparison.OrdinalIgnoreCase);
+                default: return true;
+            }
+        }
+
+        /// <summary>
         /// 判断节点是否完成（或签：任一已审；会签：全部已审）
         /// </summary>
         private bool IsNodeComplete(long instanceId, WfFlowNode node)
@@ -459,6 +630,9 @@ namespace ZR.Workflow.Service
                 .Where(t => t.InstanceId == instanceId && t.NodeId == node.NodeId)
                 .ToList();
             if (!tasks.Any()) return true;
+            // 抄送节点：任务生成即视为完成（状态 Skipped），无需审批；并行汇聚时依赖此判定
+            if (node.NodeType == (int)WfNodeType.Cc)
+                return !tasks.Any(t => t.Status == (int)WfTaskStatus.Pending);
             if (node.SignType == (int)WfSignType.And)
                 return tasks.All(t => t.Status == (int)WfTaskStatus.Done);
             return tasks.Any(t => t.Status == (int)WfTaskStatus.Done);

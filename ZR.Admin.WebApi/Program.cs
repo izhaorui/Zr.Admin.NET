@@ -11,7 +11,7 @@ using SqlSugar;
 using System.Globalization;
 using System.Text.Json;
 using ZR.Admin.WebApi.Extensions;
-using  Infrastructure.Cache;
+using Infrastructure.Cache;
 using ZR.Common.DynamicApiSimple.Extens;
 using ZR.ServiceCore.Oss;
 using ZR.Infrastructure.IPTools;
@@ -20,8 +20,6 @@ using ZR.Model;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
 using Infrastructure.Captcha;
-
-//using SQLitePCL;
 
 var builder = WebApplication.CreateBuilder(args);
 // NLog: Setup NLog for Dependency injection

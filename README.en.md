@@ -100,6 +100,7 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 18. Notification management: The system notifies and announces information release and maintenance, and uses SignalR to realize real-time notification to users.
 19. Account Registration: You can register an account to log in to the system.
 20. Multi-language management: support static and back-end dynamic configuration internationalization. Currently only supports Chinese, English, and Traditional characters (only VUE3 is supported)
+21. Workflow module: a built-in lightweight approval workflow supporting dynamic forms (9 control types), process copy, approve/reject/withdraw/transfer/add-sign, dashboard, and soft-delete with guards. See [Workflow module documentation](document/工作流模块说明.md)
 
 ## 🍻 Project structure
 
@@ -114,6 +115,19 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 ├─ZR.Vue               			->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。
 ├─document               		->[文档]：数据库脚本
 ```
+
+## ⚡ Workflow module
+
+A built-in lightweight approval workflow module covering the full chain of "definition → initiation → node approval → record tracking".
+
+- **Dynamic form**: Configure form fields as JSON in the process definition; the front end auto-renders 9 control types (single/multi-line text, number, date, datetime, select, radio, switch, image upload).
+- **Process copy**: One-click copy of the process definition and all node configurations, generating a disabled copy to avoid rebuilding.
+- **Approval actions**: Approve, reject, withdraw, transfer, add-sign; supports OR/AND sign; approvers can be specific users/roles/departments.
+- **Dashboard**: Aggregates the current user's todo / done / initiated-by-me / cc counts.
+- **Soft delete & guard**: Deleting a process definition keeps historical data (nodes/instances/tasks/records); deletion is rejected if approval-pending or withdrawn instances exist.
+- **Mobile menu**: Standalone workflow App workbench menu, filtered by permission.
+
+See [Workflow module documentation](document/工作流模块说明.md).
 
 ## 🍎 Storyplate
 

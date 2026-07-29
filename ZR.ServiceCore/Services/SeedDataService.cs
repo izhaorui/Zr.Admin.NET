@@ -264,20 +264,6 @@ namespace ZR.ServiceCore.Services
             data ??= [];
             data = data.Where(x => !string.IsNullOrWhiteSpace(x.TenantId)).ToList();
 
-            var mainDb = App.MainDbConfigId;
-            if (!data.Any(x => string.Equals(x.TenantId, mainDb, StringComparison.OrdinalIgnoreCase)))
-            {
-                data.Add(new SysTenant
-                {
-                    TenantId = mainDb,
-                    TenantName = "默认租户",
-                    CompanyName = "默认租户",
-                    Status = 0,
-                    DelFlag = 0,
-                    Remark = "种子初始化自动补齐"
-                });
-            }
-
             var db = DbScoped.SugarScope;
             var x = db.Storageable(data)
                 .WhereColumns(it => it.TenantId)
@@ -288,6 +274,32 @@ namespace ZR.ServiceCore.Services
 
             string msg = $"[租户数据] 插入{x.InsertList.Count} 更新{x.UpdateList.Count} 错误{x.ErrorList.Count} 总共{x.TotalList.Count}";
             return (msg, x.ErrorList, x.IgnoreList);
+        }
+
+        /// <summary>
+        /// 确保主库默认租户存在（幂等，直接查库判断）。作为种子数据的兜底：
+        /// 即使 data.xlsx 无 tenant 页或未执行全量种子，也能保证主库租户元信息存在。
+        /// 原分散在 InitTable.EnsureDefaultTenant，已统一收敛至此。
+        /// </summary>
+        public string EnsureDefaultTenant()
+        {
+            var mainDb = App.MainDbConfigId;
+            var db = DbScoped.SugarScope;
+
+            if (db.Queryable<SysTenant>().Any(x => x.DelFlag == 0 && x.TenantId == mainDb))
+                return "[默认租户] 已存在，跳过";
+
+            db.Insertable(new SysTenant
+            {
+                TenantId = mainDb,
+                TenantName = "默认租户",
+                CompanyName = "默认租户",
+                Status = 0,
+                DelFlag = 0,
+                Remark = "种子初始化自动补齐"
+            }).ExecuteCommand();
+
+            return "[默认租户] 已创建";
         }
 
         /// <summary>
@@ -362,13 +374,14 @@ namespace ZR.ServiceCore.Services
                 result.Add(InitArticleCategoryData(sysArticleCategory).Item1);
                 result.Add(InitNoticeData(sysNotice).Item1);
                 result.Add(InitTenantData(sysTenant).Item1);
+                result.Add(EnsureDefaultTenant());
                 result.Add(EnsureTenantMenuSeedData());
                 result.Add(EnsureTenantPlanMenuSeedData());
                 result.Add(EnsureTenantDictSeedData());
                 result.Add(EnsureDailyScheduleMenuSeedData());
-                result.Add(EnsureSystemTasksSeedData());
-                result.Add(EnsureMallTasksSeedData());
-                result.Add(EnsureDbSyncMenuSeedData());
+                result.Add(new SystemTaskSeedService().EnsureSystemTasksSeedData());
+                result.Add(new MallSeedService().EnsureTasksSeedData());
+                result.Add(new SystemMenuSeedService().EnsureDbSyncMenuSeedData());
 
                 db.Ado.CommitTran();
             }
@@ -594,7 +607,7 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 为默认套餐写入所有非平台菜单作为初始菜单，确保新套餐开箱即用
         /// </summary>
-        private string EnsureTenantPlanMenuSeedData()
+        internal string EnsureTenantPlanMenuSeedData()
         {
             if (!App.IsTenantEnabled())
                 return "[套餐菜单] 多租户未启用，跳过";
@@ -617,26 +630,31 @@ namespace ZR.ServiceCore.Services
             var insertedCount = 0;
             foreach (var plan in plans)
             {
-                var existingCount = db.Queryable<SysTenantPlanMenu>().Count(x => x.PlanCode == plan.PlanCode);
-                if (existingCount > 0)
-                    continue;
+                // 增量补充：只补「套餐里还没有」的菜单，避免整体跳过导致后续新增菜单无法纳入
+                var existingMenuIds = db.Queryable<SysTenantPlanMenu>()
+                    .Where(x => x.PlanCode == plan.PlanCode)
+                    .Select(x => x.MenuId)
+                    .ToList();
 
-                var entities = filteredMenuIds.Select(menuId => new SysTenantPlanMenu
-                {
-                    PlanCode = plan.PlanCode,
-                    MenuId = menuId,
-                    Create_by = "system",
-                    Create_time = now
-                }).ToList();
+                var toAdd = filteredMenuIds
+                    .Where(menuId => !existingMenuIds.Contains(menuId))
+                    .Select(menuId => new SysTenantPlanMenu
+                    {
+                        PlanCode = plan.PlanCode,
+                        MenuId = menuId,
+                        Create_by = "system",
+                        Create_time = now
+                    })
+                    .ToList();
 
-                if (entities.Count > 0)
+                if (toAdd.Count > 0)
                 {
-                    db.Insertable(entities).ExecuteCommand();
-                    insertedCount += entities.Count;
+                    db.Insertable(toAdd).ExecuteCommand();
+                    insertedCount += toAdd.Count;
                 }
             }
 
-            return $"[套餐菜单] 为默认套餐写入{insertedCount}条菜单";
+            return $"[套餐菜单] 为默认套餐补充{insertedCount}条菜单";
         }
 
 
@@ -810,264 +828,21 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 确保系统内置定时任务存在（如租户到期自动停服）。幂等，仅在首次运行时写入。
-        /// 与租户菜单/字典等系统数据一致，通过代码而非 data.xlsx 维护。
-        /// </summary>
-        private string EnsureSystemTasksSeedData()
-        {
-            var mainTenantId = App.MainDbConfigId;
-            var db = DbScoped.SugarScope.GetConnectionScope(mainTenantId);
-
-            if (db.Queryable<SysTasks>().ClearFilter().Any(x => x.ID == "tenant_expire_suspend"))
-                return "[系统任务] 租户到期自动停服已存在，跳过";
-
-            db.Insertable(new SysTasks
-            {
-                ID = "20260725000001",
-                Name = "租户到期自动停服",
-                JobGroup = "system",
-                Cron = "0 0 2 * * ?",
-                AssemblyName = "ZR.ServiceCore",
-                ClassName = "Job_TenantExpireSuspend",
-                TriggerType = 1,
-                IntervalSecond = 0,
-                IsStart = 1,
-                TaskType = 1,
-                TenantId = mainTenantId,
-                Create_by = "system"
-            }).ExecuteCommand();
-
-            return "[系统任务] 写入租户到期自动停服";
-        }
-
-        /// <summary>
-        /// 确保商城系统内置定时任务存在（待付款超时自动取消）。幂等，仅首次写入。
-        /// 商城数据固定走 MallDb、与租户无关，TenantId 设为主库即可单次执行（OMSOrderService 内部已固定连接）。
-        /// </summary>
-        private string EnsureMallTasksSeedData()
-        {
-            var mainTenantId = App.MainDbConfigId;
-            var db = DbScoped.SugarScope.GetConnectionScope(mainTenantId);
-
-            if (db.Queryable<SysTasks>().ClearFilter().Any(x => x.ID == "mall_close_pending"))
-                return "[商城任务] 待付款超时自动取消已存在，跳过";
-
-            db.Insertable(new SysTasks
-            {
-                ID = "mall_close_pending",
-                Name = "商城待付款订单超时自动取消",
-                JobGroup = "mall",
-                Cron = "0 0/5 * * * ?",
-                AssemblyName = "ZR.Mall",
-                ClassName = "Job_ClosePendingOrder",
-                TriggerType = 1,
-                IntervalSecond = 0,
-                IsStart = 1,
-                TaskType = 1,
-                TenantId = mainTenantId,
-                Create_by = "system"
-            }).ExecuteCommand();
-
-            return "[商城任务] 写入待付款超时自动取消";
-        }
-
-        /// <summary>
-        /// 确保"数据库结构同步"菜单与按钮权限存在（幂等），挂到监控目录(monitor)下。
-        /// 与租户菜单/字典等系统数据一致，通过代码而非 data.xlsx 维护。
-        /// </summary>
-        private string EnsureDbSyncMenuSeedData()
-        {
-            var db = DbScoped.SugarScope;
-            var now = DateTime.Now;
-
-            // 监控一级目录
-            var monitorMenu = db.Queryable<SysMenu>()
-                .First(x => x.MenuType == "M" && x.Path == "monitor");
-            if (monitorMenu == null) return "[数据库同步菜单] 未找到监控目录，跳过";
-
-            // 页面菜单
-            var pageMenu = db.Queryable<SysMenu>()
-                .First(x => x.MenuType == "C" && x.Perms == "system:dbSync:list");
-            if (pageMenu == null)
-            {
-                pageMenu = new SysMenu
-                {
-                    MenuName = "数据库同步",
-                    ParentId = monitorMenu.MenuId,
-                    OrderNum = 99,
-                    Path = "dbsync",
-                    Component = "monitor/DbSync",
-                    IsCache = "0",
-                    IsFrame = "0",
-                    MenuType = "C",
-                    Visible = "0",
-                    Status = "0",
-                    Perms = "system:dbSync:list",
-                    Icon = "ele-refresh",
-                    Create_by = "system",
-                    Create_time = now
-                };
-                pageMenu.MenuId = db.Insertable(pageMenu).ExecuteReturnIdentity();
-            }
-
-            // 按钮权限
-            var buttons = new List<(string Name, string Perms, int OrderNum)>
-            {
-                ("预览差异", "system:dbSync:diff", 1),
-                ("执行同步", "system:dbSync:sync", 2)
-            };
-            foreach (var b in buttons)
-            {
-                var exist = db.Queryable<SysMenu>()
-                    .Any(x => x.ParentId == pageMenu.MenuId && x.MenuType == "F" && x.Perms == b.Perms);
-                if (exist) continue;
-
-                db.Insertable(new SysMenu
-                {
-                    MenuName = b.Name,
-                    ParentId = pageMenu.MenuId,
-                    OrderNum = b.OrderNum,
-                    Path = string.Empty,
-                    Component = string.Empty,
-                    IsCache = "0",
-                    IsFrame = "0",
-                    MenuType = "F",
-                    Visible = "0",
-                    Status = "0",
-                    Perms = b.Perms,
-                    Icon = "#",
-                    Create_by = "system",
-                    Create_time = now
-                }).ExecuteCommand();
-            }
-
-
-            return "[数据库同步菜单] 已确保存在";
-        }
-
-        /// <summary>
-        /// 确保商城后台管理菜单与按钮权限存在（幂等）。与租户菜单/字典等系统数据一致，通过代码而非 data.xlsx 维护。
-        /// 建好后会被 EnsureTenantPlanMenuSeedData 自动纳入默认套餐，租户开箱可见。
-        /// </summary>
-        private string EnsureMallMenuSeedData()
-        {
-            var db = DbScoped.SugarScope;
-            var now = DateTime.Now;
-
-            // 1) 商城目录（一级目录）
-            var mallMenu = db.Queryable<SysMenu>()
-                .First(x => x.MenuType == "M" && x.Path == "shopping");
-            if (mallMenu == null)
-            {
-                mallMenu = new SysMenu
-                {
-                    MenuName = "商城",
-                    ParentId = 0,
-                    OrderNum = 50,
-                    Path = "shopping",
-                    Component = null,
-                    IsCache = "0",
-                    IsFrame = "0",
-                    MenuType = "M",
-                    Visible = "0",
-                    Status = "0",
-                    Perms = string.Empty,
-                    Icon = "shopping",
-                    MenuNameKey = "",
-                    Create_by = "system",
-                    Create_time = now
-                };
-                mallMenu.MenuId = db.Insertable(mallMenu).ExecuteReturnIdentity();
-            }
-
-            // 2) 子页面 + 按钮权限定义
-            var pages = new List<(string Name, string Path, string Component, string Perms, string Icon, int OrderNum, List<(string, string, int)> Buttons)>
-            {
-                ("品牌管理", "brand", "shopping/Brand", "shop:brand:list", "goods", 1,
-                    new() { ("查询", "shop:brand:query", 1), ("新增", "shop:brand:add", 2), ("修改", "shop:brand:edit", 3), ("删除", "shop:brand:delete", 4), ("导出", "shop:brand:export", 5) }),
-                ("商品分类", "category", "shopping/Category", "shop:category:list", "tree", 2,
-                    new() { ("查询", "shop:category:query", 1), ("新增", "shop:category:add", 2), ("修改", "shop:category:edit", 3), ("删除", "shop:category:delete", 4), ("导出", "shop:category:export", 5) }),
-                ("商品管理", "product", "shopping/Product", "shop:product:list", "shopping", 3,
-                    new() { ("查询", "shop:product:query", 1), ("新增", "shop:product:add", 2), ("修改", "shop:product:edit", 3), ("删除", "shop:product:delete", 4), ("导出", "shop:product:export", 5) }),
-                ("规格模板", "spectemplate", "shopping/SpecTemplate", "spectpl:list", "operation", 4,
-                    new() { ("查询", "spectpl:query", 1), ("新增", "spectpl:add", 2), ("修改", "spectpl:edit", 3), ("删除", "spectpl:delete", 4) }),
-                ("库存/SKU", "skus", "shopping/Skus", "shop:skus:list", "collection", 5,
-                    new() { ("查询", "shop:skus:query", 1), ("新增", "shop:skus:add", 2), ("修改", "shop:skus:edit", 3), ("删除", "shop:skus:delete", 4) }),
-                ("订单管理", "order", "shopping/Order", "oms:order:list", "list", 6,
-                    new() { ("查询", "oms:order:query", 1), ("发货", "oms:order:ship", 2), ("取消", "oms:order:cancel", 3), ("删除", "oms:order:delete", 4), ("导出", "oms:order:export", 5), ("销售统计", "oms:sale:query", 6) }),
-                ("支付流水", "payment", "shopping/Payment", "oms:payment:list", "money", 7,
-                    new() { ("查询", "oms:payment:list", 1) }),
-            };
-
-            var inserted = 0;
-            foreach (var p in pages)
-            {
-                var pageMenu = db.Queryable<SysMenu>()
-                    .First(x => x.MenuType == "C" && (x.Perms == p.Perms || x.Component == p.Component));
-                if (pageMenu == null)
-                {
-                    pageMenu = new SysMenu
-                    {
-                        MenuName = p.Name,
-                        ParentId = mallMenu.MenuId,
-                        OrderNum = p.OrderNum,
-                        Path = p.Path,
-                        Component = p.Component,
-                        IsCache = "0",
-                        IsFrame = "0",
-                        MenuType = "C",
-                        Visible = "0",
-                        Status = "0",
-                        Perms = p.Perms,
-                        Icon = p.Icon,
-                        Create_by = "system",
-                        Create_time = now
-                    };
-                    pageMenu.MenuId = db.Insertable(pageMenu).ExecuteReturnIdentity();
-                    inserted++;
-                }
-
-                foreach (var btn in p.Buttons)
-                {
-                    var exist = db.Queryable<SysMenu>()
-                        .Any(x => x.ParentId == pageMenu.MenuId && x.MenuType == "F" && x.Perms == btn.Item2);
-                    if (exist) continue;
-
-                    db.Insertable(new SysMenu
-                    {
-                        MenuName = btn.Item1,
-                        ParentId = pageMenu.MenuId,
-                        OrderNum = btn.Item3,
-                        Path = string.Empty,
-                        Component = string.Empty,
-                        IsCache = "0",
-                        IsFrame = "0",
-                        MenuType = "F",
-                        Visible = "0",
-                        Status = "0",
-                        Perms = btn.Item2,
-                        Icon = "#",
-                        Create_by = "system",
-                        Create_time = now
-                    }).ExecuteCommand();
-                    inserted++;
-                }
-            }
-
-            return $"[商城菜单] 新增{inserted}条菜单/权限";
-        }
-
-        /// <summary>
-        /// 单独初始化商城模块：创建商城菜单与按钮权限，并重新纳入默认套餐使其对租户可见。
-        /// 供 InitDb=false 时通过 InitMall 单独执行（不再随全量种子数据自动执行）。
+        /// 单独初始化商城模块：创建商城菜单与按钮权限，并纳入默认套餐使其对租户可见。
+        /// 委托给 MallSeedService，供 InitDb=false 时通过 InitMall 单独执行。
         /// </summary>
         public List<string> InitMallMenuSeedData()
         {
-            var result = new List<string>();
-            result.Add(EnsureMallMenuSeedData());
-            result.Add(EnsureTenantPlanMenuSeedData());
-            result.Add(EnsureDbSyncMenuSeedData());
-            return result;
+            return new MallSeedService().InitMenuSeedData();
+        }
+
+        /// <summary>
+        /// 单独初始化工作流模块：创建工作流菜单与按钮权限，并纳入默认套餐使其对租户可见。
+        /// 委托给 WorkflowSeedService，供 InitDb=false 时通过 InitWorkflow 单独执行。
+        /// </summary>
+        public List<string> InitWorkflowMenuSeedData()
+        {
+            return new WorkflowSeedService().InitMenuSeedData();
         }
     }
 }
