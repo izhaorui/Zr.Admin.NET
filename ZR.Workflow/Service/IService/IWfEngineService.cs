@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using ZR.Workflow.Model;
-
 namespace ZR.Workflow.Service.IService
 {
     /// <summary>
@@ -22,6 +19,11 @@ namespace ZR.Workflow.Service.IService
         /// 驳回
         /// </summary>
         void Reject(long taskId, string opinion, string operatorName);
+
+        /// <summary>
+        /// 重新提交：驳回后由申请人修改表单再次发起，回到首节点重新审批
+        /// </summary>
+        void Resubmit(long instanceId, string formContent, string attachment, string title, string operatorName);
 
         /// <summary>
         /// 撤回（仅首节点未处理时）

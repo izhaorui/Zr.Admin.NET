@@ -11,5 +11,9 @@ public enum UserMsgType
     /// <summary>
     /// 商城订单通知：发货/退款等订单状态变化推送给买家
     /// </summary>
-    ORDER = 5
+    ORDER = 5,
+    /// <summary>
+    /// 工作流通知：审批待办/通过/驳回/转办/加签/撤回/重提等流转提醒
+    /// </summary>
+    WORKFLOW = 6
 }

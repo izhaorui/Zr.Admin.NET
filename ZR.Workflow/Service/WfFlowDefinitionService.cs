@@ -151,13 +151,15 @@ namespace ZR.Workflow.Service
         /// </summary>
         private string GenCopyCode(string baseCode)
         {
-            var candidate = $"{baseCode}_copy";
+            var prefix = $"{baseCode}_copy";
+            var existing = Context.Queryable<WfFlowDefinition>()
+                .Where(f => f.IsDelete == 0 && f.FlowCode.StartsWith(prefix))
+                .Select(f => f.FlowCode)
+                .ToList();
+            var candidate = prefix;
             var i = 2;
-            while (Context.Queryable<WfFlowDefinition>().Any(f => f.IsDelete == 0 && f.FlowCode == candidate))
-            {
-                candidate = $"{baseCode}_copy{i}";
-                i++;
-            }
+            while (existing.Contains(candidate))
+                candidate = $"{baseCode}_copy{i++}";
             return candidate;
         }
 

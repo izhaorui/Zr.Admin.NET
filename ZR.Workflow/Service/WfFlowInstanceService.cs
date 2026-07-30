@@ -1,8 +1,4 @@
-using SqlSugar;
 using ZR.Workflow.Enum;
-using ZR.Workflow.Model;
-using ZR.Workflow.Model.Dto;
-using ZR.Workflow.Service.IService;
 
 namespace ZR.Workflow.Service
 {
@@ -19,10 +15,16 @@ namespace ZR.Workflow.Service
             _engine = engine;
         }
 
-        public PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, string userName)
+        /// <summary>
+        /// 查询我的待办/已办/我发起/抄送的流程实例列表，按申请时间倒序分页返回。
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, long userId)
         {
             var predicate = Expressionable.Create<WfFlowInstance>();
-            predicate = predicate.And(t => t.ApplyUser == userName);
+            predicate = predicate.And(t => t.ApplyUserId == userId);
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), t => t.Title.Contains(parm.Title));
             predicate = predicate.AndIF(parm.Status != null, t => t.Status == parm.Status);
             predicate = predicate.AndIF(parm.FlowId != null, t => t.FlowId == parm.FlowId);
@@ -30,6 +32,10 @@ namespace ZR.Workflow.Service
                 .ToPage<WfFlowInstance, WfFlowInstanceDto>(parm);
             // 冗余 FlowName 可能为空，按 FlowId 关联流程定义兜底填充
             FillFlowName(paged.Result);
+            // 填充当前节点名称
+            FillCurrentNode(paged.Result);
+            // 填充审批人（列表展示）
+            FillApprovers(paged.Result);
             return paged;
         }
 
@@ -49,6 +55,54 @@ namespace ZR.Workflow.Service
             }
         }
 
+        /// <summary>
+        /// 按 CurrentNodeId 关联 wf_flow_node 填充当前节点名称（已结束/无当前节点则不填）。
+        /// </summary>
+        private void FillCurrentNode(List<WfFlowInstanceDto> list)
+        {
+            if (list == null || list.Count == 0) return;
+            var needIds = list.Where(x => x.CurrentNodeId.HasValue && string.IsNullOrEmpty(x.CurrentNodeName))
+                .Select(x => x.CurrentNodeId.Value).Distinct().ToList();
+            if (needIds.Count == 0) return;
+            var nodes = Context.Queryable<WfFlowNode>()
+                .Where(n => needIds.Contains(n.NodeId))
+                .ToList();
+            var map = nodes.ToDictionary(n => n.NodeId, n => n.NodeName);
+            foreach (var it in list)
+            {
+                if (it.CurrentNodeId.HasValue && string.IsNullOrEmpty(it.CurrentNodeName)
+                    && map.TryGetValue(it.CurrentNodeId.Value, out var nn))
+                    it.CurrentNodeName = nn;
+            }
+        }
+
+        /// <summary>
+        /// 填充审批人：进行中实例取当前待审任务审批人；已结束/撤回实例取全部参与审批人。
+        /// 直接读取任务表的昵称快照，免运行时关联用户表。
+        /// </summary>
+        private void FillApprovers(List<WfFlowInstanceDto> list)
+        {
+            if (list == null || list.Count == 0) return;
+            var ids = list.Select(x => x.InstanceId).Distinct().ToList();
+            var tasks = Context.Queryable<WfFlowTask>().Where(t => ids.Contains(t.InstanceId)).ToList();
+            foreach (var it in list)
+            {
+                var grp = tasks.Where(t => t.InstanceId == it.InstanceId);
+                // 进行中：当前待审审批人；结束/撤回：所有参与审批人
+                var relevant = it.Status == (int)WfInstanceStatus.Approval
+                    ? grp.Where(t => t.Status == (int)WfTaskStatus.Pending)
+                    : grp;
+                var approvers = relevant
+                    .Select(t => t.AssigneeNickName)
+                    .Where(a => !string.IsNullOrEmpty(a))
+                    .SelectMany(a => a.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    .Select(a => a.Trim())
+                    .Distinct()
+                    .ToList();
+                it.Approvers = string.Join(",", approvers);
+            }
+        }
+
         public WfFlowInstanceDto GetInfo(long instanceId)
         {
             var inst = Queryable().First(i => i.InstanceId == instanceId);
@@ -58,6 +112,11 @@ namespace ZR.Workflow.Service
             {
                 var def = Context.Queryable<WfFlowDefinition>().First(d => d.FlowId == inst.FlowId);
                 if (def != null) dto.FlowName = def.FlowName;
+            }
+            if (inst.CurrentNodeId.HasValue)
+            {
+                var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == inst.CurrentNodeId);
+                if (node != null) dto.CurrentNodeName = node.NodeName;
             }
             dto.Tasks = Context.Queryable<WfFlowTask>()
                 .Where(t => t.InstanceId == instanceId)
@@ -69,38 +128,59 @@ namespace ZR.Workflow.Service
                 .OrderBy(r => r.RecordId)
                 .ToList()
                 .Adapt<List<WfFlowRecordDto>>();
+            // 申请人/操作人昵称已在落库时快照（ApplyNickName / OperatorNickName），直接随 DTO 返回，无需运行时关联用户表
             return dto;
         }
 
-        public long Start(WfFlowInstanceDto dto, string userName)
+        public long Start(WfFlowInstanceDto dto, LoginUser user)
         {
             var instance = dto.Adapt<WfFlowInstance>();
-            instance.ApplyUser = userName;
+            instance.ApplyUser = user.UserName;
+            instance.ApplyUserId = user.UserId;
             instance.Status = (int)WfInstanceStatus.Approval;
-            instance.Create_by = userName;
+            instance.Create_by = user.UserName;
             instance.Create_time = DateTime.Now;
             return _engine.Start(instance);
+        }
+
+        /// <summary>
+        /// 驳回后重新提交：申请人修改内容再次发起，回到首节点重新审批
+        /// </summary>
+        public void Resubmit(long instanceId, WfFlowInstanceDto dto, string userName)
+        {
+            _engine.Resubmit(instanceId, dto.FormContent, dto.Attachment, dto.Title, userName);
         }
 
         /// <summary>
         /// 数据面板统计：聚合当前用户的待办/已办/我发起/抄送数量。
         /// 全部为只读 Count，单次调用返回所有指标。
         /// </summary>
-        public WfDashboardStatsDto GetDashboardStats(string userName)
+        public WfDashboardStatsDto GetDashboardStats(long userId)
         {
-            var todoCount = Context.Queryable<WfFlowTask>()
-                .Count(t => t.Assignee == userName && t.Status == (int)WfTaskStatus.Pending);
-            var doneCount = Context.Queryable<WfFlowTask>()
-                .Count(t => t.Assignee == userName && t.Status == (int)WfTaskStatus.Done);
-            var myInProgress = Context.Queryable<WfFlowInstance>()
-                .Count(i => i.ApplyUser == userName && i.Status == (int)WfInstanceStatus.Approval);
-            var myCompleted = Context.Queryable<WfFlowInstance>()
-                .Count(i => i.ApplyUser == userName
-                    && (i.Status == (int)WfInstanceStatus.Approved || i.Status == (int)WfInstanceStatus.Rejected));
-            // 抄送记录：Opinion 标记为"抄送"，Operator 以逗号分隔存放被抄送人
+            // 待办/已办：按状态分组一次聚合，减少数据库往返
+            var taskStats = Context.Queryable<WfFlowTask>()
+                .Where(t => t.AssigneeId == userId)
+                .GroupBy(t => t.Status)
+                .Select(t => new { Status = t.Status, Cnt = SqlFunc.AggregateCount(1) })
+                .ToList();
+            var todoCount = taskStats.FirstOrDefault(x => x.Status == (int)WfTaskStatus.Pending)?.Cnt ?? 0;
+            var doneCount = taskStats.FirstOrDefault(x => x.Status == (int)WfTaskStatus.Done)?.Cnt ?? 0;
+
+            // 我发起：按状态分组一次聚合
+            var instStats = Context.Queryable<WfFlowInstance>()
+                .Where(i => i.ApplyUserId == userId)
+                .GroupBy(i => i.Status)
+                .Select(i => new { Status = i.Status, Cnt = SqlFunc.AggregateCount(1) })
+                .ToList();
+            var myInProgress = instStats.FirstOrDefault(x => x.Status == (int)WfInstanceStatus.Approval)?.Cnt ?? 0;
+            var myCompleted = instStats
+                .Where(x => x.Status == (int)WfInstanceStatus.Approved || x.Status == (int)WfInstanceStatus.Rejected)
+                .Sum(x => x.Cnt);
+
+            // 抄送：记录已按收件人拆分并写入 OperatorId，且 Action 标记为 WfAction.Cc，直接按 userId 精确匹配，无需反查用户表
             var ccCount = Context.Queryable<WfFlowRecord>()
-                .Count(r => r.Opinion == "抄送"
-                    && SqlFunc.Contains(SqlFunc.MergeString(",", r.Operator, ","), "," + userName + ","));
+                .Count(r => r.Action == (int)WfAction.Cc && r.OperatorId == userId);
+
             return new WfDashboardStatsDto
             {
                 TodoCount = todoCount,

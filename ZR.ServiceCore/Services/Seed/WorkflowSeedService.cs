@@ -24,7 +24,7 @@ namespace ZR.ServiceCore.Services
             {
                 wfMenu = new SysMenu
                 {
-                    MenuName = "工作流",
+                    MenuName = "流程管理",
                     ParentId = 0,
                     OrderNum = 50,
                     Path = "workflow",
@@ -35,7 +35,7 @@ namespace ZR.ServiceCore.Services
                     Visible = "0",
                     Status = "0",
                     Perms = string.Empty,
-                    Icon = "menu",
+                    Icon = "cascader",
                     RouteName = "Workflow",
                     Create_by = "system",
                     Create_time = now
@@ -48,7 +48,7 @@ namespace ZR.ServiceCore.Services
             {
                 ("流程定义", "definition", "workflow/flowDefinition/index", "workflow:definition:list", "", 1, "",
                     new() { ("新增", "workflow:definition:add", 1), ("修改", "workflow:definition:edit", 2), ("删除", "workflow:definition:delete", 3) }),
-                ("我发起的", "my", "workflow/instance/index", "workflow:instance:list", "", 2, "",
+                ("我的流程", "my", "workflow/instance/index", "workflow:instance:list", "", 2, "",
                     new() { ("发起", "workflow:instance:start", 1), ("撤回", "workflow:instance:withdraw", 2) }),
                 ("待我审批", "todo", "workflow/todo/index", "workflow:task:list", "", 3, "",
                     new() { ("通过", "workflow:task:approve", 1), ("驳回", "workflow:task:reject", 2), ("转办", "workflow:task:transfer", 3), ("加签", "workflow:task:addsign", 4) }),

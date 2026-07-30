@@ -33,6 +33,9 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>审批人</summary>
         public string Assignee { get; set; }
 
+        /// <summary>审批人昵称（快照）</summary>
+        public string AssigneeNickName { get; set; }
+
         /// <summary>任务状态</summary>
         public int Status { get; set; } = 0;
 
@@ -42,6 +45,12 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>实际动作</summary>
         public int? Action { get; set; }
 
+        /// <summary>任务类型 0=审批 1=抄送</summary>
+        public int TaskType { get; set; }
+
+        /// <summary>是否已读</summary>
+        public bool IsRead { get; set; }
+
         /// <summary>处理时间</summary>
         public DateTime? HandleTime { get; set; }
 
@@ -50,6 +59,9 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>申请人（冗余）</summary>
         public string ApplyUser { get; set; }
+
+        /// <summary>申请人昵称（快照，冗余）</summary>
+        public string ApplyNickName { get; set; }
 
         /// <summary>流程名称（冗余）</summary>
         public string FlowName { get; set; }

@@ -33,10 +33,18 @@ namespace ZR.Workflow.Model
         public string NodeName { get; set; }
 
         /// <summary>
-        /// 审批人
+        /// 审批人（登录名，权限/关联用）
         /// </summary>
-        [SugarColumn(Length = 64, ExtendedAttribute = ProteryConstant.NOTNULL)]
+        [SugarColumn(Length = 500, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string Assignee { get; set; }
+
+        /// <summary>审批人Id（稳定外键）</summary>
+        [SugarColumn(IsNullable = true)]
+        public long? AssigneeId { get; set; }
+
+        /// <summary>审批人昵称（快照）</summary>
+        [SugarColumn(Length = 500, IsNullable = true)]
+        public string AssigneeNickName { get; set; }
 
         /// <summary>
         /// 任务状态 0=待审 1=已审 2=跳过
@@ -55,6 +63,16 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(IsNullable = true)]
         public int? Action { get; set; }
+
+        /// <summary>
+        /// 任务类型 0=审批 1=抄送（区分审批待办与抄送知会；原仅靠 Status=Skipped 易与“被跳过的审批”混淆）
+        /// </summary>
+        [SugarColumn(IsNullable = false, DefaultValue = "0")]
+        public int TaskType { get; set; } = 0;
+
+        /// <summary>是否已读（待办已读标记，默认未读）</summary>
+        [SugarColumn(IsNullable = false, DefaultValue = "0")]
+        public bool IsRead { get; set; } = false;
 
         /// <summary>
         /// 处理时间

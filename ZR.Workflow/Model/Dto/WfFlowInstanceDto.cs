@@ -38,11 +38,20 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>申请人</summary>
         public string ApplyUser { get; set; }
 
+        /// <summary>申请人昵称（快照）</summary>
+        public string ApplyNickName { get; set; }
+
         /// <summary>实例状态</summary>
         public int Status { get; set; } = 0;
 
         /// <summary>当前节点Id</summary>
         public long? CurrentNodeId { get; set; }
+
+        /// <summary>当前节点名称（按 CurrentNodeId 关联 wf_flow_node 填充）</summary>
+        public string CurrentNodeName { get; set; }
+
+        /// <summary>审批人（列表展示用，逗号分隔；进行中为当前待审人，已结束为全部参与审批人）</summary>
+        public string Approvers { get; set; }
 
         /// <summary>表单内容（JSON）</summary>
         public string FormContent { get; set; }

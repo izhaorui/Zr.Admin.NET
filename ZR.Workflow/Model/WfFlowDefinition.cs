@@ -45,9 +45,10 @@ namespace ZR.Workflow.Model
         /// <summary>
         /// 表单字段定义（JSON 数组，轻量动态表单；方案2 可替换为设计器 schema）
         /// 结构示例：[{"field":"reason","label":"请假事由","type":"textarea","required":true,"options":""}]
-        /// type: input|textarea|number|date|select；select 的 options 为逗号分隔文本
+        /// type 取值：input|textarea|number|date|datetime|select|radio|checkbox|switch|image|user
+        /// select/radio/checkbox 的 options 为逗号分隔文本（label 即 value）；user 类型存昵称字符串
         /// </summary>
-        [SugarColumn(ColumnDataType = "nvarchar(max)", IsNullable = true)]
+        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString, IsNullable = true)]
         public string FormItems { get; set; }
     }
 }

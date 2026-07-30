@@ -27,8 +27,8 @@ namespace ZR.Workflow.Controllers
         public IActionResult Start([FromBody] WfFlowInstanceDto parm)
         {
             if (parm == null) return ToResponse(ResultCode.PARAM_ERROR, "参数错误");
-            var userName = HttpContext.GetName();
-            var instanceId = _service.Start(parm, userName);
+            var loginUser = HttpContext.GetCurrentUser();
+            var instanceId = _service.Start(parm, loginUser);
             return SUCCESS(instanceId);
         }
 
@@ -39,8 +39,8 @@ namespace ZR.Workflow.Controllers
         [ActionPermissionFilter(Permission = "workflow:instance:list")]
         public IActionResult MyList([FromQuery] WfFlowInstanceQueryDto parm)
         {
-            var userName = HttpContext.GetName();
-            return SUCCESS(_service.GetMyList(parm, userName));
+            var userId = HttpContext.GetUId();
+            return SUCCESS(_service.GetMyList(parm, userId));
         }
 
         /// <summary>
@@ -67,13 +67,27 @@ namespace ZR.Workflow.Controllers
         }
 
         /// <summary>
+        /// 驳回后重新提交
+        /// </summary>
+        [HttpPost("resubmit/{instanceId}")]
+        [ActionPermissionFilter(Permission = "workflow:instance:start")]
+        [Log(Title = "重新提交", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Resubmit(long instanceId, [FromBody] WfFlowInstanceDto parm)
+        {
+            if (parm == null) return ToResponse(ResultCode.PARAM_ERROR, "参数错误");
+            var userName = HttpContext.GetName();
+            _service.Resubmit(instanceId, parm, userName);
+            return SUCCESS(1);
+        }
+
+        /// <summary>
         /// 数据面板统计（待办/已办/我发起/抄送）
         /// </summary>
         [HttpGet("dashboard")]
         public IActionResult Dashboard()
         {
-            var userName = HttpContext.GetName();
-            return SUCCESS(_service.GetDashboardStats(userName));
+            var userId = HttpContext.GetUId();
+            return SUCCESS(_service.GetDashboardStats(userId));
         }
     }
 }

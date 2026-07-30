@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ZR.Workflow.Model.Dto;
 
 namespace ZR.Workflow.Service.IService
@@ -8,6 +9,7 @@ namespace ZR.Workflow.Service.IService
     public interface IWfFlowRecordService
     {
         PagedInfo<WfFlowRecordDto> GetList(WfFlowRecordQueryDto parm);
-        PagedInfo<WfFlowRecordDto> GetCcList(WfFlowRecordQueryDto parm, string userName);
+        PagedInfo<WfFlowRecordDto> GetCcList(WfFlowRecordQueryDto parm, long userId);
+        void Read(List<long> ids, long userId);
     }
 }

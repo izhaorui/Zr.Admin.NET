@@ -1,5 +1,3 @@
-using ZR.Model.System;
-
 namespace ZR.Workflow.Model
 {
     /// <summary>
@@ -39,10 +37,18 @@ namespace ZR.Workflow.Model
         public string Title { get; set; }
 
         /// <summary>
-        /// 申请人
+        /// 申请人（登录名，权限/关联用）
         /// </summary>
         [SugarColumn(Length = 64, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string ApplyUser { get; set; }
+
+        /// <summary>申请人Id（稳定外键，按此查询/关联，避免依赖可变登录名）</summary>
+        [SugarColumn(IsNullable = true)]
+        public long? ApplyUserId { get; set; }
+
+        /// <summary>申请人昵称（提交时快照，展示用，免运行时关联用户表）</summary>
+        [SugarColumn(Length = 64, IsNullable = true)]
+        public string ApplyNickName { get; set; }
 
         /// <summary>
         /// 实例状态 0=审批中 1=通过 2=驳回 3=撤回

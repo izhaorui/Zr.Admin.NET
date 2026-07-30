@@ -1,5 +1,3 @@
-using ZR.Model.System;
-
 namespace ZR.Workflow.Model
 {
     /// <summary>
@@ -33,13 +31,22 @@ namespace ZR.Workflow.Model
         public long? NodeId { get; set; }
 
         /// <summary>
-        /// 操作人
+        /// 操作人（登录名，权限/关联用）
         /// </summary>
         [SugarColumn(Length = 64, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string Operator { get; set; }
 
+        /// <summary>操作人Id（稳定外键）</summary>
+        [SugarColumn(IsNullable = true)]
+        public long? OperatorId { get; set; }
+
+        /// <summary>操作人昵称（快照）</summary>
+        [SugarColumn(Length = 64, IsNullable = true)]
+        public string OperatorNickName { get; set; }
+
         /// <summary>
-        /// 动作 0=提交 1=通过 2=驳回 4=撤回
+        /// 动作，取值以 WfAction 枚举为准：
+        /// 0=提交 1=通过 2=驳回 3=转交 4=撤回 5=加签 6=重新提交 7=抄送
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public int Action { get; set; } = 0;
@@ -49,5 +56,9 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(Length = 500, IsNullable = true)]
         public string Opinion { get; set; }
+
+        /// <summary>是否已读（抄送/记录已读标记，默认未读）</summary>
+        [SugarColumn(IsNullable = false, DefaultValue = "0")]
+        public bool IsRead { get; set; } = false;
     }
 }

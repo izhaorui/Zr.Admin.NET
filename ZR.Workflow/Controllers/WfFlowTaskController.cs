@@ -1,8 +1,6 @@
-using Infrastructure.Extensions;
-using Infrastructure.Model;
+using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
-using ZR.Workflow.Model.Dto;
-using ZR.Workflow.Service.IService;
 
 namespace ZR.Workflow.Controllers
 {
@@ -29,8 +27,8 @@ namespace ZR.Workflow.Controllers
         [ActionPermissionFilter(Permission = "workflow:task:list")]
         public IActionResult TodoList([FromQuery] WfFlowTaskQueryDto parm)
         {
-            var userName = HttpContext.GetName();
-            return SUCCESS(_taskService.GetTodoList(parm, userName));
+            var userId = HttpContext.GetUId();
+            return SUCCESS(_taskService.GetTodoList(parm, userId));
         }
 
         /// <summary>
@@ -40,8 +38,8 @@ namespace ZR.Workflow.Controllers
         [ActionPermissionFilter(Permission = "workflow:task:list")]
         public IActionResult DoneList([FromQuery] WfFlowTaskQueryDto parm)
         {
-            var userName = HttpContext.GetName();
-            return SUCCESS(_taskService.GetDoneList(parm, userName));
+            var userId = HttpContext.GetUId();
+            return SUCCESS(_taskService.GetDoneList(parm, userId));
         }
 
         /// <summary>
@@ -94,6 +92,29 @@ namespace ZR.Workflow.Controllers
             var userName = HttpContext.GetName();
             _engine.AddSign(parm.TaskId, parm.Users, parm.Opinion, userName);
             return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 标记待办已读
+        /// </summary>
+        [HttpPost("read")]
+        [ActionPermissionFilter(Permission = "workflow:task:list")]
+        public IActionResult Read([FromBody] WfReadInput parm)
+        {
+            var userId = HttpContext.GetUId();
+            _taskService.Read(ParseIds(parm.Ids), userId);
+            return SUCCESS(1);
+        }
+
+        private static List<long> ParseIds(string ids)
+        {
+            var result = new List<long>();
+            if (string.IsNullOrEmpty(ids)) return result;
+            foreach (var s in ids.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (long.TryParse(s, out var v)) result.Add(v);
+            }
+            return result;
         }
     }
 }

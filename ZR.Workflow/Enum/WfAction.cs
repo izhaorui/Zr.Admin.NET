@@ -16,6 +16,10 @@ namespace ZR.Workflow.Enum
         /// <summary>撤回</summary>
         Withdraw = 4,
         /// <summary>加签</summary>
-        AddSign = 5
+        AddSign = 5,
+        /// <summary>重新提交</summary>
+        Resubmit = 6,
+        /// <summary>抄送</summary>
+        Cc = 7
     }
 }

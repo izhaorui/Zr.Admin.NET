@@ -29,4 +29,13 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>加签说明</summary>
         public string Opinion { get; set; }
     }
+
+    /// <summary>
+    /// 标记已读入参（Ids 为逗号分隔的主键，支持批量）
+    /// </summary>
+    public class WfReadInput
+    {
+        /// <summary>主键列表（逗号分隔）</summary>
+        public string Ids { get; set; }
+    }
 }

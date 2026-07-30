@@ -23,23 +23,6 @@ namespace Infrastructure.Extensions
         /// HttpContext.Items 中缓存的当前登录用户 Key（JwtAuthMiddleware 写入，避免同请求内重复解析 JWT）
         /// </summary>
         public const string CurrentUserCacheKey = "__CurrentUser";
-        /// <summary>
-        /// 是否是ajax请求
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        public static bool IsAjaxRequest(this HttpRequest request)
-        {
-            if (request == null)
-            {
-                throw new ArgumentNullException(nameof(request));
-            }
-
-            //return request.Headers.ContainsKey("X-Requested-With") &&
-            //       request.Headers["X-Requested-With"].Equals("XMLHttpRequest");
-
-            return request.Headers["X-Requested-With"] == "XMLHttpRequest" || request.Headers != null && request.Headers["X-Requested-With"] == "XMLHttpRequest";
-        }
 
         /// <summary>
         /// 获取客户端IP

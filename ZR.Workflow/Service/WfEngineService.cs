@@ -1,7 +1,4 @@
-using System.Collections.Generic;
-using ZR.Workflow.Model;
-using ZR.Workflow.Model.Dto;
-using ZR.Workflow.Service.IService;
+using ZR.ServiceCore.Services;
 
 namespace ZR.Workflow.Service
 {
@@ -11,6 +8,13 @@ namespace ZR.Workflow.Service
     [AppService(ServiceType = typeof(IWfEngineService))]
     public class WfEngineService : BaseService<WfFlowInstance>, IWfEngineService
     {
+        private readonly ISysUserMsgService _msgService;
+
+        public WfEngineService(ISysUserMsgService msgService)
+        {
+            _msgService = msgService;
+        }
+
         /// <summary>
         /// 发起申请
         /// </summary>
@@ -31,20 +35,19 @@ namespace ZR.Workflow.Service
 
             var result = UseTran(() =>
             {
+                var now = DateTime.Now;
+                var applyUser = Context.Queryable<SysUser>().First(u => u.UserId == instance.ApplyUserId);
+                if (applyUser != null)
+                {
+                    instance.ApplyNickName = applyUser.NickName;
+                }
+
                 instance.Status = (int)WfInstanceStatus.Approval;
                 instance.CurrentNodeId = firstNode?.NodeId;
-                instance.Create_time = DateTime.Now;
+                instance.Create_time = now;
                 instance = InsertReturnEntity(instance) ?? throw new CustomException("发起申请失败");
 
-                Context.Insertable(new WfFlowRecord
-                {
-                    InstanceId = instance.InstanceId,
-                    Operator = instance.ApplyUser,
-                    Action = (int)WfAction.Submit,
-                    Opinion = "发起申请",
-                    Create_time = DateTime.Now,
-                    Create_by = instance.ApplyUser
-                }).ExecuteCommand();
+                AddRecord(instance.InstanceId, null, null, instance.ApplyUser, (int)WfAction.Submit, "发起申请");
 
                 var formValues = ParseFormValues(instance);
                 if (firstNode == null)
@@ -87,31 +90,24 @@ namespace ZR.Workflow.Service
 
             var result = UseTran(() =>
             {
+                var now = DateTime.Now;
                 Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Status = (int)WfTaskStatus.Done,
                         Action = (int)WfAction.Approve,
                         Opinion = opinion,
-                        HandleTime = DateTime.Now,
-                        Update_time = DateTime.Now,
+                        HandleTime = now,
+                        Update_time = now,
                         Update_by = operatorName
                     })
                     .Where(t => t.TaskId == taskId).ExecuteCommand();
 
-                Context.Insertable(new WfFlowRecord
-                {
-                    TaskId = taskId,
-                    InstanceId = instance.InstanceId,
-                    NodeId = task.NodeId,
-                    Operator = operatorName,
-                    Action = (int)WfAction.Approve,
-                    Opinion = opinion,
-                    Create_time = DateTime.Now,
-                    Create_by = operatorName
-                }).ExecuteCommand();
+                AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.Approve, opinion);
 
                 if (!IsNodeComplete(instance.InstanceId, node)) return;
+
+                NotifyUsers(new[] { instance.ApplyUser }, $"【审批进度】{instance.Title} 的「{node.NodeName}」节点已通过。");
 
                 // 本节点已完成：跳过同节点其余待办，避免或签/并发下重复流转下一节点
                 Context.Updateable<WfFlowTask>()
@@ -144,29 +140,22 @@ namespace ZR.Workflow.Service
 
             var result = UseTran(() =>
             {
+                var now = DateTime.Now;
                 Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Status = (int)WfTaskStatus.Done,
                         Action = (int)WfAction.Reject,
                         Opinion = opinion,
-                        HandleTime = DateTime.Now,
-                        Update_time = DateTime.Now,
+                        HandleTime = now,
+                        Update_time = now,
                         Update_by = operatorName
                     })
                     .Where(t => t.TaskId == taskId).ExecuteCommand();
 
-                Context.Insertable(new WfFlowRecord
-                {
-                    TaskId = taskId,
-                    InstanceId = instance.InstanceId,
-                    NodeId = task.NodeId,
-                    Operator = operatorName,
-                    Action = (int)WfAction.Reject,
-                    Opinion = opinion,
-                    Create_time = DateTime.Now,
-                    Create_by = operatorName
-                }).ExecuteCommand();
+                AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.Reject, opinion);
+
+                NotifyUsers(new[] { instance.ApplyUser }, $"【审批驳回】{instance.Title} 被 {operatorName} 驳回{(string.IsNullOrEmpty(opinion) ? "" : "：" + opinion)}");
 
                 instance.Status = (int)WfInstanceStatus.Rejected;
                 Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
@@ -180,6 +169,62 @@ namespace ZR.Workflow.Service
             if (!result.IsSuccess)
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "驳回失败", result.ErrorMessage);
         }
+
+        /// <summary>
+        /// 重新提交：驳回后由申请人修改内容再次发起，实例回到首节点重新审批。
+        /// 历史审批任务与记录保留作为轨迹；仅当实例处于驳回状态时可操作。
+        /// </summary>
+        public void Resubmit(long instanceId, string formContent, string attachment, string title, string operatorName)
+        {
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.ApplyUser != operatorName)
+                throw new CustomException("仅申请人可重新提交");
+            if (instance.Status != (int)WfInstanceStatus.Rejected)
+                throw new CustomException("当前状态不可重新提交");
+
+            var def = Context.Queryable<WfFlowDefinition>().First(d => d.FlowId == instance.FlowId);
+            if (def == null) throw new CustomException("流程定义不存在");
+
+            var allNodes = Context.Queryable<WfFlowNode>()
+                .Where(n => n.FlowId == instance.FlowId)
+                .OrderBy(n => n.NodeOrder).ToList();
+            var firstNode = allNodes
+                .Where(n => n.NodeType == (int)WfNodeType.Audit || n.NodeType == (int)WfNodeType.Cc)
+                .FirstOrDefault();
+
+            var result = UseTran(() =>
+            {
+                var now = DateTime.Now;
+                instance.Status = (int)WfInstanceStatus.Approval;
+                instance.CurrentNodeId = firstNode?.NodeId;
+                instance.FormContent = formContent;
+                instance.Attachment = attachment;
+                if (!string.IsNullOrEmpty(title)) instance.Title = title;
+                instance.Update_time = now;
+                instance.Update_by = operatorName;
+                Context.Updateable(instance)
+                    .UpdateColumns(i => new { i.Status, i.CurrentNodeId, i.FormContent, i.Attachment, i.Title, i.Update_time, i.Update_by })
+                    .ExecuteCommand();
+
+                AddRecord(instanceId, null, null, operatorName, (int)WfAction.Resubmit, "重新提交");
+
+                var formValues = ParseFormValues(instance);
+                if (firstNode == null)
+                {
+                    instance.Status = (int)WfInstanceStatus.Approved;
+                    Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
+                }
+                else
+                {
+                    ArriveNode(instance, firstNode, allNodes, formValues);
+                }
+            });
+
+            if (!result.IsSuccess)
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "重新提交失败", result.ErrorMessage);
+        }
+
 
         /// <summary>
         /// 撤回
@@ -204,20 +249,19 @@ namespace ZR.Workflow.Service
 
             var result = UseTran(() =>
             {
+                var pendingAssignees = Context.Queryable<WfFlowTask>()
+                    .Where(t => t.InstanceId == instanceId && t.Status == (int)WfTaskStatus.Pending)
+                    .Select(t => t.Assignee)
+                    .ToList();
+
                 Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
                     .Where(t => t.InstanceId == instanceId && t.Status == (int)WfTaskStatus.Pending)
                     .ExecuteCommand();
 
-                Context.Insertable(new WfFlowRecord
-                {
-                    InstanceId = instanceId,
-                    Operator = operatorName,
-                    Action = (int)WfAction.Withdraw,
-                    Opinion = "撤回申请",
-                    Create_time = DateTime.Now,
-                    Create_by = operatorName
-                }).ExecuteCommand();
+                AddRecord(instanceId, null, null, operatorName, (int)WfAction.Withdraw, "撤回申请");
+
+                NotifyUsers(pendingAssignees, $"【审批撤回】{instance.Title} 已被申请人撤回。");
 
                 instance.Status = (int)WfInstanceStatus.Withdrawn;
                 Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
@@ -247,29 +291,29 @@ namespace ZR.Workflow.Service
             if (instance.Status != (int)WfInstanceStatus.Approval)
                 throw new CustomException("流程状态异常，无法转办");
 
+            var targetUserEntity = Context.Queryable<SysUser>().First(u => u.UserName == targetUser);
+            var targetUserId = targetUserEntity?.UserId;
+            var targetNickName = targetUserEntity?.NickName;
             var result = UseTran(() =>
             {
+                var now = DateTime.Now;
                 Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Assignee = targetUser,
+                        AssigneeId = targetUserId,
+                        AssigneeNickName = targetNickName,
                         Opinion = opinion,
-                        Update_time = DateTime.Now,
+                        Action = (int)WfAction.Transfer,
+                        Update_time = now,
                         Update_by = operatorName
                     })
                     .Where(t => t.TaskId == taskId).ExecuteCommand();
 
-                Context.Insertable(new WfFlowRecord
-                {
-                    TaskId = taskId,
-                    InstanceId = instance.InstanceId,
-                    NodeId = task.NodeId,
-                    Operator = operatorName,
-                    Action = (int)WfAction.Transfer,
-                    Opinion = "转办给 " + targetUser + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion),
-                    Create_time = DateTime.Now,
-                    Create_by = operatorName
-                }).ExecuteCommand();
+                var recordOpinion = "转办给 " + targetUser + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.Transfer, recordOpinion);
+
+                NotifyUsers(new[] { targetUser }, $"【审批转办】{instance.Title} 由 {operatorName} 转办给您处理。");
             });
 
             if (!result.IsSuccess)
@@ -305,31 +349,12 @@ namespace ZR.Workflow.Service
 
             var result = UseTran(() =>
             {
-                foreach (var u in toAdd)
-                {
-                    Context.Insertable(new WfFlowTask
-                    {
-                        InstanceId = task.InstanceId,
-                        NodeId = task.NodeId,
-                        NodeName = task.NodeName,
-                        Assignee = u,
-                        Status = (int)WfTaskStatus.Pending,
-                        Create_time = DateTime.Now,
-                        Create_by = operatorName
-                    }).ExecuteCommand();
-                }
+                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, toAdd, (int)WfTaskStatus.Pending, operatorName);
 
-                Context.Insertable(new WfFlowRecord
-                {
-                    TaskId = taskId,
-                    InstanceId = instance.InstanceId,
-                    NodeId = task.NodeId,
-                    Operator = operatorName,
-                    Action = (int)WfAction.AddSign,
-                    Opinion = "加签：" + string.Join(",", toAdd) + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion),
-                    Create_time = DateTime.Now,
-                    Create_by = operatorName
-                }).ExecuteCommand();
+                NotifyUsers(toAdd, $"【审批加签】{instance.Title} 由 {operatorName} 邀请您加签审批。");
+
+                var recordOpinion = "加签：" + string.Join(",", toAdd) + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.AddSign, recordOpinion);
             });
 
             if (!result.IsSuccess)
@@ -337,6 +362,128 @@ namespace ZR.Workflow.Service
         }
 
         #region 内部流转辅助
+
+        #region 基础辅助
+
+        /// <summary>
+        /// 统一创建流程操作记录
+        /// </summary>
+        private void AddRecord(long instanceId, long? taskId, long? nodeId, string operatorName, int action, string opinion, DateTime? createTime = null, long? operatorId = null, string operatorNick = null)
+        {
+            // 未显式提供时按登录名反查用户表取 Id/昵称；已提供（如抄送多收件人）则保留快照值
+            if (!operatorId.HasValue || string.IsNullOrEmpty(operatorNick))
+            {
+                var op = Context.Queryable<SysUser>().First(u => u.UserName == operatorName);
+                if (!operatorId.HasValue) operatorId = op?.UserId;
+                if (string.IsNullOrEmpty(operatorNick)) operatorNick = op?.NickName;
+            }
+            Context.Insertable(new WfFlowRecord
+            {
+                InstanceId = instanceId,
+                TaskId = taskId,
+                NodeId = nodeId,
+                Operator = operatorName,
+                OperatorId = operatorId,
+                OperatorNickName = operatorNick,
+                Action = action,
+                Opinion = opinion,
+                Create_time = createTime ?? DateTime.Now,
+                Create_by = operatorName
+            }).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 站内信通知：落库并 SignalR 实时推送（异常不影响主流程）
+        /// </summary>
+        private void Notify(long userId, string content)
+        {
+            try { _msgService.AddSysUserMsg(userId, content, UserMsgType.WORKFLOW); }
+            catch { /* 通知失败不影响流程主逻辑 */ }
+        }
+
+        /// <summary>
+        /// 批量通知一组用户名（支持逗号分隔串，自动拆分去重）
+        /// </summary>
+        private void NotifyUsers(IEnumerable<string> userNames, string content)
+        {
+            if (userNames == null) return;
+            var names = userNames
+                .SelectMany(n => (n ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(n => n.Trim())
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .ToList();
+            if (names.Count == 0) return;
+            var ids = Context.Queryable<SysUser>().Where(u => names.Contains(u.UserName)).Select(u => u.UserId).ToList();
+            foreach (var id in ids) Notify(id, content);
+        }
+
+        /// <summary>
+        /// 批量解析用户名 -> (UserId, NickName)，用于任务/记录审批人昵称快照
+        /// </summary>
+        private Dictionary<string, SysUser> GetUserMap(IEnumerable<string> userNames)
+        {
+            var names = userNames.Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
+            if (names.Count == 0) return new Dictionary<string, SysUser>();
+            return Context.Queryable<SysUser>().Where(u => names.Contains(u.UserName)).ToList()
+                .ToDictionary(u => u.UserName, u => u);
+        }
+
+        /// <summary>
+        /// 生成抄送任务并落库抄送记录、推送通知；审批人昵称一并快照。
+        /// </summary>
+        private void CreateCcTask(WfFlowInstance instance, WfFlowNode node)
+        {
+            var ccList = ResolveApprovers(node);
+            var users = GetUserMap(ccList);
+            var ccUsers = string.Join(",", ccList);
+            var ccNick = string.Join(",", ccList.Select(c => users.TryGetValue(c, out var u) ? u.NickName : c));
+            Context.Insertable(new WfFlowTask
+            {
+                InstanceId = instance.InstanceId,
+                NodeId = node.NodeId,
+                NodeName = node.NodeName,
+                Assignee = ccUsers,
+                AssigneeId = null,
+                AssigneeNickName = ccNick,
+                Status = (int)WfTaskStatus.Skipped,
+                TaskType = (int)WfTaskType.Cc,
+                Create_time = DateTime.Now,
+                Create_by = instance.ApplyUser
+            }).ExecuteCommand();
+            // 每个收件人落一条抄送记录并写入各自的 OperatorId，便于按 userId 精确匹配（抄送给我/数据面板），无需反查用户表
+            foreach (var c in ccList)
+            {
+                var u = users.TryGetValue(c, out var su) ? su : null;
+                AddRecord(instance.InstanceId, null, node.NodeId, c, (int)WfAction.Cc, "抄送", null, u?.UserId, u?.NickName);
+            }
+            NotifyUsers(ccList, $"【审批抄送】{instance.Title}（{instance.FlowName}）抄送知会，请知悉。");
+        }
+
+        /// <summary>
+        /// 批量创建任务（待办/抄送），替代逐条 ExecuteCommand 以减少数据库往返
+        /// </summary>
+        private void BatchCreateTasks(long instanceId, long nodeId, string nodeName, List<string> assignees, int status, string createBy, DateTime? createTime = null)
+        {
+            if (assignees == null || assignees.Count == 0) return;
+            var now = createTime ?? DateTime.Now;
+            var userMap = GetUserMap(assignees);
+            var tasks = assignees.Select(a => new WfFlowTask
+            {
+                InstanceId = instanceId,
+                NodeId = nodeId,
+                NodeName = nodeName,
+                Assignee = a,
+                AssigneeId = userMap.TryGetValue(a, out var u) ? u.UserId : (long?)null,
+                AssigneeNickName = u?.NickName ?? a,
+                Status = status,
+                Create_time = now,
+                Create_by = createBy
+            }).ToList();
+            Context.Insertable(tasks).ExecuteCommand();
+        }
+
+        #endregion
 
         /// <summary>
         /// 解析节点审批人列表。
@@ -355,7 +502,7 @@ namespace ZR.Workflow.Service
             {
                 case (int)WfApproverType.Role:
                     {
-                        var roleIds = ids.Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                        var roleIds = ids.Select(s => long.TryParse(s, out var v) ? v : (long?)null).Where(v => v.HasValue).Select(v => v.Value).ToList();
                         if (roleIds.Count == 0) return new List<string>();
                         return Context.Queryable<SysUser>()
                             .InnerJoin<SysUserRole>((u, ur) => u.UserId == ur.UserId)
@@ -366,7 +513,7 @@ namespace ZR.Workflow.Service
                     }
                 case (int)WfApproverType.Dept:
                     {
-                        var deptIds = ids.Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                        var deptIds = ids.Select(s => long.TryParse(s, out var v) ? v : (long?)null).Where(v => v.HasValue).Select(v => v.Value).ToList();
                         if (deptIds.Count == 0) return new List<string>();
                         return Context.Queryable<SysUser>()
                             .Where(u => deptIds.Contains(u.DeptId) && u.Status == 0)
@@ -418,43 +565,13 @@ namespace ZR.Workflow.Service
                         if (!EvalCondition(g, formValues)) continue; // 分支条件不满足：不生成待办，视为已完成(包容网关)
                         if (g.NodeType == (int)WfNodeType.Cc)
                         {
-                            var ccUsers = string.Join(",", ResolveApprovers(g));
-                            Context.Insertable(new WfFlowTask
-                            {
-                                InstanceId = instance.InstanceId,
-                                NodeId = g.NodeId,
-                                NodeName = g.NodeName,
-                                Assignee = ccUsers,
-                                Status = (int)WfTaskStatus.Skipped,
-                                Create_time = DateTime.Now,
-                                Create_by = instance.ApplyUser
-                            }).ExecuteCommand();
-                            Context.Insertable(new WfFlowRecord
-                            {
-                                InstanceId = instance.InstanceId,
-                                NodeId = g.NodeId,
-                                Operator = ccUsers,
-                                Action = (int)WfAction.Submit,
-                                Opinion = "抄送",
-                                Create_time = DateTime.Now,
-                                Create_by = instance.ApplyUser
-                            }).ExecuteCommand();
+                            CreateCcTask(instance, g);
                         }
                         else
                         {
-                            foreach (var approver in ResolveApprovers(g))
-                            {
-                                Context.Insertable(new WfFlowTask
-                                {
-                                    InstanceId = instance.InstanceId,
-                                    NodeId = g.NodeId,
-                                    NodeName = g.NodeName,
-                                    Assignee = approver,
-                                    Status = (int)WfTaskStatus.Pending,
-                                    Create_time = DateTime.Now,
-                                    Create_by = instance.ApplyUser
-                                }).ExecuteCommand();
-                            }
+                            var nodeApprovers = ResolveApprovers(g);
+                            BatchCreateTasks(instance.InstanceId, g.NodeId, g.NodeName, nodeApprovers, (int)WfTaskStatus.Pending, instance.ApplyUser);
+                            NotifyUsers(nodeApprovers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{g.NodeName}」待您审批。");
                         }
                     }
 
@@ -484,28 +601,7 @@ namespace ZR.Workflow.Service
             // —— 非并行节点 ——
             if (node.NodeType == (int)WfNodeType.Cc)
             {
-                var ccUsers = string.Join(",", ResolveApprovers(node));
-                Context.Insertable(new WfFlowTask
-                {
-                    InstanceId = instance.InstanceId,
-                    NodeId = node.NodeId,
-                    NodeName = node.NodeName,
-                    Assignee = ccUsers,
-                    Status = (int)WfTaskStatus.Skipped,
-                    Create_time = DateTime.Now,
-                    Create_by = instance.ApplyUser
-                }).ExecuteCommand();
-
-                Context.Insertable(new WfFlowRecord
-                {
-                    InstanceId = instance.InstanceId,
-                    NodeId = node.NodeId,
-                    Operator = ccUsers,
-                    Action = (int)WfAction.Submit,
-                    Opinion = "抄送",
-                    Create_time = DateTime.Now,
-                    Create_by = instance.ApplyUser
-                }).ExecuteCommand();
+                CreateCcTask(instance, node);
 
                 var next = GetNextAuditNode(allNodes, node.NodeOrder);
                 if (next == null)
@@ -525,20 +621,8 @@ namespace ZR.Workflow.Service
             Context.Updateable(instance).UpdateColumns(i => new { i.CurrentNodeId }).ExecuteCommand();
 
             var approvers = ResolveApprovers(node);
-
-            foreach (var approver in approvers)
-            {
-                Context.Insertable(new WfFlowTask
-                {
-                    InstanceId = instance.InstanceId,
-                    NodeId = node.NodeId,
-                    NodeName = node.NodeName,
-                    Assignee = approver,
-                    Status = (int)WfTaskStatus.Pending,
-                    Create_time = DateTime.Now,
-                    Create_by = instance.ApplyUser
-                }).ExecuteCommand();
-            }
+            BatchCreateTasks(instance.InstanceId, node.NodeId, node.NodeName, approvers, (int)WfTaskStatus.Pending, instance.ApplyUser);
+            NotifyUsers(approvers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」待您审批。");
         }
 
         /// <summary>
@@ -589,7 +673,7 @@ namespace ZR.Workflow.Service
                 if (kv != null)
                     foreach (var k in kv) dict[k.Key] = k.Value;
             }
-            catch { /* 非 JSON：视为无条件 */ }
+            catch (Exception ex) { /* JSON 解析失败（格式错误或类型不匹配），视为无条件；排查时可记录 ex.Message */ }
             return dict;
         }
 
