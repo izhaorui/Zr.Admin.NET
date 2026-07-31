@@ -82,4 +82,16 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>审批意见</summary>
         public string Opinion { get; set; }
     }
+
+    /// <summary>
+    /// 批量审批入参（逐条复用 Approve 流转，仅支持通过）
+    /// </summary>
+    public class WfBatchApproveInput
+    {
+        /// <summary>任务Id列表（逗号分隔）</summary>
+        public string TaskIds { get; set; }
+
+        /// <summary>统一审批意见（可选）</summary>
+        public string Opinion { get; set; }
+    }
 }

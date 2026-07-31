@@ -44,20 +44,26 @@ namespace ZR.ServiceCore.Services
             }
 
             // 2) 子页面 + 按钮权限定义（Component 唯一，作为幂等键；注意部分页面 Perms 相同，故不按 Perms 去重）
-            var pages = new List<(string Name, string Path, string Component, string Perms, string Icon, int OrderNum, string RouteName, List<(string, string, int)> Buttons)>
+            //    visible 默认 "0"（侧边栏可见）；apply/resubmit 为跳转入口页，设 "1"（隐藏，仅用于动态路由注册）
+            var pages = new List<(string Name, string Path, string Component, string Perms, string Icon, int OrderNum, string RouteName, string Visible, List<(string, string, int)> Buttons)>
             {
-                ("流程定义", "definition", "workflow/flowDefinition/index", "workflow:definition:list", "", 1, "",
+                ("流程定义", "definition", "workflow/flowDefinition/index", "workflow:definition:list", "", 1, "", "0",
                     new() { ("新增", "workflow:definition:add", 1), ("修改", "workflow:definition:edit", 2), ("删除", "workflow:definition:delete", 3) }),
-                ("我的流程", "my", "workflow/instance/index", "workflow:instance:list", "", 2, "",
+                ("我的流程", "my", "workflow/instance/index", "workflow:instance:list", "", 2, "", "0",
                     new() { ("发起", "workflow:instance:start", 1), ("撤回", "workflow:instance:withdraw", 2) }),
-                ("待我审批", "todo", "workflow/todo/index", "workflow:task:list", "", 3, "",
+                ("待我审批", "todo", "workflow/todo/index", "workflow:task:list", "", 3, "", "0",
                     new() { ("通过", "workflow:task:approve", 1), ("驳回", "workflow:task:reject", 2), ("转办", "workflow:task:transfer", 3), ("加签", "workflow:task:addsign", 4) }),
-                ("已办任务", "done", "workflow/done/index", "workflow:task:list", "", 4, "",
+                ("已办任务", "done", "workflow/done/index", "workflow:task:list", "", 4, "", "0",
                     new()),
-                ("审批记录", "record", "workflow/record/index", "workflow:record:list", "", 5, "",
+                ("审批记录", "record", "workflow/record/index", "workflow:record:list", "", 5, "", "0",
                     new()),
-                ("抄送给我", "cc", "workflow/cc/index", "workflow:record:cc", "", 6, "WfCc",
+                ("抄送给我", "cc", "workflow/cc/index", "workflow:record:cc", "", 6, "WfCc", "0",
                     new() { ("查看", "workflow:record:cc", 1) }),
+                // 跳转入口页：发起申请 / 重新提交（不在侧边栏展示，仅用于动态路由注册，前端不再写死静态路由）
+                ("发起申请", "apply", "workflow/apply/index", "", "", 7, "WfApply", "1",
+                    new()),
+                ("重新提交", "resubmit", "workflow/resubmit/index", "", "", 8, "WfResubmit", "1",
+                    new()),
             };
 
             var inserted = 0;
@@ -77,7 +83,7 @@ namespace ZR.ServiceCore.Services
                         IsCache = "0",
                         IsFrame = "0",
                         MenuType = "C",
-                        Visible = "0",
+                        Visible = p.Visible,
                         Status = "0",
                         Perms = p.Perms,
                         Icon = p.Icon,

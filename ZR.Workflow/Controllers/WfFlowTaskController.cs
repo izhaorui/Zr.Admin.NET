@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ZR.Workflow.Controllers
@@ -104,6 +102,39 @@ namespace ZR.Workflow.Controllers
             var userId = HttpContext.GetUId();
             _taskService.Read(ParseIds(parm.Ids), userId);
             return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 批量通过（逐条复用 Approve 流转；单条失败不影响其余，返回成功/失败计数）
+        /// </summary>
+        [HttpPost("batchApprove")]
+        [ActionPermissionFilter(Permission = "workflow:task:approve")]
+        [Log(Title = "批量审批通过", BusinessType = BusinessType.UPDATE)]
+        public IActionResult BatchApprove([FromBody] WfBatchApproveInput parm)
+        {
+            var userName = HttpContext.GetName();
+            var ids = ParseIds(parm.TaskIds);
+            int success = 0;
+            var failed = new List<string>();
+            foreach (var taskId in ids)
+            {
+                try
+                {
+                    _engine.Approve(taskId, parm.Opinion, userName);
+                    success++;
+                }
+                catch (Exception ex)
+                {
+                    failed.Add($"任务 {taskId}: {ex.Message}");
+                }
+            }
+            var failedMsg = failed.Count == 0 ? null : "；" + string.Join("；", failed);
+            return SUCCESS(new
+            {
+                success,
+                failed = failed.Count,
+                message = $"成功 {success} 条，失败 {failed.Count} 条{failedMsg}"
+            });
         }
 
         private static List<long> ParseIds(string ids)
