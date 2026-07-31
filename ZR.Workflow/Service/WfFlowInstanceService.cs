@@ -190,5 +190,85 @@ namespace ZR.Workflow.Service
                 CcCount = ccCount
             };
         }
+
+        /// <summary>
+        /// 流程效率统计（基于当前用户作为申请人的实例）：
+        /// 1) 平均/最短/最长审批时长：已通过实例的 Update_time(完成) - Create_time(发起)；
+        /// 2) 各节点平均耗时：已完成任务 HandleTime - Create_time，按节点名称聚合；
+        /// 3) 完成率趋势：按月统计结束实例（通过+驳回），通过数 / 结束总数。
+        /// </summary>
+        public WfEfficiencyStatsDto GetEfficiencyStats(long userId)
+        {
+            // 已完成（通过）实例：用 Update_time 近似完成时间（引擎在状态流转时更新）
+            var finished = Context.Queryable<WfFlowInstance>()
+                .Where(i => i.ApplyUserId == userId && i.Status == (int)WfInstanceStatus.Approved)
+                .Select(i => new { i.Create_time, i.Update_time })
+                .ToList();
+
+            var durations = finished
+                .Select(x => (decimal)((x.Update_time ?? x.Create_time) - x.Create_time).TotalHours)
+                .ToList();
+
+            var eff = new WfEfficiencyStatsDto
+            {
+                FinishedCount = finished.Count
+            };
+            if (durations.Count > 0)
+            {
+                eff.AvgDurationHours = (decimal)Math.Round((double)durations.Average(), 2);
+                eff.MinDurationHours = (decimal)Math.Round((double)durations.Min(), 2);
+                eff.MaxDurationHours = (decimal)Math.Round((double)durations.Max(), 2);
+            }
+
+            // 各节点耗时分布：仅统计已处理(Status=Done)且 HandleTime 有值的任务
+            var nodeDurations = Context.Queryable<WfFlowTask>()
+                .Where(t => t.AssigneeId == userId && t.Status == (int)WfTaskStatus.Done && t.HandleTime != null)
+                .GroupBy(t => t.NodeName)
+                .Select(t => new
+                {
+                    NodeName = t.NodeName,
+                    AvgHours = SqlFunc.AggregateAvg(SqlFunc.DateDiff(DateType.Hour, t.Create_time, t.HandleTime.Value)),
+                    Cnt = SqlFunc.AggregateCount(1)
+                })
+                .ToList()
+                .Where(x => !string.IsNullOrEmpty(x.NodeName))
+                .Select(x => new WfNodeDurationDto
+                {
+                    NodeName = x.NodeName,
+                    AvgHours = (decimal)Math.Round((double)x.AvgHours, 2),
+                    Count = x.Cnt
+                })
+                .OrderByDescending(x => x.AvgHours)
+                .ToList();
+            eff.NodeDurations = nodeDurations;
+
+            // 完成率趋势：按月统计结束实例（通过 + 驳回）
+            var ended = Context.Queryable<WfFlowInstance>()
+                .Where(i => i.ApplyUserId == userId && (i.Status == (int)WfInstanceStatus.Approved || i.Status == (int)WfInstanceStatus.Rejected))
+                .Select(i => new { i.Status, i.Update_time })
+                .ToList();
+
+            eff.CompletionTrend = ended
+                .GroupBy(x => (x.Update_time ?? DateTime.Now).ToString("yyyy-MM"))
+                .Select(g => new WfCompletionTrendDto
+                {
+                    Month = g.Key,
+                    TotalFinished = g.Count(),
+                    Approved = g.Count(x => x.Status == (int)WfInstanceStatus.Approved),
+                    Rejected = g.Count(x => x.Status == (int)WfInstanceStatus.Rejected)
+                })
+                .Select(g => new WfCompletionTrendDto
+                {
+                    Month = g.Month,
+                    TotalFinished = g.TotalFinished,
+                    Approved = g.Approved,
+                    Rejected = g.Rejected,
+                    Rate = g.TotalFinished == 0 ? 0 : Math.Round((decimal)g.Approved * 100 / g.TotalFinished, 1)
+                })
+                .OrderBy(g => g.Month)
+                .ToList();
+
+            return eff;
+        }
     }
 }

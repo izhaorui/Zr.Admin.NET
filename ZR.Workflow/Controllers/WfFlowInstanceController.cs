@@ -89,5 +89,15 @@ namespace ZR.Workflow.Controllers
             var userId = HttpContext.GetUId();
             return SUCCESS(_service.GetDashboardStats(userId));
         }
+
+        /// <summary>
+        /// 流程效率统计：平均审批时长、各节点耗时分布、完成率趋势
+        /// </summary>
+        [HttpGet("efficiency")]
+        public IActionResult Efficiency()
+        {
+            var userId = HttpContext.GetUId();
+            return SUCCESS(_service.GetEfficiencyStats(userId));
+        }
     }
 }
