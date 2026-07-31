@@ -5,10 +5,12 @@ namespace ZR.Workflow.Model.Dto
     /// </summary>
     public class WfFlowDefinitionQueryDto : PagerInfo
     {
-        /// <summary>流程名称</summary>
-        public string FlowName { get; set; }
-        /// <summary>状态</summary>
-        public int? Status { get; set; }
+    /// <summary>流程名称</summary>
+    public string FlowName { get; set; }
+    /// <summary>状态</summary>
+    public int? Status { get; set; }
+    /// <summary>是否草稿（查询用）0=已发布 1=草稿；为空表示不过滤</summary>
+    public int? IsDraft { get; set; }
     }
 
     /// <summary>
@@ -23,6 +25,9 @@ namespace ZR.Workflow.Model.Dto
         [Required(ErrorMessage = "流程编码不能为空")]
         public string FlowCode { get; set; }
 
+        /// <summary>版本号（同一 FlowCode 下自增，历史版本冻结保留）</summary>
+        public int Version { get; set; } = 1;
+
         /// <summary>流程名称</summary>
         [Required(ErrorMessage = "流程名称不能为空")]
         public string FlowName { get; set; }
@@ -32,6 +37,13 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>状态</summary>
         public int Status { get; set; } = 1;
+
+        /// <summary>是否草稿 0=已发布 1=草稿</summary>
+        public int IsDraft { get; set; } = 0;
+
+        /// <summary>是否现行版本（同 FlowCode 下唯一，由查询计算填充，仅展示用）</summary>
+        [SugarColumn(IsIgnore = true)]
+        public bool IsCurrent { get; set; }
 
         /// <summary>表单字段定义（JSON）</summary>
         public string FormItems { get; set; }

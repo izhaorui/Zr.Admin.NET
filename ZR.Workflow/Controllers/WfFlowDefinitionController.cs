@@ -96,5 +96,65 @@ namespace ZR.Workflow.Controllers
             var newId = _service.Copy(flowId, userName);
             return SUCCESS(newId);
         }
+
+        /// <summary>
+        /// 另存为新版本：复制当前定义与节点到新 FlowId，Version 自增，旧版本冻结保留
+        /// </summary>
+        [HttpPost("saveAsNewVersion/{flowId}")]
+        [ActionPermissionFilter(Permission = "workflow:definition:add")]
+        [Log(Title = "流程定义", BusinessType = BusinessType.INSERT)]
+        public IActionResult SaveAsNewVersion(long flowId)
+        {
+            var userName = HttpContext.GetName();
+            var newId = _service.SaveAsNewVersion(flowId, userName);
+            return SUCCESS(newId);
+        }
+
+        /// <summary>
+        /// 查询某流程编码下的全部版本（版本历史）
+        /// </summary>
+        [HttpGet("versions")]
+        [ActionPermissionFilter(Permission = "workflow:definition:list")]
+        public IActionResult GetVersions([FromQuery] string flowCode)
+        {
+            return SUCCESS(_service.GetVersions(flowCode));
+        }
+
+        /// <summary>
+        /// 设为现行版本：启用目标版本并停用同 FlowCode 下其他版本，保证现行版本唯一
+        /// </summary>
+        [HttpPost("setCurrent/{flowId}")]
+        [ActionPermissionFilter(Permission = "workflow:definition:edit")]
+        [Log(Title = "流程定义", BusinessType = BusinessType.UPDATE)]
+        public IActionResult SetCurrentVersion(long flowId)
+        {
+            var userName = HttpContext.GetName();
+            return SUCCESS(_service.SetCurrentVersion(flowId, userName));
+        }
+
+        /// <summary>
+        /// 发布草稿版本：将草稿(IsDraft=1)转为正式(IsDraft=0)
+        /// </summary>
+        [HttpPost("publish/{flowId}")]
+        [ActionPermissionFilter(Permission = "workflow:definition:edit")]
+        [Log(Title = "流程定义", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Publish(long flowId)
+        {
+            var userName = HttpContext.GetName();
+            return SUCCESS(_service.Publish(flowId, userName));
+        }
+
+        /// <summary>
+        /// 版本回滚：将指定历史版本复制为新的最高版本（草稿态），保留完整版本链路
+        /// </summary>
+        [HttpPost("rollback/{flowId}")]
+        [ActionPermissionFilter(Permission = "workflow:definition:edit")]
+        [Log(Title = "流程定义", BusinessType = BusinessType.INSERT)]
+        public IActionResult Rollback(long flowId)
+        {
+            var userName = HttpContext.GetName();
+            var newId = _service.Rollback(flowId, userName);
+            return SUCCESS(newId);
+        }
     }
 }

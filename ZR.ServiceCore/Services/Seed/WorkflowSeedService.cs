@@ -49,6 +49,9 @@ namespace ZR.ServiceCore.Services
             {
                 ("流程定义", "definition", "workflow/flowDefinition/index", "workflow:definition:list", "", 1, "", "0",
                     new() { ("新增", "workflow:definition:add", 1), ("修改", "workflow:definition:edit", 2), ("删除", "workflow:definition:delete", 3) }),
+                // 作为工作流目录下的隐藏子页面（Visible="1"），仅用于动态路由注册，对应前端 edit.vue
+                ("流程定义设计", "definition-edit", "workflow/flowDefinition/edit", "workflow:definition:edit", "build", 8, "WfFlowDefinitionEdit", "1",
+                    new()),
                 ("我的流程", "my", "workflow/instance/index", "workflow:instance:list", "", 2, "", "0",
                     new() { ("发起", "workflow:instance:start", 1), ("撤回", "workflow:instance:withdraw", 2) }),
                 ("待我审批", "todo", "workflow/todo/index", "workflow:task:list", "", 3, "", "0",

@@ -13,10 +13,16 @@ namespace ZR.Workflow.Model
         public long FlowId { get; set; }
 
         /// <summary>
-        /// 流程编码（唯一）
+        /// 流程编码（同流程多版本共享，与 Version 组合唯一）
         /// </summary>
         [SugarColumn(Length = 64, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string FlowCode { get; set; }
+
+        /// <summary>
+        /// 版本号（同一 FlowCode 下从 1 自增；历史版本冻结保留，实例绑定各自 FlowId）
+        /// </summary>
+        [SugarColumn(DefaultValue = "1")]
+        public int Version { get; set; } = 1;
 
         /// <summary>
         /// 流程名称
@@ -35,6 +41,21 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(DefaultValue = "1")]
         public int Status { get; set; } = 1;
+
+        /// <summary>
+        /// 是否草稿 0=已发布(正式版) 1=草稿(未发布)。
+        /// 草稿版本不可被发起/设为现行，需 Publish 后转为已发布。
+        /// 另存新版本默认生成草稿，避免误发起。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int IsDraft { get; set; } = 0;
+
+        /// <summary>
+        /// 是否为现行版本（同 FlowCode 下唯一，Status=1 且 IsDraft=0 的版本即为现行）。
+        /// 仅用于列表/版本历史展示标记，不持久化为独立列，由 Service 在查询时计算填充。
+        /// </summary>
+        [SugarColumn(IsIgnore = true)]
+        public bool IsCurrent { get; set; }
 
         /// <summary>
         /// 是否删除 0=未删 1=已删（软删除，保留节点/实例/任务/记录等历史数据）

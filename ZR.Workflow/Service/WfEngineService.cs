@@ -22,6 +22,10 @@ namespace ZR.Workflow.Service
         {
             var def = Context.Queryable<WfFlowDefinition>().First(d => d.FlowId == instance.FlowId);
             if (def == null) throw new CustomException("流程定义不存在");
+            // 标准版：草稿(IsDraft=1)或停用(Status=0)或已删除的定义不可发起，需发布并设为现行
+            if (def.IsDraft == 1) throw new CustomException("该流程版本为草稿态，暂不可发起，请先发布");
+            if (def.Status != 1) throw new CustomException("该流程版本已停用，暂不可发起");
+            if (def.IsDelete == 1) throw new CustomException("该流程定义已删除，不可发起");
             if (string.IsNullOrEmpty(instance.FlowName)) instance.FlowName = def.FlowName;
 
             var allNodes = Context.Queryable<WfFlowNode>()
@@ -185,6 +189,10 @@ namespace ZR.Workflow.Service
 
             var def = Context.Queryable<WfFlowDefinition>().First(d => d.FlowId == instance.FlowId);
             if (def == null) throw new CustomException("流程定义不存在");
+            // 标准版：草稿(IsDraft=1)或停用(Status=0)或已删除的定义不可发起，需发布并设为现行
+            if (def.IsDraft == 1) throw new CustomException("该流程版本为草稿态，暂不可发起，请先发布");
+            if (def.Status != 1) throw new CustomException("该流程版本已停用，暂不可发起");
+            if (def.IsDelete == 1) throw new CustomException("该流程定义已删除，不可发起");
 
             var allNodes = Context.Queryable<WfFlowNode>()
                 .Where(n => n.FlowId == instance.FlowId)
