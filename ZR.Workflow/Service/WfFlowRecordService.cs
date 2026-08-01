@@ -77,6 +77,16 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
+        /// 当前用户抄送未读数量（Action=Cc 且 IsRead=false）
+        /// </summary>
+        public int GetUnreadCount(long userId)
+        {
+            return Context.Queryable<WfFlowRecord>()
+                .Where(r => r.OperatorId == userId && r.Action == (int)WfAction.Cc && !r.IsRead)
+                .Count();
+        }
+
+        /// <summary>
         /// 标记抄送已读（仅更新当前用户作为收件人的记录，防止越权标记他人）
         /// </summary>
         public void Read(List<long> ids, long userId)

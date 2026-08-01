@@ -47,7 +47,7 @@ namespace ZR.Workflow.Controllers
         /// 实例详情
         /// </summary>
         [HttpGet("{instanceId}")]
-        [ActionPermissionFilter(Permission = "workflow:instance:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult GetInfo(long instanceId)
         {
             return SUCCESS(_service.GetInfo(instanceId));

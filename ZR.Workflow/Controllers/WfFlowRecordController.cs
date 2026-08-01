@@ -22,7 +22,7 @@ namespace ZR.Workflow.Controllers
         /// 审批记录列表
         /// </summary>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "workflow:record:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult QueryList([FromQuery] WfFlowRecordQueryDto parm)
         {
             return SUCCESS(_service.GetList(parm));
@@ -32,7 +32,7 @@ namespace ZR.Workflow.Controllers
         /// 抄送给我
         /// </summary>
         [HttpGet("cc")]
-        [ActionPermissionFilter(Permission = "workflow:record:cc")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult CcList([FromQuery] WfFlowRecordQueryDto parm)
         {
             var userId = HttpContext.GetUId();
@@ -43,12 +43,23 @@ namespace ZR.Workflow.Controllers
         /// 标记抄送已读
         /// </summary>
         [HttpPost("read")]
-        [ActionPermissionFilter(Permission = "workflow:record:cc")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult Read([FromBody] WfReadInput parm)
         {
             var userId = HttpContext.GetUId();
             _service.Read(ParseIds(parm.Ids), userId);
             return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 抄送未读数量（用于菜单红点）
+        /// </summary>
+        [HttpGet("unread")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult UnreadCount()
+        {
+            var userId = HttpContext.GetUId();
+            return SUCCESS(_service.GetUnreadCount(userId));
         }
 
         private static List<long> ParseIds(string ids)

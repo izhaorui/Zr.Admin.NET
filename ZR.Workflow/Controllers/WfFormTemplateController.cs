@@ -21,7 +21,7 @@ namespace ZR.Workflow.Controllers
         /// 表单模板列表
         /// </summary>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "workflow:template:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult QueryList([FromQuery] WfFormTemplateQueryDto parm)
         {
             return SUCCESS(_service.GetList(parm));

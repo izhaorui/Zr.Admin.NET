@@ -58,7 +58,7 @@ namespace ZR.ServiceCore.Services
                 ("我的流程", "my", "workflow/instance/index", "workflow:instance:list", "", 3, "", "0",
                     new() { ("发起", "workflow:instance:start", 1), ("撤回", "workflow:instance:withdraw", 2) }),
                 ("待我审批", "todo", "workflow/todo/index", "workflow:task:list", "", 4, "", "0",
-                    new() { ("通过", "workflow:task:approve", 1), ("驳回", "workflow:task:reject", 2), ("转办", "workflow:task:transfer", 3), ("加签", "workflow:task:addsign", 4) }),
+                    new() { ("通过", "workflow:task:approve", 1), ("驳回", "workflow:task:reject", 2), ("转办", "workflow:task:transfer", 3), ("加签", "workflow:task:addsign", 4), ("评论", "workflow:comment:list", 5), ("发表评论", "workflow:comment:add", 6) }),
                 ("已办任务", "done", "workflow/done/index", "workflow:task:list", "", 5, "", "0",
                     new()),
                 ("审批记录", "record", "workflow/record/index", "workflow:record:list", "", 6, "", "0",
@@ -152,6 +152,40 @@ namespace ZR.ServiceCore.Services
                     Create_time = now
                 }).ExecuteCommand();
                 inserted++;
+            }
+
+            // 4) 工作流所有按钮权限（F 类型，含上述 pages 里的全部 Buttons）默认授予所有角色。
+            //    原因：Controller 里凡声明 [ActionPermissionFilter] 的接口，普通角色必须配套拥有该权限，
+            //    否则访问即被过滤器拦截（401/403）。超管角色（admin）在过滤器中天然放行，此处补齐普通审批角色。
+            //    覆盖范围：definition/template 的 add/edit/delete、task 的 approve/reject/transfer/addsign、
+            //    instance 的 start/withdraw、record 的 cc、comment 的 list/add 等全部按钮权限。
+            var allButtonPerms = pages.SelectMany(p => p.Buttons.Select(b => b.Item2)).Distinct().ToList();
+            var buttonMenuIds = db.Queryable<SysMenu>()
+                .Where(x => x.MenuType == "F" && allButtonPerms.Contains(x.Perms))
+                .Select(x => x.MenuId)
+                .ToList();
+            if (buttonMenuIds.Count > 0)
+            {
+                var roleIds = db.Queryable<SysRole>().Select(r => r.RoleId).ToList();
+                var existRoleMenus = db.Queryable<SysRoleMenu>()
+                    .Where(rm => buttonMenuIds.Contains(rm.Menu_id))
+                    .ToList();
+                var toInsert = new List<SysRoleMenu>();
+                foreach (var roleId in roleIds)
+                {
+                    foreach (var menuId in buttonMenuIds)
+                    {
+                        if (!existRoleMenus.Any(rm => rm.Role_id == roleId && rm.Menu_id == menuId))
+                        {
+                            toInsert.Add(new SysRoleMenu { Role_id = roleId, Menu_id = menuId, Create_by = "system", Create_time = now });
+                        }
+                    }
+                }
+                if (toInsert.Count > 0)
+                {
+                    db.Insertable(toInsert).ExecuteCommand();
+                    inserted += toInsert.Count;
+                }
             }
 
             return $"[工作流菜单] 新增{inserted}条菜单/权限";

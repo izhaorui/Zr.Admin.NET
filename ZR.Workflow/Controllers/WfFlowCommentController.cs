@@ -20,7 +20,7 @@ namespace ZR.Workflow.Controllers
         /// 评论列表（按流程实例，可选按节点）
         /// </summary>
         [HttpGet("list")]
-        [ActionPermissionFilter(Permission = "workflow:comment:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult QueryList([FromQuery] WfFlowCommentQueryDto parm)
         {
             return SUCCESS(_service.GetList(parm));

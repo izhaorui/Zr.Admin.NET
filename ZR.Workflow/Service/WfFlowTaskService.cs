@@ -50,6 +50,16 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
+        /// 当前用户待办未读数量（Status=Pending 且 IsRead=false）
+        /// </summary>
+        public int GetUnreadCount(long userId)
+        {
+            return Context.Queryable<WfFlowTask>()
+                .Where(t => t.AssigneeId == userId && t.Status == (int)WfTaskStatus.Pending && !t.IsRead)
+                .Count();
+        }
+
+        /// <summary>
         /// 标记待办已读（仅更新当前用户名下任务，防止越权标记他人）
         /// </summary>
         public void Read(List<long> ids, long userId)

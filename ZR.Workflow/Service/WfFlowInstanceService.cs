@@ -177,9 +177,9 @@ namespace ZR.Workflow.Service
                 .Where(x => x.Status == (int)WfInstanceStatus.Approved || x.Status == (int)WfInstanceStatus.Rejected)
                 .Sum(x => x.Cnt);
 
-            // 抄送：记录已按收件人拆分并写入 OperatorId，且 Action 标记为 WfAction.Cc，直接按 userId 精确匹配，无需反查用户表
+            // 抄送：记录已按收件人拆分并写入 OperatorId，且 Action 标记为 WfAction.Cc；角标统计「未读」抄送（IsRead=false）
             var ccCount = Context.Queryable<WfFlowRecord>()
-                .Count(r => r.Action == (int)WfAction.Cc && r.OperatorId == userId);
+                .Count(r => r.Action == (int)WfAction.Cc && r.OperatorId == userId && !r.IsRead);
 
             return new WfDashboardStatsDto
             {

@@ -22,7 +22,7 @@ namespace ZR.Workflow.Controllers
         /// 待我审批
         /// </summary>
         [HttpGet("todo")]
-        [ActionPermissionFilter(Permission = "workflow:task:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult TodoList([FromQuery] WfFlowTaskQueryDto parm)
         {
             var userId = HttpContext.GetUId();
@@ -33,7 +33,7 @@ namespace ZR.Workflow.Controllers
         /// 已办任务
         /// </summary>
         [HttpGet("done")]
-        [ActionPermissionFilter(Permission = "workflow:task:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult DoneList([FromQuery] WfFlowTaskQueryDto parm)
         {
             var userId = HttpContext.GetUId();
@@ -96,12 +96,23 @@ namespace ZR.Workflow.Controllers
         /// 标记待办已读
         /// </summary>
         [HttpPost("read")]
-        [ActionPermissionFilter(Permission = "workflow:task:list")]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult Read([FromBody] WfReadInput parm)
         {
             var userId = HttpContext.GetUId();
             _taskService.Read(ParseIds(parm.Ids), userId);
             return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 待办未读数量（用于菜单红点）
+        /// </summary>
+        [HttpGet("unread")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult UnreadCount()
+        {
+            var userId = HttpContext.GetUId();
+            return SUCCESS(_taskService.GetUnreadCount(userId));
         }
 
         /// <summary>
