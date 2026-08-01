@@ -49,18 +49,21 @@ namespace ZR.ServiceCore.Services
             {
                 ("流程定义", "definition", "workflow/flowDefinition/index", "workflow:definition:list", "", 1, "", "0",
                     new() { ("新增", "workflow:definition:add", 1), ("修改", "workflow:definition:edit", 2), ("删除", "workflow:definition:delete", 3) }),
+                // 表单模板：可复用动态表单的管理页（供流程设计器"载入模板"复用）
+                ("表单模板", "formTemplate", "workflow/formTemplate/index", "workflow:template:list", "", 2, "", "0",
+                    new() { ("新增", "workflow:template:add", 1), ("修改", "workflow:template:edit", 2), ("删除", "workflow:template:delete", 3) }),
                 // 作为工作流目录下的隐藏子页面（Visible="1"），仅用于动态路由注册，对应前端 edit.vue
                 ("流程定义设计", "definition-edit", "workflow/flowDefinition/edit", "workflow:definition:edit", "build", 8, "WfFlowDefinitionEdit", "1",
                     new()),
-                ("我的流程", "my", "workflow/instance/index", "workflow:instance:list", "", 2, "", "0",
+                ("我的流程", "my", "workflow/instance/index", "workflow:instance:list", "", 3, "", "0",
                     new() { ("发起", "workflow:instance:start", 1), ("撤回", "workflow:instance:withdraw", 2) }),
-                ("待我审批", "todo", "workflow/todo/index", "workflow:task:list", "", 3, "", "0",
+                ("待我审批", "todo", "workflow/todo/index", "workflow:task:list", "", 4, "", "0",
                     new() { ("通过", "workflow:task:approve", 1), ("驳回", "workflow:task:reject", 2), ("转办", "workflow:task:transfer", 3), ("加签", "workflow:task:addsign", 4) }),
-                ("已办任务", "done", "workflow/done/index", "workflow:task:list", "", 4, "", "0",
+                ("已办任务", "done", "workflow/done/index", "workflow:task:list", "", 5, "", "0",
                     new()),
-                ("审批记录", "record", "workflow/record/index", "workflow:record:list", "", 5, "", "0",
+                ("审批记录", "record", "workflow/record/index", "workflow:record:list", "", 6, "", "0",
                     new()),
-                ("抄送给我", "cc", "workflow/cc/index", "workflow:record:cc", "", 6, "WfCc", "0",
+                ("抄送给我", "cc", "workflow/cc/index", "workflow:record:cc", "", 7, "WfCc", "0",
                     new() { ("查看", "workflow:record:cc", 1) }),
                 // 跳转入口页：发起申请 / 重新提交（不在侧边栏展示，仅用于动态路由注册，前端不再写死静态路由）
                 ("发起申请", "apply", "workflow/apply/index", "", "", 7, "WfApply", "1",

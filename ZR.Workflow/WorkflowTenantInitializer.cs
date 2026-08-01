@@ -50,6 +50,7 @@ namespace ZR.Workflow
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfFlowTask));
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfFlowRecord));
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfFlowComment));
+			DbMigrationService.EnsureEntitySchema(db, typeof(WfFormTemplate));
 		}
 	}
 }
