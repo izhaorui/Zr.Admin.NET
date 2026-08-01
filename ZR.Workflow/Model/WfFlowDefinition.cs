@@ -4,6 +4,13 @@ namespace ZR.Workflow.Model
     /// 流程定义
     /// </summary>
     [SugarTable("wf_flow_definition", "流程定义")]
+    // (FlowCode, Version) 联合唯一索引：保证同一流程编码的版本号不重复，避免并发 Copy/另存新版本
+    // 选这两个字段的理由：Copy 会改 FlowCode（加 _copy 后缀），自然不冲突；
+    // SaveAsNewVersion/Rollback 保持 FlowCode 不变但 Version 自增，也不会冲突；
+    // Update 不会改这两个字段，因此 INSERT 才是唯一可能冲突的场景。
+    // 唯一约束的副作用：被软删除(IsDelete=1)的行仍占名额，重新启用同名同版本需先清理或改名，
+    // 这是"软删除+唯一索引"的固有取舍，业务层一般不会恢复同名同版本。
+    //[SugarIndex("uk_flow_code_version", nameof(FlowCode), nameof(Version), OrderByType.Asc, true)]
     public class WfFlowDefinition : SysBase
     {
         /// <summary>

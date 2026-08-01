@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using ZR.Workflow.Model.Dto;
-
 namespace ZR.Workflow.Service.IService
 {
     /// <summary>
@@ -9,6 +6,6 @@ namespace ZR.Workflow.Service.IService
     public interface IWfFlowCommentService
     {
         PagedInfo<WfFlowCommentDto> GetList(WfFlowCommentQueryDto parm);
-        void Add(WfFlowCommentInput parm, string userName, long userId);
+        void Add(WfFlowCommentInput parm, LoginUser user);
     }
 }

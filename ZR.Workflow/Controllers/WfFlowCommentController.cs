@@ -34,9 +34,8 @@ namespace ZR.Workflow.Controllers
         [Log(Title = "审批评论", BusinessType = BusinessType.INSERT)]
         public IActionResult Add([FromBody] WfFlowCommentInput parm)
         {
-            var userName = HttpContext.GetName();
-            var userId = HttpContext.GetUId();
-            _service.Add(parm, userName, userId);
+            var loginUser = HttpContext.GetCurrentUser();
+            _service.Add(parm, loginUser);
             return SUCCESS(1);
         }
     }

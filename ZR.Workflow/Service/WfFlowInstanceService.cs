@@ -1,9 +1,25 @@
-using ZR.Workflow.Enum;
-
 namespace ZR.Workflow.Service
 {
     /// <summary>
-    /// 流程实例服务
+    /// 流程实例服务（我发起的视角）。
+    ///
+    /// 职责分层：
+    /// <list type="bullet">
+    /// <item><b>列表 / 详情</b>：申请人维度的实例查询与详情组装，兜底关联流程定义/节点/任务的展示字段。</item>
+    /// <item><b>状态变更</b>：发起（<see cref="Start"/>）与驳回后重新提交（<see cref="Resubmit"/>）——
+    /// 仅做"DTO → 实体"转换与用户上下文注入，落库/状态机推进全部委托给 <see cref="IWfEngineService"/>。</item>
+    /// <item><b>统计</b>：数据面板角标与流程效率聚合，全部为只读 Count/Average，GroupBy 一次拿全部状态指标。</item>
+    /// </list>
+    ///
+    /// 关键约束：
+    /// <list type="bullet">
+    /// <item>展示用名称（流程名/节点名/审批人昵称/申请人昵称）一律按落库快照读取，运行时不再 JOIN 用户表/定义表，
+    /// 仅在快照为空时按 Id 反查兜底（如已结束实例的 FlowName 兜底）。</item>
+    /// <item>状态变更类公共方法签名稳定后即不轻易改动，扩展行为优先在私有辅助里加，遵循
+    /// <see cref="WfEngineService"/> 已锁定的"pre-flight → RunInTx → ArriveNode/AdvanceToNext"模式。</item>
+    /// <item>性能敏感路径（<see cref="FillApprovers"/>、<see cref="GetEfficiencyStats"/>）必须 O(N) 或单次聚合，
+    /// 避免 N+1 嵌套扫描；大表下任何 N*M 都是隐形坑。</item>
+    /// </list>
     /// </summary>
     [AppService(ServiceType = typeof(IWfFlowInstanceService))]
     public class WfFlowInstanceService : BaseService<WfFlowInstance>, IWfFlowInstanceService
@@ -15,39 +31,46 @@ namespace ZR.Workflow.Service
             _engine = engine;
         }
 
+        #region 列表
+
         /// <summary>
         /// 查询我的待办/已办/我发起/抄送的流程实例列表，按申请时间倒序分页返回。
         /// </summary>
-        /// <param name="parm"></param>
-        /// <param name="userId"></param>
-        /// <returns></returns>
+        /// <param name="parm">查询条件（标题/状态/流程定义）</param>
+        /// <param name="userId">当前用户 Id（按 <c>ApplyUserId</c> 关联）</param>
         public PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, long userId)
         {
-            var predicate = Expressionable.Create<WfFlowInstance>();
-            predicate = predicate.And(t => t.ApplyUserId == userId);
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Title), t => t.Title.Contains(parm.Title));
-            predicate = predicate.AndIF(parm.Status != null, t => t.Status == parm.Status);
-            predicate = predicate.AndIF(parm.FlowId != null, t => t.FlowId == parm.FlowId);
+            var predicate = Expressionable.Create<WfFlowInstance>()
+                .And(t => t.ApplyUserId == userId)
+                .AndIF(!string.IsNullOrEmpty(parm.Title), t => t.Title.Contains(parm.Title))
+                .AndIF(parm.Status != null, t => t.Status == parm.Status)
+                .AndIF(parm.FlowId != null, t => t.FlowId == parm.FlowId);
+
             var paged = Queryable().Where(predicate.ToExpression())
                 .ToPage<WfFlowInstance, WfFlowInstanceDto>(parm);
-            // 冗余 FlowName 可能为空，按 FlowId 关联流程定义兜底填充
+
+            // 三个填充器互不依赖，固定顺序：FlowName → CurrentNodeName → Approvers
+            // 前两个是按 Id 关联定义/节点表的"快照兜底"，第三个是任务表聚合
             FillFlowName(paged.Result);
-            // 填充当前节点名称
             FillCurrentNode(paged.Result);
-            // 填充审批人（列表展示）
             FillApprovers(paged.Result);
             return paged;
         }
 
+        /// <summary>
+        /// 兜底填充流程名：实例上冗余的 <c>FlowName</c> 为空时，按 <c>FlowId</c> 关联 <see cref="WfFlowDefinition"/> 取一次。
+        /// </summary>
         private void FillFlowName(List<WfFlowInstanceDto> list)
         {
             if (list == null || list.Count == 0) return;
-            var needIds = list.Where(x => string.IsNullOrEmpty(x.FlowName)).Select(x => x.FlowId).Distinct().ToList();
+            var needIds = list.Where(x => string.IsNullOrEmpty(x.FlowName))
+                .Select(x => x.FlowId).Distinct().ToList();
             if (needIds.Count == 0) return;
-            var defs = Context.Queryable<WfFlowDefinition>()
+
+            var map = Context.Queryable<WfFlowDefinition>()
                 .Where(d => needIds.Contains(d.FlowId))
-                .ToList();
-            var map = defs.ToDictionary(d => d.FlowId, d => d.FlowName);
+                .ToList()
+                .ToDictionary(d => d.FlowId, d => d.FlowName);
             foreach (var it in list)
             {
                 if (string.IsNullOrEmpty(it.FlowName) && map.TryGetValue(it.FlowId, out var fn))
@@ -56,18 +79,19 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 按 CurrentNodeId 关联 wf_flow_node 填充当前节点名称（已结束/无当前节点则不填）。
+        /// 按 <c>CurrentNodeId</c> 关联 <see cref="WfFlowNode"/> 填充当前节点名称（已结束/无当前节点则不填）。
         /// </summary>
         private void FillCurrentNode(List<WfFlowInstanceDto> list)
         {
             if (list == null || list.Count == 0) return;
             var needIds = list.Where(x => x.CurrentNodeId.HasValue && string.IsNullOrEmpty(x.CurrentNodeName))
-                .Select(x => x.CurrentNodeId.Value).Distinct().ToList();
+                .Select(x => x.CurrentNodeId!.Value).Distinct().ToList();
             if (needIds.Count == 0) return;
-            var nodes = Context.Queryable<WfFlowNode>()
+
+            var map = Context.Queryable<WfFlowNode>()
                 .Where(n => needIds.Contains(n.NodeId))
-                .ToList();
-            var map = nodes.ToDictionary(n => n.NodeId, n => n.NodeName);
+                .ToList()
+                .ToDictionary(n => n.NodeId, n => n.NodeName);
             foreach (var it in list)
             {
                 if (it.CurrentNodeId.HasValue && string.IsNullOrEmpty(it.CurrentNodeName)
@@ -79,20 +103,34 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 填充审批人：进行中实例取当前待审任务审批人；已结束/撤回实例取全部参与审批人。
         /// 直接读取任务表的昵称快照，免运行时关联用户表。
+        ///
+        /// 性能：实例 × 任务全表嵌套是 O(N*M)，改用 <c>GroupBy</c> + <c>Dictionary</c> 一次性索引到 O(N+M)。
         /// </summary>
         private void FillApprovers(List<WfFlowInstanceDto> list)
         {
             if (list == null || list.Count == 0) return;
-            var ids = list.Select(x => x.InstanceId).Distinct().ToList();
-            var tasks = Context.Queryable<WfFlowTask>().Where(t => ids.Contains(t.InstanceId)).ToList();
+            var instanceIds = list.Select(x => x.InstanceId).Distinct().ToList();
+
+            // 一次性按 InstanceId 分组，转 Dictionary 索引；任务表通常比实例表大得多，
+            // 避免 foreach 内层再做 Where 全扫描
+            var taskByInstance = Context.Queryable<WfFlowTask>()
+                .Where(t => instanceIds.Contains(t.InstanceId))
+                .ToList()
+                .GroupBy(t => t.InstanceId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             foreach (var it in list)
             {
-                var grp = tasks.Where(t => t.InstanceId == it.InstanceId);
-                // 进行中：当前待审审批人；结束/撤回：所有参与审批人
-                var relevant = it.Status == (int)WfInstanceStatus.Approval
-                    ? grp.Where(t => t.Status == (int)WfTaskStatus.Pending)
-                    : grp;
-                var approvers = relevant
+                if (!taskByInstance.TryGetValue(it.InstanceId, out var ownTasks))
+                {
+                    it.Approvers = string.Empty;
+                    continue;
+                }
+                // 进行中：当前待审人（昵称快照）；结束/撤回：全部参与人
+                var isInProgress = it.Status == (int)WfInstanceStatus.Approval;
+                var approvers = (isInProgress
+                        ? ownTasks.Where(t => t.Status == (int)WfTaskStatus.Pending)
+                        : ownTasks)
                     .Select(t => t.AssigneeNickName)
                     .Where(a => !string.IsNullOrEmpty(a))
                     .SelectMany(a => a.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -103,6 +141,18 @@ namespace ZR.Workflow.Service
             }
         }
 
+        #endregion
+
+        #region 详情
+
+        /// <summary>
+        /// 实例详情：含基础信息、当前节点名、任务列表、记录列表。
+        /// 申请人/操作人昵称已在落库时快照（<c>ApplyNickName</c> / <c>OperatorNickName</c>），直接随 DTO 返回，无需运行时关联用户表。
+        ///
+        /// 性能说明：当前 4 次查询（实例 / 流程定义 / 当前节点 / 任务 / 记录），
+        /// 任务/记录总量可控时无 N+1 风险；若未来详情页要展示评论附件等大字段，可考虑改用
+        /// <c>Queryable().Includes(t => t.Tasks).Includes(r => r.Records)</c> 一次拉取。
+        /// </summary>
         public WfFlowInstanceDto GetInfo(long instanceId)
         {
             var inst = Queryable().First(i => i.InstanceId == instanceId);
@@ -128,36 +178,58 @@ namespace ZR.Workflow.Service
                 .OrderBy(r => r.RecordId)
                 .ToList()
                 .Adapt<List<WfFlowRecordDto>>();
-            // 申请人/操作人昵称已在落库时快照（ApplyNickName / OperatorNickName），直接随 DTO 返回，无需运行时关联用户表
             return dto;
         }
 
+        #endregion
+
+        #region 状态变更
+
+        /// <summary>
+        /// 发起申请。完成"DTO → 实体"转换、用户上下文（申请人/创建人/昵称）注入，
+        /// 实际状态机/任务池推进委托给 <see cref="IWfEngineService.Start(WfFlowInstance)"/>。
+        ///
+        /// 注意：<c>Status</c> 在 Engine 内部会再次置为 <see cref="WfInstanceStatus.Approval"/>（防御性赋值），
+        /// Service 层先 set 是为了避免 Engine 之前变更语义时漏处理。
+        /// </summary>
         public long Start(WfFlowInstanceDto dto, LoginUser user)
         {
             var instance = dto.Adapt<WfFlowInstance>();
+            var now = DateTime.Now;
             instance.ApplyUser = user.UserName;
             instance.ApplyUserId = user.UserId;
+            instance.ApplyNickName = user.NickName;
             instance.Status = (int)WfInstanceStatus.Approval;
             instance.Create_by = user.UserName;
-            instance.Create_time = DateTime.Now;
+            instance.Create_time = now;
             return _engine.Start(instance);
         }
 
         /// <summary>
-        /// 驳回后重新提交：申请人修改内容再次发起，回到首节点重新审批
+        /// 驳回后重新提交：申请人修改内容再次发起，回到首节点重新审批。
+        /// 参数仅接收变更字段（表单/附件/标题），避免传入整个 DTO 引入意外字段。
         /// </summary>
-        public void Resubmit(long instanceId, WfFlowInstanceDto dto, string userName)
+        /// <param name="instanceId">流程实例 Id</param>
+        /// <param name="formContent">表单内容 JSON</param>
+        /// <param name="attachment">附件路径（逗号分隔）</param>
+        /// <param name="title">申请标题；空则保留实例原标题</param>
+        /// <param name="userName">操作人登录名（须为原申请人，由 Engine 校验）</param>
+        public void Resubmit(long instanceId, string formContent, string attachment, string title, string userName)
         {
-            _engine.Resubmit(instanceId, dto.FormContent, dto.Attachment, dto.Title, userName);
+            _engine.Resubmit(instanceId, formContent, attachment, title, userName);
         }
+
+        #endregion
+
+        #region 统计
 
         /// <summary>
         /// 数据面板统计：聚合当前用户的待办/已办/我发起/抄送数量。
-        /// 全部为只读 Count，单次调用返回所有指标。
+        /// 全部为只读 Count，待办/已办 与 我发起 各用一次 GroupBy 拿全部分组，单次调用返回所有指标。
         /// </summary>
         public WfDashboardStatsDto GetDashboardStats(long userId)
         {
-            // 待办/已办：按状态分组一次聚合，减少数据库往返
+            // 待办/已办：按状态分组一次聚合
             var taskStats = Context.Queryable<WfFlowTask>()
                 .Where(t => t.AssigneeId == userId)
                 .GroupBy(t => t.Status)
@@ -177,7 +249,8 @@ namespace ZR.Workflow.Service
                 .Where(x => x.Status == (int)WfInstanceStatus.Approved || x.Status == (int)WfInstanceStatus.Rejected)
                 .Sum(x => x.Cnt);
 
-            // 抄送：记录已按收件人拆分并写入 OperatorId，且 Action 标记为 WfAction.Cc；角标统计「未读」抄送（IsRead=false）
+            // 抄送：记录已按收件人拆分并写入 OperatorId，且 Action 标记为 WfAction.Cc；
+            // 角标统计「未读」抄送（IsRead=false）
             var ccCount = Context.Queryable<WfFlowRecord>()
                 .Count(r => r.Action == (int)WfAction.Cc && r.OperatorId == userId && !r.IsRead);
 
@@ -193,20 +266,29 @@ namespace ZR.Workflow.Service
 
         /// <summary>
         /// 流程效率统计（基于当前用户作为申请人的实例）：
-        /// 1) 平均/最短/最长审批时长：已通过实例的 Update_time(完成) - Create_time(发起)；
-        /// 2) 各节点平均耗时：已完成任务 HandleTime - Create_time，按节点名称聚合；
-        /// 3) 完成率趋势：按月统计结束实例（通过+驳回），通过数 / 结束总数。
+        /// <list type="number">
+        /// <item>平均/最短/最长审批时长：已通过实例的 <c>Update_time - Create_time</c>（小时）；</item>
+        /// <item>各节点平均耗时：已完成任务 <c>HandleTime - Create_time</c>，按节点名称聚合；</item>
+        /// <item>完成率趋势：按月统计结束实例（通过+驳回），通过数 / 结束总数。</item>
+        /// </list>
         /// </summary>
         public WfEfficiencyStatsDto GetEfficiencyStats(long userId)
         {
-            // 已完成（通过）实例：用 Update_time 近似完成时间（引擎在状态流转时更新）
-            var finished = Context.Queryable<WfFlowInstance>()
-                .Where(i => i.ApplyUserId == userId && i.Status == (int)WfInstanceStatus.Approved)
-                .Select(i => new { i.Create_time, i.Update_time })
+            // 单次拉取当前用户全部实例的最小字段集（Status/Create_time/Update_time），
+            // 在内存里同时算出"已通过（用于时长）"和"已结束（用于完成率趋势）"，避免两次扫 wf_flow_instance
+            var allInst = Context.Queryable<WfFlowInstance>()
+                .Where(i => i.ApplyUserId == userId)
+                .Select(i => new { i.Status, i.Create_time, i.Update_time })
+                .ToList();
+
+            // 已通过：Update_time 为完成时间；个别情况下 Update_time 未更新（引擎漏写）时用 Create_time 兜底，避免负值
+            var finished = allInst
+                .Where(i => i.Status == (int)WfInstanceStatus.Approved)
+                .Select(i => new { i.Create_time, EndTime = i.Update_time ?? i.Create_time })
                 .ToList();
 
             var durations = finished
-                .Select(x => (decimal)((x.Update_time ?? x.Create_time) - x.Create_time).TotalHours)
+                .Select(x => (decimal)(x.EndTime - x.Create_time).TotalHours)
                 .ToList();
 
             var eff = new WfEfficiencyStatsDto
@@ -243,20 +325,18 @@ namespace ZR.Workflow.Service
             eff.NodeDurations = nodeDurations;
 
             // 完成率趋势：按月统计结束实例（通过 + 驳回）
-            var ended = Context.Queryable<WfFlowInstance>()
-                .Where(i => i.ApplyUserId == userId && (i.Status == (int)WfInstanceStatus.Approved || i.Status == (int)WfInstanceStatus.Rejected))
-                .Select(i => new { i.Status, i.Update_time })
-                .ToList();
-
-            eff.CompletionTrend = ended
-                .GroupBy(x => (x.Update_time ?? DateTime.Now).ToString("yyyy-MM"))
-                .Select(g => new WfCompletionTrendDto
+            // Update_time 为 null 时用 Create_time 兜底（与 finished 同口径），避免污染"本月"
+            eff.CompletionTrend = allInst
+                .Where(i => i.Status == (int)WfInstanceStatus.Approved || i.Status == (int)WfInstanceStatus.Rejected)
+                .GroupBy(i => (i.Update_time ?? i.Create_time).ToString("yyyy-MM"))
+                .Select(g => new
                 {
                     Month = g.Key,
                     TotalFinished = g.Count(),
                     Approved = g.Count(x => x.Status == (int)WfInstanceStatus.Approved),
                     Rejected = g.Count(x => x.Status == (int)WfInstanceStatus.Rejected)
                 })
+                .OrderBy(g => g.Month)
                 .Select(g => new WfCompletionTrendDto
                 {
                     Month = g.Month,
@@ -265,10 +345,11 @@ namespace ZR.Workflow.Service
                     Rejected = g.Rejected,
                     Rate = g.TotalFinished == 0 ? 0 : Math.Round((decimal)g.Approved * 100 / g.TotalFinished, 1)
                 })
-                .OrderBy(g => g.Month)
                 .ToList();
 
             return eff;
         }
+
+        #endregion
     }
 }

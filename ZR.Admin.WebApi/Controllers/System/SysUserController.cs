@@ -49,6 +49,20 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
+        /// 工作流选择用户 -> 获取用户
+        /// /system/user/seletList
+        /// </summary>
+        /// <returns></returns>
+        [ActionPermissionFilter(Permission = "common")]
+        [HttpGet("seletList")]
+        public IActionResult SelectUserList([FromQuery] SysUserQueryDto user, PagerInfo pager)
+        {
+            var list = UserService.SelectUserList(user, pager);
+
+            return SUCCESS(list);
+        }
+
+        /// <summary>
         /// 用户管理 -> 编辑、添加用户获取用户，信息查询
         /// </summary>
         /// <param name="userId"></param>

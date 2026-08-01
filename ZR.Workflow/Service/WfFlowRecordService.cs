@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using ZR.Workflow.Enum;
-
 namespace ZR.Workflow.Service
 {
     /// <summary>
@@ -70,7 +67,7 @@ namespace ZR.Workflow.Service
 
         private ISugarQueryable<WfFlowRecord, WfFlowNode, WfFlowInstance, WfFlowDefinition> BuildRecordQuery()
         {
-            return Context.Queryable<WfFlowRecord>()
+            return Queryable()
                 .LeftJoin<WfFlowNode>((r, n) => r.NodeId == n.NodeId)
                 .LeftJoin<WfFlowInstance>((r, n, i) => r.InstanceId == i.InstanceId)
                 .LeftJoin<WfFlowDefinition>((r, n, i, d) => i.FlowId == d.FlowId);
@@ -81,7 +78,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         public int GetUnreadCount(long userId)
         {
-            return Context.Queryable<WfFlowRecord>()
+            return Queryable()
                 .Where(r => r.OperatorId == userId && r.Action == (int)WfAction.Cc && !r.IsRead)
                 .Count();
         }

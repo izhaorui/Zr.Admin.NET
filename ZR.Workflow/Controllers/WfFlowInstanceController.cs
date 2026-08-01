@@ -76,7 +76,8 @@ namespace ZR.Workflow.Controllers
         {
             if (parm == null) return ToResponse(ResultCode.PARAM_ERROR, "参数错误");
             var userName = HttpContext.GetName();
-            _service.Resubmit(instanceId, parm, userName);
+            // 只透传三个可编辑字段，避免前端携带整 DTO 时的歧义（Status/InstanceId 等后端字段不在变更范围内）
+            _service.Resubmit(instanceId, parm.FormContent, parm.Attachment, parm.Title, userName);
             return SUCCESS(1);
         }
 

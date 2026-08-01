@@ -1,8 +1,3 @@
-using System.Collections.Generic;
-using ZR.Model.System;
-using ZR.Workflow.Model;
-using ZR.Workflow.Model.Dto;
-
 namespace ZR.Workflow.Service
 {
     /// <summary>
@@ -16,7 +11,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         public PagedInfo<WfFlowCommentDto> GetList(WfFlowCommentQueryDto parm)
         {
-            var query = Context.Queryable<WfFlowComment>()
+            var query = Queryable()
                 .WhereIF(parm.InstanceId != null, c => c.InstanceId == parm.InstanceId)
                 .WhereIF(parm.NodeId != null, c => c.NodeId == parm.NodeId)
                 .OrderBy(c => c.Create_time, OrderByType.Asc)
@@ -37,23 +32,19 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 新增评论（按当前用户写入，不推进流程）
         /// </summary>
-        public void Add(WfFlowCommentInput parm, string userName, long userId)
+        public void Add(WfFlowCommentInput parm, LoginUser user)
         {
-            var nickName = userName;
-            var sysUser = Context.Queryable<SysUser>().First(u => u.UserId == userId);
-            if (sysUser != null && !string.IsNullOrEmpty(sysUser.NickName)) nickName = sysUser.NickName;
-
             var entity = new WfFlowComment
             {
                 InstanceId = parm.InstanceId,
                 NodeId = parm.NodeId,
                 TaskId = parm.TaskId,
                 Comment = parm.Comment,
-                UserName = userName,
-                UserId = userId,
-                NickName = nickName
+                UserName = user.UserName,
+                UserId = user.UserId,
+                NickName = user.NickName
             };
-            Context.Insertable(entity).ExecuteReturnEntity();
+            InsertReturnEntity(entity);
         }
     }
 }

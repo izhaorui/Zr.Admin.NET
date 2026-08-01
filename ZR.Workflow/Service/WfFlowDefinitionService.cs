@@ -1,11 +1,23 @@
 namespace ZR.Workflow.Service
 {
     /// <summary>
-    /// 流程定义与节点配置服务
+    /// 流程定义与节点配置服务。
+    ///
+    /// 职责分层：
+    /// - 公共入口：列表/详情/增删改查
+    /// - 版本与副本管理：复制(Copy)、版本历史(GetVersions)、现行切换(SetCurrentVersion)、发布(Publish)、另存新版本(SaveAsNewVersion)、回滚(Rollback)
+    /// - 私有辅助：节点复制与软删除查询
+    ///
+    /// 关键约束：
+    /// - 软删除统一经由 GetActiveDef(GetVersions/GetActiveDefByCode 由列表路径承担)，列表查询经由 QueryExp，避免散落过滤条件
+    /// - 节点新增字段时只需改 CloneNodeForCopy 与 InsertNodes 各一处
+    /// - 版本管理不删除历史定义，实例绑定各自 FlowId，旧版可继续承载在途实例
     /// </summary>
     [AppService(ServiceType = typeof(IWfFlowDefinitionService))]
     public class WfFlowDefinitionService : BaseService<WfFlowDefinition>, IWfFlowDefinitionService
     {
+        #region 公共入口
+
         public PagedInfo<WfFlowDefinitionDto> GetList(WfFlowDefinitionQueryDto parm)
         {
             var predicate = QueryExp(parm);
@@ -17,24 +29,16 @@ namespace ZR.Workflow.Service
 
         public WfFlowDefinitionDto GetInfo(long flowId)
         {
-            var def = Queryable().Where(f => f.IsDelete == 0 && f.FlowId == flowId).First();
+            var def = GetActiveDef(flowId);
             if (def == null) return null;
             var dto = def.Adapt<WfFlowDefinitionDto>();
-            dto.Nodes = Context.Queryable<WfFlowNode>()
-                .Where(n => n.FlowId == flowId)
-                .OrderBy(n => n.NodeOrder)
-                .ToList()
-                .Adapt<List<WfFlowNodeDto>>();
+            dto.Nodes = GetOrderedNodes(flowId).Adapt<List<WfFlowNodeDto>>();
             return dto;
         }
 
         public List<WfFlowNodeDto> GetNodes(long flowId)
         {
-            return Context.Queryable<WfFlowNode>()
-                .Where(n => n.FlowId == flowId)
-                .OrderBy(n => n.NodeOrder)
-                .ToList()
-                .Adapt<List<WfFlowNodeDto>>();
+            return GetOrderedNodes(flowId).Adapt<List<WfFlowNodeDto>>();
         }
 
         public WfFlowDefinition Add(WfFlowDefinitionDto dto)
@@ -54,10 +58,9 @@ namespace ZR.Workflow.Service
         public int Update(WfFlowDefinitionDto dto)
         {
             var userName = App.HttpContext?.GetName();
-            // 保留数据库中的 FlowCode / Version，避免编辑时版本号被客户端覆盖（版本仅由 SaveAsNewVersion 产生）
-            var existing = Queryable().Where(f => f.FlowId == dto.FlowId).First();
-            if (existing == null)
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
+            // 保留数据库中的 FlowCode / Version / IsDraft，避免编辑时版本号或草稿态被客户端覆盖
+            var existing = GetActiveDef(dto.FlowId)
+                ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
             var def = dto.Adapt<WfFlowDefinition>().ToUpdate(App.HttpContext);
             def.FlowCode = existing.FlowCode;
             def.Version = existing.Version;
@@ -95,6 +98,10 @@ namespace ZR.Workflow.Service
             return rows;
         }
 
+        #endregion
+
+        #region 版本与副本管理
+
         /// <summary>
         /// 复制流程定义及其节点配置：生成一份停用状态的副本。
         /// 副本编码为「原编码_copy／_copy2…」（自动避让已存在的编码），
@@ -102,85 +109,23 @@ namespace ZR.Workflow.Service
         /// </summary>
         public long Copy(long flowId, string userName)
         {
-            var src = Queryable().Where(f => f.IsDelete == 0 && f.FlowId == flowId).First();
-            if (src == null)
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
-            var srcNodes = Context.Queryable<WfFlowNode>()
-                .Where(n => n.FlowId == flowId)
-                .OrderBy(n => n.NodeOrder)
-                .ToList();
-
-            var copy = new WfFlowDefinition
-            {
-                FlowCode = GenCopyCode(src.FlowCode),
-                FlowName = src.FlowName + "_副本",
-                FormType = src.FormType,
-                Status = 0, // 副本默认停用，确认后再启用，避免误发起
-                FormItems = src.FormItems,
-                Remark = src.Remark,
-                Create_by = userName,
-                Create_time = DateTime.Now,
-                Update_by = userName,
-                Update_time = DateTime.Now
-            };
-
-            long newId = 0;
-            var result = UseTran(() =>
-            {
-                copy = InsertReturnEntity(copy) ?? throw new CustomException("复制流程定义失败");
-                newId = copy.FlowId;
-                if (srcNodes.Count > 0)
+            return CloneDefAndNodes(
+                flowId,
+                defFactory: src => new WfFlowDefinition
                 {
-                    var entities = srcNodes.Select(n => new WfFlowNode
-                    {
-                        FlowId = newId,
-                        NodeName = n.NodeName,
-                        NodeType = n.NodeType,
-                        ApproverType = n.ApproverType,
-                        ApproverId = n.ApproverId,
-                        ApproverNames = n.ApproverNames,
-                        NodeOrder = n.NodeOrder,
-                        SignType = n.SignType,
-                        ConditionField = n.ConditionField,
-                        ConditionOp = n.ConditionOp,
-                        ConditionValue = n.ConditionValue,
-                        ParallelGroup = n.ParallelGroup,
-                        Create_by = userName,
-                        Create_time = DateTime.Now
-                    }).ToList();
-                    Context.Insertable(entities).ExecuteCommand();
-                }
-            });
-            if (!result.IsSuccess)
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "复制失败", result.ErrorMessage);
-            return newId;
-        }
-
-        /// <summary>
-        /// 生成不冲突的副本编码：原编码_copy，若已存在则 _copy2 / _copy3 …
-        /// </summary>
-        private string GenCopyCode(string baseCode)
-        {
-            var prefix = $"{baseCode}_copy";
-            var existing = Context.Queryable<WfFlowDefinition>()
-                .Where(f => f.IsDelete == 0 && f.FlowCode.StartsWith(prefix))
-                .Select(f => f.FlowCode)
-                .ToList();
-            var candidate = prefix;
-            var i = 2;
-            while (existing.Contains(candidate))
-                candidate = $"{baseCode}_copy{i++}";
-            return candidate;
-        }
-
-        /// <summary>
-        /// 另存为新版本：复制当前定义（FlowCode 不变）与节点到新的 FlowId，
-        /// Version = 该 FlowCode 当前最大版本 + 1；旧版本冻结保留，不影响在途实例。
-        /// 生成草稿态（IsDraft=1），需手动发布/设为现行后才可发起。
-        /// </summary>
-        public long SaveAsNewVersion(long flowId, string userName)
-        {
-            return SaveAsNewVersionInternal(flowId, userName, "另存新版本");
+                    FlowCode = GenCopyCode(src.FlowCode),
+                    FlowName = src.FlowName + "_副本",
+                    FormType = src.FormType,
+                    Status = 0, // 副本默认停用，确认后再启用，避免误发起
+                    FormItems = src.FormItems,
+                    Remark = src.Remark,
+                    Create_by = userName,
+                    Create_time = DateTime.Now,
+                    Update_by = userName,
+                    Update_time = DateTime.Now
+                },
+                errorLabel: "复制流程定义失败",
+                userName: userName);
         }
 
         /// <summary>
@@ -207,9 +152,8 @@ namespace ZR.Workflow.Service
         /// </summary>
         public int SetCurrentVersion(long flowId, string userName)
         {
-            var target = Queryable().Where(f => f.IsDelete == 0 && f.FlowId == flowId).First();
-            if (target == null)
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
+            var target = GetActiveDef(flowId)
+                ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
 
             var result = UseTran(() =>
             {
@@ -235,9 +179,8 @@ namespace ZR.Workflow.Service
         /// </summary>
         public int Publish(long flowId, string userName)
         {
-            var target = Queryable().Where(f => f.IsDelete == 0 && f.FlowId == flowId).First();
-            if (target == null)
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
+            var target = GetActiveDef(flowId)
+                ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
             if (target.IsDraft == 0)
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "该版本已是正式版，无需发布", null);
 
@@ -246,6 +189,16 @@ namespace ZR.Workflow.Service
                 .SetColumns(it => new WfFlowDefinition { IsDraft = 0, Update_by = userName, Update_time = DateTime.Now })
                 .ExecuteCommand();
             return rows;
+        }
+
+        /// <summary>
+        /// 另存为新版本：复制当前定义（FlowCode 不变）与节点到新的 FlowId，
+        /// Version = 该 FlowCode 当前最大版本 + 1；旧版本冻结保留，不影响在途实例。
+        /// 生成草稿态（IsDraft=1），需手动发布/设为现行后才可发起。
+        /// </summary>
+        public long SaveAsNewVersion(long flowId, string userName)
+        {
+            return SaveAsNewVersionInternal(flowId, userName, "另存新版本");
         }
 
         /// <summary>
@@ -263,91 +216,182 @@ namespace ZR.Workflow.Service
         /// </summary>
         private long SaveAsNewVersionInternal(long flowId, string userName, string reason)
         {
-            var src = Queryable().Where(f => f.IsDelete == 0 && f.FlowId == flowId).First();
-            if (src == null)
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
-            var srcNodes = Context.Queryable<WfFlowNode>()
-                .Where(n => n.FlowId == flowId)
-                .OrderBy(n => n.NodeOrder)
-                .ToList();
-
-            var maxVer = Queryable().Where(f => f.IsDelete == 0 && f.FlowCode == src.FlowCode)
-                .Select(f => f.Version)
-                .ToList()
-                .DefaultIfEmpty(0)
-                .Max();
-            var newVer = maxVer + 1;
-
-            var copy = new WfFlowDefinition
-            {
-                FlowCode = src.FlowCode,
-                FlowName = src.FlowName,
-                FormType = src.FormType,
-                Status = 0, // 回滚/另存均为草稿停用态，需手动发布/设现行
-                FormItems = src.FormItems,
-                Version = newVer,
-                IsDraft = 1,
-                Remark = src.Remark,
-                Create_by = userName,
-                Create_time = DateTime.Now,
-                Update_by = userName,
-                Update_time = DateTime.Now
-            };
-
-            long newId = 0;
-            var result = UseTran(() =>
-            {
-                copy = InsertReturnEntity(copy) ?? throw new CustomException($"{reason}失败");
-                newId = copy.FlowId;
-                if (srcNodes.Count > 0)
+            return CloneDefAndNodes(
+                flowId,
+                defFactory: src => new WfFlowDefinition
                 {
-                    var entities = srcNodes.Select(n => new WfFlowNode
-                    {
-                        FlowId = newId,
-                        NodeName = n.NodeName,
-                        NodeType = n.NodeType,
-                        ApproverType = n.ApproverType,
-                        ApproverId = n.ApproverId,
-                        ApproverNames = n.ApproverNames,
-                        NodeOrder = n.NodeOrder,
-                        SignType = n.SignType,
-                        ConditionField = n.ConditionField,
-                        ConditionOp = n.ConditionOp,
-                        ConditionValue = n.ConditionValue,
-                        ParallelGroup = n.ParallelGroup,
-                        Create_by = userName,
-                        Create_time = DateTime.Now
-                    }).ToList();
-                    Context.Insertable(entities).ExecuteCommand();
-                }
-            });
-            if (!result.IsSuccess)
-                throw new CustomException(ResultCode.CUSTOM_ERROR, $"{reason}失败", result.ErrorMessage);
-            return newId;
+                    FlowCode = src.FlowCode,
+                    FlowName = src.FlowName,
+                    FormType = src.FormType,
+                    Status = 0, // 回滚/另存均为草稿停用态，需手动发布/设现行
+                    FormItems = src.FormItems,
+                    Version = GetNextVersion(src.FlowCode),
+                    IsDraft = 1,
+                    Remark = src.Remark,
+                    Create_by = userName,
+                    Create_time = DateTime.Now,
+                    Update_by = userName,
+                    Update_time = DateTime.Now
+                },
+                errorLabel: $"{reason}失败",
+                userName: userName);
+        }
+
+        #endregion
+
+        #region 私有辅助 —— 节点复制
+
+        /// <summary>
+        /// 新增/复制节点时构造实体的唯一入口。新增 WfFlowNode 字段时只需改本方法一处，
+        /// InsertNodes / CloneDefAndNodes 自动覆盖。
+        /// </summary>
+        private static WfFlowNode CloneNodeForCopy(WfFlowNode src, long newFlowId, string userName)
+        {
+            return new WfFlowNode
+            {
+                FlowId = newFlowId,
+                NodeName = src.NodeName,
+                NodeType = src.NodeType,
+                ApproverType = src.ApproverType,
+                ApproverId = src.ApproverId,
+                ApproverNames = src.ApproverNames,
+                NodeOrder = src.NodeOrder,
+                SignType = src.SignType,
+                ConditionField = src.ConditionField,
+                ConditionOp = src.ConditionOp,
+                ConditionValue = src.ConditionValue,
+                ParallelGroup = src.ParallelGroup,
+                Create_by = userName,
+                Create_time = DateTime.Now
+            };
         }
 
         private void InsertNodes(long flowId, List<WfFlowNodeDto> nodes, string userName)
         {
             if (nodes == null || nodes.Count == 0) return;
-            var entities = nodes.Select(n => new WfFlowNode
-            {
-                FlowId = flowId,
-                NodeName = n.NodeName,
-                NodeType = n.NodeType,
-                ApproverType = n.ApproverType ?? 0,
-                ApproverId = n.ApproverId,
-                ApproverNames = n.ApproverNames,
-                NodeOrder = n.NodeOrder,
-                SignType = n.SignType ?? 0,
-                ConditionField = n.ConditionField,
-                ConditionOp = n.ConditionOp ?? 0,
-                ConditionValue = n.ConditionValue,
-                ParallelGroup = n.ParallelGroup ?? 0,
-                Create_by = userName,
-                Create_time = DateTime.Now
-            }).ToList();
+            // Dto → 实体 走 Adapt 后再走 CloneNodeForCopy，保证后续字段扩展只改一处
+            var entities = nodes.Select(n => CloneNodeForCopy(n.Adapt<WfFlowNode>(), flowId, userName)).ToList();
             Context.Insertable(entities).ExecuteCommand();
         }
+
+        /// <summary>
+        /// 复制源定义的节点到新 FlowId。无源节点则跳过。
+        /// </summary>
+        private void CloneNodesToNewFlow(long srcFlowId, long newFlowId, string userName)
+        {
+            var srcNodes = GetOrderedNodes(srcFlowId);
+            if (srcNodes.Count == 0) return;
+            var entities = srcNodes.Select(n => CloneNodeForCopy(n, newFlowId, userName)).ToList();
+            Context.Insertable(entities).ExecuteCommand();
+        }
+
+        #endregion
+
+        #region 私有辅助 —— 软删除查询 / 排序节点
+
+        /// <summary>
+        /// 取未删除的定义；不存在返回 null（不抛，由调用方决定文案）。
+        /// </summary>
+        private WfFlowDefinition GetActiveDef(long flowId)
+        {
+            return Queryable().Where(f => f.IsDelete == 0 && f.FlowId == flowId).First();
+        }
+
+        /// <summary>
+        /// 取某 FlowCode 当前最大版本号（已软删除的不算），无则视为 0。
+        /// </summary>
+        private int GetNextVersion(string flowCode)
+        {
+            return Queryable()
+                .Where(f => f.IsDelete == 0 && f.FlowCode == flowCode)
+                .Select(f => f.Version)
+                .ToList()
+                .DefaultIfEmpty(0)
+                .Max() + 1;
+        }
+
+        /// <summary>
+        /// 按 NodeOrder 升序取某 FlowId 的全部节点（含已软删除定义的节点，仅本服务内部使用，
+        /// 不依赖 IsDelete 过滤——节点行没有 IsDelete 字段）。
+        /// </summary>
+        private List<WfFlowNode> GetOrderedNodes(long flowId)
+        {
+            return Context.Queryable<WfFlowNode>()
+                .Where(n => n.FlowId == flowId)
+                .OrderBy(n => n.NodeOrder)
+                .ToList();
+        }
+
+        #endregion
+
+        #region 私有辅助 —— 定义/节点复制事务
+
+        /// <summary>
+        /// 复制源定义到新 FlowId（含节点）。
+        ///
+        /// 流转图：
+        /// <code>
+        ///   CloneDefAndNodes
+        ///        │
+        ///        ├─ 取源（GetActiveDef，null → CustomException）
+        ///        │
+        ///        ├─ UseTran
+        ///        │     │
+        ///        │     ├─ defFactory(src) 构造新定义
+        ///        │     ├─ InsertReturnEntity（新 FlowId）
+        ///        │     └─ CloneNodesToNewFlow
+        ///        │
+        ///        └─ 返回 newId
+        /// </code>
+        /// </summary>
+        private long CloneDefAndNodes(long srcFlowId, Func<WfFlowDefinition, WfFlowDefinition> defFactory, string errorLabel, string userName)
+        {
+            var src = GetActiveDef(srcFlowId)
+                ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
+
+            long newId = 0;
+            var result = UseTran(() =>
+            {
+                var copy = defFactory(src);
+                copy = InsertReturnEntity(copy) ?? throw new CustomException(errorLabel);
+                newId = copy.FlowId;
+                CloneNodesToNewFlow(srcFlowId, newId, userName);
+            });
+            if (!result.IsSuccess)
+                throw new CustomException(ResultCode.CUSTOM_ERROR, errorLabel, result.ErrorMessage);
+            return newId;
+        }
+
+        #endregion
+
+        #region 私有辅助 —— 副本编码生成（带冲突重试）
+
+        // FlowCode 列在数据库侧无唯一约束（仅 Length=64 NOTNULL），
+        // 并发 Copy 时两个事务可能都读到同一份"已存在编码"集合并选中同一候选，
+        // 导致后插入的版本拿到重复 FlowCode。本方法通过循环最多 999 次避让，
+        // 但**真正的并发安全应依赖数据库唯一索引**，超出本服务范围。
+        private const int MaxCopyCodeRetry = 999;
+
+        /// <summary>
+        /// 生成不冲突的副本编码：原编码_copy，若已存在则 _copy2 / _copy3 …
+        /// </summary>
+        private string GenCopyCode(string baseCode)
+        {
+            var prefix = $"{baseCode}_copy";
+            for (var i = 2; i <= MaxCopyCodeRetry; i++)
+            {
+                var candidate = i == 2 ? prefix : $"{baseCode}_copy{i}";
+                var exists = Context.Queryable<WfFlowDefinition>()
+                    .Where(f => f.IsDelete == 0 && f.FlowCode == candidate)
+                    .Any();
+                if (!exists) return candidate;
+            }
+            return $"{baseCode}_copy_{DateTime.Now:HHmmssfff}"; // 极端并发兜底
+        }
+
+        #endregion
+
+        #region 私有辅助 —— 列表查询条件
 
         private static Expressionable<WfFlowDefinition> QueryExp(WfFlowDefinitionQueryDto parm)
         {
@@ -359,5 +403,7 @@ namespace ZR.Workflow.Service
             predicate = predicate.And(it => it.IsDelete == 0);
             return predicate;
         }
+
+        #endregion
     }
 }

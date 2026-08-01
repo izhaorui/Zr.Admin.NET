@@ -33,8 +33,8 @@ namespace ZR.Workflow.Controllers
             var children = new List<RouterVo>
             {
                 new() { Path = "/pages/work/definition", Meta = new Meta("流程定义", "list") { Permi = "workflow:definition:list" } },
-                new() { Path = "/pages/work/my", Meta = new Meta("我发起的", "file-text") { Permi = "workflow:instance:list" } },
-                new() { Path = "/pages/work/todo", Meta = new Meta("待我审批", "checkmark-circle") { Permi = "workflow:task:list" } },
+                new() { Path = "/pages/work/my", Meta = new Meta("我的流程", "file-text") { Permi = "workflow:instance:list" } },
+                new() { Path = "/pages/work/todo", Meta = new Meta("待办任务", "checkmark-circle") { Permi = "workflow:task:list" } },
                 new() { Path = "/pages/work/done", Meta = new Meta("已办任务", "checkmark") { Permi = "workflow:task:list" } },
                 new() { Path = "/pages/work/record", Meta = new Meta("审批记录", "clock") { Permi = "workflow:record:list" } },
                 new() { Path = "/pages/work/cc", Meta = new Meta("抄送给我", "chat") { Permi = "workflow:record:cc" } },

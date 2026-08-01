@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace ZR.Workflow.Service
 {
     /// <summary>
@@ -20,7 +18,7 @@ namespace ZR.Workflow.Service
 
         private PagedInfo<WfFlowTaskDto> GetTaskList(WfFlowTaskQueryDto parm, long userId, int status)
         {
-            var query = Context.Queryable<WfFlowTask>()
+            var query = Queryable()
                 .InnerJoin<WfFlowInstance>((t, i) => t.InstanceId == i.InstanceId)
                 .LeftJoin<WfFlowDefinition>((t, i, d) => i.FlowId == d.FlowId)
                 .Where((t, i, d) => t.AssigneeId == userId && t.Status == status)
@@ -54,7 +52,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         public int GetUnreadCount(long userId)
         {
-            return Context.Queryable<WfFlowTask>()
+            return Queryable()
                 .Where(t => t.AssigneeId == userId && t.Status == (int)WfTaskStatus.Pending && !t.IsRead)
                 .Count();
         }
