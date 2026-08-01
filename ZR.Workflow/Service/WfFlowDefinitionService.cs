@@ -9,7 +9,9 @@ namespace ZR.Workflow.Service
         public PagedInfo<WfFlowDefinitionDto> GetList(WfFlowDefinitionQueryDto parm)
         {
             var predicate = QueryExp(parm);
-            return Queryable().Where(predicate.ToExpression())
+            return Queryable()
+                .Where(predicate.ToExpression())
+                .OrderByDescending(f => f.FlowId)
                 .ToPage<WfFlowDefinition, WfFlowDefinitionDto>(parm);
         }
 
@@ -136,6 +138,7 @@ namespace ZR.Workflow.Service
                         NodeType = n.NodeType,
                         ApproverType = n.ApproverType,
                         ApproverId = n.ApproverId,
+                        ApproverNames = n.ApproverNames,
                         NodeOrder = n.NodeOrder,
                         SignType = n.SignType,
                         ConditionField = n.ConditionField,
@@ -305,6 +308,7 @@ namespace ZR.Workflow.Service
                         NodeType = n.NodeType,
                         ApproverType = n.ApproverType,
                         ApproverId = n.ApproverId,
+                        ApproverNames = n.ApproverNames,
                         NodeOrder = n.NodeOrder,
                         SignType = n.SignType,
                         ConditionField = n.ConditionField,
@@ -330,14 +334,15 @@ namespace ZR.Workflow.Service
                 FlowId = flowId,
                 NodeName = n.NodeName,
                 NodeType = n.NodeType,
-                ApproverType = n.ApproverType,
+                ApproverType = n.ApproverType ?? 0,
                 ApproverId = n.ApproverId,
+                ApproverNames = n.ApproverNames,
                 NodeOrder = n.NodeOrder,
-                SignType = n.SignType,
+                SignType = n.SignType ?? 0,
                 ConditionField = n.ConditionField,
-                ConditionOp = n.ConditionOp,
+                ConditionOp = n.ConditionOp ?? 0,
                 ConditionValue = n.ConditionValue,
-                ParallelGroup = n.ParallelGroup,
+                ParallelGroup = n.ParallelGroup ?? 0,
                 Create_by = userName,
                 Create_time = DateTime.Now
             }).ToList();

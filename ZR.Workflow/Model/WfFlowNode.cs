@@ -31,16 +31,22 @@ namespace ZR.Workflow.Model
         public int NodeType { get; set; } = 1;
 
         /// <summary>
-        /// 审批人类型 0=指定用户 1=指定角色 2=指定部门
+        /// 审批人类型 0=指定用户 1=指定角色 2=指定部门 3=按表单字段
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public int ApproverType { get; set; } = 0;
 
         /// <summary>
-        /// 审批人（ApproverType=0 时多个逗号分隔；或签一人通过即通过）
+        /// 审批人标识（ApproverType=0 时存 userId 逗号分隔；=1 角色Id；=2 部门Id；=3 表单字段 key；或签一人通过即通过）
         /// </summary>
         [SugarColumn(Length = 500, IsNullable = true)]
         public string ApproverId { get; set; }
+
+        /// <summary>
+        /// 审批人/抄送人 userName 快照（ApproverType=0 时与 ApproverId 同步，逗号分隔；选人时写入，显示时直接读取，不反查）
+        /// </summary>
+        [SugarColumn(Length = 500, IsNullable = true)]
+        public string ApproverNames { get; set; }
 
         /// <summary>
         /// 节点顺序（从 1 开始）

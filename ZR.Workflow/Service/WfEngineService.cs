@@ -355,11 +355,14 @@ namespace ZR.Workflow.Service
                 .Distinct().ToList();
             if (toAdd.Count == 0) throw new CustomException("加签人已在该节点审批人中");
 
+            // 加签人前端传 userName，统一解析为 ResolvedApprover（带 UserId）再落库
+            var toAddApprovers = ResolveByUserNames(toAdd);
+
             var result = UseTran(() =>
             {
-                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, toAdd, (int)WfTaskStatus.Pending, operatorName);
+                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, toAddApprovers, (int)WfTaskStatus.Pending, operatorName);
 
-                NotifyUsers(toAdd, $"【审批加签】{instance.Title} 由 {operatorName} 邀请您加签审批。");
+                NotifyUsers(toAddApprovers, $"【审批加签】{instance.Title} 由 {operatorName} 邀请您加签审批。");
 
                 var recordOpinion = "加签：" + string.Join(",", toAdd) + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
                 AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.AddSign, recordOpinion);
@@ -410,7 +413,17 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 批量通知一组用户名（支持逗号分隔串，自动拆分去重）
+        /// 批量通知一组审批人（直接用 UserId 推送，无需反查用户表）
+        /// </summary>
+        private void NotifyUsers(List<ResolvedApprover> approvers, string content)
+        {
+            if (approvers == null) return;
+            foreach (var a in approvers.Distinct())
+                Notify(a.UserId, content);
+        }
+
+        /// <summary>
+        /// 按用户名批量通知（用于通知发起人、转办/加签目标等以 userName 标识的场景）
         /// </summary>
         private void NotifyUsers(IEnumerable<string> userNames, string content)
         {
@@ -427,25 +440,14 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 批量解析用户名 -> (UserId, NickName)，用于任务/记录审批人昵称快照
-        /// </summary>
-        private Dictionary<string, SysUser> GetUserMap(IEnumerable<string> userNames)
-        {
-            var names = userNames.Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
-            if (names.Count == 0) return new Dictionary<string, SysUser>();
-            return Context.Queryable<SysUser>().Where(u => names.Contains(u.UserName)).ToList()
-                .ToDictionary(u => u.UserName, u => u);
-        }
-
-        /// <summary>
         /// 生成抄送任务并落库抄送记录、推送通知；审批人昵称一并快照。
         /// </summary>
-        private void CreateCcTask(WfFlowInstance instance, WfFlowNode node)
+        private void CreateCcTask(WfFlowInstance instance, WfFlowNode node, Dictionary<string, string> formValues)
         {
-            var ccList = ResolveApprovers(node);
-            var users = GetUserMap(ccList);
-            var ccUsers = string.Join(",", ccList);
-            var ccNick = string.Join(",", ccList.Select(c => users.TryGetValue(c, out var u) ? u.NickName : c));
+            var ccList = ResolveApprovers(node, formValues);
+            var ccUsers = string.Join(",", ccList.Select(c => c.UserName));
+            var ccUserIds = string.Join(",", ccList.Select(c => c.UserId));
+            var ccNick = string.Join(",", ccList.Select(c => c.NickName));
             Context.Insertable(new WfFlowTask
             {
                 InstanceId = instance.InstanceId,
@@ -459,11 +461,10 @@ namespace ZR.Workflow.Service
                 Create_time = DateTime.Now,
                 Create_by = instance.ApplyUser
             }).ExecuteCommand();
-            // 每个收件人落一条抄送记录并写入各自的 OperatorId，便于按 userId 精确匹配（抄送给我/数据面板），无需反查用户表
+            // 每个收件人落一条抄送记录并写入各自的 OperatorId（userId），便于按 userId 精确匹配（抄送给我/数据面板）
             foreach (var c in ccList)
             {
-                var u = users.TryGetValue(c, out var su) ? su : null;
-                AddRecord(instance.InstanceId, null, node.NodeId, c, (int)WfAction.Cc, "抄送", null, u?.UserId, u?.NickName);
+                AddRecord(instance.InstanceId, null, node.NodeId, c.UserName, (int)WfAction.Cc, "抄送", null, c.UserId, c.NickName);
             }
             NotifyUsers(ccList, $"【审批抄送】{instance.Title}（{instance.FlowName}）抄送知会，请知悉。");
         }
@@ -471,19 +472,18 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 批量创建任务（待办/抄送），替代逐条 ExecuteCommand 以减少数据库往返
         /// </summary>
-        private void BatchCreateTasks(long instanceId, long nodeId, string nodeName, List<string> assignees, int status, string createBy, DateTime? createTime = null)
+        private void BatchCreateTasks(long instanceId, long nodeId, string nodeName, List<ResolvedApprover> assignees, int status, string createBy, DateTime? createTime = null)
         {
             if (assignees == null || assignees.Count == 0) return;
             var now = createTime ?? DateTime.Now;
-            var userMap = GetUserMap(assignees);
             var tasks = assignees.Select(a => new WfFlowTask
             {
                 InstanceId = instanceId,
                 NodeId = nodeId,
                 NodeName = nodeName,
-                Assignee = a,
-                AssigneeId = userMap.TryGetValue(a, out var u) ? u.UserId : (long?)null,
-                AssigneeNickName = u?.NickName ?? a,
+                Assignee = a.UserName,
+                AssigneeId = a.UserId,
+                AssigneeNickName = a.NickName,
                 Status = status,
                 Create_time = now,
                 Create_by = createBy
@@ -494,10 +494,17 @@ namespace ZR.Workflow.Service
         #endregion
 
         /// <summary>
-        /// 解析节点审批人列表。
-        /// ApproverType=0 直接返回用户名；=1 按角色Id查该角色下所有用户；=2 按部门Id取该部门下所有用户。
+        /// 解析后的审批人（直接用 UserId 落库，不依赖 userName 反查）。
         /// </summary>
-        private List<string> ResolveApprovers(WfFlowNode node)
+        private sealed record ResolvedApprover(long UserId, string UserName, string NickName);
+
+        /// <summary>
+        /// 解析节点审批人列表，统一返回 (UserId, UserName, NickName)。
+        /// 定义态存的是稳定标识：ApproverType=0/指定用户存 userId；
+        /// =1 角色Id；=2 部门Id；=3 表单字段 key，字段值为逗号分隔的 userId。
+        /// 所有分支最终都查 SysUser 得到 UserId，运行态任务/记录直接用 UserId，避免 userName 变更失效。
+        /// </summary>
+        private List<ResolvedApprover> ResolveApprovers(WfFlowNode node, Dictionary<string, string> formValues)
         {
             var ids = (node.ApproverId ?? "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -506,32 +513,68 @@ namespace ZR.Workflow.Service
                 .Distinct()
                 .ToList();
 
+            List<SysUser> users;
             switch (node.ApproverType)
             {
                 case (int)WfApproverType.Role:
                     {
                         var roleIds = ids.Select(s => long.TryParse(s, out var v) ? v : (long?)null).Where(v => v.HasValue).Select(v => v.Value).ToList();
-                        if (roleIds.Count == 0) return new List<string>();
-                        return Context.Queryable<SysUser>()
+                        if (roleIds.Count == 0) return new List<ResolvedApprover>();
+                        users = Context.Queryable<SysUser>()
                             .InnerJoin<SysUserRole>((u, ur) => u.UserId == ur.UserId)
                             .Where((u, ur) => roleIds.Contains(ur.RoleId))
-                            .Select(u => u.UserName)
                             .Distinct()
                             .ToList();
+                        break;
                     }
                 case (int)WfApproverType.Dept:
                     {
                         var deptIds = ids.Select(s => long.TryParse(s, out var v) ? v : (long?)null).Where(v => v.HasValue).Select(v => v.Value).ToList();
-                        if (deptIds.Count == 0) return new List<string>();
-                        return Context.Queryable<SysUser>()
+                        if (deptIds.Count == 0) return new List<ResolvedApprover>();
+                        users = Context.Queryable<SysUser>()
                             .Where(u => deptIds.Contains(u.DeptId) && u.Status == 0)
-                            .Select(u => u.UserName)
                             .Distinct()
                             .ToList();
+                        break;
                     }
-                default: // 指定用户
-                    return ids;
+                case (int)WfApproverType.Field:
+                    {
+                        // 表单字段动态审批人：ApproverId 为表单字段 key，字段值为逗号分隔的 userId
+                        var key = node.ApproverId ?? "";
+                        if (string.IsNullOrWhiteSpace(key) || formValues == null || !formValues.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+                            return new List<ResolvedApprover>();
+                        var userIds = raw.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(s => s.Trim())
+                            .Where(s => long.TryParse(s, out var id) && id > 0)
+                            .Select(s => long.Parse(s))
+                            .Distinct()
+                            .ToList();
+                        if (userIds.Count == 0) return new List<ResolvedApprover>();
+                        users = Context.Queryable<SysUser>().Where(u => userIds.Contains(u.UserId)).Distinct().ToList();
+                        break;
+                    }
+                default: // 指定用户：ApproverId 存 userId（数字）
+                    {
+                        var userIds = ids.Where(s => long.TryParse(s, out var id) && id > 0).Select(s => long.Parse(s)).Distinct().ToList();
+                        if (userIds.Count == 0) return new List<ResolvedApprover>();
+                        users = Context.Queryable<SysUser>().Where(u => userIds.Contains(u.UserId)).Distinct().ToList();
+                        break;
+                    }
             }
+            return users.Select(u => new ResolvedApprover(u.UserId, u.UserName, u.NickName)).ToList();
+        }
+
+        /// <summary>
+        /// 按 userName 列表解析为 ResolvedApprover（加签等以 userName 传入的场景）
+        /// </summary>
+        private List<ResolvedApprover> ResolveByUserNames(List<string> userNames)
+        {
+            if (userNames == null || userNames.Count == 0) return new List<ResolvedApprover>();
+            var names = userNames.Where(n => !string.IsNullOrEmpty(n)).Select(n => n.Trim()).Distinct().ToList();
+            if (names.Count == 0) return new List<ResolvedApprover>();
+            return Context.Queryable<SysUser>().Where(u => names.Contains(u.UserName))
+                .Select(u => new ResolvedApprover(u.UserId, u.UserName, u.NickName))
+                .ToList();
         }
 
         /// <summary>
@@ -573,11 +616,11 @@ namespace ZR.Workflow.Service
                         if (!EvalCondition(g, formValues)) continue; // 分支条件不满足：不生成待办，视为已完成(包容网关)
                         if (g.NodeType == (int)WfNodeType.Cc)
                         {
-                            CreateCcTask(instance, g);
+                            CreateCcTask(instance, g, formValues);
                         }
                         else
                         {
-                            var nodeApprovers = ResolveApprovers(g);
+                            var nodeApprovers = ResolveApprovers(g, formValues);
                             BatchCreateTasks(instance.InstanceId, g.NodeId, g.NodeName, nodeApprovers, (int)WfTaskStatus.Pending, instance.ApplyUser);
                             NotifyUsers(nodeApprovers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{g.NodeName}」待您审批。");
                         }
@@ -609,7 +652,7 @@ namespace ZR.Workflow.Service
             // —— 非并行节点 ——
             if (node.NodeType == (int)WfNodeType.Cc)
             {
-                CreateCcTask(instance, node);
+                CreateCcTask(instance, node, formValues);
 
                 var next = GetNextAuditNode(allNodes, node.NodeOrder);
                 if (next == null)
@@ -628,7 +671,7 @@ namespace ZR.Workflow.Service
             instance.CurrentNodeId = node.NodeId;
             Context.Updateable(instance).UpdateColumns(i => new { i.CurrentNodeId }).ExecuteCommand();
 
-            var approvers = ResolveApprovers(node);
+            var approvers = ResolveApprovers(node, formValues);
             BatchCreateTasks(instance.InstanceId, node.NodeId, node.NodeName, approvers, (int)WfTaskStatus.Pending, instance.ApplyUser);
             NotifyUsers(approvers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」待您审批。");
         }
