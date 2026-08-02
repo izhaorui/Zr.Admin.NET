@@ -64,11 +64,13 @@ namespace ZR.ServiceCore.Services
                 ("审批记录", "record", "workflow/record/index", "workflow:record:list", "", 6, "", "0",
                     new()),
                 ("抄送给我", "cc", "workflow/cc/index", "workflow:record:cc", "", 7, "WfCc", "0",
-                    new() { ("查看", "workflow:record:cc", 1) }),
+                    new()),
                 // 跳转入口页：发起申请 / 重新提交（不在侧边栏展示，仅用于动态路由注册，前端不再写死静态路由）
                 ("发起申请", "apply", "workflow/apply/index", "", "", 7, "WfApply", "1",
                     new()),
                 ("重新提交", "resubmit", "workflow/resubmit/index", "", "", 8, "WfResubmit", "1",
+                    new()),
+                ("流程审批", "approval", "workflow/todo/approval", "", "", 8, "WfApproval", "1",
                     new()),
             };
 

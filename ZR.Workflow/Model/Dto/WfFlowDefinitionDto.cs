@@ -50,5 +50,8 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>节点配置</summary>
         public List<WfFlowNodeDto> Nodes { get; set; } = new();
+
+        /// <summary>节点连线（分支路由）。**前端应始终为每条边生成一条连线**，直线 ConditionJson 留空；引擎据此唯一决定串联走向</summary>
+        public List<WfNodeLinkDto> NodeLinks { get; set; } = new();
     }
 }

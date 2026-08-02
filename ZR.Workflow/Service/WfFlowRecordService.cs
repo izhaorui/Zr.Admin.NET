@@ -11,7 +11,7 @@ namespace ZR.Workflow.Service
             var query = BuildRecordQuery()
                 .WhereIF(parm.InstanceId != null, (r, n, i, d) => r.InstanceId == parm.InstanceId)
                 .WhereIF(!string.IsNullOrEmpty(parm.Title), (r, n, i, d) => i.Title.Contains(parm.Title))
-                .OrderBy(r => r.RecordId)
+                .OrderByDescending(r => r.RecordId)
                 .Select((r, n, i, d) => new WfFlowRecordDto
                 {
                     RecordId = r.RecordId,

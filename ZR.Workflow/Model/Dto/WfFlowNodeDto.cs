@@ -15,7 +15,7 @@ namespace ZR.Workflow.Model.Dto
         [Required(ErrorMessage = "节点名称不能为空")]
         public string NodeName { get; set; }
 
-        /// <summary>节点类型 0=开始 1=审批 2=抄送 3=结束</summary>
+        /// <summary>节点类型 0=开始 1=审批 2=抄送 3=结束 4=条件网关（菱形，不生成任务，按出边条件选路）</summary>
         public int NodeType { get; set; } = 1;
 
         /// <summary>审批人类型 0=指定用户 1=指定角色 2=部门主管（开始/结束等非审批节点不传）</summary>
@@ -27,7 +27,7 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>审批人/抄送人 userName 快照（多个逗号分隔，与 ApproverId 同步）</summary>
         public string ApproverNames { get; set; }
 
-        /// <summary>节点顺序</summary>
+        /// <summary>节点顺序（仅展示/兜底排序用；串联走向由 NodeLinks 决定）</summary>
         public int NodeOrder { get; set; } = 1;
 
         /// <summary>签类型 0=或签 1=会签（开始/结束等非审批节点不传）</summary>

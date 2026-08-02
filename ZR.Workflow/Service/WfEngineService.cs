@@ -36,7 +36,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         public long Start(WfFlowInstance instance)
         {
-            var (def, allNodes, firstNode) = PrepareStartFlow(instance);
+            var (def, allNodes, linksBySource, firstNode) = PrepareStartFlow(instance);
 
             RunInTx(() =>
             {
@@ -56,7 +56,7 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, firstNode, allNodes, formValues);
+                    ArriveNode(instance, firstNode, allNodes, linksBySource, formValues);
                 }
             }, "发起申请失败");
 
@@ -74,6 +74,7 @@ namespace ZR.Workflow.Service
 
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var allNodes = LoadOrderedNodes(instance.FlowId);
+            var linksBySource = LoadNodeLinks(instance.FlowId);
 
             RunInTx(() =>
             {
@@ -103,7 +104,7 @@ namespace ZR.Workflow.Service
                     .ExecuteCommand();
 
                 var formValues = ParseFormValues(instance);
-                AdvanceToNext(instance, node, allNodes, formValues);
+                AdvanceToNext(instance, node, allNodes, linksBySource, formValues);
             }, "审批失败");
         }
 
@@ -156,7 +157,7 @@ namespace ZR.Workflow.Service
             if (instance.Status != (int)WfInstanceStatus.Rejected)
                 throw new CustomException("当前状态不可重新提交");
 
-            var (def, allNodes, firstNode) = PrepareStartFlow(instance);
+            var (def, allNodes, linksBySource, firstNode) = PrepareStartFlow(instance);
 
             RunInTx(() =>
             {
@@ -182,7 +183,7 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, firstNode, allNodes, formValues);
+                    ArriveNode(instance, firstNode, allNodes, linksBySource, formValues);
                 }
             }, "重新提交失败");
         }
@@ -367,16 +368,32 @@ namespace ZR.Workflow.Service
             nodeType == (int)WfNodeType.Audit || nodeType == (int)WfNodeType.Cc;
 
         /// <summary>
-        /// Start / Resubmit 共同的 pre-flight：取定义、校验、查节点全集、取首节点。
+        /// 取某 FlowId 的全部节点连线，按 SourceNodeId 分组（便于 O(1) 取某节点的出边集合）。
+        /// 无连线返回空字典。连线的存在与否决定引擎是否走"图分支"通道。
+        /// </summary>
+        private Dictionary<long, List<WfNodeLink>> LoadNodeLinks(long flowId)
+        {
+            var links = Context.Queryable<WfNodeLink>()
+                .Where(l => l.FlowId == flowId)
+                .OrderBy(l => l.Sort)
+                .ToList();
+            return links
+                .GroupBy(l => l.SourceNodeId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        /// <summary>
+        /// Start / Resubmit 共同的 pre-flight：取定义、校验、查节点全集、取首节点、加载节点连线。
         /// 调用方在事务体内完成各自的 Insert / Update 持久化差异。
         /// </summary>
-        private (WfFlowDefinition def, List<WfFlowNode> allNodes, WfFlowNode firstNode) PrepareStartFlow(WfFlowInstance instance)
+        private (WfFlowDefinition def, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, WfFlowNode firstNode) PrepareStartFlow(WfFlowInstance instance)
         {
             var def = LoadActivatableDefinition(instance.FlowId);
             if (string.IsNullOrEmpty(instance.FlowName)) instance.FlowName = def.FlowName;
             var allNodes = LoadOrderedNodes(instance.FlowId);
+            var linksBySource = LoadNodeLinks(instance.FlowId);
             var firstNode = allNodes.FirstOrDefault(n => IsAuditableNode(n.NodeType));
-            return (def, allNodes, firstNode);
+            return (def, allNodes, linksBySource, firstNode);
         }
 
         /// <summary>
@@ -392,7 +409,7 @@ namespace ZR.Workflow.Service
                 if (kv != null)
                     foreach (var k in kv) dict[k.Key] = k.Value;
             }
-            catch (Exception ex) { /* JSON 解析失败（格式错误或类型不匹配），视为无条件；排查时可记录 ex.Message */ }
+            catch { /* JSON 解析失败（格式错误或类型不匹配），视为无条件 */ }
             return dict;
         }
 
@@ -416,12 +433,13 @@ namespace ZR.Workflow.Service
         ///             └─ 审批节点 → 生成待办并等待
         /// </code>
         /// </summary>
-        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<string, string> formValues)
+        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
         {
-            // 排他跳过：条件不满足则顺延到下一节点（递归）；全部不满足则流程直接通过
-            if (!EvalCondition(node, formValues))
+            // 条件网关（菱形，NodeType=4）：本身不生成任务，到达后按出边 ConditionJson 选一路继续。
+            // 条件在连线（link）上表达，无需节点级 EvalCondition；无条件出边作为默认分支。
+            if (node.NodeType == (int)WfNodeType.Condition)
             {
-                var next = GetNextAuditNode(allNodes, node.NodeOrder);
+                var next = ResolveNextNode(node, allNodes, linksBySource, formValues);
                 if (next == null)
                 {
                     instance.Status = (int)WfInstanceStatus.Approved;
@@ -429,7 +447,23 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, next, allNodes, formValues);
+                    ArriveNode(instance, next, allNodes, linksBySource, formValues);
+                }
+                return;
+            }
+
+            // 排他跳过：条件不满足则顺延到下一节点（递归）；全部不满足则流程直接通过
+            if (!EvalCondition(node, formValues))
+            {
+                var next = ResolveNextNode(node, allNodes, linksBySource, formValues);
+                if (next == null)
+                {
+                    instance.Status = (int)WfInstanceStatus.Approved;
+                    Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
+                }
+                else
+                {
+                    ArriveNode(instance, next, allNodes, linksBySource, formValues);
                 }
                 return;
             }
@@ -467,7 +501,7 @@ namespace ZR.Workflow.Service
                     if (!hasPending)
                     {
                         // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点
-                        var after = GetNextAuditNode(allNodes, groupNodes.Max(g => g.NodeOrder));
+                        var after = ResolveNextNode(groupNodes.MaxBy(g => g.NodeOrder)!, allNodes, linksBySource, formValues);
                         if (after == null)
                         {
                             instance.Status = (int)WfInstanceStatus.Approved;
@@ -475,7 +509,7 @@ namespace ZR.Workflow.Service
                         }
                         else
                         {
-                            ArriveNode(instance, after, allNodes, formValues);
+                            ArriveNode(instance, after, allNodes, linksBySource, formValues);
                         }
                     }
                     return; // 等待组内审批完成（由 Approve 的并行 join 汇聚推进）
@@ -489,7 +523,7 @@ namespace ZR.Workflow.Service
             {
                 CreateCcTask(instance, node, formValues);
 
-                var next = GetNextAuditNode(allNodes, node.NodeOrder);
+                var next = ResolveNextNode(node, allNodes, linksBySource, formValues);
                 if (next == null)
                 {
                     instance.Status = (int)WfInstanceStatus.Approved;
@@ -497,7 +531,7 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, next, allNodes, formValues);
+                    ArriveNode(instance, next, allNodes, linksBySource, formValues);
                 }
                 return;
             }
@@ -525,14 +559,15 @@ namespace ZR.Workflow.Service
         ///        └─ 存在下一节点 → ArriveNode(next)
         /// </code>
         /// </summary>
-        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<string, string> formValues)
+        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
         {
             if (completedNode.ParallelGroup > 0)
             {
                 var groupNodes = allNodes.Where(n => n.ParallelGroup == completedNode.ParallelGroup).ToList();
                 var groupDone = groupNodes.All(g => IsNodeComplete(instance.InstanceId, g));
                 if (!groupDone) return; // 等待组内其余分支
-                var after = GetNextAuditNode(allNodes, groupNodes.Max(g => g.NodeOrder));
+                var lastInGroup = groupNodes.MaxBy(g => g.NodeOrder);
+                var after = lastInGroup == null ? null : ResolveNextNode(lastInGroup, allNodes, linksBySource, formValues);
                 if (after == null)
                 {
                     instance.Status = (int)WfInstanceStatus.Approved;
@@ -540,12 +575,12 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, after, allNodes, formValues);
+                    ArriveNode(instance, after, allNodes, linksBySource, formValues);
                 }
                 return;
             }
 
-            var next = GetNextAuditNode(allNodes, completedNode.NodeOrder);
+            var next = ResolveNextNode(completedNode, allNodes, linksBySource, formValues);
             if (next == null)
             {
                 instance.Status = (int)WfInstanceStatus.Approved;
@@ -553,12 +588,52 @@ namespace ZR.Workflow.Service
             }
             else
             {
-                ArriveNode(instance, next, allNodes, formValues);
+                ArriveNode(instance, next, allNodes, linksBySource, formValues);
             }
         }
 
         /// <summary>
-        /// 取下一审批/抄送节点（跳过开始/结束）
+        /// 解析当前节点的下一节点：**link 为唯一串联事实，NodeOrder 仅作兜底/展示排序**。
+        /// 前端应始终为每条边（含直线）生成一条 WfNodeLink（直线 ConditionJson 留空），
+        /// 故生产流程下每个非结束节点都有出边，引擎走下方"连线分支"通道。
+        /// - 当前节点存在出边（linksBySource 命中 SourceNodeId）：按连线 + ConditionJson 选边（条件命中走该边，
+        ///   无任一边命中且有默认分支[ConditionJson 为空]则走默认分支；仍无则视为流程结束）。
+        /// - 当前节点无出边（数据缺失兜底）：fallback 到 NodeOrder 升序取下一审批/抄送节点，避免运行态卡死。
+        /// 仅筛选审批/抄送节点作为可达目标（开始/结束节点不计入"下一节点"）。
+        /// </summary>
+        private WfFlowNode ResolveNextNode(WfFlowNode current, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
+        {
+            if (linksBySource.TryGetValue(current.NodeId, out var outLinks) && outLinks.Count > 0)
+            {
+                WfNodeLink defaultLink = null;
+                foreach (var link in outLinks) // 已按 Sort 升序
+                {
+                    if (string.IsNullOrWhiteSpace(link.ConditionJson))
+                    {
+                        defaultLink ??= link; // 第一条无条件出边作为默认分支
+                        continue;
+                    }
+                    if (EvalLinkCondition(link.ConditionJson, formValues))
+                    {
+                        var hit = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
+                        if (hit != null) return hit;
+                    }
+                }
+                // 无任一条件分支命中：走默认分支（若有）
+                if (defaultLink != null)
+                {
+                    var def = allNodes.FirstOrDefault(n => n.NodeId == defaultLink.TargetNodeId);
+                    if (def != null) return def;
+                }
+                return null; // 有出边但无可达目标：视为流程结束
+            }
+
+            // 无出边：fallback 到 NodeOrder 串联（存量通道）
+            return GetNextAuditNode(allNodes, current.NodeOrder);
+        }
+
+        /// <summary>
+        /// 取下一审批/抄送节点（跳过开始/结束），NodeOrder fallback 通道使用。
         /// </summary>
         private WfFlowNode GetNextAuditNode(List<WfFlowNode> allNodes, int currentOrder)
         {
@@ -566,6 +641,36 @@ namespace ZR.Workflow.Service
                 .Where(n => n.NodeOrder > currentOrder && IsAuditableNode(n.NodeType))
                 .OrderBy(n => n.NodeOrder)
                 .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// 评估连线条件（ConditionJson）。空 JSON 视为无条件（默认分支），由 <see cref="ResolveNextNode"/> 上层分流，
+        /// 不进入本方法。
+        ///
+        /// 解析失败 / 字段缺失视为条件不满足（保守，避免误走分支）。
+        /// 复用 <see cref="CompareValue"/> 的比较语义，仅数据源来自连线 JSON。
+        /// </summary>
+        private bool EvalLinkCondition(string conditionJson, Dictionary<string, string> formValues)
+        {
+            if (string.IsNullOrWhiteSpace(conditionJson)) return false;
+            try
+            {
+                var cond = JsonConvert.DeserializeObject<WfLinkCondition>(conditionJson);
+                if (cond == null
+                    || string.IsNullOrWhiteSpace(cond.Field)
+                    || !cond.Op.HasValue
+                    || string.IsNullOrWhiteSpace(cond.Value)
+                    || !formValues.TryGetValue(cond.Field, out var raw)
+                    || string.IsNullOrWhiteSpace(raw))
+                {
+                    return false;
+                }
+                return CompareValue((WfConditionOp)cond.Op.Value, raw, cond.Value);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -587,7 +692,7 @@ namespace ZR.Workflow.Service
 
         /// <summary>
         /// 评估节点条件：字段/运算符/值三者齐全才生效，任一缺失视为无条件（返回 true）。
-        /// 数值可解析时按数值比较，否则按字符串比较；字段缺失或无值视为条件不满足（保守跳过）。
+        /// 字段缺失或无值视为条件不满足（保守跳过）。比较语义委托 <see cref="CompareValue"/>。
         /// </summary>
         private bool EvalCondition(WfFlowNode node, Dictionary<string, string> formValues)
         {
@@ -596,12 +701,22 @@ namespace ZR.Workflow.Service
             if (string.IsNullOrWhiteSpace(node.ConditionValue)) return true;
             if (!formValues.TryGetValue(node.ConditionField, out var raw) || string.IsNullOrWhiteSpace(raw))
                 return false;
+            return CompareValue((WfConditionOp)node.ConditionOp, raw, node.ConditionValue);
+        }
 
-            var target = node.ConditionValue;
+        /// <summary>
+        /// 条件比较核心：节点条件 / 连线条件共用。
+        /// 两端都能解析为 double 时按数值比较，否则按 OrdinalIgnoreCase 字符串比较。
+        /// - Eq/Ne 始终按字符串比较（忽略大小写），避免 "1" vs "1.0" 数值相等的歧义。
+        /// - 未知 op 视为 false（连线场景保守）/ true（节点场景：节点条件不严谨时仍放行）。
+        /// 调用方应先保证 op 落在 <see cref="WfConditionOp"/> 范围。
+        /// </summary>
+        private static bool CompareValue(WfConditionOp op, string raw, string target)
+        {
             var leftOk = double.TryParse(raw, out var left);
             var rightOk = double.TryParse(target, out var right);
             var bothNum = leftOk && rightOk;
-            switch ((WfConditionOp)node.ConditionOp)
+            switch (op)
             {
                 case WfConditionOp.Lt: return bothNum ? left < right : string.CompareOrdinal(raw, target) < 0;
                 case WfConditionOp.Le: return bothNum ? left <= right : string.CompareOrdinal(raw, target) <= 0;
@@ -609,7 +724,7 @@ namespace ZR.Workflow.Service
                 case WfConditionOp.Ge: return bothNum ? left >= right : string.CompareOrdinal(raw, target) >= 0;
                 case WfConditionOp.Eq: return string.Equals(raw, target, StringComparison.OrdinalIgnoreCase);
                 case WfConditionOp.Ne: return !string.Equals(raw, target, StringComparison.OrdinalIgnoreCase);
-                default: return true;
+                default: return false;
             }
         }
 

@@ -33,6 +33,7 @@ namespace ZR.Workflow.Service
             if (def == null) return null;
             var dto = def.Adapt<WfFlowDefinitionDto>();
             dto.Nodes = GetOrderedNodes(flowId).Adapt<List<WfFlowNodeDto>>();
+            dto.NodeLinks = GetNodeLinks(flowId).Adapt<List<WfNodeLinkDto>>();
             return dto;
         }
 
@@ -44,11 +45,13 @@ namespace ZR.Workflow.Service
         public WfFlowDefinition Add(WfFlowDefinitionDto dto)
         {
             var userName = App.HttpContext?.GetName();
+            ValidateLinks(dto.Nodes, dto.NodeLinks); // link 为唯一串联事实：非结束节点必须有出边
             var def = dto.Adapt<WfFlowDefinition>().ToCreate(App.HttpContext);
             var result = UseTran(() =>
             {
                 def = InsertReturnEntity(def) ?? throw new CustomException("添加流程定义失败");
-                InsertNodes(def.FlowId, dto.Nodes, userName);
+                var nodeMap = InsertNodes(def.FlowId, dto.Nodes, userName);
+                InsertLinks(def.FlowId, dto.NodeLinks, userName, nodeMap);
             });
             if (!result.IsSuccess)
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "添加失败", result.ErrorMessage);
@@ -65,11 +68,15 @@ namespace ZR.Workflow.Service
             def.FlowCode = existing.FlowCode;
             def.Version = existing.Version;
             def.IsDraft = existing.IsDraft; // 编辑不清除草稿态，仅发布可改变
+            ValidateLinks(dto.Nodes, dto.NodeLinks); // link 为唯一串联事实：非结束节点必须有出边
             var result = UseTran(() =>
             {
                 Update(def, true, "修改流程定义");
+                // 节点整体替换：先删旧连线再删旧节点（连线依赖节点），随后重建
+                Context.Deleteable<WfNodeLink>().Where(l => l.FlowId == dto.FlowId).ExecuteCommand();
                 Context.Deleteable<WfFlowNode>().Where(n => n.FlowId == dto.FlowId).ExecuteCommand();
-                InsertNodes(dto.FlowId, dto.Nodes, userName);
+                var nodeMap = InsertNodes(dto.FlowId, dto.Nodes, userName);
+                InsertLinks(dto.FlowId, dto.NodeLinks, userName, nodeMap);
             });
             if (!result.IsSuccess)
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "修改失败", result.ErrorMessage);
@@ -266,23 +273,43 @@ namespace ZR.Workflow.Service
             };
         }
 
-        private void InsertNodes(long flowId, List<WfFlowNodeDto> nodes, string userName)
+        /// <summary>
+        /// 写入节点并返回「客户端节点Id(clientId) → 新生成 NodeId」映射。
+        /// clientId 即前端传入的 <see cref="WfFlowNodeDto.NodeId"/>：编辑时为旧 NodeId、新增时为前端自管的临时 Id（如负数/0）。
+        /// 返回的映射供调用方把连线(link)的 SourceNodeId/TargetNodeId 重映射为新 NodeId。
+        /// 节点为空返回空字典。
+        /// </summary>
+        private Dictionary<long, long> InsertNodes(long flowId, List<WfFlowNodeDto> nodes, string userName)
         {
-            if (nodes == null || nodes.Count == 0) return;
+            var map = new Dictionary<long, long>();
+            if (nodes == null || nodes.Count == 0) return map;
             // Dto → 实体 走 Adapt 后再走 CloneNodeForCopy，保证后续字段扩展只改一处
             var entities = nodes.Select(n => CloneNodeForCopy(n.Adapt<WfFlowNode>(), flowId, userName)).ToList();
-            Context.Insertable(entities).ExecuteCommand();
+            // 逐个插入以拿到新 NodeId（InsertReturnEntity 返回带 Id 的实体），建立 clientId→newId 映射
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var saved = Context.Insertable(entities[i]).ExecuteReturnEntity() ?? throw new CustomException("写入流程节点失败");
+                map[nodes[i].NodeId] = saved.NodeId;
+            }
+            return map;
         }
 
         /// <summary>
         /// 复制源定义的节点到新 FlowId。无源节点则跳过。
+        /// 返回「源 NodeId → 新 NodeId」映射，供复制连线时重映射。
         /// </summary>
-        private void CloneNodesToNewFlow(long srcFlowId, long newFlowId, string userName)
+        private Dictionary<long, long> CloneNodesToNewFlow(long srcFlowId, long newFlowId, string userName)
         {
+            var map = new Dictionary<long, long>();
             var srcNodes = GetOrderedNodes(srcFlowId);
-            if (srcNodes.Count == 0) return;
-            var entities = srcNodes.Select(n => CloneNodeForCopy(n, newFlowId, userName)).ToList();
-            Context.Insertable(entities).ExecuteCommand();
+            if (srcNodes.Count == 0) return map;
+            foreach (var n in srcNodes)
+            {
+                var copy = CloneNodeForCopy(n, newFlowId, userName);
+                copy = Context.Insertable(copy).ExecuteReturnEntity() ?? throw new CustomException("复制流程节点失败");
+                map[n.NodeId] = copy.NodeId;
+            }
+            return map;
         }
 
         #endregion
@@ -322,6 +349,104 @@ namespace ZR.Workflow.Service
                 .ToList();
         }
 
+        /// <summary>
+        /// 取某 FlowId 的全部节点连线（按 Sort 升序），供详情返回与复制读取。
+        /// </summary>
+        private List<WfNodeLink> GetNodeLinks(long flowId)
+        {
+            return Context.Queryable<WfNodeLink>()
+                .Where(l => l.FlowId == flowId)
+                .OrderBy(l => l.Sort)
+                .ToList();
+        }
+
+        /// <summary>
+        /// 写入连线：将 DTO 中的 SourceNodeId/TargetNodeId 按 <paramref name="nodeMap"/> 重映射为新建节点的真实 Id 后落库。
+        /// nodeMap 为「客户端节点Id → 新 NodeId」映射（新增/编辑场景）或「源 NodeId → 新 NodeId」映射（复制场景）。
+        ///
+        /// 落库前过滤三类脏数据：
+        /// - 任一端未命中 nodeMap（指向不存在的节点）；
+        /// - 端点为 0（前端未填）；
+        /// - 自环（SourceNodeId == TargetNodeId，引擎无意义、且会引发死循环）。
+        /// 无连线则空操作。
+        /// </summary>
+        /// <summary>
+        /// 提交前校验：link 为流程串联的唯一事实来源，故每个「非结束节点」必须至少有一条有效出边，
+        /// 否则运行态会从该节点断链卡死。有效出边 = SourceNodeId &gt; 0 且 != TargetNodeId（与 InsertLinks 过滤口径一致）。
+        /// 结束节点（NodeType=3）允许无出边。校验在事务外执行，避免脏数据进事务。
+        /// </summary>
+        private void ValidateLinks(List<WfFlowNodeDto> nodes, List<WfNodeLinkDto> links)
+        {
+            if (nodes == null || nodes.Count == 0) return;
+            var validSources = (links ?? new List<WfNodeLinkDto>())
+                .Where(l => l.SourceNodeId > 0 && l.TargetNodeId > 0 && l.SourceNodeId != l.TargetNodeId)
+                .Select(l => l.SourceNodeId)
+                .ToHashSet();
+            foreach (var node in nodes)
+            {
+                if (node.NodeType == (int)Enum.WfNodeType.End) continue; // 结束节点无需出边
+                if (!validSources.Contains(node.NodeId))
+                    throw new CustomException(ResultCode.CUSTOM_ERROR,
+                        $"节点「{node.NodeName}」缺少出边连线，流程将无法继续流转", null);
+                // 条件网关（菱形）：必须有 ≥2 条出边且至少一条带条件，否则分流无意义
+                if (node.NodeType == (int)Enum.WfNodeType.Condition)
+                {
+                    var outCount = links.Count(l => l.SourceNodeId == node.NodeId
+                        && l.SourceNodeId > 0 && l.TargetNodeId > 0 && l.SourceNodeId != l.TargetNodeId);
+                    var hasCond = links.Any(l => l.SourceNodeId == node.NodeId
+                        && !string.IsNullOrWhiteSpace(l.ConditionJson));
+                    if (outCount < 2 || !hasCond)
+                        throw new CustomException(ResultCode.CUSTOM_ERROR,
+                            $"条件网关「{node.NodeName}」至少需 2 条出边且至少 1 条带条件", null);
+                }
+            }
+        }
+
+        private void InsertLinks(long flowId, List<WfNodeLinkDto> links, string userName, Dictionary<long, long> nodeMap)
+        {
+            if (links == null || links.Count == 0) return;
+            var entities = links
+                .Select(l => new WfNodeLink
+                {
+                    FlowId = flowId,
+                    SourceNodeId = nodeMap.TryGetValue(l.SourceNodeId, out var s) ? s : l.SourceNodeId,
+                    TargetNodeId = nodeMap.TryGetValue(l.TargetNodeId, out var t) ? t : l.TargetNodeId,
+                    ConditionJson = l.ConditionJson,
+                    Sort = l.Sort,
+                    Create_by = userName,
+                    Create_time = DateTime.Now
+                })
+                .Where(l => l.SourceNodeId > 0 && l.TargetNodeId > 0 && l.SourceNodeId != l.TargetNodeId)
+                .ToList();
+            if (entities.Count == 0) return;
+            Context.Insertable(entities).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 复制源 FlowId 的连线到新 FlowId，按 nodeMap（源 NodeId → 新 NodeId）重映射源/目标节点。
+        /// 同样过滤未命中映射 / 端点为 0 / 自环。无源连线或空映射时跳过。
+        /// </summary>
+        private void CloneLinksToNewFlow(long srcFlowId, long newFlowId, Dictionary<long, long> nodeMap, string userName)
+        {
+            var srcLinks = GetNodeLinks(srcFlowId);
+            if (srcLinks.Count == 0) return;
+            var entities = srcLinks
+                .Select(l => new WfNodeLink
+                {
+                    FlowId = newFlowId,
+                    SourceNodeId = nodeMap.TryGetValue(l.SourceNodeId, out var s) ? s : l.SourceNodeId,
+                    TargetNodeId = nodeMap.TryGetValue(l.TargetNodeId, out var t) ? t : l.TargetNodeId,
+                    ConditionJson = l.ConditionJson,
+                    Sort = l.Sort,
+                    Create_by = userName,
+                    Create_time = DateTime.Now
+                })
+                .Where(l => l.SourceNodeId > 0 && l.TargetNodeId > 0 && l.SourceNodeId != l.TargetNodeId)
+                .ToList();
+            if (entities.Count == 0) return;
+            Context.Insertable(entities).ExecuteCommand();
+        }
+
         #endregion
 
         #region 私有辅助 —— 定义/节点复制事务
@@ -355,7 +480,8 @@ namespace ZR.Workflow.Service
                 var copy = defFactory(src);
                 copy = InsertReturnEntity(copy) ?? throw new CustomException(errorLabel);
                 newId = copy.FlowId;
-                CloneNodesToNewFlow(srcFlowId, newId, userName);
+                var nodeMap = CloneNodesToNewFlow(srcFlowId, newId, userName);
+                CloneLinksToNewFlow(srcFlowId, newId, nodeMap, userName);
             });
             if (!result.IsSuccess)
                 throw new CustomException(ResultCode.CUSTOM_ERROR, errorLabel, result.ErrorMessage);

@@ -25,7 +25,7 @@ namespace ZR.Workflow.Model
         public string NodeName { get; set; }
 
         /// <summary>
-        /// 节点类型 0=开始 1=审批 2=抄送 3=结束
+        /// 节点类型 0=开始 1=审批 2=抄送 3=结束 4=条件
         /// </summary>
         [SugarColumn(DefaultValue = "1")]
         public int NodeType { get; set; } = 1;
