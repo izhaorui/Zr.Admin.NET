@@ -5,12 +5,12 @@ namespace ZR.Workflow.Model.Dto
     /// </summary>
     public class WfFlowDefinitionQueryDto : PagerInfo
     {
-    /// <summary>流程名称</summary>
-    public string FlowName { get; set; }
-    /// <summary>状态</summary>
-    public int? Status { get; set; }
-    /// <summary>是否草稿（查询用）0=已发布 1=草稿；为空表示不过滤</summary>
-    public int? IsDraft { get; set; }
+        /// <summary>流程名称</summary>
+        public string FlowName { get; set; }
+        /// <summary>状态</summary>
+        public int? Status { get; set; }
+        /// <summary>是否草稿（查询用）0=已发布 1=草稿；为空表示不过滤</summary>
+        public int? IsDraft { get; set; }
     }
 
     /// <summary>
@@ -47,6 +47,9 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>表单字段定义（JSON）</summary>
         public string FormItems { get; set; }
+
+        /// <summary>LogicFlow 完整设计数据（JSON）</summary>
+        public string DesignJson { get; set; }
 
         /// <summary>节点配置</summary>
         public List<WfFlowNodeDto> Nodes { get; set; } = new();

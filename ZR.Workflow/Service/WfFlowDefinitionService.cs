@@ -45,6 +45,10 @@ namespace ZR.Workflow.Service
         public WfFlowDefinition Add(WfFlowDefinitionDto dto)
         {
             var userName = App.HttpContext?.GetName();
+            // 流程编码严格唯一：同一 FlowCode 视为同一流程的不同版本，新增独立流程必须走新编码；
+            // 想加版本应走"另存为新版本"，而非重复 Add 同一 FlowCode。
+            if (Queryable().Any(f => f.IsDelete == 0 && f.FlowCode == dto.FlowCode))
+                throw new CustomException(ResultCode.CUSTOM_ERROR, $"流程编码「{dto.FlowCode}」已存在，请换一个或改用版本管理", null);
             ValidateLinks(dto.Nodes, dto.NodeLinks); // link 为唯一串联事实：非结束节点必须有出边
             var def = dto.Adapt<WfFlowDefinition>().ToCreate(App.HttpContext);
             var result = UseTran(() =>
@@ -125,6 +129,7 @@ namespace ZR.Workflow.Service
                     FormType = src.FormType,
                     Status = 0, // 副本默认停用，确认后再启用，避免误发起
                     FormItems = src.FormItems,
+                    DesignJson = src.DesignJson,
                     Remark = src.Remark,
                     Create_by = userName,
                     Create_time = DateTime.Now,
@@ -232,6 +237,7 @@ namespace ZR.Workflow.Service
                     FormType = src.FormType,
                     Status = 0, // 回滚/另存均为草稿停用态，需手动发布/设现行
                     FormItems = src.FormItems,
+                    DesignJson = src.DesignJson,
                     Version = GetNextVersion(src.FlowCode),
                     IsDraft = 1,
                     Remark = src.Remark,
@@ -378,21 +384,17 @@ namespace ZR.Workflow.Service
         private void ValidateLinks(List<WfFlowNodeDto> nodes, List<WfNodeLinkDto> links)
         {
             if (nodes == null || nodes.Count == 0) return;
-            var validSources = (links ?? new List<WfNodeLinkDto>())
-                .Where(l => l.SourceNodeId > 0 && l.TargetNodeId > 0 && l.SourceNodeId != l.TargetNodeId)
-                .Select(l => l.SourceNodeId)
-                .ToHashSet();
+            // 开始/结束节点由引擎隐式处理、不在 dto.Nodes。
+            // 普通审批/抄送节点：无出边即视为流程终点（流向结束），允许（支持树形多叶子结构）；
+            // 仅条件网关（菱形）必须至少有 2 条有效出边且至少 1 条带条件，否则分流无意义。
             foreach (var node in nodes)
             {
                 if (node.NodeType == (int)Enum.WfNodeType.End) continue; // 结束节点无需出边
-                if (!validSources.Contains(node.NodeId))
-                    throw new CustomException(ResultCode.CUSTOM_ERROR,
-                        $"节点「{node.NodeName}」缺少出边连线，流程将无法继续流转", null);
                 // 条件网关（菱形）：必须有 ≥2 条出边且至少一条带条件，否则分流无意义
                 if (node.NodeType == (int)Enum.WfNodeType.Condition)
                 {
                     var outCount = links.Count(l => l.SourceNodeId == node.NodeId
-                        && l.SourceNodeId > 0 && l.TargetNodeId > 0 && l.SourceNodeId != l.TargetNodeId);
+                        && l.SourceNodeId != 0 && l.TargetNodeId != 0 && l.SourceNodeId != l.TargetNodeId);
                     var hasCond = links.Any(l => l.SourceNodeId == node.NodeId
                         && !string.IsNullOrWhiteSpace(l.ConditionJson));
                     if (outCount < 2 || !hasCond)

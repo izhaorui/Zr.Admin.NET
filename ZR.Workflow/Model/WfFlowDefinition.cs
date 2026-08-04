@@ -4,13 +4,11 @@ namespace ZR.Workflow.Model
     /// 流程定义
     /// </summary>
     [SugarTable("wf_flow_definition", "流程定义")]
-    // (FlowCode, Version) 联合唯一索引：保证同一流程编码的版本号不重复，避免并发 Copy/另存新版本
+    // (FlowCode, Version) 联合唯一：同一流程编码的版本号不重复，避免并发 Copy/另存新版本。
     // 选这两个字段的理由：Copy 会改 FlowCode（加 _copy 后缀），自然不冲突；
-    // SaveAsNewVersion/Rollback 保持 FlowCode 不变但 Version 自增，也不会冲突；
-    // Update 不会改这两个字段，因此 INSERT 才是唯一可能冲突的场景。
-    // 唯一约束的副作用：被软删除(IsDelete=1)的行仍占名额，重新启用同名同版本需先清理或改名，
-    // 这是"软删除+唯一索引"的固有取舍，业务层一般不会恢复同名同版本。
-    //[SugarIndex("uk_flow_code_version", nameof(FlowCode), nameof(Version), OrderByType.Asc, true)]
+    // SaveAsNewVersion/Rollback 保持 FlowCode 不变但 Version 自增，也不会冲突；Update 不改这两字段。
+    [SugarIndex("uk_flow_code_version", nameof(FlowCode), OrderByType.Asc, true)]
+    [SugarIndex("uk_flow_code_version", nameof(Version), OrderByType.Asc, true)]
     public class WfFlowDefinition : SysBase
     {
         /// <summary>
@@ -71,12 +69,19 @@ namespace ZR.Workflow.Model
         public int IsDelete { get; set; } = 0;
 
         /// <summary>
-        /// 表单字段定义（JSON 数组，轻量动态表单；方案2 可替换为设计器 schema）
+        /// 表单字段定义（JSON 数组，轻量动态表单）
         /// 结构示例：[{"field":"reason","label":"请假事由","type":"textarea","required":true,"options":""}]
         /// type 取值：input|textarea|number|date|datetime|select|radio|checkbox|switch|image|user
         /// select/radio/checkbox 的 options 为逗号分隔文本（label 即 value）；user 类型存昵称字符串
         /// </summary>
-        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString, IsNullable = true)]
+        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString)]
         public string FormItems { get; set; }
+
+        /// <summary>
+        /// LogicFlow 完整设计数据（JSON），保存流程设计器的节点/连线/画布完整状态，
+        /// 用于重新打开设计器时还原，而非仅存轻量结构化节点 NodeLinks。
+        /// </summary>
+        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString)]
+        public string DesignJson { get; set; }
     }
 }

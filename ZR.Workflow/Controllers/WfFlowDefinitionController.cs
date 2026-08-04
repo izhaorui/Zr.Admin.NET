@@ -55,8 +55,7 @@ namespace ZR.Workflow.Controllers
         public IActionResult Add([FromBody] WfFlowDefinitionDto parm)
         {
             if (parm == null) return ToResponse(ResultCode.PARAM_ERROR, "参数错误");
-            var response = _service.Add(parm.ToCreate());
-            return SUCCESS(response);
+            return SUCCESS(_service.Add(parm.ToCreate()));
         }
 
         /// <summary>
