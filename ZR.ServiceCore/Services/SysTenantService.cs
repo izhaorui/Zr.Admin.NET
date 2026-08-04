@@ -677,7 +677,12 @@ namespace ZR.ServiceCore.Services
 
         public void EnsureTenantUserQuotaForAdd(string tenantId, int addingCount = 1)
         {
-            EnsureTenantFeatureEnabled();
+            // 未启用多租户时不做配额校验，直接放行
+            if (!App.IsTenantEnabled())
+            {
+                return;
+            }
+
             if (addingCount <= 0)
             {
                 return;
