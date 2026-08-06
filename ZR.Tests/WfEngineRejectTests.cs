@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using Infrastructure;
+using Moq;
 using Xunit;
+using ZR.ServiceCore.Services;
 using ZR.Workflow.Enum;
 using ZR.Workflow.Model;
 using ZR.Workflow.Service;
@@ -23,14 +25,15 @@ namespace ZR.Tests
             _db = db;
             _db.Ensure();
             _db.Clean();
-            _engine = new WfEngineService();
+            _db.EnsureUsers("alice", "zhangsan", "lisi", "wangwu");
+            _engine = new WfEngineService(Mock.Of<ISysUserMsgService>());
         }
 
         private long BuildTwoNodeFlow(out long node1, out long node2)
         {
             var flowId = _db.AddDefinition("REJECT", "驳回流程");
-            node1 = _db.AddNode(flowId, "一级", (int)WfNodeType.Audit, (int)WfApproverType.User, "zhangsan", 1);
-            node2 = _db.AddNode(flowId, "二级", (int)WfNodeType.Audit, (int)WfApproverType.User, "lisi", 2);
+            node1 = _db.AddNode(flowId, "一级", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uids("zhangsan"), 1);
+            node2 = _db.AddNode(flowId, "二级", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uids("lisi"), 2);
             return flowId;
         }
 
@@ -42,7 +45,6 @@ namespace ZR.Tests
         {
             var flowId = BuildTwoNodeFlow(out var node1, out var node2);
             var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
-            // 先通过一级
             _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", "zhangsan");
 
             _engine.Reject(GetTask(id, node2, "lisi").TaskId, "不同意", "lisi");
@@ -75,7 +77,6 @@ namespace ZR.Tests
             _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", "zhangsan");
             _engine.Reject(GetTask(id, node2, "lisi").TaskId, "不同意", "lisi");
 
-            // 实例已驳回，再次审批应抛异常
             var ex = Assert.Throws<CustomException>(() =>
                 _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "再同意", "zhangsan"));
             Assert.True(ex.Message.Contains("该任务已处理") || ex.Message.Contains("流程状态异常"));

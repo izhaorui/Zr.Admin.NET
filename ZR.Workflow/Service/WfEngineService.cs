@@ -36,7 +36,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         public long Start(WfFlowInstance instance)
         {
-            var (def, allNodes, linksBySource, firstNode) = PrepareStartFlow(instance);
+            var (def, allNodes, linksBySource, linksByTarget, firstNode) = PrepareStartFlow(instance);
 
             RunInTx(() =>
             {
@@ -44,20 +44,13 @@ namespace ZR.Workflow.Service
 
                 instance.Status = (int)WfInstanceStatus.Approval;
                 instance.CurrentNodeId = firstNode?.NodeId;
+                instance.CurrentNodeIds = firstNode != null ? JsonConvert.SerializeObject(new[] { firstNode.NodeId }) : null;
                 instance = InsertReturnEntity(instance) ?? throw new CustomException("发起申请失败");
 
                 AddRecord(instance.InstanceId, null, null, instance.ApplyUser, (int)WfAction.Submit, "发起申请");
 
                 var formValues = ParseFormValues(instance);
-                if (firstNode == null)
-                {
-                    instance.Status = (int)WfInstanceStatus.Approved;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
-                }
-                else
-                {
-                    ArriveNode(instance, firstNode, allNodes, linksBySource, formValues);
-                }
+                ArriveOrComplete(instance, firstNode, allNodes, linksBySource, linksByTarget, formValues);
             }, "发起申请失败");
 
             return instance.InstanceId;
@@ -75,6 +68,12 @@ namespace ZR.Workflow.Service
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var allNodes = LoadOrderedNodes(instance.FlowId);
             var linksBySource = LoadNodeLinks(instance.FlowId);
+            var linksByTarget = LoadNodeLinksByTarget(instance.FlowId);
+            // 活动集兜底初始化：存量实例可能无 CurrentNodeIds，用 CurrentNodeId 单值补齐，避免并行汇聚判定缺失
+            if (string.IsNullOrWhiteSpace(instance.CurrentNodeIds) && instance.CurrentNodeId.HasValue)
+            {
+                instance.CurrentNodeIds = JsonConvert.SerializeObject(new[] { instance.CurrentNodeId.Value });
+            }
 
             RunInTx(() =>
             {
@@ -104,7 +103,7 @@ namespace ZR.Workflow.Service
                     .ExecuteCommand();
 
                 var formValues = ParseFormValues(instance);
-                AdvanceToNext(instance, node, allNodes, linksBySource, formValues);
+                AdvanceToNext(instance, node, allNodes, linksBySource, linksByTarget, formValues);
             }, "审批失败");
         }
 
@@ -134,6 +133,7 @@ namespace ZR.Workflow.Service
 
                 NotifyUsers(new[] { instance.ApplyUser }, $"【审批驳回】{instance.Title} 被 {operatorName} 驳回{(string.IsNullOrEmpty(opinion) ? "" : "：" + opinion)}");
 
+                // 驳回：保留 CurrentNodeId 指向被驳回的节点（详情页/重新提交需要展示"卡在哪一步"）
                 instance.Status = (int)WfInstanceStatus.Rejected;
                 Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
 
@@ -157,13 +157,14 @@ namespace ZR.Workflow.Service
             if (instance.Status != (int)WfInstanceStatus.Rejected)
                 throw new CustomException("当前状态不可重新提交");
 
-            var (def, allNodes, linksBySource, firstNode) = PrepareStartFlow(instance);
+            var (def, allNodes, linksBySource, linksByTarget, firstNode) = PrepareStartFlow(instance);
 
             RunInTx(() =>
             {
                 var now = DateTime.Now;
                 instance.Status = (int)WfInstanceStatus.Approval;
                 instance.CurrentNodeId = firstNode?.NodeId;
+                instance.CurrentNodeIds = firstNode != null ? JsonConvert.SerializeObject(new[] { firstNode.NodeId }) : null;
                 instance.FormContent = formContent;
                 instance.Attachment = attachment;
                 if (!string.IsNullOrEmpty(title)) instance.Title = title;
@@ -176,15 +177,7 @@ namespace ZR.Workflow.Service
                 AddRecord(instanceId, null, null, operatorName, (int)WfAction.Resubmit, "重新提交");
 
                 var formValues = ParseFormValues(instance);
-                if (firstNode == null)
-                {
-                    instance.Status = (int)WfInstanceStatus.Approved;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
-                }
-                else
-                {
-                    ArriveNode(instance, firstNode, allNodes, linksBySource, formValues);
-                }
+                ArriveOrComplete(instance, firstNode, allNodes, linksBySource, linksByTarget, formValues);
             }, "重新提交失败");
         }
 
@@ -383,17 +376,99 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
+        /// 按 TargetNodeId 分组的节点入边表（汇聚网关判定用：某汇聚节点的所有入边源是否都完成）。
+        /// </summary>
+        private Dictionary<long, List<WfNodeLink>> LoadNodeLinksByTarget(long flowId)
+        {
+            var links = Context.Queryable<WfNodeLink>()
+                .Where(l => l.FlowId == flowId)
+                .OrderBy(l => l.Sort)
+                .ToList();
+            return links
+                .GroupBy(l => l.TargetNodeId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        /// <summary>
         /// Start / Resubmit 共同的 pre-flight：取定义、校验、查节点全集、取首节点、加载节点连线。
         /// 调用方在事务体内完成各自的 Insert / Update 持久化差异。
         /// </summary>
-        private (WfFlowDefinition def, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, WfFlowNode firstNode) PrepareStartFlow(WfFlowInstance instance)
+        private (WfFlowDefinition def, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, WfFlowNode firstNode) PrepareStartFlow(WfFlowInstance instance)
         {
             var def = LoadActivatableDefinition(instance.FlowId);
             if (string.IsNullOrEmpty(instance.FlowName)) instance.FlowName = def.FlowName;
             var allNodes = LoadOrderedNodes(instance.FlowId);
             var linksBySource = LoadNodeLinks(instance.FlowId);
-            var firstNode = allNodes.FirstOrDefault(n => IsAuditableNode(n.NodeType));
-            return (def, allNodes, linksBySource, firstNode);
+            var linksByTarget = LoadNodeLinksByTarget(instance.FlowId);
+            // 首节点须包含条件网关（NodeType=4）与并行分叉网关（NodeType=7）：网关可作为流程的第一个节点（发起后立即分流/分叉）。
+            // 若这里沿用 IsAuditableNode（只认 Audit/Cc），会直接跳过网关落到 NodeOrder 上的第一个审批节点，
+            // 导致分支条件从未被评估、始终走"第一条分支"。ArriveNode 内部会对 Condition/ParallelFork 做透传处理。
+            var firstNode = allNodes.FirstOrDefault(n => IsAuditableNode(n.NodeType) || n.NodeType == (int)WfNodeType.Condition || n.NodeType == (int)WfNodeType.ParallelFork);
+            return (def, allNodes, linksBySource, linksByTarget, firstNode);
+        }
+
+        /// <summary>
+        /// 流程走到终点：置实例为「通过」并清空当前节点指针。
+        /// 所有"下一节点为空"的分支统一走此方法，避免 CurrentNodeId 残留指向最后一个已完成节点
+        /// （残留会让详情页/列表在已结束实例上仍显示"当前节点：xxx"）。
+        /// </summary>
+        private void CompleteInstance(WfFlowInstance instance)
+        {
+            instance.Status = (int)WfInstanceStatus.Approved;
+            instance.CurrentNodeId = null;
+            instance.CurrentNodeIds = null;
+            Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId, i.CurrentNodeIds }).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 到达下一节点或结束流程：<paramref name="next"/> 为空则置通过，否则递归 ArriveNode。
+        /// 收敛 ArriveNode / AdvanceToNext 中大量重复的 "next == null ? 置通过 : ArriveNode" 模板。
+        /// </summary>
+        private void ArriveOrComplete(WfFlowInstance instance, WfFlowNode next, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
+        {
+            if (next == null) CompleteInstance(instance);
+            else ArriveNode(instance, next, allNodes, linksBySource, linksByTarget, formValues);
+        }
+
+        // —— 活动节点集（并行网关节点 7/8 并发时，多个分支同时活动的节点集合）——
+        // 存于 instance.CurrentNodeIds（JSON 数组）。单值 CurrentNodeId 同步取集合首个作为兼容字段。
+
+        private static List<long> GetActiveNodeIds(WfFlowInstance instance)
+        {
+            if (string.IsNullOrWhiteSpace(instance.CurrentNodeIds)) return new List<long>();
+            try
+            {
+                var arr = JsonConvert.DeserializeObject<long[]>(instance.CurrentNodeIds);
+                return arr == null ? new List<long>() : arr.ToList();
+            }
+            catch { return new List<long>(); }
+        }
+
+        private static void SetActiveNodeIds(WfFlowInstance instance, List<long> ids)
+        {
+            var distinct = ids.Distinct().ToList();
+            instance.CurrentNodeIds = distinct.Count == 0 ? null : JsonConvert.SerializeObject(distinct);
+            instance.CurrentNodeId = distinct.Count > 0 ? distinct.Min() : (long?)null;
+        }
+
+        private static void AddActiveNodeId(WfFlowInstance instance, long nodeId)
+        {
+            var ids = GetActiveNodeIds(instance);
+            if (!ids.Contains(nodeId)) ids.Add(nodeId);
+            SetActiveNodeIds(instance, ids);
+        }
+
+        private static void RemoveActiveNodeId(WfFlowInstance instance, long nodeId)
+        {
+            var ids = GetActiveNodeIds(instance);
+            ids.Remove(nodeId);
+            SetActiveNodeIds(instance, ids);
+        }
+
+        // 将内存中维护的 CurrentNodeIds / CurrentNodeId 落库（活动集在 ArriveNode/AdvanceToNext 内多次变更后统一回写一次）
+        private void SyncActiveNodeId(WfFlowInstance instance)
+        {
+            Context.Updateable(instance).UpdateColumns(i => new { i.CurrentNodeIds, i.CurrentNodeId }).ExecuteCommand();
         }
 
         /// <summary>
@@ -433,21 +508,45 @@ namespace ZR.Workflow.Service
         ///             └─ 审批节点 → 生成待办并等待
         /// </code>
         /// </summary>
-        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
+        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
         {
             // 条件网关（菱形，NodeType=4）：本身不生成任务，到达后按出边 ConditionJson 选一路继续。
             // 条件在连线（link）上表达，无需节点级 EvalCondition；无条件出边作为默认分支。
             if (node.NodeType == (int)WfNodeType.Condition)
             {
-                var next = ResolveNextNode(node, allNodes, linksBySource, formValues);
-                if (next == null)
+                // 网关自身不是活动审批节点（Start 可能把它当首节点塞进活动集），透传前先移除自己，
+                // 否则活动集残留网关 id、CurrentNodeId 被 SetActiveNodeIds 的 Min() 取成网关而非真正活动节点。
+                RemoveActiveNodeId(instance, node.NodeId);
+                SyncActiveNodeId(instance);
+                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
+                return;
+            }
+
+            // 并行分叉网关(7)：本身不生成任务，fork 同时激活全部出边目标（多活动分支并发）。
+            if (node.NodeType == (int)WfNodeType.ParallelFork)
+            {
+                RemoveActiveNodeId(instance, node.NodeId);
+                var targets = ResolveNextNodes(node, allNodes, linksBySource, formValues);
+                if (targets.Count == 0) { CompleteInstance(instance); return; }
+                foreach (var t in targets) ArriveNode(instance, t, allNodes, linksBySource, linksByTarget, formValues);
+                SyncActiveNodeId(instance);
+                return;
+            }
+
+            // 并行汇聚网关(8)：本身不生成任务，等待所有入边分支均完成才继续（join）。
+            if (node.NodeType == (int)WfNodeType.ParallelJoin)
+            {
+                if (IsJoinComplete(instance, node, allNodes, linksByTarget))
                 {
-                    instance.Status = (int)WfInstanceStatus.Approved;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
+                    RemoveActiveNodeId(instance, node.NodeId);
+                    var after = ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues);
+                    ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
                 }
                 else
                 {
-                    ArriveNode(instance, next, allNodes, linksBySource, formValues);
+                    // 仍有分支未完成：汇聚网关保持在活动集等待，不推进
+                    AddActiveNodeId(instance, node.NodeId);
+                    SyncActiveNodeId(instance);
                 }
                 return;
             }
@@ -455,16 +554,7 @@ namespace ZR.Workflow.Service
             // 排他跳过：条件不满足则顺延到下一节点（递归）；全部不满足则流程直接通过
             if (!EvalCondition(node, formValues))
             {
-                var next = ResolveNextNode(node, allNodes, linksBySource, formValues);
-                if (next == null)
-                {
-                    instance.Status = (int)WfInstanceStatus.Approved;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
-                }
-                else
-                {
-                    ArriveNode(instance, next, allNodes, linksBySource, formValues);
-                }
+                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
                 return;
             }
 
@@ -477,21 +567,22 @@ namespace ZR.Workflow.Service
                     .Any(t => t.InstanceId == instance.InstanceId && groupNodeIds.Contains(t.NodeId));
                 if (!groupActive)
                 {
-                    instance.CurrentNodeId = groupNodes.Min(g => g.NodeId);
-                    Context.Updateable(instance).UpdateColumns(i => new { i.CurrentNodeId }).ExecuteCommand();
-
+                    // 并行分组 fork：把组内「将活动」的成员（生成待办/抄送的节点）同时加入活动集 CurrentNodeIds，
+                    // 使 CurrentNodeId（取活动集 Min）与活动集保持一致；条件不满足的成员不进活动集（视为已完成）。
                     foreach (var g in groupNodes)
                     {
                         if (!EvalCondition(g, formValues)) continue; // 分支条件不满足：不生成待办，视为已完成（包容网关）
                         if (g.NodeType == (int)WfNodeType.Cc)
                         {
                             CreateCcTask(instance, g, formValues);
+                            AddActiveNodeId(instance, g.NodeId);
                         }
                         else
                         {
                             var nodeApprovers = ResolveApprovers(g, formValues);
                             BatchCreateTasks(instance.InstanceId, g.NodeId, g.NodeName, nodeApprovers, (int)WfTaskStatus.Pending, instance.ApplyUser);
                             NotifyUsers(nodeApprovers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{g.NodeName}」待您审批。");
+                            AddActiveNodeId(instance, g.NodeId);
                         }
                     }
 
@@ -501,16 +592,13 @@ namespace ZR.Workflow.Service
                     if (!hasPending)
                     {
                         // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点
-                        var after = ResolveNextNode(groupNodes.MaxBy(g => g.NodeOrder)!, allNodes, linksBySource, formValues);
-                        if (after == null)
-                        {
-                            instance.Status = (int)WfInstanceStatus.Approved;
-                            Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
-                        }
-                        else
-                        {
-                            ArriveNode(instance, after, allNodes, linksBySource, formValues);
-                        }
+                        var after = ResolveNextNode(groupNodes.MaxBy(g => g.NodeOrder)!, allNodes, linksBySource, linksByTarget, formValues);
+                        ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
+                    }
+                    else
+                    {
+                        // 有分支待审：把活动集（并行分组全部活跃成员）落库，等待组内审批完成（由 Approve 的并行 join 汇聚推进）
+                        SyncActiveNodeId(instance);
                     }
                     return; // 等待组内审批完成（由 Approve 的并行 join 汇聚推进）
                 }
@@ -522,31 +610,24 @@ namespace ZR.Workflow.Service
             if (node.NodeType == (int)WfNodeType.Cc)
             {
                 CreateCcTask(instance, node, formValues);
-
-                var next = ResolveNextNode(node, allNodes, linksBySource, formValues);
-                if (next == null)
-                {
-                    instance.Status = (int)WfInstanceStatus.Approved;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
-                }
-                else
-                {
-                    ArriveNode(instance, next, allNodes, linksBySource, formValues);
-                }
+                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
                 return;
             }
 
             // 审批节点
             instance.CurrentNodeId = node.NodeId;
             Context.Updateable(instance).UpdateColumns(i => new { i.CurrentNodeId }).ExecuteCommand();
+            AddActiveNodeId(instance, node.NodeId);
 
             var approvers = ResolveApprovers(node, formValues);
             BatchCreateTasks(instance.InstanceId, node.NodeId, node.NodeName, approvers, (int)WfTaskStatus.Pending, instance.ApplyUser);
             NotifyUsers(approvers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」待您审批。");
+            SyncActiveNodeId(instance);
         }
 
         /// <summary>
-        /// 节点完成后推进：并行分组内需整组完成才汇聚到后续节点；否则取下一节点。
+        /// 节点完成后推进：并行分组内需整组完成才汇聚到后续节点；并行分叉(7)的下游各自独立推进、
+        /// 汇聚网关(8)需等所有入边分支完成才继续；否则取下一节点。
         ///
         /// 流转图：
         /// <code>
@@ -554,82 +635,116 @@ namespace ZR.Workflow.Service
         ///        │
         ///        ├─ 并行分组未全部完成 → 等待
         ///        │
+        ///        ├─ 出边目标是汇聚网关(8)且未全部完成 → 8 入活动集等待
+        ///        │
         ///        ├─ 下一节点为空 → 置通过
         ///        │
-        ///        └─ 存在下一节点 → ArriveNode(next)
+        ///        └─ 存在下一节点（含多目标 fork）→ ArriveNode(next)
         /// </code>
         /// </summary>
-        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
+        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
         {
+            RemoveActiveNodeId(instance, completedNode.NodeId);
+
             if (completedNode.ParallelGroup > 0)
             {
                 var groupNodes = allNodes.Where(n => n.ParallelGroup == completedNode.ParallelGroup).ToList();
                 var groupDone = groupNodes.All(g => IsNodeComplete(instance.InstanceId, g));
-                if (!groupDone) return; // 等待组内其余分支
+                if (!groupDone) { SyncActiveNodeId(instance); return; } // 等待组内其余分支
                 var lastInGroup = groupNodes.MaxBy(g => g.NodeOrder);
-                var after = lastInGroup == null ? null : ResolveNextNode(lastInGroup, allNodes, linksBySource, formValues);
-                if (after == null)
-                {
-                    instance.Status = (int)WfInstanceStatus.Approved;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
-                }
-                else
-                {
-                    ArriveNode(instance, after, allNodes, linksBySource, formValues);
-                }
+                var after = lastInGroup == null ? null : ResolveNextNode(lastInGroup, allNodes, linksBySource, linksByTarget, formValues);
+                ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
                 return;
             }
 
-            var next = ResolveNextNode(completedNode, allNodes, linksBySource, formValues);
-            if (next == null)
+            // 取当前节点全部出边目标（并行分叉可能多目标，普通节点单目标）
+            var nexts = ResolveNextNodes(completedNode, allNodes, linksBySource, formValues);
+            if (nexts.Count == 0) { CompleteInstance(instance); return; }
+            foreach (var next in nexts)
             {
-                instance.Status = (int)WfInstanceStatus.Approved;
-                Context.Updateable(instance).UpdateColumns(i => new { i.Status, i.CurrentNodeId }).ExecuteCommand();
+                // 出边目标是汇聚网关(8)：仅当所有入边分支均完成时，才激活 8 的后续；否则 8 入活动集等待
+                if (next.NodeType == (int)WfNodeType.ParallelJoin)
+                {
+                    if (IsJoinComplete(instance, next, allNodes, linksByTarget))
+                    {
+                        RemoveActiveNodeId(instance, next.NodeId);
+                        var after = ResolveNextNode(next, allNodes, linksBySource, linksByTarget, formValues);
+                        ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
+                    }
+                    else
+                    {
+                        AddActiveNodeId(instance, next.NodeId);
+                    }
+                }
+                else
+                {
+                    ArriveNode(instance, next, allNodes, linksBySource, linksByTarget, formValues);
+                }
             }
-            else
-            {
-                ArriveNode(instance, next, allNodes, linksBySource, formValues);
-            }
+            SyncActiveNodeId(instance);
         }
 
         /// <summary>
-        /// 解析当前节点的下一节点：**link 为唯一串联事实，NodeOrder 仅作兜底/展示排序**。
-        /// 前端应始终为每条边（含直线）生成一条 WfNodeLink（直线 ConditionJson 留空），
-        /// 故生产流程下每个非结束节点都有出边，引擎走下方"连线分支"通道。
-        /// - 当前节点存在出边（linksBySource 命中 SourceNodeId）：按连线 + ConditionJson 选边（条件命中走该边，
-        ///   无任一边命中且有默认分支[ConditionJson 为空]则走默认分支；仍无则视为流程结束）。
-        /// - 当前节点无出边（数据缺失兜底）：fallback 到 NodeOrder 升序取下一审批/抄送节点，避免运行态卡死。
-        /// 仅筛选审批/抄送节点作为可达目标（开始/结束节点不计入"下一节点"）。
+        /// 解析当前节点的所有下一节点（多目标，供并行分叉 fork / 普通节点发散用）。
+        /// 按连线 + ConditionJson 选边：条件命中走该边，无任一命中且有默认分支[ConditionJson 为空]走默认分支，仍无则空。
+        /// 与 <see cref="ResolveNextNode"/> 的单目标选取口径一致，只是返回全部可达目标。
         /// </summary>
-        private WfFlowNode ResolveNextNode(WfFlowNode current, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
+        private List<WfFlowNode> ResolveNextNodes(WfFlowNode current, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
         {
-            if (linksBySource.TryGetValue(current.NodeId, out var outLinks) && outLinks.Count > 0)
+            var result = new List<WfFlowNode>();
+            if (!linksBySource.TryGetValue(current.NodeId, out var outLinks) || outLinks.Count == 0)
             {
-                WfNodeLink defaultLink = null;
-                foreach (var link in outLinks) // 已按 Sort 升序
+                // 无出边：若流程完全无 link（存量老数据）才 fallback 到 NodeOrder 取下一审批/抄送节点
+                if (linksBySource.Count == 0)
                 {
-                    if (string.IsNullOrWhiteSpace(link.ConditionJson))
-                    {
-                        defaultLink ??= link; // 第一条无条件出边作为默认分支
-                        continue;
-                    }
-                    if (EvalLinkCondition(link.ConditionJson, formValues))
-                    {
-                        var hit = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
-                        if (hit != null) return hit;
-                    }
+                    var fb = GetNextAuditNode(allNodes, current.NodeOrder);
+                    if (fb != null) result.Add(fb);
                 }
-                // 无任一条件分支命中：走默认分支（若有）
-                if (defaultLink != null)
-                {
-                    var def = allNodes.FirstOrDefault(n => n.NodeId == defaultLink.TargetNodeId);
-                    if (def != null) return def;
-                }
-                return null; // 有出边但无可达目标：视为流程结束
+                return result;
             }
+            foreach (var link in outLinks) // 已按 Sort 升序
+            {
+                if (!string.IsNullOrWhiteSpace(link.ConditionJson) && !EvalLinkCondition(link.ConditionJson, formValues)) continue;
+                var hit = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
+                if (hit != null && !result.Contains(hit)) result.Add(hit);
+            }
+            return result;
+        }
 
-            // 无出边：fallback 到 NodeOrder 串联（存量通道）
-            return GetNextAuditNode(allNodes, current.NodeOrder);
+        /// <summary>
+        /// 判断汇聚网关(8)是否已满足 join 条件：所有入边源节点（linksByTarget 中 SourceNodeId）均已"完成"。
+        /// 任一入边源尚未完成 → 返回 false（继续等待）。
+        /// </summary>
+        private bool IsJoinComplete(WfFlowInstance instance, WfFlowNode joinNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksByTarget)
+        {
+            if (!linksByTarget.TryGetValue(joinNode.NodeId, out var inLinks) || inLinks.Count == 0) return true;
+            foreach (var l in inLinks)
+            {
+                var src = allNodes.FirstOrDefault(n => n.NodeId == l.SourceNodeId);
+                // 入边源节点完成判定：源节点若为网关(7/8/4)则视为瞬时完成（它们不生成任务，由流转自然跳过），
+                // 实际并行分支的"完成"体现在分支末端的审批/抄送节点；这里只校验真实业务节点（审批/抄送）的完成。
+                if (src != null && (src.NodeType == (int)WfNodeType.Audit || src.NodeType == (int)WfNodeType.Cc))
+                {
+                    if (!IsNodeComplete(instance.InstanceId, src)) return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 解析当前节点的下一节点（单目标，原有串行语义）：取 <see cref="ResolveNextNodes"/> 的首个可达目标。
+        /// **link 为唯一串联事实，NodeOrder 仅作展示排序 / 存量数据兜底**。
+        /// 前端为每条边（含直线）生成一条 WfNodeLink（直线 ConditionJson 留空），
+        /// 分支终点 / 末节点则**不生成出边**——即"无出边 = 流程终点"，与 ValidateLinks 的口径一致。
+        /// - 当前节点存在出边：按连线 + ConditionJson 选边（条件命中走该边，无任一边命中且有默认分支则走默认分支；仍无则流程结束）。
+        /// - 当前节点无出边且流程存在 link 数据：此节点就是终点 → 返回 null（流程结束）。
+        ///   ⚠️ 此处**绝不能** fallback 到 NodeOrder（条件分支叶子节点天然无出边，顺延会错误流入另一分支）。
+        /// - 整个流程**完全没有 link**（存量老数据）：才 fallback 到 NodeOrder 串联，避免老实例卡死。
+        /// </summary>
+        private WfFlowNode ResolveNextNode(WfFlowNode current, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
+        {
+            var nexts = ResolveNextNodes(current, allNodes, linksBySource, formValues);
+            return nexts.Count > 0 ? nexts[0] : null;
         }
 
         /// <summary>

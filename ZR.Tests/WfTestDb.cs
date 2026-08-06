@@ -67,6 +67,7 @@ namespace ZR.Tests
             _scope.CodeFirst.InitTables(
                 typeof(WfFlowDefinition),
                 typeof(WfFlowNode),
+                typeof(WfNodeLink),
                 typeof(WfFlowInstance),
                 typeof(WfFlowTask),
                 typeof(WfFlowRecord),
@@ -102,6 +103,7 @@ namespace ZR.Tests
             Db.Deleteable<WfFlowTask>().ExecuteCommand();
             Db.Deleteable<WfFlowRecord>().ExecuteCommand();
             Db.Deleteable<WfFlowInstance>().ExecuteCommand();
+            Db.Deleteable<WfNodeLink>().ExecuteCommand();
             Db.Deleteable<WfFlowNode>().ExecuteCommand();
             Db.Deleteable<WfFlowDefinition>().ExecuteCommand();
             Db.Deleteable<SysUserRole>().ExecuteCommand();
@@ -115,7 +117,8 @@ namespace ZR.Tests
                 .ExecuteReturnIdentity();
         }
 
-        public long AddNode(long flowId, string name, int nodeType, int approverType, string approverId, int nodeOrder, int signType = 0)
+        public long AddNode(long flowId, string name, int nodeType, int approverType, string approverId, int nodeOrder,
+            int signType = 0, int parallelGroup = 0, string conditionField = null, int conditionOp = 0, string conditionValue = null)
         {
             Ensure();
             return Db.Insertable(new WfFlowNode
@@ -127,6 +130,26 @@ namespace ZR.Tests
                 ApproverId = approverId,
                 NodeOrder = nodeOrder,
                 SignType = signType,
+                ParallelGroup = parallelGroup,
+                ConditionField = conditionField,
+                ConditionOp = conditionOp,
+                ConditionValue = conditionValue,
+            }).ExecuteReturnIdentity();
+        }
+
+        /// <summary>
+        /// 建一条节点连线（有向边）。conditionJson 为空/null 表示默认分支（无条件）。
+        /// </summary>
+        public long AddLink(long flowId, long sourceNodeId, long targetNodeId, string conditionJson = null, int sort = 0)
+        {
+            Ensure();
+            return Db.Insertable(new WfNodeLink
+            {
+                FlowId = flowId,
+                SourceNodeId = sourceNodeId,
+                TargetNodeId = targetNodeId,
+                ConditionJson = string.IsNullOrEmpty(conditionJson) ? null : conditionJson,
+                Sort = sort,
             }).ExecuteReturnIdentity();
         }
 
@@ -142,6 +165,43 @@ namespace ZR.Tests
                 Status = status,
             }).ExecuteReturnIdentity();
         }
+
+        /// <summary>
+        /// 幂等播种一批测试用户（userName 与 userId 同值，便于按 userName 反查 / 作审批人标识）。
+        /// 引擎 ResolveApprovers 需到 SysUser 落库审批人，测试库必须事先存在这些用户。
+        /// </summary>
+        public void EnsureUsers(params string[] userNames)
+        {
+            Ensure();
+            foreach (var name in userNames)
+            {
+                if (string.IsNullOrEmpty(name)) continue;
+                if (Db.Queryable<SysUser>().Any(u => u.UserName == name)) continue;
+                Db.Insertable(new SysUser
+                {
+                    UserName = name,
+                    NickName = name,
+                    Password = "test",
+                    DeptId = 1,
+                    Status = 0,
+                }).ExecuteCommand();
+            }
+        }
+
+        /// <summary>
+        /// 按 userName 反查其自增 userId。引擎 ResolveApprovers 的指定用户/部门/角色分支
+        /// 最终都以 userId 落库，故测试建节点时 ApproverId 必须传数字 userId（而非 userName）。
+        /// </summary>
+        public long Uid(string userName)
+        {
+            Ensure();
+            return Db.Queryable<SysUser>().Where(u => u.UserName == userName).Select(u => u.UserId).First();
+        }
+
+        /// <summary>
+        /// 同 <see cref="Uid"/>，但直接返回字符串形式 userId，便于作为 AddNode 的 approverId 参数。
+        /// </summary>
+        public string Uids(string userName) => Uid(userName).ToString();
 
         public void AddUserRole(long userId, long roleId)
         {

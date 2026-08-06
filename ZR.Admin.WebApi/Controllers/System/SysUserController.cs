@@ -54,7 +54,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [ActionPermissionFilter(Permission = "common")]
-        [HttpGet("seletList")]
+        [HttpGet("selectList")]
         public IActionResult SelectUserList([FromQuery] SysUserQueryDto user, PagerInfo pager)
         {
             var list = UserService.SelectUserList(user, pager);

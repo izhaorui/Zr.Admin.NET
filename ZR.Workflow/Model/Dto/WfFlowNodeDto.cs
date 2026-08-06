@@ -15,7 +15,7 @@ namespace ZR.Workflow.Model.Dto
         [Required(ErrorMessage = "节点名称不能为空")]
         public string NodeName { get; set; }
 
-        /// <summary>节点类型 0=开始 1=审批 2=抄送 3=结束 4=条件网关（菱形，不生成任务，按出边条件选路）</summary>
+        /// <summary>节点类型 0=开始 1=审批 2=抄送 3=结束 4=条件网关 7=并行分叉网关 8=并行汇聚网关（7/8 不配审批人，本身不生成任务）</summary>
         public int NodeType { get; set; } = 1;
 
         /// <summary>审批人类型 0=指定用户 1=指定角色 2=部门主管（开始/结束等非审批节点不传）</summary>

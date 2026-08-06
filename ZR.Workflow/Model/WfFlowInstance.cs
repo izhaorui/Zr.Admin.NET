@@ -57,10 +57,19 @@ namespace ZR.Workflow.Model
         public int Status { get; set; } = 0;
 
         /// <summary>
-        /// 当前节点Id
+        /// 当前节点Id（单值兼容字段：无并行活动时等于唯一活动节点；并行期间等于首个活动节点，仅用于兼容旧查询/列表展示）
+        /// 真正的并行活动节点集合见 <see cref="CurrentNodeIds"/>。
         /// </summary>
         [SugarColumn(IsNullable = true)]
         public long? CurrentNodeId { get; set; }
+
+        /// <summary>
+        /// 当前活动节点集合（JSON 数组，如 [12,15,18]）。并行网关节点(7) fork 后此处会有多个节点；
+        /// 单分支流转时退化为只含 1 个元素的数组，与 <see cref="CurrentNodeId"/> 保持一致。
+        /// 流程结束/未开始为 null 或空数组。
+        /// </summary>
+        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString, IsNullable = true)]
+        public string CurrentNodeIds { get; set; }
 
         /// <summary>
         /// 表单内容（JSON，预留动态表单）

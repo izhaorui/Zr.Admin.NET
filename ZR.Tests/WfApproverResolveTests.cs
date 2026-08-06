@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Infrastructure;
+using Moq;
 using Xunit;
+using ZR.ServiceCore.Services;
 using ZR.Workflow.Enum;
 using ZR.Workflow.Model;
 using ZR.Workflow.Service;
@@ -13,6 +15,7 @@ namespace ZR.Tests
     /// 审批人解析（ResolveApprovers）单元测试。
     /// 该方法为私有，通过构造含不同 ApproverType 节点的流程，发起后断言生成的
     /// wf_flow_task.Assignee 集合，间接验证指定用户/角色/部门三类解析分支。
+    /// 注意：指定用户分支以数字 userId 解析，故 ApproverId 传 _db.Uids("用户名")。
     /// </summary>
     [Collection("WfTests")]
     public class WfApproverResolveTests
@@ -25,7 +28,8 @@ namespace ZR.Tests
             _db = db;
             _db.Ensure();
             _db.Clean();
-            _engine = new WfEngineService();
+            _db.EnsureUsers("alice", "u1", "u2", "u3", "ra", "rb", "rc", "da", "db", "dc", "dd");
+            _engine = new WfEngineService(Mock.Of<ISysUserMsgService>());
         }
 
         private HashSet<string> StartAndGetAssignees(long flowId)
@@ -42,7 +46,7 @@ namespace ZR.Tests
         public void Resolve_指定用户_逗号拆分生成多待办()
         {
             var flowId = _db.AddDefinition("U", "用户");
-            _db.AddNode(flowId, "审批", (int)WfNodeType.Audit, (int)WfApproverType.User, "u1,u2,u3", 1);
+            _db.AddNode(flowId, "审批", (int)WfNodeType.Audit, (int)WfApproverType.User, $"{_db.Uids("u1")},{_db.Uids("u2")},{_db.Uids("u3")}", 1);
 
             var assignees = StartAndGetAssignees(flowId);
 

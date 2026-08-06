@@ -311,6 +311,15 @@ namespace ZR.ServiceCore.SqlSugar
             if (!string.IsNullOrWhiteSpace(col.DataType)
                 && !col.DataType.Trim().Equals("NULL", StringComparison.OrdinalIgnoreCase))
             {
+                // CodeFirst_BigString 等"按数据库选类型"的写法，在 EntityColumnInfo.DataType 中
+                // 表现为逗号分隔的多类型串（如 "varcharmax,longtext,text,clob"）。SqlSugar 建表时
+                // 会按当前 DbType 选其中一段，但本项目自定义 AddColumn 不会自动裁剪，原样拼进
+                // ALTER 会生成非法 SQL（"..." ADD [X] varcharmax,longtext,text,clob NULL"）。
+                // 这里显式按当前数据库挑出对应的长文本类型。
+                if (col.DataType.Contains(','))
+                {
+                    return ResolveBigStringType(db);
+                }
                 return col.DataType;
             }
 
@@ -330,6 +339,23 @@ namespace ZR.ServiceCore.SqlSugar
             if (type == typeof(bool) || type.IsEnum) return "int";
             if (type == typeof(Guid)) return "char(36)";
             return "varchar(255)";
+        }
+
+        /// <summary>
+        /// 把 CodeFirst_BigString 这种"逗号分隔多数据库类型串"解析为当前数据库对应的长文本类型。
+        /// 多用于补列场景（自定义 AddColumn 不会像 CodeFirst 那样自动按 DbType 裁剪类型串）。
+        /// </summary>
+        private static string ResolveBigStringType(ISqlSugarClient db)
+        {
+            return db.CurrentConnectionConfig.DbType switch
+            {
+                DbType.SqlServer => "varchar(max)",
+                DbType.MySql => "longtext",
+                DbType.Sqlite => "clob",
+                DbType.PostgreSQL => "text",
+                DbType.Oracle => "clob",
+                _ => "text"
+            };
         }
 
         /// <summary>

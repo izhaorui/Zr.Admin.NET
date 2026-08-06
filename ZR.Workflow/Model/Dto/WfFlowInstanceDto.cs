@@ -44,8 +44,16 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>实例状态</summary>
         public int Status { get; set; } = 0;
 
-        /// <summary>当前节点Id</summary>
+        /// <summary>当前节点Id（活动节点集合中的首节点，兼容单分支场景）</summary>
         public long? CurrentNodeId { get; set; }
+
+        /// <summary>
+        /// 当前活动节点集合（JSON 数组，元素为 nodeId）。
+        /// 并行网关节点(7/8)并发时，多分支同时活动的节点 id 都会落入此集合；
+        /// 单分支流转时退化为只含 1 个元素的数组，与 <see cref="CurrentNodeId"/> 保持一致。
+        /// 详情页/流程图可据此高亮所有"进行中"节点，而非仅首个。
+        /// </summary>
+        public string CurrentNodeIds { get; set; }
 
         /// <summary>当前节点名称（按 CurrentNodeId 关联 wf_flow_node 填充）</summary>
         public string CurrentNodeName { get; set; }

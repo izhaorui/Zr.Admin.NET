@@ -401,6 +401,26 @@ namespace ZR.Workflow.Service
                         throw new CustomException(ResultCode.CUSTOM_ERROR,
                             $"条件网关「{node.NodeName}」至少需 2 条出边且至少 1 条带条件", null);
                 }
+                // 并行分叉网关(7)：需 ≥2 条出边（全部分支并发），否则并行无意义
+                else if (node.NodeType == (int)Enum.WfNodeType.ParallelFork)
+                {
+                    var outCount = links.Count(l => l.SourceNodeId == node.NodeId
+                        && l.SourceNodeId != 0 && l.TargetNodeId != 0 && l.SourceNodeId != l.TargetNodeId);
+                    if (outCount < 2)
+                        throw new CustomException(ResultCode.CUSTOM_ERROR,
+                            $"并行分叉「{node.NodeName}」至少需 2 条出边（并行分支）", null);
+                }
+                // 并行汇聚网关(8)：需 ≥1 条入边（来自并行分支）且 ≥1 条出边（汇聚后继续），否则汇聚无意义
+                else if (node.NodeType == (int)Enum.WfNodeType.ParallelJoin)
+                {
+                    var inCount = links.Count(l => l.TargetNodeId == node.NodeId
+                        && l.SourceNodeId != 0 && l.TargetNodeId != 0 && l.SourceNodeId != l.TargetNodeId);
+                    var outCount = links.Count(l => l.SourceNodeId == node.NodeId
+                        && l.SourceNodeId != 0 && l.TargetNodeId != 0 && l.SourceNodeId != l.TargetNodeId);
+                    if (inCount < 1 || outCount < 1)
+                        throw new CustomException(ResultCode.CUSTOM_ERROR,
+                            $"并行汇聚「{node.NodeName}」需至少 1 条入边与 1 条出边", null);
+                }
             }
         }
 
