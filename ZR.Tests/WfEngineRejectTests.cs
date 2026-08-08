@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Infrastructure;
 using Moq;
@@ -44,10 +44,10 @@ namespace ZR.Tests
         public void Reject_二级驳回_实例置驳回并记录驳回动作()
         {
             var flowId = BuildTwoNodeFlow(out var node1, out var node2);
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
-            _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", "zhangsan");
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
+            _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", _db.Uid("zhangsan"));
 
-            _engine.Reject(GetTask(id, node2, "lisi").TaskId, "不同意", "lisi");
+            _engine.Reject(GetTask(id, node2, "lisi").TaskId, "不同意", _db.Uid("lisi"));
 
             var saved = _db.Db.Queryable<WfFlowInstance>().InSingle(id);
             Assert.Equal((int)WfInstanceStatus.Rejected, saved.Status);
@@ -62,10 +62,10 @@ namespace ZR.Tests
         public void Reject_非审批人_抛无权限()
         {
             var flowId = BuildTwoNodeFlow(out var node1, out _);
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
 
             var task = GetTask(id, node1, "zhangsan");
-            var ex = Assert.Throws<CustomException>(() => _engine.Reject(task.TaskId, "不同意", "wangwu"));
+            var ex = Assert.Throws<CustomException>(() => _engine.Reject(task.TaskId, "不同意", _db.Uid("wangwu")));
             Assert.Contains("无审批权限", ex.Message);
         }
 
@@ -73,12 +73,12 @@ namespace ZR.Tests
         public void Reject_驳回后流程不可再审批_抛异常()
         {
             var flowId = BuildTwoNodeFlow(out var node1, out var node2);
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
-            _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", "zhangsan");
-            _engine.Reject(GetTask(id, node2, "lisi").TaskId, "不同意", "lisi");
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
+            _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", _db.Uid("zhangsan"));
+            _engine.Reject(GetTask(id, node2, "lisi").TaskId, "不同意", _db.Uid("lisi"));
 
             var ex = Assert.Throws<CustomException>(() =>
-                _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "再同意", "zhangsan"));
+                _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "再同意", _db.Uid("zhangsan")));
             Assert.True(ex.Message.Contains("该任务已处理") || ex.Message.Contains("流程状态异常"));
         }
     }

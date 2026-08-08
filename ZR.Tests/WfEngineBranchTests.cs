@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Infrastructure;
 using Moq;
@@ -68,7 +68,7 @@ namespace ZR.Tests
             {
                 FlowId = flowId,
                 Title = "报销100",
-                ApplyUser = "alice",
+                ApplyUser = "alice", ApplyUserId = _db.Uid("alice"),
                 FormContent = "{\"amount\":\"100\"}",
             });
 
@@ -79,7 +79,7 @@ namespace ZR.Tests
             Assert.Single(_db.Db.Queryable<WfFlowTask>().Where(t => t.InstanceId == id).ToList());
             Assert.Equal("boss", GetTask(id, boss, "boss").Assignee);
 
-            _engine.Approve(GetTask(id, boss, "boss").TaskId, "同意", "boss");
+            _engine.Approve(GetTask(id, boss, "boss").TaskId, "同意", _db.Uid("boss"));
 
             // 老板批完 → 无出边 = 终点 → 应结束
             inst = GetInstance(id);
@@ -106,7 +106,7 @@ namespace ZR.Tests
             {
                 FlowId = flowId,
                 Title = "报销5",
-                ApplyUser = "alice",
+                ApplyUser = "alice", ApplyUserId = _db.Uid("alice"),
                 FormContent = "{\"amount\":\"5\"}",
             });
 
@@ -115,7 +115,7 @@ namespace ZR.Tests
             Assert.Equal("mgr", GetTask(id, mgr, "mgr").Assignee);
             Assert.Empty(_db.Db.Queryable<WfFlowTask>().Where(t => t.InstanceId == id && t.NodeId == boss).ToList());
 
-            _engine.Approve(GetTask(id, mgr, "mgr").TaskId, "同意", "mgr");
+            _engine.Approve(GetTask(id, mgr, "mgr").TaskId, "同意", _db.Uid("mgr"));
 
             inst = GetInstance(id);
             Assert.Equal((int)WfInstanceStatus.Approved, inst.Status);
@@ -139,13 +139,13 @@ namespace ZR.Tests
             {
                 FlowId = flowId,
                 Title = "报销10",
-                ApplyUser = "alice",
+                ApplyUser = "alice", ApplyUserId = _db.Uid("alice"),
                 FormContent = "{\"amount\":\"10\"}",
             });
 
             var inst = GetInstance(id);
             Assert.Equal(boss, inst.CurrentNodeId);
-            _engine.Approve(GetTask(id, boss, "boss").TaskId, "同意", "boss");
+            _engine.Approve(GetTask(id, boss, "boss").TaskId, "同意", _db.Uid("boss"));
             Assert.Equal((int)WfInstanceStatus.Approved, GetInstance(id).Status);
         }
 
@@ -168,18 +168,18 @@ namespace ZR.Tests
             {
                 FlowId = flowId,
                 Title = "t",
-                ApplyUser = "alice",
+                ApplyUser = "alice", ApplyUserId = _db.Uid("alice"),
                 FormContent = "{\"amount\":\"200\"}",
             });
 
             // 应先停在主管审批
             Assert.Equal(n1, GetInstance(id).CurrentNodeId);
-            _engine.Approve(GetTask(id, n1, "lead").TaskId, "同意", "lead");
+            _engine.Approve(GetTask(id, n1, "lead").TaskId, "同意", _db.Uid("lead"));
 
             // 主管通过后到网关，金额 200 > 100 走老板批
             var inst = GetInstance(id);
             Assert.Equal(boss, inst.CurrentNodeId);
-            _engine.Approve(GetTask(id, boss, "boss").TaskId, "同意", "boss");
+            _engine.Approve(GetTask(id, boss, "boss").TaskId, "同意", _db.Uid("boss"));
 
             inst = GetInstance(id);
             Assert.Equal((int)WfInstanceStatus.Approved, inst.Status);
@@ -205,7 +205,7 @@ namespace ZR.Tests
             {
                 FlowId = flowId,
                 Title = "t",
-                ApplyUser = "alice",
+                ApplyUser = "alice", ApplyUserId = _db.Uid("alice"),
                 FormContent = "{\"lvl\":\"9\"}", // 无分支命中
             });
 
@@ -234,30 +234,30 @@ namespace ZR.Tests
             _db.AddLink(flowId, pa, pb, null, 1); // 串接写法，引擎按 ParallelGroup 识别同组 fork
             _db.AddLink(flowId, pb, pc, null, 1);
 
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
 
             // Start 后先停在发起节点 n1，并行组尚未 fork
             Assert.Equal(n1, GetInstance(id).CurrentNodeId);
-            _engine.Approve(GetTask(id, n1, "lead").TaskId, "同意", "lead");
+            _engine.Approve(GetTask(id, n1, "lead").TaskId, "同意", _db.Uid("lead"));
 
             // n1 审批后并行 A、B 同时有待办
             Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, pa, "a").Status);
             Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, pb, "b").Status);
 
-            _engine.Approve(GetTask(id, pa, "a").TaskId, "同意", "a");
+            _engine.Approve(GetTask(id, pa, "a").TaskId, "同意", _db.Uid("a"));
             // A 完成但 B 未完成，仍在并行组，不汇聚；活动集仅剩 B，CurrentNodeId 取活动集剩余成员（pb）
             var inst = GetInstance(id);
             Assert.Equal((int)WfInstanceStatus.Approval, inst.Status);
             Assert.Equal(pb, inst.CurrentNodeId);
             Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, pb, "b").Status);
 
-            _engine.Approve(GetTask(id, pb, "b").TaskId, "同意", "b");
+            _engine.Approve(GetTask(id, pb, "b").TaskId, "同意", _db.Uid("b"));
             // 两组都完成 → 汇聚到 C
             inst = GetInstance(id);
             Assert.Equal(pc, inst.CurrentNodeId);
             Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, pc, "c").Status);
 
-            _engine.Approve(GetTask(id, pc, "c").TaskId, "同意", "c");
+            _engine.Approve(GetTask(id, pc, "c").TaskId, "同意", _db.Uid("c"));
             Assert.Equal((int)WfInstanceStatus.Approved, GetInstance(id).Status);
         }
 
@@ -282,20 +282,20 @@ namespace ZR.Tests
             {
                 FlowId = flowId,
                 Title = "t",
-                ApplyUser = "alice",
+                ApplyUser = "alice", ApplyUserId = _db.Uid("alice"),
                 FormContent = "{\"vip\":\"0\"}",
             });
 
             // 先审批发起节点 n1，触发并行组 fork
-            _engine.Approve(GetTask(id, n1, "lead").TaskId, "同意", "lead");
+            _engine.Approve(GetTask(id, n1, "lead").TaskId, "同意", _db.Uid("lead"));
 
             Assert.Empty(_db.Db.Queryable<WfFlowTask>().Where(t => t.InstanceId == id && t.NodeId == pa).ToList());
             Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, pb, "b").Status);
 
             // 仅 B 通过即汇聚到 C
-            _engine.Approve(GetTask(id, pb, "b").TaskId, "同意", "b");
+            _engine.Approve(GetTask(id, pb, "b").TaskId, "同意", _db.Uid("b"));
             Assert.Equal(pc, GetInstance(id).CurrentNodeId);
-            _engine.Approve(GetTask(id, pc, "c").TaskId, "同意", "c");
+            _engine.Approve(GetTask(id, pc, "c").TaskId, "同意", _db.Uid("c"));
             Assert.Equal((int)WfInstanceStatus.Approved, GetInstance(id).Status);
         }
 
@@ -314,9 +314,9 @@ namespace ZR.Tests
             var cc = _db.AddNode(flowId, "抄送", (int)WfNodeType.Cc, (int)WfApproverType.User, $"{_db.Uid("cc1")},{_db.Uid("cc2")}", 2);
             _db.AddLink(flowId, n1, cc, null, 1);
 
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
 
-            _engine.Approve(GetTask(id, n1, "a").TaskId, "同意", "a");
+            _engine.Approve(GetTask(id, n1, "a").TaskId, "同意", _db.Uid("a"));
 
             // 抄送任务生成（Skipped 状态）：引擎对抄送节点只落 1 条任务，多人以逗号串存于 Assignee
             var ccTasks = _db.Db.Queryable<WfFlowTask>().Where(t => t.InstanceId == id && t.NodeId == cc).ToList();
@@ -342,13 +342,13 @@ namespace ZR.Tests
             _db.AddLink(flowId, n1, cc, null, 1);
             _db.AddLink(flowId, cc, n2, null, 1);
 
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
-            _engine.Approve(GetTask(id, n1, "a").TaskId, "同意", "a");
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
+            _engine.Approve(GetTask(id, n1, "a").TaskId, "同意", _db.Uid("a"));
 
             // 抄送落库后继续到二级
             Assert.Equal(n2, GetInstance(id).CurrentNodeId);
             Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, n2, "b").Status);
-            _engine.Approve(GetTask(id, n2, "b").TaskId, "同意", "b");
+            _engine.Approve(GetTask(id, n2, "b").TaskId, "同意", _db.Uid("b"));
             Assert.Equal((int)WfInstanceStatus.Approved, GetInstance(id).Status);
         }
 
@@ -374,16 +374,16 @@ namespace ZR.Tests
             {
                 FlowId = flowId,
                 Title = "t",
-                ApplyUser = "alice",
+                ApplyUser = "alice", ApplyUserId = _db.Uid("alice"),
                 FormContent = "{\"vip\":\"0\"}", // n2 条件不满足
             });
 
-            _engine.Approve(GetTask(id, n1, "a").TaskId, "同意", "a");
+            _engine.Approve(GetTask(id, n1, "a").TaskId, "同意", _db.Uid("a"));
 
             // n2 被跳过，直接到 n3，不生成 n2 待办
             Assert.Equal(n3, GetInstance(id).CurrentNodeId);
             Assert.Empty(_db.Db.Queryable<WfFlowTask>().Where(t => t.InstanceId == id && t.NodeId == n2).ToList());
-            _engine.Approve(GetTask(id, n3, "b").TaskId, "同意", "b");
+            _engine.Approve(GetTask(id, n3, "b").TaskId, "同意", _db.Uid("b"));
             Assert.Equal((int)WfInstanceStatus.Approved, GetInstance(id).Status);
         }
 
@@ -404,7 +404,7 @@ namespace ZR.Tests
             {
                 FlowId = flowId,
                 Title = "t",
-                ApplyUser = "alice",
+                ApplyUser = "alice", ApplyUserId = _db.Uid("alice"),
                 FormContent = "{\"x\":\"0\",\"y\":\"0\"}",
             });
 
@@ -429,13 +429,13 @@ namespace ZR.Tests
             var n2 = _db.AddNode(flowId, "二级", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uid("b").ToString(), 2);
             // 不建任何 WfNodeLink
 
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
             Assert.Equal(n1, GetInstance(id).CurrentNodeId);
 
-            _engine.Approve(GetTask(id, n1, "a").TaskId, "同意", "a");
+            _engine.Approve(GetTask(id, n1, "a").TaskId, "同意", _db.Uid("a"));
             Assert.Equal(n2, GetInstance(id).CurrentNodeId);
 
-            _engine.Approve(GetTask(id, n2, "b").TaskId, "同意", "b");
+            _engine.Approve(GetTask(id, n2, "b").TaskId, "同意", _db.Uid("b"));
             Assert.Equal((int)WfInstanceStatus.Approved, GetInstance(id).Status);
             Assert.Null(GetInstance(id).CurrentNodeId);
         }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Infrastructure;
 using Moq;
@@ -34,7 +34,7 @@ namespace ZR.Tests
             var flowId = _db.AddDefinition("LEAVE", "请假流程");
             var nodeId = _db.AddNode(flowId, "主管审批", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uids("zhangsan"), 1);
 
-            var instance = new WfFlowInstance { FlowId = flowId, Title = "请假1天", ApplyUser = "alice" };
+            var instance = new WfFlowInstance { FlowId = flowId, Title = "请假1天", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") };
             var id = _engine.Start(instance);
 
             Assert.True(id > 0);
@@ -62,7 +62,7 @@ namespace ZR.Tests
             var flowId = _db.AddDefinition("EMPTY", "无节点流程");
             _db.AddNode(flowId, "开始", (int)WfNodeType.Start, (int)WfApproverType.User, "", 1);
 
-            var instance = new WfFlowInstance { FlowId = flowId, Title = "直接通过", ApplyUser = "alice" };
+            var instance = new WfFlowInstance { FlowId = flowId, Title = "直接通过", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") };
             var id = _engine.Start(instance);
 
             var saved = _db.Db.Queryable<WfFlowInstance>().InSingle(id);
@@ -76,7 +76,7 @@ namespace ZR.Tests
         [Fact]
         public void Start_流程定义不存在_抛CustomException()
         {
-            var instance = new WfFlowInstance { FlowId = 999999, Title = "x", ApplyUser = "alice" };
+            var instance = new WfFlowInstance { FlowId = 999999, Title = "x", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") };
 
             var ex = Assert.Throws<CustomException>(() => _engine.Start(instance));
             Assert.Contains("流程定义不存在", ex.Message);
@@ -88,7 +88,7 @@ namespace ZR.Tests
             var flowId = _db.AddDefinition("LEAVE2", "请假流程2");
             _db.AddNode(flowId, "主管审批", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uids("zhangsan"), 1);
 
-            var instance = new WfFlowInstance { FlowId = flowId, Title = "请假", ApplyUser = "alice", FlowName = "我的请假" };
+            var instance = new WfFlowInstance { FlowId = flowId, Title = "请假", ApplyUser = "alice", ApplyUserId = _db.Uid("alice"), FlowName = "我的请假" };
             var id = _engine.Start(instance);
 
             Assert.Equal("我的请假", _db.Db.Queryable<WfFlowInstance>().InSingle(id).FlowName);

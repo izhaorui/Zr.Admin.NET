@@ -49,8 +49,8 @@ namespace ZR.Workflow.Controllers
         [Log(Title = "审批通过", BusinessType = BusinessType.UPDATE)]
         public IActionResult Approve([FromBody] WfApproveInput parm)
         {
-            var userName = HttpContext.GetName();
-            _engine.Approve(parm.TaskId, parm.Opinion, userName);
+            var userId = HttpContext.GetUId();
+            _engine.Approve(parm.TaskId, parm.Opinion, userId);
             return SUCCESS(1);
         }
 
@@ -62,8 +62,8 @@ namespace ZR.Workflow.Controllers
         [Log(Title = "审批驳回", BusinessType = BusinessType.UPDATE)]
         public IActionResult Reject([FromBody] WfApproveInput parm)
         {
-            var userName = HttpContext.GetName();
-            _engine.Reject(parm.TaskId, parm.Opinion, userName);
+            var userId = HttpContext.GetUId();
+            _engine.Reject(parm.TaskId, parm.Opinion, userId);
             return SUCCESS(1);
         }
 
@@ -75,8 +75,8 @@ namespace ZR.Workflow.Controllers
         [Log(Title = "转办", BusinessType = BusinessType.UPDATE)]
         public IActionResult Transfer([FromBody] WfTransferInput parm)
         {
-            var userName = HttpContext.GetName();
-            _engine.Transfer(parm.TaskId, parm.TargetUser, parm.Opinion, userName);
+            var userId = HttpContext.GetUId();
+            _engine.Transfer(parm.TaskId, parm.TargetUserId, parm.Opinion, userId);
             return SUCCESS(1);
         }
 
@@ -88,8 +88,8 @@ namespace ZR.Workflow.Controllers
         [Log(Title = "加签", BusinessType = BusinessType.UPDATE)]
         public IActionResult AddSign([FromBody] WfAddSignInput parm)
         {
-            var userName = HttpContext.GetName();
-            _engine.AddSign(parm.TaskId, parm.Users, parm.Opinion, userName);
+            var userId = HttpContext.GetUId();
+            _engine.AddSign(parm.TaskId, parm.UserIds, parm.Opinion, userId);
             return SUCCESS(1);
         }
 
@@ -124,7 +124,7 @@ namespace ZR.Workflow.Controllers
         [Log(Title = "批量审批通过", BusinessType = BusinessType.UPDATE)]
         public IActionResult BatchApprove([FromBody] WfBatchApproveInput parm)
         {
-            var userName = HttpContext.GetName();
+            var userId = HttpContext.GetUId();
             var ids = Tools.SpitLongArrary(parm.TaskIds);
             int success = 0;
             var failed = new List<string>();
@@ -132,7 +132,7 @@ namespace ZR.Workflow.Controllers
             {
                 try
                 {
-                    _engine.Approve(taskId, parm.Opinion, userName);
+                    _engine.Approve(taskId, parm.Opinion, userId);
                     success++;
                 }
                 catch (Exception ex)

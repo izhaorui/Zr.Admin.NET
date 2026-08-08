@@ -256,10 +256,10 @@ namespace ZR.Workflow.Service
         /// <param name="formContent">表单内容 JSON</param>
         /// <param name="attachment">附件路径（逗号分隔）</param>
         /// <param name="title">申请标题；空则保留实例原标题</param>
-        /// <param name="userName">操作人登录名（须为原申请人，由 Engine 校验）</param>
-        public void Resubmit(long instanceId, string formContent, string attachment, string title, string userName)
+        /// <param name="userId">操作人 userId（须为原申请人 ApplyUserId，由 Engine 校验）</param>
+        public void Resubmit(long instanceId, string formContent, string attachment, string title, long userId)
         {
-            _engine.Resubmit(instanceId, formContent, attachment, title, userName);
+            _engine.Resubmit(instanceId, formContent, attachment, title, userId);
         }
 
         #endregion

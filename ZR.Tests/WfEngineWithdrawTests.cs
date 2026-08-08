@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Infrastructure;
 using Moq;
@@ -44,9 +44,9 @@ namespace ZR.Tests
         public void Withdraw_申请人撤回_置撤回并跳过待办()
         {
             var flowId = BuildFlow(out var node1, out _);
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
 
-            _engine.Withdraw(id, "alice");
+            _engine.Withdraw(id, _db.Uid("alice"));
 
             var saved = _db.Db.Queryable<WfFlowInstance>().InSingle(id);
             Assert.Equal((int)WfInstanceStatus.Withdrawn, saved.Status);
@@ -60,9 +60,9 @@ namespace ZR.Tests
         public void Withdraw_非申请人_抛仅申请人可撤回()
         {
             var flowId = BuildFlow(out _, out _);
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
 
-            var ex = Assert.Throws<CustomException>(() => _engine.Withdraw(id, "bob"));
+            var ex = Assert.Throws<CustomException>(() => _engine.Withdraw(id, _db.Uid("bob")));
             Assert.Contains("仅申请人可撤回", ex.Message);
         }
 
@@ -71,10 +71,10 @@ namespace ZR.Tests
         {
             var flowId = _db.AddDefinition("WAPPROVED", "已通过");
             var node1 = _db.AddNode(flowId, "审批", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uids("zhangsan"), 1);
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
-            _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", "zhangsan");
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
+            _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", _db.Uid("zhangsan"));
 
-            var ex = Assert.Throws<CustomException>(() => _engine.Withdraw(id, "alice"));
+            var ex = Assert.Throws<CustomException>(() => _engine.Withdraw(id, _db.Uid("alice")));
             Assert.Contains("当前状态不可撤回", ex.Message);
         }
 
@@ -84,11 +84,11 @@ namespace ZR.Tests
             var flowId = _db.AddDefinition("WAND", "会签撤回");
             var node1 = _db.AddNode(flowId, "会签", (int)WfNodeType.Audit, (int)WfApproverType.User, $"{_db.Uids("zhangsan")},{_db.Uids("lisi")}", 1, (int)WfSignType.And);
             var node2 = _db.AddNode(flowId, "二级", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uids("wangwu"), 2);
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
 
-            _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", "zhangsan");
+            _engine.Approve(GetTask(id, node1, "zhangsan").TaskId, "同意", _db.Uid("zhangsan"));
 
-            var ex = Assert.Throws<CustomException>(() => _engine.Withdraw(id, "alice"));
+            var ex = Assert.Throws<CustomException>(() => _engine.Withdraw(id, _db.Uid("alice")));
             Assert.Contains("当前节点已审批，无法撤回", ex.Message);
         }
     }

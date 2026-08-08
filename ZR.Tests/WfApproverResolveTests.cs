@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Infrastructure;
@@ -35,7 +35,7 @@ namespace ZR.Tests
 
         private HashSet<string> StartAndGetAssignees(long flowId)
         {
-            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
             return _db.Db.Queryable<WfFlowTask>()
                 .Where(t => t.InstanceId == id)
                 .Select(t => t.Assignee)
@@ -143,7 +143,7 @@ namespace ZR.Tests
                 var flowId = _db.AddDefinition("DL_Empty", "部门负责人空");
                 _db.AddNode(flowId, "审批", (int)WfNodeType.Audit, (int)WfApproverType.DeptLeader, deptId.ToString(), 1);
 
-                var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice" });
+                var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
 
                 // 断言：流程不卡死——单节点流程在审批人缺失时自动跳过并直接通过（Status=Approved=1）
                 var status = _db.Db.Queryable<WfFlowInstance>().Where(i => i.InstanceId == id).Select(i => i.Status).First();

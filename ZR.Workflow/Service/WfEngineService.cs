@@ -18,6 +18,10 @@ namespace ZR.Workflow.Service
     /// "pre-flight 校验 → <see cref="RunInTx"/> 事务 → 状态/任务/记录 落库 → <see cref="ArriveNode"/> /
     /// <see cref="AdvanceToNext"/> 推进"模式。ArriveNode / AdvanceToNext 负责节点流转，
     /// 包含顺序、条件、并行分组、抄送、结束判定。
+    ///
+    /// 标识约定：公共入口的"人"一律用 <c>userId</c>（见 <see cref="IWfEngineService"/>）。鉴权比对走
+    /// <c>WfFlowTask.AssigneeId</c> / <c>WfFlowInstance.ApplyUserId</c>，不再比对可变的 userName；
+    /// 展示用 userName / nickName 由 <see cref="LoadUser"/> 按 Id 查一次后快照落库。
     /// </summary>
     [AppService(ServiceType = typeof(IWfEngineService))]
     public class WfEngineService : BaseService<WfFlowInstance>, IWfEngineService
@@ -47,7 +51,7 @@ namespace ZR.Workflow.Service
                 instance.CurrentNodeIds = firstNode != null ? JsonConvert.SerializeObject(new[] { firstNode.NodeId }) : null;
                 instance = InsertReturnEntity(instance) ?? throw new CustomException("发起申请失败");
 
-                AddRecord(instance.InstanceId, null, null, instance.ApplyUser, (int)WfAction.Submit, "发起申请");
+                AddRecord(instance.InstanceId, null, null, ApplicantOf(instance), (int)WfAction.Submit, "发起申请");
 
                 var formValues = ParseFormValues(instance);
                 ArriveOrComplete(instance, firstNode, allNodes, linksBySource, linksByTarget, formValues);
@@ -59,11 +63,13 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 通过
         /// </summary>
-        public void Approve(long taskId, string opinion, string operatorName)
+        public void Approve(long taskId, string opinion, long operatorId)
         {
-            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorName);
+            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
             if (instance.Status != (int)WfInstanceStatus.Approval)
                 throw new CustomException("流程状态异常，无法审批");
+
+            var op = LoadUser(operatorId);
 
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var allNodes = LoadOrderedNodes(instance.FlowId);
@@ -86,15 +92,15 @@ namespace ZR.Workflow.Service
                         Opinion = opinion,
                         HandleTime = now,
                         Update_time = now,
-                        Update_by = operatorName
+                        Update_by = op.UserName
                     })
                     .Where(t => t.TaskId == taskId).ExecuteCommand();
 
-                AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.Approve, opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Approve, opinion);
 
                 if (!IsNodeComplete(instance.InstanceId, node)) return;
 
-                NotifyUsers(new[] { instance.ApplyUser }, $"【审批进度】{instance.Title} 的「{node.NodeName}」节点已通过。");
+                NotifyUser(instance.ApplyUserId, $"【审批进度】{instance.Title} 的「{node.NodeName}」节点已通过。");
 
                 // 本节点已完成：跳过同节点其余待办，避免或签/并发下重复流转下一节点
                 Context.Updateable<WfFlowTask>()
@@ -110,9 +116,10 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 驳回
         /// </summary>
-        public void Reject(long taskId, string opinion, string operatorName)
+        public void Reject(long taskId, string opinion, long operatorId)
         {
-            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorName);
+            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
+            var op = LoadUser(operatorId);
 
             RunInTx(() =>
             {
@@ -125,13 +132,13 @@ namespace ZR.Workflow.Service
                         Opinion = opinion,
                         HandleTime = now,
                         Update_time = now,
-                        Update_by = operatorName
+                        Update_by = op.UserName
                     })
                     .Where(t => t.TaskId == taskId).ExecuteCommand();
 
-                AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.Reject, opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Reject, opinion);
 
-                NotifyUsers(new[] { instance.ApplyUser }, $"【审批驳回】{instance.Title} 被 {operatorName} 驳回{(string.IsNullOrEmpty(opinion) ? "" : "：" + opinion)}");
+                NotifyUser(instance.ApplyUserId, $"【审批驳回】{instance.Title} 被 {op.NickName} 驳回{(string.IsNullOrEmpty(opinion) ? "" : "：" + opinion)}");
 
                 // 驳回：保留 CurrentNodeId 指向被驳回的节点（详情页/重新提交需要展示"卡在哪一步"）
                 instance.Status = (int)WfInstanceStatus.Rejected;
@@ -148,15 +155,16 @@ namespace ZR.Workflow.Service
         /// 重新提交：驳回后由申请人修改内容再次发起，实例回到首节点重新审批。
         /// 历史审批任务与记录保留作为轨迹；仅当实例处于驳回状态时可操作。
         /// </summary>
-        public void Resubmit(long instanceId, string formContent, string attachment, string title, string operatorName)
+        public void Resubmit(long instanceId, string formContent, string attachment, string title, long operatorId)
         {
             var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
                 ?? throw new CustomException("流程实例不存在");
-            if (instance.ApplyUser != operatorName)
+            if (instance.ApplyUserId != operatorId)
                 throw new CustomException("仅申请人可重新提交");
             if (instance.Status != (int)WfInstanceStatus.Rejected)
                 throw new CustomException("当前状态不可重新提交");
 
+            var op = LoadUser(operatorId);
             var (def, allNodes, linksBySource, linksByTarget, firstNode) = PrepareStartFlow(instance);
 
             RunInTx(() =>
@@ -169,12 +177,12 @@ namespace ZR.Workflow.Service
                 instance.Attachment = attachment;
                 if (!string.IsNullOrEmpty(title)) instance.Title = title;
                 instance.Update_time = now;
-                instance.Update_by = operatorName;
+                instance.Update_by = op.UserName;
                 Context.Updateable(instance)
                     .UpdateColumns(i => new { i.Status, i.CurrentNodeId, i.FormContent, i.Attachment, i.Title, i.Update_time, i.Update_by })
                     .ExecuteCommand();
 
-                AddRecord(instanceId, null, null, operatorName, (int)WfAction.Resubmit, "重新提交");
+                AddRecord(instanceId, null, null, op, (int)WfAction.Resubmit, "重新提交");
 
                 var formValues = ParseFormValues(instance);
                 ArriveOrComplete(instance, firstNode, allNodes, linksBySource, linksByTarget, formValues);
@@ -184,14 +192,16 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 撤回
         /// </summary>
-        public void Withdraw(long instanceId, string operatorName)
+        public void Withdraw(long instanceId, long operatorId)
         {
             var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
                 ?? throw new CustomException("流程实例不存在");
-            if (instance.ApplyUser != operatorName)
+            if (instance.ApplyUserId != operatorId)
                 throw new CustomException("仅申请人可撤回");
             if (instance.Status != (int)WfInstanceStatus.Approval)
                 throw new CustomException("当前状态不可撤回");
+
+            var op = LoadUser(operatorId);
 
             // 仅当前审批节点尚未被处理时允许撤回；已被审批则流程已进入下一环节，不可撤回。
             // 放在事务外做预检，使业务校验异常直接抛出（不会被包裹成通用的"撤回失败"）。
@@ -204,9 +214,10 @@ namespace ZR.Workflow.Service
 
             RunInTx(() =>
             {
-                var pendingAssignees = Context.Queryable<WfFlowTask>()
-                    .Where(t => t.InstanceId == instanceId && t.Status == (int)WfTaskStatus.Pending)
-                    .Select(t => t.Assignee)
+                // 待办审批人直接取 AssigneeId（userId），无需再按登录名反查用户表
+                var pendingAssigneeIds = Context.Queryable<WfFlowTask>()
+                    .Where(t => t.InstanceId == instanceId && t.Status == (int)WfTaskStatus.Pending && t.AssigneeId != null)
+                    .Select(t => t.AssigneeId)
                     .ToList();
 
                 Context.Updateable<WfFlowTask>()
@@ -214,9 +225,9 @@ namespace ZR.Workflow.Service
                     .Where(t => t.InstanceId == instanceId && t.Status == (int)WfTaskStatus.Pending)
                     .ExecuteCommand();
 
-                AddRecord(instanceId, null, null, operatorName, (int)WfAction.Withdraw, "撤回申请");
+                AddRecord(instanceId, null, null, op, (int)WfAction.Withdraw, "撤回申请");
 
-                NotifyUsers(pendingAssignees, $"【审批撤回】{instance.Title} 已被申请人撤回。");
+                NotifyUserIds(pendingAssigneeIds, $"【审批撤回】{instance.Title} 已被申请人撤回。");
 
                 instance.Status = (int)WfInstanceStatus.Withdrawn;
                 Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
@@ -226,71 +237,77 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 转办：将当前待办转移给目标用户（节点不变，由目标用户接手）
         /// </summary>
-        public void Transfer(long taskId, string targetUser, string opinion, string operatorName)
+        public void Transfer(long taskId, long targetUserId, string opinion, long operatorId)
         {
-            if (string.IsNullOrEmpty(targetUser)) throw new CustomException("请选择转办人");
-            if (targetUser == operatorName) throw new CustomException("不能转办给自己");
+            if (targetUserId <= 0) throw new CustomException("请选择转办人");
+            if (targetUserId == operatorId) throw new CustomException("不能转办给自己");
 
-            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorName);
+            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
             if (instance.Status != (int)WfInstanceStatus.Approval)
                 throw new CustomException("流程状态异常，无法转办");
 
-            var targetUserEntity = Context.Queryable<SysUser>().First(u => u.UserName == targetUser);
-            var targetUserId = targetUserEntity?.UserId;
-            var targetNickName = targetUserEntity?.NickName;
+            var op = LoadUser(operatorId);
+            // 转办目标按 userId 取用户；不存在则直接拒绝（避免把任务转给一个无效 Id 造成流程卡死）
+            var target = Context.Queryable<SysUser>().First(u => u.UserId == targetUserId)
+                ?? throw new CustomException("转办人不存在");
+            var targetName = target.UserName;
+            var targetNickName = target.NickName;
             RunInTx(() =>
             {
                 var now = DateTime.Now;
                 Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
-                        Assignee = targetUser,
+                        Assignee = targetName,
                         AssigneeId = targetUserId,
                         AssigneeNickName = targetNickName,
                         Opinion = opinion,
                         Action = (int)WfAction.Transfer,
                         Update_time = now,
-                        Update_by = operatorName
+                        Update_by = op.UserName
                     })
                     .Where(t => t.TaskId == taskId).ExecuteCommand();
 
-                var recordOpinion = "转办给 " + targetUser + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
-                AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.Transfer, recordOpinion);
+                var recordOpinion = "转办给 " + targetNickName + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Transfer, recordOpinion);
 
-                NotifyUsers(new[] { targetUser }, $"【审批转办】{instance.Title} 由 {operatorName} 转办给您处理。");
+                Notify(targetUserId, $"【审批转办】{instance.Title} 由 {op.NickName} 转办给您处理。");
             }, "转办失败");
         }
 
         /// <summary>
         /// 加签：在当前审批节点追加额外审批人，新增待办纳入节点完成判定
         /// </summary>
-        public void AddSign(long taskId, List<string> users, string opinion, string operatorName)
+        public void AddSign(long taskId, List<long> userIds, string opinion, long operatorId)
         {
-            if (users == null || users.Count == 0) throw new CustomException("请选择加签人");
+            if (userIds == null || userIds.Count == 0) throw new CustomException("请选择加签人");
 
-            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorName);
+            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
             if (instance.Status != (int)WfInstanceStatus.Approval)
                 throw new CustomException("流程状态异常，无法加签");
 
-            var existing = Context.Queryable<WfFlowTask>()
-                .Where(t => t.InstanceId == task.InstanceId && t.NodeId == task.NodeId)
-                .Select(t => t.Assignee)
+            var op = LoadUser(operatorId);
+            // 去重按 AssigneeId（userId）比对，不再按可变的登录名
+            var existingIds = Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == task.InstanceId && t.NodeId == task.NodeId && t.AssigneeId != null)
+                .Select(t => t.AssigneeId)
                 .ToList();
-            var toAdd = users.Where(u => !string.IsNullOrEmpty(u) && !existing.Contains(u))
+            var toAdd = userIds.Where(id => id > 0 && !existingIds.Contains(id))
                 .Distinct().ToList();
             if (toAdd.Count == 0) throw new CustomException("加签人已在该节点审批人中");
 
-            // 加签人前端传 userName，统一解析为 ResolvedApprover（带 UserId）再落库
-            var toAddApprovers = ResolveByUserNames(toAdd);
+            // 加签人前端传 userId，统一解析为 ResolvedApprover（带 UserName/NickName 快照）再落库
+            var toAddApprovers = ResolveByUserIds(toAdd);
+            if (toAddApprovers.Count == 0) throw new CustomException("加签人不存在");
 
             RunInTx(() =>
             {
-                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, toAddApprovers, (int)WfTaskStatus.Pending, operatorName);
+                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, toAddApprovers, (int)WfTaskStatus.Pending, op.UserName);
 
-                NotifyUsers(toAddApprovers, $"【审批加签】{instance.Title} 由 {operatorName} 邀请您加签审批。");
+                NotifyUsers(toAddApprovers, $"【审批加签】{instance.Title} 由 {op.NickName} 邀请您加签审批。");
 
-                var recordOpinion = "加签：" + string.Join(",", toAdd) + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
-                AddRecord(instance.InstanceId, taskId, task.NodeId, operatorName, (int)WfAction.AddSign, recordOpinion);
+                var recordOpinion = "加签：" + string.Join(",", toAddApprovers.Select(a => a.NickName)) + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.AddSign, recordOpinion);
             }, "加签失败");
         }
 
@@ -314,19 +331,33 @@ namespace ZR.Workflow.Service
         /// 加载待办任务 + 关联实例。统一做"任务存在 / 状态待办 / 审批人匹配"三项校验，
         /// instance 存在性校验一并处理；instance 业务状态校验（!=Approval）由调用方按场景 message 决定
         /// （如 Approve 用"无法审批"、Transfer 用"无法转办"、AddSign 用"无法加签"；Reject 不校验）。
+        ///
+        /// 审批权限按 <c>AssigneeId</c>（userId）比对：userName 可被改名，用它鉴权会在改名后误判无权限。
         /// </summary>
-        private (WfFlowTask task, WfFlowInstance instance) LoadPendingTaskAndInstance(long taskId, string operatorName)
+        private (WfFlowTask task, WfFlowInstance instance) LoadPendingTaskAndInstance(long taskId, long operatorId)
         {
             var task = Context.Queryable<WfFlowTask>().First(t => t.TaskId == taskId)
                 ?? throw new CustomException("审批任务不存在");
             if (task.Status != (int)WfTaskStatus.Pending)
                 throw new CustomException("该任务已处理");
-            if (task.Assignee != operatorName)
+            if (task.AssigneeId != operatorId)
                 throw new CustomException("无审批权限");
 
             var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == task.InstanceId)
                 ?? throw new CustomException("流程实例不存在");
             return (task, instance);
+        }
+
+        /// <summary>
+        /// 按 userId 取操作人（登录名 + 昵称快照）。公共入口只收 userId，展示用名称在此一次性取出，
+        /// 后续落 <c>Update_by</c> / 记录快照 / 通知文案直接复用，避免各处重复查库。
+        /// 用户不存在时抛业务异常（Token 有效但用户已被删除的边界）。
+        /// </summary>
+        private ResolvedApprover LoadUser(long userId)
+        {
+            var u = Context.Queryable<SysUser>().First(x => x.UserId == userId)
+                ?? throw new CustomException("操作用户不存在");
+            return new ResolvedApprover(u.UserId, u.UserName, u.NickName);
         }
 
         /// <summary>
@@ -961,17 +992,25 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 按 userName 列表解析为 ResolvedApprover（加签等以 userName 传入的场景）
+        /// 按 userId 列表解析为 ResolvedApprover（加签等以 userId 传入的场景）。
+        /// 不存在的 Id 静默丢弃，由调用方判断结果是否为空。
         /// </summary>
-        private List<ResolvedApprover> ResolveByUserNames(List<string> userNames)
+        private List<ResolvedApprover> ResolveByUserIds(List<long> userIds)
         {
-            if (userNames == null || userNames.Count == 0) return new List<ResolvedApprover>();
-            var names = userNames.Where(n => !string.IsNullOrEmpty(n)).Select(n => n.Trim()).Distinct().ToList();
-            if (names.Count == 0) return new List<ResolvedApprover>();
-            return Context.Queryable<SysUser>().Where(u => names.Contains(u.UserName))
+            if (userIds == null || userIds.Count == 0) return new List<ResolvedApprover>();
+            var ids = userIds.Where(id => id > 0).Distinct().ToList();
+            if (ids.Count == 0) return new List<ResolvedApprover>();
+            return Context.Queryable<SysUser>().Where(u => ids.Contains(u.UserId))
                 .Select(u => new ResolvedApprover(u.UserId, u.UserName, u.NickName))
                 .ToList();
         }
+
+        /// <summary>
+        /// 由实例上的申请人快照（ApplyUserId / ApplyUser / ApplyNickName）构造操作人，
+        /// 用于"发起 / 自动跳过"这类以申请人名义落记录的场景，无需再查用户表。
+        /// </summary>
+        private static ResolvedApprover ApplicantOf(WfFlowInstance instance)
+            => new(instance.ApplyUserId ?? 0, instance.ApplyUser, instance.ApplyNickName);
 
         /// <summary>
         /// 批量创建任务（待办/抄送），替代逐条 ExecuteCommand 以减少数据库往返
@@ -1015,7 +1054,7 @@ namespace ZR.Workflow.Service
                 Create_time = DateTime.Now,
                 Create_by = instance.ApplyUser
             }).ExecuteCommand();
-            AddRecord(instance.InstanceId, null, node.NodeId, instance.ApplyUser, (int)WfAction.AutoSkip, reason, null, instance.ApplyUserId, instance.ApplyNickName);
+            AddRecord(instance.InstanceId, null, node.NodeId, ApplicantOf(instance), (int)WfAction.AutoSkip, reason);
         }
 
         /// <summary>
@@ -1043,35 +1082,29 @@ namespace ZR.Workflow.Service
             // 每个收件人落一条抄送记录并写入各自的 OperatorId（userId），便于按 userId 精确匹配（抄送给我/数据面板）
             foreach (var c in ccList)
             {
-                AddRecord(instance.InstanceId, null, node.NodeId, c.UserName, (int)WfAction.Cc, "抄送", null, c.UserId, c.NickName);
+                AddRecord(instance.InstanceId, null, node.NodeId, c, (int)WfAction.Cc, "抄送");
             }
             NotifyUsers(ccList, $"【审批抄送】{instance.Title}（{instance.FlowName}）抄送知会，请知悉。");
         }
 
         /// <summary>
-        /// 统一创建流程操作记录
+        /// 统一创建流程操作记录。操作人以 <see cref="ResolvedApprover"/>（userId + 名称快照）传入，
+        /// 调用方已持有完整身份，此处不再按登录名反查用户表。
         /// </summary>
-        private void AddRecord(long instanceId, long? taskId, long? nodeId, string operatorName, int action, string opinion, DateTime? createTime = null, long? operatorId = null, string operatorNick = null)
+        private void AddRecord(long instanceId, long? taskId, long? nodeId, ResolvedApprover op, int action, string opinion, DateTime? createTime = null)
         {
-            // 未显式提供时按登录名反查用户表取 Id/昵称；已提供（如抄送多收件人）则保留快照值
-            if (!operatorId.HasValue || string.IsNullOrEmpty(operatorNick))
-            {
-                var op = Context.Queryable<SysUser>().First(u => u.UserName == operatorName);
-                if (!operatorId.HasValue) operatorId = op?.UserId;
-                if (string.IsNullOrEmpty(operatorNick)) operatorNick = op?.NickName;
-            }
             Context.Insertable(new WfFlowRecord
             {
                 InstanceId = instanceId,
                 TaskId = taskId,
                 NodeId = nodeId,
-                Operator = operatorName,
-                OperatorId = operatorId,
-                OperatorNickName = operatorNick,
+                Operator = op.UserName,
+                OperatorId = op.UserId,
+                OperatorNickName = op.NickName,
                 Action = action,
                 Opinion = opinion,
                 Create_time = createTime ?? DateTime.Now,
-                Create_by = operatorName
+                Create_by = op.UserName
             }).ExecuteCommand();
         }
 
@@ -1095,15 +1128,21 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 按用户名批量通知（用于通知发起人、转办/加签目标等以 userName 标识的场景）
+        /// 按 userId 集合批量通知（如撤回时通知全部待办审批人）。null 元素与重复项自动忽略。
         /// </summary>
-        private void NotifyUsers(IEnumerable<string> userNames, string content)
+        private void NotifyUserIds(IEnumerable<long?> userIds, string content)
         {
-            if (userNames == null) return;
-            var names = userNames.SelectMany(n => n.SplitByComma()).ToList();
-            if (names.Count == 0) return;
-            var ids = Context.Queryable<SysUser>().Where(u => names.Contains(u.UserName)).Select(u => u.UserId).ToList();
-            foreach (var id in ids) Notify(id, content);
+            if (userIds == null) return;
+            foreach (var id in userIds.Where(i => i.HasValue && i.Value > 0).Select(i => i.Value).Distinct())
+                Notify(id, content);
+        }
+
+        /// <summary>
+        /// 通知单个用户（userId 为空/非法时静默跳过，如存量实例缺 ApplyUserId）。
+        /// </summary>
+        private void NotifyUser(long? userId, string content)
+        {
+            if (userId.HasValue && userId.Value > 0) Notify(userId.Value, content);
         }
 
         #endregion

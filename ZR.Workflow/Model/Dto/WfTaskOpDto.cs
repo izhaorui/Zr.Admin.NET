@@ -8,8 +8,8 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>任务Id</summary>
         public long TaskId { get; set; }
 
-        /// <summary>转办目标用户</summary>
-        public string TargetUser { get; set; }
+        /// <summary>转办目标用户 userId（稳定标识，不使用可变的登录名）</summary>
+        public long TargetUserId { get; set; }
 
         /// <summary>转办说明</summary>
         public string Opinion { get; set; }
@@ -23,8 +23,8 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>任务Id</summary>
         public long TaskId { get; set; }
 
-        /// <summary>加签用户列表</summary>
-        public List<string> Users { get; set; } = new();
+        /// <summary>加签用户 userId 列表（稳定标识，不使用可变的登录名）</summary>
+        public List<long> UserIds { get; set; } = new();
 
         /// <summary>加签说明</summary>
         public string Opinion { get; set; }

@@ -61,8 +61,8 @@ namespace ZR.Workflow.Controllers
         [Log(Title = "撤回申请", BusinessType = BusinessType.UPDATE)]
         public IActionResult Withdraw(long instanceId)
         {
-            var userName = HttpContext.GetName();
-            _engine.Withdraw(instanceId, userName);
+            var userId = HttpContext.GetUId();
+            _engine.Withdraw(instanceId, userId);
             return SUCCESS(1);
         }
 
@@ -75,9 +75,9 @@ namespace ZR.Workflow.Controllers
         public IActionResult Resubmit(long instanceId, [FromBody] WfFlowInstanceDto parm)
         {
             if (parm == null) return ToResponse(ResultCode.PARAM_ERROR, "参数错误");
-            var userName = HttpContext.GetName();
+            var userId = HttpContext.GetUId();
             // 只透传三个可编辑字段，避免前端携带整 DTO 时的歧义（Status/InstanceId 等后端字段不在变更范围内）
-            _service.Resubmit(instanceId, parm.FormContent, parm.Attachment, parm.Title, userName);
+            _service.Resubmit(instanceId, parm.FormContent, parm.Attachment, parm.Title, userId);
             return SUCCESS(1);
         }
 
