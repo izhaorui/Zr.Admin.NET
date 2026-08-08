@@ -76,6 +76,13 @@
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public long DeptId { get; set; }
+
+        /// <summary>
+        /// 上级主管用户Id（仅存 Id，昵称展示时实时回查，避免改名后数据不一致）
+        /// </summary>
+        [SugarColumn(ColumnDescription = "上级主管用户Id", IsNullable = true)]
+        public long? LeaderId { get; set; }
+
         public string Province { get; set; }
         public string City { get; set; }
         /// <summary>

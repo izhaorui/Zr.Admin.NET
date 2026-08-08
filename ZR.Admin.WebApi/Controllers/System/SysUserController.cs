@@ -126,6 +126,10 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult UpdateUser([FromBody] SysUserDto parm)
         {
             if (parm == null || parm.UserId <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
+            if (parm.LeaderId != null && parm.LeaderId == parm.UserId)
+            {
+                return ToResponse(ApiResult.Error("上级主管不能是用户本人"));
+            }
             parm = parm.ToUpdate();
             int upResult = UserService.UpdateUser(parm);
 

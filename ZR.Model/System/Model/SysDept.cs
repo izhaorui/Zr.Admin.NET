@@ -36,10 +36,18 @@
         public int OrderNum { get; set; }
 
         /// <summary>
-        /// 负责人
+        /// 负责人（昵称快照，多个以逗号分隔）
+        /// 注意：存量库该列为 varchar(30)，自动迁移只补列不改类型，
+        /// 故此处保持 30 不变，负责人数量过多时由前端限制，避免截断报错。
         /// </summary>
         [SugarColumn(Length = 30)]
         public string Leader { get; set; }
+
+        /// <summary>
+        /// 负责人用户Id集合，多个以逗号分隔
+        /// </summary>
+        [SugarColumn(Length = 500, ColumnDescription = "负责人用户Id集合", IsNullable = true)]
+        public string LeaderIds { get; set; }
 
         /// <summary>
         /// 联系电话

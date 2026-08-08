@@ -20,6 +20,11 @@
 
         public string Leader { get; set; }
 
+        /// <summary>
+        /// 负责人用户Id集合，多个以逗号分隔
+        /// </summary>
+        public string LeaderIds { get; set; }
+
         public string Phone { get; set; }
 
         public string Email { get; set; }

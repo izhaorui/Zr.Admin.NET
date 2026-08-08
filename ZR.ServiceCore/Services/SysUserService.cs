@@ -59,11 +59,13 @@ namespace ZR.ServiceCore.Services
             }
             var query = Queryable()
                 .LeftJoin<SysDept>((u, dept) => u.DeptId == dept.DeptId)
+                .LeftJoin<SysUser>((u, dept, leader) => u.LeaderId == leader.UserId)
                 .Where(exp.ToExpression())
-                .Select((u, dept) => new SysUserDto
+                .Select((u, dept, leader) => new SysUserDto
                 {
                     UserId = u.UserId.SelectAll(),
                     DeptName = dept.DeptName,
+                    LeaderName = leader.NickName,
                 });
             var list = query.ToPage(pager);
             list.Result.MaskField(
@@ -90,6 +92,13 @@ namespace ZR.ServiceCore.Services
             var user = userModel.Adapt<SysUserDto>();
             if (user != null && user.UserId > 0)
             {
+                if (user.LeaderId != null && user.LeaderId > 0)
+                {
+                    user.LeaderName = Queryable()
+                        .Where(l => l.UserId == user.LeaderId)
+                        .Select(l => l.NickName)
+                        .First();
+                }
                 user.Roles = RoleService.SelectUserRoleListByUserId(userId);
                 user.RoleIds = user.Roles.Select(x => x.RoleId).ToArray();
 
@@ -208,6 +217,7 @@ namespace ZR.ServiceCore.Services
                 t.Email,
                 t.Phonenumber,
                 t.DeptId,
+                t.LeaderId,
                 t.Status,
                 t.Sex,
                 t.PostIds,

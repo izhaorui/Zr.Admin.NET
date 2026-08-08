@@ -35,6 +35,16 @@
         /// </summary>
         public long DeptId { get; set; }
 
+        /// <summary>
+        /// 上级主管用户Id
+        /// </summary>
+        public long? LeaderId { get; set; }
+
+        /// <summary>
+        /// 上级主管昵称（查询时实时回查填充，仅用于展示，不入库）
+        /// </summary>
+        public string LeaderName { get; set; }
+
         public string WelcomeContent { get; set; }
 
         /// <summary>
