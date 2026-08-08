@@ -31,7 +31,7 @@ namespace ZR.Workflow.Model
         public int NodeType { get; set; } = 1;
 
         /// <summary>
-        /// 审批人类型 0=指定用户 1=指定角色 2=指定部门 3=按表单字段
+        /// 审批人类型 0=指定用户 1=指定角色 2=指定部门 3=按表单字段 4=部门负责人 5=发起人主管
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public int ApproverType { get; set; } = 0;

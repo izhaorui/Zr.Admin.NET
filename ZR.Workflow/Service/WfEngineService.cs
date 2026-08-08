@@ -579,10 +579,18 @@ namespace ZR.Workflow.Service
                         }
                         else
                         {
-                            var nodeApprovers = ResolveApprovers(g, formValues);
-                            BatchCreateTasks(instance.InstanceId, g.NodeId, g.NodeName, nodeApprovers, (int)WfTaskStatus.Pending, instance.ApplyUser);
-                            NotifyUsers(nodeApprovers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{g.NodeName}」待您审批。");
-                            AddActiveNodeId(instance, g.NodeId);
+                            var nodeApprovers = ResolveApprovers(g, formValues, instance.ApplyUserId);
+                            if (nodeApprovers.Count == 0)
+                            {
+                                // 并行成员审批人为空：留痕自动跳过，不加入活动集（视为已完成，由 IsNodeComplete 的 !tasks.Any() 判定完成）
+                                CreateAutoSkipTask(instance, g, "审批人为空，节点自动跳过");
+                            }
+                            else
+                            {
+                                BatchCreateTasks(instance.InstanceId, g.NodeId, g.NodeName, nodeApprovers, (int)WfTaskStatus.Pending, instance.ApplyUser);
+                                NotifyUsers(nodeApprovers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{g.NodeName}」待您审批。");
+                                AddActiveNodeId(instance, g.NodeId);
+                            }
                         }
                     }
 
@@ -617,9 +625,17 @@ namespace ZR.Workflow.Service
             // 审批节点
             instance.CurrentNodeId = node.NodeId;
             Context.Updateable(instance).UpdateColumns(i => new { i.CurrentNodeId }).ExecuteCommand();
-            AddActiveNodeId(instance, node.NodeId);
 
-            var approvers = ResolveApprovers(node, formValues);
+            var approvers = ResolveApprovers(node, formValues, instance.ApplyUserId);
+            if (approvers.Count == 0)
+            {
+                // 审批人为空（如部门未配置负责人 / 发起人无主管 / 指定用户已删除）：参考业界「节点自动通过」策略，
+                // 生成一条 Skipped 留痕任务并立即推进，避免流程卡死在无待办的节点上。
+                CreateAutoSkipTask(instance, node, "审批人为空，节点自动跳过");
+                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
+                return;
+            }
+            AddActiveNodeId(instance, node.NodeId);
             BatchCreateTasks(instance.InstanceId, node.NodeId, node.NodeName, approvers, (int)WfTaskStatus.Pending, instance.ApplyUser);
             NotifyUsers(approvers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」待您审批。");
             SyncActiveNodeId(instance);
@@ -855,10 +871,11 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 解析节点审批人列表，统一返回 (UserId, UserName, NickName)。
         /// 定义态存的是稳定标识：ApproverType=0/指定用户存 userId；
-        /// =1 角色Id；=2 部门Id；=3 表单字段 key，字段值为逗号分隔的 userId。
+        /// =1 角色Id；=2 部门Id；=3 表单字段 key，字段值为逗号分隔的 userId；
+        /// =4 部门负责人（ApproverId 存部门Id，取部门 LeaderIds）；=5 发起人主管（取流程发起人 LeaderId）。
         /// 所有分支最终都查 SysUser 得到 UserId，运行态任务/记录直接用 UserId，避免 userName 变更失效。
         /// </summary>
-        private List<ResolvedApprover> ResolveApprovers(WfFlowNode node, Dictionary<string, string> formValues)
+        private List<ResolvedApprover> ResolveApprovers(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId = null)
         {
             var ids = (node.ApproverId ?? "").SplitByComma();
 
@@ -899,6 +916,37 @@ namespace ZR.Workflow.Service
                             .ToList();
                         if (userIds.Count == 0) return new List<ResolvedApprover>();
                         users = Context.Queryable<SysUser>().Where(u => userIds.Contains(u.UserId)).Distinct().ToList();
+                        break;
+                    }
+                case (int)WfApproverType.DeptLeader:
+                    {
+                        // 部门负责人：ApproverId 存部门Id（逗号分隔），取这些部门 LeaderIds 中的 userId
+                        var deptIds = ids.Select(s => long.TryParse(s, out var v) ? v : (long?)null).Where(v => v.HasValue).Select(v => v.Value).ToList();
+                        if (deptIds.Count == 0) return new List<ResolvedApprover>();
+                        var leaderIdStrs = Context.Queryable<SysDept>()
+                            .Where(d => deptIds.Contains(d.DeptId))
+                            .Select(d => d.LeaderIds)
+                            .ToList()
+                            .Where(s => !string.IsNullOrWhiteSpace(s))
+                            .SelectMany(s => s.SplitByComma())
+                            .Where(s => long.TryParse(s, out var id) && id > 0)
+                            .Select(s => long.Parse(s))
+                            .Distinct()
+                            .ToList();
+                        if (leaderIdStrs.Count == 0) return new List<ResolvedApprover>();
+                        users = Context.Queryable<SysUser>().Where(u => leaderIdStrs.Contains(u.UserId)).Distinct().ToList();
+                        break;
+                    }
+                case (int)WfApproverType.ApplyLeader:
+                    {
+                        // 发起人主管：取流程发起人的 LeaderId（再查一次得到主管用户）
+                        if (applyUserId == null || applyUserId <= 0) return new List<ResolvedApprover>();
+                        var leaderId = Context.Queryable<SysUser>()
+                            .Where(u => u.UserId == applyUserId)
+                            .Select(u => u.LeaderId)
+                            .First();
+                        if (leaderId == null || leaderId <= 0) return new List<ResolvedApprover>();
+                        users = Context.Queryable<SysUser>().Where(u => u.UserId == leaderId).Distinct().ToList();
                         break;
                     }
                 default: // 指定用户：ApproverId 存 userId（数字）
@@ -948,11 +996,34 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
+        /// 审批人为空时生成一条 Skipped 留痕任务 + 操作记录（节点自动通过）。
+        /// 用于部门未配置负责人 / 发起人无主管 / 指定用户已删除等场景，避免流程卡死在无待办的节点。
+        /// 参考业界（钉钉/飞书/Activiti）「审批人为空则节点自动跳过」策略，复用抄送节点的 Skipped 模式。
+        /// </summary>
+        private void CreateAutoSkipTask(WfFlowInstance instance, WfFlowNode node, string reason)
+        {
+            Context.Insertable(new WfFlowTask
+            {
+                InstanceId = instance.InstanceId,
+                NodeId = node.NodeId,
+                NodeName = node.NodeName,
+                Assignee = null,
+                AssigneeId = null,
+                AssigneeNickName = null,
+                Status = (int)WfTaskStatus.Skipped,
+                TaskType = (int)WfTaskType.Audit,
+                Create_time = DateTime.Now,
+                Create_by = instance.ApplyUser
+            }).ExecuteCommand();
+            AddRecord(instance.InstanceId, null, node.NodeId, instance.ApplyUser, (int)WfAction.AutoSkip, reason, null, instance.ApplyUserId, instance.ApplyNickName);
+        }
+
+        /// <summary>
         /// 生成抄送任务并落库抄送记录、推送通知；审批人昵称一并快照。
         /// </summary>
         private void CreateCcTask(WfFlowInstance instance, WfFlowNode node, Dictionary<string, string> formValues)
         {
-            var ccList = ResolveApprovers(node, formValues);
+            var ccList = ResolveApprovers(node, formValues, instance.ApplyUserId);
             var ccUsers = string.Join(",", ccList.Select(c => c.UserName));
             var ccUserIds = string.Join(",", ccList.Select(c => c.UserId));
             var ccNick = string.Join(",", ccList.Select(c => c.NickName));

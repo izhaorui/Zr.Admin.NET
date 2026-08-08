@@ -15,6 +15,12 @@ namespace ZR.Workflow.Enum
         Dept = 2,
 
         /// <summary>表单字段（ApproverId 存表单字段 key，字段值为 userId 逗号分隔，运行时从表单动态解析审批人）</summary>
-        Field = 3
+        Field = 3,
+
+        /// <summary>部门负责人（ApproverId 存部门Id 逗号分隔，解析该部门 LeaderIds 对应的用户）</summary>
+        DeptLeader = 4,
+
+        /// <summary>发起人主管（ApproverId 为空，运行时取流程发起人 SysUser.LeaderId 对应的用户）</summary>
+        ApplyLeader = 5
     }
 }

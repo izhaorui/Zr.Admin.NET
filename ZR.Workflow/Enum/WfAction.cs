@@ -20,6 +20,8 @@ namespace ZR.Workflow.Enum
         /// <summary>重新提交</summary>
         Resubmit = 6,
         /// <summary>抄送</summary>
-        Cc = 7
+        Cc = 7,
+        /// <summary>自动跳过（审批人为空时节点自动通过，仅留痕）</summary>
+        AutoSkip = 8
     }
 }
