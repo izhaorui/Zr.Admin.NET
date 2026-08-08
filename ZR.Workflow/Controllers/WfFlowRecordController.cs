@@ -1,6 +1,5 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
+using ZR.Common;
 
 namespace ZR.Workflow.Controllers
 {
@@ -47,7 +46,7 @@ namespace ZR.Workflow.Controllers
         public IActionResult Read([FromBody] WfReadInput parm)
         {
             var userId = HttpContext.GetUId();
-            _service.Read(ParseIds(parm.Ids), userId);
+            _service.Read([.. Tools.SpitLongArrary(parm.Ids)], userId);
             return SUCCESS(1);
         }
 
@@ -60,17 +59,6 @@ namespace ZR.Workflow.Controllers
         {
             var userId = HttpContext.GetUId();
             return SUCCESS(_service.GetUnreadCount(userId));
-        }
-
-        private static List<long> ParseIds(string ids)
-        {
-            var result = new List<long>();
-            if (string.IsNullOrEmpty(ids)) return result;
-            foreach (var s in ids.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            {
-                if (long.TryParse(s, out var v)) result.Add(v);
-            }
-            return result;
         }
     }
 }

@@ -79,13 +79,18 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 按 <c>CurrentNodeId</c> 关联 <see cref="WfFlowNode"/> 填充当前节点名称（已结束/无当前节点则不填）。
+        /// 按活动节点集合（<c>CurrentNodeIds</c>，空则回退 <c>CurrentNodeId</c>）关联 <see cref="WfFlowNode"/> 填充当前节点名称；
+        /// 并行网关下多个活动节点用"、"联接展示，已结束/无当前节点则不填。
         /// </summary>
         private void FillCurrentNode(List<WfFlowInstanceDto> list)
         {
             if (list == null || list.Count == 0) return;
-            var needIds = list.Where(x => x.CurrentNodeId.HasValue && string.IsNullOrEmpty(x.CurrentNodeName))
-                .Select(x => x.CurrentNodeId!.Value).Distinct().ToList();
+            // 一次性汇总全部实例需要兜底的节点 Id（含集合回退单值），批量查询避免 N+1
+            var needIds = list
+                .Where(x => string.IsNullOrEmpty(x.CurrentNodeName))
+                .SelectMany(x => ParseActiveNodeIds(x.CurrentNodeIds, x.CurrentNodeId))
+                .Distinct()
+                .ToList();
             if (needIds.Count == 0) return;
 
             var map = Context.Queryable<WfFlowNode>()
@@ -94,9 +99,12 @@ namespace ZR.Workflow.Service
                 .ToDictionary(n => n.NodeId, n => n.NodeName);
             foreach (var it in list)
             {
-                if (it.CurrentNodeId.HasValue && string.IsNullOrEmpty(it.CurrentNodeName)
-                    && map.TryGetValue(it.CurrentNodeId.Value, out var nn))
-                    it.CurrentNodeName = nn;
+                if (string.IsNullOrEmpty(it.CurrentNodeName))
+                {
+                    var ids = ParseActiveNodeIds(it.CurrentNodeIds, it.CurrentNodeId);
+                    var names = ids.Where(id => map.ContainsKey(id)).Select(id => map[id]);
+                    it.CurrentNodeName = string.Join("、", names);
+                }
             }
         }
 
@@ -131,12 +139,8 @@ namespace ZR.Workflow.Service
                 var approvers = (isInProgress
                         ? ownTasks.Where(t => t.Status == (int)WfTaskStatus.Pending)
                         : ownTasks)
-                    .Select(t => t.AssigneeNickName)
-                    .Where(a => !string.IsNullOrEmpty(a))
-                    .SelectMany(a => a.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    .Select(a => a.Trim())
-                    .Distinct()
-                    .ToList();
+                    .SelectMany(t => t.AssigneeNickName.SplitByComma())
+                    .Distinct();
                 it.Approvers = string.Join(",", approvers);
             }
         }
@@ -163,10 +167,18 @@ namespace ZR.Workflow.Service
                 var def = Context.Queryable<WfFlowDefinition>().First(d => d.FlowId == inst.FlowId);
                 if (def != null) dto.FlowName = def.FlowName;
             }
-            if (inst.CurrentNodeId.HasValue)
+            // 当前活动节点集合优先（并行网关下可能多个），按 nodeId 批量关联节点名，多个用"、"联接；
+            // 集合为空或不可解析时回退单值 CurrentNodeId 兼容旧数据
+            var activeNodeIds = ParseActiveNodeIds(inst.CurrentNodeIds, inst.CurrentNodeId);
+            if (activeNodeIds.Count > 0)
             {
-                var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == inst.CurrentNodeId);
-                if (node != null) dto.CurrentNodeName = node.NodeName;
+                var nodeMap = Context.Queryable<WfFlowNode>()
+                    .Where(n => activeNodeIds.Contains(n.NodeId))
+                    .ToList()
+                    .ToDictionary(n => n.NodeId, n => n.NodeName);
+                dto.CurrentNodeName = string.Join("、", activeNodeIds
+                    .Where(id => nodeMap.TryGetValue(id, out _))
+                    .Select(id => nodeMap[id]));
             }
             dto.Tasks = Context.Queryable<WfFlowTask>()
                 .Where(t => t.InstanceId == instanceId)
@@ -178,7 +190,39 @@ namespace ZR.Workflow.Service
                 .OrderBy(r => r.RecordId)
                 .ToList()
                 .Adapt<List<WfFlowRecordDto>>();
+            // 审批记录按 NodeId 关联节点名（节点名称展示用，WfFlowRecord 仅存 NodeId 不冗余名称）
+            var recordNodeIds = dto.Records
+                .Where(r => r.NodeId.HasValue)
+                .Select(r => r.NodeId.Value)
+                .Distinct()
+                .ToList();
+            if (recordNodeIds.Count > 0)
+            {
+                var nodes = Context.Queryable<WfFlowNode>()
+                    .Where(n => recordNodeIds.Contains(n.NodeId))
+                    .ToList();
+                var nodeNameMap = nodes.ToDictionary(n => n.NodeId, n => n.NodeName);
+                foreach (var r in dto.Records)
+                {
+                    if (r.NodeId.HasValue && nodeNameMap.TryGetValue(r.NodeId.Value, out var nn))
+                    {
+                        r.NodeName = nn;
+                    }
+                }
+            }
             return dto;
+        }
+
+        /// <summary>
+        /// 解析实例当前活动节点 Id 集合：优先读 <paramref name="currentNodeIds"/>（JSON 数组），
+        /// 空/不可解析时回退单值 <paramref name="currentNodeId"/>，去重后返回。
+        /// </summary>
+        private List<long> ParseActiveNodeIds(string currentNodeIds, long? currentNodeId)
+        {
+            // 集合为空时回退单值 CurrentNodeId（兼容无并行活动/存量实例）
+            if (string.IsNullOrWhiteSpace(currentNodeIds))
+                return currentNodeId.HasValue ? [currentNodeId.Value] : [];
+            return JsonConvert.DeserializeObject<long[]>(currentNodeIds)?.Distinct().ToList() ?? [];
         }
 
         #endregion
@@ -195,13 +239,12 @@ namespace ZR.Workflow.Service
         public long Start(WfFlowInstanceDto dto, LoginUser user)
         {
             var instance = dto.Adapt<WfFlowInstance>();
-            var now = DateTime.Now;
+            
             instance.ApplyUser = user.UserName;
             instance.ApplyUserId = user.UserId;
             instance.ApplyNickName = user.NickName;
             instance.Status = (int)WfInstanceStatus.Approval;
             instance.Create_by = user.UserName;
-            instance.Create_time = now;
             return _engine.Start(instance);
         }
 

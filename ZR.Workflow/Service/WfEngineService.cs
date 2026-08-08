@@ -860,12 +860,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         private List<ResolvedApprover> ResolveApprovers(WfFlowNode node, Dictionary<string, string> formValues)
         {
-            var ids = (node.ApproverId ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(a => a.Trim())
-                .Where(a => !string.IsNullOrEmpty(a))
-                .Distinct()
-                .ToList();
+            var ids = (node.ApproverId ?? "").SplitByComma();
 
             List<SysUser> users;
             switch (node.ApproverType)
@@ -897,8 +892,7 @@ namespace ZR.Workflow.Service
                         var key = node.ApproverId ?? "";
                         if (string.IsNullOrWhiteSpace(key) || formValues == null || !formValues.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
                             return new List<ResolvedApprover>();
-                        var userIds = raw.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(s => s.Trim())
+                        var userIds = raw.SplitByComma()
                             .Where(s => long.TryParse(s, out var id) && id > 0)
                             .Select(s => long.Parse(s))
                             .Distinct()
@@ -1035,12 +1029,7 @@ namespace ZR.Workflow.Service
         private void NotifyUsers(IEnumerable<string> userNames, string content)
         {
             if (userNames == null) return;
-            var names = userNames
-                .SelectMany(n => (n ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
-                .Select(n => n.Trim())
-                .Where(n => !string.IsNullOrEmpty(n))
-                .Distinct()
-                .ToList();
+            var names = userNames.SelectMany(n => n.SplitByComma()).ToList();
             if (names.Count == 0) return;
             var ids = Context.Queryable<SysUser>().Where(u => names.Contains(u.UserName)).Select(u => u.UserId).ToList();
             foreach (var id in ids) Notify(id, content);

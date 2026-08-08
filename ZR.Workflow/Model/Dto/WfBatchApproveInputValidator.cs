@@ -20,8 +20,7 @@ namespace ZR.Workflow.Model.Dto
         private static bool ContainValidId(string taskIds)
         {
             if (string.IsNullOrWhiteSpace(taskIds)) return false;
-            return taskIds.Split(',', System.StringSplitOptions.RemoveEmptyEntries)
-                .Any(s => long.TryParse(s, out _));
+            return taskIds.SplitByComma().Any(s => long.TryParse(s, out _));
         }
     }
 }

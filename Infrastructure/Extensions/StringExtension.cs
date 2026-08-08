@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -7,6 +8,22 @@ namespace Infrastructure.Extensions
 {
     public static class StringExtension
     {
+
+        /// <summary>
+        /// 按逗号拆分字符串：去除两端空白与空项，并去重。
+        /// 用于昵称串/userId串/附件路径串等逗号分隔的展示或解析场景，避免各处重复 Split/Trim/Distinct 样板。
+        /// </summary>
+        /// <param name="str">逗号分隔的原始串；null/空返回空列表</param>
+        /// <returns>去空、Trim、去重后的字符串列表</returns>
+        public static List<string> SplitByComma(this string str)
+        {
+            if (string.IsNullOrEmpty(str)) return new List<string>();
+            return str.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Distinct()
+                .ToList();
+        }
 
         /// <summary>
         /// SQL条件拼接

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ZR.Common;
 
 namespace ZR.Workflow.Controllers
 {
@@ -100,7 +101,7 @@ namespace ZR.Workflow.Controllers
         public IActionResult Read([FromBody] WfReadInput parm)
         {
             var userId = HttpContext.GetUId();
-            _taskService.Read(ParseIds(parm.Ids), userId);
+            _taskService.Read(Tools.SpitLongArrary(parm.Ids).ToList(), userId);
             return SUCCESS(1);
         }
 
@@ -124,7 +125,7 @@ namespace ZR.Workflow.Controllers
         public IActionResult BatchApprove([FromBody] WfBatchApproveInput parm)
         {
             var userName = HttpContext.GetName();
-            var ids = ParseIds(parm.TaskIds);
+            var ids = Tools.SpitLongArrary(parm.TaskIds);
             int success = 0;
             var failed = new List<string>();
             foreach (var taskId in ids)
@@ -146,17 +147,6 @@ namespace ZR.Workflow.Controllers
                 failed = failed.Count,
                 message = $"成功 {success} 条，失败 {failed.Count} 条{failedMsg}"
             });
-        }
-
-        private static List<long> ParseIds(string ids)
-        {
-            var result = new List<long>();
-            if (string.IsNullOrEmpty(ids)) return result;
-            foreach (var s in ids.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            {
-                if (long.TryParse(s, out var v)) result.Add(v);
-            }
-            return result;
         }
     }
 }
