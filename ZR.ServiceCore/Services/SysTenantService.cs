@@ -977,7 +977,8 @@ namespace ZR.ServiceCore.Services
             var targetDb = ResolveTenantDb(tenantId);
 
             // 当租户库已有核心数据时默认不覆盖，避免误伤线上数据。
-            if (targetDb.Queryable<SysUser>().Any() || targetDb.Queryable<SysMenu>().Any())
+            // 注：SysMenu 是主库表（IMainDbEntity），租户库不保存副本，判重只看租户库自有表。
+            if (targetDb.Queryable<SysUser>().Any())
             {
                 return "租户库已存在基础数据，跳过种子复制";
             }
@@ -998,18 +999,14 @@ namespace ZR.ServiceCore.Services
             var logs = new List<string>();
 
             // 读取 Excel（与 InitSeedData 保持一致的数据源）
+            // 注：sys_menu 为 IMainDbEntity 主库表，租户库不保存副本，菜单权限由主库 sys_tenant_plan_menu 套餐机制提供，故不复制菜单。
             var sysDept = MiniExcel.Query<SysDept>(path, sheetName: "dept").ToList();
             var sysPost = MiniExcel.Query<SysPost>(path, sheetName: "post").ToList();
             var sysRole = MiniExcel.Query<SysRole>(path, sheetName: "role").ToList();
-            var sysMenu = MiniExcel.Query<SysMenu>(path, sheetName: "menu").ToList();
             var sysRoleMenu = MiniExcel.Query<SysRoleMenu>(path, sheetName: "role_menu").ToList();
             var sysUser = MiniExcel.Query<SysUser>(path, sheetName: "user").ToList();
             sysUser.ForEach(x => x.Password = "E10ADC3949BA59ABBE56E057F20F883E");
             var sysUserRole = MiniExcel.Query<SysUserRole>(path, sheetName: "user_role").ToList();
-
-            var filteredMenus = sysMenu
-                .Where(m => !TenantFeaturePolicy.IsPlatformMenuPermission(m.Perms))
-                .ToList();
 
             try
             {
@@ -1029,11 +1026,6 @@ namespace ZR.ServiceCore.Services
                     .WhereColumns(it => it.RoleKey).ToStorage();
                 roleStore.AsInsertable.OffIdentity().ExecuteCommand();
                 logs.Add($"角色:{roleStore.InsertList.Count}");
-
-                var menuStore = targetDb.Storageable(filteredMenus)
-                    .WhereColumns(it => it.MenuId).ToStorage();
-                menuStore.AsInsertable.OffIdentity().ExecuteCommand();
-                logs.Add($"菜单:{menuStore.InsertList.Count}");
 
                 var roleMenuStore = targetDb.Storageable(sysRoleMenu)
                     .WhereColumns(it => new { it.Role_id, it.Menu_id }).ToStorage();
@@ -1076,7 +1068,8 @@ namespace ZR.ServiceCore.Services
             var sourceDb = ResolveMainDb();
             var targetDb = ResolveTenantDb(tenantId);
 
-            if (targetDb.Queryable<SysMenu>().Any() && targetDb.Queryable<SysRole>().Any())
+            // SysMenu 为 IMainDbEntity 主库表，租户库不保存副本，判重只看租户库自有表。
+            if (targetDb.Queryable<SysRole>().Any())
             {
                 return "租户库已存在权限菜单数据，跳过初始化";
             }
