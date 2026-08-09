@@ -79,6 +79,11 @@
         public static string TYPE_LINK = "L";
 
         /// <summary>
+        /// 导航树可见菜单类型（目录/菜单/链接）
+        /// </summary>
+        public static string TYPE_TREE_IDS = "M,C,L";
+
+        /// <summary>
         /// Layout组件标识
         /// </summary>
         public static string LAYOUT = "Layout";

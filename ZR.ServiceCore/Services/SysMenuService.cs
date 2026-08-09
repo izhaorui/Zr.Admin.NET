@@ -1,6 +1,7 @@
 using Infrastructure;
 using Infrastructure.Attribute;
 using SqlSugar.IOC;
+using System.Linq.Expressions;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -151,7 +152,6 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public long EditMenu(SysMenu menu)
         {
-            menu.Icon = string.IsNullOrEmpty(menu.Icon) ? "" : menu.Icon;
             return Update(menu, false);
         }
 
@@ -188,21 +188,16 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public string CheckMenuNameUnique(SysMenu menu)
         {
-            long menuId = menu.MenuId == 0 ? -1 : menu.MenuId;
             SysMenu info = GetFirst(it => it.MenuName == menu.MenuName && it.ParentId == menu.ParentId);
             if (menu.MenuType == "C")
             {
-                SysMenu info2 = GetFirst(it => it.Path == menu.Path);
-                if (info2 != null)
+                SysMenu info2 = GetFirst(it => it.Path == menu.Path && it.ParentId == menu.ParentId);
+                if (info2 != null && info2.MenuId != menu.MenuId)
                 {
                     throw new CustomException($"{menu.Path}路由地址已存在");
                 }
             }
 
-            //if (info != null && menuId != info.menuId && menu.menuName.Equals(info.menuName))
-            //{
-            //    return UserConstants.NOT_UNIQUE;
-            //}
             if (info != null && info.MenuId != menu.MenuId)
             {
                 return UserConstants.NOT_UNIQUE;
@@ -237,7 +232,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public List<SysMenu> SelectMenuTreeByUserId(long userId)
         {
-            MenuQueryDto dto = new() { Status = "0", MenuTypeIds = "M,C,L" };
+            MenuQueryDto dto = new() { Status = "0", MenuTypeIds = UserConstants.TYPE_TREE_IDS };
             if (SysRoleService.IsAdmin(userId))
             {
                 return SelectTreeMenuList(dto);
@@ -255,35 +250,10 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public List<SysMenu> SelectMenuTreeByUserIdForTenant(long userId, string tenantId)
         {
-            var mdb = MainDb();
-            var planMenuIds = PlanMenuService.GetMenuIdsByTenantId(tenantId);
-            if (planMenuIds.Count == 0) return new List<SysMenu>();
-
-            List<long> allowedMenuIds;
-            if (SysRoleService.IsAdmin(userId))
-            {
-                allowedMenuIds = planMenuIds;
-            }
-            else
-            {
-                var roleIds = SysRoleService.SelectUserRoles(userId);
-                var roleMenuIds = TenantDb().Queryable<SysRoleMenu>()
-                    .Where(r => roleIds.Contains(r.Role_id))
-                    .Select(s => s.Menu_id)
-                    .Distinct()
-                    .ToList();
-                allowedMenuIds = roleMenuIds.Intersect(planMenuIds).ToList();
-            }
-
+            var allowedMenuIds = GetAllowedMenuIds(userId, tenantId);
             if (allowedMenuIds.Count == 0) return new List<SysMenu>();
 
-            var menus = mdb.Queryable<SysMenu>()
-                .Where(m => allowedMenuIds.Contains(m.MenuId))
-                .Where(m => m.Status == "0")
-                .Where(m => new[] { "M", "C", "L" }.Contains(m.MenuType))
-                .OrderBy(m => new { m.ParentId, m.OrderNum })
-                .ToList();
-
+            var menus = QueryAllowedMenus(allowedMenuIds, UserConstants.TYPE_TREE_IDS);
             return BuildMenuTree(menus);
         }
 
@@ -293,37 +263,52 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public List<SysMenu> SelectMenuTreeForRoleAssign(long userId, string tenantId)
         {
-            var mdb = MainDb();
-            var planMenuIds = PlanMenuService.GetMenuIdsByTenantId(tenantId);
-            if (planMenuIds.Count == 0) return new List<SysMenu>();
-
-            List<long> allowedMenuIds;
-            if (SysRoleService.IsAdmin(userId))
-            {
-                allowedMenuIds = planMenuIds;
-            }
-            else
-            {
-                var roleIds = SysRoleService.SelectUserRoles(userId);
-                var roleMenuIds = TenantDb().Queryable<SysRoleMenu>()
-                    .Where(r => roleIds.Contains(r.Role_id))
-                    .Select(s => s.Menu_id)
-                    .Distinct()
-                    .ToList();
-                allowedMenuIds = roleMenuIds.Intersect(planMenuIds).ToList();
-            }
-
+            var allowedMenuIds = GetAllowedMenuIds(userId, tenantId);
             if (allowedMenuIds.Count == 0) return new List<SysMenu>();
 
-            var menus = mdb.Queryable<SysMenu>()
-                .Where(m => allowedMenuIds.Contains(m.MenuId))
-                .Where(m => m.Status == "0")
-                .OrderBy(m => new { m.ParentId, m.OrderNum })
-                .ToList();
-
-            return menus;
+            return QueryAllowedMenus(allowedMenuIds, null);
         }
 
+        /// <summary>
+        /// 多租户模式：计算用户可访问菜单id = 角色菜单 ∩ 套餐菜单
+        /// </summary>
+        private List<long> GetAllowedMenuIds(long userId, string tenantId)
+        {
+            var planMenuIds = PlanMenuService.GetMenuIdsByTenantId(tenantId);
+            if (planMenuIds.Count == 0) return new List<long>();
+
+            if (SysRoleService.IsAdmin(userId))
+            {
+                return planMenuIds;
+            }
+
+            var roleIds = SysRoleService.SelectUserRoles(userId);
+            var roleMenuIds = TenantDb().Queryable<SysRoleMenu>()
+                .Where(r => roleIds.Contains(r.Role_id))
+                .Select(s => s.Menu_id)
+                .Distinct()
+                .ToList();
+            return roleMenuIds.Intersect(planMenuIds).ToList();
+        }
+
+        /// <summary>
+        /// 多租户模式：按可访问菜单id查询主库菜单（menuTypeFilter 为空表示不限类型，含 F 按钮）
+        /// </summary>
+        private List<SysMenu> QueryAllowedMenus(List<long> allowedMenuIds, string menuTypeFilter)
+        {
+            var mdb = MainDb();
+            var q = mdb.Queryable<SysMenu>()
+                .Where(m => allowedMenuIds.Contains(m.MenuId))
+                .Where(m => m.Status == "0");
+
+            if (!string.IsNullOrEmpty(menuTypeFilter))
+            {
+                var types = menuTypeFilter.Split(',');
+                q = q.Where(m => types.Contains(m.MenuType));
+            }
+
+            return q.OrderBy(m => new { m.ParentId, m.OrderNum }).ToList();
+        }
 
         /// <summary>
         /// 查询精确到按钮的操作权限
@@ -356,32 +341,9 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public List<string> SelectMenuPermsByUserIdForTenant(long userId, string tenantId)
         {
-            var tdb = TenantDb();
             var mdb = MainDb();
 
-            var planMenuIds = PlanMenuService.GetMenuIdsByTenantId(tenantId);
-            if (planMenuIds.Count == 0) return new List<string>();
-
-            List<long> menuIds;
-            if (SysRoleService.IsAdmin(userId))
-            {
-                menuIds = planMenuIds;
-            }
-            else
-            {
-                menuIds = tdb.Queryable<SysRoleMenu, SysUserRole, SysRole>((rm, ur, r) => new JoinQueryInfos(
-                    JoinType.Left, rm.Role_id == ur.RoleId,
-                    JoinType.Left, ur.RoleId == r.RoleId
-                ))
-                .WithCache(60 * 10)
-                .Where((rm, ur, r) => r.Status == 0 && ur.UserId == userId)
-                .Select((rm, ur, r) => rm.Menu_id)
-                .Distinct()
-                .ToList();
-
-                menuIds = menuIds.Intersect(planMenuIds).ToList();
-            }
-
+            var menuIds = GetAllowedMenuIds(userId, tenantId);
             if (menuIds.Count == 0) return new List<string>();
 
             return mdb.Queryable<SysMenu>()
@@ -406,10 +368,7 @@ namespace ZR.ServiceCore.Services
 
             return Queryable()
                 .Where(c => roleMenus.Contains(c.MenuId))
-                .WhereIF(!string.IsNullOrEmpty(menu.MenuName), (c) => c.MenuName.Contains(menu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(menu.Visible), (c) => c.Visible == menu.Visible)
-                .WhereIF(!string.IsNullOrEmpty(menu.Status), (c) => c.Status == menu.Status)
-                .WhereIF(!string.IsNullOrEmpty(menu.MenuTypeIds), c => menu.MenuTypeIdArr.Contains(c.MenuType))
+                .Where(ApplyMenuQueryFilter(menu))
                 .OrderBy((c) => new { c.ParentId, c.OrderNum })
                 .Select(c => c)
                 .ToTree(it => it.Children, it => it.ParentId, 0);
@@ -448,15 +407,8 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         private List<SysMenu> SelectMenuList(MenuQueryDto menu)
         {
-            var menuExp = Expressionable.Create<SysMenu>();
-            menuExp.AndIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName));
-            menuExp.AndIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible);
-            menuExp.AndIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status);
-            menuExp.AndIF(!string.IsNullOrEmpty(menu.MenuTypeIds), it => menu.MenuTypeIdArr.Contains(it.MenuType));
-            menuExp.AndIF(menu.ParentId != null, it => it.ParentId == menu.ParentId);
-
             return Queryable()
-            .Where(menuExp.ToExpression())
+            .Where(ApplyMenuQueryFilter(menu))
             .OrderBy(it => new { it.ParentId, it.OrderNum })
             .ToList();
         }
@@ -475,11 +427,7 @@ namespace ZR.ServiceCore.Services
 
             return Queryable()
                 .Where(c => roleMenuIds.Contains(c.MenuId) && c.Status == "0")
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.MenuName), c => c.MenuName.Contains(sysMenu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.Visible), c => c.Visible == sysMenu.Visible)
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.Status), c => c.Status == sysMenu.Status)
-                .WhereIF(!string.IsNullOrEmpty(sysMenu.MenuTypeIds), c => sysMenu.MenuTypeIdArr.Contains(c.MenuType))
-                .WhereIF(sysMenu.ParentId != null, c => c.ParentId == sysMenu.ParentId)
+                .Where(ApplyMenuQueryFilter(sysMenu))
                 .OrderBy(c => new { c.ParentId, c.OrderNum })
                 .Select(c => c)
                 .ToList();
@@ -495,16 +443,27 @@ namespace ZR.ServiceCore.Services
 
             var list = Queryable()
                 //.WithCache(60 * 10)
-                .WhereIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName))
-                .WhereIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible)
-                .WhereIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status)
-                .WhereIF(!string.IsNullOrEmpty(menu.MenuTypeIds), it => menu.MenuTypeIdArr.Contains(it.MenuType))
-                .WhereIF(menu.ParentId != null, it => it.ParentId == menu.ParentId)
+                .Where(ApplyMenuQueryFilter(menu))
                 .OrderBy(it => new { it.ParentId, it.OrderNum })
                 .ToTree(it => it.Children, it => it.ParentId, parentId);
 
             return list;
         }
+        /// <summary>
+        /// 统一拼装菜单查询过滤条件（MenuName/Visible/Status/MenuTypeIds/ParentId）
+        /// 供各查询方法复用，避免重复 WhereIF 拼装
+        /// </summary>
+        private static Expression<Func<SysMenu, bool>> ApplyMenuQueryFilter(MenuQueryDto menu)
+        {
+            var exp = Expressionable.Create<SysMenu>();
+            exp.AndIF(!string.IsNullOrEmpty(menu.MenuName), it => it.MenuName.Contains(menu.MenuName));
+            exp.AndIF(!string.IsNullOrEmpty(menu.Visible), it => it.Visible == menu.Visible);
+            exp.AndIF(!string.IsNullOrEmpty(menu.Status), it => it.Status == menu.Status);
+            exp.AndIF(!string.IsNullOrEmpty(menu.MenuTypeIds), it => menu.MenuTypeIdArr.Contains(it.MenuType));
+            exp.AndIF(menu.ParentId != null, it => it.ParentId == menu.ParentId);
+            return exp.ToExpression();
+        }
+
         #region 方法
 
         /// <summary>
@@ -621,9 +580,8 @@ namespace ZR.ServiceCore.Services
                 // 如果是顶级节点, 遍历该父节点的所有子节点
                 if (!tempList.Contains(menu.ParentId))
                 {
-                    var menuInfo = menus.Find(f => f.MenuId == menu.MenuId);
                     //移除按钮没有上级
-                    if (!tempList.Contains(menuInfo.ParentId) && menu.MenuType != "F")
+                    if (!tempList.Contains(menu.ParentId) && menu.MenuType != "F")
                     {
                         RecursionFn(menus, menu);
                         returnList.Add(menu);
@@ -894,11 +852,8 @@ namespace ZR.ServiceCore.Services
             {
                 menuList.Add(menuImport);
             }
-            //Insert(menuList);
 
             var x = Context.Storageable(menuList)
-                //.SplitInsert(it => !it.Any())
-                //.SplitUpdate(it => !it.Any())
                 .WhereColumns(it => new { it.MenuName, it.ParentId })
                 .ToStorage();
             x.AsInsertable.ExecuteCommand();//插入可插入部分;
@@ -1026,7 +981,7 @@ namespace ZR.ServiceCore.Services
                     }
                 }
 
-                if (routerVo.Children != null && routerVo.Children.Count > 0)
+                if (routerVo.Children.Count > 0)
                 {
                     routerVo.Meta = item.Meta;
                     newRouter.Add(routerVo);
