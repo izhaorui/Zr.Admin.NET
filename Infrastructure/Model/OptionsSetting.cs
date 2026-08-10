@@ -32,7 +32,13 @@ namespace Infrastructure.Model
         /// 是否单独初始化工作流模块（开发模式下建工作流业务表）。独立于 InitDb，
         /// 可在 InitDb=false 时单独设为 true 来只初始化工作流（建表），不影响其他模块初始化。
         /// </summary>
-        public bool InitWorkflow { get; set; }
+        public bool InitWorkflow { get; set; } = false;
+        /// <summary>
+        /// 是否初始化独立种子菜单（租户管理、套餐菜单、字典种子、日程管理等系统级菜单/权限）。
+        /// 区别于 InitMall/InitWorkflow 业务模块，此处无业务建表，仅在开关开启时补齐这些菜单与权限。
+        /// 默认 true，保持与原 data.xlsx 全量种子一致；设为 false 可跳过这些菜单种子写入。
+        /// </summary>
+        public bool InitSaasMenu { get; set; }
         /// <summary>数据库迁移配置（自动发现实体、差异检测、迁移历史）</summary>
         public DbMigrationOptions DbMigration { get; set; } = new();
         public string[] InitTables { get; set; }

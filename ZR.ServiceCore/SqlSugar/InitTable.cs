@@ -109,18 +109,9 @@ namespace ZR.ServiceCore.SqlSugar
                 Console.ResetColor();
             }
 
-            // 商城模块独立初始化（所有环境，仅受 InitMall 开关控制，独立于 InitDb）
-            // 解除 Development 限制：保证非开发环境设 InitMall=true 也能自动补列（LockStock/PayType 等）
-            if (options.InitMall)
-            {
-                ModuleInitRunner.Run("Mall");
-            }
-
-            // 工作流模块独立初始化（所有环境，仅受 InitWorkflow 开关控制，独立于 InitDb）
-            if (options.InitWorkflow)
-            {
-                ModuleInitRunner.Run("Workflow");
-            }
+            // 按 appsettings 开关批量运行独立业务模块（商城/工作流等），
+            // 受各自开关控制、独立于 InitDb，可在非开发环境单独开启自动补列。
+            ModuleInitRunner.RunEnabledModules(options);
         }
 
         private static string ReadLineWithTimeout(TimeSpan timeout)
@@ -136,7 +127,7 @@ namespace ZR.ServiceCore.SqlSugar
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($"[种子数据] 未找到 {path}，跳过自动初始化");
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ResetColor();
                 return;
             }
 
@@ -149,13 +140,13 @@ namespace ZR.ServiceCore.SqlSugar
                 Console.WriteLine("==== 种子数据初始化完成 ====");
                 foreach (var item in result)
                     Console.WriteLine(item);
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ResetColor();
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"[种子数据] 自动初始化失败，事务已回滚: {ex.Message}");
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ResetColor();
             }
         }
 

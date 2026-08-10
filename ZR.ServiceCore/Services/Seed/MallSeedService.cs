@@ -11,7 +11,7 @@ namespace ZR.ServiceCore.Services
     internal sealed class MallSeedService
     {
         /// <summary>
-        /// 确保商城后台管理菜单与按钮权限存在（幂等）。与租户菜单/字典等系统数据一致，通过代码而非 data.xlsx 维护。
+        /// 确保商城后台管理菜单与按钮权限存在（幂等）
         /// </summary>
         public string EnsureMenuSeedData()
         {
@@ -25,7 +25,7 @@ namespace ZR.ServiceCore.Services
             {
                 mallMenu = new SysMenu
                 {
-                    MenuName = "商城",
+                    MenuName = "商城管理",
                     ParentId = 0,
                     OrderNum = 50,
                     Path = "shopping",
@@ -44,23 +44,53 @@ namespace ZR.ServiceCore.Services
                 mallMenu.MenuId = db.Insertable(mallMenu).ExecuteReturnIdentity();
             }
 
-            // 2) 子页面 + 按钮权限定义
-            var pages = new List<(string Name, string Path, string Component, string Perms, string Icon, int OrderNum, List<(string, string, int)> Buttons)>
+            // 2) 子页面 + 按钮权限定义（用 SeedPage / SeedButton 命名属性，新增字段无需改动此处）
+            var pages = new List<SeedPage>
             {
-                ("品牌管理", "brand", "shopping/Brand", "shop:brand:list", "goods", 1,
-                    new() { ("查询", "shop:brand:query", 1), ("新增", "shop:brand:add", 2), ("修改", "shop:brand:edit", 3), ("删除", "shop:brand:delete", 4), ("导出", "shop:brand:export", 5) }),
-                ("商品分类", "category", "shopping/Category", "shop:category:list", "tree", 2,
-                    new() { ("查询", "shop:category:query", 1), ("新增", "shop:category:add", 2), ("修改", "shop:category:edit", 3), ("删除", "shop:category:delete", 4), ("导出", "shop:category:export", 5) }),
-                ("商品管理", "product", "shopping/Product", "shop:product:list", "shopping", 3,
-                    new() { ("查询", "shop:product:query", 1), ("新增", "shop:product:add", 2), ("修改", "shop:product:edit", 3), ("删除", "shop:product:delete", 4), ("导出", "shop:product:export", 5) }),
-                ("规格模板", "spectemplate", "shopping/SpecTemplate", "spectpl:list", "operation", 4,
-                    new() { ("查询", "spectpl:query", 1), ("新增", "spectpl:add", 2), ("修改", "spectpl:edit", 3), ("删除", "spectpl:delete", 4) }),
-                ("库存/SKU", "skus", "shopping/Skus", "shop:skus:list", "collection", 5,
-                    new() { ("查询", "shop:skus:query", 1), ("新增", "shop:skus:add", 2), ("修改", "shop:skus:edit", 3), ("删除", "shop:skus:delete", 4) }),
-                ("订单管理", "order", "shopping/Order", "oms:order:list", "list", 6,
-                    new() { ("查询", "oms:order:query", 1), ("发货", "oms:order:ship", 2), ("取消", "oms:order:cancel", 3), ("删除", "oms:order:delete", 4), ("导出", "oms:order:export", 5), ("销售统计", "oms:sale:query", 6) }),
-                ("支付流水", "payment", "shopping/Payment", "oms:payment:list", "money", 7,
-                    new() { ("查询", "oms:payment:list", 1) }),
+                new(Name: "品牌管理", Path: "brand", Component: "shopping/Brand", Perms: "shop:brand:list", OrderNum: 1, Icon: "star",
+                    Buttons: new List<SeedButton>
+                    {
+                        new("查询", "shop:brand:query"), new("新增", "shop:brand:add"),
+                        new("修改", "shop:brand:edit"), new("删除", "shop:brand:delete"), new("导出", "shop:brand:export"),
+                    }),
+                new(Name: "商品分类", Path: "category", Component: "shopping/Category", Perms: "shop:category:list", OrderNum: 2, Icon: "tree",
+                    Buttons: new List<SeedButton>
+                    {
+                        new("查询", "shop:category:query"), new("新增", "shop:category:add"),
+                        new("修改", "shop:category:edit"), new("删除", "shop:category:delete"), new("导出", "shop:category:export"),
+                    }),
+                new(Name: "商品管理", Path: "product", Component: "shopping/Product", Perms: "shop:product:list", OrderNum: 3, Icon: "shopping",
+                    Buttons: new List<SeedButton>
+                    {
+                        new("查询", "shop:product:query"), new("新增", "shop:product:add"),
+                        new("删除", "shop:product:delete"), new("导出", "shop:product:export"),
+                    }),
+                new(Name: "规格模板", Path: "spectemplate", Component: "shopping/SpecTemplate", Perms: "spectpl:list", OrderNum: 4, Icon: "zujian",
+                    Buttons:
+                    [
+                        new("查询", "spectpl:query"), new("新增", "spectpl:add"),
+                        new("修改", "spectpl:edit"), new("删除", "spectpl:delete"),
+                    ]),
+                new(Name: "库存/SKU", Path: "skus", Component: "shopping/Skus", Perms: "shop:skus:list", OrderNum: 5, Icon: "database",
+                    Buttons:
+                    [
+                        new("查询", "shop:skus:query"), new("新增", "shop:skus:add"),
+                        new("修改", "shop:skus:edit"), new("删除", "shop:skus:delete"),
+                    ]),
+                new(Name: "订单管理", Path: "order", Component: "shopping/Order", Perms: "oms:order:list", OrderNum: 6, Icon: "list",
+                    Buttons:
+                    [
+                        new("发货", "oms:order:ship"), new("取消", "oms:order:cancel"),
+                        new("删除", "oms:order:delete"), new("导出", "oms:order:export"),
+                    ]),
+                new(Name: "支付流水", Path: "payment", Component: "shopping/Payment", Perms: "oms:payment:list", OrderNum: 7, Icon: "money",
+                    Buttons: [new("查询", "oms:payment:list")]),
+                new(Name: "商品编辑", Path: "productEdit", Component: "shopping/ProductEdit", Perms: "shop:product:edit", OrderNum: 8, Visible: "1",
+                    Buttons: []),
+                new(Name: "订单详情", Path: "/orderDetails", Component: "order/Details", Perms: "oms:order:query", OrderNum: 8, Visible: "1",
+                    Buttons: []),
+                new(Name: "销售统计", Path: "salesDashboard", Component: "order/SalesDashboard", Perms: "oms:sale:query", OrderNum: 11, Visible: "0", Icon: "chart",
+                    Buttons: []),
             };
 
             var inserted = 0;
@@ -80,7 +110,7 @@ namespace ZR.ServiceCore.Services
                         IsCache = "0",
                         IsFrame = "0",
                         MenuType = "C",
-                        Visible = "0",
+                        Visible = p.Visible,
                         Status = "0",
                         Perms = p.Perms,
                         Icon = p.Icon,
@@ -94,14 +124,14 @@ namespace ZR.ServiceCore.Services
                 foreach (var btn in p.Buttons)
                 {
                     var exist = db.Queryable<SysMenu>()
-                        .Any(x => x.ParentId == pageMenu.MenuId && x.MenuType == "F" && x.Perms == btn.Item2);
+                        .Any(x => x.ParentId == pageMenu.MenuId && x.MenuType == "F" && x.Perms == btn.Perms);
                     if (exist) continue;
 
                     db.Insertable(new SysMenu
                     {
-                        MenuName = btn.Item1,
+                        MenuName = btn.Name,
                         ParentId = pageMenu.MenuId,
-                        OrderNum = btn.Item3,
+                        OrderNum = btn.OrderNum,
                         Path = string.Empty,
                         Component = string.Empty,
                         IsCache = "0",
@@ -109,7 +139,7 @@ namespace ZR.ServiceCore.Services
                         MenuType = "F",
                         Visible = "0",
                         Status = "0",
-                        Perms = btn.Item2,
+                        Perms = btn.Perms,
                         Icon = "#",
                         Create_by = "system",
                         Create_time = now
@@ -158,10 +188,10 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public List<string> InitMenuSeedData()
         {
-            var result = new List<string>();
-            result.Add(EnsureMenuSeedData());
-            result.Add(new SeedDataService().EnsureTenantPlanMenuSeedData());
-            result.Add(new SystemMenuSeedService().EnsureDbSyncMenuSeedData());
+            var result = new List<string>
+            {
+                EnsureMenuSeedData()
+            };
             return result;
         }
     }
