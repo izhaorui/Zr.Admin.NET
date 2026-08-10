@@ -37,9 +37,11 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (dictData.DictType.StartsWith("sql_"))
             {
                 var result = SysDictService.SelectDictDataByCustomSql(dictData.DictType);
-
-                list.Result.AddRange(result.Adapt<List<SysDictData>>());
-                list.TotalNum += result.Count;
+                if (result != null && result.Count > 0)
+                {
+                    list.Result.AddRange(result.Adapt<List<SysDictData>>());
+                    list.TotalNum += result.Count;
+                }
             }
             return SUCCESS(list);
         }
@@ -97,7 +99,11 @@ namespace ZR.Admin.WebApi.Controllers.System
                 };
                 if (dic.StartsWith("cus_") || dic.StartsWith("sql_"))
                 {
-                    vo.List.AddRange(SysDictService.SelectDictDataByCustomSql(dic));
+                    var custom = SysDictService.SelectDictDataByCustomSql(dic);
+                    if (custom != null)
+                    {
+                        vo.List.AddRange(custom);
+                    }
                 }
                 dataVos.Add(vo);
             }

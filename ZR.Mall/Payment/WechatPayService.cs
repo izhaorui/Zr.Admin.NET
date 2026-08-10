@@ -247,7 +247,20 @@ namespace ZR.Mall.Payment
             if (string.Equals(callbackModel.EventType, "TRANSACTION.SUCCESS", System.StringComparison.OrdinalIgnoreCase))
             {
                 var resource = client.DecryptEventResource<TransactionResource>(callbackModel);
-                _orderService.PayOrderByOrderNo(resource.OutTradeNumber, PayTypeEnum.Wechat, resource.TransactionId, body);
+
+                // 安全校验：未支付成功、金额缺失均视为非法回调，拒绝流转订单状态
+                if (!string.Equals(resource.TradeState, "SUCCESS", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.WriteLine(ConsoleColor.Yellow, $"[WechatPay] 回调交易状态非 SUCCESS(={resource.TradeState})，已忽略。OutTradeNo={resource.OutTradeNumber}");
+                    return false;
+                }
+                if (resource.Amount == null || resource.Amount.Total <= 0)
+                {
+                    Log.WriteLine(ConsoleColor.Red, $"[WechatPay] 回调金额缺失或非法，已拒绝！OutTradeNo={resource.OutTradeNumber}");
+                    return false;
+                }
+
+                _orderService.PayOrderByOrderNo(resource.OutTradeNumber, PayTypeEnum.Wechat, resource.TransactionId, body, resource.Amount.Total);
             }
             return true;
         }

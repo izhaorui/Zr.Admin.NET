@@ -267,12 +267,27 @@ namespace ZR.Mall.Service
         /// 供游客直接支付（PayOrder 手机号鉴权后）与支付渠道异步回调（微信/支付宝 notify）调用。
         /// 幂等 + 条件更新（防并发重复支付 / 支付与取消竞态）。状态机不变。
         /// </summary>
-        public OMSOrder PayOrderByOrderNo(string orderNo, Enum.PayTypeEnum payType = Enum.PayTypeEnum.Mock, string transactionId = null, string callbackRaw = null)
+        /// <summary>
+        /// 按订单号完成支付（待付款 → 待发货）。
+        /// callbackTotalFen：支付渠道异步回调带回的金额（单位：分）。非 null 时与订单应付金额(PayAmount)做一致性校验，
+        /// 防止伪造/篡改回调把订单标为已付（金额不符直接拒绝）。
+        /// </summary>
+        public OMSOrder PayOrderByOrderNo(string orderNo, Enum.PayTypeEnum payType = Enum.PayTypeEnum.Mock, string transactionId = null, string callbackRaw = null, long? callbackTotalFen = null)
         {
             var order = Queryable().First(x => x.OrderNo == orderNo && x.IsDelete == 0);
             if (order == null)
             {
                 throw new CustomException("订单不存在");
+            }
+            // 回调金额一致性校验：微信/支付宝回调带回的是分，订单库为元，按四舍五入换算后比对
+            if (callbackTotalFen.HasValue)
+            {
+                var expectedFen = Math.Round(order.PayAmount * 100, MidpointRounding.AwayFromZero);
+                if (callbackTotalFen.Value != expectedFen)
+                {
+                    Log.WriteLine(ConsoleColor.Red, $"[OMSOrder] 支付回调金额不一致！OrderNo={orderNo} 订单应付={order.PayAmount}元({expectedFen}分) 回调={callbackTotalFen.Value}分，疑似伪造回调，已拒绝支付。");
+                    throw new CustomException("支付回调金额与订单金额不一致，支付失败");
+                }
             }
             // 幂等：已支付直接返回（支付方式/流水号不覆盖，避免回调重复写入）
             if (order.OrderStatus == Enum.OrderStatusEnum.TobeShipped ||

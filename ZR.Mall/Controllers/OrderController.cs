@@ -238,9 +238,11 @@ namespace ZR.Mall.Controllers
                     resultList.Add(item);
                     continue;
                 }
-                var order = item.Adapt<OMSOrder>();
-                
-                var result =  await _OMSOrderService.OrderDelivery(order);
+                // 用数据库订单实体发货（保留 Id/AddressSnapshot/OrderStatus 等），仅覆盖 Excel 里的快递信息
+                orderInfo.DeliveryCompany = item.DeliveryCompany;
+                orderInfo.DeliveryNo = item.DeliveryNo;
+
+                var result =  await _OMSOrderService.OrderDelivery(orderInfo);
                 item.Status = result > 0 ? "发货成功" : "发货失败";
                 resultList.Add(item);
             }

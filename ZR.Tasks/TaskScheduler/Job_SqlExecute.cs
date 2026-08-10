@@ -32,7 +32,11 @@ namespace ZR.Tasks.TaskScheduler
 
             if (info != null && info.SqlText.IsNotEmpty())
             {
-                var result = DbScoped.SugarScope.Ado.ExecuteCommandWithGo(info.SqlText);
+                if (!SqlTaskGuard.IsSafe(info.SqlText, out var unsafeReason))
+                {
+                    throw new CustomException($"任务{trigger?.JobName} SQL 未通过安全校验，已拒绝执行：{unsafeReason}");
+                }
+                var result = DbScoped.SugarScope.Ado.ExecuteCommand(info.SqlText);
                 logger.Info($"任务【{info.Name}】sql请求执行结果=" + result);
             }
             else

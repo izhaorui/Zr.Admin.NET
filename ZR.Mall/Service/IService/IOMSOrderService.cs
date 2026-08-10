@@ -37,7 +37,7 @@ namespace ZR.Mall.Service.IService
         /// payType/transactionId 用于记录支付方式与第三方流水号（默认模拟支付）。
         /// callbackRaw 为支付渠道回调原文（微信/支付宝），写入支付流水表便于排查。
         /// </summary>
-        OMSOrder PayOrderByOrderNo(string orderNo, ZR.Mall.Enum.PayTypeEnum payType = ZR.Mall.Enum.PayTypeEnum.Mock, string transactionId = null, string callbackRaw = null);
+        OMSOrder PayOrderByOrderNo(string orderNo, ZR.Mall.Enum.PayTypeEnum payType = ZR.Mall.Enum.PayTypeEnum.Mock, string transactionId = null, string callbackRaw = null, long? callbackTotalFen = null);
         /// <summary>
         /// 关闭超时未支付的待付款订单并回补库存（定时任务 Job_ClosePendingOrder 调用，幂等）
         /// </summary>

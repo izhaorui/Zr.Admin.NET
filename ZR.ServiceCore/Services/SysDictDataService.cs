@@ -269,10 +269,16 @@ namespace ZR.ServiceCore.Services
 
         /// <summary>
         /// 根据字典类型查询自定义sql（仅主库）
+        /// 兜底安全校验：即使上游绕过，危险 SQL 也不会执行。
         /// </summary>
         public List<SysDictDataDto> SelectDictDataByCustomSql(SysDictType sysDictType)
         {
-            return Context.Ado.SqlQuery<SysDictDataDto>(sysDictType?.CustomSql).ToList();
+            if (!SysDictService.IsSafeCustomSql(sysDictType?.CustomSql))
+            {
+                Log.WriteLine(ConsoleColor.Red, $"[SysDict] 执行层拦截非法自定义字典 SQL。DictType={sysDictType?.DictType}");
+                return new List<SysDictDataDto>();
+            }
+            return Context.Ado.SqlQuery<SysDictDataDto>(sysDictType.CustomSql).ToList();
         }
 
         #endregion

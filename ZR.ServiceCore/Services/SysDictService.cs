@@ -117,19 +117,77 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 根据字典类型查询自定义sql
+        /// 自定义字典 SQL 白名单关键字（小写），命中任一即禁止执行，防止注入。
+        /// 仅允许只读 SELECT，禁止写操作/DDL/多语句/系统存储过程。
         /// </summary>
-        /// <param name="dictType"></param>
-        /// <returns></returns>
+        private static readonly string[] ForbiddenSqlKeywords =
+        {
+            ";", "--", "/*", "*/", "drop", "delete", "update", "insert", "truncate",
+            "alter", "create", "exec", "execute", "grant", "revoke", "xp_", "sp_",
+            "union", "into", "merge", "begin", "declare", "waitfor", "shutdown"
+        };
+
+        /// <summary>
+        /// 校验自定义字典 SQL 是否合法（仅允许只读 SELECT 单语句）。
+        /// 返回 false 表示疑似注入/非法，禁止执行。internal 供执行层兜底复用。
+        /// </summary>
+        internal static bool IsSafeCustomSql(string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql))
+            {
+                return false;
+            }
+            var normalized = sql.Trim().Replace("\r", " ").Replace("\n", " ").Replace("\t", " ");
+            if (!normalized.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            // 去除字符串字面量（'...'）后再检测危险关键字，避免误伤正常列名
+#if NET6_0_OR_GREATER
+            var stripped = System.Text.RegularExpressions.Regex.Replace(normalized, "'(?:[^']|'')*'", "''", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+#else
+            var stripped = normalized;
+#endif
+            var lower = stripped.ToLowerInvariant();
+            foreach (var kw in ForbiddenSqlKeywords)
+            {
+                var idx = lower.IndexOf(kw, StringComparison.Ordinal);
+                if (idx >= 0)
+                {
+                    // 排除列名/表名中恰好包含关键字子串的情况（如字段名含"describe"）做简单边界判断
+                    if (kw.Length == 1) // 仅 ";" 这类符号直接拦截
+                    {
+                        return false;
+                    }
+                    // 关键字前后应为非字母数字，避免 "updated_at" 误判 "update"
+                    var before = idx > 0 ? lower[idx - 1] : ' ';
+                    var after = idx + kw.Length < lower.Length ? lower[idx + kw.Length] : ' ';
+                    var isWordBoundary = !char.IsLetterOrDigit(before) && !char.IsLetterOrDigit(after);
+                    if (isWordBoundary)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 根据字典类型查询自定义sql（仅允许只读 SELECT 单语句，经白名单校验）
+        /// </summary>
         public List<SysDictDataDto> SelectDictDataByCustomSql(string dictType)
         {
             var dictInfo = Queryable()
                 .Where(f => f.DictType == dictType).First();
-            if (dictInfo == null || !dictInfo.CustomSql.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+            if (dictInfo == null || !IsSafeCustomSql(dictInfo.CustomSql))
             {
-                return null;
+                if (dictInfo != null)
+                {
+                    Log.WriteLine(ConsoleColor.Yellow, $"[SysDict] 自定义字典 SQL 未通过安全校验，已拒绝执行。DictType={dictInfo.DictType}");
+                }
+                return new List<SysDictDataDto>();
             }
-            return DictDataService.SelectDictDataByCustomSql(dictInfo);
+            return DictDataService.SelectDictDataByCustomSql(dictInfo) ?? new List<SysDictDataDto>();
         }
     }
 }
