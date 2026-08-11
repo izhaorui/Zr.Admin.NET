@@ -53,7 +53,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             try
             {
                 var mainDb = DbScoped.SugarScope;
-                var mainReport = DbMigrationService.Migrate(mainDb, App.WebHostEnvironment);
+                var mainReport = DbMigrationService.Migrate(mainDb);
                 logs.Add($"主库：新增表 {mainReport.NewTables.Count} 张，新增列 {mainReport.NewColumns.Sum(c => c.Columns.Count)} 个" +
                          (mainReport.HasFailures ? $"，失败 {mainReport.FailedEntities.Count} 个实体" : ""));
                 foreach (var t in mainReport.NewTables) logs.Add($"  + 表 {t}");

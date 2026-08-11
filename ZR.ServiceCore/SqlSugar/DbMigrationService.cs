@@ -1,4 +1,3 @@
-using System;
 using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using SqlSugar.IOC;
@@ -153,7 +152,7 @@ namespace ZR.ServiceCore.SqlSugar
         /// <summary>
         /// 执行 CodeFirst 迁移（建新表 + 补新列），返回变更报告
         /// </summary>
-        public static MigrationReport Migrate(SqlSugarScope db, IWebHostEnvironment env)
+        public static MigrationReport Migrate(SqlSugarScope db)
         {
             var report = new MigrationReport();
             var options = App.OptionsSetting;
@@ -179,11 +178,10 @@ namespace ZR.ServiceCore.SqlSugar
             // 3) 迁移前快照
             var beforeSchema = GetDbSchema(db);
 
-            // 4) ReportOnly 模式：对比实体模型与数据库实际结构，不执行 DDL
+            // 4) ReportOnly 模式：复用 Diff 逻辑，仅对比实体模型与数据库实际结构，不执行 DDL
             if (reportOnly)
             {
-                ComputeEntityVsDbDiff(db, entities, beforeSchema, report);
-                report.Success = true;
+                report = Diff(db);
                 PrintReport(report);
                 return report;
             }

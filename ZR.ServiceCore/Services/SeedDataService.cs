@@ -356,6 +356,24 @@ namespace ZR.ServiceCore.Services
                 result.Add($"[种子数据初始化失败] 事务已回滚: {ex.Message}");
             }
 
+            // 独立模块菜单种子：按 appsettings 的 InitMall/InitWorkflow/InitSaasMenu 开关决定是否写入，
+            // 与 CLI --initdb 链路（ModuleInitRunner.RunEnabledModules）行为保持一致。
+            // 放在主事务之外，避免模块菜单写入失败连带回滚核心种子；菜单种子本身幂等。
+            try
+            {
+                var options = App.OptionsSetting;
+                if (options != null)
+                {
+                    if (options.InitMall) result.AddRange(InitMallMenuSeedData());
+                    if (options.InitWorkflow) result.AddRange(InitWorkflowMenuSeedData());
+                    if (options.InitSaasMenu) result.AddRange(InitSaasMenuSeedData());
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Add($"[独立模块菜单种子失败] {ex.Message}");
+            }
+
             return result;
         }
 

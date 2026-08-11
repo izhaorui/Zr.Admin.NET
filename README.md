@@ -12,7 +12,7 @@
 
 [![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
 [![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
-[![更新日志](https://img.shields.io/badge/更新日志-20260418-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+[![更新日志](https://img.shields.io/badge/更新日志-20260723-yellow)](http://www.izhaorui.cn/doc/changelog.html)
 
 [![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)
@@ -47,6 +47,21 @@
 
 - 快速开始：[https://www.izhaorui.cn/doc/quickstart.html](https://www.izhaorui.cn/doc/quickstart.html)
 
+## 🛠 数据库初始化（CLI）
+
+「自动迁移 + 种子数据」通过命令行参数显式触发，适合部署、首次建库、灌种子时使用：
+
+```bash
+# 在仓库根目录执行（.sln 所在目录）
+dotnet run --project ZR.Admin.WebApi -- --initdb
+# 或简写
+dotnet run --project ZR.Admin.WebApi -- -i
+
+# 或者 
+双击执行
+init-run.bat
+```
+
 ## 🍿 在线体验
 
 - 官方文档：http://www.izhaorui.cn/doc
@@ -71,6 +86,7 @@
 | net8                | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore) |
 | web 前端 vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)    |
 | 移动端              | [联系作者](http://www.izhaorui.cn/vip/)                | [联系作者](http://www.izhaorui.cn/vip/)             |
+| 工作流版              | [联系作者](http://www.izhaorui.cn/vip/)                | [联系作者](http://www.izhaorui.cn/vip/)             |
 
 ## 🍁 前端技术
 
@@ -90,6 +106,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 - 多 租 户：内置完整 SaaS 多租户方案（DB-per-tenant 独立数据库 + 套餐菜单授权），详见下方 [SaaS 多租户](#-saas-多租户)
 - 缓存数据：内置内存缓存和 `Redis`
 - signalR：使用 `signalr` 管理用户在线状态
+- 工作流：内置轻量级审批流（Work Flow）模块，覆盖「流程定义 → 发起申请 → 节点审批 → 记录追踪」全链路。
 
 ## 🍖 内置功能
 
@@ -120,7 +137,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 25. 数据大屏：更直观的展示数据
 26. 商城管理：商城功能，包含订单管理、发货、分类、品牌管理、销售统计；（前端还在开发中）
 27. SaaS 多租户：内置完整的多租户 SaaS 体系，支持租户全生命周期管理、套餐授权、用户配额、到期提醒等。
-28. 工作流模块：内置轻量级审批流，支持动态表单（9 种控件）、流程复制、通过/驳回/撤回/转办/加签、数据面板、软删除与防呆。
+28. 工作流模块：内置轻量级可视化审批流引擎，支持动态表单、流程设计复制、通过/驳回/撤回/转办/加签等全场景流转、运行数据面板，并提供软删除与防呆校验保障数据安全。
 
 ## 🏢 SaaS 多租户
 
@@ -141,14 +158,14 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 
 ## ⚡ 工作流模块
 
-内置轻量级审批流（Work Flow）模块，覆盖「流程定义 → 发起申请 → 节点审批 → 记录追踪」全链路。
+内置轻量级可视化审批流（Work Flow）模块，覆盖「流程定义 → 发起申请 → 节点审批 → 记录追踪」全链路，开箱即用地支撑企业日常审批场景。
 
-- **动态表单**：流程定义中以 JSON 配置表单字段，前端自动渲染 9 种控件（单行/多行文本、数字、日期、日期时间、下拉选择、单选、开关、图片上传）。
-- **流程复制**：一键复制流程定义及全部节点配置，生成停用状态副本，避免重复搭建。
-- **审批动作**：通过、驳回、撤回、转办、加签；支持或签/会签，审批人可指定用户/角色/部门。
-- **数据面板**：聚合当前用户的待办 / 已办 / 我发起 / 抄送数量。
-- **软删除与防呆**：删除流程定义保留历史数据（节点/实例/任务/记录），存在审批中或撤回实例时拒绝删除。
-- **移动端菜单**：独立的工作流 App 工作台菜单，按权限过滤展示。
+- **动态表单**：流程定义中以 JSON 配置表单字段，前端按字段类型自动渲染对应控件（单行/多行文本、数字、日期、日期时间、下拉、单选、开关、图片上传等），无需硬编码页面。
+- **流程设计器**：可视化拖拽编排审批节点与流转连线，支持条件网关、并行分支、抄送节点，一键复制流程生成停用副本，避免重复搭建。
+- **审批动作**：通过、驳回、撤回、转办、加签；支持或签/会签，审批人可指定用户/角色/部门，灵活适配各类审批规则。
+- **运行数据面板**：聚合当前用户的待办 / 已办 / 我发起 / 抄送数量，进度一目了然。
+- **软删除与防呆**：删除流程定义时保留全部历史数据（节点/实例/任务/记录），且存在审批中或撤回中实例时拒绝删除，保障数据可追溯。
+- **多端协同**：配套独立的移动端工作流工作台菜单，按权限过滤展示，随时随地发起与审批。
 
 ## 🍻 项目结构
 
@@ -288,6 +305,22 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/23.jpg"/></td>
     </tr>
 
+</table>
+
+## 工作流
+<table>
+	<tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/wf1.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/wf2.png"/></td>
+    </tr>
+	<tr>
+         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/wf3.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/wf5.png"/></td>
+    </tr>
+    <tr> 
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/wf6.png"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/wf7.png"/></td>
+    </tr>
 </table>
 
 ## 🎉 优势

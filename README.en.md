@@ -36,6 +36,21 @@ If it helps you, you can click "Star" in the upper right corner to collect it, s
 
 - Quick start：[https://www.izhaorui.cn/doc/quickstart.html](https://www.izhaorui.cn/doc/quickstart.html)
 
+## 🛠 Database initialization (CLI)
+
+The full "auto migration + seed data" has been decoupled from the Web startup pipeline and is **no longer executed automatically on every `dotnet run`** (to avoid blocking/slowing down startup). Trigger it explicitly via a command-line argument — ideal for deployment, first-time setup, or seeding:
+
+```bash
+# Run from the repository root (where the .sln lives)
+dotnet run --project ZR.Admin.WebApi -- --initdb
+# or the short form
+dotnet run --project ZR.Admin.WebApi -- -i
+```
+
+- A normal Web start (`dotnet run`) only performs **idempotent multi-tenant column patching** (`MigrateTenantColumns`); it does not re-run seeding, so startup is faster and more stable.
+- Full migration + seed data is triggered **solely by the `--initdb` argument**; there is no "initialize on startup" switch to configure in `appsettings.json`.
+- On failure, the initializer prints the exception and exits with code 1, making it easy to detect from deployment scripts.
+
 ## 🍿 Online experience
 
 - Official documentation：http://www.izhaorui.cn/doc

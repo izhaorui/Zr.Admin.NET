@@ -5,7 +5,6 @@ namespace ZR.ServiceCore.Services
 {
     /// <summary>
     /// 工作流模块种子：菜单/按钮权限。建好后由 EnsureTenantPlanMenuSeedData 自动纳入默认套餐，租户开箱可见。
-    /// 结构参照 ZR.Workflow/workflow_menu.sql。
     /// </summary>
     internal sealed class WorkflowSeedService
     {
@@ -61,7 +60,7 @@ namespace ZR.ServiceCore.Services
                     Visible = "0",
                     Status = "0",
                     Perms = string.Empty,
-                    Icon = "dict",
+                    Icon = "database",
                     RouteName = "workflow",
                     Create_by = "system",
                     Create_time = now
@@ -75,44 +74,45 @@ namespace ZR.ServiceCore.Services
             var pages = new List<SeedPage>
             {
                 // —— 流程管理（定义 / 配置）——
-                new(Name: "流程定义", Path: "definition", Component: "workflow/flowDefinition/index", Perms: "workflow:definition:list", OrderNum: 1, Category: 0,
-                    Buttons: new List<SeedButton>
-                    {
+                new(Name: "流程定义", Path: "definition", Component: "workflow/flowDefinition/index", Perms: "workflow:definition:list", OrderNum: 1, Category: 0, Icon: "dict",
+                    Buttons: [
                         new("新增", "workflow:definition:add"), new("修改", "workflow:definition:edit"), new("删除", "workflow:definition:delete"),
-                    }),
+                    ]),
                 // 表单模板：可复用动态表单的管理页（供流程设计器"载入模板"复用）
-                new(Name: "表单模板", Path: "formTemplate", Component: "workflow/formTemplate/index", Perms: "workflow:template:list", OrderNum: 2, Category: 0,
-                    Buttons: new List<SeedButton>
-                    {
+                new(Name: "表单模板", Path: "formTemplate", Component: "workflow/formTemplate/index", Perms: "workflow:template:list", OrderNum: 2, Category: 0, Icon: "list",
+                    Buttons: [
                         new("新增", "workflow:template:add"), new("修改", "workflow:template:edit"), new("删除", "workflow:template:delete"),
-                    }),
+                    ]),
                 // 作为工作流目录下的隐藏子页面（Visible="1"），仅用于动态路由注册，对应前端 edit.vue
                 new(Name: "流程定义设计", Path: "definition-edit", Component: "workflow/flowDefinition/edit", Perms: "workflow:definition:edit", Icon: "build", OrderNum: 8, RouteName: "WfFlowDefinitionEdit", Visible: "1", Category: 0,
-                    Buttons: new List<SeedButton>()),
+                    Buttons: []),
                 // —— 流程中心（运行态）——
-                new(Name: "数据面板", Path: "dashboard", Component: "workflow/dashboard/index", Perms: "workflow:instance:list", OrderNum: 0, RouteName: "WfDashboard", Category: 1,
-                    Buttons: new List<SeedButton>()),
-                new(Name: "我的流程", Path: "my", Component: "workflow/instance/index", Perms: "workflow:instance:list", OrderNum: 1, Category: 1,
-                    Buttons: new List<SeedButton> { new("发起", "workflow:instance:start"), new("撤回", "workflow:instance:withdraw") }),
-                new(Name: "待我审批", Path: "todo", Component: "workflow/todo/index", Perms: "workflow:task:list", OrderNum: 2, Category: 1,
-                    Buttons: new List<SeedButton>
-                    {
+                new(Name: "数据面板", Path: "dashboard", Component: "workflow/dashboard/index", Perms: "workflow:instance:list", OrderNum: 0, RouteName: "WfDashboard", Category: 1, Icon: "dashboard",
+                    Buttons: []),
+                new(Name: "我发起的", Path: "my", Component: "workflow/instance/index", Perms: "workflow:instance:list", OrderNum: 1, Category: 1, Icon: "guide",
+                    Buttons: [
+                        new("发起", "workflow:instance:start"), 
+                        new("撤回", "workflow:instance:withdraw")
+                    ]),
+                new(Name: "待我审批", Path: "todo", Component: "workflow/todo/index", Perms: "workflow:task:list", OrderNum: 2, Category: 1, Icon: "gonggao",
+                    Buttons:
+                    [
                         new("通过", "workflow:task:approve"), new("驳回", "workflow:task:reject"), new("转办", "workflow:task:transfer"),
                         new("加签", "workflow:task:addsign"), new("评论", "workflow:comment:list"), new("发表评论", "workflow:comment:add"),
-                    }),
-                new(Name: "已办任务", Path: "done", Component: "workflow/done/index", Perms: "workflow:task:list", OrderNum: 3, Category: 1,
-                    Buttons: new List<SeedButton>()),
-                new(Name: "审批记录", Path: "record", Component: "workflow/record/index", Perms: "workflow:record:list", OrderNum: 4, Category: 1,
-                    Buttons: new List<SeedButton>()),
-                new(Name: "抄送给我", Path: "cc", Component: "workflow/cc/index", Perms: "workflow:record:cc", OrderNum: 5, RouteName: "WfCc", Category: 1,
-                    Buttons: new List<SeedButton>()),
+                    ]),
+                new(Name: "已办任务", Path: "done", Component: "workflow/done/index", Perms: "workflow:task:list", OrderNum: 3, Category: 1, Icon: "log",
+                    Buttons: []),
+                new(Name: "审批记录", Path: "record", Component: "workflow/record/index", Perms: "workflow:record:list", OrderNum: 4, Category: 1, Icon: "form",
+                    Buttons: []),
+                new(Name: "抄送给我", Path: "cc", Component: "workflow/cc/index", Perms: "workflow:record:cc", OrderNum: 5, RouteName: "WfCc", Category: 1, Icon: "guide",
+                    Buttons: []),
                 // 跳转入口页：发起申请 / 重新提交 / 流程审批（不在侧边栏展示，仅用于动态路由注册）
                 new(Name: "发起申请", Path: "apply", Component: "workflow/apply/index", Perms: "", OrderNum: 6, RouteName: "WfApply", Visible: "1", Category: 1,
-                    Buttons: new List<SeedButton>()),
+                    Buttons: []),
                 new(Name: "重新提交", Path: "resubmit", Component: "workflow/resubmit/index", Perms: "", OrderNum: 7, RouteName: "WfResubmit", Visible: "1", Category: 1,
-                    Buttons: new List<SeedButton>()),
+                    Buttons: []),
                 new(Name: "流程审批", Path: "approval", Component: "workflow/todo/approval", Perms: "", OrderNum: 8, RouteName: "WfApproval", Visible: "1", Category: 1,
-                    Buttons: new List<SeedButton>()),
+                    Buttons: []),
             };
 
             var inserted = 0;
@@ -143,12 +143,6 @@ namespace ZR.ServiceCore.Services
                     };
                     pageMenu.MenuId = db.Insertable(pageMenu).ExecuteReturnIdentity();
                     inserted++;
-                }
-                else if (pageMenu.ParentId != expectParent)
-                {
-                    // 存量菜单归属修正：运行态页面从旧“流程管理”目录迁到“流程中心”目录
-                    pageMenu.ParentId = expectParent;
-                    db.Updateable(pageMenu).ExecuteCommand();
                 }
 
                 foreach (var btn in p.Buttons)

@@ -15,12 +15,12 @@ namespace ZR.ServiceCore.SqlSugar
         /// 自动创建db、表、补充缺失列。实体由 DbMigrationService 显式注册表管理。
         /// 由 CLI 参数 --initdb 显式触发（见 RunInitDb），不需再用开关二次把关。
         /// </summary>
-        public static void InitDb(IWebHostEnvironment env)
+        public static void InitDb()
         {
             var db = DbScoped.SugarScope;
 
             // 核心：显式注册表实体 → 差异检测 → CodeFirst 迁移（逐个容错）→ 报告输出 + 历史记录
-            var report = DbMigrationService.Migrate(db, env);
+            var report = DbMigrationService.Migrate(db);
 
             if (report.Success)
             {
@@ -54,7 +54,7 @@ namespace ZR.ServiceCore.SqlSugar
             Log.WriteLine(ConsoleColor.Cyan, "==== 开始数据库初始化（自动迁移 + 种子数据）====");
             try
             {
-                InitDb(environment);
+                InitDb();
             }
             catch (Exception ex)
             {

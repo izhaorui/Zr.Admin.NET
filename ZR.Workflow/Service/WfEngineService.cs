@@ -1041,14 +1041,16 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void CreateAutoSkipTask(WfFlowInstance instance, WfFlowNode node, string reason)
         {
+            // Assignee 列 NOT NULL，自动跳过无具体审批人，用申请人登录名占位（或系统常量兜底）。
+            var skipAssignee = string.IsNullOrEmpty(instance.ApplyUser) ? "__SYSTEM__" : instance.ApplyUser;
             Context.Insertable(new WfFlowTask
             {
                 InstanceId = instance.InstanceId,
                 NodeId = node.NodeId,
                 NodeName = node.NodeName,
-                Assignee = null,
-                AssigneeId = null,
-                AssigneeNickName = null,
+                Assignee = skipAssignee,
+                AssigneeId = instance.ApplyUserId,
+                AssigneeNickName = instance.ApplyNickName,
                 Status = (int)WfTaskStatus.Skipped,
                 TaskType = (int)WfTaskType.Audit,
                 Create_time = DateTime.Now,
