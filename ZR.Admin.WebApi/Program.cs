@@ -131,6 +131,16 @@ InternalApp.WebHostEnvironment = app.Environment;
 IpTool.Configure(app.Services.GetRequiredKeyedService<ISearcher>("IP2Region.Net"));
 //初始化db
 builder.Services.AddDb(app.Environment);
+
+// CLI 模式：显式触发全量数据库初始化（迁移 + 种子），完成后直接退出，不启动 Web。
+// 用法：dotnet run -- --initdb   或   dotnet ZR.Admin.WebApi.dll --initdb
+// 这样 Web 正常启动不再耦合初始化动作，部署时按需手动执行一次即可。
+var initDbRequested = args.Any(a => a == "--initdb" || a == "-i");
+if (initDbRequested)
+{
+    InitTable.RunInitDb(app.Environment);
+    return;
+}
 var workId = builder.Configuration["workId"].ParseToInt();
 if (app.Environment.IsDevelopment())
 {

@@ -1,3 +1,4 @@
+using System;
 using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using SqlSugar.IOC;
@@ -165,21 +166,15 @@ namespace ZR.ServiceCore.SqlSugar
             // 2) 解析实体列表（系统注册表 + 配置文件扩展 - [SkipMigration] 排除）
             var entities = ResolveEntityTypes(SystemEntityTypes, additionalTypes, out var skipped);
 
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"[DbMigration] 注册实体 {SystemEntityTypes.Length} 个，实际迁移 {entities.Count} 个");
+            Log.WriteLine(ConsoleColor.Cyan, $"[DbMigration] 注册实体 {SystemEntityTypes.Length} 个，实际迁移 {entities.Count} 个");
             if (additionalTypes is { Length: > 0 })
             {
-                Console.WriteLine($"[DbMigration] 配置文件额外类型: {string.Join(", ", additionalTypes)}");
+                Log.WriteLine(ConsoleColor.Cyan, $"[DbMigration] 配置文件额外类型: {string.Join(", ", additionalTypes)}");
             }
-            if (skipped.Count > 0)
+            foreach (var s in skipped)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                foreach (var s in skipped)
-                {
-                    Console.WriteLine($"[DbMigration]   [跳过] {s}");
-                }
+                Log.WriteLine(ConsoleColor.DarkGray, $"[DbMigration]   [跳过] {s}");
             }
-            Console.ResetColor();
 
             // 3) 迁移前快照
             var beforeSchema = GetDbSchema(db);
@@ -286,17 +281,13 @@ namespace ZR.ServiceCore.SqlSugar
                         DefaultValue = defaultValue
                     });
 
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine($"[DbMigration] 表 {tableName} 已补列 {col.DbColumnName} {(isNotNull ? "NOT NULL" : "NULL")}");
-                    Console.ResetColor();
+                    Log.WriteLine(ConsoleColor.Green, $"[DbMigration] 表 {tableName} 已补列 {col.DbColumnName} {(isNotNull ? "NOT NULL" : "NULL")}");
                 }
                 catch (Exception ex)
                 {
                     // 单个列补列失败（如 NOT NULL 且无默认值、存量数据冲突）不中断其他表/列，
                     // 打印提示交由人工处理，保证迁移整体可用。
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"[DbMigration] 表 {tableName} 补列 {col.DbColumnName} 失败: {ex.Message}");
-                    Console.ResetColor();
+                    Log.WriteLine(ConsoleColor.Yellow, $"[DbMigration] 表 {tableName} 补列 {col.DbColumnName} 失败: {ex.Message}");
                 }
             }
         }
@@ -424,16 +415,12 @@ namespace ZR.ServiceCore.SqlSugar
                     IsNullable = true
                 });
 
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"[DbMigration] 已为存量表 {tableName} 添加列 TenantId {dataType} NULL");
-                Console.ResetColor();
+                Log.WriteLine(ConsoleColor.Green, $"[DbMigration] 已为存量表 {tableName} 添加列 TenantId {dataType} NULL");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"[DbMigration] 为表 {tableName} 添加 TenantId 列失败: {ex.Message}");
-                Console.ResetColor();
+                Log.WriteLine(ConsoleColor.Red, $"[DbMigration] 为表 {tableName} 添加 TenantId 列失败: {ex.Message}");
                 return false;
             }
         }
@@ -457,9 +444,7 @@ namespace ZR.ServiceCore.SqlSugar
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[DbMigration] 记录 TenantId 补列历史失败: {ex.Message}");
-                Console.ResetColor();
+                Log.WriteLine(ConsoleColor.Yellow, $"[DbMigration] 记录 TenantId 补列历史失败: {ex.Message}");
             }
         }
 
@@ -476,9 +461,7 @@ namespace ZR.ServiceCore.SqlSugar
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[DbMigration] 创建迁移历史表失败（不影响主流程）: {ex.Message}");
-                Console.ResetColor();
+                Log.WriteLine(ConsoleColor.Yellow, $"[DbMigration] 创建迁移历史表失败（不影响主流程）: {ex.Message}");
             }
         }
 
@@ -591,80 +574,65 @@ namespace ZR.ServiceCore.SqlSugar
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[DbMigration] 记录迁移历史失败: {ex.Message}");
-                Console.ResetColor();
+                Log.WriteLine(ConsoleColor.Yellow, $"[DbMigration] 记录迁移历史失败: {ex.Message}");
             }
         }
 
         private static void PrintReport(MigrationReport report)
         {
-            Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("========== 数据库迁移报告 ==========");
-            Console.ResetColor();
+            Log.WriteLine(ConsoleColor.White, "");
+            Log.WriteLine(ConsoleColor.Cyan, "========== 数据库迁移报告 ==========");
 
             // 全盘致命错误
             if (!report.Success)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"迁移中断: {report.Error}");
-                Console.ResetColor();
+                Log.WriteLine(ConsoleColor.Red, $"迁移中断: {report.Error}");
                 return;
             }
 
             // 无任何变更也无错误
             if (!report.HasChanges && !report.HasFailures)
             {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("数据库结构与实体模型一致，无需变更。");
-                Console.ResetColor();
-                Console.WriteLine("====================================");
+                Log.WriteLine(ConsoleColor.Green, "数据库结构与实体模型一致，无需变更。");
+                Log.WriteLine(ConsoleColor.White, "====================================");
                 return;
             }
 
             // 差异变更
             if (report.NewTables.Count > 0)
             {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"--- 新增表 ({report.NewTables.Count}) ---");
+                Log.WriteLine(ConsoleColor.Green, $"--- 新增表 ({report.NewTables.Count}) ---");
                 foreach (var t in report.NewTables)
-                    Console.WriteLine($"  + {t}");
+                    Log.WriteLine(ConsoleColor.White, $"  + {t}");
             }
 
             if (report.NewColumns.Count > 0)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"--- 新增列 ({report.NewColumns.Sum(c => c.Columns.Count)}) ---");
+                Log.WriteLine(ConsoleColor.Yellow, $"--- 新增列 ({report.NewColumns.Sum(c => c.Columns.Count)}) ---");
                 foreach (var tc in report.NewColumns)
                 {
-                    Console.WriteLine($"  [{tc.TableName}]");
+                    Log.WriteLine(ConsoleColor.White, $"  [{tc.TableName}]");
                     foreach (var col in tc.Columns)
-                        Console.WriteLine($"    + {col}");
+                        Log.WriteLine(ConsoleColor.White, $"    + {col}");
                 }
             }
 
             // 部分实体失败
             if (report.HasFailures)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"--- DDL 失败 ({report.FailedEntities.Count}) ---");
+                Log.WriteLine(ConsoleColor.Red, $"--- DDL 失败 ({report.FailedEntities.Count}) ---");
                 foreach (var err in report.FailedEntities)
-                    Console.WriteLine($"  ! {err}");
+                    Log.WriteLine(ConsoleColor.White, $"  ! {err}");
             }
 
-            Console.ForegroundColor = report.HasFailures ? ConsoleColor.Yellow : ConsoleColor.Green;
-            var status = report.HasFailures ? "部分成功" : "成功";
-            Console.WriteLine($"迁移{status}: 新增 {report.NewTables.Count} 表, {report.NewColumns.Sum(c => c.Columns.Count)} 列"
+            Log.WriteLine(report.HasFailures ? ConsoleColor.Yellow : ConsoleColor.Green,
+                $"迁移{(report.HasFailures ? "部分成功" : "成功")}: 新增 {report.NewTables.Count} 表, {report.NewColumns.Sum(c => c.Columns.Count)} 列"
                 + (report.HasFailures ? $", 失败 {report.FailedEntities.Count} 个实体" : ""));
-            Console.ResetColor();
-            Console.WriteLine("====================================");
+            Log.WriteLine(ConsoleColor.White, "====================================");
 
             if (report.DiffError != null)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"注意: 差异计算异常 ({report.DiffError})，以上报告可能不完整");
-                Console.ResetColor();
+                Log.WriteLine(ConsoleColor.Yellow, $"注意: 差异计算异常 ({report.DiffError})，以上报告可能不完整");
             }
         }
 

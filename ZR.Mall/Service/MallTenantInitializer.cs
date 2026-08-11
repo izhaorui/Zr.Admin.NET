@@ -1,3 +1,4 @@
+using Infrastructure;
 using Microsoft.Extensions.Hosting;
 using SqlSugar;
 using SqlSugar.IOC;
@@ -120,12 +121,12 @@ namespace ZR.Mall.Service
 					IsNullable = !isNotNull,
 					DefaultValue = defaultValue
 				});
-					Console.WriteLine($"[商城迁移] 表 {tableName} 已补列 {col.DbColumnName} {col.DataType} {(isNotNull ? "NOT NULL" : "NULL")}");
+					Log.WriteLine(ConsoleColor.Green, $"[商城迁移] 表 {tableName} 已补列 {col.DbColumnName} {col.DataType} {(isNotNull ? "NOT NULL" : "NULL")}");
 				}
 				catch (Exception ex)
 				{
 					// 单个列补列失败（如 NOT NULL 且无默认值）不中断其他表/列，打印提示交由人工处理
-					Console.WriteLine($"[商城迁移] 表 {tableName} 补列 {col.DbColumnName} 失败: {ex.Message}");
+					Log.WriteLine(ConsoleColor.Yellow, $"[商城迁移] 表 {tableName} 补列 {col.DbColumnName} 失败: {ex.Message}");
 				}
 			}
 		}

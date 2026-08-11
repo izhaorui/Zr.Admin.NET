@@ -361,7 +361,7 @@ namespace ZR.ServiceCore.Services
 
         /// <summary>
         /// 单独初始化商城模块：创建商城菜单与按钮权限，并纳入默认套餐使其对租户可见。
-        /// 委托给 MallSeedService，供 InitDb=false 时通过 InitMall 单独执行。
+        /// 委托给 MallSeedService，由 CLI --initdb 触发、按 InitMall 开关决定是否执行。
         /// </summary>
         public List<string> InitMallMenuSeedData()
         {
@@ -370,7 +370,7 @@ namespace ZR.ServiceCore.Services
 
         /// <summary>
         /// 单独初始化工作流模块：创建工作流菜单与按钮权限，并纳入默认套餐使其对租户可见。
-        /// 委托给 WorkflowSeedService，供 InitDb=false 时通过 InitWorkflow 单独执行。
+        /// 委托给 WorkflowSeedService，由 CLI --initdb 触发、按 InitWorkflow 开关决定是否执行。
         /// </summary>
         public List<string> InitWorkflowMenuSeedData()
         {

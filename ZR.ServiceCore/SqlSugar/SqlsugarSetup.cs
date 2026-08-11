@@ -78,8 +78,8 @@ namespace ZR.ServiceCore.SqlSugar
             // 实体来源与 DbMigrationService.Migrate 共用显式注册表；新装库由 CodeFirst 自动建列。
             DbMigrationService.MigrateTenantColumns();
 
-            //初始化表和种子数据
-            InitTable.RunInitDb(environment);
+            // 注意：全量"迁移 + 种子数据"已不再耦合进 Web 启动主链路，改由 CLI 参数 --initdb 显式触发
+            // （见 Program.cs 的 --initdb 分支），避免每次启动被阻塞/拖慢。此处仅保留幂等补列。
         }
 
 

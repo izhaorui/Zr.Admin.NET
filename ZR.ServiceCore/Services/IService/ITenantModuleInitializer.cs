@@ -19,7 +19,7 @@ namespace ZR.ServiceCore.Services
 		string InitializeTenant(string tenantId);
 
 		/// <summary>
-		/// 非SaaS模式的模块表初始化（仅在 Development + InitDb=true 时被调用）。
+		/// 非SaaS模式的模块表初始化（仅在 CLI --initdb 触发全量初始化时被调用）。
 		/// 模块自行判断环境条件，并通过 [Tenant("XxxDb")] 的配置 key 拿到目标 ConfigId。
 		/// </summary>
 		void InitializeNonSaaS();

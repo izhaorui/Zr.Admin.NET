@@ -16,21 +16,13 @@ namespace Infrastructure.Model
         /// </summary>
         public bool DemoMode { get; set; }
         /// <summary>
-        /// 初始化db（建表）。设为 true 启动时会自动建表，并自动导入种子数据
-        /// </summary>
-        public bool InitDb { get; set; }
-        /// <summary>
-        /// 是否在 InitDb 建表后自动导入种子数据（data.xlsx）。默认 true，无需手动调用 InitSeedData 接口
-        /// </summary>
-        public bool InitSeed { get; set; } = true;
-        /// <summary>
-        /// 是否单独初始化商城模块（开发模式下建商城业务表 + 商城菜单种子）。独立于 InitDb，
-        /// 可在 InitDb=false 时单独设为 true 来只初始化商城（建表 + 商城菜单），不影响其他模块初始化。
+        /// 是否单独初始化商城模块（开发模式下建商城业务表 + 商城菜单种子）。由 CLI 参数 --initdb 触发后、
+        /// 再按本开关决定是否执行，可在部署时单独控制商城模块是否纳入初始化。
         /// </summary>
         public bool InitMall { get; set; }
         /// <summary>
-        /// 是否单独初始化工作流模块（开发模式下建工作流业务表）。独立于 InitDb，
-        /// 可在 InitDb=false 时单独设为 true 来只初始化工作流（建表），不影响其他模块初始化。
+        /// 是否单独初始化工作流模块（开发模式下建工作流业务表）。由 CLI 参数 --initdb 触发后、
+        /// 再按本开关决定是否执行，可在部署时单独控制工作流模块是否纳入初始化。
         /// </summary>
         public bool InitWorkflow { get; set; } = false;
         /// <summary>

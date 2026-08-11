@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Hosting;
 using SqlSugar.IOC;
 using ZR.ServiceCore.Services;
 using ZR.ServiceCore.SqlSugar;
@@ -34,7 +33,7 @@ namespace ZR.Workflow
 
 		public void InitializeNonSaaS()
 		{
-			if (!InternalApp.WebHostEnvironment.IsDevelopment()) return;
+			if (!App.OptionsSetting.InitWorkflow) return;
 
 			var db = DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);
 			InitCore(db);
@@ -52,6 +51,7 @@ namespace ZR.Workflow
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfFlowComment));
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfFormTemplate));
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfNodeLink));
+			Log.WriteLine(ConsoleColor.Green, "==== 工作流业务表初始化完成 ====");
 		}
 	}
 }
