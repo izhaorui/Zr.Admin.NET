@@ -26,6 +26,16 @@ namespace ZR.Workflow.Enum
         /// <summary>减签（移除本节点某审批人，任务置 Skipped 并重新判定节点完成）</summary>
         RemoveSign = 9,
         /// <summary>委托代审（原审批人将待办委托给他人代审，任务仍归属原审批人）</summary>
-        Delegate = 10
+        Delegate = 10,
+        /// <summary>挂起（管理员暂停流程）</summary>
+        Suspend = 11,
+        /// <summary>恢复（管理员恢复被挂起的流程）</summary>
+        Resume = 12,
+        /// <summary>终止/作废（管理员强制结束流程，不可逆）</summary>
+        Terminate = 13,
+        /// <summary>改派（管理员把某节点待办改给其他人）</summary>
+        Reassign = 14,
+        /// <summary>跳转节点（管理员把卡住的实例跳到指定节点）</summary>
+        Jump = 15
     }
 }

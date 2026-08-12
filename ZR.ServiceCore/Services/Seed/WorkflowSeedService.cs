@@ -92,7 +92,13 @@ namespace ZR.ServiceCore.Services
                 new(Name: "我发起的", Path: "my", Component: "workflow/instance/index", Perms: "workflow:instance:list", OrderNum: 1, Category: 1, Icon: "guide",
                     Buttons: [
                         new("发起", "workflow:instance:start"), 
-                        new("撤回", "workflow:instance:withdraw")
+                        new("撤回", "workflow:instance:withdraw"),
+                        // 管理员运维操作（P0）：终止 / 挂起 / 恢复 / 改派 / 跳转
+                        new("终止", "workflow:instance:terminate"),
+                        new("挂起", "workflow:instance:suspend"),
+                        new("恢复", "workflow:instance:resume"),
+                        new("改派", "workflow:instance:reassign"),
+                        new("跳转", "workflow:instance:jump")
                     ]),
                 new(Name: "待我审批", Path: "todo", Component: "workflow/todo/index", Perms: "workflow:task:list", OrderNum: 2, Category: 1, Icon: "gonggao",
                     Buttons:

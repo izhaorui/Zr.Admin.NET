@@ -1,4 +1,4 @@
-using ZR.ServiceCore.Services;
+﻿using ZR.ServiceCore.Services;
 
 namespace ZR.Workflow.Service
 {
@@ -1087,6 +1087,210 @@ namespace ZR.Workflow.Service
             }
             SyncActiveNodeId(instance);
         }
+
+        #region 管理员运维操作（P0：终止 / 挂起 / 恢复 / 改派 / 跳转）
+
+        /// <summary>
+        /// 管理员强制终止 / 作废流程（不可逆）。把所有未完成任务置为 Skipped，实例置 Terminated，
+        /// 记一条终止记录并通知申请人/相关人。仅由 Controller 的权限过滤器保证只有管理员可调用。
+        /// </summary>
+        /// <param name="instanceId">流程实例Id</param>
+        /// <param name="operatorId">操作管理员 userId</param>
+        /// <param name="opinion">终止原因（可选）</param>
+        public async Task AdminTerminate(long instanceId, long operatorId, string opinion)
+        {
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.Status == (int)WfInstanceStatus.Terminated)
+                throw new CustomException("流程已终止，不可重复操作");
+            if (instance.Status == (int)WfInstanceStatus.Approved)
+                throw new CustomException("流程已通过，不可终止");
+            if (instance.Status == (int)WfInstanceStatus.Withdrawn)
+                throw new CustomException("流程已撤回，不可终止");
+
+            var op = LoadUser(operatorId);
+            var def = LoadActivatableDefinition(instance.FlowId);
+            var openTaskIds = Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == instanceId && t.Status != (int)WfTaskStatus.Done && t.Status != (int)WfTaskStatus.Skipped)
+                .Select(t => t.AssigneeId).ToList();
+
+            RunInTx(() =>
+            {
+                // 所有未完成任务置为跳过
+                var openTasks = Context.Queryable<WfFlowTask>()
+                    .Where(t => t.InstanceId == instanceId && t.Status != (int)WfTaskStatus.Done && t.Status != (int)WfTaskStatus.Skipped)
+                    .ToList();
+                foreach (var t in openTasks)
+                {
+                    t.Status = (int)WfTaskStatus.Skipped;
+                    t.Action = (int)WfAction.Terminate;
+                    t.Opinion = opinion;
+                    t.HandleTime = DateTime.Now;
+                    Context.Updateable(t).ExecuteCommand();
+                }
+
+                instance.Status = (int)WfInstanceStatus.Terminated;
+                SetActiveNodeIds(instance, new List<long>());
+                SyncActiveNodeId(instance);
+                Context.Updateable(instance).ExecuteCommand();
+
+                AddRecord(instanceId, null, null, op, (int)WfAction.Terminate, opinion);
+            }, "AdminTerminate");
+
+            var msg = $"流程【{def.FlowName}】已被管理员{op.NickName}终止";
+            NotifyUser(instance.ApplyUserId, msg);
+            NotifyUserIds(openTaskIds, msg);
+        }
+
+        /// <summary>
+        /// 管理员挂起流程（暂停流转，等待恢复）。仅运行中实例可挂起；挂起期间普通审批操作应被前端隐藏，
+        /// 本方法仅置状态，不改动任务。恢复请调 <see cref="AdminResume"/>。
+        /// </summary>
+        public async Task AdminSuspend(long instanceId, long operatorId, string opinion)
+        {
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.Status != (int)WfInstanceStatus.Approval)
+                throw new CustomException("仅运行中的流程可挂起");
+
+            var op = LoadUser(operatorId);
+            var def = LoadActivatableDefinition(instance.FlowId);
+
+            RunInTx(() =>
+            {
+                instance.Status = (int)WfInstanceStatus.Suspended;
+                Context.Updateable(instance).ExecuteCommand();
+                AddRecord(instanceId, null, null, op, (int)WfAction.Suspend, opinion);
+            }, "AdminSuspend");
+
+            var msg = $"流程【{def.FlowName}】已被管理员{op.NickName}挂起";
+            NotifyUser(instance.ApplyUserId, msg);
+        }
+
+        /// <summary>
+        /// 管理员恢复被挂起的流程。仅 Suspended 态可恢复，恢复后回到 Approval 流转。
+        /// </summary>
+        public async Task AdminResume(long instanceId, long operatorId, string opinion)
+        {
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.Status != (int)WfInstanceStatus.Suspended)
+                throw new CustomException("仅被挂起的流程可恢复");
+
+            var op = LoadUser(operatorId);
+            var def = LoadActivatableDefinition(instance.FlowId);
+
+            RunInTx(() =>
+            {
+                instance.Status = (int)WfInstanceStatus.Approval;
+                Context.Updateable(instance).ExecuteCommand();
+                AddRecord(instanceId, null, null, op, (int)WfAction.Resume, opinion);
+            }, "AdminResume");
+
+            var msg = $"流程【{def.FlowName}】已被管理员{op.NickName}恢复";
+            NotifyUser(instance.ApplyUserId, msg);
+        }
+
+        /// <summary>
+        /// 管理员改派：把指定节点的全部未完成任务（审批/抄送）重新分配给目标用户。
+        /// 适用于审批人离职/失联，管理员需把卡住的待办改给其他人。节点不存在任务时抛异常。
+        /// </summary>
+        /// <param name="instanceId">流程实例Id</param>
+        /// <param name="nodeId">目标节点（实例当前所处或任意未完成任务所属节点）</param>
+        /// <param name="targetUserId">改派目标用户 userId</param>
+        /// <param name="operatorId">操作管理员 userId</param>
+        /// <param name="opinion">改派说明（可选）</param>
+        public async Task AdminReassign(long instanceId, long nodeId, long targetUserId, long operatorId, string opinion)
+        {
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.Status != (int)WfInstanceStatus.Approval && instance.Status != (int)WfInstanceStatus.Suspended)
+                throw new CustomException("仅运行中或挂起态的流程可改派");
+
+            var op = LoadUser(operatorId);
+            var target = LoadUser(targetUserId);
+            var def = LoadActivatableDefinition(instance.FlowId);
+
+            // 业务校验放 RunInTx 之前，确保异常消息能透传给调用方（RunInTx 会用 errorLabel 覆盖内部异常）
+            var tasks = Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == instanceId && t.NodeId == nodeId
+                    && t.Status != (int)WfTaskStatus.Done && t.Status != (int)WfTaskStatus.Skipped)
+                .ToList();
+            if (tasks.Count == 0)
+                throw new CustomException("该节点无可改派的未完成任务");
+
+            RunInTx(() =>
+            {
+                foreach (var t in tasks)
+                {
+                    t.AssigneeId = target.UserId;
+                    t.Assignee = target.UserName;
+                    t.AssigneeNickName = target.NickName;
+                    t.DelegateId = null;
+                    t.DelegateName = null;
+                    t.IsRead = false;
+                    Context.Updateable(t).ExecuteCommand();
+                    AddRecord(instanceId, t.TaskId, nodeId, op, (int)WfAction.Reassign, $"改派给 {target.NickName}{(string.IsNullOrEmpty(opinion) ? "" : $"：{opinion}")}");
+                }
+            }, "AdminReassign");
+
+            NotifyUser((long?)target.UserId, $"您有流程【{def.FlowName}】的待办已被管理员{op.NickName}改派给您");
+        }
+
+        /// <summary>
+        /// 管理员跳转节点：把卡住的实例直接跳到指定节点（重新激活该节点，生成其待办/抄送），
+        /// 清空当前活动集与未完成任务。用于流程设计变更后修复在途实例、或绕过异常节点。不可逆。
+        /// </summary>
+        /// <param name="instanceId">流程实例Id</param>
+        /// <param name="targetNodeId">跳转目标节点（必须存在于该流程且非结束节点）</param>
+        /// <param name="operatorId">操作管理员 userId</param>
+        /// <param name="opinion">跳转说明（可选）</param>
+        public async Task AdminJump(long instanceId, long targetNodeId, long operatorId, string opinion)
+        {
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.Status != (int)WfInstanceStatus.Approval && instance.Status != (int)WfInstanceStatus.Suspended)
+                throw new CustomException("仅运行中或挂起态的流程可跳转");
+
+            var op = LoadUser(operatorId);
+            var def = LoadActivatableDefinition(instance.FlowId);
+            var allNodes = LoadOrderedNodes(instance.FlowId);
+            var target = allNodes.FirstOrDefault(n => n.NodeId == targetNodeId)
+                ?? throw new CustomException("跳转目标节点不存在");
+
+            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+            var formValues = ParseFormValues(instance);
+
+            RunInTx(() =>
+            {
+                // 清空当前活动集，把在途未完成任务置为跳过
+                var openTasks = Context.Queryable<WfFlowTask>()
+                    .Where(t => t.InstanceId == instanceId && t.Status != (int)WfTaskStatus.Done && t.Status != (int)WfTaskStatus.Skipped)
+                    .ToList();
+                foreach (var t in openTasks)
+                {
+                    t.Status = (int)WfTaskStatus.Skipped;
+                    t.Action = (int)WfAction.Jump;
+                    t.Opinion = "管理员跳转，原待办作废";
+                    t.HandleTime = DateTime.Now;
+                    Context.Updateable(t).ExecuteCommand();
+                }
+
+                // 恢复流转态（若当前为挂起）
+                instance.Status = (int)WfInstanceStatus.Approval;
+
+                AddRecord(instanceId, null, targetNodeId, op, (int)WfAction.Jump, $"跳转到节点【{target.NodeName}】{(string.IsNullOrEmpty(opinion) ? "" : $"：{opinion}")}");
+
+                // 重新激活目标节点（条件/网关节点会自行顺延或 fork，无需人工处理）
+                ArriveNode(instance, target, allNodes, linksBySource, linksByTarget, formValues);
+                SyncActiveNodeId(instance);
+            }, "AdminJump");
+
+            var msg = $"流程【{def.FlowName}】已被管理员{op.NickName}跳转至节点【{target.NodeName}】";
+            NotifyUser(instance.ApplyUserId, msg);
+        }
+
+        #endregion
 
         /// <summary>
         /// 解析当前节点的所有下一节点（多目标，供并行分叉 fork / 普通节点发散用）。

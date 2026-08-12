@@ -5,7 +5,7 @@ namespace ZR.Workflow.Service.IService
     /// </summary>
     public interface IWfFlowInstanceService
     {
-        PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, long userId);
+        PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, long userId, bool allUser = false);
         WfFlowInstanceDto GetInfo(long instanceId);
         long Start(WfFlowInstanceDto dto, LoginUser user);
         /// <summary>

@@ -11,6 +11,8 @@ namespace ZR.Workflow.Model.Dto
         public int? Status { get; set; }
         /// <summary>流程定义Id</summary>
         public long? FlowId { get; set; }
+        /// <summary>申请人 userId（管理员查全部时按此过滤指定申请人，普通用户忽略）</summary>
+        public long? ApplyUserId { get; set; }
     }
 
     /// <summary>

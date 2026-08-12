@@ -38,10 +38,14 @@ namespace ZR.Workflow.Service
         /// </summary>
         /// <param name="parm">查询条件（标题/状态/流程定义）</param>
         /// <param name="userId">当前用户 Id（按 <c>ApplyUserId</c> 关联）</param>
-        public PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, long userId)
+        /// <param name="allUser">是否查询全部用户的流程（管理员视角）。为 true 时跳过"仅本人"过滤，
+        /// 但 parm.ApplyUserId 有值则按指定申请人过滤；为 false 时始终只看当前用户。</param>
+        public PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, long userId, bool allUser = false)
         {
+            // 非管理员只看自己；管理员(allUser)看全部，可再按 ApplyUserId 二次筛选
+            var applyUserId = allUser ? parm.ApplyUserId : userId;
             var predicate = Expressionable.Create<WfFlowInstance>()
-                .And(t => t.ApplyUserId == userId)
+                .AndIF(applyUserId != null, t => t.ApplyUserId == applyUserId)
                 .AndIF(!string.IsNullOrEmpty(parm.Title), t => t.Title.Contains(parm.Title))
                 .AndIF(parm.Status != null, t => t.Status == parm.Status)
                 .AndIF(parm.FlowId != null, t => t.FlowId == parm.FlowId);

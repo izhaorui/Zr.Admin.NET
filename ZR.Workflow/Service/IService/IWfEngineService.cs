@@ -78,5 +78,36 @@ namespace ZR.Workflow.Service.IService
         /// <param name="opinion">减签说明</param>
         /// <param name="operatorId">操作人 userId（须为该节点某一任务的审批人）</param>
         void RemoveSign(long taskId, long targetUserId, string opinion, long operatorId);
+
+        /// <summary>
+        /// 管理员强制终止 / 作废流程（不可逆）
+        /// </summary>
+        /// <param name="instanceId">流程实例Id</param>
+        /// <param name="operatorId">操作管理员 userId</param>
+        /// <param name="opinion">终止原因</param>
+        Task AdminTerminate(long instanceId, long operatorId, string opinion);
+
+        /// <summary>
+        /// 管理员挂起流程（暂停流转）
+        /// </summary>
+        Task AdminSuspend(long instanceId, long operatorId, string opinion);
+
+        /// <summary>
+        /// 管理员恢复被挂起的流程
+        /// </summary>
+        Task AdminResume(long instanceId, long operatorId, string opinion);
+
+        /// <summary>
+        /// 管理员改派：把指定节点的全部未完成任务改给目标用户
+        /// </summary>
+        /// <param name="nodeId">目标节点</param>
+        /// <param name="targetUserId">改派目标用户 userId</param>
+        Task AdminReassign(long instanceId, long nodeId, long targetUserId, long operatorId, string opinion);
+
+        /// <summary>
+        /// 管理员跳转节点：把卡住的实例直接跳到指定节点重新激活
+        /// </summary>
+        /// <param name="targetNodeId">跳转目标节点（必须存在且非结束节点）</param>
+        Task AdminJump(long instanceId, long targetNodeId, long operatorId, string opinion);
     }
 }
