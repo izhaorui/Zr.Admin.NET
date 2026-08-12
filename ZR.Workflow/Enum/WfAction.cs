@@ -24,6 +24,8 @@ namespace ZR.Workflow.Enum
         /// <summary>自动跳过（审批人为空时节点自动通过，仅留痕）</summary>
         AutoSkip = 8,
         /// <summary>减签（移除本节点某审批人，任务置 Skipped 并重新判定节点完成）</summary>
-        RemoveSign = 9
+        RemoveSign = 9,
+        /// <summary>委托代审（原审批人将待办委托给他人代审，任务仍归属原审批人）</summary>
+        Delegate = 10
     }
 }

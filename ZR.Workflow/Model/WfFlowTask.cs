@@ -47,6 +47,17 @@ namespace ZR.Workflow.Model
         public string AssigneeNickName { get; set; }
 
         /// <summary>
+        /// 委托代审人Id（稳定外键）。委托生效后填入实际代审人 userId，任务仍归属原审批人（AssigneeId 不变），
+        /// 代审人凭此字段可在待办看到并代为审批；未委托时为 null。
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public long? DelegateId { get; set; }
+
+        /// <summary>委托代审人昵称（快照，方便前端直接展示"代 X 审批"）</summary>
+        [SugarColumn(Length = 500, IsNullable = true)]
+        public string DelegateName { get; set; }
+
+        /// <summary>
         /// 任务状态 0=待审 1=已审 2=跳过
         /// </summary>
         [SugarColumn(DefaultValue = "0")]

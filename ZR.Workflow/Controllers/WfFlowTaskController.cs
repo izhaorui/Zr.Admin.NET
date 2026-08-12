@@ -94,6 +94,19 @@ namespace ZR.Workflow.Controllers
         }
 
         /// <summary>
+        /// 委托代审（任务仍归属原审批人，仅记录代审人）
+        /// </summary>
+        [HttpPost("delegate")]
+        [ActionPermissionFilter(Permission = "workflow:task:delegate")]
+        [Log(Title = "委托代审", BusinessType = BusinessType.UPDATE)]
+        public IActionResult Delegate([FromBody] WfDelegateInput parm)
+        {
+            var userId = HttpContext.GetUId();
+            _engine.Delegate(parm.TaskId, parm.TargetUserId, parm.Opinion, userId);
+            return SUCCESS(1);
+        }
+
+        /// <summary>
         /// 标记待办已读
         /// </summary>
         [HttpPost("read")]

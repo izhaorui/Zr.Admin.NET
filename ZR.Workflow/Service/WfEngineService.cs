@@ -73,7 +73,9 @@ namespace ZR.Workflow.Service
                 throw new CustomException("流程状态异常，无法审批");
 
             var op = LoadUser(operatorId);
-            logger.Info($"审批通过：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId})");
+            // 委托代审：操作人实为代审人，记录标注"代 X 审批"（X=原审批人昵称）
+            var delegatedNote = IsDelegatedOperator(task, operatorId) ? $"（代 {task.AssigneeNickName} 审批）" : "";
+            logger.Info($"审批通过：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId}){delegatedNote}");
 
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var allNodes = LoadOrderedNodes(instance.FlowId);
@@ -100,7 +102,7 @@ namespace ZR.Workflow.Service
                     })
                     .Where(t => t.TaskId == taskId).ExecuteCommand();
 
-                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Approve, opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Approve, delegatedNote + opinion);
 
                 // 依次审批：激活下一位等待中的审批人（前一人已通过，轮到下一顺位；不推进节点）
                 if (node.SignType == (int)WfSignType.Sequential)
@@ -143,7 +145,8 @@ namespace ZR.Workflow.Service
         {
             var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
             var op = LoadUser(operatorId);
-            logger.Info($"审批驳回：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId})");
+            var delegatedNote = IsDelegatedOperator(task, operatorId) ? $"（代 {task.AssigneeNickName} 审批）" : "";
+            logger.Info($"审批驳回：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId}){delegatedNote}");
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var allNodes = LoadOrderedNodes(instance.FlowId);
             var linksBySource = LoadNodeLinks(instance.FlowId);
@@ -164,7 +167,7 @@ namespace ZR.Workflow.Service
                     })
                     .Where(t => t.TaskId == taskId).ExecuteCommand();
 
-                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Reject, opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Reject, delegatedNote + opinion);
 
                 NotifyUser(instance.ApplyUserId, $"【审批驳回】{instance.Title} 被 {op.NickName} 驳回{(string.IsNullOrEmpty(opinion) ? "" : "：" + opinion)}");
 
@@ -396,6 +399,50 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
+        /// 委托代审：原审批人把当前待办委托给他人代审。
+        /// 与转办的本质区别——<b>不转移任务归属</b>：AssigneeId（原审批人）保持不变，仅写入 DelegateId/DelegateName 记录实际代审人；
+        /// 代审人可凭 DelegateId 在待办看到并代为通过/驳回，操作记录标注"代 X 审批"。
+        /// 已委托（DelegateId 已有值）则拒绝重复委托；不能委托给自己或无效用户。
+        /// </summary>
+        public void Delegate(long taskId, long targetUserId, string opinion, long operatorId)
+        {
+            if (targetUserId <= 0) throw new CustomException("请选择代审人");
+            if (targetUserId == operatorId) throw new CustomException("不能委托给自己");
+
+            var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
+            if (instance.Status != (int)WfInstanceStatus.Approval)
+                throw new CustomException("流程状态异常，无法委托");
+            if (task.DelegateId != null)
+                throw new CustomException("该任务已委托他人代审，请勿重复委托");
+
+            var op = LoadUser(operatorId);
+            logger.Info($"委托代审：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) {op.NickName}({operatorId}) → 代审人({targetUserId})");
+            var target = Context.Queryable<SysUser>().First(u => u.UserId == targetUserId)
+                ?? throw new CustomException("代审人不存在");
+
+            RunInTx(() =>
+            {
+                var now = DateTime.Now;
+                Context.Updateable<WfFlowTask>()
+                    .SetColumns(t => new WfFlowTask
+                    {
+                        // 注意：AssigneeId / Assignee / AssigneeNickName 均保持不变，任务仍归属原审批人
+                        DelegateId = targetUserId,
+                        DelegateName = target.NickName,
+                        Opinion = opinion,
+                        Update_time = now,
+                        Update_by = op.UserName
+                    })
+                    .Where(t => t.TaskId == taskId).ExecuteCommand();
+
+                var recordOpinion = "委托 " + target.NickName + " 代审" + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
+                AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Delegate, recordOpinion);
+
+                Notify(targetUserId, $"【审批委托】{instance.Title} 由 {op.NickName} 委托您代审（任务仍归属 {op.NickName}）。");
+            }, "委托失败");
+        }
+
+        /// <summary>
         /// 减签：移除本节点某审批人（将其待办置 Skipped 并重新判定节点完成）。
         /// 操作人必须是该节点某一审批任务的审批人（含已处理），被减签目标须为该节点处于 Pending/Waiting 的任务。
         /// 减签后：若节点满足完成条件则按原流转推进；若依次审批(Sequential)下当前处理人被减掉，则自动激活下一位 Waiting。
@@ -513,6 +560,7 @@ namespace ZR.Workflow.Service
         /// （如 Approve 用"无法审批"、Transfer 用"无法转办"、AddSign 用"无法加签"；Reject 不校验）。
         ///
         /// 审批权限按 <c>AssigneeId</c>（userId）比对：userName 可被改名，用它鉴权会在改名后误判无权限。
+        /// 委托代审场景下，<c>DelegateId</c> 命中操作者亦视为有权（任务仍归属原审批人，代审人代为操作）。
         /// </summary>
         private (WfFlowTask task, WfFlowInstance instance) LoadPendingTaskAndInstance(long taskId, long operatorId)
         {
@@ -520,13 +568,20 @@ namespace ZR.Workflow.Service
                 ?? throw new CustomException("审批任务不存在");
             if (task.Status != (int)WfTaskStatus.Pending)
                 throw new CustomException("该任务已处理");
-            if (task.AssigneeId != operatorId)
+            if (task.AssigneeId != operatorId && task.DelegateId != operatorId)
                 throw new CustomException("无审批权限");
 
             var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == task.InstanceId)
                 ?? throw new CustomException("流程实例不存在");
             return (task, instance);
         }
+
+        /// <summary>
+        /// 判断当前操作者是否为"代审人"（任务被委托给该用户，任务本身归属原审批人）。
+        /// 代审场景下审批记录需标注"代 X 审批"，且操作人以代审人身份落痕。
+        /// </summary>
+        private bool IsDelegatedOperator(WfFlowTask task, long operatorId)
+            => task.DelegateId == operatorId && task.AssigneeId != operatorId;
 
         /// <summary>
         /// 按 userId 取操作人（登录名 + 昵称快照）。公共入口只收 userId，展示用名称在此一次性取出，

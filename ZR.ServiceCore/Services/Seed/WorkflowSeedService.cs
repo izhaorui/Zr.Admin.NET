@@ -98,7 +98,7 @@ namespace ZR.ServiceCore.Services
                     Buttons:
                     [
                         new("通过", "workflow:task:approve"), new("驳回", "workflow:task:reject"), new("转办", "workflow:task:transfer"),
-                        new("加签", "workflow:task:addsign"), new("评论", "workflow:comment:list"), new("发表评论", "workflow:comment:add"),
+                        new("加签", "workflow:task:addsign"), new("委托", "workflow:task:delegate"), new("评论", "workflow:comment:list"), new("发表评论", "workflow:comment:add"),
                     ]),
                 new(Name: "已办任务", Path: "done", Component: "workflow/done/index", Perms: "workflow:task:list", OrderNum: 3, Category: 1, Icon: "log",
                     Buttons: []),

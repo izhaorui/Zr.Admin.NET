@@ -21,7 +21,7 @@ namespace ZR.Workflow.Service
             var query = Queryable()
                 .InnerJoin<WfFlowInstance>((t, i) => t.InstanceId == i.InstanceId)
                 .LeftJoin<WfFlowDefinition>((t, i, d) => i.FlowId == d.FlowId)
-                .Where((t, i, d) => t.AssigneeId == userId && t.Status == status)
+                .Where((t, i, d) => (t.AssigneeId == userId || t.DelegateId == userId) && t.Status == status)
                 .WhereIF(!string.IsNullOrEmpty(parm.Title), (t, i, d) => i.Title.Contains(parm.Title))
                 .Select((t, i, d) => new WfFlowTaskDto
                 {
@@ -31,6 +31,8 @@ namespace ZR.Workflow.Service
                     NodeName = t.NodeName,
                     Assignee = t.Assignee,
                     AssigneeNickName = t.AssigneeNickName,
+                    DelegateId = t.DelegateId,
+                    DelegateName = t.DelegateName,
                     Status = t.Status,
                     Opinion = t.Opinion,
                     Action = t.Action,
@@ -53,7 +55,7 @@ namespace ZR.Workflow.Service
         public int GetUnreadCount(long userId)
         {
             return Queryable()
-                .Where(t => t.AssigneeId == userId && t.Status == (int)WfTaskStatus.Pending && !t.IsRead)
+                .Where(t => (t.AssigneeId == userId || t.DelegateId == userId) && t.Status == (int)WfTaskStatus.Pending && !t.IsRead)
                 .Count();
         }
 
@@ -65,7 +67,7 @@ namespace ZR.Workflow.Service
             if (ids == null || ids.Count == 0) return;
             Context.Updateable<WfFlowTask>()
                 .SetColumns(t => new WfFlowTask { IsRead = true })
-                .Where(t => ids.Contains(t.TaskId) && t.AssigneeId == userId)
+                .Where(t => ids.Contains(t.TaskId) && (t.AssigneeId == userId || t.DelegateId == userId))
                 .ExecuteCommand();
         }
     }

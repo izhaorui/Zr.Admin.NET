@@ -62,6 +62,15 @@ namespace ZR.Workflow.Service.IService
         void AddSign(long taskId, List<long> userIds, string opinion, long operatorId);
 
         /// <summary>
+        /// 委托代审：原审批人将当前待办委托给他人代审（任务仍归属原审批人，仅记录代审人）
+        /// </summary>
+        /// <param name="taskId">任务Id</param>
+        /// <param name="targetUserId">代审人 userId</param>
+        /// <param name="opinion">委托说明</param>
+        /// <param name="operatorId">操作人 userId（须为该任务的 AssigneeId，且未重复委托）</param>
+        void Delegate(long taskId, long targetUserId, string opinion, long operatorId);
+
+        /// <summary>
         /// 减签：移除本节点某审批人（将其待办置 Skipped 并重新判定节点完成）
         /// </summary>
         /// <param name="taskId">操作人自己的任务 Id（用于鉴权该节点）</param>

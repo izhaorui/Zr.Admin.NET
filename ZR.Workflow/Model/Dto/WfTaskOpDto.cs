@@ -31,6 +31,21 @@ namespace ZR.Workflow.Model.Dto
     }
 
     /// <summary>
+    /// 委托代审入参（委托不转移任务归属，仅记录实际代审人）
+    /// </summary>
+    public class WfDelegateInput
+    {
+        /// <summary>任务Id</summary>
+        public long TaskId { get; set; }
+
+        /// <summary>代审人 userId（稳定标识，不使用可变的登录名）</summary>
+        public long TargetUserId { get; set; }
+
+        /// <summary>委托说明</summary>
+        public string Opinion { get; set; }
+    }
+
+    /// <summary>
     /// 标记已读入参（Ids 为逗号分隔的主键，支持批量）
     /// </summary>
     public class WfReadInput
