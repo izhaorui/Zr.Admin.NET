@@ -352,6 +352,110 @@ namespace ZR.Tests
             Assert.Equal((int)WfInstanceStatus.Approved, GetInstance(id).Status);
         }
 
+        /// <summary>
+        /// 回归：并行网关(7) 分叉 → A/B 审批 → 汇聚(8) → 抄送(3)（无后续）终态。
+        /// 汇聚后到达抄送节点时，实例应正常 CompleteInstance（Approved），抄送任务 Skipped。
+        /// </summary>
+        [Fact]
+        public void Cc_并行网关汇聚后到抄送_正常结束()
+        {
+            var flowId = _db.AddDefinition("CC3", "汇聚后抄送");
+            var fork = _db.AddNode(flowId, "分叉", (int)WfNodeType.ParallelFork, 0, "", 1);
+            var a = _db.AddNode(flowId, "分支A", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uid("a").ToString(), 2);
+            var b = _db.AddNode(flowId, "分支B", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uid("b").ToString(), 3);
+            var join = _db.AddNode(flowId, "汇聚", (int)WfNodeType.ParallelJoin, 0, "", 4);
+            var cc = _db.AddNode(flowId, "抄送C", (int)WfNodeType.Cc, (int)WfApproverType.User, _db.Uid("cc1").ToString(), 5);
+            _db.AddLink(flowId, fork, a, null, 1);
+            _db.AddLink(flowId, fork, b, null, 2);
+            _db.AddLink(flowId, a, join, null, 1);
+            _db.AddLink(flowId, b, join, null, 2);
+            _db.AddLink(flowId, join, cc, null, 1);
+
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
+            _engine.Approve(GetTask(id, a, "a").TaskId, "ok", _db.Uid("a"));
+            Assert.Equal((int)WfInstanceStatus.Approval, GetInstance(id).Status);
+
+            _engine.Approve(GetTask(id, b, "b").TaskId, "ok", _db.Uid("b"));
+            var inst = GetInstance(id);
+            Assert.Equal((int)WfInstanceStatus.Approved, inst.Status);
+            Assert.Null(inst.CurrentNodeId);
+            var ccs = _db.Db.Queryable<WfFlowTask>().Where(t => t.InstanceId == id && t.NodeId == cc).ToList();
+            Assert.Single(ccs);
+            Assert.Equal((int)WfTaskStatus.Skipped, ccs[0].Status);
+        }
+
+        /// <summary>
+        /// 回归（修复 2026-08-12 并行分组内抄送导致 CurrentNodeId 错指抄送节点）：
+        /// 并行分组（ParallelGroup 字段）内含抄送节点 C，汇聚后到下游审批 D。
+        /// 修复前：fork 时抄送节点被加入活动集但从不移除，汇聚后 CurrentNodeId 错取抄送 C(3) 而非真正下游 D(4)，
+        /// 前端据此把"抄送节点"标成当前审批节点、实例卡在审批中。
+        /// 修复后：CurrentNodeId 正确指向 D，抄送节点不残留活动集。
+        /// </summary>
+        [Fact]
+        public void Cc_并行分组内含抄送_汇聚后正确到下游审批()
+        {
+            var flowId = _db.AddDefinition("CC4", "并行分组内抄送");
+            var start = _db.AddNode(flowId, "发起", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uid("lead").ToString(), 1);
+            var a = _db.AddNode(flowId, "组内A", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uid("a").ToString(), 2, parallelGroup: 1);
+            var c = _db.AddNode(flowId, "组内抄送", (int)WfNodeType.Cc, (int)WfApproverType.User, _db.Uid("cc1").ToString(), 3, parallelGroup: 1);
+            var d = _db.AddNode(flowId, "末审批D", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uid("b").ToString(), 4);
+            _db.AddLink(flowId, start, a, null, 1);
+            _db.AddLink(flowId, start, c, null, 2);
+            _db.AddLink(flowId, a, d, null, 1);
+            _db.AddLink(flowId, c, d, null, 2);
+
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
+            _engine.Approve(GetTask(id, start, "lead").TaskId, "ok", _db.Uid("lead"));
+            _engine.Approve(GetTask(id, a, "a").TaskId, "ok", _db.Uid("a"));
+
+            var inst = GetInstance(id);
+            Assert.Equal((int)WfInstanceStatus.Approval, inst.Status);
+            Assert.Equal(d, inst.CurrentNodeId);                 // 关键：指向真正的下游审批 D，而非抄送 C
+            Assert.DoesNotContain(c.ToString(), inst.CurrentNodeIds ?? ""); // 抄送节点不残留活动集
+            Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, d, "b").Status);
+        }
+
+        /// <summary>
+        /// 回归（修复 2026-08-12 并行分支内某成员被"审批人为空自动跳过"导致汇聚卡死）：
+        /// 线上流程 FlowId=3：主管审批(26) → 并行分叉(27) → [并行一(28, 申请人主管/空→自动跳过 Skipped),
+        /// 并行二(29, 指定 a)] → 并行汇聚(30) → 抄送(31)。
+        /// 修复前：节点28因审批人为空生成 Skipped 任务，但 IsNodeComplete 或签分支只认 Done 不认 Skipped，
+        /// 汇聚判定 28 未完成 → 永远等待 → 实例卡审批中（任务已全完成）。
+        /// 修复后：并行二(29)审批完，汇聚放行 → 抄送 → 实例置通过(Approved)。
+        /// </summary>
+        [Fact]
+        public void Parallel_分支内自动跳过_汇聚仍正常完成()
+        {
+            var flowId = _db.AddDefinition("PAR3", "并行分支跳过汇聚");
+            var n26 = _db.AddNode(flowId, "直属主管审批", (int)WfNodeType.Audit, (int)WfApproverType.ApplyLeader, "", 1);
+            var n27 = _db.AddNode(flowId, "并行分叉", (int)WfNodeType.ParallelFork, 0, "", 2);
+            var n28 = _db.AddNode(flowId, "并行一·主管(空跳过)", (int)WfNodeType.Audit, (int)WfApproverType.ApplyLeader, "", 3, parallelGroup: 1);
+            var n29 = _db.AddNode(flowId, "并行二·a", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uid("a").ToString(), 4, parallelGroup: 1);
+            var n30 = _db.AddNode(flowId, "并行汇聚", (int)WfNodeType.ParallelJoin, 0, "", 5);
+            var n31 = _db.AddNode(flowId, "抄送1", (int)WfNodeType.Cc, (int)WfApproverType.User, _db.Uid("cc1").ToString(), 6);
+
+            _db.AddLink(flowId, n26, n27, null, 1);
+            _db.AddLink(flowId, n27, n28, null, 2);
+            _db.AddLink(flowId, n27, n29, null, 3);
+            _db.AddLink(flowId, n28, n30, null, 4);
+            _db.AddLink(flowId, n29, n30, null, 5);
+            _db.AddLink(flowId, n30, n31, null, 6);
+
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
+
+            var t29 = GetTask(id, n29, "a");
+            Assert.Equal((int)WfTaskStatus.Pending, t29.Status);
+            Assert.Equal((int)WfInstanceStatus.Approval, GetInstance(id).Status);
+
+            _engine.Approve(t29.TaskId, "ok", _db.Uid("a"));
+
+            var inst = GetInstance(id);
+            Assert.Equal((int)WfInstanceStatus.Approved, inst.Status);
+            Assert.Null(inst.CurrentNodeId);
+            var cc = _db.Db.Queryable<WfFlowTask>().First(t => t.InstanceId == id && t.NodeId == n31);
+            Assert.Equal((int)WfTaskStatus.Skipped, cc.Status);
+        }
+
         #endregion
 
         #region D. 节点级条件排他（ConditionField）

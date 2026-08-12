@@ -30,6 +30,13 @@ namespace ZR.Workflow.Service
 
         private readonly ISysUserMsgService _msgService;
 
+        // —— Webhook 延迟投递队列 ——
+        // 节点进入/离开钩子不在事务体内直接发 HTTP（库回滚时外部系统已收事件 → 状态不一致），
+        // 而是先入队，待 RunInTx 事务提交成功后统一投递（best-effort，失败仅记日志不阻断）。
+        // 服务为 Scoped，队列实例随请求作用域，天然并发隔离。
+        private readonly object _hookLock = new();
+        private readonly List<Func<Task>> _pendingHooks = new();
+
         public WfEngineService(ISysUserMsgService msgService)
         {
             _msgService = msgService;
@@ -79,8 +86,7 @@ namespace ZR.Workflow.Service
 
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var allNodes = LoadOrderedNodes(instance.FlowId);
-            var linksBySource = LoadNodeLinks(instance.FlowId);
-            var linksByTarget = LoadNodeLinksByTarget(instance.FlowId);
+            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
             // 活动集兜底初始化：存量实例可能无 CurrentNodeIds，用 CurrentNodeId 单值补齐，避免并行汇聚判定缺失
             if (string.IsNullOrWhiteSpace(instance.CurrentNodeIds) && instance.CurrentNodeId.HasValue)
             {
@@ -149,8 +155,7 @@ namespace ZR.Workflow.Service
             logger.Info($"审批驳回：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId}){delegatedNote}");
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var allNodes = LoadOrderedNodes(instance.FlowId);
-            var linksBySource = LoadNodeLinks(instance.FlowId);
-            var linksByTarget = LoadNodeLinksByTarget(instance.FlowId);
+            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
 
             RunInTx(() =>
             {
@@ -288,10 +293,18 @@ namespace ZR.Workflow.Service
             logger.Info($"撤回申请：InstanceId={instanceId} 发起人={op.NickName}({operatorId})");
 
             // 仅当前审批节点尚未被处理时允许撤回；已被审批则流程已进入下一环节，不可撤回。
+            // 并行场景下活动集 CurrentNodeIds 可能有多个活动节点（并行分叉/分组），
+            // 一旦进入并行阶段（活动节点 >1），任一分支可能已被审批、也可能并发推进中，整单撤回会破坏已产生的分支轨迹，
+            // 故并行阶段一律不允许撤回；串行（活动节点=1）沿用"当前节点未处理才可撤回"的判定。
             // 放在事务外做预检，使业务校验异常直接抛出（不会被包裹成通用的"撤回失败"）。
+            var activeNodeIds = GetActiveNodeIds(instance);
+            if (activeNodeIds.Count == 0 && instance.CurrentNodeId.HasValue)
+                activeNodeIds.Add(instance.CurrentNodeId.Value); // 存量实例无活动集时兜底用单值
+            if (activeNodeIds.Count > 1)
+                throw new CustomException("并行审批进行中，无法撤回");
             var currentNodeHandled = Context.Queryable<WfFlowTask>()
                 .Any(t => t.InstanceId == instanceId
-                         && t.NodeId == instance.CurrentNodeId
+                         && activeNodeIds.Contains(t.NodeId)
                          && t.Status == (int)WfTaskStatus.Done);
             if (currentNodeHandled)
                 throw new CustomException("当前节点已审批，无法撤回");
@@ -519,8 +532,7 @@ namespace ZR.Workflow.Service
             if (complete)
             {
                 var allNodes = LoadOrderedNodes(instance.FlowId);
-                var linksBySource = LoadNodeLinks(instance.FlowId);
-                var linksByTarget = LoadNodeLinksByTarget(instance.FlowId);
+                var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
                 var formValues = ParseFormValues(instance);
                 AdvanceToNext(instance, node, allNodes, linksBySource, linksByTarget, formValues);
                 return;
@@ -546,12 +558,40 @@ namespace ZR.Workflow.Service
         /// <see cref="BaseService{T}.UseTran(Action)"/> + 失败包装的统一入口。
         /// 事务回滚或异常时抛出带 <paramref name="errorLabel"/> 的 CustomException，
         /// 原 errorMessage 透传便于排障。所有公共入口均通过此方法走事务。
+        /// 事务提交成功后统一投递事务内入队的节点 Webhook（避免"库回滚但外部已收事件"不一致）。
         /// </summary>
         private void RunInTx(Action action, string errorLabel)
         {
+            // 清掉上次失败残留的钩子，避免把过期事件带进本次事务后误投递
+            lock (_hookLock) _pendingHooks.Clear();
+
             var result = UseTran(action);
             if (!result.IsSuccess)
                 throw new CustomException(ResultCode.CUSTOM_ERROR, errorLabel, result.ErrorMessage);
+
+            FlushPendingHooks();
+        }
+
+        /// <summary>
+        /// 投递事务内入队的节点钩子。事务已提交，此时 fire-and-forget 投递仅存在"通知丢失"风险
+        /// （符合钩子 best-effort 设计，失败仅记日志不阻断主流程）。
+        /// </summary>
+        private void FlushPendingHooks()
+        {
+            List<Func<Task>> hooks;
+            lock (_hookLock) { hooks = _pendingHooks.ToList(); _pendingHooks.Clear(); }
+            if (hooks.Count == 0) return;
+            foreach (var hook in hooks)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try { await hook(); }
+                    catch (Exception ex)
+                    {
+                        logger.Error($"[节点钩子] 投递异常：{ex.Message}");
+                    }
+                });
+            }
         }
 
         /// <summary>
@@ -627,32 +667,19 @@ namespace ZR.Workflow.Service
             nodeType == (int)WfNodeType.Audit || nodeType == (int)WfNodeType.Cc;
 
         /// <summary>
-        /// 取某 FlowId 的全部节点连线，按 SourceNodeId 分组（便于 O(1) 取某节点的出边集合）。
-        /// 无连线返回空字典。连线的存在与否决定引擎是否走"图分支"通道。
+        /// 一次性加载某 FlowId 的全部节点连线并分组成：按 SourceNodeId（出边）与按 TargetNodeId（入边）两张表。
+        /// 仅查库一次，避免原来 LoadNodeLinks / LoadNodeLinksByTarget 各自全量查询两次。
         /// </summary>
-        private Dictionary<long, List<WfNodeLink>> LoadNodeLinks(long flowId)
+        private (Dictionary<long, List<WfNodeLink>> bySource, Dictionary<long, List<WfNodeLink>> byTarget) LoadNodeLinks(long flowId)
         {
             var links = Context.Queryable<WfNodeLink>()
                 .Where(l => l.FlowId == flowId)
                 .OrderBy(l => l.Sort)
                 .ToList();
-            return links
-                .GroupBy(l => l.SourceNodeId)
-                .ToDictionary(g => g.Key, g => g.ToList());
-        }
-
-        /// <summary>
-        /// 按 TargetNodeId 分组的节点入边表（汇聚网关判定用：某汇聚节点的所有入边源是否都完成）。
-        /// </summary>
-        private Dictionary<long, List<WfNodeLink>> LoadNodeLinksByTarget(long flowId)
-        {
-            var links = Context.Queryable<WfNodeLink>()
-                .Where(l => l.FlowId == flowId)
-                .OrderBy(l => l.Sort)
-                .ToList();
-            return links
-                .GroupBy(l => l.TargetNodeId)
-                .ToDictionary(g => g.Key, g => g.ToList());
+            return (
+                links.GroupBy(l => l.SourceNodeId).ToDictionary(g => g.Key, g => g.ToList()),
+                links.GroupBy(l => l.TargetNodeId).ToDictionary(g => g.Key, g => g.ToList())
+            );
         }
 
         /// <summary>
@@ -664,8 +691,7 @@ namespace ZR.Workflow.Service
             var def = LoadActivatableDefinition(instance.FlowId);
             if (string.IsNullOrEmpty(instance.FlowName)) instance.FlowName = def.FlowName;
             var allNodes = LoadOrderedNodes(instance.FlowId);
-            var linksBySource = LoadNodeLinks(instance.FlowId);
-            var linksByTarget = LoadNodeLinksByTarget(instance.FlowId);
+            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
             // 首节点须包含条件网关（NodeType=4）与并行分叉网关（NodeType=7）：网关可作为流程的第一个节点（发起后立即分流/分叉）。
             // 若这里沿用 IsAuditableNode（只认 Audit/Cc），会直接跳过网关落到 NodeOrder 上的第一个审批节点，
             // 导致分支条件从未被评估、始终走"第一条分支"。ArriveNode 内部会对 Condition/ParallelFork 做透传处理。
@@ -760,18 +786,20 @@ namespace ZR.Workflow.Service
         #region 节点事件钩子（Webhook）
 
         /// <summary>
-        /// 触发节点事件 Webhook。钩子失败（网络/超时/非 2xx）仅记日志不阻断流程。
-        /// EnterHookUrl 在节点进入时调用；LeaveHookUrl 在节点离开（完成并推进前）时调用。
+        /// 登记节点事件 Webhook（入队，待事务提交后统一投递）。
+        /// EnterHookUrl 在节点进入时登记；LeaveHookUrl 在节点离开（完成并推进前）时登记。
+        /// 钩子失败（网络/超时/非 2xx）仅记日志不阻断流程。
         /// </summary>
         /// <param name="instance">流程实例（提供 InstanceId/Title/FormContent）</param>
         /// <param name="node">触发节点（提供 NodeId/NodeName/钩子 URL）</param>
         /// <param name="eventType">enter / leave</param>
         /// <param name="formValues">表单字段值（快照进 payload，便于外部系统取值）</param>
-        private async void FireNodeHook(WfFlowInstance instance, WfFlowNode node, string eventType, Dictionary<string, string> formValues)
+        private void QueueNodeHook(WfFlowInstance instance, WfFlowNode node, string eventType, Dictionary<string, string> formValues)
         {
             var url = eventType == "enter" ? node.EnterHookUrl : node.LeaveHookUrl;
             if (string.IsNullOrWhiteSpace(url)) return;
 
+            // 事务内快照全部入参，payload 在投递时再序列化，避免闭包捕获可变对象
             var payload = new
             {
                 eventType,
@@ -787,16 +815,23 @@ namespace ZR.Workflow.Service
                 formValues,
                 time = DateTime.Now
             };
-            try
+
+            lock (_hookLock)
             {
-                var body = JsonConvert.SerializeObject(payload);
-                await HttpHelper.HttpPostAsync(url, body, "application/json");
-                Log.WriteLine(ConsoleColor.Green, $"[节点钩子:{eventType}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 已通知 {url}");
-            }
-            catch (Exception ex)
-            {
-                // 钩子失败不阻断流转，仅记录
-                Log.WriteLine(ConsoleColor.Red, $"[节点钩子:{eventType}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 通知失败 {url}：{ex.Message}");
+                _pendingHooks.Add(async () =>
+                {
+                    try
+                    {
+                        var body = JsonConvert.SerializeObject(payload);
+                        await HttpHelper.HttpPostAsync(url, body, "application/json");
+                        logger.Info($"[节点钩子:{eventType}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 已通知 {url}");
+                    }
+                    catch (Exception ex)
+                    {
+                        // 钩子失败不阻断流转，仅记录
+                        logger.Info($"[节点钩子:{eventType}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 通知失败 {url}：{ex.Message}");
+                    }
+                });
             }
         }
 
@@ -822,8 +857,8 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
         {
-            // 节点进入事件钩子（Webhook）：进入该节点时异步通知外部系统，失败不阻断流转
-            FireNodeHook(instance, node, "enter", formValues);
+            // 节点进入事件钩子（Webhook）：登记入队，事务提交后统一投递，失败不阻断流转
+            QueueNodeHook(instance, node, "enter", formValues);
             logger.Info($"进入节点：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) Type={(WfNodeType)node.NodeType}{(node.ParallelGroup > 0 ? $" ParallelGroup={node.ParallelGroup}" : "")}");
 
             // 条件网关（菱形，NodeType=4）：本身不生成任务，到达后按出边 ConditionJson 选一路继续。
@@ -854,7 +889,8 @@ namespace ZR.Workflow.Service
             // 并行汇聚网关(8)：本身不生成任务，等待所有入边分支均完成才继续（join）。
             if (node.NodeType == (int)WfNodeType.ParallelJoin)
             {
-                if (IsJoinComplete(instance, node, allNodes, linksByTarget))
+                var tasksByNode = LoadNodeTasks(instance.InstanceId);
+                if (IsJoinComplete(instance, node, allNodes, linksByTarget, tasksByNode))
                 {
                     logger.Info($"并行汇聚完成：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 全部入边完成 → 继续推进");
                     RemoveActiveNodeId(instance, node.NodeId);
@@ -896,8 +932,9 @@ namespace ZR.Workflow.Service
                         if (!EvalCondition(g, formValues)) continue; // 分支条件不满足：不生成待办，视为已完成（包容网关）
                         if (g.NodeType == (int)WfNodeType.Cc)
                         {
+                            // 抄送节点瞬时完成（Skipped），其「完成」由 IsNodeComplete 的「无 Pending 任务」判定，
+                            // 不加入活动集：否则后续分组汇聚推进时它会残留活动集，导致 CurrentNodeId 取到抄送节点而非真正的下游节点。
                             CreateCcTask(instance, g, formValues);
-                            AddActiveNodeId(instance, g.NodeId);
                         }
                         else
                         {
@@ -1006,13 +1043,16 @@ namespace ZR.Workflow.Service
             logger.Info($"节点完成推进：InstanceId={instance.InstanceId} CompletedNode={completedNode.NodeName}({completedNode.NodeId})");
             RemoveActiveNodeId(instance, completedNode.NodeId);
 
-            // 节点离开事件钩子（Webhook）：节点完成并推进前异步通知外部系统，失败不阻断流转
-            FireNodeHook(instance, completedNode, "leave", formValues);
+            // 节点离开事件钩子（Webhook）：登记入队，事务提交后统一投递，失败不阻断流转
+            QueueNodeHook(instance, completedNode, "leave", formValues);
+
+            // 一次性加载实例全部任务供 join / 分组汇聚批量判定完成，避免逐节点查库（N+1）
+            var tasksByNode = LoadNodeTasks(instance.InstanceId);
 
             if (completedNode.ParallelGroup > 0)
             {
                 var groupNodes = allNodes.Where(n => n.ParallelGroup == completedNode.ParallelGroup).ToList();
-                var groupDone = groupNodes.All(g => IsNodeComplete(instance.InstanceId, g));
+                var groupDone = groupNodes.All(g => IsNodeComplete(tasksByNode, g));
                 if (!groupDone) { logger.Info($"并行分组汇聚等待：InstanceId={instance.InstanceId} Group={completedNode.ParallelGroup} 仍有分支未完成 → 继续等待"); SyncActiveNodeId(instance); return; } // 等待组内其余分支
                 var lastInGroup = groupNodes.MaxBy(g => g.NodeOrder);
                 var after = lastInGroup == null ? null : ResolveNextNode(lastInGroup, allNodes, linksBySource, linksByTarget, formValues);
@@ -1028,7 +1068,7 @@ namespace ZR.Workflow.Service
                 // 出边目标是汇聚网关(8)：仅当所有入边分支均完成时，才激活 8 的后续；否则 8 入活动集等待
                 if (next.NodeType == (int)WfNodeType.ParallelJoin)
                 {
-                    if (IsJoinComplete(instance, next, allNodes, linksByTarget))
+                    if (IsJoinComplete(instance, next, allNodes, linksByTarget, tasksByNode))
                     {
                         RemoveActiveNodeId(instance, next.NodeId);
                         var after = ResolveNextNode(next, allNodes, linksBySource, linksByTarget, formValues);
@@ -1079,7 +1119,7 @@ namespace ZR.Workflow.Service
         /// 判断汇聚网关(8)是否已满足 join 条件：所有入边源节点（linksByTarget 中 SourceNodeId）均已"完成"。
         /// 任一入边源尚未完成 → 返回 false（继续等待）。
         /// </summary>
-        private bool IsJoinComplete(WfFlowInstance instance, WfFlowNode joinNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksByTarget)
+        private bool IsJoinComplete(WfFlowInstance instance, WfFlowNode joinNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<long, List<WfFlowTask>> tasksByNode)
         {
             if (!linksByTarget.TryGetValue(joinNode.NodeId, out var inLinks) || inLinks.Count == 0) return true;
             foreach (var l in inLinks)
@@ -1089,7 +1129,7 @@ namespace ZR.Workflow.Service
                 // 实际并行分支的"完成"体现在分支末端的审批/抄送节点；这里只校验真实业务节点（审批/抄送）的完成。
                 if (src != null && (src.NodeType == (int)WfNodeType.Audit || src.NodeType == (int)WfNodeType.Cc))
                 {
-                    if (!IsNodeComplete(instance.InstanceId, src)) return false;
+                    if (!IsNodeComplete(tasksByNode, src)) return false;
                 }
             }
             return true;
@@ -1153,21 +1193,41 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 判断节点是否完成（或签：任一已审；会签：全部已审）
+        /// 一次性加载某实例的全部任务，并按 NodeId 分组成字典（供并行 join 批量判定完成，避免逐节点查库 N+1）。
+        /// </summary>
+        private Dictionary<long, List<WfFlowTask>> LoadNodeTasks(long instanceId)
+        {
+            return Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == instanceId)
+                .ToList()
+                .GroupBy(t => t.NodeId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        /// <summary>
+        /// 判断节点是否完成（或签：任一已审；会签：全部已审）。
+        /// 单节点查库版（串行主路径用）。
         /// </summary>
         private bool IsNodeComplete(long instanceId, WfFlowNode node)
+            => IsNodeComplete(LoadNodeTasks(instanceId), node);
+
+        /// <summary>
+        /// 判断节点是否完成（或签：任一已审；会签：全部已审）——内存版，接收已按节点分组的任务字典，
+        /// 供并行 join / 分组汇聚在一次性加载后批量判定，消除逐节点查库的 N+1。
+        /// </summary>
+        private bool IsNodeComplete(Dictionary<long, List<WfFlowTask>> tasksByNode, WfFlowNode node)
         {
-            var tasks = Context.Queryable<WfFlowTask>()
-                .Where(t => t.InstanceId == instanceId && t.NodeId == node.NodeId)
-                .ToList();
-            if (!tasks.Any()) return true;
+            if (!tasksByNode.TryGetValue(node.NodeId, out var tasks) || tasks == null || tasks.Count == 0) return true;
             // 抄送节点：任务生成即视为完成（状态 Skipped），无需审批；并行汇聚时依赖此判定
             if (node.NodeType == (int)WfNodeType.Cc)
                 return !tasks.Any(t => t.Status == (int)WfTaskStatus.Pending);
             if (node.SignType == (int)WfSignType.And || node.SignType == (int)WfSignType.Sequential)
                 // 会签/依次：已减签(Skipped)或被跳过(AutoSkip)的任务不阻塞完成判定，仅校验未跳过的任务是否全部 Done
                 return tasks.Where(t => t.Status != (int)WfTaskStatus.Skipped).All(t => t.Status == (int)WfTaskStatus.Done);
-            return tasks.Any(t => t.Status == (int)WfTaskStatus.Done);
+            // 或签：已跳过(AutoSkip)的 Skipped 任务同样不阻塞（如审批人为空自动跳过）。
+            // 若无未跳过任务（整节点被跳过），视为完成；否则要求未跳过的任务中任一 Done 即可。
+            var effective = tasks.Where(t => t.Status != (int)WfTaskStatus.Skipped).ToList();
+            return effective.Count == 0 || effective.Any(t => t.Status == (int)WfTaskStatus.Done);
         }
 
         /// <summary>
@@ -1401,11 +1461,22 @@ namespace ZR.Workflow.Service
                 Create_time = DateTime.Now,
                 Create_by = instance.ApplyUser
             }).ExecuteCommand();
-            // 每个收件人落一条抄送记录并写入各自的 OperatorId（userId），便于按 userId 精确匹配（抄送给我/数据面板）
-            foreach (var c in ccList)
+            // 每个收件人落一条抄送记录并写入各自的 OperatorId（userId），便于按 userId 精确匹配（抄送给我/数据面板）。
+            // 批量 Insertable 一次入库，避免逐条 ExecuteCommand 的多次往返。
+            var now = DateTime.Now;
+            Context.Insertable(ccList.Select(c => new WfFlowRecord
             {
-                AddRecord(instance.InstanceId, null, node.NodeId, c, (int)WfAction.Cc, "抄送");
-            }
+                InstanceId = instance.InstanceId,
+                TaskId = null,
+                NodeId = node.NodeId,
+                Operator = c.UserName,
+                OperatorId = c.UserId,
+                OperatorNickName = c.NickName,
+                Action = (int)WfAction.Cc,
+                Opinion = "抄送",
+                Create_time = now,
+                Create_by = c.UserName
+            }).ToList()).ExecuteCommand();
             NotifyUsers(ccList, $"【审批抄送】{instance.Title}（{instance.FlowName}）抄送知会，请知悉。");
         }
 
