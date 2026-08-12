@@ -26,6 +26,8 @@ namespace ZR.Workflow.Service
     [AppService(ServiceType = typeof(IWfEngineService))]
     public class WfEngineService : BaseService<WfFlowInstance>, IWfEngineService
     {
+        private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private readonly ISysUserMsgService _msgService;
 
         public WfEngineService(ISysUserMsgService msgService)
@@ -41,6 +43,7 @@ namespace ZR.Workflow.Service
         public long Start(WfFlowInstance instance)
         {
             var (def, allNodes, linksBySource, linksByTarget, firstNode) = PrepareStartFlow(instance);
+            logger.Info($"发起申请：FlowId={instance.FlowId} Title={instance.Title} 首节点={firstNode?.NodeName}({firstNode?.NodeId})");
 
             RunInTx(() =>
             {
@@ -70,6 +73,7 @@ namespace ZR.Workflow.Service
                 throw new CustomException("流程状态异常，无法审批");
 
             var op = LoadUser(operatorId);
+            logger.Info($"审批通过：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId})");
 
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var allNodes = LoadOrderedNodes(instance.FlowId);
@@ -98,7 +102,26 @@ namespace ZR.Workflow.Service
 
                 AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Approve, opinion);
 
+                // 依次审批：激活下一位等待中的审批人（前一人已通过，轮到下一顺位；不推进节点）
+                if (node.SignType == (int)WfSignType.Sequential)
+                {
+                    var next = Context.Queryable<WfFlowTask>()
+                        .Where(t => t.InstanceId == instance.InstanceId && t.NodeId == node.NodeId && t.Status == (int)WfTaskStatus.Waiting)
+                        .OrderBy(t => t.TaskId)
+                        .First();
+                    if (next != null)
+                    {
+                        Context.Updateable<WfFlowTask>()
+                            .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Pending, Opinion = "" })
+                            .Where(t => t.TaskId == next.TaskId).ExecuteCommand();
+                        Notify(next.AssigneeId.Value, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」轮到您审批。");
+                        logger.Info($"依次审批轮转：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 轮到下一审批人({next.AssigneeId})");
+                        return;
+                    }
+                }
+
                 if (!IsNodeComplete(instance.InstanceId, node)) return;
+                logger.Info($"节点完成：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 满足签类型完成条件 → 推进后续");
 
                 NotifyUser(instance.ApplyUserId, $"【审批进度】{instance.Title} 的「{node.NodeName}」节点已通过。");
 
@@ -120,6 +143,11 @@ namespace ZR.Workflow.Service
         {
             var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
             var op = LoadUser(operatorId);
+            logger.Info($"审批驳回：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId})");
+            var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
+            var allNodes = LoadOrderedNodes(instance.FlowId);
+            var linksBySource = LoadNodeLinks(instance.FlowId);
+            var linksByTarget = LoadNodeLinksByTarget(instance.FlowId);
 
             RunInTx(() =>
             {
@@ -140,15 +168,66 @@ namespace ZR.Workflow.Service
 
                 NotifyUser(instance.ApplyUserId, $"【审批驳回】{instance.Title} 被 {op.NickName} 驳回{(string.IsNullOrEmpty(opinion) ? "" : "：" + opinion)}");
 
-                // 驳回：保留 CurrentNodeId 指向被驳回的节点（详情页/重新提交需要展示"卡在哪一步"）
-                instance.Status = (int)WfInstanceStatus.Rejected;
-                Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
+                var strategy = (WfRejectStrategy)node.RejectStrategy;
+                WfFlowNode targetNode = null;
+                if (strategy == WfRejectStrategy.ToPrevNode)
+                {
+                    // 驳回到上一审批节点（NodeOrder 小于当前且为审批节点的最后一个）
+                    targetNode = allNodes
+                        .Where(n => n.NodeType == (int)WfNodeType.Audit && n.NodeOrder < node.NodeOrder)
+                        .OrderByDescending(n => n.NodeOrder)
+                        .FirstOrDefault();
+                }
+                else if (strategy == WfRejectStrategy.ToSpecifiedNode && node.RejectTargetNodeId.HasValue)
+                {
+                    targetNode = allNodes.FirstOrDefault(n => n.NodeId == node.RejectTargetNodeId.Value);
+                }
 
-                Context.Updateable<WfFlowTask>()
-                    .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
-                    .Where(t => t.InstanceId == instance.InstanceId && t.Status == (int)WfTaskStatus.Pending)
-                    .ExecuteCommand();
+                if (targetNode == null)
+                {
+                    // 退化策略：无上一节点 / 未配置指定节点 → 驳回发起人（默认行为）
+                    logger.Info($"驳回退化：InstanceId={instance.InstanceId} 无回退目标节点 → 直接驳回发起人");
+                    instance.Status = (int)WfInstanceStatus.Rejected;
+                    Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
+                    Context.Updateable<WfFlowTask>()
+                        .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
+                        .Where(t => t.InstanceId == instance.InstanceId && t.Status == (int)WfTaskStatus.Pending)
+                        .ExecuteCommand();
+                    return;
+                }
+
+                // 回退到目标节点重新审批：清掉目标及之后所有任务（轨迹保留在 WfFlowRecord），重置活动集并重新进入目标节点
+                logger.Info($"驳回回退：InstanceId={instance.InstanceId} 回退到节点 {targetNode?.NodeName}({targetNode?.NodeId})（策略={(WfRejectStrategy)node.RejectStrategy}）");
+                RollbackToNode(instance, targetNode, allNodes, linksBySource, linksByTarget);
             }, "驳回失败");
+        }
+
+        /// <summary>
+        /// 将流程回退到指定节点重新审批（可配置驳回策略：驳回到上一步 / 指定节点）。
+        /// 清掉目标节点及其之后所有任务，重置活动集为目标节点，重新触发该节点的进入/任务生成。
+        /// 历史审批轨迹由 WfFlowRecord 保留，任务仅作为"当前待办"快照被清理。
+        /// </summary>
+        private void RollbackToNode(WfFlowInstance instance, WfFlowNode targetNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget)
+        {
+            var cleanupIds = allNodes
+                .Where(n => n.NodeOrder >= targetNode.NodeOrder)
+                .Select(n => n.NodeId)
+                .ToList();
+            logger.Info($"回退重置：InstanceId={instance.InstanceId} 清理节点集 Order>={targetNode.NodeOrder}（{cleanupIds.Count} 个）并重新进入 {targetNode.NodeName}({targetNode.NodeId})");
+            Context.Updateable<WfFlowTask>()
+                .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
+                .Where(t => t.InstanceId == instance.InstanceId && cleanupIds.Contains(t.NodeId))
+                .ExecuteCommand();
+
+            instance.CurrentNodeId = targetNode.NodeId;
+            instance.CurrentNodeIds = JsonConvert.SerializeObject(new[] { targetNode.NodeId });
+            instance.Status = (int)WfInstanceStatus.Approval;
+            Context.Updateable(instance)
+                .UpdateColumns(i => new { i.CurrentNodeId, i.CurrentNodeIds, i.Status })
+                .ExecuteCommand();
+
+            var formValues = ParseFormValues(instance);
+            ArriveNode(instance, targetNode, allNodes, linksBySource, linksByTarget, formValues);
         }
 
         /// <summary>
@@ -166,6 +245,7 @@ namespace ZR.Workflow.Service
 
             var op = LoadUser(operatorId);
             var (def, allNodes, linksBySource, linksByTarget, firstNode) = PrepareStartFlow(instance);
+            logger.Info($"发起申请：FlowId={instance.FlowId} Title={instance.Title} 首节点={firstNode?.NodeName}({firstNode?.NodeId})");
 
             RunInTx(() =>
             {
@@ -202,6 +282,7 @@ namespace ZR.Workflow.Service
                 throw new CustomException("当前状态不可撤回");
 
             var op = LoadUser(operatorId);
+            logger.Info($"撤回申请：InstanceId={instanceId} 发起人={op.NickName}({operatorId})");
 
             // 仅当前审批节点尚未被处理时允许撤回；已被审批则流程已进入下一环节，不可撤回。
             // 放在事务外做预检，使业务校验异常直接抛出（不会被包裹成通用的"撤回失败"）。
@@ -230,6 +311,7 @@ namespace ZR.Workflow.Service
                 NotifyUserIds(pendingAssigneeIds, $"【审批撤回】{instance.Title} 已被申请人撤回。");
 
                 instance.Status = (int)WfInstanceStatus.Withdrawn;
+                logger.Info($"撤回完成：InstanceId={instanceId} → 状态=Withdrawn（已撤回）");
                 Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
             }, "撤回失败");
         }
@@ -247,6 +329,7 @@ namespace ZR.Workflow.Service
                 throw new CustomException("流程状态异常，无法转办");
 
             var op = LoadUser(operatorId);
+            logger.Info($"转办：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) {op.NickName}({operatorId}) → 目标用户({targetUserId})");
             // 转办目标按 userId 取用户；不存在则直接拒绝（避免把任务转给一个无效 Id 造成流程卡死）
             var target = Context.Queryable<SysUser>().First(u => u.UserId == targetUserId)
                 ?? throw new CustomException("转办人不存在");
@@ -287,6 +370,7 @@ namespace ZR.Workflow.Service
                 throw new CustomException("流程状态异常，无法加签");
 
             var op = LoadUser(operatorId);
+            logger.Info($"加签：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId}) 加签用户=[{string.Join(",", userIds)}]");
             // 去重按 AssigneeId（userId）比对，不再按可变的登录名
             var existingIds = Context.Queryable<WfFlowTask>()
                 .Where(t => t.InstanceId == task.InstanceId && t.NodeId == task.NodeId && t.AssigneeId != null)
@@ -445,6 +529,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void CompleteInstance(WfFlowInstance instance)
         {
+            logger.Info($"流程结束：InstanceId={instance.InstanceId} Title={instance.Title} → 状态=Approved（通过）");
             instance.Status = (int)WfInstanceStatus.Approved;
             instance.CurrentNodeId = null;
             instance.CurrentNodeIds = null;
@@ -521,6 +606,51 @@ namespace ZR.Workflow.Service
 
         #endregion
 
+        #region 节点事件钩子（Webhook）
+
+        /// <summary>
+        /// 触发节点事件 Webhook。钩子失败（网络/超时/非 2xx）仅记日志不阻断流程。
+        /// EnterHookUrl 在节点进入时调用；LeaveHookUrl 在节点离开（完成并推进前）时调用。
+        /// </summary>
+        /// <param name="instance">流程实例（提供 InstanceId/Title/FormContent）</param>
+        /// <param name="node">触发节点（提供 NodeId/NodeName/钩子 URL）</param>
+        /// <param name="eventType">enter / leave</param>
+        /// <param name="formValues">表单字段值（快照进 payload，便于外部系统取值）</param>
+        private async void FireNodeHook(WfFlowInstance instance, WfFlowNode node, string eventType, Dictionary<string, string> formValues)
+        {
+            var url = eventType == "enter" ? node.EnterHookUrl : node.LeaveHookUrl;
+            if (string.IsNullOrWhiteSpace(url)) return;
+
+            var payload = new
+            {
+                eventType,
+                instanceId = instance.InstanceId,
+                flowId = instance.FlowId,
+                flowName = instance.FlowName,
+                title = instance.Title,
+                businessKey = instance.BusinessKey,
+                nodeId = node.NodeId,
+                nodeName = node.NodeName,
+                nodeType = node.NodeType,
+                formContent = instance.FormContent,
+                formValues,
+                time = DateTime.Now
+            };
+            try
+            {
+                var body = JsonConvert.SerializeObject(payload);
+                await HttpHelper.HttpPostAsync(url, body, "application/json");
+                Log.WriteLine(ConsoleColor.Green, $"[节点钩子:{eventType}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 已通知 {url}");
+            }
+            catch (Exception ex)
+            {
+                // 钩子失败不阻断流转，仅记录
+                Log.WriteLine(ConsoleColor.Red, $"[节点钩子:{eventType}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 通知失败 {url}：{ex.Message}");
+            }
+        }
+
+        #endregion
+
         #region 内部流转引擎
 
         /// <summary>
@@ -541,6 +671,10 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
         {
+            // 节点进入事件钩子（Webhook）：进入该节点时异步通知外部系统，失败不阻断流转
+            FireNodeHook(instance, node, "enter", formValues);
+            logger.Info($"进入节点：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) Type={(WfNodeType)node.NodeType}{(node.ParallelGroup > 0 ? $" ParallelGroup={node.ParallelGroup}" : "")}");
+
             // 条件网关（菱形，NodeType=4）：本身不生成任务，到达后按出边 ConditionJson 选一路继续。
             // 条件在连线（link）上表达，无需节点级 EvalCondition；无条件出边作为默认分支。
             if (node.NodeType == (int)WfNodeType.Condition)
@@ -549,6 +683,7 @@ namespace ZR.Workflow.Service
                 // 否则活动集残留网关 id、CurrentNodeId 被 SetActiveNodeIds 的 Min() 取成网关而非真正活动节点。
                 RemoveActiveNodeId(instance, node.NodeId);
                 SyncActiveNodeId(instance);
+                logger.Info($"条件网关选路：InstanceId={instance.InstanceId} Condition={node.NodeName}({node.NodeId}) 走 ResolveNextNode 选路");
                 ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
                 return;
             }
@@ -559,6 +694,7 @@ namespace ZR.Workflow.Service
                 RemoveActiveNodeId(instance, node.NodeId);
                 var targets = ResolveNextNodes(node, allNodes, linksBySource, formValues);
                 if (targets.Count == 0) { CompleteInstance(instance); return; }
+                logger.Info($"并行分叉网关：InstanceId={instance.InstanceId} Fork={node.NodeName}({node.NodeId}) → {targets.Count} 条出边");
                 foreach (var t in targets) ArriveNode(instance, t, allNodes, linksBySource, linksByTarget, formValues);
                 SyncActiveNodeId(instance);
                 return;
@@ -569,6 +705,7 @@ namespace ZR.Workflow.Service
             {
                 if (IsJoinComplete(instance, node, allNodes, linksByTarget))
                 {
+                    logger.Info($"并行汇聚完成：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 全部入边完成 → 继续推进");
                     RemoveActiveNodeId(instance, node.NodeId);
                     var after = ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues);
                     ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
@@ -576,6 +713,7 @@ namespace ZR.Workflow.Service
                 else
                 {
                     // 仍有分支未完成：汇聚网关保持在活动集等待，不推进
+                    logger.Info($"并行汇聚等待：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 仍有入边分支未完成 → 等待");
                     AddActiveNodeId(instance, node.NodeId);
                     SyncActiveNodeId(instance);
                 }
@@ -585,6 +723,7 @@ namespace ZR.Workflow.Service
             // 排他跳过：条件不满足则顺延到下一节点（递归）；全部不满足则流程直接通过
             if (!EvalCondition(node, formValues))
             {
+                logger.Info($"排他跳过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 条件不满足 → 顺延下一节点");
                 ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
                 return;
             }
@@ -592,6 +731,7 @@ namespace ZR.Workflow.Service
             // 并行分支：首次到达该分组时，同时激活组内所有满足条件的节点
             if (node.ParallelGroup > 0)
             {
+                logger.Info($"并行分组进入：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) ParallelGroup={node.ParallelGroup}");
                 var groupNodes = allNodes.Where(n => n.ParallelGroup == node.ParallelGroup).ToList();
                 var groupNodeIds = groupNodes.Select(g => g.NodeId).ToList();
                 var groupActive = Context.Queryable<WfFlowTask>()
@@ -628,6 +768,7 @@ namespace ZR.Workflow.Service
                     // 分组内无任何待办（条件均不满足 / 全为抄送）：视为已完成，直接汇聚
                     var hasPending = Context.Queryable<WfFlowTask>()
                         .Any(t => t.InstanceId == instance.InstanceId && groupNodeIds.Contains(t.NodeId) && t.Status == (int)WfTaskStatus.Pending);
+                    logger.Info($"并行分组 fork：InstanceId={instance.InstanceId} Group={node.ParallelGroup} 组内活跃成员={groupNodes.Count} 是否产生待办={hasPending}");
                     if (!hasPending)
                     {
                         // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点
@@ -662,13 +803,23 @@ namespace ZR.Workflow.Service
             {
                 // 审批人为空（如部门未配置负责人 / 发起人无主管 / 指定用户已删除）：参考业界「节点自动通过」策略，
                 // 生成一条 Skipped 留痕任务并立即推进，避免流程卡死在无待办的节点上。
+                // 关键：自动跳过等价于「节点完成并推进」，需先从活动集移除当前节点（否则会残留高亮，
+                // 且下一节点加入后活动集变成 [当前, 下一] 两个，导致当前节点与下一节点同时处于活动态）。
+                logger.Info($"审批人自动跳过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 审批人为空 → 自动通过");
                 CreateAutoSkipTask(instance, node, "审批人为空，节点自动跳过");
+                RemoveActiveNodeId(instance, node.NodeId);
+                SyncActiveNodeId(instance);
                 ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
                 return;
             }
             AddActiveNodeId(instance, node.NodeId);
-            BatchCreateTasks(instance.InstanceId, node.NodeId, node.NodeName, approvers, (int)WfTaskStatus.Pending, instance.ApplyUser);
-            NotifyUsers(approvers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」待您审批。");
+            // 审批节点：生成审批人待办（或签/会签同时激活；依次审批仅首位 Pending，其余 Waiting）
+            var sequential = node.SignType == (int)WfSignType.Sequential;
+            logger.Info($"生成审批待办：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 审批人={approvers.Count} 签类型={(WfSignType)node.SignType}{(sequential ? " 依次审批" : "")}");
+            BatchCreateTasks(instance.InstanceId, node.NodeId, node.NodeName, approvers, (int)WfTaskStatus.Pending, instance.ApplyUser, sequential: sequential);
+            // 通知：或签/会签通知全部；依次审批仅通知当前首位（其余 Waiting 待轮到再通知）
+            var notifyList = sequential ? approvers.Take(1).ToList() : approvers;
+            NotifyUsers(notifyList, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」待您审批。");
             SyncActiveNodeId(instance);
         }
 
@@ -691,13 +842,17 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
         {
+            logger.Info($"节点完成推进：InstanceId={instance.InstanceId} CompletedNode={completedNode.NodeName}({completedNode.NodeId})");
             RemoveActiveNodeId(instance, completedNode.NodeId);
+
+            // 节点离开事件钩子（Webhook）：节点完成并推进前异步通知外部系统，失败不阻断流转
+            FireNodeHook(instance, completedNode, "leave", formValues);
 
             if (completedNode.ParallelGroup > 0)
             {
                 var groupNodes = allNodes.Where(n => n.ParallelGroup == completedNode.ParallelGroup).ToList();
                 var groupDone = groupNodes.All(g => IsNodeComplete(instance.InstanceId, g));
-                if (!groupDone) { SyncActiveNodeId(instance); return; } // 等待组内其余分支
+                if (!groupDone) { logger.Info($"并行分组汇聚等待：InstanceId={instance.InstanceId} Group={completedNode.ParallelGroup} 仍有分支未完成 → 继续等待"); SyncActiveNodeId(instance); return; } // 等待组内其余分支
                 var lastInGroup = groupNodes.MaxBy(g => g.NodeOrder);
                 var after = lastInGroup == null ? null : ResolveNextNode(lastInGroup, allNodes, linksBySource, linksByTarget, formValues);
                 ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
@@ -720,6 +875,7 @@ namespace ZR.Workflow.Service
                     }
                     else
                     {
+                        logger.Info($"汇聚网关等待：InstanceId={instance.InstanceId} Join={next.NodeName}({next.NodeId}) 仍有入边分支未完成 → 保持活动集等待");
                         AddActiveNodeId(instance, next.NodeId);
                     }
                 }
@@ -847,7 +1003,7 @@ namespace ZR.Workflow.Service
             // 抄送节点：任务生成即视为完成（状态 Skipped），无需审批；并行汇聚时依赖此判定
             if (node.NodeType == (int)WfNodeType.Cc)
                 return !tasks.Any(t => t.Status == (int)WfTaskStatus.Pending);
-            if (node.SignType == (int)WfSignType.And)
+            if (node.SignType == (int)WfSignType.And || node.SignType == (int)WfSignType.Sequential)
                 return tasks.All(t => t.Status == (int)WfTaskStatus.Done);
             return tasks.Any(t => t.Status == (int)WfTaskStatus.Done);
         }
@@ -1015,11 +1171,11 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 批量创建任务（待办/抄送），替代逐条 ExecuteCommand 以减少数据库往返
         /// </summary>
-        private void BatchCreateTasks(long instanceId, long nodeId, string nodeName, List<ResolvedApprover> assignees, int status, string createBy, DateTime? createTime = null)
+        private void BatchCreateTasks(long instanceId, long nodeId, string nodeName, List<ResolvedApprover> assignees, int status, string createBy, DateTime? createTime = null, bool sequential = false)
         {
             if (assignees == null || assignees.Count == 0) return;
             var now = createTime ?? DateTime.Now;
-            var tasks = assignees.Select(a => new WfFlowTask
+            var tasks = assignees.Select((a, idx) => new WfFlowTask
             {
                 InstanceId = instanceId,
                 NodeId = nodeId,
@@ -1027,7 +1183,8 @@ namespace ZR.Workflow.Service
                 Assignee = a.UserName,
                 AssigneeId = a.UserId,
                 AssigneeNickName = a.NickName,
-                Status = status,
+                // 依次审批：仅首位激活为传入 status，其余置 Waiting 排队，前一人完成才轮到下一位
+                Status = (sequential && idx > 0) ? (int)WfTaskStatus.Waiting : status,
                 Create_time = now,
                 Create_by = createBy
             }).ToList();
@@ -1065,6 +1222,7 @@ namespace ZR.Workflow.Service
         private void CreateCcTask(WfFlowInstance instance, WfFlowNode node, Dictionary<string, string> formValues)
         {
             var ccList = ResolveApprovers(node, formValues, instance.ApplyUserId);
+            logger.Info($"生成抄送：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 抄送人={ccList.Count}");
             var ccUsers = string.Join(",", ccList.Select(c => c.UserName));
             var ccUserIds = string.Join(",", ccList.Select(c => c.UserId));
             var ccNick = string.Join(",", ccList.Select(c => c.NickName));

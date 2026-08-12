@@ -83,5 +83,29 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public int ParallelGroup { get; set; } = 0;
+
+        /// <summary>
+        /// 节点进入事件钩子（Webhook URL）。节点被引擎到达（生成待办/抄送前）时异步 POST 通知，失败仅记日志不阻断流程。
+        /// </summary>
+        [SugarColumn(Length = 500, IsNullable = true)]
+        public string EnterHookUrl { get; set; }
+
+        /// <summary>
+        /// 节点离开事件钩子（Webhook URL）。节点审批/抄送完成后、推进到下一节点前异步 POST 通知，失败仅记日志不阻断流程。
+        /// </summary>
+        [SugarColumn(Length = 500, IsNullable = true)]
+        public string LeaveHookUrl { get; set; }
+
+        /// <summary>
+        /// 驳回策略（对应 WfRejectStrategy）：0=驳回发起人（默认）；1=驳回到上一审批节点；2=驳回到指定节点。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int RejectStrategy { get; set; } = 0;
+
+        /// <summary>
+        /// 驳回目标节点（RejectStrategy=2 时生效）：驳回后回到该节点重新审批。
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public long? RejectTargetNodeId { get; set; }
     }
 }

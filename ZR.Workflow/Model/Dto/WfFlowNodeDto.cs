@@ -44,5 +44,17 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>并行分组号（>0 表示并行分支，同组并发并汇聚；非并行节点不传）</summary>
         public int? ParallelGroup { get; set; }
+
+        /// <summary>节点进入事件钩子（Webhook URL）。节点被引擎到达时异步 POST 通知，失败不阻断流程。</summary>
+        public string EnterHookUrl { get; set; }
+
+        /// <summary>节点离开事件钩子（Webhook URL）。节点完成后推进前异步 POST 通知，失败不阻断流程。</summary>
+        public string LeaveHookUrl { get; set; }
+
+        /// <summary>驳回策略（WfRejectStrategy）：0=驳回发起人；1=驳回到上一节点；2=驳回到指定节点</summary>
+        public int RejectStrategy { get; set; }
+
+        /// <summary>驳回目标节点（RejectStrategy=2 时生效）</summary>
+        public long? RejectTargetNodeId { get; set; }
     }
 }

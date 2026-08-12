@@ -118,7 +118,8 @@ namespace ZR.Tests
         }
 
         public long AddNode(long flowId, string name, int nodeType, int approverType, string approverId, int nodeOrder,
-            int signType = 0, int parallelGroup = 0, string conditionField = null, int conditionOp = 0, string conditionValue = null)
+            int signType = 0, int parallelGroup = 0, string conditionField = null, int conditionOp = 0, string conditionValue = null,
+            string enterHookUrl = null, string leaveHookUrl = null, int rejectStrategy = 0, long? rejectTargetNodeId = null)
         {
             Ensure();
             return Db.Insertable(new WfFlowNode
@@ -134,6 +135,10 @@ namespace ZR.Tests
                 ConditionField = conditionField,
                 ConditionOp = conditionOp,
                 ConditionValue = conditionValue,
+                EnterHookUrl = enterHookUrl,
+                LeaveHookUrl = leaveHookUrl,
+                RejectStrategy = rejectStrategy,
+                RejectTargetNodeId = rejectTargetNodeId,
             }).ExecuteReturnIdentity();
         }
 

@@ -274,6 +274,10 @@ namespace ZR.Workflow.Service
                 ConditionOp = src.ConditionOp,
                 ConditionValue = src.ConditionValue,
                 ParallelGroup = src.ParallelGroup,
+                EnterHookUrl = src.EnterHookUrl,
+                LeaveHookUrl = src.LeaveHookUrl,
+                RejectStrategy = src.RejectStrategy,
+                RejectTargetNodeId = src.RejectTargetNodeId,
                 Create_by = userName,
                 Create_time = DateTime.Now
             };
