@@ -278,6 +278,8 @@ namespace ZR.Workflow.Service
                 LeaveHookUrl = src.LeaveHookUrl,
                 RejectStrategy = src.RejectStrategy,
                 RejectTargetNodeId = src.RejectTargetNodeId,
+                EmptyApproverStrategy = src.EmptyApproverStrategy,
+                DefaultApproverId = src.DefaultApproverId,
                 Create_by = userName,
                 Create_time = DateTime.Now
             };
@@ -286,20 +288,47 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 写入节点并返回「客户端节点Id(clientId) → 新生成 NodeId」映射。
         /// clientId 即前端传入的 <see cref="WfFlowNodeDto.NodeId"/>：编辑时为旧 NodeId、新增时为前端自管的临时 Id（如负数/0）。
-        /// 返回的映射供调用方把连线(link)的 SourceNodeId/TargetNodeId 重映射为新 NodeId。
+        /// 返回的映射供调用方把连线(link)的 SourceNodeId/TargetNodeId 重映射为新 NodeId，
+        /// 同时也用于把本批节点的 RejectTargetNodeId（驳回到指定节点）按同一映射重映射为新主键，
+        /// 避免前端传负数临时 id 时落库指向不存在的节点。
         /// 节点为空返回空字典。
         /// </summary>
         private Dictionary<long, long> InsertNodes(long flowId, List<WfFlowNodeDto> nodes, string userName)
         {
             var map = new Dictionary<long, long>();
             if (nodes == null || nodes.Count == 0) return map;
-            // Dto → 实体 走 Adapt 后再走 CloneNodeForCopy，保证后续字段扩展只改一处
-            var entities = nodes.Select(n => CloneNodeForCopy(n.Adapt<WfFlowNode>(), flowId, userName)).ToList();
+            // Dto → 实体 走 Adapt 后再走 CloneNodeForCopy，保证后续字段扩展只改一处。
+            // 注意：RejectTargetNodeId 暂置 0（引用尚未生成的新节点），待本批全部写入、map 就绪后再回填重映射值。
+            var entities = nodes.Select(n =>
+            {
+                var e = CloneNodeForCopy(n.Adapt<WfFlowNode>(), flowId, userName);
+                e.RejectTargetNodeId = 0;
+                return e;
+            }).ToList();
             // 逐个插入以拿到新 NodeId（InsertReturnEntity 返回带 Id 的实体），建立 clientId→newId 映射
             for (var i = 0; i < nodes.Count; i++)
             {
                 var saved = Context.Insertable(entities[i]).ExecuteReturnEntity() ?? throw new CustomException("写入流程节点失败");
                 map[nodes[i].NodeId] = saved.NodeId;
+            }
+            // 驳回目标节点重映射：前端传来的是目标节点的 clientId（编辑为旧主键、新增为负数临时 id），
+            // 必须按本批 map 翻译成新主键；未命中（如指向别的流程节点）保持原值，由引擎运行时校验。
+            var needUpdate = false;
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var raw = nodes[i].RejectTargetNodeId;
+                if (raw == 0 || !raw.HasValue) continue;
+                if (map.TryGetValue(raw.Value, out var newId))
+                {
+                    entities[i].RejectTargetNodeId = newId;
+                    needUpdate = true;
+                }
+            }
+            if (needUpdate)
+            {
+                Context.Updateable(entities.Where(e => e.RejectTargetNodeId > 0).ToList())
+                    .UpdateColumns(e => new { e.RejectTargetNodeId })
+                    .ExecuteCommand();
             }
             return map;
         }
@@ -316,6 +345,11 @@ namespace ZR.Workflow.Service
             foreach (var n in srcNodes)
             {
                 var copy = CloneNodeForCopy(n, newFlowId, userName);
+                // 驳回目标节点：源流程中的 RejectTargetNodeId 指向源节点主键，复制后须映射为新流程的主键
+                if (copy.RejectTargetNodeId > 0 && copy.RejectTargetNodeId.HasValue && map.TryGetValue(copy.RejectTargetNodeId.Value, out var newTarget))
+                {
+                    copy.RejectTargetNodeId = newTarget;
+                }
                 copy = Context.Insertable(copy).ExecuteReturnEntity() ?? throw new CustomException("复制流程节点失败");
                 map[n.NodeId] = copy.NodeId;
             }

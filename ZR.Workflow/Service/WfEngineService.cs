@@ -395,6 +395,102 @@ namespace ZR.Workflow.Service
             }, "加签失败");
         }
 
+        /// <summary>
+        /// 减签：移除本节点某审批人（将其待办置 Skipped 并重新判定节点完成）。
+        /// 操作人必须是该节点某一审批任务的审批人（含已处理），被减签目标须为该节点处于 Pending/Waiting 的任务。
+        /// 减签后：若节点满足完成条件则按原流转推进；若依次审批(Sequential)下当前处理人被减掉，则自动激活下一位 Waiting。
+        /// </summary>
+        /// <param name="taskId">操作人自己的任务 ID（用于鉴权该节点）</param>
+        /// <param name="targetUserId">被减签的审批人 userId</param>
+        /// <param name="opinion">减签意见（可选）</param>
+        /// <param name="operatorId">操作人 userId</param>
+        public void RemoveSign(long taskId, long targetUserId, string opinion, long operatorId)
+        {
+            var op = LoadUser(operatorId);
+            var operatorTask = Context.Queryable<WfFlowTask>().First(t => t.TaskId == taskId)
+                ?? throw new CustomException("审批任务不存在");
+
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == operatorTask.InstanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.Status != (int)WfInstanceStatus.Approval)
+                throw new CustomException("流程状态异常，无法减签");
+
+            var nodeId = operatorTask.NodeId;
+            // 操作人必须是该节点某一任务的审批人（含已处理），否则无减签权限
+            var nodeTasks = Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == instance.InstanceId && t.NodeId == nodeId)
+                .ToList();
+            if (!nodeTasks.Any(t => t.AssigneeId == operatorId))
+                throw new CustomException("无减签权限");
+
+            var target = nodeTasks
+                .FirstOrDefault(t => t.AssigneeId == targetUserId && (t.Status == (int)WfTaskStatus.Pending || t.Status == (int)WfTaskStatus.Waiting))
+                ?? throw new CustomException("被减签人不是该节点待审批人");
+
+            var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == nodeId)
+                ?? throw new CustomException("流程节点不存在");
+            var targetName = target.Assignee;
+
+            RunInTx(() =>
+            {
+                target.Status = (int)WfTaskStatus.Skipped;
+                target.Update_by = op.UserName;
+                target.Update_time = DateTime.Now;
+                Context.Updateable(target).ExecuteCommand();
+
+                var recordOpinion = "减签：" + targetName + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
+                AddRecord(instance.InstanceId, taskId, nodeId, op, (int)WfAction.RemoveSign, recordOpinion);
+
+                // 减签后重新判定节点完成 / 依次审批推进
+                ReevaluateNodeAfterRemove(instance, node, operatorTask);
+            }, "减签失败");
+        }
+
+        /// <summary>
+        /// 减签后对该节点重新评估：
+        /// 1) 若节点已完成（或签任一 Done / 会签全 Done / 剩余无人）→ 推进到下一节点；
+        /// 2) 若依次审批(Sequential)且当前无 Pending 但有 Waiting → 激活首位 Waiting；
+        /// 3) 否则保持原状（仍有人待审批）。
+        /// </summary>
+        private void ReevaluateNodeAfterRemove(WfFlowInstance instance, WfFlowNode node, WfFlowTask callerTask)
+        {
+            var tasks = Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == instance.InstanceId && t.NodeId == node.NodeId)
+                .OrderBy(t => t.TaskId)
+                .ToList();
+            var pending = tasks.Where(t => t.Status == (int)WfTaskStatus.Pending).ToList();
+            var waiting = tasks.Where(t => t.Status == (int)WfTaskStatus.Waiting).ToList();
+            var done = tasks.Where(t => t.Status == (int)WfTaskStatus.Done).ToList();
+
+            // 或签/会签完成判定：或签任一 Done；会签需全部 Done（无剩余 Pending/Waiting）
+            bool complete;
+            if (node.SignType == (int)WfSignType.And)
+                complete = tasks.All(t => t.Status == (int)WfTaskStatus.Done || t.Status == (int)WfTaskStatus.Skipped);
+            else
+                complete = done.Count > 0 || (pending.Count == 0 && waiting.Count == 0);
+
+            if (complete)
+            {
+                var allNodes = LoadOrderedNodes(instance.FlowId);
+                var linksBySource = LoadNodeLinks(instance.FlowId);
+                var linksByTarget = LoadNodeLinksByTarget(instance.FlowId);
+                var formValues = ParseFormValues(instance);
+                AdvanceToNext(instance, node, allNodes, linksBySource, linksByTarget, formValues);
+                return;
+            }
+
+            // 依次审批：当前无 Pending 但有 Waiting → 激活首位
+            if (node.SignType == (int)WfSignType.Sequential && pending.Count == 0 && waiting.Count > 0)
+            {
+                var next = waiting.First();
+                next.Status = (int)WfTaskStatus.Pending;
+                next.Update_by = callerTask.Update_by;
+                next.Update_time = DateTime.Now;
+                Context.Updateable(next).ExecuteCommand();
+                Notify(next.AssigneeId.Value, $"【待审批】{instance.Title}（{node.NodeName}）");
+            }
+        }
+
         #endregion
 
         #region 私有辅助
@@ -801,16 +897,26 @@ namespace ZR.Workflow.Service
             var approvers = ResolveApprovers(node, formValues, instance.ApplyUserId);
             if (approvers.Count == 0)
             {
-                // 审批人为空（如部门未配置负责人 / 发起人无主管 / 指定用户已删除）：参考业界「节点自动通过」策略，
-                // 生成一条 Skipped 留痕任务并立即推进，避免流程卡死在无待办的节点上。
-                // 关键：自动跳过等价于「节点完成并推进」，需先从活动集移除当前节点（否则会残留高亮，
-                // 且下一节点加入后活动集变成 [当前, 下一] 两个，导致当前节点与下一节点同时处于活动态）。
-                logger.Info($"审批人自动跳过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 审批人为空 → 自动通过");
-                CreateAutoSkipTask(instance, node, "审批人为空，节点自动跳过");
-                RemoveActiveNodeId(instance, node.NodeId);
-                SyncActiveNodeId(instance);
-                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
-                return;
+                // 审批人为空：按节点配置的兜底策略处理，避免流程卡死在无待办的节点上。
+                var emptyStrategy = (WfEmptyApproverStrategy)node.EmptyApproverStrategy;
+                if (emptyStrategy == WfEmptyApproverStrategy.DefaultUser && node.DefaultApproverId.HasValue && node.DefaultApproverId.Value > 0)
+                {
+                    approvers = ResolveByUserIds(new List<long> { node.DefaultApproverId.Value });
+                }
+                if (approvers.Count == 0)
+                {
+                    // 自动通过（默认策略 / 未配置默认审批人 / 默认审批人解析失败）：生成一条 Skipped 留痕任务并立即推进。
+                    // 关键：自动跳过等价于「节点完成并推进」，需先从活动集移除当前节点（否则会残留高亮，
+                    // 且下一节点加入后活动集变成 [当前, 下一] 两个，导致当前节点与下一节点同时处于活动态）。
+                    logger.Info($"审批人自动跳过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 审批人为空 → 自动通过");
+                    CreateAutoSkipTask(instance, node, "审批人为空，节点自动跳过");
+                    RemoveActiveNodeId(instance, node.NodeId);
+                    SyncActiveNodeId(instance);
+                    ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
+                    return;
+                }
+                // 兜底默认审批人生效：继续走下方正常待办生成逻辑（approvers 已被替换为默认审批人）
+                logger.Info($"审批人为空 → 使用兜底默认审批人：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) DefaultApproverId={node.DefaultApproverId}");
             }
             AddActiveNodeId(instance, node.NodeId);
             // 审批节点：生成审批人待办（或签/会签同时激活；依次审批仅首位 Pending，其余 Waiting）
@@ -1004,7 +1110,8 @@ namespace ZR.Workflow.Service
             if (node.NodeType == (int)WfNodeType.Cc)
                 return !tasks.Any(t => t.Status == (int)WfTaskStatus.Pending);
             if (node.SignType == (int)WfSignType.And || node.SignType == (int)WfSignType.Sequential)
-                return tasks.All(t => t.Status == (int)WfTaskStatus.Done);
+                // 会签/依次：已减签(Skipped)或被跳过(AutoSkip)的任务不阻塞完成判定，仅校验未跳过的任务是否全部 Done
+                return tasks.Where(t => t.Status != (int)WfTaskStatus.Skipped).All(t => t.Status == (int)WfTaskStatus.Done);
             return tasks.Any(t => t.Status == (int)WfTaskStatus.Done);
         }
 

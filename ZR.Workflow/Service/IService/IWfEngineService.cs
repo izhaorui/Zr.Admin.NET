@@ -60,5 +60,14 @@ namespace ZR.Workflow.Service.IService
         /// <param name="opinion">加签说明</param>
         /// <param name="operatorId">操作人 userId（须为该任务的 AssigneeId）</param>
         void AddSign(long taskId, List<long> userIds, string opinion, long operatorId);
+
+        /// <summary>
+        /// 减签：移除本节点某审批人（将其待办置 Skipped 并重新判定节点完成）
+        /// </summary>
+        /// <param name="taskId">操作人自己的任务 Id（用于鉴权该节点）</param>
+        /// <param name="targetUserId">被减签的审批人 userId（须为该节点 Pending/Waiting 任务）</param>
+        /// <param name="opinion">减签说明</param>
+        /// <param name="operatorId">操作人 userId（须为该节点某一任务的审批人）</param>
+        void RemoveSign(long taskId, long targetUserId, string opinion, long operatorId);
     }
 }

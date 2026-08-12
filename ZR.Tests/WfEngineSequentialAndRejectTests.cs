@@ -12,7 +12,7 @@ namespace ZR.Tests
     /// P0-1 引擎增强验证：依次审批（顺序会签）+ 可配置驳回策略（驳回到上一节点）。
     /// </summary>
     [Collection("WfTests")]
-    public class WfEngineSequentialAndRejectTests : IClassFixture<WfTestDb>
+    public class WfEngineSequentialAndRejectTests
     {
         private readonly WfTestDb _db;
         private readonly WfEngineService _engine;

@@ -56,5 +56,11 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>驳回目标节点（RejectStrategy=2 时生效）</summary>
         public long? RejectTargetNodeId { get; set; }
+
+        /// <summary>空审批人兜底策略（WfEmptyApproverStrategy）：0=自动通过（默认）；1=指定默认审批人</summary>
+        public int EmptyApproverStrategy { get; set; }
+
+        /// <summary>兜底默认审批人（EmptyApproverStrategy=1 时生效）userId</summary>
+        public long? DefaultApproverId { get; set; }
     }
 }

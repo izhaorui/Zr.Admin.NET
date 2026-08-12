@@ -107,5 +107,18 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(IsNullable = true)]
         public long? RejectTargetNodeId { get; set; }
+
+        /// <summary>
+        /// 空审批人兜底策略（对应 WfEmptyApproverStrategy）：0=自动通过（默认）；1=指定默认审批人。
+        /// 当节点审批人为空时按此策略处理，避免流程因无人审批而卡死。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int EmptyApproverStrategy { get; set; } = 0;
+
+        /// <summary>
+        /// 兜底默认审批人（EmptyApproverStrategy=1 时生效）：审批人为空时退回到该 userId 代为审批；为空则退化为自动通过。
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public long? DefaultApproverId { get; set; }
     }
 }
