@@ -1323,6 +1323,18 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
         {
+            // 并发幂等保护：同一节点被多次并发完成（或签多待办同时点通过）时，
+            // 先到的事务已把该节点移出活动集并 fork 了后续待办；后到的事务在事务内重新读取活动集，
+            // 发现节点已不在，则跳过本次推进，避免重复 fork 子节点待办（并发竞态去重）。
+            // 必须在事务内重新查库（而非用外层传入的 instance 内存副本），否则读不到已提交的并发修改。
+            var freshActiveIds = GetActiveNodeIds(
+                Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instance.InstanceId));
+            if (!freshActiveIds.Contains(completedNode.NodeId))
+            {
+                logger.Info($"并发去重：InstanceId={instance.InstanceId} CompletedNode={completedNode.NodeName}({completedNode.NodeId}) 已不在活动集 → 跳过重复推进");
+                return;
+            }
+
             logger.Info($"节点完成推进：InstanceId={instance.InstanceId} CompletedNode={completedNode.NodeName}({completedNode.NodeId})");
             RemoveActiveNodeId(instance, completedNode.NodeId);
 
