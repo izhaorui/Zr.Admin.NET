@@ -23,8 +23,9 @@ namespace ZR.Workflow.Service.IService
         /// </summary>
         WfDashboardStatsDto GetDashboardStats(long userId);
         /// <summary>
-        /// 流程效率统计：平均审批时长、各节点耗时分布、完成率趋势（当前用户作为申请人的实例）
+        /// 流程效率统计：平均审批时长、各节点耗时分布、完成率趋势。
+        /// isAdmin=true 时放开为全部用户实例（管理员全局视图）；flowId 可选，按流程定义维度过滤。
         /// </summary>
-        WfEfficiencyStatsDto GetEfficiencyStats(long userId);
+        WfEfficiencyStatsDto GetEfficiencyStats(long userId, bool isAdmin = false, long? flowId = null);
     }
 }

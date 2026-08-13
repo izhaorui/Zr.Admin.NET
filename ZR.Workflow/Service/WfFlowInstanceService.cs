@@ -312,21 +312,33 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 流程效率统计（基于当前用户作为申请人的实例）：
+        /// 流程效率统计：
         /// <list type="number">
         /// <item>平均/最短/最长审批时长：已通过实例的 <c>Update_time - Create_time</c>（小时）；</item>
         /// <item>各节点平均耗时：已完成任务 <c>HandleTime - Create_time</c>，按节点名称聚合；</item>
         /// <item>完成率趋势：按月统计结束实例（通过+驳回），通过数 / 结束总数。</item>
         /// </list>
+        /// isAdmin=true 时放开为全部用户实例（管理员全局视图）；flowId 可选，按流程定义维度过滤。
         /// </summary>
-        public WfEfficiencyStatsDto GetEfficiencyStats(long userId)
+        public WfEfficiencyStatsDto GetEfficiencyStats(long userId, bool isAdmin = false, long? flowId = null)
         {
-            // 单次拉取当前用户全部实例的最小字段集（Status/Create_time/Update_time），
+            // 单次拉取目标实例的最小字段集（Status/Create_time/Update_time），
             // 在内存里同时算出"已通过（用于时长）"和"已结束（用于完成率趋势）"，避免两次扫 wf_flow_instance
-            var allInst = Context.Queryable<WfFlowInstance>()
-                .Where(i => i.ApplyUserId == userId)
-                .Select(i => new { i.Status, i.Create_time, i.Update_time })
+            var instQuery = Context.Queryable<WfFlowInstance>();
+            if (!isAdmin)
+            {
+                // 普通用户仅看自己作为申请人的实例
+                instQuery = instQuery.Where(i => i.ApplyUserId == userId);
+            }
+            if (flowId != null)
+            {
+                instQuery = instQuery.Where(i => i.FlowId == flowId.Value);
+            }
+            var allInst = instQuery
+                .Select(i => new { i.InstanceId, i.Status, i.Create_time, i.Update_time })
                 .ToList();
+            // 目标实例范围（用于节点耗时分布关联，保证与管理员/流程维度过滤口径一致）
+            var targetInstanceIds = allInst.Select(i => i.InstanceId).ToList();
 
             // 已通过：Update_time 为完成时间；个别情况下 Update_time 未更新（引擎漏写）时用 Create_time 兜底，避免负值
             var finished = allInst
@@ -349,9 +361,19 @@ namespace ZR.Workflow.Service
                 eff.MaxDurationHours = (decimal)Math.Round((double)durations.Max(), 2);
             }
 
-            // 各节点耗时分布：仅统计已处理(Status=Done)且 HandleTime 有值的任务
-            var nodeDurations = Context.Queryable<WfFlowTask>()
-                .Where(t => t.AssigneeId == userId && t.Status == (int)WfTaskStatus.Done && t.HandleTime != null)
+            // 各节点耗时分布：仅统计已处理(Status=Done)且 HandleTime 有值的任务；
+            // 普通用户只看自己经手的节点(ApproveId)，管理员/按流程筛选时按目标实例范围聚合
+            var nodeTaskQuery = Context.Queryable<WfFlowTask>()
+                .Where(t => t.Status == (int)WfTaskStatus.Done && t.HandleTime != null);
+            if (!isAdmin)
+            {
+                nodeTaskQuery = nodeTaskQuery.Where(t => t.AssigneeId == userId);
+            }
+            else if (targetInstanceIds.Count > 0)
+            {
+                nodeTaskQuery = nodeTaskQuery.Where(t => targetInstanceIds.Contains(t.InstanceId));
+            }
+            var nodeDurations = nodeTaskQuery
                 .GroupBy(t => t.NodeName)
                 .Select(t => new
                 {

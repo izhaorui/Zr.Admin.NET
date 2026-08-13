@@ -94,13 +94,15 @@ namespace ZR.Workflow.Controllers
         }
 
         /// <summary>
-        /// 流程效率统计：平均审批时长、各节点耗时分布、完成率趋势
+        /// 流程效率统计：平均审批时长、各节点耗时分布、完成率趋势。
+        /// 管理员(IsAdmin)可查看全局数据；flowId 可选，按流程定义维度筛选。
         /// </summary>
         [HttpGet("efficiency")]
-        public IActionResult Efficiency()
+        public IActionResult Efficiency([FromQuery] long? flowId = null)
         {
             var userId = HttpContext.GetUId();
-            return SUCCESS(_service.GetEfficiencyStats(userId));
+            var isAdmin = HttpContext.IsAdmin();
+            return SUCCESS(_service.GetEfficiencyStats(userId, isAdmin, flowId));
         }
 
         #region 管理员运维操作（P0）
