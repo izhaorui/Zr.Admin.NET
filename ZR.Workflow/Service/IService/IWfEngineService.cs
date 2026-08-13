@@ -109,5 +109,18 @@ namespace ZR.Workflow.Service.IService
         /// </summary>
         /// <param name="targetNodeId">跳转目标节点（必须存在且非结束节点）</param>
         Task AdminJump(long instanceId, long targetNodeId, long operatorId, string opinion);
+
+        /// <summary>
+        /// 超时自动处理：扫描当前租户下已超时（DeadlineTime 已过）且未处理的待办，按节点 TimeoutAction 自动通过/驳回/转交。
+        /// 由定时任务 Job_WfTimeoutAutoProcess 周期性调用，无需人工鉴权。
+        /// </summary>
+        void ProcessTimeoutTasks();
+
+        /// <summary>
+        /// 申请人催办：对审批中实例向当前活动节点审批人发通知；24 小时内同实例仅可催办一次。
+        /// </summary>
+        /// <param name="instanceId">流程实例Id</param>
+        /// <param name="operatorId">操作人 userId（须为实例申请人 ApplyUserId）</param>
+        void Urge(long instanceId, long operatorId);
     }
 }

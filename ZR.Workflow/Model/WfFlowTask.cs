@@ -90,5 +90,18 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(IsNullable = true)]
         public DateTime? HandleTime { get; set; }
+
+        /// <summary>
+        /// 待办到达时间（引擎生成待办时写入），用于超时判定与展示。
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public DateTime? ArriveTime { get; set; }
+
+        /// <summary>
+        /// 超时截止时间。仅当所属节点 TimeoutHours>0 时由引擎计算 = ArriveTime + TimeoutHours；否则为 null。
+        /// 定时任务扫描 Status=Pending 且 DeadlineTime&lt;now 的待办进行超时自动处理。
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public DateTime? DeadlineTime { get; set; }
     }
 }

@@ -82,5 +82,11 @@ namespace ZR.Workflow.Model
         /// </summary>
         [SugarColumn(Length = 1000, IsNullable = true)]
         public string Attachment { get; set; }
+
+        /// <summary>
+        /// 最近一次催办时间。用于申请人催办的 24 小时限频：距上次催办不足 24h 则拒绝再次催办。
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public DateTime? LastUrgeTime { get; set; }
     }
 }

@@ -98,13 +98,14 @@ namespace ZR.ServiceCore.Services
                         new("挂起", "workflow:instance:suspend"),
                         new("恢复", "workflow:instance:resume"),
                         new("改派", "workflow:instance:reassign"),
-                        new("跳转", "workflow:instance:jump")
+                        new("跳转", "workflow:instance:jump"),
+                        new("催办", "workflow:task:urge")
                     ]),
                 new(Name: "待我审批", Path: "todo", Component: "workflow/todo/index", Perms: "workflow:task:list", OrderNum: 2, Category: 1, Icon: "gonggao",
                     Buttons:
                     [
                         new("通过", "workflow:task:approve"), new("驳回", "workflow:task:reject"), new("转办", "workflow:task:transfer"),
-                        new("加签", "workflow:task:addsign"), new("委托", "workflow:task:delegate"), new("评论", "workflow:comment:list"), new("发表评论", "workflow:comment:add"),
+                        new("加签", "workflow:task:addsign"), new("减签", "workflow:task:removesign"), new("委托", "workflow:task:delegate"), new("评论", "workflow:comment:list"), new("发表评论", "workflow:comment:add"),
                     ]),
                 new(Name: "已办任务", Path: "done", Component: "workflow/done/index", Perms: "workflow:task:list", OrderNum: 3, Category: 1, Icon: "log",
                     Buttons: []),

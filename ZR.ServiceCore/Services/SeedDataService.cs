@@ -346,6 +346,7 @@ namespace ZR.ServiceCore.Services
                 result.Add(EnsureDefaultTenant());
 
                 result.Add(new SystemTaskSeedService().EnsureSystemTasksSeedData());
+                result.Add(new SystemTaskSeedService().EnsureWorkflowTimeoutTaskSeedData());
                 result.Add(new MallSeedService().EnsureTasksSeedData());
 
                 db.Ado.CommitTran();

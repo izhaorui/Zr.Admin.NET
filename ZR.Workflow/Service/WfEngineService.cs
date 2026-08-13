@@ -456,6 +456,269 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
+        /// 超时自动处理（由定时任务 Job_WfTimeoutAutoProcess 按租户周期调用）。
+        /// 扫描当前租户下 Status=Pending 且 DeadlineTime 已过、所属节点配置了超时动作的待办，
+        /// 按节点 TimeoutAction 自动通过 / 自动驳回 / 自动转交，并写审批记录 + 通知。
+        /// 复用既有 Approve/Reject/转交的事务体语义（以申请人名义落记录、跳过人工鉴权），
+        /// 会签场景复用 IsNodeComplete 判定整组完成才推进，不破坏并行分组逻辑。
+        /// </summary>
+        public void ProcessTimeoutTasks()
+        {
+            var now = DateTime.Now;
+            var dueTasks = Context.Queryable<WfFlowTask>()
+                .Where(t => t.Status == (int)WfTaskStatus.Pending
+                            && t.DeadlineTime != null
+                            && t.DeadlineTime < now)
+                .ToList();
+            if (dueTasks.Count == 0) return;
+
+            // 预加载节点配置（含 TimeoutAction / TimeoutTransferUserId），避免逐任务查库
+            var nodeIds = dueTasks.Select(t => t.NodeId).Distinct().ToList();
+            var nodes = Context.Queryable<WfFlowNode>().Where(n => nodeIds.Contains(n.NodeId)).ToList();
+            var nodeMap = nodes.ToDictionary(n => n.NodeId);
+
+            var handled = 0;
+            foreach (var task in dueTasks)
+            {
+                if (!nodeMap.TryGetValue(task.NodeId, out var node)) continue;
+                var action = (WfTimeoutAction)node.TimeoutAction;
+                if (action == WfTimeoutAction.None) continue; // 未配置超时动作 → 跳过
+
+                var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == task.InstanceId);
+                if (instance == null || instance.Status != (int)WfInstanceStatus.Approval) continue;
+
+                try
+                {
+                    switch (action)
+                    {
+                        case WfTimeoutAction.AutoApprove:
+                            AutoApproveTask(task, instance, node);
+                            break;
+                        case WfTimeoutAction.AutoReject:
+                            AutoRejectTask(task, instance, node);
+                            break;
+                        case WfTimeoutAction.Transfer:
+                            AutoTransferTask(task, instance, node);
+                            break;
+                    }
+                    handled++;
+                }
+                catch (Exception ex)
+                {
+                    // 单条失败不影响其余超时任务；记录日志后继续
+                    logger.Error(ex, $"超时自动处理失败：InstanceId={task.InstanceId} TaskId={task.TaskId} Node={node.NodeName}({node.NodeId}) Action={action}");
+                }
+            }
+            logger.Info($"超时自动处理完成：扫描 {dueTasks.Count} 条超时待办，成功处理 {handled} 条");
+        }
+
+        /// <summary>
+        /// 超时自动通过：以申请人名义将待办置为通过并推进（复用 Approve 事务体，跳过人工鉴权与代审标注）。
+        /// </summary>
+        private void AutoApproveTask(WfFlowTask task, WfFlowInstance instance, WfFlowNode node)
+        {
+            var allNodes = LoadOrderedNodes(instance.FlowId);
+            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+            var op = ApplicantOf(instance); // 超时自动通过以申请人名义落记录
+            RunInTx(() =>
+            {
+                var now = DateTime.Now;
+                Context.Updateable<WfFlowTask>()
+                    .SetColumns(t => new WfFlowTask
+                    {
+                        Status = (int)WfTaskStatus.Done,
+                        Action = (int)WfAction.Approve,
+                        Opinion = "超时自动通过",
+                        HandleTime = now,
+                        Update_time = now,
+                        Update_by = op.UserName
+                    })
+                    .Where(t => t.TaskId == task.TaskId).ExecuteCommand();
+
+                AddRecord(instance.InstanceId, task.TaskId, task.NodeId, op, (int)WfAction.Approve, "超时自动通过");
+
+                // 依次审批：超时通过同样触发下一位 Waiting 轮转
+                if (node.SignType == (int)WfSignType.Sequential)
+                {
+                    var next = Context.Queryable<WfFlowTask>()
+                        .Where(t => t.InstanceId == instance.InstanceId && t.NodeId == node.NodeId && t.Status == (int)WfTaskStatus.Waiting)
+                        .OrderBy(t => t.TaskId)
+                        .First();
+                    if (next != null)
+                    {
+                        Context.Updateable<WfFlowTask>()
+                            .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Pending, Opinion = "" })
+                            .Where(t => t.TaskId == next.TaskId).ExecuteCommand();
+                        Notify(next.AssigneeId.Value, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」轮到您审批。");
+                        return;
+                    }
+                }
+
+                if (!IsNodeComplete(instance.InstanceId, node)) return;
+
+                NotifyUser(instance.ApplyUserId, $"【审批进度】{instance.Title} 的「{node.NodeName}」节点已超时自动通过。");
+
+                Context.Updateable<WfFlowTask>()
+                    .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
+                    .Where(t => t.InstanceId == instance.InstanceId && t.NodeId == node.NodeId && t.Status == (int)WfTaskStatus.Pending)
+                    .ExecuteCommand();
+
+                var formValues = ParseFormValues(instance);
+                AdvanceToNext(instance, node, allNodes, linksBySource, linksByTarget, formValues);
+            }, "超时自动通过失败");
+        }
+
+        /// <summary>
+        /// 超时自动驳回：以申请人名义将待办置为驳回，按节点驳回策略回退（复用 Reject 事务体）。
+        /// </summary>
+        private void AutoRejectTask(WfFlowTask task, WfFlowInstance instance, WfFlowNode node)
+        {
+            var allNodes = LoadOrderedNodes(instance.FlowId);
+            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+            var op = ApplicantOf(instance);
+            RunInTx(() =>
+            {
+                var now = DateTime.Now;
+                Context.Updateable<WfFlowTask>()
+                    .SetColumns(t => new WfFlowTask
+                    {
+                        Status = (int)WfTaskStatus.Done,
+                        Action = (int)WfAction.Reject,
+                        Opinion = "超时自动驳回",
+                        HandleTime = now,
+                        Update_time = now,
+                        Update_by = op.UserName
+                    })
+                    .Where(t => t.TaskId == task.TaskId).ExecuteCommand();
+
+                AddRecord(instance.InstanceId, task.TaskId, task.NodeId, op, (int)WfAction.Reject, "超时自动驳回");
+
+                NotifyUser(instance.ApplyUserId, $"【审批驳回】{instance.Title} 被超时自动驳回（节点「{node.NodeName}」）");
+
+                var strategy = (WfRejectStrategy)node.RejectStrategy;
+                WfFlowNode targetNode = null;
+                if (strategy == WfRejectStrategy.ToPrevNode)
+                {
+                    targetNode = allNodes
+                        .Where(n => n.NodeType == (int)WfNodeType.Audit && n.NodeOrder < node.NodeOrder)
+                        .OrderByDescending(n => n.NodeOrder)
+                        .FirstOrDefault();
+                }
+                else if (strategy == WfRejectStrategy.ToSpecifiedNode && node.RejectTargetNodeId.HasValue)
+                {
+                    targetNode = allNodes.FirstOrDefault(n => n.NodeId == node.RejectTargetNodeId.Value);
+                }
+
+                if (targetNode == null)
+                {
+                    instance.Status = (int)WfInstanceStatus.Rejected;
+                    Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
+                    Context.Updateable<WfFlowTask>()
+                        .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
+                        .Where(t => t.InstanceId == instance.InstanceId && t.Status == (int)WfTaskStatus.Pending)
+                        .ExecuteCommand();
+                    return;
+                }
+
+                RollbackToNode(instance, targetNode, allNodes, linksBySource, linksByTarget);
+            }, "超时自动驳回失败");
+        }
+
+        /// <summary>
+        /// 超时自动转交：将待办转给节点配置的 TimeoutTransferUserId。
+        /// 目标无效（未配置/不存在/即申请人）则退化为自动通过，避免流程卡死。
+        /// </summary>
+        private void AutoTransferTask(WfFlowTask task, WfFlowInstance instance, WfFlowNode node)
+        {
+            var targetUserId = node.TimeoutTransferUserId;
+            if (!targetUserId.HasValue || targetUserId.Value <= 0 || targetUserId.Value == instance.ApplyUserId)
+            {
+                logger.Warn($"超时转交目标无效（TimeoutTransferUserId={targetUserId}）→ 退化为自动通过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId})");
+                AutoApproveTask(task, instance, node);
+                return;
+            }
+            var target = Context.Queryable<SysUser>().First(u => u.UserId == targetUserId.Value);
+            if (target == null)
+            {
+                logger.Warn($"超时转交目标用户不存在（{targetUserId}）→ 退化为自动通过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId})");
+                AutoApproveTask(task, instance, node);
+                return;
+            }
+            var op = ApplicantOf(instance);
+            RunInTx(() =>
+            {
+                var now = DateTime.Now;
+                Context.Updateable<WfFlowTask>()
+                    .SetColumns(t => new WfFlowTask
+                    {
+                        Assignee = target.UserName,
+                        AssigneeId = target.UserId,
+                        AssigneeNickName = target.NickName,
+                        Opinion = "超时自动转交",
+                        Action = (int)WfAction.Transfer,
+                        Update_time = now,
+                        Update_by = op.UserName
+                    })
+                    .Where(t => t.TaskId == task.TaskId).ExecuteCommand();
+
+                AddRecord(instance.InstanceId, task.TaskId, task.NodeId, op, (int)WfAction.Transfer, "超时自动转交：" + target.NickName);
+
+                Notify(target.UserId, $"【审批转办】{instance.Title} 因节点「{node.NodeName}」超时，自动转办给您处理。");
+            }, "超时自动转交失败");
+        }
+
+        /// <summary>
+        /// 申请人催办：对运行中的实例，向当前活动节点的全部待办审批人发送催办通知。
+        /// 24 小时限频：距上次催办不足 24h 则拒绝；通过则更新 LastUrgeTime。
+        /// </summary>
+        /// <param name="instanceId">流程实例 ID</param>
+        /// <param name="operatorId">操作人 userId（必须为实例申请人）</param>
+        public void Urge(long instanceId, long operatorId)
+        {
+            var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == instanceId)
+                ?? throw new CustomException("流程实例不存在");
+            if (instance.ApplyUserId != operatorId)
+                throw new CustomException("仅申请人可催办");
+            if (instance.Status != (int)WfInstanceStatus.Approval)
+                throw new CustomException("当前流程不在审批中，无法催办");
+
+            var now = DateTime.Now;
+            if (instance.LastUrgeTime.HasValue && (now - instance.LastUrgeTime.Value).TotalHours < 24)
+                throw new CustomException("距上次催办不足 24 小时，请稍后再催办");
+
+            // 当前活动节点的全部待办审批人（含或签/会签/依次审批的 Pending/Waiting）
+            var activeNodeIds = GetActiveNodeIds(instance);
+            if (activeNodeIds.Count == 0 && instance.CurrentNodeId.HasValue)
+                activeNodeIds.Add(instance.CurrentNodeId.Value);
+            var assigneeIds = Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == instanceId && activeNodeIds.Contains(t.NodeId)
+                            && (t.Status == (int)WfTaskStatus.Pending || t.Status == (int)WfTaskStatus.Waiting)
+                            && t.AssigneeId != null)
+                .Select(t => t.AssigneeId)
+                .ToList();
+
+            if (assigneeIds.Count == 0)
+                throw new CustomException("当前无审批人可催办");
+
+            var op = LoadUser(operatorId);
+            RunInTx(() =>
+            {
+                instance.LastUrgeTime = now;
+                instance.Update_time = now;
+                instance.Update_by = op.UserName;
+                Context.Updateable(instance).UpdateColumns(i => new { i.LastUrgeTime, i.Update_time, i.Update_by }).ExecuteCommand();
+
+                var nodeNames = Context.Queryable<WfFlowNode>()
+                    .Where(n => activeNodeIds.Contains(n.NodeId))
+                    .Select(n => n.NodeName)
+                    .ToList();
+                var nodeDesc = string.Join("、", nodeNames);
+                NotifyUserIds(assigneeIds, $"【审批催办】{instance.Title}（{instance.FlowName}）申请人 {op.NickName} 催办：节点「{nodeDesc}」请尽快处理。");
+                AddRecord(instanceId, null, null, op, (int)WfAction.Urge, "催办审批人");
+            }, "催办失败");
+        }
+
+        /// <summary>
         /// 减签：移除本节点某审批人（将其待办置 Skipped 并重新判定节点完成）。
         /// 操作人必须是该节点某一审批任务的审批人（含已处理），被减签目标须为该节点处于 Pending/Waiting 的任务。
         /// 减签后：若节点满足完成条件则按原流转推进；若依次审批(Sequential)下当前处理人被减掉，则自动激活下一位 Waiting。
@@ -502,7 +765,7 @@ namespace ZR.Workflow.Service
                 AddRecord(instance.InstanceId, taskId, nodeId, op, (int)WfAction.RemoveSign, recordOpinion);
 
                 // 减签后重新判定节点完成 / 依次审批推进
-                ReevaluateNodeAfterRemove(instance, node, operatorTask);
+                ReevaluateNodeAfterRemove(instance, node, op.UserName);
             }, "减签失败");
         }
 
@@ -512,7 +775,7 @@ namespace ZR.Workflow.Service
         /// 2) 若依次审批(Sequential)且当前无 Pending 但有 Waiting → 激活首位 Waiting；
         /// 3) 否则保持原状（仍有人待审批）。
         /// </summary>
-        private void ReevaluateNodeAfterRemove(WfFlowInstance instance, WfFlowNode node, WfFlowTask callerTask)
+        private void ReevaluateNodeAfterRemove(WfFlowInstance instance, WfFlowNode node, string operatorUserName)
         {
             var tasks = Context.Queryable<WfFlowTask>()
                 .Where(t => t.InstanceId == instance.InstanceId && t.NodeId == node.NodeId)
@@ -543,7 +806,7 @@ namespace ZR.Workflow.Service
             {
                 var next = waiting.First();
                 next.Status = (int)WfTaskStatus.Pending;
-                next.Update_by = callerTask.Update_by;
+                next.Update_by = operatorUserName;
                 next.Update_time = DateTime.Now;
                 Context.Updateable(next).ExecuteCommand();
                 Notify(next.AssigneeId.Value, $"【待审批】{instance.Title}（{node.NodeName}）");
@@ -874,6 +1137,15 @@ namespace ZR.Workflow.Service
                 return;
             }
 
+            // 结束节点(3)：流程到达终点，不生成任务，直接完成实例。
+            if (node.NodeType == (int)WfNodeType.End)
+            {
+                RemoveActiveNodeId(instance, node.NodeId);
+                SyncActiveNodeId(instance);
+                CompleteInstance(instance);
+                return;
+            }
+
             // 并行分叉网关(7)：本身不生成任务，fork 同时激活全部出边目标（多活动分支并发）。
             if (node.NodeType == (int)WfNodeType.ParallelFork)
             {
@@ -946,7 +1218,7 @@ namespace ZR.Workflow.Service
                             }
                             else
                             {
-                                BatchCreateTasks(instance.InstanceId, g.NodeId, g.NodeName, nodeApprovers, (int)WfTaskStatus.Pending, instance.ApplyUser);
+                                BatchCreateTasks(instance.InstanceId, g.NodeId, g.NodeName, nodeApprovers, (int)WfTaskStatus.Pending, instance.ApplyUser, deadlineTime: ComputeDeadline(g, DateTime.Now));
                                 NotifyUsers(nodeApprovers, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{g.NodeName}」待您审批。");
                                 AddActiveNodeId(instance, g.NodeId);
                             }
@@ -1014,7 +1286,7 @@ namespace ZR.Workflow.Service
             // 审批节点：生成审批人待办（或签/会签同时激活；依次审批仅首位 Pending，其余 Waiting）
             var sequential = node.SignType == (int)WfSignType.Sequential;
             logger.Info($"生成审批待办：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 审批人={approvers.Count} 签类型={(WfSignType)node.SignType}{(sequential ? " 依次审批" : "")}");
-            BatchCreateTasks(instance.InstanceId, node.NodeId, node.NodeName, approvers, (int)WfTaskStatus.Pending, instance.ApplyUser, sequential: sequential);
+            BatchCreateTasks(instance.InstanceId, node.NodeId, node.NodeName, approvers, (int)WfTaskStatus.Pending, instance.ApplyUser, sequential: sequential, deadlineTime: ComputeDeadline(node, DateTime.Now));
             // 通知：或签/会签通知全部；依次审批仅通知当前首位（其余 Waiting 待轮到再通知）
             var notifyList = sequential ? approvers.Take(1).ToList() : approvers;
             NotifyUsers(notifyList, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」待您审批。");
@@ -1276,8 +1548,15 @@ namespace ZR.Workflow.Service
                     Context.Updateable(t).ExecuteCommand();
                 }
 
-                // 恢复流转态（若当前为挂起）
+                // 恢复流转态（若当前为挂起）+ 清空旧活动集并落库：
+                // 若不先 SetActiveNodeIds(empty)，并行态跳转时旧活动节点(CurrentNodeIds)会残留，
+                // ArriveNode 只 AddActiveNodeId(target) → 活动集变成 [旧A,旧B,target]，CurrentNodeId=Min(旧节点)，
+                // 前端高亮错乱且单值指针取到已跳过节点。参照 RollbackToNode 的写法重置活动集并持久化 Status。
+                SetActiveNodeIds(instance, new List<long>());
                 instance.Status = (int)WfInstanceStatus.Approval;
+                Context.Updateable(instance)
+                    .UpdateColumns(i => new { i.CurrentNodeId, i.CurrentNodeIds, i.Status })
+                    .ExecuteCommand();
 
                 AddRecord(instanceId, null, targetNodeId, op, (int)WfAction.Jump, $"跳转到节点【{target.NodeName}】{(string.IsNullOrEmpty(opinion) ? "" : $"：{opinion}")}");
 
@@ -1597,7 +1876,7 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 批量创建任务（待办/抄送），替代逐条 ExecuteCommand 以减少数据库往返
         /// </summary>
-        private void BatchCreateTasks(long instanceId, long nodeId, string nodeName, List<ResolvedApprover> assignees, int status, string createBy, DateTime? createTime = null, bool sequential = false)
+        private void BatchCreateTasks(long instanceId, long nodeId, string nodeName, List<ResolvedApprover> assignees, int status, string createBy, DateTime? createTime = null, bool sequential = false, DateTime? deadlineTime = null)
         {
             if (assignees == null || assignees.Count == 0) return;
             var now = createTime ?? DateTime.Now;
@@ -1611,11 +1890,21 @@ namespace ZR.Workflow.Service
                 AssigneeNickName = a.NickName,
                 // 依次审批：仅首位激活为传入 status，其余置 Waiting 排队，前一人完成才轮到下一位
                 Status = (sequential && idx > 0) ? (int)WfTaskStatus.Waiting : status,
+                // 超时埋点：待办到达时间 + 截止时间（仅当节点配置了 TimeoutHours>0 时由调用方传入 deadlineTime）
+                ArriveTime = now,
+                DeadlineTime = deadlineTime,
                 Create_time = now,
                 Create_by = createBy
             }).ToList();
             Context.Insertable(tasks).ExecuteCommand();
         }
+
+        /// <summary>
+        /// 根据节点超时配置计算待办截止时间。TimeoutHours>0 时返回 ArriveTime + TimeoutHours（小时），
+        /// 否则返回 null（无超时约束）。供 ArriveNode 生成审批待办时传入 BatchCreateTasks。
+        /// </summary>
+        private static DateTime? ComputeDeadline(WfFlowNode node, DateTime arriveTime)
+            => node.TimeoutHours > 0 ? arriveTime.AddHours(node.TimeoutHours) : (DateTime?)null;
 
         /// <summary>
         /// 审批人为空时生成一条 Skipped 留痕任务 + 操作记录（节点自动通过）。

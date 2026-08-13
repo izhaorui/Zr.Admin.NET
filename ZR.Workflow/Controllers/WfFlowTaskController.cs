@@ -107,6 +107,19 @@ namespace ZR.Workflow.Controllers
         }
 
         /// <summary>
+        /// 减签（从当前节点移除某位加签/会签待审批人，操作人须为该节点审批人之一）
+        /// </summary>
+        [HttpPost("removesign")]
+        [ActionPermissionFilter(Permission = "workflow:task:removesign")]
+        [Log(Title = "减签", BusinessType = BusinessType.UPDATE)]
+        public IActionResult RemoveSign([FromBody] WfRemoveSignInput parm)
+        {
+            var userId = HttpContext.GetUId();
+            _engine.RemoveSign(parm.TaskId, parm.TargetUserId, parm.Opinion, userId);
+            return SUCCESS(1);
+        }
+
+        /// <summary>
         /// 标记待办已读
         /// </summary>
         [HttpPost("read")]
@@ -127,6 +140,19 @@ namespace ZR.Workflow.Controllers
         {
             var userId = HttpContext.GetUId();
             return SUCCESS(_taskService.GetUnreadCount(userId));
+        }
+
+        /// <summary>
+        /// 申请人催办（仅实例申请人可调用；24 小时内同实例仅可催办一次）
+        /// </summary>
+        [HttpPost("urge")]
+        [ActionPermissionFilter(Permission = "workflow:task:urge")]
+        [Log(Title = "催办", BusinessType = BusinessType.OTHER)]
+        public IActionResult Urge([FromBody] WfUrgeInput parm)
+        {
+            var userId = HttpContext.GetUId();
+            _engine.Urge(parm.InstanceId, userId);
+            return SUCCESS(1);
         }
 
         /// <summary>

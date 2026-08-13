@@ -36,6 +36,9 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>审批人昵称（快照）</summary>
         public string AssigneeNickName { get; set; }
 
+        /// <summary>审批人 userId（稳定标识，用于减签等按 userId 识别）</summary>
+        public long? AssigneeId { get; set; }
+
         /// <summary>委托代审人Id（任务被委托时填代审人 userId，任务仍归属 AssigneeId）</summary>
         public long? DelegateId { get; set; }
 

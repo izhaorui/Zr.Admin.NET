@@ -36,6 +36,8 @@ namespace ZR.Workflow.Enum
         /// <summary>改派（管理员把某节点待办改给其他人）</summary>
         Reassign = 14,
         /// <summary>跳转节点（管理员把卡住的实例跳到指定节点）</summary>
-        Jump = 15
+        Jump = 15,
+        /// <summary>催办（申请人对在审批中的实例主动提醒当前节点审批人）</summary>
+        Urge = 16
     }
 }

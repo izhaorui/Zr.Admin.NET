@@ -69,6 +69,9 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>附件</summary>
         public string Attachment { get; set; }
 
+        /// <summary>最近一次催办时间（申请人催办 24h 限频用，列表前端据此禁用催办按钮）</summary>
+        public DateTime? LastUrgeTime { get; set; }
+
         /// <summary>审批任务列表（详情用）</summary>
         public List<WfFlowTaskDto> Tasks { get; set; } = new();
 
