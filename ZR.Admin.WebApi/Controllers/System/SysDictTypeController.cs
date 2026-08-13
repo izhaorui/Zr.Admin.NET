@@ -114,6 +114,18 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
+        /// 获取字典选择框列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("optionselect")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult Optionselect()
+        {
+            List<SysDictType> dictTypes = SysDictService.GetDictTypeOptionSelect();
+            return SUCCESS(dictTypes);
+        }
+
+        /// <summary>
         /// 字典导出
         /// </summary>
         /// <returns></returns>

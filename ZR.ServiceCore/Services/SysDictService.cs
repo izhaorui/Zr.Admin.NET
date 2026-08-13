@@ -24,6 +24,15 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
+        /// 获取字典选择框列表（仅启用状态的字典类型）
+        /// </summary>
+        /// <returns></returns>
+        public List<SysDictType> GetDictTypeOptionSelect()
+        {
+            return Queryable().Where(f => f.Status == "0").ToList();
+        }
+
+        /// <summary>
         /// 查询字段类型列表
         /// </summary>
         /// <param name="dictType">实体模型</param>
