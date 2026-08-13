@@ -287,6 +287,55 @@ namespace ZR.Tests
             Assert.Equal(nodeD, after.CurrentNodeId);
         }
 
+        // 用户场景：并行节点[并行1,并行2](并行分组) → 并行汇聚(8) → 抄送1 → 结束。
+        // 管理员跳转到 并行1（分组内成员节点）。按业界主流（Activiti/钉钉/飞书）的单令牌跳转语义（A 方案）：
+        // 只重新激活目标节点 并行1，组内其它分支 并行2 的未完成任务被置 Skipped、不再重新待办；
+        // 目标分支通过后并行汇聚判定组内其余分支已"完成"（Skipped）→ 放行到 抄送1 → 流程通过。
+        // 不能整组重新 fork（会让 并行2 也重新待办并高亮，用户被迫重批本无问题分支）。
+        [Fact]
+        public async Task AdminJump_跳转并行分组节点_只激活目标分支不整组重新fork()
+        {
+            var flowId = _db.AddDefinition("JUMP_PGROUP", "跳转-并行分组");
+            var fork = _db.AddNode(flowId, "分叉", (int)WfNodeType.ParallelFork, (int)WfApproverType.User, _db.Uids("zhangsan"), 1);
+            var p1 = _db.AddNode(flowId, "并行1", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uids("lisi"), 2, parallelGroup: 1);
+            var p2 = _db.AddNode(flowId, "并行2", (int)WfNodeType.Audit, (int)WfApproverType.User, _db.Uids("wangwu"), 3, parallelGroup: 1);
+            var join = _db.AddNode(flowId, "并行汇聚", (int)WfNodeType.ParallelJoin, (int)WfApproverType.User, _db.Uids("zhangsan"), 4);
+            var cc = _db.AddNode(flowId, "抄送1", (int)WfNodeType.Cc, (int)WfApproverType.User, _db.Uids("admin"), 5);
+            _db.AddLink(flowId, fork, p1);
+            _db.AddLink(flowId, fork, p2);
+            _db.AddLink(flowId, p1, join);
+            _db.AddLink(flowId, p2, join);
+            _db.AddLink(flowId, join, cc);
+            var id = _engine.Start(new WfFlowInstance { FlowId = flowId, Title = "t", ApplyUser = "alice", ApplyUserId = _db.Uid("alice") });
+
+            // 前置：启动即分叉，并行1/并行2 都有 Pending 待办
+            Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, p1, "lisi").Status);
+            Assert.Equal((int)WfTaskStatus.Pending, GetTask(id, p2, "wangwu").Status);
+
+            // 管理员跳转到并行1
+            await _engine.AdminJump(id, p1, _db.Uid("admin"), "重走并行1");
+
+            // 关键断言：跳转后只激活目标 并行1（生成 Pending 待办）；
+            // 并行2 不重新激活（原有任务全部 Skipped，无 Pending 待办）。
+            Assert.Equal((int)WfTaskStatus.Pending, _db.Db.Queryable<WfFlowTask>().First(t => t.InstanceId == id && t.NodeId == p1 && t.Assignee == "lisi" && t.Status == (int)WfTaskStatus.Pending).Status);
+            // 并行2 不存在 Pending 任务（整组未重新 fork）
+            Assert.False(_db.Db.Queryable<WfFlowTask>().Any(t => t.InstanceId == id && t.NodeId == p2 && t.Status == (int)WfTaskStatus.Pending));
+            // 活动集 = 仅 [并行1]
+            var inst = _db.Db.Queryable<WfFlowInstance>().InSingle(id);
+            Assert.Equal((int)WfInstanceStatus.Approval, inst.Status);
+            var active = Newtonsoft.Json.JsonConvert.DeserializeObject<long[]>(inst.CurrentNodeIds).OrderBy(x => x).ToArray();
+            Assert.Equal(new[] { p1 }, active);
+            Assert.Equal(p1, inst.CurrentNodeId);
+
+            // 只需 并行1 通过 → 并行汇聚(8)放行（并行2 已 Skipped 视为完成）→ 抄送1 → 流程通过
+            var p1Task = _db.Db.Queryable<WfFlowTask>().First(t => t.InstanceId == id && t.NodeId == p1 && t.Assignee == "lisi" && t.Status == (int)WfTaskStatus.Pending);
+            _engine.Approve(p1Task.TaskId, "ok", _db.Uid("lisi"));
+            var done = _db.Db.Queryable<WfFlowInstance>().InSingle(id);
+            Assert.Equal((int)WfInstanceStatus.Approved, done.Status);
+            var ccTask = _db.Db.Queryable<WfFlowTask>().First(t => t.InstanceId == id && t.NodeId == cc);
+            Assert.Equal((int)WfTaskStatus.Skipped, ccTask.Status);
+        }
+
         // 挂起态跳转：Suspend → AdminJump 后，DB Status 必须恢复为 Approval（持久化），
         // 否则跳转后实例在库里仍是 Suspended，恢复链路与实际流转态不一致。
         [Fact]

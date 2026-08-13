@@ -1117,8 +1117,13 @@ namespace ZR.Workflow.Service
         ///             │
         ///             └─ 审批节点 → 生成待办并等待
         /// </code>
+        ///
+        /// <c>singleNodeOnly</c>：仅管理员跳转（AdminJump）到"并行分组内成员节点"时置 true，
+        /// 跳过并行分组的整组 fork，只激活目标节点本身（生成其待办/抄送）；组内其它分支由
+        /// AdminJump 先统一置 Skipped，使并行汇聚判定组内其余分支已完成、目标分支通过后即可放行，
+        /// 避免卡死与多余分支高亮。
         /// </summary>
-        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
+        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, bool singleNodeOnly = false)
         {
             // 节点进入事件钩子（Webhook）：登记入队，事务提交后统一投递，失败不阻断流转
             QueueNodeHook(instance, node, "enter", formValues);
@@ -1187,14 +1192,20 @@ namespace ZR.Workflow.Service
                 return;
             }
 
-            // 并行分支：首次到达该分组时，同时激活组内所有满足条件的节点
-            if (node.ParallelGroup > 0)
+            // 并行分支：首次到达该分组时，同时激活组内所有满足条件的节点。
+            // 但管理员跳转（singleNodeOnly=true）到组内某成员时，跳过整组 fork，落到下方"非并行节点"分支只激活目标节点自身。
+            if (node.ParallelGroup > 0 && !singleNodeOnly)
             {
                 logger.Info($"并行分组进入：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) ParallelGroup={node.ParallelGroup}");
                 var groupNodes = allNodes.Where(n => n.ParallelGroup == node.ParallelGroup).ToList();
                 var groupNodeIds = groupNodes.Select(g => g.NodeId).ToList();
+                // 分组是否"已激活"：仅当组内存在活跃（待审/排队）任务才算已 fork 过。
+                // 若组内只剩已跳过/已审的旧任务（如 AdminJump 跳转到并行节点、或 Resubmit 回首并行节点后旧任务残留），
+                // 不能视为已激活——否则会走下方 return（"分组已激活，避免重复生成"）而不生成任何新待办，
+                // 导致流程停在"审核中"却无可审批任务（卡死）。此时应重新 fork 生成组内全部 Pending 待办。
                 var groupActive = Context.Queryable<WfFlowTask>()
-                    .Any(t => t.InstanceId == instance.InstanceId && groupNodeIds.Contains(t.NodeId));
+                    .Any(t => t.InstanceId == instance.InstanceId && groupNodeIds.Contains(t.NodeId)
+                        && (t.Status == (int)WfTaskStatus.Pending || t.Status == (int)WfTaskStatus.Waiting));
                 if (!groupActive)
                 {
                     // 并行分组 fork：把组内「将活动」的成员（生成待办/抄送的节点）同时加入活动集 CurrentNodeIds，
@@ -1560,8 +1571,11 @@ namespace ZR.Workflow.Service
 
                 AddRecord(instanceId, null, targetNodeId, op, (int)WfAction.Jump, $"跳转到节点【{target.NodeName}】{(string.IsNullOrEmpty(opinion) ? "" : $"：{opinion}")}");
 
-                // 重新激活目标节点（条件/网关节点会自行顺延或 fork，无需人工处理）
-                ArriveNode(instance, target, allNodes, linksBySource, linksByTarget, formValues);
+                // 重新激活目标节点（条件/网关节点会自行顺延或 fork，无需人工处理）。
+                // singleNodeOnly=true：目标若是并行分组内成员，只激活该节点本身（生成其待办/抄送），
+                // 组内其它分支的未完成任务已在上面统一置 Skipped → 并行汇聚判定其已完成，目标分支通过后即可放行，
+                // 不会整组重新 fork、不会多余分支高亮、不会卡死。参照业界（Activiti/钉钉等）单令牌跳转语义。
+                ArriveNode(instance, target, allNodes, linksBySource, linksByTarget, formValues, singleNodeOnly: true);
                 SyncActiveNodeId(instance);
             }, "AdminJump");
 
