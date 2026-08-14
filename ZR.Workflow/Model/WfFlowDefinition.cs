@@ -42,6 +42,13 @@ namespace ZR.Workflow.Model
         public int FormType { get; set; } = 0;
 
         /// <summary>
+        /// 设计器类型：1=LogicFlow(自由画布) 2=Simple(简单式纵向卡片流)。
+        /// 决定该流程定义使用哪个前端设计器打开与保存，随定义持久化。
+        /// </summary>
+        [SugarColumn(DefaultValue = "1")]
+        public int DesignType { get; set; } = 1;
+
+        /// <summary>
         /// 状态 0=停用 1=启用
         /// </summary>
         [SugarColumn(DefaultValue = "1")]

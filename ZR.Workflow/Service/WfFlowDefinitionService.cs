@@ -127,6 +127,7 @@ namespace ZR.Workflow.Service
                     FlowCode = GenCopyCode(src.FlowCode),
                     FlowName = src.FlowName + "_副本",
                     FormType = src.FormType,
+                    DesignType = src.DesignType,
                     Status = 0, // 副本默认停用，确认后再启用，避免误发起
                     FormItems = src.FormItems,
                     DesignJson = src.DesignJson,
@@ -235,6 +236,7 @@ namespace ZR.Workflow.Service
                     FlowCode = src.FlowCode,
                     FlowName = src.FlowName,
                     FormType = src.FormType,
+                    DesignType = src.DesignType,
                     Status = 0, // 回滚/另存均为草稿停用态，需手动发布/设现行
                     FormItems = src.FormItems,
                     DesignJson = src.DesignJson,

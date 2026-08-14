@@ -35,6 +35,9 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>表单类型</summary>
         public int FormType { get; set; } = 0;
 
+        /// <summary>设计器类型 1=LogicFlow 2=Simple</summary>
+        public int DesignType { get; set; } = 1;
+
         /// <summary>状态</summary>
         public int Status { get; set; } = 1;
 
