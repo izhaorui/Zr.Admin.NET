@@ -49,13 +49,20 @@ namespace ZR.ServiceCore.Middleware
                 return;
             }
 
-            // 允许匿名访问的端点
+            // 未匹配到任何端点（如 404、非 API 请求），无需鉴权，直接放行
             var endpoint = context.GetEndpoint();
-            var allowAnonymous = endpoint?.Metadata?.GetMetadata<AllowAnonymousAttribute>() != null;
-
-            if (allowAnonymous || endpoint == null)
+            if (endpoint == null)
             {
-                Console.WriteLine($"断点访问被过滤path={path}");
+                Console.WriteLine($"路由访问404 path={path}");
+                await _next(context);
+                return;
+            }
+
+            // 标注了 [AllowAnonymous] 的公开端点（如登录、验证码），跳过鉴权
+            var allowAnonymous = endpoint.Metadata.GetMetadata<AllowAnonymousAttribute>() != null;
+            if (allowAnonymous)
+            {
+                Console.WriteLine($"匿名端点被放行path={path}");
                 await _next(context);
                 return;
             }
