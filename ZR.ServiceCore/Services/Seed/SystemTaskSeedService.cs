@@ -68,6 +68,23 @@ namespace ZR.ServiceCore.Services
                 Create_by = "system"
             }).ExecuteCommand();
 
+            // 工作流 Webhook Outbox 重试（默认每 2 分钟，按租户展开）
+            db.Insertable(new SysTasks
+            {
+                ID = "20260813000002",
+                Name = "工作流Webhook投递",
+                JobGroup = "workflow",
+                Cron = "0 0/2 * * * ?",
+                AssemblyName = "ZR.Workflow",
+                ClassName = "Job_WfWebhookRetry",
+                TriggerType = 1,
+                IntervalSecond = 0,
+                IsStart = 1,
+                TaskType = 1,
+                TenantId = "*",
+                Create_by = "system"
+            }).ExecuteCommand();
+
             return "[系统任务] 写入工作流超时自动处理";
         }
     }

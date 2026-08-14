@@ -1,4 +1,6 @@
 ﻿using ZR.ServiceCore.Services;
+using ZR.Workflow.Model;
+using ZR.Workflow.Service.IService;
 
 namespace ZR.Workflow.Service
 {
@@ -29,17 +31,12 @@ namespace ZR.Workflow.Service
         private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         private readonly ISysUserMsgService _msgService;
+        private readonly IWfWebhookService _webhookService;
 
-        // —— Webhook 延迟投递队列 ——
-        // 节点进入/离开钩子不在事务体内直接发 HTTP（库回滚时外部系统已收事件 → 状态不一致），
-        // 而是先入队，待 RunInTx 事务提交成功后统一投递（best-effort，失败仅记日志不阻断）。
-        // 服务为 Scoped，队列实例随请求作用域，天然并发隔离。
-        private readonly object _hookLock = new();
-        private readonly List<Func<Task>> _pendingHooks = new();
-
-        public WfEngineService(ISysUserMsgService msgService)
+        public WfEngineService(ISysUserMsgService msgService, IWfWebhookService webhookService)
         {
             _msgService = msgService;
+            _webhookService = webhookService;
         }
 
         #region 公共入口
@@ -821,40 +818,15 @@ namespace ZR.Workflow.Service
         /// <see cref="BaseService{T}.UseTran(Action)"/> + 失败包装的统一入口。
         /// 事务回滚或异常时抛出带 <paramref name="errorLabel"/> 的 CustomException，
         /// 原 errorMessage 透传便于排障。所有公共入口均通过此方法走事务。
-        /// 事务提交成功后统一投递事务内入队的节点 Webhook（避免"库回滚但外部已收事件"不一致）。
+        /// 节点 Webhook 改为"Outbox 事务发件箱"：触发时在事务体内写一条 Pending 投递记录
+        /// （与业务变更原子落库），由独立定时任务 RetryWebhookDeliveries 统一投递，
+        /// 避免"库回滚但外部已收事件"不一致，且支持失败重试 / 死信 / 多实例抢占。
         /// </summary>
         private void RunInTx(Action action, string errorLabel)
         {
-            // 清掉上次失败残留的钩子，避免把过期事件带进本次事务后误投递
-            lock (_hookLock) _pendingHooks.Clear();
-
             var result = UseTran(action);
             if (!result.IsSuccess)
                 throw new CustomException(ResultCode.CUSTOM_ERROR, errorLabel, result.ErrorMessage);
-
-            FlushPendingHooks();
-        }
-
-        /// <summary>
-        /// 投递事务内入队的节点钩子。事务已提交，此时 fire-and-forget 投递仅存在"通知丢失"风险
-        /// （符合钩子 best-effort 设计，失败仅记日志不阻断主流程）。
-        /// </summary>
-        private void FlushPendingHooks()
-        {
-            List<Func<Task>> hooks;
-            lock (_hookLock) { hooks = _pendingHooks.ToList(); _pendingHooks.Clear(); }
-            if (hooks.Count == 0) return;
-            foreach (var hook in hooks)
-            {
-                _ = Task.Run(async () =>
-                {
-                    try { await hook(); }
-                    catch (Exception ex)
-                    {
-                        logger.Error($"[节点钩子] 投递异常：{ex.Message}");
-                    }
-                });
-            }
         }
 
         /// <summary>
@@ -1049,23 +1021,30 @@ namespace ZR.Workflow.Service
         #region 节点事件钩子（Webhook）
 
         /// <summary>
-        /// 登记节点事件 Webhook（入队，待事务提交后统一投递）。
-        /// EnterHookUrl 在节点进入时登记；LeaveHookUrl 在节点离开（完成并推进前）时登记。
-        /// 钩子失败（网络/超时/非 2xx）仅记日志不阻断流程。
+        /// 节点进入/离开事件钩子：Outbox 事务发件箱。
+        /// 按节点关联的 Webhook 配置（EnterWebhookId / LeaveWebhookId）查询启用的端点，
+        /// 在本方法被调用的"业务事务体内"插入一条 Pending 投递记录（含 EventId 幂等键、Payload 快照），
+        /// 与流程推进原子落库；投递由独立定时任务 RetryWebhookDeliveries 负责。失败不阻断流转。
         /// </summary>
         /// <param name="instance">流程实例（提供 InstanceId/Title/FormContent）</param>
-        /// <param name="node">触发节点（提供 NodeId/NodeName/钩子 URL）</param>
-        /// <param name="eventType">enter / leave</param>
+        /// <param name="node">触发节点（提供 NodeId/NodeName/WebhookId 引用）</param>
+        /// <param name="eventType">enter / leave（映射为 node.enter / node.leave）</param>
         /// <param name="formValues">表单字段值（快照进 payload，便于外部系统取值）</param>
         private void QueueNodeHook(WfFlowInstance instance, WfFlowNode node, string eventType, Dictionary<string, string> formValues)
         {
-            var url = eventType == "enter" ? node.EnterHookUrl : node.LeaveHookUrl;
-            if (string.IsNullOrWhiteSpace(url)) return;
+            var webhookId = eventType == "enter" ? node.EnterWebhookId : node.LeaveWebhookId;
+            if (webhookId == null || webhookId <= 0) return;
 
-            // 事务内快照全部入参，payload 在投递时再序列化，避免闭包捕获可变对象
+            var cfg = _webhookService.GetFirst(it => it.WebhookId == webhookId && it.Enabled == 1);
+            if (cfg == null) return; // 配置不存在或已停用，不投递
+
+            var eventTypeNorm = eventType == "enter" ? "node.enter" : "node.leave";
+            var eventId = $"evt_{DateTime.Now:yyyyMMddHHmmssfff}_{Guid.NewGuid():N}";
             var payload = new
             {
-                eventType,
+                eventId,
+                eventType = eventTypeNorm,
+                webhookId = cfg.WebhookId,
                 instanceId = instance.InstanceId,
                 flowId = instance.FlowId,
                 flowName = instance.FlowName,
@@ -1079,23 +1058,122 @@ namespace ZR.Workflow.Service
                 time = DateTime.Now
             };
 
-            lock (_hookLock)
+            var delivery = new WfWebhookDelivery
             {
-                _pendingHooks.Add(async () =>
+                EventId = eventId,
+                WebhookId = cfg.WebhookId,
+                HookName = cfg.Name,
+                HookUrl = cfg.Url,
+                InstanceId = instance.InstanceId,
+                NodeId = node.NodeId,
+                NodeName = node.NodeName,
+                EventType = eventTypeNorm,
+                Payload = JsonConvert.SerializeObject(payload),
+                Status = (int)WfWebhookDeliveryStatus.Pending,
+                Processing = 0,
+                RetryCount = 0,
+                MaxRetry = 5,
+                Create_time = DateTime.Now
+            };
+            Context.Insertable(delivery).ExecuteCommand();
+            logger.Info($"[节点钩子:{eventTypeNorm}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 已登记 Outbox 投递 EventId={eventId} Webhook={cfg.Name}");
+        }
+
+        /// <summary>
+        /// 投递 Outbox 中待发 / 到期可重试的 Webhook 记录（由 Job_WfWebhookRetry 定时调用）。
+        /// 多实例安全：用单条原子 UPDATE 抢占（WHERE Status=Pending AND LockUntil 过期），抢到才投递，
+        /// 避免多个 Worker 重复投递同一条；Worker 崩溃后 LockUntil 过期可被其它实例重新抢占。
+        /// 全程 try/catch，绝不向调用方抛异常，不阻断主流程。
+        /// </summary>
+        public void RetryWebhookDeliveries()
+        {
+            var now = DateTime.Now;
+            var due = Context.Queryable<WfWebhookDelivery>()
+                .Where(it => (it.Status == (int)WfWebhookDeliveryStatus.Pending)
+                    && (it.NextRetryTime == null || it.NextRetryTime <= now))
+                .OrderBy(it => it.Create_time)
+                .Take(200)
+                .ToList();
+
+            foreach (var d in due)
+            {
+                long id = d.DeliveryId;
+                // ① 原子抢占：CAS 把 Pending 改为 Processing，并置 LockUntil 防重复
+                var claimed = Context.Updateable<WfWebhookDelivery>()
+                    .SetColumns(it => new WfWebhookDelivery
+                    {
+                        Status = (int)WfWebhookDeliveryStatus.Processing,
+                        Processing = 1,
+                        LockUntil = DateTime.Now.AddSeconds(60)
+                    })
+                    .Where(it => it.DeliveryId == id
+                        && it.Status == (int)WfWebhookDeliveryStatus.Pending
+                        && (it.LockUntil == null || it.LockUntil < DateTime.Now))
+                    .ExecuteCommand();
+                if (claimed <= 0) continue; // 被其它 Worker 抢占 / 已锁定中，跳过
+
+                try
                 {
-                    try
+                    // 投递到 Webhook 端点（受保护虚拟方法，便于测试注入成功/失败/计数）
+                    SendWebhook(d.HookUrl, d.Payload ?? "{}");
+                    // 抢占到 → 投递成功：置 Sent
+                    Context.Updateable<WfWebhookDelivery>()
+                        .SetColumns(it => new WfWebhookDelivery
+                        {
+                            Status = (int)WfWebhookDeliveryStatus.Sent,
+                            Processing = 0,
+                            LockUntil = null,
+                            LastAttemptTime = DateTime.Now,
+                            LastHttpStatusCode = 200,
+                            LastError = null,
+                            SentTime = DateTime.Now
+                        })
+                        .Where(it => it.DeliveryId == id)
+                        .ExecuteCommand();
+                    logger.Info($"[Webhook投递] EventId={d.EventId} Webhook={d.HookName} 投递成功");
+                }
+                catch (Exception ex)
+                {
+                    // 失败：回 Pending，RetryCount++，指数退避算 NextRetryTime，超限 → Dead
+                    var newCount = d.RetryCount + 1;
+                    int status;
+                    DateTime? next = null;
+                    if (newCount >= d.MaxRetry)
                     {
-                        var body = JsonConvert.SerializeObject(payload);
-                        await HttpHelper.HttpPostAsync(url, body, "application/json");
-                        logger.Info($"[节点钩子:{eventType}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 已通知 {url}");
+                        status = (int)WfWebhookDeliveryStatus.Dead;
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        // 钩子失败不阻断流转，仅记录
-                        logger.Info($"[节点钩子:{eventType}] 实例{instance.InstanceId} 节点{node.NodeName}({node.NodeId}) 通知失败 {url}：{ex.Message}");
+                        status = (int)WfWebhookDeliveryStatus.Pending;
+                        // 指数退避：2^RetryCount 分钟（1→2m,2→4m,3→8m,4→16m）
+                        next = DateTime.Now.AddMinutes(Math.Pow(2, newCount));
                     }
-                });
+                    Context.Updateable<WfWebhookDelivery>()
+                        .SetColumns(it => new WfWebhookDelivery
+                        {
+                            Status = status,
+                            Processing = 0,
+                            LockUntil = null,
+                            RetryCount = newCount,
+                            LastAttemptTime = DateTime.Now,
+                            LastHttpStatusCode = null,
+                            LastError = ex.Message,
+                            NextRetryTime = next
+                        })
+                        .Where(it => it.DeliveryId == id)
+                        .ExecuteCommand();
+                    logger.Error($"[Webhook投递] EventId={d.EventId} Webhook={d.HookName} 第{newCount}次失败：{ex.Message} → {(status == (int)WfWebhookDeliveryStatus.Dead ? "Dead" : "Pending")}");
+                }
             }
+        }
+
+        /// <summary>
+        /// 向 Webhook 端点投递 payload（POST JSON）。抽出为受保护虚拟方法，便于单元测试通过子类重写注入成功/失败/计数。
+        /// 默认实现走框架 HttpHelper；投递异常直接向上抛，由 RetryWebhookDeliveries 统一处理为退避/死信。
+        /// </summary>
+        protected virtual void SendWebhook(string url, string body)
+        {
+            HttpHelper.HttpPostAsync(url, body, "application/json").GetAwaiter().GetResult();
         }
 
         #endregion

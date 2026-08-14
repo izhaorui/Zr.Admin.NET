@@ -83,6 +83,11 @@ namespace ZR.ServiceCore.Services
                     Buttons: [
                         new("新增", "workflow:template:add"), new("修改", "workflow:template:edit"), new("删除", "workflow:template:delete"),
                     ]),
+                // Webhook 配置：节点事件回调端点，供流程设计器节点面板下拉选择
+                new(Name: "Webhook配置", Path: "webhook", Component: "workflow/webhook/index", Perms: "workflow:webhook:list", OrderNum: 3, Category: 0, Icon: "link",
+                    Buttons: [
+                        new("新增", "workflow:webhook:add"), new("修改", "workflow:webhook:edit"), new("删除", "workflow:webhook:delete"),
+                    ]),
                 // 作为工作流目录下的隐藏子页面（Visible="1"），仅用于动态路由注册，对应前端 edit.vue
                 new(Name: "流程定义设计", Path: "definition-edit", Component: "workflow/flowDefinition/edit", Perms: "workflow:definition:edit", Icon: "build", OrderNum: 8, RouteName: "WfFlowDefinitionEdit", Visible: "1", Category: 0,
                     Buttons: []),
@@ -107,7 +112,7 @@ namespace ZR.ServiceCore.Services
                         new("通过", "workflow:task:approve"), new("驳回", "workflow:task:reject"), new("转办", "workflow:task:transfer"),
                         new("加签", "workflow:task:addsign"), new("减签", "workflow:task:removesign"), new("委托", "workflow:task:delegate"), new("评论", "workflow:comment:list"), new("发表评论", "workflow:comment:add"),
                     ]),
-                new(Name: "已办任务", Path: "done", Component: "workflow/done/index", Perms: "workflow:task:list", OrderNum: 3, Category: 1, Icon: "log",
+                new(Name: "已办任务", Path: "done", Component: "workflow/done/index", Perms: "workflow:task:list", OrderNum: 3, Category: 1, Icon: "checkbox",
                     Buttons: []),
                 new(Name: "审批记录", Path: "record", Component: "workflow/record/index", Perms: "workflow:record:list", OrderNum: 4, Category: 1, Icon: "form",
                     Buttons: []),

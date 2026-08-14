@@ -51,6 +51,8 @@ namespace ZR.Workflow
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfFlowComment));
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfFormTemplate));
 			DbMigrationService.EnsureEntitySchema(db, typeof(WfNodeLink));
+			DbMigrationService.EnsureEntitySchema(db, typeof(WfWebhook));
+			DbMigrationService.EnsureEntitySchema(db, typeof(WfWebhookDelivery));
 			Log.WriteLine(ConsoleColor.Green, "==== 工作流业务表初始化完成 ====");
 		}
 	}

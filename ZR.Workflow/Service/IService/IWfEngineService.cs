@@ -117,6 +117,12 @@ namespace ZR.Workflow.Service.IService
         void ProcessTimeoutTasks();
 
         /// <summary>
+        /// 投递 Outbox 中待发 / 到期可重试的 Webhook 记录（多实例原子抢占 + 指数退避 + 死信）。
+        /// 由定时任务 Job_WfWebhookRetry 周期性调用，绝不向调用方抛异常，不阻断主流程。
+        /// </summary>
+        void RetryWebhookDeliveries();
+
+        /// <summary>
         /// 申请人催办：对审批中实例向当前活动节点审批人发通知；24 小时内同实例仅可催办一次。
         /// </summary>
         /// <param name="instanceId">流程实例Id</param>
