@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Model;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using ZR.Model.System.Dto;
@@ -94,15 +95,21 @@ namespace ZR.ServiceCore.Middleware
                     HasPermi = info.RoleKeys.Contains(RolePermi);
                 }
                 bool isDemoMode = AppSettings.GetAppConfig("DemoMode", false);
+                bool isGet = HttpMethods.IsGet(context.HttpContext.Request.Method);
                 var url = context.HttpContext.Request.Path;
-                //演示公开环境屏蔽权限
-                string[] denyPerms = ["update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send", "export", "upload", "common", "gencode", "reset", "forceLogout", "batchLogout"];
+                //演示公开环境屏蔽权限：针对写操作动词；"common" 是"登录即放行"标记（见下方放行逻辑），
+                //不再列入 denyPerms，避免误伤 common 只读接口（如流程详情/列表/抄送）。common 的写操作
+                //（POST/PUT/DELETE）仍按 HttpMethod 在下方兜底屏蔽。
+                string[] denyPerms = ["update", "add", "remove", "add", "edit", "delete", "import", "run", "start", "stop", "clear", "send", "export", "upload", "gencode", "reset", "forceLogout", "batchLogout"];
                 if (isDemoMode)
                 {
                     var requiredPerms = Permission.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    if (requiredPerms.Any(p => denyPerms.Any(d => p.Contains(d, StringComparison.OrdinalIgnoreCase))))
+                    //common 标记：GET（只读查询，登录即可访问）在演示模式放行；写动词仍屏蔽，保护演示数据
+                    var isCommonRead = Permission.Equals("common", StringComparison.OrdinalIgnoreCase) && isGet;
+                    if (!isCommonRead && requiredPerms.Any(p => denyPerms.Any(d => p.Contains(d, StringComparison.OrdinalIgnoreCase))))
                     {
-                        context.Result = new JsonResult(new { code = (int)ResultCode.FORBIDDEN, msg = "演示模式 , 不允许操作" });
+                        // 非 GET 写操作被演示模式拦截时，前端仅提示不跳转 403 页
+                        context.Result = new JsonResult(new { code = (int)ResultCode.FORBIDDEN, msg = "演示模式 , 不允许操作", jumpStatus = !isGet });
                     }
                 }
                 if (!HasPermi && !Permission.Equals("common"))
@@ -110,6 +117,8 @@ namespace ZR.ServiceCore.Middleware
                     logger.Info($"用户{info.UserName}没有权限访问{url}，当前权限[{Permission}]");
                     var apiResult = new ApiResult((int)ResultCode.FORBIDDEN, $"你当前没有权限访问,请联系管理员", url);
                     apiResult.Put("permi", Permission);
+                    // 非 GET 请求无权限：前端仅提示不跳转 403 页（GET 默认跳转）
+                    if (!isGet) apiResult.Put("jumpStatus", true);
                     JsonResult result = new(apiResult)
                     {
                         StatusCode = 403,
