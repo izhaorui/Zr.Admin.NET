@@ -42,55 +42,12 @@ namespace Infrastructure.Helper
         /// </summary>
         public static async Task<string> ChatAsync(AiOptions options, string systemPrompt, string userPrompt)
         {
-            var resolved = ResolveProvider(options);
-            var uri = BuildRequestUri(options);
-            var payload = new
+            var messages = new[]
             {
-                model = resolved.Model,
-                messages = new[]
-                {
-                    new { role = "system", content = systemPrompt },
-                    new { role = "user", content = userPrompt }
-                },
-                temperature = options.Temperature,
-                max_tokens = options.MaxTokens,
-                stream = false
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = userPrompt }
             };
-
-            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-
-            var headers = new Dictionary<string, string>
-            {
-                ["Authorization"] = "Bearer " + (resolved.ApiKey ?? string.Empty)
-            };
-
-            var responseText = await HttpHelper.HttpPostAsync(
-                uri.ToString(),
-                json,
-                "application/json",
-                options.TimeoutSeconds,
-                headers).ConfigureAwait(false);
-
-            if (string.IsNullOrWhiteSpace(responseText))
-            {
-                return string.Empty;
-            }
-
-            try
-            {
-                using var doc = JsonDocument.Parse(responseText);
-                var content = ReadContent(doc.RootElement);
-                LogUsage(doc.RootElement, resolved.Provider, resolved.Model);
-                return content;
-            }
-            catch (JsonException)
-            {
-                // 非标准 JSON（如直接返回纯文本）时原样返回，由上层剥离/解析
-                return responseText;
-            }
+            return await ChatCoreAsync(options, messages).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -98,6 +55,15 @@ namespace Infrastructure.Helper
         /// 用于校验失败后的纠错重试（self-correction）等需要回灌上下文的场景。
         /// </summary>
         public static async Task<string> ChatWithMessagesAsync(AiOptions options, object[] messages)
+        {
+            return await ChatCoreAsync(options, messages).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// ChatAsync / ChatWithMessagesAsync 共用的请求核心：拼装负载、POST、解析 content、记录 token 用量。
+        /// 非标准 JSON 响应按纯文本兜底返回。
+        /// </summary>
+        private static async Task<string> ChatCoreAsync(AiOptions options, object messages)
         {
             var resolved = ResolveProvider(options);
             var uri = BuildRequestUri(options);
@@ -141,6 +107,7 @@ namespace Infrastructure.Helper
             }
             catch (JsonException)
             {
+                // 非标准 JSON（如直接返回纯文本）时原样返回，由上层剥离/解析
                 return responseText;
             }
         }
@@ -173,7 +140,7 @@ namespace Infrastructure.Helper
             if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = GetDefaultBaseUrl(provider);
             if (string.IsNullOrWhiteSpace(endpoint)) endpoint = GetDefaultEndpoint(provider);
             if (string.IsNullOrWhiteSpace(model)) model = GetDefaultModel(provider);
-            Log.WriteLine(ConsoleColor.DarkCyan, $"Resolved AI provider: {provider}, baseUrl={baseUrl}, endpoint={endpoint}, model={model}");
+            Logger.LogInformation("解析 AI provider: {Provider}, baseUrl={BaseUrl}, endpoint={Endpoint}, model={Model}", provider, baseUrl, endpoint, model);
             return (provider, baseUrl, endpoint, model, apiKey);
         }
 
@@ -321,10 +288,8 @@ namespace Infrastructure.Helper
                 return result;
             }
 
-            if (message.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.String)
-            {
-                result.Content = content.GetString();
-            }
+            // 复用公共的 content 读取逻辑，避免与 ReadContent 重复
+            result.Content = TryReadMessageContent(message);
 
             if (message.TryGetProperty("tool_calls", out var toolCalls) && toolCalls.ValueKind == JsonValueKind.Array)
             {
@@ -367,12 +332,26 @@ namespace Infrastructure.Helper
             }
 
             var firstChoice = choices[0];
-            if (!firstChoice.TryGetProperty("message", out var message) || !message.TryGetProperty("content", out var content))
+            if (!firstChoice.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object)
             {
                 return string.Empty;
             }
 
-            return content.GetString() ?? string.Empty;
+            return TryReadMessageContent(message);
+        }
+
+        /// <summary>
+        /// 从 message 节点读取 content 文本（message.content 为字符串时返回，否则空）。
+        /// 同时被 ReadContent 与 ReadToolResult 复用。
+        /// </summary>
+        private static string TryReadMessageContent(JsonElement message)
+        {
+            if (message.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.String)
+            {
+                return content.GetString() ?? string.Empty;
+            }
+
+            return string.Empty;
         }
 
         public static string BuildAiErrorMessage(int statusCode, string responseText)

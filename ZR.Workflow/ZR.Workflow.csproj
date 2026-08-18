@@ -15,8 +15,4 @@
 		<ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<EmbeddedResource Include="Prompts\wf_form_generate.txt" />
-	</ItemGroup>
-
 </Project>

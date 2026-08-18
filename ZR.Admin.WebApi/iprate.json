@@ -6,7 +6,7 @@
     "RealIpHeader": "X-Real-IP",
     "ClientIdHeader": "X-ClientId",
     "HttpStatusCode": 429,
-    "EndpointWhitelist": [ "post:/system/dict/data/types", "*:/msghub/negotiate", "*:/LogOut", "*:/common/uploadfile", "*:/VerifyScan" ],
+    "EndpointWhitelist": [ "post:/system/dict/data/types", "*:/msghub/negotiate", "*:/LogOut", "*:/common/uploadfile", "*:/VerifyScan", "*:/workflow/ai/generate", "*:/workflow/ai/approval-suggest", "*:/workflow/ai/flow-analyze", "*:/workflow/ai/match-fill" ],
     "QuotaExceededResponse": {
       "Content": "{{\"code\":429,\"msg\":\"访问过于频繁，请稍后重试\"}}",
       "ContentType": "application/json",
@@ -28,8 +28,29 @@
       },
       {
         "Endpoint": "((post)|(put)):*",
-        "Period": "3s",
+        "Period": "5s",
         "Limit": 1
+      },
+      // 工作流 AI 接口：直连大模型且计费，按成本单独限流（generate 含多轮自纠，最贵）
+      {
+        "Endpoint": "*:/workflow/ai/generate",
+        "Period": "60s",
+        "Limit": 3
+      },
+      {
+        "Endpoint": "*:/workflow/ai/approval-suggest",
+        "Period": "20s",
+        "Limit": 5
+      },
+      {
+        "Endpoint": "*:/workflow/ai/flow-analyze",
+        "Period": "60s",
+        "Limit": 5
+      },
+      {
+        "Endpoint": "*:/workflow/ai/match-fill",
+        "Period": "20s",
+        "Limit": 5
       }
     ]
   }

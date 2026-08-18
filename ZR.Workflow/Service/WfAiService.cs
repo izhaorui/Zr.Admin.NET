@@ -589,8 +589,6 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 剥离可能的 ```json ``` 代码块包裹，并提取首个 JSON 对象。
         /// </summary>
-
-
         private static void NormalizeResult(WfAiGenerateResultDto result)
         {
             result.Nodes ??= new List<WfAiNodeDto>();

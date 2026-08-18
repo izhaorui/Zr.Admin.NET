@@ -9,6 +9,12 @@ namespace Infrastructure
     public class HttpHelper
     {
         /// <summary>
+        /// 静态单例 HttpClient：避免每次请求 new HttpClient 导致 socket（TIME_WAIT）耗尽。
+        /// 所有对外 POST/GET 共享此实例；超时由各调用方通过 timeOut 参数控制（每次请求独立设置）。
+        /// </summary>
+        private static readonly HttpClient SharedClient = new HttpClient();
+
+        /// <summary>
         /// 发起POST同步请求
         /// </summary>
         /// <param name="url"></param>
@@ -18,9 +24,8 @@ namespace Infrastructure
         /// <returns></returns>
         public static string HttpPost(string url, string postData = null, string contentType = null, int timeOut = 30, Dictionary<string, string> headers = null)
         {
-            Console.WriteLine($"【{DateTime.Now}】Post请求{url}");
             postData ??= "";
-            using HttpClient client = new HttpClient();
+            var client = SharedClient;
             client.Timeout = new TimeSpan(0, 0, timeOut);
             if (headers != null)
             {
@@ -46,7 +51,7 @@ namespace Infrastructure
         public static async Task<string> HttpPostAsync(string url, string postData = null, string contentType = null, int timeOut = 30, Dictionary<string, string> headers = null)
         {
             postData ??= "";
-            using HttpClient client = new HttpClient();
+            var client = SharedClient;
             client.Timeout = new TimeSpan(0, 0, timeOut);
             if (headers != null)
             {
@@ -69,8 +74,7 @@ namespace Infrastructure
         /// <returns></returns>
         public static string HttpGet(string url, Dictionary<string, string> headers = null)
         {
-            Console.WriteLine($"【{DateTime.Now}】Get请求{url}");
-            using HttpClient client = new HttpClient();
+            var client = SharedClient;
             if (headers != null)
             {
                 foreach (var header in headers)
@@ -102,7 +106,7 @@ namespace Infrastructure
         /// <returns></returns>
         public static async Task<string> HttpGetAsync(string url, Dictionary<string, string> headers = null)
         {
-            using HttpClient client = new HttpClient();
+            var client = SharedClient;
             if (headers != null)
             {
                 foreach (var header in headers)
@@ -123,7 +127,7 @@ namespace Infrastructure
         public static string HttpPut(string url, string postData = null, string contentType = null, int timeOut = 30, Dictionary<string, string> headers = null)
         {
             postData ??= "";
-            using HttpClient client = new HttpClient();
+            var client = SharedClient;
             client.Timeout = new TimeSpan(0, 0, timeOut);
             if (headers != null)
             {

@@ -82,5 +82,60 @@
 
             return "***.***.***.***"; // fallback
         }
+
+        /// <summary>
+        /// 对一整段自由文本做批量脱敏：自动识别其中的手机号、身份证、邮箱、银行卡、金额，
+        /// 统一打码后返回。用于 AI 场景（表单填报内容 / 用户自然语言描述）发送给第三方模型前，
+        /// 避免个人隐私与企业敏感数据明文出网。无法识别的普通文本原样保留。
+        /// </summary>
+        public static string MaskSensitiveText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return text;
+
+            // 手机号（1 开头，11 位）
+            text = System.Text.RegularExpressions.Regex.Replace(
+                text, @"(?&lt;!\d)1[3-9]\d{9}(?!\d)", m => MaskPhone(m.Value));
+
+            // 身份证（15 或 18 位，18 位末位可为 X）
+            text = System.Text.RegularExpressions.Regex.Replace(
+                text, @"(?&lt;!\d)\d{15}(?!\d)|(?&lt;!\d)\d{17}[\dXx](?!\d)", m => MaskIdCard(m.Value));
+
+            // 邮箱
+            text = System.Text.RegularExpressions.Regex.Replace(
+                text, @"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", m => MaskEmail(m.Value));
+
+            // 银行卡（16~19 位纯数字，前后非数字边界）
+            text = System.Text.RegularExpressions.Regex.Replace(
+                text, @"(?&lt;!\d)\d{16,19}(?!\d)", m => MaskBankCard(m.Value));
+
+            // 金额（带货币符号或「元/万元」单位，如 ¥12345、12345.00元、12.3万元）
+            text = System.Text.RegularExpressions.Regex.Replace(
+                text, @"(?&lt;!\d)\d{1,3}(,\d{3})*(\.\d+)?\s*(元|万元|块钱|RMB|￥|$)", m => MaskAmount(m.Value));
+
+            return text;
+        }
+
+        /// <summary>
+        /// 银行卡脱敏：保留前 6 位与后 4 位，中间打码。
+        /// </summary>
+        public static string MaskBankCard(string card)
+        {
+            if (string.IsNullOrEmpty(card) || card.Length < 10) return card;
+            return card.Substring(0, 6) + new string('*', card.Length - 10) + card.Substring(card.Length - 4);
+        }
+
+        /// <summary>
+        /// 金额脱敏：仅保留数量级，具体数值打码（如 12345.00元 -> *****元）。
+        /// 保留单位便于模型理解上下文，但不泄露精确金额。
+        /// </summary>
+        public static string MaskAmount(string amount)
+        {
+            if (string.IsNullOrWhiteSpace(amount)) return amount;
+            // 末位是单位或货币符号时保留，前面的数字部分打码
+            var last = amount[amount.Length - 1];
+            var unit = char.IsDigit(last) || last == '.' || last == ',' ? string.Empty : last.ToString();
+            var digits = amount.Substring(0, amount.Length - unit.Length);
+            return new string('*', digits.Length) + unit;
+        }
     }
 }

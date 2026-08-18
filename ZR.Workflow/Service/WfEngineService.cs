@@ -1,6 +1,4 @@
 ﻿using ZR.ServiceCore.Services;
-using ZR.Workflow.Model;
-using ZR.Workflow.Service.IService;
 
 namespace ZR.Workflow.Service
 {
@@ -34,11 +32,27 @@ namespace ZR.Workflow.Service
         private readonly IWfWebhookService _webhookService;
         private readonly IWfAiService _aiService;
 
+        /// <summary>
+        /// 审批人解析策略注册表：WfApproverType → IApproverResolver。
+        /// 新增审批人类型时只需「加一个 resolver 类 + 一行注册」，无需再改 switch 分支。
+        /// </summary>
+        private readonly Dictionary<WfApproverType, IApproverResolver> _approverResolvers;
+
         public WfEngineService(ISysUserMsgService msgService, IWfWebhookService webhookService, IWfAiService aiService)
         {
             _msgService = msgService;
             _webhookService = webhookService;
             _aiService = aiService;
+
+            _approverResolvers = new Dictionary<WfApproverType, IApproverResolver>
+            {
+                [WfApproverType.User] = new UserApproverResolver(this),
+                [WfApproverType.Role] = new RoleApproverResolver(this),
+                [WfApproverType.Dept] = new DeptApproverResolver(this),
+                [WfApproverType.Field] = new FormFieldApproverResolver(this),
+                [WfApproverType.DeptLeader] = new DeptLeaderApproverResolver(this),
+                [WfApproverType.ApplyLeader] = new ApplyLeaderApproverResolver(this),
+            };
         }
 
         #region 公共入口
@@ -346,8 +360,8 @@ namespace ZR.Workflow.Service
             var op = LoadUser(operatorId);
             logger.Info($"转办：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) {op.NickName}({operatorId}) → 目标用户({targetUserId})");
             // 转办目标按 userId 取用户；不存在则直接拒绝（避免把任务转给一个无效 Id 造成流程卡死）
-            var target = Context.Queryable<SysUser>().First(u => u.UserId == targetUserId)
-                ?? throw new CustomException("转办人不存在");
+            var target = ActiveUsers().First(u => u.UserId == targetUserId)
+                ?? throw new CustomException("转办人不存在或已停用");
             var targetName = target.UserName;
             var targetNickName = target.NickName;
             RunInTx(() =>
@@ -429,8 +443,8 @@ namespace ZR.Workflow.Service
 
             var op = LoadUser(operatorId);
             logger.Info($"委托代审：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) {op.NickName}({operatorId}) → 代审人({targetUserId})");
-            var target = Context.Queryable<SysUser>().First(u => u.UserId == targetUserId)
-                ?? throw new CustomException("代审人不存在");
+            var target = ActiveUsers().First(u => u.UserId == targetUserId)
+                ?? throw new CustomException("代审人不存在或已停用");
 
             RunInTx(() =>
             {
@@ -636,10 +650,10 @@ namespace ZR.Workflow.Service
                 AutoApproveTask(task, instance, node);
                 return;
             }
-            var target = Context.Queryable<SysUser>().First(u => u.UserId == targetUserId.Value);
+            var target = ActiveUsers().First(u => u.UserId == targetUserId.Value);
             if (target == null)
             {
-                logger.Warn($"超时转交目标用户不存在（{targetUserId}）→ 退化为自动通过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId})");
+                logger.Warn($"超时转交目标用户不存在或已停用（{targetUserId}）→ 退化为自动通过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId})");
                 AutoApproveTask(task, instance, node);
                 return;
             }
@@ -1867,95 +1881,36 @@ namespace ZR.Workflow.Service
         private sealed record ResolvedApprover(long UserId, string UserName, string NickName);
 
         /// <summary>
+        /// 有效用户查询起点：未删除（DelFlag==0）且未停用（Status==0）。
+        /// 引擎内所有取用户处统一复用，避免审批人解析/转办等场景选到已删除或停用的用户导致流程卡死。
+        /// </summary>
+        private ISugarQueryable<SysUser> ActiveUsers()
+            => Context.Queryable<SysUser>().Where(u => u.DelFlag == 0 && u.Status == 0);
+
+        /// <summary>
         /// 解析节点审批人列表，统一返回 (UserId, UserName, NickName)。
         /// 定义态存的是稳定标识：ApproverType=0/指定用户存 userId；
         /// =1 角色Id；=2 部门Id；=3 表单字段 key，字段值为逗号分隔的 userId；
         /// =4 部门负责人（ApproverId 存部门Id，取部门 LeaderIds）；=5 发起人主管（取流程发起人 LeaderId）。
         /// 所有分支最终都查 SysUser 得到 UserId，运行态任务/记录直接用 UserId，避免 userName 变更失效。
+        /// 各类型解析逻辑由 <see cref="IApproverResolver"/> 策略实现，此处仅查表分发 + 统一去重兜底。
         /// </summary>
         private List<ResolvedApprover> ResolveApprovers(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId = null)
         {
-            var ids = (node.ApproverId ?? "").SplitByComma();
-
-            List<SysUser> users;
-            switch (node.ApproverType)
+            if (!_approverResolvers.TryGetValue((WfApproverType)node.ApproverType, out var resolver))
             {
-                case (int)WfApproverType.Role:
-                    {
-                        var roleIds = ids.Select(s => long.TryParse(s, out var v) ? v : (long?)null).Where(v => v.HasValue).Select(v => v.Value).ToList();
-                        if (roleIds.Count == 0) return new List<ResolvedApprover>();
-                        users = Context.Queryable<SysUser>()
-                            .InnerJoin<SysUserRole>((u, ur) => u.UserId == ur.UserId)
-                            .Where((u, ur) => roleIds.Contains(ur.RoleId))
-                            .Distinct()
-                            .ToList();
-                        break;
-                    }
-                case (int)WfApproverType.Dept:
-                    {
-                        var deptIds = ids.Select(s => long.TryParse(s, out var v) ? v : (long?)null).Where(v => v.HasValue).Select(v => v.Value).ToList();
-                        if (deptIds.Count == 0) return new List<ResolvedApprover>();
-                        users = Context.Queryable<SysUser>()
-                            .Where(u => deptIds.Contains(u.DeptId) && u.Status == 0)
-                            .Distinct()
-                            .ToList();
-                        break;
-                    }
-                case (int)WfApproverType.Field:
-                    {
-                        // 表单字段动态审批人：ApproverId 为表单字段 key，字段值为逗号分隔的 userId
-                        var key = node.ApproverId ?? "";
-                        if (string.IsNullOrWhiteSpace(key) || formValues == null || !formValues.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
-                            return new List<ResolvedApprover>();
-                        var userIds = raw.SplitByComma()
-                            .Where(s => long.TryParse(s, out var id) && id > 0)
-                            .Select(s => long.Parse(s))
-                            .Distinct()
-                            .ToList();
-                        if (userIds.Count == 0) return new List<ResolvedApprover>();
-                        users = Context.Queryable<SysUser>().Where(u => userIds.Contains(u.UserId)).Distinct().ToList();
-                        break;
-                    }
-                case (int)WfApproverType.DeptLeader:
-                    {
-                        // 部门负责人：ApproverId 存部门Id（逗号分隔），取这些部门 LeaderIds 中的 userId
-                        var deptIds = ids.Select(s => long.TryParse(s, out var v) ? v : (long?)null).Where(v => v.HasValue).Select(v => v.Value).ToList();
-                        if (deptIds.Count == 0) return new List<ResolvedApprover>();
-                        var leaderIdStrs = Context.Queryable<SysDept>()
-                            .Where(d => deptIds.Contains(d.DeptId))
-                            .Select(d => d.LeaderIds)
-                            .ToList()
-                            .Where(s => !string.IsNullOrWhiteSpace(s))
-                            .SelectMany(s => s.SplitByComma())
-                            .Where(s => long.TryParse(s, out var id) && id > 0)
-                            .Select(s => long.Parse(s))
-                            .Distinct()
-                            .ToList();
-                        if (leaderIdStrs.Count == 0) return new List<ResolvedApprover>();
-                        users = Context.Queryable<SysUser>().Where(u => leaderIdStrs.Contains(u.UserId)).Distinct().ToList();
-                        break;
-                    }
-                case (int)WfApproverType.ApplyLeader:
-                    {
-                        // 发起人主管：取流程发起人的 LeaderId（再查一次得到主管用户）
-                        if (applyUserId == null || applyUserId <= 0) return new List<ResolvedApprover>();
-                        var leaderId = Context.Queryable<SysUser>()
-                            .Where(u => u.UserId == applyUserId)
-                            .Select(u => u.LeaderId)
-                            .First();
-                        if (leaderId == null || leaderId <= 0) return new List<ResolvedApprover>();
-                        users = Context.Queryable<SysUser>().Where(u => u.UserId == leaderId).Distinct().ToList();
-                        break;
-                    }
-                default: // 指定用户：ApproverId 存 userId（数字）
-                    {
-                        var userIds = ids.Where(s => long.TryParse(s, out var id) && id > 0).Select(s => long.Parse(s)).Distinct().ToList();
-                        if (userIds.Count == 0) return new List<ResolvedApprover>();
-                        users = Context.Queryable<SysUser>().Where(u => userIds.Contains(u.UserId)).Distinct().ToList();
-                        break;
-                    }
+                // 未知审批人类型：返回空并告警，避免误当指定用户解析
+                logger.Warn($"审批人类型未知：Node={node.NodeName}({node.NodeId}) ApproverType={node.ApproverType} ApproverId={node.ApproverId}");
+                return new List<ResolvedApprover>();
             }
-            return users.Select(u => new ResolvedApprover(u.UserId, u.UserName, u.NickName)).ToList();
+
+            var users = resolver.Resolve(node, formValues, applyUserId);
+            // 最终按 UserId 去重兜底，防止上游分支 Distinct 遗漏导致同一审批人重复
+            return users
+                .GroupBy(u => u.UserId)
+                .Select(g => g.First())
+                .Select(u => new ResolvedApprover(u.UserId, u.UserName, u.NickName))
+                .ToList();
         }
 
         /// <summary>
@@ -1967,9 +1922,141 @@ namespace ZR.Workflow.Service
             if (userIds == null || userIds.Count == 0) return new List<ResolvedApprover>();
             var ids = userIds.Where(id => id > 0).Distinct().ToList();
             if (ids.Count == 0) return new List<ResolvedApprover>();
-            return Context.Queryable<SysUser>().Where(u => ids.Contains(u.UserId))
+            return ActiveUsers().Where(u => ids.Contains(u.UserId))
                 .Select(u => new ResolvedApprover(u.UserId, u.UserName, u.NickName))
                 .ToList();
+        }
+
+        /// <summary>
+        /// 审批人解析策略：按 WfApproverType 各自实现「从节点定义 + 表单值解析出有效用户列表」。
+        /// 新增审批人类型时实现本接口并在构造函数注册即可，无需改动 ResolveApprovers 的分发逻辑。
+        /// </summary>
+        private interface IApproverResolver
+        {
+            List<SysUser> Resolve(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId);
+        }
+
+        /// <summary>解析策略基类：复用引擎的 ActiveUsers()（有效用户谓词）与 Context。</summary>
+        private abstract class ApproverResolverBase : IApproverResolver
+        {
+            protected readonly WfEngineService Engine;
+
+            protected ApproverResolverBase(WfEngineService engine) => Engine = engine;
+
+            public abstract List<SysUser> Resolve(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId);
+
+            /// <summary>ApproverId 逗号分隔解析为 long 列表（非法值丢弃）。</summary>
+            protected static List<long> ParseIds(string approverId)
+                => (approverId ?? "").SplitByComma()
+                    .Select(s => long.TryParse(s, out var v) ? v : (long?)null)
+                    .Where(v => v.HasValue)
+                    .Select(v => v.Value)
+                    .ToList();
+        }
+
+        /// <summary>指定用户：ApproverId 存 userId（逗号分隔，数字）。</summary>
+        private sealed class UserApproverResolver : ApproverResolverBase
+        {
+            public UserApproverResolver(WfEngineService engine) : base(engine) { }
+
+            public override List<SysUser> Resolve(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId)
+            {
+                var userIds = ParseIds(node.ApproverId).Where(id => id > 0).Distinct().ToList();
+                if (userIds.Count == 0) return new List<SysUser>();
+                return Engine.ActiveUsers().Where(u => userIds.Contains(u.UserId)).Distinct().ToList();
+            }
+        }
+
+        /// <summary>指定角色：ApproverId 存角色Id（逗号分隔），取拥有这些角色的用户。</summary>
+        private sealed class RoleApproverResolver : ApproverResolverBase
+        {
+            public RoleApproverResolver(WfEngineService engine) : base(engine) { }
+
+            public override List<SysUser> Resolve(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId)
+            {
+                var roleIds = ParseIds(node.ApproverId);
+                if (roleIds.Count == 0) return new List<SysUser>();
+                return Engine.ActiveUsers()
+                    .InnerJoin<SysUserRole>((u, ur) => u.UserId == ur.UserId)
+                    .Where((u, ur) => roleIds.Contains(ur.RoleId))
+                    .Distinct()
+                    .ToList();
+            }
+        }
+
+        /// <summary>指定部门：ApproverId 存部门Id（逗号分隔），取这些部门下所有有效用户。</summary>
+        private sealed class DeptApproverResolver : ApproverResolverBase
+        {
+            public DeptApproverResolver(WfEngineService engine) : base(engine) { }
+
+            public override List<SysUser> Resolve(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId)
+            {
+                var deptIds = ParseIds(node.ApproverId);
+                if (deptIds.Count == 0) return new List<SysUser>();
+                return Engine.ActiveUsers().Where(u => deptIds.Contains(u.DeptId)).Distinct().ToList();
+            }
+        }
+
+        /// <summary>表单字段动态审批人：ApproverId 为表单字段 key，字段值为逗号分隔的 userId。</summary>
+        private sealed class FormFieldApproverResolver : ApproverResolverBase
+        {
+            public FormFieldApproverResolver(WfEngineService engine) : base(engine) { }
+
+            public override List<SysUser> Resolve(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId)
+            {
+                var key = node.ApproverId ?? "";
+                if (string.IsNullOrWhiteSpace(key) || formValues == null || !formValues.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+                    return new List<SysUser>();
+                var userIds = raw.SplitByComma()
+                    .Where(s => long.TryParse(s, out var id) && id > 0)
+                    .Select(s => long.Parse(s))
+                    .Distinct()
+                    .ToList();
+                if (userIds.Count == 0) return new List<SysUser>();
+                return Engine.ActiveUsers().Where(u => userIds.Contains(u.UserId)).Distinct().ToList();
+            }
+        }
+
+        /// <summary>部门负责人：ApproverId 存部门Id（逗号分隔），解析这些部门 LeaderIds 对应的有效用户。</summary>
+        private sealed class DeptLeaderApproverResolver : ApproverResolverBase
+        {
+            public DeptLeaderApproverResolver(WfEngineService engine) : base(engine) { }
+
+            public override List<SysUser> Resolve(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId)
+            {
+                var deptIds = ParseIds(node.ApproverId);
+                if (deptIds.Count == 0) return new List<SysUser>();
+                var leaderIdStrs = Engine.Context.Queryable<SysDept>()
+                    .Where(d => deptIds.Contains(d.DeptId) && d.DelFlag == 0)
+                    .Select(d => d.LeaderIds)
+                    .ToList()
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .SelectMany(s => s.SplitByComma())
+                    .Where(s => long.TryParse(s, out var id) && id > 0)
+                    .Select(s => long.Parse(s))
+                    .Distinct()
+                    .ToList();
+                if (leaderIdStrs.Count == 0) return new List<SysUser>();
+                return Engine.ActiveUsers().Where(u => leaderIdStrs.Contains(u.UserId)).Distinct().ToList();
+            }
+        }
+
+        /// <summary>发起人主管：ApproverId 为空，运行时取流程发起人 SysUser.LeaderId 对应的有效用户。</summary>
+        private sealed class ApplyLeaderApproverResolver : ApproverResolverBase
+        {
+            public ApplyLeaderApproverResolver(WfEngineService engine) : base(engine) { }
+
+            public override List<SysUser> Resolve(WfFlowNode node, Dictionary<string, string> formValues, long? applyUserId)
+            {
+                if (applyUserId == null || applyUserId <= 0) return new List<SysUser>();
+                var leaderId = Engine.Context.Queryable<SysUser>()
+                    .Where(u => u.UserId == applyUserId)
+                    .Select(u => u.LeaderId)
+                    .ToList()
+                    .FirstOrDefault();
+                if (leaderId == null || leaderId <= 0) return new List<SysUser>();
+                return Engine.ActiveUsers().Where(u => u.UserId == leaderId).Distinct().ToList();
+            }
         }
 
         /// <summary>
