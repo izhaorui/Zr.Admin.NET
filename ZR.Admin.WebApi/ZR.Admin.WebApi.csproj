@@ -34,6 +34,13 @@
 		<Folder Include="Properties\PublishProfiles\" />
 	</ItemGroup>
 
+	<!-- 工作流 AI 提示词目录：复制随部署（缺失不影响编译；运行时按 AiOptions:PromptDir 读取） -->
+	<ItemGroup>
+		<Content Include="Prompts\**\*.md">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
 	<ItemGroup>
 		<None Update="ip2region_v4.xdb">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>

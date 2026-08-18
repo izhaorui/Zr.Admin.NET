@@ -1,7 +1,18 @@
 namespace ZR.Workflow.Model.Dto
 {
     /// <summary>
-    /// AI 自然语言生成流程草稿 - 请求
+    /// AI 生成层 DSL 契约边界（重要）。
+    ///
+    /// 本文件定义的 DTO 是「AI 自然语言输出」与「引擎业务模型（WfFlowDefinition / WfFlowNode）」之间的
+    /// <b>稳定中间层（Workflow DSL）</b>，承担两道隔离：
+    /// <list type="bullet">
+    /// <item><b>边界 A（AI ↔ DTO）</b>：由 System Prompt + JSON schema 约束，保证模型输出结构稳定。</item>
+    /// <item><b>边界 B（DTO ↔ 业务模型）</b>：由 ConvertToFlowDefinition 统一翻译，AI 格式演进只在本文件与
+    /// ConvertToFlowDefinition 内消化，<b>禁止让 WfFlowNode 等 DB 实体感知任何 AI 专属结构</b>。</item>
+    /// </list>
+    ///
+    /// 当未来 AI 产出漂移（如多字段组合条件、嵌套并行、动态表达式审批）时，新增/调整字段只改这里与
+    /// ConvertToFlowDefinition，DB 实体与运行引擎不受影响。
     /// </summary>
     public class WfAiGenerateInput
     {
@@ -10,7 +21,9 @@ namespace ZR.Workflow.Model.Dto
     }
 
     /// <summary>
-    /// AI 生成的流程草稿（节点数组 + 连线数组 + 表单字段），仅作设计器渲染草稿，不直接入库
+    /// AI 生成的流程草稿（Workflow DSL），节点数组 + 连线数组 + 表单字段。
+    /// 这是 AI 与引擎之间的中间表示：仅用于设计器渲染草稿与 ConvertToFlowDefinition 翻译，
+    /// <b>不直接入库</b>，也不继承任何 DB 基类（无 SugarTable/SysBase），刻意与 WfFlowNode 解耦。
     /// </summary>
     public class WfAiGenerateResultDto
     {

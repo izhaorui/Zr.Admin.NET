@@ -38,23 +38,22 @@ namespace ZR.Workflow.Service
             PropertyNameCaseInsensitive = true
         };
 
-        // 提示词模板（嵌入资源，见 ZR.Workflow/Prompts/），首次使用时从程序集读取并缓存
-        private static readonly string SystemPrompt = LoadEmbeddedPrompt("wf_form_generate.txt");
+        // 提示词加载器：从磁盘 Prompts 目录读取 .md（目录可经 AiOptions.PromptDir 配置）。
+        // 文件缺失不抛异常、不阻断编译，仅在对应能力调用时通过 GetPromptOrThrow 抛友好提示。
+        private static readonly PromptLoader PromptLoader =
+            new(AppSettings.Get<AiOptions>("AiOptions")?.PromptDir);
 
         /// <summary>
-        /// 从当前程序集的嵌入资源读取提示词文本。
+        /// 读取提示词，缺失时抛出友好异常（含文件名与目录，便于运维补文件）。
         /// </summary>
-        private static string LoadEmbeddedPrompt(string fileName)
+        private static string GetPromptOrThrow(string fileName, string capability)
         {
-            var resourceName = $"ZR.Workflow.Prompts.{fileName}";
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
-            if (stream == null)
+            var text = PromptLoader.Load(fileName);
+            if (string.IsNullOrWhiteSpace(text))
             {
-                throw new FileNotFoundException($"未找到嵌入的提示词资源：{resourceName}");
+                throw new Exception($"AI 能力「{capability}」所需提示词文件缺失：{fileName}（请检查 AiOptions:PromptDir 指向的 Prompts 目录）");
             }
-
-            using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
+            return text;
         }
 
         /// <summary>
@@ -169,7 +168,7 @@ namespace ZR.Workflow.Service
             // 消息数组（由本服务持有维护）：system + user + 后续的 assistant(tool_calls) / tool 回灌
             var messages = new List<object>
             {
-                new { role = "system", content = SystemPrompt },
+                new { role = "system", content = GetPromptOrThrow("flow-generate.md", "流程生成") },
                 new { role = "user", content = description }
             };
             var tools = new object[] { ValidateToolSchema };
@@ -802,14 +801,7 @@ namespace ZR.Workflow.Service
             }
         }
 
-        // ===== 提交前审批意见话术建议 =====
-        private const string ApprovalSuggestSystem = @"你是一名严谨的行政审批助手。用户会给你：当前审批节点名称、一张表单的内容（JSON，键为英文字段名、值为提交内容）、以及可选的已有草稿意见。
-请基于节点职责与表单事实，生成一段简洁、得体、可直接作为审批意见的参考话术（中文，1~3 句）。
-要求：
-- 只陈述基于表单内容可判断的事实与建议，不要编造表单中没有的信息；
-- 若表单项为空或不足以判断，给出【需补充XX材料】类的提示性建议；
-- 语气正式、客观，像一个资深审批人在写批注；
-- 不要包含任何 Markdown 代码块或前缀标签，直接输出话术正文。";
+        // ===== 提交前审批意见话术建议（提示词见 Prompts/approval-suggest.md） =====
 
         public async Task<WfAiApprovalSuggestResult> SuggestApprovalAsync(WfAiApprovalSuggestInput input)
         {
@@ -822,7 +814,7 @@ namespace ZR.Workflow.Service
             var draft = string.IsNullOrWhiteSpace(input.DraftOpinion) ? string.Empty : $"\n已有草稿意见：{input.DraftOpinion}";
             var user = $"审批节点：{input.NodeName}\n表单内容：{formText}{draft}";
 
-            var text = await ChatSafeAsync(ApprovalSuggestSystem, user).ConfigureAwait(false);
+            var text = await ChatSafeAsync(GetPromptOrThrow("approval-suggest.md", "审批意见建议"), user).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(text))
             {
                 throw new Exception("AI 未返回建议内容，请稍后重试");
@@ -830,10 +822,7 @@ namespace ZR.Workflow.Service
             return new WfAiApprovalSuggestResult { Suggestion = JsonHelper.StripMarkdown(text).Trim() };
         }
 
-        // ===== 提交后审批记录摘要（落痕用，异步调用） =====
-        private const string ApprovalSummarySystem = @"你是一名流程审计助手。用户会给你：审批动作（同意/驳回/转交等）、审批节点名称、审批人填写的意见、表单内容（JSON）。
-请生成一句 20~60 字的中文摘要，概括【谁在哪个节点做了什么、关键结论】，用于审批轨迹快速浏览。
-要求：客观、凝练，不重复表单全部细节；不要包含 Markdown 或前缀标签，直接输出摘要正文。";
+        // ===== 提交后审批记录摘要（落痕用，异步调用，提示词见 Prompts/flow-review.md） =====
 
         public async Task<WfAiApprovalSummaryResult> SummarizeApprovalAsync(string action, string nodeName, string opinion, string formContent)
         {
@@ -841,18 +830,11 @@ namespace ZR.Workflow.Service
             var op = string.IsNullOrWhiteSpace(opinion) ? "（未填写意见）" : opinion;
             var user = $"审批动作：{action}\n审批节点：{nodeName}\n审批意见：{op}\n表单内容：{formText}";
 
-            var text = await ChatSafeAsync(ApprovalSummarySystem, user).ConfigureAwait(false);
+            var text = await ChatSafeAsync(GetPromptOrThrow("flow-review.md", "审批记录摘要"), user).ConfigureAwait(false);
             return new WfAiApprovalSummaryResult { Summary = JsonHelper.StripMarkdown(text).Trim() };
         }
 
-        // ===== 流程优化体检 =====
-        private const string FlowAnalyzeSystem = @"你是一名业务流程优化顾问。用户会给你一个流程定义的全部信息：流程名称、表单字段、节点列表（类型/名称/审批人类型）、连线（走向与条件）。
-请为这个流程做【体检】，输出：
-1) 一段整体评价（精简，指出整体健康度与主要风险点）；
-2) 若干条结构化优化建议（每条一行，以短横线加空格开头），覆盖：是否存在冗余/重复审批、是否有关键瓶颈节点、串行能否改为并行、条件分支是否完备（有无遗漏默认分支）、审批人设置是否合理。
-要求：建议必须具体、可操作，结合该流程实际节点名称，不要泛泛而谈；若流程已经合理，明确说明无明显问题。
-最终请严格以如下 JSON 返回（不要代码块）：
-{""analysis"":""整体评价"",""suggestions"":[""- 建议1"",""- 建议2""]}";
+        // ===== 流程优化体检（提示词见 Prompts/flow-optimize.md） =====
 
         public async Task<WfAiFlowAnalyzeResult> AnalyzeFlowAsync(WfAiFlowAnalyzeInput input)
         {
@@ -871,7 +853,7 @@ namespace ZR.Workflow.Service
             var linksDesc = string.Join("\n", (def.NodeLinks ?? new List<WfNodeLinkDto>()).Select(l => $"- 连线：节点{l.SourceNodeId} -> 节点{l.TargetNodeId}（条件：{l.ConditionJson ?? "无"}）"));
             var user = $"流程名称：{def.FlowName}\n表单字段（JSON）：{formDesc}\n节点列表：\n{nodesDesc}\n连线列表：\n{linksDesc}";
 
-            var text = await ChatSafeAsync(FlowAnalyzeSystem, user).ConfigureAwait(false);
+            var text = await ChatSafeAsync(GetPromptOrThrow("flow-optimize.md", "流程优化体检"), user).ConfigureAwait(false);
             return ParseAnalyzeResult(text);
         }
 
@@ -905,15 +887,7 @@ namespace ZR.Workflow.Service
             return result;
         }
 
-        // ===== 自然语言发起申请（Web 端：匹配流程 + 预填表单） =====
-        private const string MatchFillSystem = @"你是一名 OA 流程助理。用户会用大白话描述想办的事。你需要从给定的【可选流程清单】中挑出最合适的一个，并把用户描述里能对应上的表单字段预填好。
-可选流程清单格式：每个流程有 FlowId、FlowName、字段列表（field=英文字段名, label=中文名, type=类型）。
-要求：
-1) 从清单中选 1 个最匹配的流程（matchFlowId）；
-2) 把用户描述中能识别出的字段值填到 formContent（键用 field，值一律为字符串；识别不出则不填该字段）；
-3) 用一句话说明匹配理由（reason）。
-仅返回如下 JSON（不要代码块，键名使用双引号）：
-{""matchFlowId"":123,""flowName"":""请假流程"",""formContent"":{""reason"":""回家探亲""},""reason"":""描述涉及请假，匹配请假流程""}";
+        // ===== 自然语言发起申请（Web 端：匹配流程 + 预填表单，提示词见 Prompts/intent-match.md） =====
 
         public async Task<WfAiMatchFillResult> MatchAndFillFormAsync(WfAiMatchFillInput input)
         {
@@ -950,7 +924,7 @@ namespace ZR.Workflow.Service
 
             var user = $"可选流程清单：\n{catalog}\n\n用户描述：{input.Description}";
 
-            var text = await ChatSafeAsync(MatchFillSystem, user).ConfigureAwait(false);
+            var text = await ChatSafeAsync(GetPromptOrThrow("intent-match.md", "自然语言填单"), user).ConfigureAwait(false);
             return ParseMatchFillResult(text, candidates);
         }
 

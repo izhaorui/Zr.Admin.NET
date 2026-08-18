@@ -278,6 +278,13 @@ namespace Infrastructure.Model
         /// 提供商配置列表（用于不同provider使用不同ApiKey）
         /// </summary>
         public List<AiProviderOptions> Providers { get; set; }
+
+        /// <summary>
+        /// 提示词（Prompt）目录。工作流 AI 的各能力提示词以 .md 文件存放在此目录，运行时读取、可热改无需重编译。
+        /// 留空则默认取应用程序基目录下的 Prompts 子目录（AppContext.BaseDirectory/Prompts）。
+        /// 文件缺失不会阻断编译或启动，仅会在对应能力调用时抛出友好异常。
+        /// </summary>
+        public string PromptDir { get; set; }
     }
 
     public class AiProviderOptions
