@@ -1,6 +1,7 @@
 using Infrastructure.Helper;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
+using System.Text.Json;
 using STJson = System.Text.Json;
 
 namespace ZR.Workflow.Service
@@ -12,11 +13,12 @@ namespace ZR.Workflow.Service
     [AppService(ServiceType = typeof(IWfAiService))]
     public class WfAiService : IWfAiService
     {
-        private readonly ILogger<WfAiService> Logger;
+        private static readonly ILogger<WfAiService> Logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<WfAiService>();
+        private readonly IWfFlowDefinitionService _definitionService;
 
-        public WfAiService(ILogger<WfAiService> logger)
+        public WfAiService(IWfFlowDefinitionService definitionService)
         {
-            Logger = logger;
+            _definitionService = definitionService;
         }
 
         // 允许的节点类型，复用 ZR.Workflow.Enum.WfNodeType
@@ -161,19 +163,7 @@ namespace ZR.Workflow.Service
                 throw new Exception("流程描述不能为空");
             }
 
-            var options = AppSettings.Get<AiOptions>("AiOptions");
-            if (options == null || !options.Enable)
-            {
-                throw new Exception("AI 功能未启用，请在 appsettings.json 配置 AiOptions");
-            }
-            // 复用 AiLlmClient 的解析结果校验：实际请求按 Provider 从 Providers 分项取 ApiKey，
-            // 顶层 ApiKey 为空但 Providers 已配置时不应误判为未启用。
-            var resolved = AiLlmClient.ResolveProvider(options);
-            if (string.IsNullOrWhiteSpace(resolved.ApiKey))
-            {
-                throw new Exception("AI 功能未配置 ApiKey，请在 appsettings.json 的 AiOptions 或 Providers 中配置");
-            }
-
+            var options = EnsureAiEnabled();
             var description = input.Description.Trim();
 
             // 消息数组（由本服务持有维护）：system + user + 后续的 assistant(tool_calls) / tool 回灌
@@ -263,7 +253,8 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// Skill 闭环结束后的收尾：剥离 Markdown、解析并校验草稿，成功返回结果，失败抛异常。
+        /// Skill 闭环结束后的收尾：先直接反序列化（要求 AI 严格返回纯 JSON），
+        /// 失败则 ExtractFirstJsonObject 兜底，再失败抛异常。
         /// </summary>
         private WfAiGenerateResultDto FinalizeResult(string requestId, string lastJson)
         {
@@ -272,17 +263,74 @@ namespace ZR.Workflow.Service
                 throw new Exception("AI 未返回流程草稿，请重新描述或稍后重试");
             }
 
-            var json = StripMarkdown(lastJson);
-            if (!BuildResult(json, out var result, out var finalError))
+            var result = TryDeserializeDirect(lastJson);
+            if (result == null)
             {
-                Log.WriteLine(ConsoleColor.Red, $"[WfAi] Skill 闭环后仍校验失败：{finalError}");
-                Logger.LogWarning("[WfAi][{RequestId}] 解析后 JSON：{Json}", requestId, json);
-                throw new Exception(finalError);
+                var extracted = JsonHelper.ExtractFirstJsonObject(lastJson);
+                if (!string.IsNullOrWhiteSpace(extracted))
+                {
+                    result = TryDeserializeDirect(extracted);
+                }
+            }
+
+            if (result == null)
+            {
+                Log.WriteLine(ConsoleColor.Red, "[WfAi] AI 输出无法解析为合法 JSON 流程结构");
+                Logger.LogWarning("[WfAi][{RequestId}] 原始输出：{Raw}", requestId, lastJson);
+                throw new Exception("AI 输出格式错误，请重新描述或稍后重试");
+            }
+
+            NormalizeResult(result);
+            var errors = ValidateWorkflow(result);
+            if (errors.Count > 0)
+            {
+                Log.WriteLine(ConsoleColor.Red, $"[WfAi] Skill 闭环后仍校验失败：{errors[0]}");
+                Logger.LogWarning("[WfAi][{RequestId}] 解析后 JSON：{Json}", requestId, STJson.JsonSerializer.Serialize(result));
+                throw new Exception(errors[0]);
             }
 
             Logger.LogInformation("[WfAi] Skill 闭环后校验通过，节点数={NodesCount}, 连线数={LinksCount}, 表单字段数={FormItemsCount}", result.Nodes.Count, result.Links.Count, result.FormItems.Count);
             Log.WriteLine(ConsoleColor.Green, "[WfAi] 生成校验通过");
             return result;
+        }
+
+        /// <summary>
+        /// 直接反序列化：成功返回对象，失败返回 null（不抛异常，由调用方决定兜底策略）。
+        /// 先尝试标准反序列化，若模型用 sourceNodeId 代替 sourceIndex 则回退到 ParseLenient。
+        /// </summary>
+        private static WfAiGenerateResultDto TryDeserializeDirect(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return null;
+
+            try
+            {
+                var result = STJson.JsonSerializer.Deserialize<WfAiGenerateResultDto>(json, JsonOptions);
+                if (result != null) return result;
+            }
+            catch (STJson.JsonException)
+            {
+                // 模型偶发用 sourceNodeId/targetNodeId 代替 sourceIndex/targetIndex，
+                // 反序列化整数端点会失败；用 JsonDocument 手动解析并归一化端点。
+                try
+                {
+                    return ParseLenient(json);
+                }
+                catch (Exception lenientEx)
+                {
+                    Logger.LogDebug(
+                        lenientEx,
+                        "[WfAi] 宽松解析失败，原始 JSON 解析异常：{Message}",
+                        lenientEx.Message);
+
+                    return null;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -335,57 +383,6 @@ namespace ZR.Workflow.Service
                     }
                 }
             };
-        }
-
-        /// <summary>
-        /// 解析 JSON 并校验；返回 true 表示成功，false 时 firstError 携带首个校验错误（用于纠错）。
-        /// </summary>
-        private static bool BuildResult(string json, out WfAiGenerateResultDto result, out string firstError)
-        {
-            result = null;
-            firstError = null;
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                firstError = "AI 返回为空，请重新描述或稍后重试";
-                return false;
-            }
-            try
-            {
-                result = STJson.JsonSerializer.Deserialize<WfAiGenerateResultDto>(json, JsonOptions);
-            }
-            catch (STJson.JsonException)
-            {
-                // 模型偶发用 sourceNodeId/targetNodeId（如 n_3）代替 sourceIndex/targetIndex，
-                // 反序列化整数端点会失败；用 JsonDocument 手动解析并归一化端点。
-                try
-                {
-                    result = ParseLenient(json);
-                }
-                catch (Exception ex2)
-                {
-                    firstError = "AI 返回内容无法解析为流程结构：" + ex2.Message;
-                    return false;
-                }
-            }
-
-            if (result == null)
-            {
-                firstError = "AI 返回内容为空结构";
-                return false;
-            }
-
-            NormalizeResult(result);
-
-            try
-            {
-                Validate(result);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                firstError = ex.Message;
-                return false;
-            }
         }
 
         /// <summary>
@@ -590,121 +587,9 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 业务校验：节点类型合法、连线端点存在、条件字段归属 formItems、并行分组一致。
-        /// 复用 ValidateWorkflow，校验不通过时抛首个错误供兜底逻辑捕获。
+        /// 剥离可能的 ```json ``` 代码块包裹，并提取首个 JSON 对象。
         /// </summary>
-        private static void Validate(WfAiGenerateResultDto result)
-        {
-            var errors = ValidateWorkflow(result);
-            if (errors.Count > 0)
-            {
-                throw new Exception(errors[0]);
-            }
-        }
 
-        /// <summary>
-        /// 剥离可能的 ```json ``` 代码块包裹
-        /// </summary>
-        private static string StripMarkdown(string raw)
-        {
-            var s = (raw ?? string.Empty).Trim();
-            if (s.Length == 0)
-            {
-                return s;
-            }
-
-            const string fenceStart = "```";
-            if (s.StartsWith(fenceStart))
-            {
-                var firstNewline = s.IndexOf('\n');
-                if (firstNewline >= 0)
-                {
-                    s = s[(firstNewline + 1)..];
-                }
-                var lastFence = s.LastIndexOf(fenceStart, StringComparison.Ordinal);
-                if (lastFence >= 0)
-                {
-                    s = s[..lastFence];
-                }
-                s = s.Trim();
-            }
-
-            var extracted = ExtractFirstJsonObject(s);
-            return string.IsNullOrWhiteSpace(extracted) ? s : extracted;
-        }
-
-        private static string ExtractFirstJsonObject(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return string.Empty;
-            }
-
-            var start = -1;
-            var depth = 0;
-            var inString = false;
-            var escaped = false;
-
-            for (var i = 0; i < text.Length; i++)
-            {
-                var c = text[i];
-
-                if (inString)
-                {
-                    if (escaped)
-                    {
-                        escaped = false;
-                        continue;
-                    }
-
-                    if (c == '\\')
-                    {
-                        escaped = true;
-                        continue;
-                    }
-
-                    if (c == '"')
-                    {
-                        inString = false;
-                    }
-
-                    continue;
-                }
-
-                if (c == '"')
-                {
-                    inString = true;
-                    continue;
-                }
-
-                if (c == '{')
-                {
-                    if (depth == 0)
-                    {
-                        start = i;
-                    }
-
-                    depth++;
-                    continue;
-                }
-
-                if (c == '}')
-                {
-                    if (depth == 0)
-                    {
-                        continue;
-                    }
-
-                    depth--;
-                    if (depth == 0 && start >= 0)
-                    {
-                        return text[start..(i + 1)];
-                    }
-                }
-            }
-
-            return string.Empty;
-        }
 
         private static void NormalizeResult(WfAiGenerateResultDto result)
         {
@@ -878,5 +763,245 @@ namespace ZR.Workflow.Service
                 Log.WriteLine(ConsoleColor.DarkYellow, $"[WfAi] 已自动补条件字段[{f}]（AI 未提供 formItems，默认 number/必填）");
             }
         }
+
+        #region AI 扩展能力（审批意见 / 流程体检 / 自然语言填单）
+
+        /// <summary>
+        /// 统一校验 AI 开关与 ApiKey，未启用抛友好异常。供新增扩展能力复用，避免重复判断。
+        /// </summary>
+        private static AiOptions EnsureAiEnabled()
+        {
+            var options = AppSettings.Get<AiOptions>("AiOptions");
+            if (options == null || !options.Enable)
+            {
+                throw new Exception("AI 功能未启用，请在 appsettings.json 配置 AiOptions");
+            }
+            var resolved = AiLlmClient.ResolveProvider(options);
+            if (string.IsNullOrWhiteSpace(resolved.ApiKey))
+            {
+                throw new Exception("AI 功能未配置 ApiKey，请在 appsettings.json 的 AiOptions 或 Providers 中配置");
+            }
+            return options;
+        }
+
+        /// <summary>
+        /// 调用大模型并包裹常见网络异常为友好提示。仅用于单次问答型能力。
+        /// </summary>
+        private async Task<string> ChatSafeAsync(string system, string user)
+        {
+            var options = EnsureAiEnabled();
+            try
+            {
+                return await AiLlmClient.ChatAsync(options, system, user).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception("调用 AI 服务失败：" + ex.Message);
+            }
+            catch (TaskCanceledException)
+            {
+                throw new Exception("调用 AI 服务超时，请稍后重试");
+            }
+        }
+
+        // ===== 提交前审批意见话术建议 =====
+        private const string ApprovalSuggestSystem = @"你是一名严谨的行政审批助手。用户会给你：当前审批节点名称、一张表单的内容（JSON，键为英文字段名、值为提交内容）、以及可选的已有草稿意见。
+请基于节点职责与表单事实，生成一段简洁、得体、可直接作为审批意见的参考话术（中文，1~3 句）。
+要求：
+- 只陈述基于表单内容可判断的事实与建议，不要编造表单中没有的信息；
+- 若表单项为空或不足以判断，给出【需补充XX材料】类的提示性建议；
+- 语气正式、客观，像一个资深审批人在写批注；
+- 不要包含任何 Markdown 代码块或前缀标签，直接输出话术正文。";
+
+        public async Task<WfAiApprovalSuggestResult> SuggestApprovalAsync(WfAiApprovalSuggestInput input)
+        {
+            if (input == null || string.IsNullOrWhiteSpace(input.NodeName))
+            {
+                throw new Exception("缺少当前审批节点名称，无法生成审批建议，请刷新页面后重试");
+            }
+
+            var formText = string.IsNullOrWhiteSpace(input.FormContent) ? "（表单为空）" : input.FormContent;
+            var draft = string.IsNullOrWhiteSpace(input.DraftOpinion) ? string.Empty : $"\n已有草稿意见：{input.DraftOpinion}";
+            var user = $"审批节点：{input.NodeName}\n表单内容：{formText}{draft}";
+
+            var text = await ChatSafeAsync(ApprovalSuggestSystem, user).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new Exception("AI 未返回建议内容，请稍后重试");
+            }
+            return new WfAiApprovalSuggestResult { Suggestion = JsonHelper.StripMarkdown(text).Trim() };
+        }
+
+        // ===== 提交后审批记录摘要（落痕用，异步调用） =====
+        private const string ApprovalSummarySystem = @"你是一名流程审计助手。用户会给你：审批动作（同意/驳回/转交等）、审批节点名称、审批人填写的意见、表单内容（JSON）。
+请生成一句 20~60 字的中文摘要，概括【谁在哪个节点做了什么、关键结论】，用于审批轨迹快速浏览。
+要求：客观、凝练，不重复表单全部细节；不要包含 Markdown 或前缀标签，直接输出摘要正文。";
+
+        public async Task<WfAiApprovalSummaryResult> SummarizeApprovalAsync(string action, string nodeName, string opinion, string formContent)
+        {
+            var formText = string.IsNullOrWhiteSpace(formContent) ? "（表单为空）" : formContent;
+            var op = string.IsNullOrWhiteSpace(opinion) ? "（未填写意见）" : opinion;
+            var user = $"审批动作：{action}\n审批节点：{nodeName}\n审批意见：{op}\n表单内容：{formText}";
+
+            var text = await ChatSafeAsync(ApprovalSummarySystem, user).ConfigureAwait(false);
+            return new WfAiApprovalSummaryResult { Summary = JsonHelper.StripMarkdown(text).Trim() };
+        }
+
+        // ===== 流程优化体检 =====
+        private const string FlowAnalyzeSystem = @"你是一名业务流程优化顾问。用户会给你一个流程定义的全部信息：流程名称、表单字段、节点列表（类型/名称/审批人类型）、连线（走向与条件）。
+请为这个流程做【体检】，输出：
+1) 一段整体评价（精简，指出整体健康度与主要风险点）；
+2) 若干条结构化优化建议（每条一行，以短横线加空格开头），覆盖：是否存在冗余/重复审批、是否有关键瓶颈节点、串行能否改为并行、条件分支是否完备（有无遗漏默认分支）、审批人设置是否合理。
+要求：建议必须具体、可操作，结合该流程实际节点名称，不要泛泛而谈；若流程已经合理，明确说明无明显问题。
+最终请严格以如下 JSON 返回（不要代码块）：
+{""analysis"":""整体评价"",""suggestions"":[""- 建议1"",""- 建议2""]}";
+
+        public async Task<WfAiFlowAnalyzeResult> AnalyzeFlowAsync(WfAiFlowAnalyzeInput input)
+        {
+            if (input == null || input.FlowId <= 0)
+            {
+                throw new Exception("流程定义 Id 不能为空");
+            }
+            var def = _definitionService.GetInfo(input.FlowId);
+            if (def == null)
+            {
+                throw new Exception("流程定义不存在");
+            }
+
+            var formDesc = string.IsNullOrWhiteSpace(def.FormItems) ? "（无表单）" : def.FormItems;
+            var nodesDesc = string.Join("\n", (def.Nodes ?? new List<WfFlowNodeDto>()).Select(n => $"- 节点：{n.NodeName}（类型={n.NodeType}，审批人类型={n.ApproverType}）"));
+            var linksDesc = string.Join("\n", (def.NodeLinks ?? new List<WfNodeLinkDto>()).Select(l => $"- 连线：节点{l.SourceNodeId} -> 节点{l.TargetNodeId}（条件：{l.ConditionJson ?? "无"}）"));
+            var user = $"流程名称：{def.FlowName}\n表单字段（JSON）：{formDesc}\n节点列表：\n{nodesDesc}\n连线列表：\n{linksDesc}";
+
+            var text = await ChatSafeAsync(FlowAnalyzeSystem, user).ConfigureAwait(false);
+            return ParseAnalyzeResult(text);
+        }
+
+        private static WfAiFlowAnalyzeResult ParseAnalyzeResult(string raw)
+        {
+            var result = new WfAiFlowAnalyzeResult();
+            if (string.IsNullOrWhiteSpace(raw)) return result;
+
+            var json = JsonHelper.StripMarkdown(raw);
+            if (string.IsNullOrWhiteSpace(json)) return result;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("analysis", out var a)) result.Analysis = a.GetString() ?? string.Empty;
+                if (root.TryGetProperty("suggestions", out var s) && s.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in s.EnumerateArray())
+                    {
+                        var v = item.GetString();
+                        if (!string.IsNullOrWhiteSpace(v)) result.Suggestions.Add(v);
+                    }
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                result.Analysis = raw.Trim();
+                result.Suggestions = new List<string> { "（AI 返回非结构化文本，已原样呈现）" };
+            }
+            return result;
+        }
+
+        // ===== 自然语言发起申请（Web 端：匹配流程 + 预填表单） =====
+        private const string MatchFillSystem = @"你是一名 OA 流程助理。用户会用大白话描述想办的事。你需要从给定的【可选流程清单】中挑出最合适的一个，并把用户描述里能对应上的表单字段预填好。
+可选流程清单格式：每个流程有 FlowId、FlowName、字段列表（field=英文字段名, label=中文名, type=类型）。
+要求：
+1) 从清单中选 1 个最匹配的流程（matchFlowId）；
+2) 把用户描述中能识别出的字段值填到 formContent（键用 field，值一律为字符串；识别不出则不填该字段）；
+3) 用一句话说明匹配理由（reason）。
+仅返回如下 JSON（不要代码块，键名使用双引号）：
+{""matchFlowId"":123,""flowName"":""请假流程"",""formContent"":{""reason"":""回家探亲""},""reason"":""描述涉及请假，匹配请假流程""}";
+
+        public async Task<WfAiMatchFillResult> MatchAndFillFormAsync(WfAiMatchFillInput input)
+        {
+            if (input == null || string.IsNullOrWhiteSpace(input.Description))
+            {
+                throw new Exception("申请描述不能为空");
+            }
+
+            // 取待匹配流程清单：指定 FlowId 则只用该流程；否则取全部启用且已发布的流程
+            var candidates = new List<WfFlowDefinitionDto>();
+            if (input.FlowId.HasValue && input.FlowId.Value > 0)
+            {
+                var single = _definitionService.GetInfo(input.FlowId.Value);
+                if (single != null) candidates.Add(single);
+            }
+            else
+            {
+                var page = _definitionService.GetList(new WfFlowDefinitionQueryDto { Status = 1, IsDraft = 0, PageSize = 200 });
+                candidates = page.Result ?? new List<WfFlowDefinitionDto>();
+            }
+
+            if (candidates.Count == 0)
+            {
+                throw new Exception("当前没有可用（已发布且启用）的流程定义，无法智能填单");
+            }
+
+            var catalog = string.Join("\n\n", candidates.Select(c =>
+            {
+                var fields = string.IsNullOrWhiteSpace(c.FormItems)
+                    ? "（无表单字段）"
+                    : c.FormItems;
+                return $"FlowId={c.FlowId}\nFlowName={c.FlowName}\n字段（JSON）：{fields}";
+            }));
+
+            var user = $"可选流程清单：\n{catalog}\n\n用户描述：{input.Description}";
+
+            var text = await ChatSafeAsync(MatchFillSystem, user).ConfigureAwait(false);
+            return ParseMatchFillResult(text, candidates);
+        }
+
+        private static WfAiMatchFillResult ParseMatchFillResult(string raw, List<WfFlowDefinitionDto> candidates)
+        {
+            var result = new WfAiMatchFillResult();
+            if (string.IsNullOrWhiteSpace(raw)) return result;
+
+            var json = JsonHelper.StripMarkdown(raw);
+            if (string.IsNullOrWhiteSpace(json)) return result;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                long matchFlowId = 0;
+                if (root.TryGetProperty("matchFlowId", out var mf) && mf.ValueKind == JsonValueKind.Number) matchFlowId = mf.GetInt64();
+                if (matchFlowId <= 0 && root.TryGetProperty("flowId", out var fid) && fid.ValueKind == JsonValueKind.Number) matchFlowId = fid.GetInt64();
+
+                var chosen = candidates.FirstOrDefault(c => c.FlowId == matchFlowId) ?? candidates.FirstOrDefault();
+                if (chosen == null) return result;
+
+                result.FlowId = chosen.FlowId;
+                result.FlowName = chosen.FlowName ?? string.Empty;
+                if (root.TryGetProperty("reason", out var r)) result.Reason = r.GetString() ?? string.Empty;
+
+                if (root.TryGetProperty("formContent", out var fc) && fc.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var prop in fc.EnumerateObject())
+                    {
+                        result.FormContent[prop.Name] = prop.Value.ValueKind == JsonValueKind.String ? prop.Value.GetString() ?? string.Empty : prop.Value.GetRawText();
+                    }
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // 解析失败时回退到首个候选，保证前端至少能进入填单页
+                var first = candidates.FirstOrDefault();
+                if (first != null)
+                {
+                    result.FlowId = first.FlowId;
+                    result.FlowName = first.FlowName ?? string.Empty;
+                    result.Reason = "（AI 返回解析失败，已默认选中首个流程）";
+                }
+            }
+            return result;
+        }
+
+        #endregion
     }
 }

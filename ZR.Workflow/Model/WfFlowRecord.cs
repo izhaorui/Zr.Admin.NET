@@ -60,5 +60,11 @@ namespace ZR.Workflow.Model
         /// <summary>是否已读（抄送/记录已读标记，默认未读）</summary>
         [SugarColumn(IsNullable = false, DefaultValue = "0")]
         public bool IsRead { get; set; } = false;
+
+        /// <summary>
+        /// AI 自动生成的审批摘要（提交后异步生成，可空）
+        /// </summary>
+        [SugarColumn(ColumnDataType = "nvarchar(max)", IsNullable = true)]
+        public string Summary { get; set; }
     }
 }

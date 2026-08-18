@@ -78,6 +78,7 @@ namespace ZR.ServiceCore.Services
                     Buttons: [
                         new("新增", "workflow:definition:add"), new("修改", "workflow:definition:edit"), new("删除", "workflow:definition:delete"),
                         new("AI生成", "workflow:definition:ai"),
+                        new("AI体检", "workflow:definition:ai-analyze"),
                     ]),
                 // 表单模板：可复用动态表单的管理页（供流程设计器"载入模板"复用）
                 new(Name: "表单模板", Path: "formTemplate", Component: "workflow/formTemplate/index", Perms: "workflow:template:list", OrderNum: 2, Category: 0, Icon: "list",
@@ -112,6 +113,7 @@ namespace ZR.ServiceCore.Services
                     [
                         new("通过", "workflow:task:approve"), new("驳回", "workflow:task:reject"), new("转办", "workflow:task:transfer"),
                         new("加签", "workflow:task:addsign"), new("减签", "workflow:task:removesign"), new("委托", "workflow:task:delegate"), new("评论", "workflow:comment:list"), new("发表评论", "workflow:comment:add"),
+                        new("AI建议", "workflow:task:ai"),
                     ]),
                 new(Name: "已办任务", Path: "done", Component: "workflow/done/index", Perms: "workflow:task:list", OrderNum: 3, Category: 1, Icon: "checkbox",
                     Buttons: []),
@@ -121,7 +123,9 @@ namespace ZR.ServiceCore.Services
                     Buttons: []),
                 // 跳转入口页：发起申请 / 重新提交 / 流程审批（不在侧边栏展示，仅用于动态路由注册）
                 new(Name: "发起申请", Path: "apply", Component: "workflow/apply/index", Perms: "", OrderNum: 6, RouteName: "WfApply", Visible: "1", Category: 1,
-                    Buttons: []),
+                    Buttons: [
+                        new("AI填单", "workflow:instance:ai-fill"),
+                    ]),
                 new(Name: "重新提交", Path: "resubmit", Component: "workflow/resubmit/index", Perms: "", OrderNum: 7, RouteName: "WfResubmit", Visible: "1", Category: 1,
                     Buttons: []),
                 new(Name: "流程审批", Path: "approval", Component: "workflow/todo/approval", Perms: "", OrderNum: 8, RouteName: "WfApproval", Visible: "1", Category: 1,

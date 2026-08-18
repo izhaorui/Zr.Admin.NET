@@ -32,11 +32,13 @@ namespace ZR.Workflow.Service
 
         private readonly ISysUserMsgService _msgService;
         private readonly IWfWebhookService _webhookService;
+        private readonly IWfAiService _aiService;
 
-        public WfEngineService(ISysUserMsgService msgService, IWfWebhookService webhookService)
+        public WfEngineService(ISysUserMsgService msgService, IWfWebhookService webhookService, IWfAiService aiService)
         {
             _msgService = msgService;
             _webhookService = webhookService;
+            _aiService = aiService;
         }
 
         #region 公共入口
@@ -2080,10 +2082,11 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 统一创建流程操作记录。操作人以 <see cref="ResolvedApprover"/>（userId + 名称快照）传入，
         /// 调用方已持有完整身份，此处不再按登录名反查用户表。
+        /// 落库后，对"审批类动作"异步生成 AI 摘要写回（不阻塞主流程，异常不影响主链路）。
         /// </summary>
         private void AddRecord(long instanceId, long? taskId, long? nodeId, ResolvedApprover op, int action, string opinion, DateTime? createTime = null)
         {
-            Context.Insertable(new WfFlowRecord
+            var record = new WfFlowRecord
             {
                 InstanceId = instanceId,
                 TaskId = taskId,
@@ -2095,7 +2098,48 @@ namespace ZR.Workflow.Service
                 Opinion = opinion,
                 Create_time = createTime ?? DateTime.Now,
                 Create_by = op.UserName
-            }).ExecuteCommand();
+            };
+            Context.Insertable(record).ExecuteCommand();
+
+            // 提交后 AI 摘要（仅审批类动作：同意/驳回/转交/加签/减签/委托/管理员跳转/重新提交/撤回/催办）
+            if (action != (int)WfAction.Submit && action != (int)WfAction.Cc && action != (int)WfAction.AutoSkip)
+            {
+                var nodeName = GetNodeNameSafe(nodeId);
+                _ = GenerateRecordSummaryAsync(record.RecordId, instanceId, nodeName, opinion);
+            }
+        }
+
+        /// <summary>
+        /// 异步生成审批记录 AI 摘要并写回（fire-and-forget，异常吞掉不影响主流程）
+        /// </summary>
+        private async Task GenerateRecordSummaryAsync(long recordId, long instanceId, string nodeName, string opinion)
+        {
+            try
+            {
+                var formContent = Context.Queryable<WfFlowInstance>()
+                    .Where(i => i.InstanceId == instanceId)
+                    .Select(i => i.FormContent)
+                    .First();
+                var summary = await _aiService.SummarizeApprovalAsync(string.Empty, nodeName, opinion, formContent);
+                if (!string.IsNullOrWhiteSpace(summary?.Summary))
+                {
+                    Context.Updateable<WfFlowRecord>()
+                        .SetColumns(r => r.Summary == summary.Summary)
+                        .Where(r => r.RecordId == recordId)
+                        .ExecuteCommand();
+                }
+            }
+            catch (Exception ex)
+            {
+                // AI 摘要失败不应影响主流程，仅记录日志
+                logger.Warn(ex, $"生成审批记录 AI 摘要失败 recordId={recordId}");
+            }
+        }
+
+        private string GetNodeNameSafe(long? nodeId)
+        {
+            if (!nodeId.HasValue) return string.Empty;
+            return Context.Queryable<WfFlowNode>().Where(n => n.NodeId == nodeId.Value).Select(n => n.NodeName).First() ?? string.Empty;
         }
 
         /// <summary>
