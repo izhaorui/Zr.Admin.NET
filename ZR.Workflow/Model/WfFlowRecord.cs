@@ -64,7 +64,7 @@ namespace ZR.Workflow.Model
         /// <summary>
         /// AI 自动生成的审批摘要（提交后异步生成，可空）
         /// </summary>
-        [SugarColumn(ColumnDataType = "nvarchar(max)", IsNullable = true)]
+        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString, IsNullable = true)]
         public string Summary { get; set; }
     }
 }
