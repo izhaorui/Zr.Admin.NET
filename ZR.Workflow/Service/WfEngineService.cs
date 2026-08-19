@@ -1335,18 +1335,6 @@ namespace ZR.Workflow.Service
                 return;
             }
 
-            // 排他跳过：条件不满足则顺延到下一节点（递归）；全部不满足则流程直接通过
-            if (!ShouldActivateNode(node, formValues))
-            {
-                logger.Info($"排他跳过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 条件不满足 → 顺延下一节点");
-                // 路线 α：被跳过的分支若下游直接汇入汇聚网关(8)/并行分组出口，若不留痕会导致 Join 汇聚傻等"从未激活的无 task 节点"。
-                // 故对每条"条件不满足的出边"沿下游链路级联建 Skipped 留痕（与并行 fork 成员的跳过留痕语义统一），
-                // 使 IsNodeComplete 对"跳过"返回完成、Join 不再把"未到达"与"完成"混为一谈。
-                SkipRejectedBranches(instance, node, allNodes, linksBySource, linksByTarget, formValues);
-                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
-                return;
-            }
-
             // 并行分支：首次到达该分组时，同时激活组内所有满足条件的节点。
             // 但管理员跳转（singleNodeOnly=true）到组内某成员时，跳过整组 fork，落到下方"非并行节点"分支只激活目标节点自身。
             if (node.ParallelGroup > 0 && !singleNodeOnly)
@@ -1365,9 +1353,12 @@ namespace ZR.Workflow.Service
                 {
                     // 并行分组 fork：把组内「将活动」的成员（生成待办/抄送的节点）同时加入活动集 CurrentNodeIds，
                     // 使 CurrentNodeId（取活动集 Min）与活动集保持一致；条件不满足的成员不进活动集（视为已完成）。
+                    // 成员"是否激活"改由「并行分叉网关(7) → 该成员」的出边 ConditionJson 决定（Edge 属性模型，对标 BPMN）：
+                    // 命中 → 激活走正常审批；不满足 → 建 Skipped 留痕。找不到分叉出边或无条件 → 无条件并发激活。
+                    var forkNode = allNodes.FirstOrDefault(n => n.NodeType == (int)WfNodeType.ParallelFork && n.ParallelGroup == node.ParallelGroup);
                     foreach (var g in groupNodes)
                     {
-                        if (!ShouldActivateNode(g, formValues))
+                        if (!ShouldActivateForkMember(forkNode, g, allNodes, linksBySource, formValues))
                         {
                             // 分支条件不满足：明确留痕 Skipped（区别于"从未激活"），使 IsNodeComplete 能区分"跳过"与"未走到"；
                             // 不加入活动集（Skipped 视为完成，且避免 CurrentNodeId 取到跳过节点）。
@@ -1954,31 +1945,35 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 统一入口：判断一个「真实业务节点」（审批/抄送等，非条件网关）是否应被激活/走到。
+        /// 判断并行分组（ParallelGroup&gt;0）成员是否应被激活。条件模型已统一为「Edge 属性」：
+        /// 并行分叉网关(7) → 该成员的出边 ConditionJson 命中才激活（对标 BPMN）。
         ///
-        /// 引擎内条件判断收敛为两个入口，职责明确、避免越做越乱：
-        /// - <see cref="ShouldActivateNode"/>：**节点级条件**（挂载在 WfFlowNode.ConditionField 上），
-        ///   用于「普通节点排他跳过」与「并行 fork 成员是否激活」——回答"这个节点要不要走/要不要激活"。
-        /// - <see cref="EvalLinkCondition"/>：**连线级条件**（挂载在 WfNodeLink.ConditionJson 上），
-        ///   仅用于「条件网关(4)按出边选路」与「被跳过出边识别」——回答"这条边能不能走"。
-        /// 两者底层都复用 <see cref="CompareValue"/>，区别仅在「条件挂载点」与「空值/未知 op 的保守策略」。
+        /// - 存在并行分叉网关(7)且有指向该成员的出边：按出边 ConditionJson 判定，命中才激活；
+        ///   无条件出边 → 并发激活。
+        /// - 找不到并行分叉网关（存量老数据，无显式 fork 节点，仅靠 ParallelGroup 表达并行）：
+        ///   兼容回退到成员自身的节点级 ConditionField（旧模型），字段齐全才判定，避免存量并行组丢失条件语义。
+        /// 条件不满足的成员由调用方建 Skipped 留痕（保持现有语义）。
         /// </summary>
-        private bool ShouldActivateNode(WfFlowNode node, Dictionary<string, string> formValues)
-            => EvalCondition(node, formValues);
-
-        /// <summary>
-        /// 评估节点条件（节点级）：字段/运算符/值三者齐全才生效，任一缺失视为无条件（返回 true）。
-        /// 字段缺失或无值视为条件不满足（保守跳过）。比较语义委托 <see cref="CompareValue"/>。
-        /// 仅供 <see cref="ShouldActivateNode"/> 内部委托调用，外部统一走 ShouldActivateNode。
-        /// </summary>
-        private bool EvalCondition(WfFlowNode node, Dictionary<string, string> formValues)
+        private bool ShouldActivateForkMember(WfFlowNode forkNode, WfFlowNode member, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
         {
-            if (string.IsNullOrWhiteSpace(node.ConditionField)) return true;
-            if (node.ConditionOp == (int)WfConditionOp.None) return true;
-            if (string.IsNullOrWhiteSpace(node.ConditionValue)) return true;
-            if (!formValues.TryGetValue(node.ConditionField, out var raw) || string.IsNullOrWhiteSpace(raw))
-                return false;
-            return CompareValue((WfConditionOp)node.ConditionOp, raw, node.ConditionValue);
+            if (forkNode != null && linksBySource.TryGetValue(forkNode.NodeId, out var outLinks) && outLinks.Count > 0)
+            {
+                var link = outLinks.FirstOrDefault(l => l.TargetNodeId == member.NodeId);
+                if (link != null)
+                {
+                    if (string.IsNullOrWhiteSpace(link.ConditionJson)) return true; // 无条件出边：并发激活
+                    return EvalLinkCondition(link.ConditionJson, formValues);
+                }
+            }
+            // 存量兼容：无显式分叉网关或该成员无对应出边时，回退到成员自身的节点级条件（旧模型，供老数据）。
+            // 新模型（分叉出边带条件）优先走上方分支；普通并行成员在新模型下不应再配节点级条件。
+            if (!string.IsNullOrWhiteSpace(member.ConditionField) && member.ConditionOp != (int)WfConditionOp.None && !string.IsNullOrWhiteSpace(member.ConditionValue))
+            {
+                if (!formValues.TryGetValue(member.ConditionField, out var raw) || string.IsNullOrWhiteSpace(raw))
+                    return false;
+                return CompareValue((WfConditionOp)member.ConditionOp, raw, member.ConditionValue);
+            }
+            return true; // 无条件：并发激活
         }
 
         /// <summary>
