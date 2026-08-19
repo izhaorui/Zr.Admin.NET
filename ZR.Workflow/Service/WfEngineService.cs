@@ -1269,7 +1269,27 @@ namespace ZR.Workflow.Service
                 RemoveActiveNodeId(instance, node.NodeId);
                 SyncActiveNodeId(instance);
                 logger.Info($"条件网关选路：InstanceId={instance.InstanceId} Condition={node.NodeName}({node.NodeId}) 走 ResolveNextNode 选路");
-                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
+                // 路线 α：排他条件网关"不满足出边"的下游分支若直接汇入汇聚网关(8)/并行分组出口，其末端业务节点
+                // 因从未被 ArriveNode 而无任务；IsNodeComplete 已规定"无 task = 未激活 = 未完成"，Join 会傻等该节点而卡死。
+                // 故对被跳过的每条不满足出边下游链级联建 Skipped 留痕并激活其下游汇聚网关，使"未到达/跳过/已完成"三态收敛为两态
+                // （跳过态 Skipped→完成；激活态走正常判定；无 task 只可能出现在"本就不该走到"的分支，Join 不会等待它）。
+                // 满足出边仍走正常 ArriveNode 推进；仅当无任何满足/默认出边、且不存在不满足出边时，才视为流程终点完成。
+                var satisfiedNext = ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues);
+                SkipRejectedBranches(instance, node, allNodes, linksBySource, linksByTarget, formValues);
+                if (satisfiedNext != null)
+                {
+                    ArriveOrComplete(instance, satisfiedNext, allNodes, linksBySource, linksByTarget, formValues);
+                }
+                else
+                {
+                    // 无满足分支也无默认出边：把"不满足出边"的下游链作为被跳过分支激活（建 Skipped 并推进到汇聚点），避免流程误判完成
+                    var fallbacks = linksBySource.TryGetValue(node.NodeId, out var outs) && outs.Count > 0
+                        ? outs.Where(l => !string.IsNullOrWhiteSpace(l.ConditionJson) && !EvalLinkCondition(l.ConditionJson, formValues))
+                              .Select(l => allNodes.FirstOrDefault(n => n.NodeId == l.TargetNodeId)).Where(n => n != null).ToList()
+                        : new List<WfFlowNode>();
+                    if (fallbacks.Count > 0) { foreach (var fb in fallbacks) SkipBranchChain(instance, fb, allNodes, linksBySource, linksByTarget, formValues, new HashSet<long>()); }
+                    else CompleteInstance(instance);
+                }
                 return;
             }
 
@@ -1319,6 +1339,10 @@ namespace ZR.Workflow.Service
             if (!EvalCondition(node, formValues))
             {
                 logger.Info($"排他跳过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 条件不满足 → 顺延下一节点");
+                // 路线 α：被跳过的分支若下游直接汇入汇聚网关(8)/并行分组出口，若不留痕会导致 Join 汇聚傻等"从未激活的无 task 节点"。
+                // 故对每条"条件不满足的出边"沿下游链路级联建 Skipped 留痕（与并行 fork 成员的跳过留痕语义统一），
+                // 使 IsNodeComplete 对"跳过"返回完成、Join 不再把"未到达"与"完成"混为一谈。
+                SkipRejectedBranches(instance, node, allNodes, linksBySource, linksByTarget, formValues);
                 ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
                 return;
             }
@@ -1343,7 +1367,13 @@ namespace ZR.Workflow.Service
                     // 使 CurrentNodeId（取活动集 Min）与活动集保持一致；条件不满足的成员不进活动集（视为已完成）。
                     foreach (var g in groupNodes)
                     {
-                        if (!EvalCondition(g, formValues)) continue; // 分支条件不满足：不生成待办，视为已完成（包容网关）
+                        if (!EvalCondition(g, formValues))
+                        {
+                            // 分支条件不满足：明确留痕 Skipped（区别于"从未激活"），使 IsNodeComplete 能区分"跳过"与"未走到"；
+                            // 不加入活动集（Skipped 视为完成，且避免 CurrentNodeId 取到跳过节点）。
+                            CreateAutoSkipTask(instance, g, "分支条件不满足，节点自动跳过");
+                            continue;
+                        }
                         if (g.NodeType == (int)WfNodeType.Cc)
                         {
                             // 抄送节点瞬时完成（Skipped），其「完成」由 IsNodeComplete 的「无 Pending 任务」判定，
@@ -1484,7 +1514,16 @@ namespace ZR.Workflow.Service
                 // 汇聚出口按 Link 拓扑解析（组内成员连到组外的出边），不依赖 NodeOrder（MaxBy 会破坏 Link 唯一真相）
                 var exits = ResolveParallelGroupExit(completedNode.ParallelGroup, allNodes, linksBySource, formValues);
                 if (exits.Count == 0) { CompleteInstance(instance); return; }
-                foreach (var exitNode in exits) ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues);
+                // 出口幂等保护：并行分组内若已有成员在 fork 阶段被 Skipped（条件不满足/审批人为空），其 Approve 会再次进入本汇聚分支；
+                // 若出口节点已被前次汇聚激活（已有任务），跳过重复 fork，避免出口（如 Join 后续节点 C）生成多条待办。
+                // 此处查询位于 Approve 的事务内（RunInTx），可同时防并发竞态重复 fork。
+                foreach (var exitNode in exits)
+                {
+                    var exitActivated = Context.Queryable<WfFlowTask>()
+                        .Any(t => t.InstanceId == instance.InstanceId && t.NodeId == exitNode.NodeId);
+                    if (exitActivated) { logger.Info($"并行分组出口幂等：InstanceId={instance.InstanceId} Exit={exitNode.NodeName}({exitNode.NodeId}) 已激活 → 跳过重复 fork"); continue; }
+                    ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues);
+                }
                 SyncActiveNodeId(instance);
                 return;
             }
@@ -1890,10 +1929,18 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 判断节点是否完成（或签：任一已审；会签：全部已审）——内存版，接收已按节点分组的任务字典，
         /// 供并行 join / 分组汇聚在一次性加载后批量判定，消除逐节点查库的 N+1。
+        ///
+        /// 「完成」三态语义（与并行 fork 时对条件不满足成员创建 Skipped 的规则配套）：
+        /// - 无 Task     → 未激活（从未走到该节点）→ 未完成 ❌
+        /// - Pending     → 未完成 ❌
+        /// - Done        → 完成 ✅
+        /// - Skipped     → 明确跳过 → 完成 ✅
+        /// 依赖前提：并行 fork 保证组内每个"应激活"的成员都至少有一条任务（Pending 或 Skipped），
+        /// 故"无 Task"只可能表示"该分支从未被 fork 激活"，绝不能视为完成，否则 Join/分组汇聚会提前放行。
         /// </summary>
         private bool IsNodeComplete(Dictionary<long, List<WfFlowTask>> tasksByNode, WfFlowNode node)
         {
-            if (!tasksByNode.TryGetValue(node.NodeId, out var tasks) || tasks == null || tasks.Count == 0) return true;
+            if (!tasksByNode.TryGetValue(node.NodeId, out var tasks) || tasks == null || tasks.Count == 0) return false; // 无 Task = 未激活 = 未完成
             // 抄送节点：任务生成即视为完成（状态 Skipped），无需审批；并行汇聚时依赖此判定
             if (node.NodeType == (int)WfNodeType.Cc)
                 return !tasks.Any(t => t.Status == (int)WfTaskStatus.Pending);
@@ -2195,6 +2242,67 @@ namespace ZR.Workflow.Service
                 Create_by = instance.ApplyUser
             }).ExecuteCommand();
             AddRecord(instance.InstanceId, null, node.NodeId, ApplicantOf(instance), (int)WfAction.AutoSkip, reason);
+        }
+
+        /// <summary>
+        /// 排他条件节点（或任意"条件不满足"节点）顺延跳过时，对**每条条件不满足的出边**沿下游链路级联建 Skipped 留痕。
+        /// 目的：被跳过的分支若下游直接汇入汇聚网关(8)/并行分组出口，其末端业务节点（Audit/Cc）会因"从未被 ArriveNode"
+        /// 而没有任何任务；IsNodeComplete 已规定"无 task = 未激活 = 未完成"，从而 Join 汇聚会傻等这个永远到不了的节点而卡死。
+        /// 级联留痕后，这些节点的 IsNodeComplete 因有 Skipped → 返回完成，Join 正确放行，使"未到达 / 跳过 / 已完成"三态收敛为两态
+        /// （激活态走正常判定；跳过态 Skipped→完成；无 task 只可能出现在"本就不该走到"的分支，Join 不会等待它）。
+        /// 级联边界：遇 ParallelFork(7)/ParallelJoin(8)/流程终点停止，不跨汇聚网关污染其它分支；节点已存在任务（Pending/Done/Skipped）则跳过，避免重复留痕。
+        /// </summary>
+        private void SkipRejectedBranches(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
+        {
+            if (!linksBySource.TryGetValue(node.NodeId, out var outLinks) || outLinks.Count == 0) return;
+            foreach (var link in outLinks)
+            {
+                // 仅处理"条件不满足"的出边（无条件默认分支视为满足，已被 ResolveNextNode 顺延走到，不在此标）
+                if (string.IsNullOrWhiteSpace(link.ConditionJson) || EvalLinkCondition(link.ConditionJson, formValues)) continue;
+                var target = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
+                if (target == null) continue;
+                SkipBranchChain(instance, target, allNodes, linksBySource, linksByTarget, formValues, new HashSet<long>());
+            }
+        }
+
+        /// <summary>
+        /// 从 branchStart 出发沿出边 DFS 下游链路，把被跳过分支整条链"建 Skipped 留痕 + 激活下游汇聚点"。
+        /// - Audit/Cc：建 Skipped（不建 Pending）；继续沿下游链递归（不调 ArriveNode，避免落入正常待办逻辑）。
+        /// - 条件网关：自身不建留痕，但其"满足出边"应由调用方 ArriveNode，故此处仅对"不满足出边"递归（防重复时由 visited 去重）。
+        /// - ParallelJoin(8)：不建留痕，但需 ArriveNode 激活汇聚网关（让它与其它真实分支一起等待 join），随后停止本链（不跨网关污染另一分支）。
+        /// - ParallelFork(7)/流程终点：停止，不跨并行子图。
+        /// 已存在任务（Pending/Done/Skipped）的节点跳过留痕，但仍继续向下游级联（如条件网关已留痕但下游分支还需标）。
+        /// </summary>
+        private void SkipBranchChain(WfFlowInstance instance, WfFlowNode branchStart, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, HashSet<long> visited)
+        {
+            if (branchStart == null || visited.Contains(branchStart.NodeId)) return;
+            visited.Add(branchStart.NodeId);
+
+            // 汇聚网关：激活它（等其它分支），不跨网关继续
+            if (branchStart.NodeType == (int)WfNodeType.ParallelJoin)
+            {
+                ArriveNode(instance, branchStart, allNodes, linksBySource, linksByTarget, formValues);
+                return;
+            }
+            // 分叉网关 / 终点：不进入并行子图，停止
+            if (branchStart.NodeType == (int)WfNodeType.ParallelFork) return;
+
+            // 真实业务节点（Audit/Cc）：建 Skipped 留痕（已存在任务则跳过），继续沿下游链级联
+            if (branchStart.NodeType == (int)WfNodeType.Audit || branchStart.NodeType == (int)WfNodeType.Cc)
+            {
+                var existing = Context.Queryable<WfFlowTask>().Any(t => t.InstanceId == instance.InstanceId && t.NodeId == branchStart.NodeId);
+                if (!existing) CreateAutoSkipTask(instance, branchStart, "上游条件不满足，分支自动跳过");
+            }
+
+            // 向下游继续级联（终点无出边自然停止）
+            if (linksBySource.TryGetValue(branchStart.NodeId, out var outs) && outs.Count > 0)
+            {
+                foreach (var l in outs)
+                {
+                    var next = allNodes.FirstOrDefault(n => n.NodeId == l.TargetNodeId);
+                    if (next != null) SkipBranchChain(instance, next, allNodes, linksBySource, linksByTarget, formValues, visited);
+                }
+            }
         }
 
         /// <summary>
