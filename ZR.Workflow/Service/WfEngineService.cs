@@ -109,7 +109,9 @@ namespace ZR.Workflow.Service
             RunInTx(() =>
             {
                 var now = DateTime.Now;
-                Context.Updateable<WfFlowTask>()
+                // 并发防重：更新必须命中待办态（Pending），命中 0 行说明该任务已被并发处理（重复点击/或签他人已审），
+                // 直接短路，不再进入 IsNodeComplete / AdvanceToNext，避免重复推进后续节点或并行汇聚重复放行。
+                var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Status = (int)WfTaskStatus.Done,
@@ -119,7 +121,9 @@ namespace ZR.Workflow.Service
                         Update_time = now,
                         Update_by = op.UserName
                     })
-                    .Where(t => t.TaskId == taskId).ExecuteCommand();
+                    .Where(t => t.TaskId == taskId && t.Status == (int)WfTaskStatus.Pending).ExecuteCommand();
+                // 数据库级 CAS 抢占：能否审批由 UPDATE 命中行数决定，命中 0 行说明任务已被并发处理（重复点击/或签他人已审）
+                if (rows != 1) throw new CustomException("任务已处理");
 
                 AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Approve, delegatedNote + opinion);
 
@@ -173,7 +177,8 @@ namespace ZR.Workflow.Service
             RunInTx(() =>
             {
                 var now = DateTime.Now;
-                Context.Updateable<WfFlowTask>()
+                // 并发防重：更新须命中待办态，命中 0 行说明任务已被并发处理（重复点击/或签他人已审），直接短路不再推进
+                var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Status = (int)WfTaskStatus.Done,
@@ -183,7 +188,9 @@ namespace ZR.Workflow.Service
                         Update_time = now,
                         Update_by = op.UserName
                     })
-                    .Where(t => t.TaskId == taskId).ExecuteCommand();
+                    .Where(t => t.TaskId == taskId && t.Status == (int)WfTaskStatus.Pending).ExecuteCommand();
+                // 数据库级 CAS 抢占：能否驳回由 UPDATE 命中行数决定，命中 0 行说明任务已被并发处理
+                if (rows != 1) throw new CustomException("任务已处理");
 
                 AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Reject, delegatedNote + opinion);
 
@@ -280,7 +287,7 @@ namespace ZR.Workflow.Service
                 instance.Update_time = now;
                 instance.Update_by = op.UserName;
                 Context.Updateable(instance)
-                    .UpdateColumns(i => new { i.Status, i.CurrentNodeId, i.FormContent, i.Attachment, i.Title, i.Update_time, i.Update_by })
+                    .UpdateColumns(i => new { i.Status, i.CurrentNodeId, i.CurrentNodeIds, i.FormContent, i.Attachment, i.Title, i.Update_time, i.Update_by })
                     .ExecuteCommand();
 
                 AddRecord(instanceId, null, null, op, (int)WfAction.Resubmit, "重新提交");
@@ -367,7 +374,8 @@ namespace ZR.Workflow.Service
             RunInTx(() =>
             {
                 var now = DateTime.Now;
-                Context.Updateable<WfFlowTask>()
+                // 并发防重：转办须命中待办态，命中 0 行说明任务已被并发处理（重复转办/或签他人已审），直接短路
+                var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Assignee = targetName,
@@ -378,7 +386,9 @@ namespace ZR.Workflow.Service
                         Update_time = now,
                         Update_by = op.UserName
                     })
-                    .Where(t => t.TaskId == taskId).ExecuteCommand();
+                    .Where(t => t.TaskId == taskId && t.Status == (int)WfTaskStatus.Pending).ExecuteCommand();
+                // 数据库级 CAS 抢占：能否转办由 UPDATE 命中行数决定，命中 0 行说明任务已被并发处理
+                if (rows != 1) throw new CustomException("任务已处理");
 
                 var recordOpinion = "转办给 " + targetNickName + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
                 AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Transfer, recordOpinion);
@@ -400,7 +410,7 @@ namespace ZR.Workflow.Service
 
             var op = LoadUser(operatorId);
             logger.Info($"加签：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId}) 加签用户=[{string.Join(",", userIds)}]");
-            // 去重按 AssigneeId（userId）比对，不再按可变的登录名
+            // 事务外快速校验：重复加签给出明确业务提示（并发兜底在事务内 CAS 完成后二次查重）
             var existingIds = Context.Queryable<WfFlowTask>()
                 .Where(t => t.InstanceId == task.InstanceId && t.NodeId == task.NodeId && t.AssigneeId != null)
                 .Select(t => t.AssigneeId)
@@ -415,11 +425,27 @@ namespace ZR.Workflow.Service
 
             RunInTx(() =>
             {
-                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, toAddApprovers, (int)WfTaskStatus.Pending, op.UserName);
+                // 数据库级 CAS 抢占：能否加签由当前待办的原子条件更新命中行数决定。
+                // 加签不改任务审批主状态，借对同一条 task 行的 UPDATE 触发行锁，串行化并发加签；
+                // 命中 0 行说明任务已被并发处理（已通过/驳回/转办/委托），直接抛"任务已处理"。
+                var tokenRows = Context.Updateable<WfFlowTask>()
+                    .SetColumns(t => new WfFlowTask { Update_time = DateTime.Now, Update_by = op.UserName })
+                    .Where(t => t.TaskId == taskId && t.Status == (int)WfTaskStatus.Pending).ExecuteCommand();
+                if (tokenRows != 1) throw new CustomException("任务已处理");
 
-                NotifyUsers(toAddApprovers, $"【审批加签】{instance.Title} 由 {op.NickName} 邀请您加签审批。");
+                // 二次查重（并发兜底）：借助上方行锁串行化，后到的并发加签能读到前一请求已加的审批人；若有重复则短路
+                var freshIds = Context.Queryable<WfFlowTask>()
+                    .Where(t => t.InstanceId == task.InstanceId && t.NodeId == task.NodeId && t.AssigneeId != null)
+                    .Select(t => t.AssigneeId)
+                    .ToList();
+                var freshToAdd = toAddApprovers.Where(a => !freshIds.Contains(a.UserId)).ToList();
+                if (freshToAdd.Count == 0) throw new CustomException("加签人已在该节点审批人中");
 
-                var recordOpinion = "加签：" + string.Join(",", toAddApprovers.Select(a => a.NickName)) + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
+                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, freshToAdd, (int)WfTaskStatus.Pending, op.UserName);
+
+                NotifyUsers(freshToAdd, $"【审批加签】{instance.Title} 由 {op.NickName} 邀请您加签审批。");
+
+                var recordOpinion = "加签：" + string.Join(",", freshToAdd.Select(a => a.NickName)) + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
                 AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.AddSign, recordOpinion);
             }, "加签失败");
         }
@@ -449,7 +475,8 @@ namespace ZR.Workflow.Service
             RunInTx(() =>
             {
                 var now = DateTime.Now;
-                Context.Updateable<WfFlowTask>()
+                // 并发防重：委托须命中待办态且未被重复委托，命中 0 行说明任务已被并发处理或已委托，直接短路
+                var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         // 注意：AssigneeId / Assignee / AssigneeNickName 均保持不变，任务仍归属原审批人
@@ -459,7 +486,9 @@ namespace ZR.Workflow.Service
                         Update_time = now,
                         Update_by = op.UserName
                     })
-                    .Where(t => t.TaskId == taskId).ExecuteCommand();
+                    .Where(t => t.TaskId == taskId && t.Status == (int)WfTaskStatus.Pending && t.DelegateId == null).ExecuteCommand();
+                // 数据库级 CAS 抢占：能否委托由 UPDATE 命中行数决定，命中 0 行说明任务已被并发处理或已委托
+                if (rows != 1) throw new CustomException("任务已处理");
 
                 var recordOpinion = "委托 " + target.NickName + " 代审" + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
                 AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Delegate, recordOpinion);
@@ -536,7 +565,8 @@ namespace ZR.Workflow.Service
             RunInTx(() =>
             {
                 var now = DateTime.Now;
-                Context.Updateable<WfFlowTask>()
+                // 并发防重：超时自动通过须命中待办态，命中 0 行说明任务已被人工/并发处理，直接短路不再推进
+                var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Status = (int)WfTaskStatus.Done,
@@ -546,7 +576,8 @@ namespace ZR.Workflow.Service
                         Update_time = now,
                         Update_by = op.UserName
                     })
-                    .Where(t => t.TaskId == task.TaskId).ExecuteCommand();
+                    .Where(t => t.TaskId == task.TaskId && t.Status == (int)WfTaskStatus.Pending).ExecuteCommand();
+                if (rows == 0) return;
 
                 AddRecord(instance.InstanceId, task.TaskId, task.NodeId, op, (int)WfAction.Approve, "超时自动通过");
 
@@ -592,7 +623,8 @@ namespace ZR.Workflow.Service
             RunInTx(() =>
             {
                 var now = DateTime.Now;
-                Context.Updateable<WfFlowTask>()
+                // 并发防重：超时自动驳回须命中待办态，命中 0 行说明任务已被并发处理，直接短路不再推进
+                var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Status = (int)WfTaskStatus.Done,
@@ -602,7 +634,8 @@ namespace ZR.Workflow.Service
                         Update_time = now,
                         Update_by = op.UserName
                     })
-                    .Where(t => t.TaskId == task.TaskId).ExecuteCommand();
+                    .Where(t => t.TaskId == task.TaskId && t.Status == (int)WfTaskStatus.Pending).ExecuteCommand();
+                if (rows == 0) return;
 
                 AddRecord(instance.InstanceId, task.TaskId, task.NodeId, op, (int)WfAction.Reject, "超时自动驳回");
 
@@ -661,7 +694,8 @@ namespace ZR.Workflow.Service
             RunInTx(() =>
             {
                 var now = DateTime.Now;
-                Context.Updateable<WfFlowTask>()
+                // 并发防重：超时自动转交须命中待办态，命中 0 行说明任务已被并发处理，直接短路
+                var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
                         Assignee = target.UserName,
@@ -672,7 +706,8 @@ namespace ZR.Workflow.Service
                         Update_time = now,
                         Update_by = op.UserName
                     })
-                    .Where(t => t.TaskId == task.TaskId).ExecuteCommand();
+                    .Where(t => t.TaskId == task.TaskId && t.Status == (int)WfTaskStatus.Pending).ExecuteCommand();
+                if (rows == 0) return;
 
                 AddRecord(instance.InstanceId, task.TaskId, task.NodeId, op, (int)WfAction.Transfer, "超时自动转交：" + target.NickName);
 
@@ -769,10 +804,12 @@ namespace ZR.Workflow.Service
 
             RunInTx(() =>
             {
-                target.Status = (int)WfTaskStatus.Skipped;
-                target.Update_by = op.UserName;
-                target.Update_time = DateTime.Now;
-                Context.Updateable(target).ExecuteCommand();
+                // 数据库级 CAS 抢占：减签须命中目标任务仍处于待审批态（Pending/Waiting），命中 0 行说明已被并发减签/处理，直接短路
+                var rows = Context.Updateable<WfFlowTask>()
+                    .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped, Update_by = op.UserName, Update_time = DateTime.Now })
+                    .Where(t => t.TaskId == target.TaskId && (t.Status == (int)WfTaskStatus.Pending || t.Status == (int)WfTaskStatus.Waiting))
+                    .ExecuteCommand();
+                if (rows != 1) return;
 
                 var recordOpinion = "减签：" + targetName + (string.IsNullOrEmpty(opinion) ? "" : "：" + opinion);
                 AddRecord(instance.InstanceId, taskId, nodeId, op, (int)WfAction.RemoveSign, recordOpinion);
@@ -1336,9 +1373,10 @@ namespace ZR.Workflow.Service
                     logger.Info($"并行分组 fork：InstanceId={instance.InstanceId} Group={node.ParallelGroup} 组内活跃成员={groupNodes.Count} 是否产生待办={hasPending}");
                     if (!hasPending)
                     {
-                        // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点
-                        var after = ResolveNextNode(groupNodes.MaxBy(g => g.NodeOrder)!, allNodes, linksBySource, linksByTarget, formValues);
-                        ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
+                        // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点（出口按 Link 拓扑解析，不依赖 NodeOrder）
+                        var exits = ResolveParallelGroupExit(node.ParallelGroup, allNodes, linksBySource, formValues);
+                        if (exits.Count == 0) { CompleteInstance(instance); }
+                        else foreach (var exitNode in exits) ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues);
                     }
                     else
                     {
@@ -1443,9 +1481,11 @@ namespace ZR.Workflow.Service
                 var groupNodes = allNodes.Where(n => n.ParallelGroup == completedNode.ParallelGroup).ToList();
                 var groupDone = groupNodes.All(g => IsNodeComplete(tasksByNode, g));
                 if (!groupDone) { logger.Info($"并行分组汇聚等待：InstanceId={instance.InstanceId} Group={completedNode.ParallelGroup} 仍有分支未完成 → 继续等待"); SyncActiveNodeId(instance); return; } // 等待组内其余分支
-                var lastInGroup = groupNodes.MaxBy(g => g.NodeOrder);
-                var after = lastInGroup == null ? null : ResolveNextNode(lastInGroup, allNodes, linksBySource, linksByTarget, formValues);
-                ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
+                // 汇聚出口按 Link 拓扑解析（组内成员连到组外的出边），不依赖 NodeOrder（MaxBy 会破坏 Link 唯一真相）
+                var exits = ResolveParallelGroupExit(completedNode.ParallelGroup, allNodes, linksBySource, formValues);
+                if (exits.Count == 0) { CompleteInstance(instance); return; }
+                foreach (var exitNode in exits) ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues);
+                SyncActiveNodeId(instance);
                 return;
             }
 
@@ -1716,6 +1756,39 @@ namespace ZR.Workflow.Service
                 if (hit != null && !result.Contains(hit)) result.Add(hit);
             }
             return result;
+        }
+
+        /// <summary>
+        /// 解析并行分组（ParallelGroup&gt;0，无显式汇聚网关）整组完成后的汇聚出口。
+        /// **link 为唯一串联事实**：出口 = 组内成员指向「组外节点」的出边目标集合，绝不依赖 NodeOrder。
+        /// 前端 buildSaveLinks 保证组内成员彼此不连线，只有连到组外目标才构成汇聚出口；
+        /// 故此处按拓扑扫描，避免 NodeOrder 与真实连线不符时（手写 FlowJSON / 导入 / 未续号）走错分支。
+        /// 兜底：整个流程完全无 link（存量老数据）才退回「组内 NodeOrder 最大成员的出边」，与旧行为一致。
+        /// </summary>
+        private List<WfFlowNode> ResolveParallelGroupExit(int parallelGroup, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
+        {
+            var groupNodes = allNodes.Where(n => n.ParallelGroup == parallelGroup).ToList();
+            if (groupNodes.Count == 0) return new List<WfFlowNode>();
+            var groupIds = groupNodes.Select(g => g.NodeId).ToHashSet();
+            var exits = new List<WfFlowNode>();
+            foreach (var g in groupNodes)
+            {
+                if (!linksBySource.TryGetValue(g.NodeId, out var outLinks) || outLinks.Count == 0) continue;
+                foreach (var link in outLinks)
+                {
+                    if (groupIds.Contains(link.TargetNodeId)) continue; // 连到组内兄弟 → 非出口
+                    var hit = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
+                    if (hit != null && !exits.Contains(hit)) exits.Add(hit);
+                }
+            }
+            // 有 link 数据但组成员均未连出：整组即流程终点（无汇聚后续）
+            if (linksBySource.Count > 0) return exits;
+            // 完全无 link（存量老数据）：退回组内 NodeOrder 最大成员的出边
+            var last = groupNodes.MaxBy(g => g.NodeOrder);
+            if (last == null) return exits;
+            var legacy = ResolveNextNodes(last, allNodes, linksBySource, formValues);
+            foreach (var n in legacy) if (!exits.Contains(n)) exits.Add(n);
+            return exits;
         }
 
         /// <summary>
