@@ -1336,7 +1336,7 @@ namespace ZR.Workflow.Service
             }
 
             // 排他跳过：条件不满足则顺延到下一节点（递归）；全部不满足则流程直接通过
-            if (!EvalCondition(node, formValues))
+            if (!ShouldActivateNode(node, formValues))
             {
                 logger.Info($"排他跳过：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 条件不满足 → 顺延下一节点");
                 // 路线 α：被跳过的分支若下游直接汇入汇聚网关(8)/并行分组出口，若不留痕会导致 Join 汇聚傻等"从未激活的无 task 节点"。
@@ -1367,7 +1367,7 @@ namespace ZR.Workflow.Service
                     // 使 CurrentNodeId（取活动集 Min）与活动集保持一致；条件不满足的成员不进活动集（视为已完成）。
                     foreach (var g in groupNodes)
                     {
-                        if (!EvalCondition(g, formValues))
+                        if (!ShouldActivateNode(g, formValues))
                         {
                             // 分支条件不满足：明确留痕 Skipped（区别于"从未激活"），使 IsNodeComplete 能区分"跳过"与"未走到"；
                             // 不加入活动集（Skipped 视为完成，且避免 CurrentNodeId 取到跳过节点）。
@@ -1954,8 +1954,22 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 评估节点条件：字段/运算符/值三者齐全才生效，任一缺失视为无条件（返回 true）。
+        /// 统一入口：判断一个「真实业务节点」（审批/抄送等，非条件网关）是否应被激活/走到。
+        ///
+        /// 引擎内条件判断收敛为两个入口，职责明确、避免越做越乱：
+        /// - <see cref="ShouldActivateNode"/>：**节点级条件**（挂载在 WfFlowNode.ConditionField 上），
+        ///   用于「普通节点排他跳过」与「并行 fork 成员是否激活」——回答"这个节点要不要走/要不要激活"。
+        /// - <see cref="EvalLinkCondition"/>：**连线级条件**（挂载在 WfNodeLink.ConditionJson 上），
+        ///   仅用于「条件网关(4)按出边选路」与「被跳过出边识别」——回答"这条边能不能走"。
+        /// 两者底层都复用 <see cref="CompareValue"/>，区别仅在「条件挂载点」与「空值/未知 op 的保守策略」。
+        /// </summary>
+        private bool ShouldActivateNode(WfFlowNode node, Dictionary<string, string> formValues)
+            => EvalCondition(node, formValues);
+
+        /// <summary>
+        /// 评估节点条件（节点级）：字段/运算符/值三者齐全才生效，任一缺失视为无条件（返回 true）。
         /// 字段缺失或无值视为条件不满足（保守跳过）。比较语义委托 <see cref="CompareValue"/>。
+        /// 仅供 <see cref="ShouldActivateNode"/> 内部委托调用，外部统一走 ShouldActivateNode。
         /// </summary>
         private bool EvalCondition(WfFlowNode node, Dictionary<string, string> formValues)
         {
