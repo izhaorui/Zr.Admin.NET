@@ -282,6 +282,9 @@ namespace ZR.Workflow.Service
                 RejectTargetNodeId = src.RejectTargetNodeId,
                 EmptyApproverStrategy = src.EmptyApproverStrategy,
                 DefaultApproverId = src.DefaultApproverId,
+                TimeoutHours = src.TimeoutHours,
+                TimeoutAction = src.TimeoutAction,
+                TimeoutTransferUserId = src.TimeoutTransferUserId,
                 Create_by = userName,
                 Create_time = DateTime.Now
             };

@@ -62,5 +62,14 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>兜底默认审批人（EmptyApproverStrategy=1 时生效）userId</summary>
         public long? DefaultApproverId { get; set; }
+
+        /// <summary>节点超时时长（小时）。0=不超时（默认）；&gt;0 时引擎在生成待办时计算 DeadlineTime。</summary>
+        public int TimeoutHours { get; set; } = 0;
+
+        /// <summary>超时动作（WfTimeoutAction）：0=不处理（默认）；1=自动通过；2=自动驳回；3=转交指定人。</summary>
+        public int TimeoutAction { get; set; } = 0;
+
+        /// <summary>超时转交目标用户（TimeoutAction=3 时生效）userId；为空则退化为自动通过。</summary>
+        public long? TimeoutTransferUserId { get; set; }
     }
 }
