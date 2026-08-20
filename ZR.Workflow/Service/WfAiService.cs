@@ -849,8 +849,19 @@ namespace ZR.Workflow.Service
             }
 
             var formDesc = string.IsNullOrWhiteSpace(def.FormItems) ? "（无表单）" : def.FormItems;
-            var nodesDesc = string.Join("\n", (def.Nodes ?? new List<WfFlowNodeDto>()).Select(n => $"- 节点：{n.NodeName}（类型={n.NodeType}，审批人类型={n.ApproverType}）"));
-            var linksDesc = string.Join("\n", (def.NodeLinks ?? new List<WfNodeLinkDto>()).Select(l => $"- 连线：节点{l.SourceNodeId} -> 节点{l.TargetNodeId}（条件：{l.ConditionJson ?? "无"}）"));
+
+            // 语义化上下文：把数字枚举/节点 Id 翻译为人类可读名称，避免 AI 输出"节点13""审批人类型5"等用户看不懂的技术表述。
+            var nodes = def.Nodes ?? new List<WfFlowNodeDto>();
+            var nodeNameById = nodes.Where(n => n.NodeId > 0).ToDictionary(n => n.NodeId, n => n.NodeName);
+            string NodeLabel(long id) => nodeNameById.TryGetValue(id, out var name) ? $"「{name}」" : $"节点{id}";
+            var nodesDesc = string.Join("\n", nodes.Select(n =>
+            {
+                var typeName = NodeTypeName(n.NodeType);
+                var extra = n.NodeType == (int)WfNodeType.Audit ? $"，审批方式：{SignTypeName(n.SignType)}，审批人：{ApproverTypeName(n.ApproverType)}" :
+                    n.NodeType == (int)WfNodeType.Cc ? "（抄送，无需审批）" : string.Empty;
+                return $"- 节点「{n.NodeName}」：{typeName}{extra}";
+            }));
+            var linksDesc = string.Join("\n", (def.NodeLinks ?? new List<WfNodeLinkDto>()).Select(l => $"- 连线：{NodeLabel(l.SourceNodeId)} → {NodeLabel(l.TargetNodeId)}（条件：{l.ConditionJson ?? "无"}）"));
             var user = $"流程名称：{def.FlowName}\n表单字段（JSON）：{formDesc}\n节点列表：\n{nodesDesc}\n连线列表：\n{linksDesc}";
 
             var text = await ChatSafeAsync(GetPromptOrThrow("flow-optimize.md", "流程优化体检"), user).ConfigureAwait(false);
@@ -886,6 +897,40 @@ namespace ZR.Workflow.Service
             }
             return result;
         }
+
+        /// <summary>节点类型数字 → 中文名（供 AI 上下文与提示词使用）。</summary>
+        private static string NodeTypeName(int nodeType) => nodeType switch
+        {
+            (int)WfNodeType.Start => "开始节点",
+            (int)WfNodeType.Audit => "审批节点",
+            (int)WfNodeType.Cc => "抄送节点",
+            (int)WfNodeType.End => "结束节点",
+            (int)WfNodeType.Condition => "条件网关",
+            (int)WfNodeType.ParallelFork => "并行分叉网关",
+            (int)WfNodeType.ParallelJoin => "并行汇聚网关",
+            _ => $"未知类型({nodeType})"
+        };
+
+        /// <summary>签类型数字 → 中文名（0 或签 / 1 会签 / 2 依次审批）。</summary>
+        private static string SignTypeName(int? signType) => signType switch
+        {
+            (int)WfSignType.And => "会签（需全部通过）",
+            (int)WfSignType.Sequential => "依次审批",
+            _ => "或签（一人通过即可）"
+        };
+
+        /// <summary>审批人类型数字 → 中文名（0 指定用户 / 1 角色 / 2 部门 / 3 表单字段 / 4 部门负责人 / 5 发起人主管）。</summary>
+        private static string ApproverTypeName(int? approverType) => approverType switch
+        {
+            (int)WfApproverType.User => "指定用户",
+            (int)WfApproverType.Role => "指定角色",
+            (int)WfApproverType.Dept => "指定部门",
+            (int)WfApproverType.Field => "表单字段（动态审批人）",
+            (int)WfApproverType.DeptLeader => "部门负责人",
+            (int)WfApproverType.ApplyLeader => "发起人主管",
+            null => "未配置",
+            _ => $"未知({approverType})"
+        };
 
         // ===== 自然语言发起申请（Web 端：匹配流程 + 预填表单，提示词见 Prompts/intent-match.md） =====
 
