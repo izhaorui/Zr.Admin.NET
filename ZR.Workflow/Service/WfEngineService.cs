@@ -1881,32 +1881,45 @@ namespace ZR.Workflow.Service
 
         /// <summary>
         /// 评估连线条件（ConditionJson）。空 JSON 视为无条件（默认分支），由 <see cref="ResolveNextNode"/> 上层分流，
-        /// 不进入本方法。
+        /// 各调用方（ResolveNextNodes / ShouldActivateForkMember / SkipRejectedBranches / 条件网关兜底）均在调用前
+        /// 过滤空 ConditionJson，故不进入本方法。
         ///
-        /// 解析失败 / 字段缺失视为条件不满足（保守，避免误走分支）。
+        /// **失败语义（2026-08-20 收紧，区分"业务不满足"与"配置错误"）**：
+        /// - 条件不满足（业务 false）→ 返回 false：字段在表单中存在但值为空、或比较结果为 false。
+        ///   此时走正常分支逻辑（可落入默认分支或视为未命中）。
+        /// - 条件配置错误（系统无法判断）→ 抛出 <see cref="CustomException"/>：JSON 解析失败、条件字段 field 缺失、
+        ///   运算符 op 缺失/无效（None 或越界）、比较值 value 缺失、条件字段不在提交的表单中。
+        ///   这是关键安全语义：若配置错误被吞掉并返回 false，当"所有条件分支都因错误而不满足"时，排他条件网关会把流程
+        ///   误判为正常结束（CompleteInstance），一个配错的流程看起来像"正常审批完成"。故配置错误必须显式失败并触发事务回滚。
         /// 复用 <see cref="CompareValue"/> 的比较语义，仅数据源来自连线 JSON。
         /// </summary>
         private bool EvalLinkCondition(string conditionJson, Dictionary<string, string> formValues)
         {
             if (string.IsNullOrWhiteSpace(conditionJson)) return false;
+            WfLinkCondition cond;
             try
             {
-                var cond = JsonConvert.DeserializeObject<WfLinkCondition>(conditionJson);
-                if (cond == null
-                    || string.IsNullOrWhiteSpace(cond.Field)
-                    || !cond.Op.HasValue
-                    || string.IsNullOrWhiteSpace(cond.Value)
-                    || !formValues.TryGetValue(cond.Field, out var raw)
-                    || string.IsNullOrWhiteSpace(raw))
-                {
-                    return false;
-                }
-                return CompareValue((WfConditionOp)cond.Op.Value, raw, cond.Value);
+                cond = JsonConvert.DeserializeObject<WfLinkCondition>(conditionJson);
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                throw new CustomException($"条件配置错误：连线条件 JSON 解析失败，{ex.Message}");
             }
+            if (cond == null)
+                throw new CustomException("条件配置错误：连线条件 JSON 内容为空");
+            if (string.IsNullOrWhiteSpace(cond.Field))
+                throw new CustomException("条件配置错误：连线条件缺少条件字段 field");
+            if (!cond.Op.HasValue)
+                throw new CustomException($"条件配置错误：连线条件[{cond.Field}]缺少运算符 op");
+            var op = (WfConditionOp)cond.Op.Value;
+            if (op == WfConditionOp.None || !System.Enum.IsDefined(typeof(WfConditionOp), cond.Op.Value))
+                throw new CustomException($"条件配置错误：连线条件[{cond.Field}]运算符 op={cond.Op.Value} 无效");
+            if (string.IsNullOrWhiteSpace(cond.Value))
+                throw new CustomException($"条件配置错误：连线条件[{cond.Field}]缺少比较值 value");
+            if (!formValues.TryGetValue(cond.Field, out var raw))
+                throw new CustomException($"条件配置错误：连线条件引用的表单字段【{cond.Field}】不在提交的表单中");
+            if (string.IsNullOrWhiteSpace(raw)) return false; // 字段存在但值为空：业务不满足（保守，不误走该分支）
+            return CompareValue(op, raw, cond.Value);
         }
 
         /// <summary>
