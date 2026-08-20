@@ -79,6 +79,53 @@ namespace ZR.Workflow.Model.Topology
                 forkByGroup[g.Key] = members.FirstOrDefault(n => n.NodeType == (int)WfNodeType.ParallelFork);
             }
 
+            // joinInBranches：ParallelJoin(8) → 入边业务分支节点（Audit/Cc，去重）。
+            // 网关源(4/7/8)不生成任务、由流转自然跳过，视为瞬时完成不计入 join 完成判定。
+            var joinInBranches = new Dictionary<long, IReadOnlyList<WfFlowNode>>();
+            foreach (var kv in prevOf)
+            {
+                var target = nodeById.TryGetValue(kv.Key, out var t) ? t : null;
+                if (target == null || target.NodeType != (int)WfNodeType.ParallelJoin) continue;
+                var branches = kv.Value
+                    .Select(id => nodeById.TryGetValue(id, out var n) ? n : null)
+                    .Where(n => n != null && (n.NodeType == (int)WfNodeType.Audit || n.NodeType == (int)WfNodeType.Cc))
+                    .Distinct()
+                    .ToList();
+                joinInBranches[kv.Key] = branches;
+            }
+
+            // forkMemberLinks：ParallelFork(7) → 出边 target → ResolvedOutLink 映射
+            // （供并行分组 fork 判断"分叉网关 → 成员"的条件命中，O(1) 取边）
+            var forkMemberLinks = new Dictionary<long, IReadOnlyDictionary<long, ResolvedOutLink>>();
+            foreach (var kv in nextOf)
+            {
+                var src = nodeById.TryGetValue(kv.Key, out var s) ? s : null;
+                if (src == null || src.NodeType != (int)WfNodeType.ParallelFork) continue;
+                var map = new Dictionary<long, ResolvedOutLink>(kv.Value.Count);
+                foreach (var link in kv.Value) map[link.TargetNodeId] = link;
+                forkMemberLinks[kv.Key] = map;
+            }
+
+            // groupExits：ParallelGroup → 组内成员指向组外节点的出边目标（去重）。
+            // link 为唯一串联事实，出口 = 组内成员连到组外目标，绝不依赖 NodeOrder。
+            var groupExits = new Dictionary<int, IReadOnlyList<WfFlowNode>>();
+            foreach (var kv in parallelRegions)
+            {
+                var groupIds = kv.Value.Select(n => n.NodeId).ToHashSet();
+                var exits = new List<WfFlowNode>();
+                foreach (var g in kv.Value)
+                {
+                    if (!nextOf.TryGetValue(g.NodeId, out var outLinks)) continue;
+                    foreach (var link in outLinks)
+                    {
+                        if (groupIds.Contains(link.TargetNodeId)) continue; // 连到组内兄弟 → 非出口
+                        var hit = nodeById.TryGetValue(link.TargetNodeId, out var h) ? h : null;
+                        if (hit != null && !exits.Contains(hit)) exits.Add(hit);
+                    }
+                }
+                groupExits[kv.Key] = exits;
+            }
+
             return new WorkflowTopology(
                 nodeById,
                 nextOf,
@@ -86,6 +133,9 @@ namespace ZR.Workflow.Model.Topology
                 nodeKind,
                 parallelRegions,
                 forkByGroup,
+                joinInBranches,
+                forkMemberLinks,
+                groupExits,
                 nodeList);
         }
 

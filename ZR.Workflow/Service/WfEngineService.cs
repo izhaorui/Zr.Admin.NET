@@ -1791,20 +1791,8 @@ namespace ZR.Workflow.Service
         /// </summary>
         private List<WfFlowNode> ResolveParallelGroupExit(int parallelGroup, WorkflowTopology topo)
         {
-            var groupNodes = topo.GetGroupNodes(parallelGroup);
-            if (groupNodes.Count == 0) return new List<WfFlowNode>();
-            var groupIds = groupNodes.Select(g => g.NodeId).ToHashSet();
-            var exits = new List<WfFlowNode>();
-            foreach (var g in groupNodes)
-            {
-                foreach (var link in topo.GetOutLinks(g.NodeId))
-                {
-                    if (groupIds.Contains(link.TargetNodeId)) continue; // 连到组内兄弟 → 非出口
-                    var hit = topo.GetNode(link.TargetNodeId);
-                    if (hit != null && !exits.Contains(hit)) exits.Add(hit);
-                }
-            }
-            return exits;
+            // 汇聚出口由拓扑预计算（groupExits）：组内成员指向组外节点的出边目标，link 为唯一串联事实。
+            return topo.GetGroupExits(parallelGroup).ToList();
         }
 
         /// <summary>
@@ -1813,17 +1801,13 @@ namespace ZR.Workflow.Service
         /// </summary>
         private bool IsJoinComplete(WfFlowInstance instance, WfFlowNode joinNode, WorkflowTopology topo, Dictionary<long, List<WfFlowTask>> tasksByNode)
         {
-            var inSourceIds = topo.GetInSourceIds(joinNode.NodeId);
-            if (inSourceIds.Count == 0) return true;
-            foreach (var srcId in inSourceIds)
+            // 入边业务分支节点（Audit/Cc，由拓扑预计算）：网关源(7/8/4)视为瞬时完成，不计入 join 判定。
+            // 实际并行分支的"完成"体现在分支末端的审批/抄送节点；任一业务分支未完成 → 继续等待。
+            var branches = topo.GetJoinInBranches(joinNode.NodeId);
+            if (branches.Count == 0) return true;
+            foreach (var src in branches)
             {
-                var src = topo.GetNode(srcId);
-                // 入边源节点完成判定：源节点若为网关(7/8/4)则视为瞬时完成（它们不生成任务，由流转自然跳过），
-                // 实际并行分支的"完成"体现在分支末端的审批/抄送节点；这里只校验真实业务节点（审批/抄送）的完成。
-                if (src != null && (src.NodeType == (int)WfNodeType.Audit || src.NodeType == (int)WfNodeType.Cc))
-                {
-                    if (!IsNodeComplete(tasksByNode, src)) return false;
-                }
+                if (!IsNodeComplete(tasksByNode, src)) return false;
             }
             return true;
         }
@@ -1936,17 +1920,8 @@ namespace ZR.Workflow.Service
         /// </summary>
         private Dictionary<long, List<WfFlowTask>> LoadJoinBranchTasks(long instanceId, WfFlowNode joinNode, WorkflowTopology topo)
         {
-            var inSourceIds = topo.GetInSourceIds(joinNode.NodeId);
-            if (inSourceIds.Count == 0)
-                return new Dictionary<long, List<WfFlowTask>>();
-            var branchNodeIds = inSourceIds
-                .Where(srcId =>
-                {
-                    var src = topo.GetNode(srcId);
-                    return src != null && (src.NodeType == (int)WfNodeType.Audit || src.NodeType == (int)WfNodeType.Cc);
-                })
-                .Distinct()
-                .ToList();
+            // 入边业务分支节点（Audit/Cc）由拓扑预计算：网关源(4/7/8)不生成任务，无需加载。
+            var branchNodeIds = topo.GetJoinInBranches(joinNode.NodeId).Select(n => n.NodeId).ToList();
             if (branchNodeIds.Count == 0) return new Dictionary<long, List<WfFlowTask>>();
             return Context.Queryable<WfFlowTask>()
                 .Where(t => t.InstanceId == instanceId && branchNodeIds.Contains(t.NodeId))
@@ -2001,7 +1976,7 @@ namespace ZR.Workflow.Service
         {
             if (forkNode != null)
             {
-                var link = topo.GetOutLinks(forkNode.NodeId).FirstOrDefault(l => l.TargetNodeId == member.NodeId);
+                var link = topo.GetForkMemberLink(forkNode.NodeId, member.NodeId);
                 if (link != null)
                 {
                     if (!link.HasCondition) return true; // 无条件出边：并发激活
