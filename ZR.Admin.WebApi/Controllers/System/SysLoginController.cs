@@ -544,23 +544,18 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 result.Add(deptId);
             }
-            if (deptChildRoles.Any())
+            if (deptChildRoles.Count != 0)
             {
                 var childIds = deptService.GetChildDeptIds(deptId);
                 if (childIds != null) result.UnionWith(childIds);
             }
-            if (customRoles.Any())
+            if (customRoles.Count != 0)
             {
                 var roleIds = customRoles.Select(r => r.RoleId).ToList();
                 var customDeptIds = deptService.SelectRoleDeptsBatch(roleIds);
                 if (customDeptIds != null) result.UnionWith(customDeptIds);
             }
-
-            // 调试：打印角色信息 + 计算结果
-            var roleInfo = string.Join("|", roles.Select(r => $"{r.RoleKey}:Scope={r.DataScope}"));
-            NLog.LogManager.GetCurrentClassLogger().Info($"[DataScope] deptId={deptId} roles=[{roleInfo}] DEPT_CHILD={deptChildRoles.Count} CUSTOM={customRoles.Count} DeptIds=[{string.Join(",", result)}]");
-
-            return result.ToList();
+            return [.. result];
         }
 
         /// <summary>
