@@ -1338,13 +1338,13 @@ namespace ZR.Workflow.Service
                 logger.Info($"并行分组进入：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) ParallelGroup={node.ParallelGroup}");
                 var groupNodes = topo.GetGroupNodes(node.ParallelGroup);
                 var groupNodeIds = groupNodes.Select(g => g.NodeId).ToList();
-                // 分组是否"已激活"：仅当组内存在活跃（待审/排队）任务才算已 fork 过。
-                // 若组内只剩已跳过/已审的旧任务（如 AdminJump 跳转到并行节点、或 Resubmit 回首并行节点后旧任务残留），
-                // 不能视为已激活——否则会走下方 return（"分组已激活，避免重复生成"）而不生成任何新待办，
-                // 导致流程停在"审核中"却无可审批任务（卡死）。此时应重新 fork 生成组内全部 Pending 待办。
-                var groupActive = Context.Queryable<WfFlowTask>()
-                    .Any(t => t.InstanceId == instance.InstanceId && groupNodeIds.Contains(t.NodeId)
-                        && (t.Status == (int)WfTaskStatus.Pending || t.Status == (int)WfTaskStatus.Waiting));
+                // 分组是否"已激活"（已 fork 过）：以「活动集 CurrentNodeIds」为唯一权威判断依据，而非 Task 状态。
+                // ⚠️ 原则（2026-08-20）：CurrentNodeIds = 运行时活动状态；WfFlowTask = 节点执行历史/人工任务状态。
+                //   Task.Pending 不能反过来作为"流程是否激活"的判断依据——AdminJump/超时/重新提交/异常恢复都会改任务与活动集，
+                //   若用 Task 反推会导致两套状态真相漂移（例：组内只剩 Skipped 旧任务但活动集已无成员，Task 判断会误判"已激活"而不再 fork）。
+                // 并行分组成员 fork 时经 AddActiveNodeId 加入活动集，故"活动集中是否含组内任一成员"即代表"分组是否已 fork"，
+                // 与 CurrentNodeIds 天然同步；首节点为分叉网关时活动集已在 ParallelFork 分支移除网关自身，此处判空会正确触发首次 fork。
+                var groupActive = GetActiveNodeIds(instance).Any(gid => groupNodeIds.Contains(gid));
                 if (!groupActive)
                 {
                     // 并行分组 fork：把组内「将活动」的成员（生成待办/抄送的节点）同时加入活动集 CurrentNodeIds，
