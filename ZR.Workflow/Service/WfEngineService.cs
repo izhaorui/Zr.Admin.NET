@@ -1244,84 +1244,90 @@ namespace ZR.Workflow.Service
 
             // 节点进入事件钩子（Webhook）：登记入队，事务提交后统一投递，失败不阻断流转
             QueueNodeHook(instance, node, "enter", formValues);
-            logger.Info($"进入节点：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) Type={(WfNodeType)node.NodeType}{(node.ParallelGroup > 0 ? $" ParallelGroup={node.ParallelGroup}" : "")}");
+            var nodeKind = topo.NodeKind.TryGetValue(node.NodeId, out var kind) ? kind : (WfNodeType)node.NodeType;
+            logger.Info($"进入节点：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) Type={nodeKind}{(node.ParallelGroup > 0 ? $" ParallelGroup={node.ParallelGroup}" : "")}");
 
-            // 条件网关（菱形，NodeType=4）：本身不生成任务，到达后按出边 ConditionJson 选一路继续。
-            // 条件在连线（link）上表达，无需节点级 EvalCondition；无条件出边作为默认分支。
-            if (node.NodeType == (int)WfNodeType.Condition)
+            // 按节点类型分派：网关/终端节点（Condition/End/ParallelFork/ParallelJoin）各自处理；
+            // 其余（Audit/Cc/并行分组）落到下方统一业务节点处理。
+            switch (nodeKind)
             {
-                // 网关自身不是活动审批节点（Start 可能把它当首节点塞进活动集），透传前先移除自己，
-                // 否则活动集残留网关 id、CurrentNodeId 被 SetActiveNodeIds 的 Min() 取成网关而非真正活动节点。
-                RemoveActiveNodeId(instance, node.NodeId);
-                SyncActiveNodeId(instance);
-                logger.Info($"条件网关选路：InstanceId={instance.InstanceId} Condition={node.NodeName}({node.NodeId}) 走 ResolveNextNode 选路");
-                // 路线 α：排他条件网关"不满足出边"的下游分支若直接汇入汇聚网关(8)/并行分组出口，其末端业务节点
-                // 因从未被 ArriveNode 而无任务；IsNodeComplete 已规定"无 task = 未激活 = 未完成"，Join 会傻等该节点而卡死。
-                // 故对被跳过的每条不满足出边下游链级联建 Skipped 留痕并激活其下游汇聚网关，使"未到达/跳过/已完成"三态收敛为两态
-                // （跳过态 Skipped→完成；激活态走正常判定；无 task 只可能出现在"本就不该走到"的分支，Join 不会等待它）。
-                // 满足出边仍走正常 ArriveNode 推进；仅当无任何满足/默认出边、且不存在不满足出边时，才视为流程终点完成。
-                var satisfiedNext = ResolveNextNode(node, topo, formValues);
-                SkipRejectedBranches(instance, node, topo, formValues, depth);
-                if (satisfiedNext != null)
+                // 条件网关（菱形，NodeType=4）：本身不生成任务，到达后按出边 ConditionJson 选一路继续。
+                // 条件在连线（link）上表达，无需节点级 EvalCondition；无条件出边作为默认分支。
+                case WfNodeType.Condition:
                 {
-                    ArriveOrComplete(instance, satisfiedNext, topo, formValues, depth + 1);
-                }
-                else
-                {
-                    // 无满足分支也无默认出边：把"不满足出边"的下游链作为被跳过分支激活（建 Skipped 并推进到汇聚点），避免流程误判完成
-                    var outLinks = topo.GetOutLinks(node.NodeId);
-                    var fallbacks = outLinks.Count > 0
-                        ? outLinks.Where(l => l.HasCondition && !EvalParsedCondition(l, formValues))
-                              .Select(l => topo.GetNode(l.TargetNodeId)).Where(n => n != null).ToList()
-                        : new List<WfFlowNode>();
-                    if (fallbacks.Count > 0) { foreach (var fb in fallbacks) SkipBranchChain(instance, fb, topo, formValues, new HashSet<long>(), depth); }
-                    else CompleteInstance(instance);
-                }
-                return;
-            }
-
-            // 结束节点(3)：流程到达终点，不生成任务，直接完成实例。
-            if (node.NodeType == (int)WfNodeType.End)
-            {
-                RemoveActiveNodeId(instance, node.NodeId);
-                SyncActiveNodeId(instance);
-                CompleteInstance(instance);
-                return;
-            }
-
-            // 并行分叉网关(7)：本身不生成任务，fork 同时激活全部出边目标（多活动分支并发）。
-            if (node.NodeType == (int)WfNodeType.ParallelFork)
-            {
-                RemoveActiveNodeId(instance, node.NodeId);
-                var targets = ResolveNextNodes(node, topo, formValues);
-                if (targets.Count == 0) { CompleteInstance(instance); return; }
-                logger.Info($"并行分叉网关：InstanceId={instance.InstanceId} Fork={node.NodeName}({node.NodeId}) → {targets.Count} 条出边");
-                foreach (var t in targets) ArriveNode(instance, t, topo, formValues, depth: depth + 1);
-                SyncActiveNodeId(instance);
-                return;
-            }
-
-            // 并行汇聚网关(8)：本身不生成任务，等待所有入边分支均完成才继续（join）。
-            if (node.NodeType == (int)WfNodeType.ParallelJoin)
-            {
-                // 仅加载该 Join 入边分支节点（Audit/Cc）的任务供完成判定，避免全量拉取实例全部任务
-                // （含已结束分支 / 其它并行组）造成的重复查询与数据量浪费。
-                var tasksByNode = LoadJoinBranchTasks(instance.InstanceId, node, topo);
-                if (IsJoinComplete(instance, node, topo, tasksByNode))
-                {
-                    logger.Info($"并行汇聚完成：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 全部入边完成 → 继续推进");
+                    // 网关自身不是活动审批节点（Start 可能把它当首节点塞进活动集），透传前先移除自己，
+                    // 否则活动集残留网关 id、CurrentNodeId 被 SetActiveNodeIds 的 Min() 取成网关而非真正活动节点。
                     RemoveActiveNodeId(instance, node.NodeId);
-                    var after = ResolveNextNode(node, topo, formValues);
-                    ArriveOrComplete(instance, after, topo, formValues, depth + 1);
-                }
-                else
-                {
-                    // 仍有分支未完成：汇聚网关保持在活动集等待，不推进
-                    logger.Info($"并行汇聚等待：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 仍有入边分支未完成 → 等待");
-                    AddActiveNodeId(instance, node.NodeId);
                     SyncActiveNodeId(instance);
+                    logger.Info($"条件网关选路：InstanceId={instance.InstanceId} Condition={node.NodeName}({node.NodeId}) 走 ResolveNextNode 选路");
+                    // 路线 α：排他条件网关"不满足出边"的下游分支若直接汇入汇聚网关(8)/并行分组出口，其末端业务节点
+                    // 因从未被 ArriveNode 而无任务；IsNodeComplete 已规定"无 task = 未激活 = 未完成"，Join 会傻等该节点而卡死。
+                    // 故对被跳过的每条不满足出边下游链级联建 Skipped 留痕并激活其下游汇聚网关，使"未到达/跳过/已完成"三态收敛为两态
+                    // （跳过态 Skipped→完成；激活态走正常判定；无 task 只可能出现在"本就不该走到"的分支，Join 不会等待它）。
+                    // 满足出边仍走正常 ArriveNode 推进；仅当无任何满足/默认出边、且不存在不满足出边时，才视为流程终点完成。
+                    var satisfiedNext = ResolveNextNode(node, topo, formValues);
+                    SkipRejectedBranches(instance, node, topo, formValues, depth);
+                    if (satisfiedNext != null)
+                    {
+                        ArriveOrComplete(instance, satisfiedNext, topo, formValues, depth + 1);
+                    }
+                    else
+                    {
+                        // 无满足分支也无默认出边：把"不满足出边"的下游链作为被跳过分支激活（建 Skipped 并推进到汇聚点），避免流程误判完成
+                        var outLinks = topo.GetOutLinks(node.NodeId);
+                        var fallbacks = outLinks.Count > 0
+                            ? outLinks.Where(l => l.HasCondition && !EvalParsedCondition(l, formValues))
+                                  .Select(l => topo.GetNode(l.TargetNodeId)).Where(n => n != null).ToList()
+                            : new List<WfFlowNode>();
+                        if (fallbacks.Count > 0) { foreach (var fb in fallbacks) SkipBranchChain(instance, fb, topo, formValues, new HashSet<long>(), depth); }
+                        else CompleteInstance(instance);
+                    }
+                    return;
                 }
-                return;
+
+                // 结束节点(3)：流程到达终点，不生成任务，直接完成实例。
+                case WfNodeType.End:
+                {
+                    RemoveActiveNodeId(instance, node.NodeId);
+                    SyncActiveNodeId(instance);
+                    CompleteInstance(instance);
+                    return;
+                }
+
+                // 并行分叉网关(7)：本身不生成任务，fork 同时激活全部出边目标（多活动分支并发）。
+                case WfNodeType.ParallelFork:
+                {
+                    RemoveActiveNodeId(instance, node.NodeId);
+                    var targets = ResolveNextNodes(node, topo, formValues);
+                    if (targets.Count == 0) { CompleteInstance(instance); return; }
+                    logger.Info($"并行分叉网关：InstanceId={instance.InstanceId} Fork={node.NodeName}({node.NodeId}) → {targets.Count} 条出边");
+                    foreach (var t in targets) ArriveNode(instance, t, topo, formValues, depth: depth + 1);
+                    SyncActiveNodeId(instance);
+                    return;
+                }
+
+                // 并行汇聚网关(8)：本身不生成任务，等待所有入边分支均完成才继续（join）。
+                case WfNodeType.ParallelJoin:
+                {
+                    // 仅加载该 Join 入边分支节点（Audit/Cc）的任务供完成判定，避免全量拉取实例全部任务
+                    // （含已结束分支 / 其它并行组）造成的重复查询与数据量浪费。
+                    var tasksByNode = LoadJoinBranchTasks(instance.InstanceId, node, topo);
+                    if (IsJoinComplete(instance, node, topo, tasksByNode))
+                    {
+                        logger.Info($"并行汇聚完成：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 全部入边完成 → 继续推进");
+                        RemoveActiveNodeId(instance, node.NodeId);
+                        var after = ResolveNextNode(node, topo, formValues);
+                        ArriveOrComplete(instance, after, topo, formValues, depth + 1);
+                    }
+                    else
+                    {
+                        // 仍有分支未完成：汇聚网关保持在活动集等待，不推进
+                        logger.Info($"并行汇聚等待：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 仍有入边分支未完成 → 等待");
+                        AddActiveNodeId(instance, node.NodeId);
+                        SyncActiveNodeId(instance);
+                    }
+                    return;
+                }
             }
 
             // 并行分支：首次到达该分组时，同时激活组内所有满足条件的节点。
@@ -1384,7 +1390,7 @@ namespace ZR.Workflow.Service
                     if (!hasPending)
                     {
                         // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点（出口按 Link 拓扑解析，不依赖 NodeOrder）
-                        var exits = ResolveParallelGroupExit(node.ParallelGroup, topo, formValues);
+                        var exits = ResolveParallelGroupExit(node.ParallelGroup, topo);
                         if (exits.Count == 0) { CompleteInstance(instance); }
                         else foreach (var exitNode in exits) ArriveNode(instance, exitNode, topo, formValues, depth: depth + 1);
                     }
@@ -1492,7 +1498,7 @@ namespace ZR.Workflow.Service
                 var groupDone = groupNodes.All(g => IsNodeComplete(tasksByNode, g));
                 if (!groupDone) { logger.Info($"并行分组汇聚等待：InstanceId={instance.InstanceId} Group={completedNode.ParallelGroup} 仍有分支未完成 → 继续等待"); SyncActiveNodeId(instance); return; } // 等待组内其余分支
                 // 汇聚出口按 Link 拓扑解析（组内成员连到组外的出边），不依赖 NodeOrder（MaxBy 会破坏 Link 唯一真相）
-                var exits = ResolveParallelGroupExit(completedNode.ParallelGroup, topo, formValues);
+                var exits = ResolveParallelGroupExit(completedNode.ParallelGroup, topo);
                 if (exits.Count == 0) { CompleteInstance(instance); return; }
                 // 出口幂等保护：并行分组内若已有成员在 fork 阶段被 Skipped（条件不满足/审批人为空），其 Approve 会再次进入本汇聚分支；
                 // 若出口节点已被前次汇聚激活（已有任务），跳过重复 fork，避免出口（如 Join 后续节点 C）生成多条待办。
@@ -1761,12 +1767,10 @@ namespace ZR.Workflow.Service
             var outLinks = topo.GetOutLinks(current.NodeId);
             if (outLinks.Count == 0)
             {
-                // 无出边：若流程完全无 link（存量老数据）才 fallback 到 NodeOrder 取下一审批/抄送节点
-                if (!topo.HasAnyLink)
-                {
-                    var fb = GetNextAuditNode(topo, current.NodeOrder);
-                    if (fb != null) result.Add(fb);
-                }
+                // 无出边：流程完全无 link（无连线数据）时，fallback 到 NodeOrder 取下一审批/抄送节点，
+                // 兼容早期"仅靠 NodeOrder 串联"的流程（无 wf_node_link）。有 link 则无出边即终点，绝不顺延。
+                var fb = GetNextAuditNode(topo, current.NodeOrder);
+                if (fb != null) result.Add(fb);
                 return result;
             }
             foreach (var link in outLinks) // 已按 Sort 升序
@@ -1783,9 +1787,8 @@ namespace ZR.Workflow.Service
         /// **link 为唯一串联事实**：出口 = 组内成员指向「组外节点」的出边目标集合，绝不依赖 NodeOrder。
         /// 前端 buildSaveLinks 保证组内成员彼此不连线，只有连到组外目标才构成汇聚出口；
         /// 故此处按拓扑扫描，避免 NodeOrder 与真实连线不符时（手写 FlowJSON / 导入 / 未续号）走错分支。
-        /// 兜底：整个流程完全无 link（存量老数据）才退回「组内 NodeOrder 最大成员的出边」，与旧行为一致。
         /// </summary>
-        private List<WfFlowNode> ResolveParallelGroupExit(int parallelGroup, WorkflowTopology topo, Dictionary<string, string> formValues)
+        private List<WfFlowNode> ResolveParallelGroupExit(int parallelGroup, WorkflowTopology topo)
         {
             var groupNodes = topo.GetGroupNodes(parallelGroup);
             if (groupNodes.Count == 0) return new List<WfFlowNode>();
@@ -1800,13 +1803,6 @@ namespace ZR.Workflow.Service
                     if (hit != null && !exits.Contains(hit)) exits.Add(hit);
                 }
             }
-            // 有 link 数据但组成员均未连出：整组即流程终点（无汇聚后续）
-            if (topo.HasAnyLink) return exits;
-            // 完全无 link（存量老数据）：退回组内 NodeOrder 最大成员的出边
-            var last = groupNodes.MaxBy(g => g.NodeOrder);
-            if (last == null) return exits;
-            var legacy = ResolveNextNodes(last, topo, formValues);
-            foreach (var n in legacy) if (!exits.Contains(n)) exits.Add(n);
             return exits;
         }
 
@@ -1837,9 +1833,9 @@ namespace ZR.Workflow.Service
         /// 前端为每条边（含直线）生成一条 WfNodeLink（直线 ConditionJson 留空），
         /// 分支终点 / 末节点则**不生成出边**——即"无出边 = 流程终点"，与 ValidateLinks 的口径一致。
         /// - 当前节点存在出边：按连线 + 条件选边（条件命中走该边，无任一边命中且有默认分支则走默认分支；仍无则流程结束）。
-        /// - 当前节点无出边且流程存在 link 数据：此节点就是终点 → 返回 null（流程结束）。
-        ///   ⚠️ 此处**绝不能** fallback 到 NodeOrder（条件分支叶子节点天然无出边，顺延会错误流入另一分支）。
-        /// - 整个流程**完全没有 link**（存量老数据）：才 fallback 到 NodeOrder 串联，避免老实例卡死。
+        /// - 当前节点无出边：此节点就是终点 → 返回 null（流程结束）。
+        ///   ⚠️ 有 link 数据时**绝不能** fallback 到 NodeOrder（条件分支叶子节点天然无出边，顺延会错误流入另一分支）。
+        ///   fallback 仅在**流程完全无 link**（早期 NodeOrder 串联流程）时由 <see cref="ResolveNextNodes"/> 触发。
         /// </summary>
         private WfFlowNode ResolveNextNode(WfFlowNode current, WorkflowTopology topo, Dictionary<string, string> formValues)
         {
@@ -1848,7 +1844,7 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 取下一审批/抄送节点（跳过开始/结束），NodeOrder fallback 通道使用。
+        /// 取下一审批/抄送节点（跳过开始/结束），NodeOrder fallback 通道使用（兼容无 link 连线的早期流程）。
         /// </summary>
         private WfFlowNode GetNextAuditNode(WorkflowTopology topo, int currentOrder)
         {
@@ -1961,13 +1957,11 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 判断并行分组（ParallelGroup&gt;0）成员是否应被激活。条件模型已统一为「Edge 属性」：
+        /// 判断并行分组（ParallelGroup&gt;0）成员是否应被激活。条件模型统一为「Edge 属性」：
         /// 并行分叉网关(7) → 该成员的出边 ConditionJson 命中才激活（对标 BPMN）。
         ///
-        /// - 存在并行分叉网关(7)且有指向该成员的出边：按出边 ConditionJson 判定，命中才激活；
-        ///   无条件出边 → 并发激活。
-        /// - 找不到并行分叉网关（存量老数据，无显式 fork 节点，仅靠 ParallelGroup 表达并行）：
-        ///   兼容回退到成员自身的节点级 ConditionField（旧模型），字段齐全才判定，避免存量并行组丢失条件语义。
+        /// 存在并行分叉网关(7)且有指向该成员的出边：按出边 ConditionJson 判定，命中才激活；
+        /// 无条件出边 / 无分叉出边 → 并发激活。
         /// 条件不满足的成员由调用方建 Skipped 留痕（保持现有语义）。
         /// </summary>
         private bool ShouldActivateForkMember(WfFlowNode forkNode, WfFlowNode member, WorkflowTopology topo, Dictionary<string, string> formValues)
@@ -1981,15 +1975,7 @@ namespace ZR.Workflow.Service
                     return EvalParsedCondition(link, formValues);
                 }
             }
-            // 存量兼容：无显式分叉网关或该成员无对应出边时，回退到成员自身的节点级条件（旧模型，供老数据）。
-            // 新模型（分叉出边带条件）优先走上方分支；普通并行成员在新模型下不应再配节点级条件。
-            if (!string.IsNullOrWhiteSpace(member.ConditionField) && member.ConditionOp != (int)WfConditionOp.None && !string.IsNullOrWhiteSpace(member.ConditionValue))
-            {
-                if (!formValues.TryGetValue(member.ConditionField, out var raw) || string.IsNullOrWhiteSpace(raw))
-                    return false;
-                return CompareValue((WfConditionOp)member.ConditionOp, raw, member.ConditionValue);
-            }
-            return true; // 无条件：并发激活
+            return true; // 无分叉出边：并发激活
         }
 
         /// <summary>

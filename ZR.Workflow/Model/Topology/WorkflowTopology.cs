@@ -38,8 +38,7 @@ namespace ZR.Workflow.Model.Topology
     /// - <see cref="PrevOf"/>：目标节点 → 入边源节点列表，替代 <c>linksByTarget</c>（Join 判定用）。
     /// - <see cref="NodeKind"/>：nodeId → 节点类型强类型视图，替代散落的 <c>(WfNodeType)node.NodeType</c> 比较。
     /// - <see cref="ParallelRegions"/>：ParallelGroup → 组内节点列表，替代 <c>allNodes.Where(n => n.ParallelGroup==x)</c>。
-    /// - <see cref="ForkByGroup"/>：ParallelGroup → 该组的并行分叉网关(7)节点（可能为 null，存量数据无显式 fork）。
-    /// - <see cref="HasAnyLink"/>：流程是否存在任何连线。false 表示存量老数据，需走 NodeOrder fallback。
+    /// - <see cref="ForkByGroup"/>：ParallelGroup → 该组的并行分叉网关(7)节点。
     /// </summary>
     public sealed class WorkflowTopology
     {
@@ -61,11 +60,8 @@ namespace ZR.Workflow.Model.Topology
         /// <summary>ParallelGroup → 该组的并行分叉网关(7)节点（可能为 null：存量数据无显式 fork）</summary>
         public IReadOnlyDictionary<int, WfFlowNode> ForkByGroup { get; }
 
-        /// <summary>按 NodeOrder 升序的节点全集（保留给 fallback 与展示排序）</summary>
+        /// <summary>按 NodeOrder 升序的节点全集（保留给首节点查找与展示排序）</summary>
         public IReadOnlyList<WfFlowNode> OrderedNodes { get; }
-
-        /// <summary>流程是否存在任何连线（false=存量老数据，走 NodeOrder fallback）</summary>
-        public bool HasAnyLink { get; }
 
         public WorkflowTopology(
             IReadOnlyDictionary<long, WfFlowNode> nodeById,
@@ -74,8 +70,7 @@ namespace ZR.Workflow.Model.Topology
             IReadOnlyDictionary<long, WfNodeType> nodeKind,
             IReadOnlyDictionary<int, IReadOnlyList<WfFlowNode>> parallelRegions,
             IReadOnlyDictionary<int, WfFlowNode> forkByGroup,
-            IReadOnlyList<WfFlowNode> orderedNodes,
-            bool hasAnyLink)
+            IReadOnlyList<WfFlowNode> orderedNodes)
         {
             NodeById = nodeById;
             NextOf = nextOf;
@@ -84,7 +79,6 @@ namespace ZR.Workflow.Model.Topology
             ParallelRegions = parallelRegions;
             ForkByGroup = forkByGroup;
             OrderedNodes = orderedNodes;
-            HasAnyLink = hasAnyLink;
         }
 
         /// <summary>按 nodeId 取节点，不存在返回 null。</summary>

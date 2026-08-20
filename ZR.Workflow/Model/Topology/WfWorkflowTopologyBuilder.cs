@@ -12,16 +12,13 @@ namespace ZR.Workflow.Model.Topology
     /// - 一次性查节点 + 连线两张表，构建 <see cref="WorkflowTopology"/> 的 O(1) 索引
     ///   （nodeById / nextOf / prevOf / nodeKind / parallelRegions / forkByGroup）。
     /// - 对每条带条件的出边做"静态配置预解析与校验"（JSON 反序列化 + field/op/value 缺失检查），
-    ///   把 JSON 解析移出引擎热路径；配置错误在发起前即暴露（抛 <see cref="CustomException"/>）。
-    ///
-    /// 与既有语义完全等价：无 link 的存量数据保留 NodeOrder fallback 通道
-    /// （<see cref="WorkflowTopology.HasAnyLink"/> 为 false）。
+    ///   把 JSON 解析移出引擎热路径；配置错误记录到 <see cref="ResolvedOutLink.ConditionError"/>，
+    ///   由引擎运行时在事务内抛出。
     /// </summary>
     public static class WfWorkflowTopologyBuilder
     {
         /// <summary>
         /// 读取某 FlowId 的节点与连线并构建不可变拓扑。每次操作调用一次，不做缓存。
-        /// 条件静态配置错误在此抛出（发起前即可暴露），事务外抛无副作用（实例未落库）。
         /// </summary>
         public static WorkflowTopology Build(ISqlSugarClient db, long flowId)
         {
@@ -89,8 +86,7 @@ namespace ZR.Workflow.Model.Topology
                 nodeKind,
                 parallelRegions,
                 forkByGroup,
-                nodeList,
-                linkList.Count > 0);
+                nodeList);
         }
 
         /// <summary>
