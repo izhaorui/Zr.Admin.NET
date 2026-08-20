@@ -1328,7 +1328,9 @@ namespace ZR.Workflow.Service
             // 并行汇聚网关(8)：本身不生成任务，等待所有入边分支均完成才继续（join）。
             if (node.NodeType == (int)WfNodeType.ParallelJoin)
             {
-                var tasksByNode = LoadNodeTasks(instance.InstanceId);
+                // 仅加载该 Join 入边分支节点（Audit/Cc）的任务供完成判定，避免全量拉取实例全部任务
+                // （含已结束分支 / 其它并行组）造成的重复查询与数据量浪费。
+                var tasksByNode = LoadJoinBranchTasks(instance.InstanceId, node, allNodes, linksByTarget);
                 if (IsJoinComplete(instance, node, allNodes, linksByTarget, tasksByNode))
                 {
                     logger.Info($"并行汇聚完成：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 全部入边完成 → 继续推进");
@@ -1924,11 +1926,40 @@ namespace ZR.Workflow.Service
 
         /// <summary>
         /// 一次性加载某实例的全部任务，并按 NodeId 分组成字典（供并行 join 批量判定完成，避免逐节点查库 N+1）。
+        /// 供需要"实例全量任务"的场景使用（如 AdvanceToNext 同时判定并行分组汇聚与多个 join）。
         /// </summary>
         private Dictionary<long, List<WfFlowTask>> LoadNodeTasks(long instanceId)
         {
             return Context.Queryable<WfFlowTask>()
                 .Where(t => t.InstanceId == instanceId)
+                .ToList()
+                .GroupBy(t => t.NodeId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        /// <summary>
+        /// 仅加载某 Join 汇聚网关入边"业务分支"节点（Audit/Cc）的任务，按 NodeId 分组成字典。
+        /// 相比 <see cref="LoadNodeTasks"/> 的全量实例任务加载，只查询 join 判定所需的入边分支节点，
+        /// 避免"到达 join 即全量拉取该实例所有任务"（含已结束分支 / 其它并行组）造成的数据量与重复查询。
+        /// 网关节点（4/7/8）本身不生成任务、由流转自然跳过，无需加载；<see cref="IsJoinComplete"/> 也只会对
+        /// Audit/Cc 分支节点做完成判定，故此处仅加载这些分支节点即可与 join 判定口径一致。
+        /// </summary>
+        private Dictionary<long, List<WfFlowTask>> LoadJoinBranchTasks(long instanceId, WfFlowNode joinNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksByTarget)
+        {
+            if (!linksByTarget.TryGetValue(joinNode.NodeId, out var inLinks) || inLinks.Count == 0)
+                return new Dictionary<long, List<WfFlowTask>>();
+            var branchNodeIds = inLinks
+                .Select(l => l.SourceNodeId)
+                .Where(srcId =>
+                {
+                    var src = allNodes.FirstOrDefault(n => n.NodeId == srcId);
+                    return src != null && (src.NodeType == (int)WfNodeType.Audit || src.NodeType == (int)WfNodeType.Cc);
+                })
+                .Distinct()
+                .ToList();
+            if (branchNodeIds.Count == 0) return new Dictionary<long, List<WfFlowTask>>();
+            return Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == instanceId && branchNodeIds.Contains(t.NodeId))
                 .ToList()
                 .GroupBy(t => t.NodeId)
                 .ToDictionary(g => g.Key, g => g.ToList());
