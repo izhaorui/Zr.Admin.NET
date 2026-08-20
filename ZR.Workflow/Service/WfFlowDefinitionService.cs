@@ -462,6 +462,68 @@ namespace ZR.Workflow.Service
                             $"并行汇聚「{node.NodeName}」需至少 1 条入边与 1 条出边", null);
                 }
             }
+
+            // 环检测：link 构成有向图，若存在环路（A→B→C→A）且环上节点为条件/抄送/空审批人这类"不落地待办即继续流转"的节点，
+            // 引擎 ArriveNode 递归会无限加深 → StackOverflow。故在保存阶段用 DFS 三色标记拒绝含环的流程，从源头拦截坏流程。
+            DetectCycle(nodes, links);
+        }
+
+        /// <summary>
+        /// 有向图环检测（DFS 三色标记：0=未访问 1=访问中 2=已访问）。
+        /// 仅考虑两端都指向本流程节点的边（前端新建节点常用负数临时 id，故不能按 &gt;0 过滤，须以 nodeIds 归属为准）；
+        /// 自环（source==target）在 InsertLinks 已过滤，此处同样跳过。检测到任一后向边（回到访问中节点）即抛异常拒绝保存。
+        /// </summary>
+        private void DetectCycle(List<WfFlowNodeDto> nodes, List<WfNodeLinkDto> links)
+        {
+            if (nodes == null || nodes.Count == 0) return;
+            var nodeIds = nodes.Select(n => n.NodeId).ToHashSet();
+            // 邻接表：源节点Id → 去重后的目标节点Id（有效边）
+            var adj = new Dictionary<long, List<long>>();
+            foreach (var l in links)
+            {
+                if (l.SourceNodeId == l.TargetNodeId) continue; // 自环由 InsertLinks 过滤，此处跳过
+                if (!nodeIds.Contains(l.SourceNodeId) || !nodeIds.Contains(l.TargetNodeId)) continue;
+                if (!adj.TryGetValue(l.SourceNodeId, out var list)) { list = new List<long>(); adj[l.SourceNodeId] = list; }
+                if (!list.Contains(l.TargetNodeId)) list.Add(l.TargetNodeId);
+            }
+            var state = new Dictionary<long, int>();
+            foreach (var n in nodes) state[n.NodeId] = 0;
+
+            foreach (var start in nodes)
+            {
+                if (state[start.NodeId] != 0) continue;
+                var inStack = new HashSet<long>();
+                if (DfsHasCycle(start.NodeId, adj, state, inStack, out var cycleNode))
+                    throw new CustomException(ResultCode.CUSTOM_ERROR,
+                        $"流程连线存在循环引用（含节点「{NodeNameOf(nodes, cycleNode)}」），引擎运行时会无限流转，请检查连线", null);
+            }
+        }
+
+        /// <summary>
+        /// DFS 递归检测从 <paramref name="id"/> 出发是否存在回到访问中节点的后向边；返回首个成环节点。
+        /// </summary>
+        private static bool DfsHasCycle(long id, Dictionary<long, List<long>> adj, Dictionary<long, int> state, HashSet<long> inStack, out long cycleNode)
+        {
+            cycleNode = 0;
+            state[id] = 1; // 访问中
+            inStack.Add(id);
+            if (adj.TryGetValue(id, out var targets))
+            {
+                foreach (var t in targets)
+                {
+                    if (state[t] == 1) { cycleNode = t; return true; } // 后向边 → 成环
+                    if (state[t] == 0 && DfsHasCycle(t, adj, state, inStack, out cycleNode)) return true;
+                }
+            }
+            inStack.Remove(id);
+            state[id] = 2; // 已访问
+            return false;
+        }
+
+        private static string NodeNameOf(List<WfFlowNodeDto> nodes, long id)
+        {
+            var n = nodes.FirstOrDefault(x => x.NodeId == id);
+            return n != null && !string.IsNullOrEmpty(n.NodeName) ? n.NodeName : id.ToString();
         }
 
         private void InsertLinks(long flowId, List<WfNodeLinkDto> links, string userName, Dictionary<long, long> nodeMap)

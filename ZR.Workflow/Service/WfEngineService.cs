@@ -1004,11 +1004,12 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 到达下一节点或结束流程：<paramref name="next"/> 为空则置通过，否则递归 ArriveNode。
         /// 收敛 ArriveNode / AdvanceToNext 中大量重复的 "next == null ? 置通过 : ArriveNode" 模板。
+        /// <paramref name="depth"/> 为本次连续到达链的层数，用于递归深度上限保护（防止环导致的无限递归）。
         /// </summary>
-        private void ArriveOrComplete(WfFlowInstance instance, WfFlowNode next, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
+        private void ArriveOrComplete(WfFlowInstance instance, WfFlowNode next, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, int depth = 0)
         {
             if (next == null) CompleteInstance(instance);
-            else ArriveNode(instance, next, allNodes, linksBySource, linksByTarget, formValues);
+            else ArriveNode(instance, next, allNodes, linksBySource, linksByTarget, formValues, depth: depth);
         }
 
         // —— 活动节点集（并行网关节点 7/8 并发时，多个分支同时活动的节点集合）——
@@ -1254,8 +1255,18 @@ namespace ZR.Workflow.Service
         /// AdminJump 先统一置 Skipped，使并行汇聚判定组内其余分支已完成、目标分支通过后即可放行，
         /// 避免卡死与多余分支高亮。
         /// </summary>
-        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, bool singleNodeOnly = false)
+        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, bool singleNodeOnly = false, int depth = 0)
         {
+            // 递归深度上限保护（最后一道保险）：正常流程节点链式到达深度为几十~上百；
+            // 若链路存在环（条件/抄送/空审批人这类"不落地待办即继续递归"的节点成环），ArriveNode 会无限递归 → StackOverflow。
+            // 拓扑校验（DetectCycle）已在保存阶段拦截含环流程，此处兜底防存量坏数据 / 绕过校验的异常流程。
+            // 上限不能设太高：每层递归都会经 CreateAutoSkipTask → SqlSugar 插入 → 连接栈，栈消耗远超纯托管帧，
+            // 实测 1000 层在 SQLite 下会先于上限触发 StackOverflow；取 200 既能覆盖正常几十节点的链式到达，
+            // 又在栈溢出之前（约 200×每层栈消耗）抛出可捕获的 CustomException。
+            const int maxTransitionCount = 200;
+            if (depth > maxTransitionCount)
+                throw new CustomException($"流程流转深度超过上限（{maxTransitionCount}），疑似存在连线循环，已终止流转");
+
             // 节点进入事件钩子（Webhook）：登记入队，事务提交后统一投递，失败不阻断流转
             QueueNodeHook(instance, node, "enter", formValues);
             logger.Info($"进入节点：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) Type={(WfNodeType)node.NodeType}{(node.ParallelGroup > 0 ? $" ParallelGroup={node.ParallelGroup}" : "")}");
@@ -1275,10 +1286,10 @@ namespace ZR.Workflow.Service
                 // （跳过态 Skipped→完成；激活态走正常判定；无 task 只可能出现在"本就不该走到"的分支，Join 不会等待它）。
                 // 满足出边仍走正常 ArriveNode 推进；仅当无任何满足/默认出边、且不存在不满足出边时，才视为流程终点完成。
                 var satisfiedNext = ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues);
-                SkipRejectedBranches(instance, node, allNodes, linksBySource, linksByTarget, formValues);
+                SkipRejectedBranches(instance, node, allNodes, linksBySource, linksByTarget, formValues, depth);
                 if (satisfiedNext != null)
                 {
-                    ArriveOrComplete(instance, satisfiedNext, allNodes, linksBySource, linksByTarget, formValues);
+                    ArriveOrComplete(instance, satisfiedNext, allNodes, linksBySource, linksByTarget, formValues, depth + 1);
                 }
                 else
                 {
@@ -1287,7 +1298,7 @@ namespace ZR.Workflow.Service
                         ? outs.Where(l => !string.IsNullOrWhiteSpace(l.ConditionJson) && !EvalLinkCondition(l.ConditionJson, formValues))
                               .Select(l => allNodes.FirstOrDefault(n => n.NodeId == l.TargetNodeId)).Where(n => n != null).ToList()
                         : new List<WfFlowNode>();
-                    if (fallbacks.Count > 0) { foreach (var fb in fallbacks) SkipBranchChain(instance, fb, allNodes, linksBySource, linksByTarget, formValues, new HashSet<long>()); }
+                    if (fallbacks.Count > 0) { foreach (var fb in fallbacks) SkipBranchChain(instance, fb, allNodes, linksBySource, linksByTarget, formValues, new HashSet<long>(), depth); }
                     else CompleteInstance(instance);
                 }
                 return;
@@ -1309,7 +1320,7 @@ namespace ZR.Workflow.Service
                 var targets = ResolveNextNodes(node, allNodes, linksBySource, formValues);
                 if (targets.Count == 0) { CompleteInstance(instance); return; }
                 logger.Info($"并行分叉网关：InstanceId={instance.InstanceId} Fork={node.NodeName}({node.NodeId}) → {targets.Count} 条出边");
-                foreach (var t in targets) ArriveNode(instance, t, allNodes, linksBySource, linksByTarget, formValues);
+                foreach (var t in targets) ArriveNode(instance, t, allNodes, linksBySource, linksByTarget, formValues, depth: depth + 1);
                 SyncActiveNodeId(instance);
                 return;
             }
@@ -1323,7 +1334,7 @@ namespace ZR.Workflow.Service
                     logger.Info($"并行汇聚完成：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 全部入边完成 → 继续推进");
                     RemoveActiveNodeId(instance, node.NodeId);
                     var after = ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues);
-                    ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
+                    ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues, depth + 1);
                 }
                 else
                 {
@@ -1397,7 +1408,7 @@ namespace ZR.Workflow.Service
                         // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点（出口按 Link 拓扑解析，不依赖 NodeOrder）
                         var exits = ResolveParallelGroupExit(node.ParallelGroup, allNodes, linksBySource, formValues);
                         if (exits.Count == 0) { CompleteInstance(instance); }
-                        else foreach (var exitNode in exits) ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues);
+                        else foreach (var exitNode in exits) ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues, depth: depth + 1);
                     }
                     else
                     {
@@ -1414,7 +1425,7 @@ namespace ZR.Workflow.Service
             if (node.NodeType == (int)WfNodeType.Cc)
             {
                 CreateCcTask(instance, node, formValues);
-                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
+                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues, depth + 1);
                 return;
             }
 
@@ -1440,7 +1451,7 @@ namespace ZR.Workflow.Service
                     CreateAutoSkipTask(instance, node, "审批人为空，节点自动跳过");
                     RemoveActiveNodeId(instance, node.NodeId);
                     SyncActiveNodeId(instance);
-                    ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues);
+                    ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues, depth + 1);
                     return;
                 }
                 // 兜底默认审批人生效：继续走下方正常待办生成逻辑（approvers 已被替换为默认审批人）
@@ -1474,7 +1485,7 @@ namespace ZR.Workflow.Service
         ///        └─ 存在下一节点（含多目标 fork）→ ArriveNode(next)
         /// </code>
         /// </summary>
-        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
+        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, int depth = 0)
         {
             // 并发幂等保护：同一节点被多次并发完成（或签多待办同时点通过）时，
             // 先到的事务已把该节点移出活动集并 fork 了后续待办；后到的事务在事务内重新读取活动集，
@@ -1513,7 +1524,7 @@ namespace ZR.Workflow.Service
                     var exitActivated = Context.Queryable<WfFlowTask>()
                         .Any(t => t.InstanceId == instance.InstanceId && t.NodeId == exitNode.NodeId);
                     if (exitActivated) { logger.Info($"并行分组出口幂等：InstanceId={instance.InstanceId} Exit={exitNode.NodeName}({exitNode.NodeId}) 已激活 → 跳过重复 fork"); continue; }
-                    ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues);
+                    ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues, depth: depth + 1);
                 }
                 SyncActiveNodeId(instance);
                 return;
@@ -1531,7 +1542,7 @@ namespace ZR.Workflow.Service
                     {
                         RemoveActiveNodeId(instance, next.NodeId);
                         var after = ResolveNextNode(next, allNodes, linksBySource, linksByTarget, formValues);
-                        ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues);
+                        ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues, depth + 1);
                     }
                     else
                     {
@@ -1541,7 +1552,7 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, next, allNodes, linksBySource, linksByTarget, formValues);
+                    ArriveNode(instance, next, allNodes, linksBySource, linksByTarget, formValues, depth: depth + 1);
                 }
             }
             SyncActiveNodeId(instance);
@@ -2261,7 +2272,7 @@ namespace ZR.Workflow.Service
         /// （激活态走正常判定；跳过态 Skipped→完成；无 task 只可能出现在"本就不该走到"的分支，Join 不会等待它）。
         /// 级联边界：遇 ParallelFork(7)/ParallelJoin(8)/流程终点停止，不跨汇聚网关污染其它分支；节点已存在任务（Pending/Done/Skipped）则跳过，避免重复留痕。
         /// </summary>
-        private void SkipRejectedBranches(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
+        private void SkipRejectedBranches(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, int depth)
         {
             if (!linksBySource.TryGetValue(node.NodeId, out var outLinks) || outLinks.Count == 0) return;
             foreach (var link in outLinks)
@@ -2270,7 +2281,7 @@ namespace ZR.Workflow.Service
                 if (string.IsNullOrWhiteSpace(link.ConditionJson) || EvalLinkCondition(link.ConditionJson, formValues)) continue;
                 var target = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
                 if (target == null) continue;
-                SkipBranchChain(instance, target, allNodes, linksBySource, linksByTarget, formValues, new HashSet<long>());
+                SkipBranchChain(instance, target, allNodes, linksBySource, linksByTarget, formValues, new HashSet<long>(), depth);
             }
         }
 
@@ -2282,7 +2293,7 @@ namespace ZR.Workflow.Service
         /// - ParallelFork(7)/流程终点：停止，不跨并行子图。
         /// 已存在任务（Pending/Done/Skipped）的节点跳过留痕，但仍继续向下游级联（如条件网关已留痕但下游分支还需标）。
         /// </summary>
-        private void SkipBranchChain(WfFlowInstance instance, WfFlowNode branchStart, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, HashSet<long> visited)
+        private void SkipBranchChain(WfFlowInstance instance, WfFlowNode branchStart, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, HashSet<long> visited, int depth)
         {
             if (branchStart == null || visited.Contains(branchStart.NodeId)) return;
             visited.Add(branchStart.NodeId);
@@ -2290,7 +2301,7 @@ namespace ZR.Workflow.Service
             // 汇聚网关：激活它（等其它分支），不跨网关继续
             if (branchStart.NodeType == (int)WfNodeType.ParallelJoin)
             {
-                ArriveNode(instance, branchStart, allNodes, linksBySource, linksByTarget, formValues);
+                ArriveNode(instance, branchStart, allNodes, linksBySource, linksByTarget, formValues, depth: depth);
                 return;
             }
             // 分叉网关 / 终点：不进入并行子图，停止
@@ -2309,7 +2320,7 @@ namespace ZR.Workflow.Service
                 foreach (var l in outs)
                 {
                     var next = allNodes.FirstOrDefault(n => n.NodeId == l.TargetNodeId);
-                    if (next != null) SkipBranchChain(instance, next, allNodes, linksBySource, linksByTarget, formValues, visited);
+                    if (next != null) SkipBranchChain(instance, next, allNodes, linksBySource, linksByTarget, formValues, visited, depth);
                 }
             }
         }
