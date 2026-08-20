@@ -1298,7 +1298,8 @@ namespace ZR.Workflow.Service
                 case WfNodeType.ParallelFork:
                 {
                     RemoveActiveNodeId(instance, node.NodeId);
-                    var targets = ResolveNextNodes(node, topo, formValues);
+                    // 并行发散：返回全部无条件/命中条件分支并发激活，与排他选路（ResolveNextNode）语义不同
+                    var targets = ResolveParallelTargets(node, topo, formValues);
                     if (targets.Count == 0) { CompleteInstance(instance); return; }
                     logger.Info($"并行分叉网关：InstanceId={instance.InstanceId} Fork={node.NodeName}({node.NodeId}) → {targets.Count} 条出边");
                     foreach (var t in targets) ArriveNode(instance, t, topo, formValues, depth: depth + 1);
@@ -1514,30 +1515,28 @@ namespace ZR.Workflow.Service
                 return;
             }
 
-            // 取当前节点全部出边目标（并行分叉可能多目标，普通节点单目标）
-            var nexts = ResolveNextNodes(completedNode, topo, formValues);
-            if (nexts.Count == 0) { CompleteInstance(instance); return; }
-            foreach (var next in nexts)
+            // 排他选路：此处仅普通节点（Audit/Cc）完成推进，条件出边排他选第一条命中的条件边，无命中则走默认分支（严格 fallback）
+            var next = ResolveNextNode(completedNode, topo, formValues);
+            if (next == null) { CompleteInstance(instance); return; }
+
+            // 出边目标是汇聚网关(8)：仅当所有入边分支均完成时，才激活 8 的后续；否则 8 入活动集等待
+            if (next.NodeType == (int)WfNodeType.ParallelJoin)
             {
-                // 出边目标是汇聚网关(8)：仅当所有入边分支均完成时，才激活 8 的后续；否则 8 入活动集等待
-                if (next.NodeType == (int)WfNodeType.ParallelJoin)
+                if (IsJoinComplete(instance, next, topo, tasksByNode))
                 {
-                    if (IsJoinComplete(instance, next, topo, tasksByNode))
-                    {
-                        RemoveActiveNodeId(instance, next.NodeId);
-                        var after = ResolveNextNode(next, topo, formValues);
-                        ArriveOrComplete(instance, after, topo, formValues, depth + 1);
-                    }
-                    else
-                    {
-                        logger.Info($"汇聚网关等待：InstanceId={instance.InstanceId} Join={next.NodeName}({next.NodeId}) 仍有入边分支未完成 → 保持活动集等待");
-                        AddActiveNodeId(instance, next.NodeId);
-                    }
+                    RemoveActiveNodeId(instance, next.NodeId);
+                    var after = ResolveNextNode(next, topo, formValues);
+                    ArriveOrComplete(instance, after, topo, formValues, depth + 1);
                 }
                 else
                 {
-                    ArriveNode(instance, next, topo, formValues, depth: depth + 1);
+                    logger.Info($"汇聚网关等待：InstanceId={instance.InstanceId} Join={next.NodeName}({next.NodeId}) 仍有入边分支未完成 → 保持活动集等待");
+                    AddActiveNodeId(instance, next.NodeId);
                 }
+            }
+            else
+            {
+                ArriveNode(instance, next, topo, formValues, depth: depth + 1);
             }
             SyncActiveNodeId(instance);
         }
@@ -1756,12 +1755,14 @@ namespace ZR.Workflow.Service
         #endregion
 
         /// <summary>
-        /// 解析当前节点的所有下一节点（多目标，供并行分叉 fork / 普通节点发散用）。
-        /// 按连线 + 预解析条件选边：条件命中走该边，无任一命中且有默认分支[无条件出边]走默认分支，仍无则空。
-        /// 与 <see cref="ResolveNextNode"/> 的单目标选取口径一致，只是返回全部可达目标。
+        /// 解析当前节点的全部下一节点（多目标，仅供并行分叉网关 fork 用）。
+        /// **并行发散语义**：无条件出边全部分支、条件出边中命中的全部分支均作为目标并发返回——
+        /// 只做"条件过滤"，不做"排他选一"。并行分叉分支必须无条件并发（模板/AI 生成的模型①约束），
+        /// 此处按条件过滤是为兼容交互创建模型②（fork 与成员同 parallelGroup 的条件分支）。
         /// 出边条件已在构建拓扑时预解析并静态校验，此处只做运行时评估。
+        /// 与排他选路的 <see cref="ResolveNextNode"/> 语义完全不同，勿混用。
         /// </summary>
-        private List<WfFlowNode> ResolveNextNodes(WfFlowNode current, WorkflowTopology topo, Dictionary<string, string> formValues)
+        private List<WfFlowNode> ResolveParallelTargets(WfFlowNode current, WorkflowTopology topo, Dictionary<string, string> formValues)
         {
             var result = new List<WfFlowNode>();
             var outLinks = topo.GetOutLinks(current.NodeId);
@@ -1828,19 +1829,51 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 解析当前节点的下一节点（单目标，原有串行语义）：取 <see cref="ResolveNextNodes"/> 的首个可达目标。
+        /// 解析当前节点的下一节点（单目标，**排他选路**：只选一路）。
         /// **link 为唯一串联事实，NodeOrder 仅作展示排序 / 存量数据兜底**。
         /// 前端为每条边（含直线）生成一条 WfNodeLink（直线 ConditionJson 留空），
         /// 分支终点 / 末节点则**不生成出边**——即"无出边 = 流程终点"，与 ValidateLinks 的口径一致。
-        /// - 当前节点存在出边：按连线 + 条件选边（条件命中走该边，无任一边命中且有默认分支则走默认分支；仍无则流程结束）。
+        ///
+        /// **排他选路正确语义（2026-08-20 修正）**——默认分支是严格 fallback，而非与命中条件并列后取第一个：
+        /// <code>
+        ///   1. 遍历所有「条件出边」，取第一条命中（EvalParsedCondition == true）的目标 → 立即返回；
+        ///   2. 若无条件边命中，则落入「默认分支」（无条件出边）的目标 → 返回；
+        ///   3. 若仍无（既无条件命中也无默认分支）→ 返回 null（流程结束）。
+        /// </code>
+        /// 该语义同时覆盖：排他条件网关(4)选路、普通节点（Audit/Cc）后接条件分支的排他流转、
+        /// 汇聚网关(8)/并行分组出口的后续推进。并行并发发散由 <see cref="ResolveParallelTargets"/> 负责，勿混用。
+        ///
         /// - 当前节点无出边：此节点就是终点 → 返回 null（流程结束）。
         ///   ⚠️ 有 link 数据时**绝不能** fallback 到 NodeOrder（条件分支叶子节点天然无出边，顺延会错误流入另一分支）。
-        ///   fallback 仅在**流程完全无 link**（早期 NodeOrder 串联流程）时由 <see cref="ResolveNextNodes"/> 触发。
+        ///   fallback 仅在**流程完全无 link**（早期 NodeOrder 串联流程）时触发。
         /// </summary>
         private WfFlowNode ResolveNextNode(WfFlowNode current, WorkflowTopology topo, Dictionary<string, string> formValues)
         {
-            var nexts = ResolveNextNodes(current, topo, formValues);
-            return nexts.Count > 0 ? nexts[0] : null;
+            var outLinks = topo.GetOutLinks(current.NodeId);
+            if (outLinks.Count == 0)
+            {
+                // 流程完全无 link（早期 NodeOrder 串联流程）时 fallback；有 link 则无出边即终点，绝不顺延
+                return GetNextAuditNode(topo, current.NodeOrder);
+            }
+
+            WfFlowNode defaultTarget = null;
+            foreach (var link in outLinks) // 已按 Sort 升序
+            {
+                if (!link.HasCondition)
+                {
+                    // 无条件出边 = 默认分支，记录首个作兜底（正常模型至多一条）
+                    if (defaultTarget == null) defaultTarget = topo.GetNode(link.TargetNodeId);
+                    continue;
+                }
+                // 第一条命中的条件出边立即返回：排他，不再考虑默认分支（默认分支是"无任何条件命中"才走的 fallback）
+                if (EvalParsedCondition(link, formValues))
+                {
+                    var hit = topo.GetNode(link.TargetNodeId);
+                    if (hit != null) return hit;
+                }
+            }
+            // 无任何条件命中 → 落入默认分支（无条件出边）
+            return defaultTarget;
         }
 
         /// <summary>
