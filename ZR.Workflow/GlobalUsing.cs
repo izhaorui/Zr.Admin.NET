@@ -16,5 +16,6 @@ global using Mapster;
 global using ZR.ServiceCore.Middleware;
 global using ZR.Workflow.Model;
 global using ZR.Workflow.Model.Dto;
+global using ZR.Workflow.Model.Topology;
 global using ZR.Workflow.Enum;
 global using ZR.Workflow.Service.IService;

@@ -62,7 +62,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         public long Start(WfFlowInstance instance)
         {
-            var (def, allNodes, linksBySource, linksByTarget, firstNode) = PrepareStartFlow(instance);
+            var (def, topo, firstNode) = PrepareStartFlow(instance);
             logger.Info($"发起申请：FlowId={instance.FlowId} Title={instance.Title} 首节点={firstNode?.NodeName}({firstNode?.NodeId})");
 
             RunInTx(() =>
@@ -77,7 +77,7 @@ namespace ZR.Workflow.Service
                 AddRecord(instance.InstanceId, null, null, ApplicantOf(instance), (int)WfAction.Submit, "发起申请");
 
                 var formValues = ParseFormValues(instance);
-                ArriveOrComplete(instance, firstNode, allNodes, linksBySource, linksByTarget, formValues);
+                ArriveOrComplete(instance, firstNode, topo, formValues);
             }, "发起申请失败");
 
             return instance.InstanceId;
@@ -98,8 +98,7 @@ namespace ZR.Workflow.Service
             logger.Info($"审批通过：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId}){delegatedNote}");
 
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
-            var allNodes = LoadOrderedNodes(instance.FlowId);
-            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+            var topo = LoadTopology(instance.FlowId);
             // 活动集兜底初始化：存量实例可能无 CurrentNodeIds，用 CurrentNodeId 单值补齐，避免并行汇聚判定缺失
             if (string.IsNullOrWhiteSpace(instance.CurrentNodeIds) && instance.CurrentNodeId.HasValue)
             {
@@ -157,7 +156,7 @@ namespace ZR.Workflow.Service
                     .ExecuteCommand();
 
                 var formValues = ParseFormValues(instance);
-                AdvanceToNext(instance, node, allNodes, linksBySource, linksByTarget, formValues);
+                AdvanceToNext(instance, node, topo, formValues);
             }, "审批失败");
         }
 
@@ -171,8 +170,7 @@ namespace ZR.Workflow.Service
             var delegatedNote = IsDelegatedOperator(task, operatorId) ? $"（代 {task.AssigneeNickName} 审批）" : "";
             logger.Info($"审批驳回：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId}){delegatedNote}");
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
-            var allNodes = LoadOrderedNodes(instance.FlowId);
-            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+            var topo = LoadTopology(instance.FlowId);
 
             RunInTx(() =>
             {
@@ -201,14 +199,14 @@ namespace ZR.Workflow.Service
                 if (strategy == WfRejectStrategy.ToPrevNode)
                 {
                     // 驳回到上一审批节点（NodeOrder 小于当前且为审批节点的最后一个）
-                    targetNode = allNodes
+                    targetNode = topo.OrderedNodes
                         .Where(n => n.NodeType == (int)WfNodeType.Audit && n.NodeOrder < node.NodeOrder)
                         .OrderByDescending(n => n.NodeOrder)
                         .FirstOrDefault();
                 }
                 else if (strategy == WfRejectStrategy.ToSpecifiedNode && node.RejectTargetNodeId.HasValue)
                 {
-                    targetNode = allNodes.FirstOrDefault(n => n.NodeId == node.RejectTargetNodeId.Value);
+                    targetNode = topo.GetNode(node.RejectTargetNodeId.Value);
                 }
 
                 if (targetNode == null)
@@ -226,7 +224,7 @@ namespace ZR.Workflow.Service
 
                 // 回退到目标节点重新审批：清掉目标及之后所有任务（轨迹保留在 WfFlowRecord），重置活动集并重新进入目标节点
                 logger.Info($"驳回回退：InstanceId={instance.InstanceId} 回退到节点 {targetNode?.NodeName}({targetNode?.NodeId})（策略={(WfRejectStrategy)node.RejectStrategy}）");
-                RollbackToNode(instance, targetNode, allNodes, linksBySource, linksByTarget);
+                RollbackToNode(instance, targetNode, topo);
             }, "驳回失败");
         }
 
@@ -235,9 +233,9 @@ namespace ZR.Workflow.Service
         /// 清掉目标节点及其之后所有任务，重置活动集为目标节点，重新触发该节点的进入/任务生成。
         /// 历史审批轨迹由 WfFlowRecord 保留，任务仅作为"当前待办"快照被清理。
         /// </summary>
-        private void RollbackToNode(WfFlowInstance instance, WfFlowNode targetNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget)
+        private void RollbackToNode(WfFlowInstance instance, WfFlowNode targetNode, WorkflowTopology topo)
         {
-            var cleanupIds = allNodes
+            var cleanupIds = topo.OrderedNodes
                 .Where(n => n.NodeOrder >= targetNode.NodeOrder)
                 .Select(n => n.NodeId)
                 .ToList();
@@ -255,7 +253,7 @@ namespace ZR.Workflow.Service
                 .ExecuteCommand();
 
             var formValues = ParseFormValues(instance);
-            ArriveNode(instance, targetNode, allNodes, linksBySource, linksByTarget, formValues);
+            ArriveNode(instance, targetNode, topo, formValues);
         }
 
         /// <summary>
@@ -272,7 +270,7 @@ namespace ZR.Workflow.Service
                 throw new CustomException("当前状态不可重新提交");
 
             var op = LoadUser(operatorId);
-            var (def, allNodes, linksBySource, linksByTarget, firstNode) = PrepareStartFlow(instance);
+            var (def, topo, firstNode) = PrepareStartFlow(instance);
             logger.Info($"发起申请：FlowId={instance.FlowId} Title={instance.Title} 首节点={firstNode?.NodeName}({firstNode?.NodeId})");
 
             RunInTx(() =>
@@ -293,7 +291,7 @@ namespace ZR.Workflow.Service
                 AddRecord(instanceId, null, null, op, (int)WfAction.Resubmit, "重新提交");
 
                 var formValues = ParseFormValues(instance);
-                ArriveOrComplete(instance, firstNode, allNodes, linksBySource, linksByTarget, formValues);
+                ArriveOrComplete(instance, firstNode, topo, formValues);
             }, "重新提交失败");
         }
 
@@ -559,8 +557,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void AutoApproveTask(WfFlowTask task, WfFlowInstance instance, WfFlowNode node)
         {
-            var allNodes = LoadOrderedNodes(instance.FlowId);
-            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+            var topo = LoadTopology(instance.FlowId);
             var op = ApplicantOf(instance); // 超时自动通过以申请人名义落记录
             RunInTx(() =>
             {
@@ -608,7 +605,7 @@ namespace ZR.Workflow.Service
                     .ExecuteCommand();
 
                 var formValues = ParseFormValues(instance);
-                AdvanceToNext(instance, node, allNodes, linksBySource, linksByTarget, formValues);
+                AdvanceToNext(instance, node, topo, formValues);
             }, "超时自动通过失败");
         }
 
@@ -617,8 +614,7 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void AutoRejectTask(WfFlowTask task, WfFlowInstance instance, WfFlowNode node)
         {
-            var allNodes = LoadOrderedNodes(instance.FlowId);
-            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+            var topo = LoadTopology(instance.FlowId);
             var op = ApplicantOf(instance);
             RunInTx(() =>
             {
@@ -645,14 +641,14 @@ namespace ZR.Workflow.Service
                 WfFlowNode targetNode = null;
                 if (strategy == WfRejectStrategy.ToPrevNode)
                 {
-                    targetNode = allNodes
+                    targetNode = topo.OrderedNodes
                         .Where(n => n.NodeType == (int)WfNodeType.Audit && n.NodeOrder < node.NodeOrder)
                         .OrderByDescending(n => n.NodeOrder)
                         .FirstOrDefault();
                 }
                 else if (strategy == WfRejectStrategy.ToSpecifiedNode && node.RejectTargetNodeId.HasValue)
                 {
-                    targetNode = allNodes.FirstOrDefault(n => n.NodeId == node.RejectTargetNodeId.Value);
+                    targetNode = topo.GetNode(node.RejectTargetNodeId.Value);
                 }
 
                 if (targetNode == null)
@@ -666,7 +662,7 @@ namespace ZR.Workflow.Service
                     return;
                 }
 
-                RollbackToNode(instance, targetNode, allNodes, linksBySource, linksByTarget);
+                RollbackToNode(instance, targetNode, topo);
             }, "超时自动驳回失败");
         }
 
@@ -844,10 +840,9 @@ namespace ZR.Workflow.Service
 
             if (complete)
             {
-                var allNodes = LoadOrderedNodes(instance.FlowId);
-                var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+                var topo = LoadTopology(instance.FlowId);
                 var formValues = ParseFormValues(instance);
-                AdvanceToNext(instance, node, allNodes, linksBySource, linksByTarget, formValues);
+                AdvanceToNext(instance, node, topo, formValues);
                 return;
             }
 
@@ -937,17 +932,6 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 按 NodeOrder 升序返回流程的全部节点。Start / Resubmit / Approve 共用。
-        /// </summary>
-        private List<WfFlowNode> LoadOrderedNodes(long flowId)
-        {
-            return Context.Queryable<WfFlowNode>()
-                .Where(n => n.FlowId == flowId)
-                .OrderBy(n => n.NodeOrder)
-                .ToList();
-        }
-
-        /// <summary>
         /// 判断节点是否属于"流程节点"（审计/抄送），用于首节点查找与 <see cref="GetNextAuditNode"/>。
         /// 静态方法便于在 LINQ 表达式树外复用。
         /// </summary>
@@ -955,36 +939,27 @@ namespace ZR.Workflow.Service
             nodeType == (int)WfNodeType.Audit || nodeType == (int)WfNodeType.Cc;
 
         /// <summary>
-        /// 一次性加载某 FlowId 的全部节点连线并分组成：按 SourceNodeId（出边）与按 TargetNodeId（入边）两张表。
-        /// 仅查库一次，避免原来 LoadNodeLinks / LoadNodeLinksByTarget 各自全量查询两次。
+        /// 加载某 FlowId 的完整静态拓扑（节点 + 连线构建的 O(1) 索引 + 出边条件预解析）。
+        /// 每次操作现构建一次，不做缓存；构建时对带条件的出边做静态配置校验（发起前暴露配置错误）。
+        /// 替代旧的三件套 <c>allNodes + linksBySource + linksByTarget</c>。
         /// </summary>
-        private (Dictionary<long, List<WfNodeLink>> bySource, Dictionary<long, List<WfNodeLink>> byTarget) LoadNodeLinks(long flowId)
-        {
-            var links = Context.Queryable<WfNodeLink>()
-                .Where(l => l.FlowId == flowId)
-                .OrderBy(l => l.Sort)
-                .ToList();
-            return (
-                links.GroupBy(l => l.SourceNodeId).ToDictionary(g => g.Key, g => g.ToList()),
-                links.GroupBy(l => l.TargetNodeId).ToDictionary(g => g.Key, g => g.ToList())
-            );
-        }
+        private WorkflowTopology LoadTopology(long flowId)
+            => WfWorkflowTopologyBuilder.Build(Context, flowId);
 
         /// <summary>
-        /// Start / Resubmit 共同的 pre-flight：取定义、校验、查节点全集、取首节点、加载节点连线。
+        /// Start / Resubmit 共同的 pre-flight：取定义、校验、构建静态拓扑、取首节点。
         /// 调用方在事务体内完成各自的 Insert / Update 持久化差异。
         /// </summary>
-        private (WfFlowDefinition def, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, WfFlowNode firstNode) PrepareStartFlow(WfFlowInstance instance)
+        private (WfFlowDefinition def, WorkflowTopology topo, WfFlowNode firstNode) PrepareStartFlow(WfFlowInstance instance)
         {
             var def = LoadActivatableDefinition(instance.FlowId);
             if (string.IsNullOrEmpty(instance.FlowName)) instance.FlowName = def.FlowName;
-            var allNodes = LoadOrderedNodes(instance.FlowId);
-            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
+            var topo = LoadTopology(instance.FlowId);
             // 首节点须包含条件网关（NodeType=4）与并行分叉网关（NodeType=7）：网关可作为流程的第一个节点（发起后立即分流/分叉）。
             // 若这里沿用 IsAuditableNode（只认 Audit/Cc），会直接跳过网关落到 NodeOrder 上的第一个审批节点，
             // 导致分支条件从未被评估、始终走"第一条分支"。ArriveNode 内部会对 Condition/ParallelFork 做透传处理。
-            var firstNode = allNodes.FirstOrDefault(n => IsAuditableNode(n.NodeType) || n.NodeType == (int)WfNodeType.Condition || n.NodeType == (int)WfNodeType.ParallelFork);
-            return (def, allNodes, linksBySource, linksByTarget, firstNode);
+            var firstNode = topo.OrderedNodes.FirstOrDefault(n => IsAuditableNode(n.NodeType) || n.NodeType == (int)WfNodeType.Condition || n.NodeType == (int)WfNodeType.ParallelFork);
+            return (def, topo, firstNode);
         }
 
         /// <summary>
@@ -1006,10 +981,10 @@ namespace ZR.Workflow.Service
         /// 收敛 ArriveNode / AdvanceToNext 中大量重复的 "next == null ? 置通过 : ArriveNode" 模板。
         /// <paramref name="depth"/> 为本次连续到达链的层数，用于递归深度上限保护（防止环导致的无限递归）。
         /// </summary>
-        private void ArriveOrComplete(WfFlowInstance instance, WfFlowNode next, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, int depth = 0)
+        private void ArriveOrComplete(WfFlowInstance instance, WfFlowNode next, WorkflowTopology topo, Dictionary<string, string> formValues, int depth = 0)
         {
             if (next == null) CompleteInstance(instance);
-            else ArriveNode(instance, next, allNodes, linksBySource, linksByTarget, formValues, depth: depth);
+            else ArriveNode(instance, next, topo, formValues, depth: depth);
         }
 
         // —— 活动节点集（并行网关节点 7/8 并发时，多个分支同时活动的节点集合）——
@@ -1255,7 +1230,7 @@ namespace ZR.Workflow.Service
         /// AdminJump 先统一置 Skipped，使并行汇聚判定组内其余分支已完成、目标分支通过后即可放行，
         /// 避免卡死与多余分支高亮。
         /// </summary>
-        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, bool singleNodeOnly = false, int depth = 0)
+        private void ArriveNode(WfFlowInstance instance, WfFlowNode node, WorkflowTopology topo, Dictionary<string, string> formValues, bool singleNodeOnly = false, int depth = 0)
         {
             // 递归深度上限保护（最后一道保险）：正常流程节点链式到达深度为几十~上百；
             // 若链路存在环（条件/抄送/空审批人这类"不落地待办即继续递归"的节点成环），ArriveNode 会无限递归 → StackOverflow。
@@ -1285,20 +1260,21 @@ namespace ZR.Workflow.Service
                 // 故对被跳过的每条不满足出边下游链级联建 Skipped 留痕并激活其下游汇聚网关，使"未到达/跳过/已完成"三态收敛为两态
                 // （跳过态 Skipped→完成；激活态走正常判定；无 task 只可能出现在"本就不该走到"的分支，Join 不会等待它）。
                 // 满足出边仍走正常 ArriveNode 推进；仅当无任何满足/默认出边、且不存在不满足出边时，才视为流程终点完成。
-                var satisfiedNext = ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues);
-                SkipRejectedBranches(instance, node, allNodes, linksBySource, linksByTarget, formValues, depth);
+                var satisfiedNext = ResolveNextNode(node, topo, formValues);
+                SkipRejectedBranches(instance, node, topo, formValues, depth);
                 if (satisfiedNext != null)
                 {
-                    ArriveOrComplete(instance, satisfiedNext, allNodes, linksBySource, linksByTarget, formValues, depth + 1);
+                    ArriveOrComplete(instance, satisfiedNext, topo, formValues, depth + 1);
                 }
                 else
                 {
                     // 无满足分支也无默认出边：把"不满足出边"的下游链作为被跳过分支激活（建 Skipped 并推进到汇聚点），避免流程误判完成
-                    var fallbacks = linksBySource.TryGetValue(node.NodeId, out var outs) && outs.Count > 0
-                        ? outs.Where(l => !string.IsNullOrWhiteSpace(l.ConditionJson) && !EvalLinkCondition(l.ConditionJson, formValues))
-                              .Select(l => allNodes.FirstOrDefault(n => n.NodeId == l.TargetNodeId)).Where(n => n != null).ToList()
+                    var outLinks = topo.GetOutLinks(node.NodeId);
+                    var fallbacks = outLinks.Count > 0
+                        ? outLinks.Where(l => l.HasCondition && !EvalParsedCondition(l, formValues))
+                              .Select(l => topo.GetNode(l.TargetNodeId)).Where(n => n != null).ToList()
                         : new List<WfFlowNode>();
-                    if (fallbacks.Count > 0) { foreach (var fb in fallbacks) SkipBranchChain(instance, fb, allNodes, linksBySource, linksByTarget, formValues, new HashSet<long>(), depth); }
+                    if (fallbacks.Count > 0) { foreach (var fb in fallbacks) SkipBranchChain(instance, fb, topo, formValues, new HashSet<long>(), depth); }
                     else CompleteInstance(instance);
                 }
                 return;
@@ -1317,10 +1293,10 @@ namespace ZR.Workflow.Service
             if (node.NodeType == (int)WfNodeType.ParallelFork)
             {
                 RemoveActiveNodeId(instance, node.NodeId);
-                var targets = ResolveNextNodes(node, allNodes, linksBySource, formValues);
+                var targets = ResolveNextNodes(node, topo, formValues);
                 if (targets.Count == 0) { CompleteInstance(instance); return; }
                 logger.Info($"并行分叉网关：InstanceId={instance.InstanceId} Fork={node.NodeName}({node.NodeId}) → {targets.Count} 条出边");
-                foreach (var t in targets) ArriveNode(instance, t, allNodes, linksBySource, linksByTarget, formValues, depth: depth + 1);
+                foreach (var t in targets) ArriveNode(instance, t, topo, formValues, depth: depth + 1);
                 SyncActiveNodeId(instance);
                 return;
             }
@@ -1330,13 +1306,13 @@ namespace ZR.Workflow.Service
             {
                 // 仅加载该 Join 入边分支节点（Audit/Cc）的任务供完成判定，避免全量拉取实例全部任务
                 // （含已结束分支 / 其它并行组）造成的重复查询与数据量浪费。
-                var tasksByNode = LoadJoinBranchTasks(instance.InstanceId, node, allNodes, linksByTarget);
-                if (IsJoinComplete(instance, node, allNodes, linksByTarget, tasksByNode))
+                var tasksByNode = LoadJoinBranchTasks(instance.InstanceId, node, topo);
+                if (IsJoinComplete(instance, node, topo, tasksByNode))
                 {
                     logger.Info($"并行汇聚完成：InstanceId={instance.InstanceId} Join={node.NodeName}({node.NodeId}) 全部入边完成 → 继续推进");
                     RemoveActiveNodeId(instance, node.NodeId);
-                    var after = ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues);
-                    ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues, depth + 1);
+                    var after = ResolveNextNode(node, topo, formValues);
+                    ArriveOrComplete(instance, after, topo, formValues, depth + 1);
                 }
                 else
                 {
@@ -1353,7 +1329,7 @@ namespace ZR.Workflow.Service
             if (node.ParallelGroup > 0 && !singleNodeOnly)
             {
                 logger.Info($"并行分组进入：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) ParallelGroup={node.ParallelGroup}");
-                var groupNodes = allNodes.Where(n => n.ParallelGroup == node.ParallelGroup).ToList();
+                var groupNodes = topo.GetGroupNodes(node.ParallelGroup);
                 var groupNodeIds = groupNodes.Select(g => g.NodeId).ToList();
                 // 分组是否"已激活"：仅当组内存在活跃（待审/排队）任务才算已 fork 过。
                 // 若组内只剩已跳过/已审的旧任务（如 AdminJump 跳转到并行节点、或 Resubmit 回首并行节点后旧任务残留），
@@ -1368,10 +1344,10 @@ namespace ZR.Workflow.Service
                     // 使 CurrentNodeId（取活动集 Min）与活动集保持一致；条件不满足的成员不进活动集（视为已完成）。
                     // 成员"是否激活"改由「并行分叉网关(7) → 该成员」的出边 ConditionJson 决定（Edge 属性模型，对标 BPMN）：
                     // 命中 → 激活走正常审批；不满足 → 建 Skipped 留痕。找不到分叉出边或无条件 → 无条件并发激活。
-                    var forkNode = allNodes.FirstOrDefault(n => n.NodeType == (int)WfNodeType.ParallelFork && n.ParallelGroup == node.ParallelGroup);
+                    var forkNode = topo.ForkByGroup.TryGetValue(node.ParallelGroup, out var fk) ? fk : null;
                     foreach (var g in groupNodes)
                     {
-                        if (!ShouldActivateForkMember(forkNode, g, allNodes, linksBySource, formValues))
+                        if (!ShouldActivateForkMember(forkNode, g, topo, formValues))
                         {
                             // 分支条件不满足：明确留痕 Skipped（区别于"从未激活"），使 IsNodeComplete 能区分"跳过"与"未走到"；
                             // 不加入活动集（Skipped 视为完成，且避免 CurrentNodeId 取到跳过节点）。
@@ -1408,9 +1384,9 @@ namespace ZR.Workflow.Service
                     if (!hasPending)
                     {
                         // 组内所有分支条件均不满足：视为完成，直接汇聚到后续节点（出口按 Link 拓扑解析，不依赖 NodeOrder）
-                        var exits = ResolveParallelGroupExit(node.ParallelGroup, allNodes, linksBySource, formValues);
+                        var exits = ResolveParallelGroupExit(node.ParallelGroup, topo, formValues);
                         if (exits.Count == 0) { CompleteInstance(instance); }
-                        else foreach (var exitNode in exits) ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues, depth: depth + 1);
+                        else foreach (var exitNode in exits) ArriveNode(instance, exitNode, topo, formValues, depth: depth + 1);
                     }
                     else
                     {
@@ -1427,7 +1403,7 @@ namespace ZR.Workflow.Service
             if (node.NodeType == (int)WfNodeType.Cc)
             {
                 CreateCcTask(instance, node, formValues);
-                ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues, depth + 1);
+                ArriveOrComplete(instance, ResolveNextNode(node, topo, formValues), topo, formValues, depth + 1);
                 return;
             }
 
@@ -1453,7 +1429,7 @@ namespace ZR.Workflow.Service
                     CreateAutoSkipTask(instance, node, "审批人为空，节点自动跳过");
                     RemoveActiveNodeId(instance, node.NodeId);
                     SyncActiveNodeId(instance);
-                    ArriveOrComplete(instance, ResolveNextNode(node, allNodes, linksBySource, linksByTarget, formValues), allNodes, linksBySource, linksByTarget, formValues, depth + 1);
+                    ArriveOrComplete(instance, ResolveNextNode(node, topo, formValues), topo, formValues, depth + 1);
                     return;
                 }
                 // 兜底默认审批人生效：继续走下方正常待办生成逻辑（approvers 已被替换为默认审批人）
@@ -1487,7 +1463,7 @@ namespace ZR.Workflow.Service
         ///        └─ 存在下一节点（含多目标 fork）→ ArriveNode(next)
         /// </code>
         /// </summary>
-        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, int depth = 0)
+        private void AdvanceToNext(WfFlowInstance instance, WfFlowNode completedNode, WorkflowTopology topo, Dictionary<string, string> formValues, int depth = 0)
         {
             // 并发幂等保护：同一节点被多次并发完成（或签多待办同时点通过）时，
             // 先到的事务已把该节点移出活动集并 fork 了后续待办；后到的事务在事务内重新读取活动集，
@@ -1512,11 +1488,11 @@ namespace ZR.Workflow.Service
 
             if (completedNode.ParallelGroup > 0)
             {
-                var groupNodes = allNodes.Where(n => n.ParallelGroup == completedNode.ParallelGroup).ToList();
+                var groupNodes = topo.GetGroupNodes(completedNode.ParallelGroup);
                 var groupDone = groupNodes.All(g => IsNodeComplete(tasksByNode, g));
                 if (!groupDone) { logger.Info($"并行分组汇聚等待：InstanceId={instance.InstanceId} Group={completedNode.ParallelGroup} 仍有分支未完成 → 继续等待"); SyncActiveNodeId(instance); return; } // 等待组内其余分支
                 // 汇聚出口按 Link 拓扑解析（组内成员连到组外的出边），不依赖 NodeOrder（MaxBy 会破坏 Link 唯一真相）
-                var exits = ResolveParallelGroupExit(completedNode.ParallelGroup, allNodes, linksBySource, formValues);
+                var exits = ResolveParallelGroupExit(completedNode.ParallelGroup, topo, formValues);
                 if (exits.Count == 0) { CompleteInstance(instance); return; }
                 // 出口幂等保护：并行分组内若已有成员在 fork 阶段被 Skipped（条件不满足/审批人为空），其 Approve 会再次进入本汇聚分支；
                 // 若出口节点已被前次汇聚激活（已有任务），跳过重复 fork，避免出口（如 Join 后续节点 C）生成多条待办。
@@ -1526,25 +1502,25 @@ namespace ZR.Workflow.Service
                     var exitActivated = Context.Queryable<WfFlowTask>()
                         .Any(t => t.InstanceId == instance.InstanceId && t.NodeId == exitNode.NodeId);
                     if (exitActivated) { logger.Info($"并行分组出口幂等：InstanceId={instance.InstanceId} Exit={exitNode.NodeName}({exitNode.NodeId}) 已激活 → 跳过重复 fork"); continue; }
-                    ArriveNode(instance, exitNode, allNodes, linksBySource, linksByTarget, formValues, depth: depth + 1);
+                    ArriveNode(instance, exitNode, topo, formValues, depth: depth + 1);
                 }
                 SyncActiveNodeId(instance);
                 return;
             }
 
             // 取当前节点全部出边目标（并行分叉可能多目标，普通节点单目标）
-            var nexts = ResolveNextNodes(completedNode, allNodes, linksBySource, formValues);
+            var nexts = ResolveNextNodes(completedNode, topo, formValues);
             if (nexts.Count == 0) { CompleteInstance(instance); return; }
             foreach (var next in nexts)
             {
                 // 出边目标是汇聚网关(8)：仅当所有入边分支均完成时，才激活 8 的后续；否则 8 入活动集等待
                 if (next.NodeType == (int)WfNodeType.ParallelJoin)
                 {
-                    if (IsJoinComplete(instance, next, allNodes, linksByTarget, tasksByNode))
+                    if (IsJoinComplete(instance, next, topo, tasksByNode))
                     {
                         RemoveActiveNodeId(instance, next.NodeId);
-                        var after = ResolveNextNode(next, allNodes, linksBySource, linksByTarget, formValues);
-                        ArriveOrComplete(instance, after, allNodes, linksBySource, linksByTarget, formValues, depth + 1);
+                        var after = ResolveNextNode(next, topo, formValues);
+                        ArriveOrComplete(instance, after, topo, formValues, depth + 1);
                     }
                     else
                     {
@@ -1554,7 +1530,7 @@ namespace ZR.Workflow.Service
                 }
                 else
                 {
-                    ArriveNode(instance, next, allNodes, linksBySource, linksByTarget, formValues, depth: depth + 1);
+                    ArriveNode(instance, next, topo, formValues, depth: depth + 1);
                 }
             }
             SyncActiveNodeId(instance);
@@ -1726,11 +1702,10 @@ namespace ZR.Workflow.Service
 
             var op = LoadUser(operatorId);
             var def = LoadActivatableDefinition(instance.FlowId);
-            var allNodes = LoadOrderedNodes(instance.FlowId);
-            var target = allNodes.FirstOrDefault(n => n.NodeId == targetNodeId)
+            var topo = LoadTopology(instance.FlowId);
+            var target = topo.GetNode(targetNodeId)
                 ?? throw new CustomException("跳转目标节点不存在");
 
-            var (linksBySource, linksByTarget) = LoadNodeLinks(instance.FlowId);
             var formValues = ParseFormValues(instance);
 
             RunInTx(() =>
@@ -1764,7 +1739,7 @@ namespace ZR.Workflow.Service
                 // singleNodeOnly=true：目标若是并行分组内成员，只激活该节点本身（生成其待办/抄送），
                 // 组内其它分支的未完成任务已在上面统一置 Skipped → 并行汇聚判定其已完成，目标分支通过后即可放行，
                 // 不会整组重新 fork、不会多余分支高亮、不会卡死。参照业界（Activiti/钉钉等）单令牌跳转语义。
-                ArriveNode(instance, target, allNodes, linksBySource, linksByTarget, formValues, singleNodeOnly: true);
+                ArriveNode(instance, target, topo, formValues, singleNodeOnly: true);
                 SyncActiveNodeId(instance);
             }, "AdminJump");
 
@@ -1776,26 +1751,28 @@ namespace ZR.Workflow.Service
 
         /// <summary>
         /// 解析当前节点的所有下一节点（多目标，供并行分叉 fork / 普通节点发散用）。
-        /// 按连线 + ConditionJson 选边：条件命中走该边，无任一命中且有默认分支[ConditionJson 为空]走默认分支，仍无则空。
+        /// 按连线 + 预解析条件选边：条件命中走该边，无任一命中且有默认分支[无条件出边]走默认分支，仍无则空。
         /// 与 <see cref="ResolveNextNode"/> 的单目标选取口径一致，只是返回全部可达目标。
+        /// 出边条件已在构建拓扑时预解析并静态校验，此处只做运行时评估。
         /// </summary>
-        private List<WfFlowNode> ResolveNextNodes(WfFlowNode current, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
+        private List<WfFlowNode> ResolveNextNodes(WfFlowNode current, WorkflowTopology topo, Dictionary<string, string> formValues)
         {
             var result = new List<WfFlowNode>();
-            if (!linksBySource.TryGetValue(current.NodeId, out var outLinks) || outLinks.Count == 0)
+            var outLinks = topo.GetOutLinks(current.NodeId);
+            if (outLinks.Count == 0)
             {
                 // 无出边：若流程完全无 link（存量老数据）才 fallback 到 NodeOrder 取下一审批/抄送节点
-                if (linksBySource.Count == 0)
+                if (!topo.HasAnyLink)
                 {
-                    var fb = GetNextAuditNode(allNodes, current.NodeOrder);
+                    var fb = GetNextAuditNode(topo, current.NodeOrder);
                     if (fb != null) result.Add(fb);
                 }
                 return result;
             }
             foreach (var link in outLinks) // 已按 Sort 升序
             {
-                if (!string.IsNullOrWhiteSpace(link.ConditionJson) && !EvalLinkCondition(link.ConditionJson, formValues)) continue;
-                var hit = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
+                if (link.HasCondition && !EvalParsedCondition(link, formValues)) continue;
+                var hit = topo.GetNode(link.TargetNodeId);
                 if (hit != null && !result.Contains(hit)) result.Add(hit);
             }
             return result;
@@ -1808,42 +1785,42 @@ namespace ZR.Workflow.Service
         /// 故此处按拓扑扫描，避免 NodeOrder 与真实连线不符时（手写 FlowJSON / 导入 / 未续号）走错分支。
         /// 兜底：整个流程完全无 link（存量老数据）才退回「组内 NodeOrder 最大成员的出边」，与旧行为一致。
         /// </summary>
-        private List<WfFlowNode> ResolveParallelGroupExit(int parallelGroup, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
+        private List<WfFlowNode> ResolveParallelGroupExit(int parallelGroup, WorkflowTopology topo, Dictionary<string, string> formValues)
         {
-            var groupNodes = allNodes.Where(n => n.ParallelGroup == parallelGroup).ToList();
+            var groupNodes = topo.GetGroupNodes(parallelGroup);
             if (groupNodes.Count == 0) return new List<WfFlowNode>();
             var groupIds = groupNodes.Select(g => g.NodeId).ToHashSet();
             var exits = new List<WfFlowNode>();
             foreach (var g in groupNodes)
             {
-                if (!linksBySource.TryGetValue(g.NodeId, out var outLinks) || outLinks.Count == 0) continue;
-                foreach (var link in outLinks)
+                foreach (var link in topo.GetOutLinks(g.NodeId))
                 {
                     if (groupIds.Contains(link.TargetNodeId)) continue; // 连到组内兄弟 → 非出口
-                    var hit = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
+                    var hit = topo.GetNode(link.TargetNodeId);
                     if (hit != null && !exits.Contains(hit)) exits.Add(hit);
                 }
             }
             // 有 link 数据但组成员均未连出：整组即流程终点（无汇聚后续）
-            if (linksBySource.Count > 0) return exits;
+            if (topo.HasAnyLink) return exits;
             // 完全无 link（存量老数据）：退回组内 NodeOrder 最大成员的出边
             var last = groupNodes.MaxBy(g => g.NodeOrder);
             if (last == null) return exits;
-            var legacy = ResolveNextNodes(last, allNodes, linksBySource, formValues);
+            var legacy = ResolveNextNodes(last, topo, formValues);
             foreach (var n in legacy) if (!exits.Contains(n)) exits.Add(n);
             return exits;
         }
 
         /// <summary>
-        /// 判断汇聚网关(8)是否已满足 join 条件：所有入边源节点（linksByTarget 中 SourceNodeId）均已"完成"。
+        /// 判断汇聚网关(8)是否已满足 join 条件：所有入边源节点（入边中 SourceNodeId）均已"完成"。
         /// 任一入边源尚未完成 → 返回 false（继续等待）。
         /// </summary>
-        private bool IsJoinComplete(WfFlowInstance instance, WfFlowNode joinNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<long, List<WfFlowTask>> tasksByNode)
+        private bool IsJoinComplete(WfFlowInstance instance, WfFlowNode joinNode, WorkflowTopology topo, Dictionary<long, List<WfFlowTask>> tasksByNode)
         {
-            if (!linksByTarget.TryGetValue(joinNode.NodeId, out var inLinks) || inLinks.Count == 0) return true;
-            foreach (var l in inLinks)
+            var inSourceIds = topo.GetInSourceIds(joinNode.NodeId);
+            if (inSourceIds.Count == 0) return true;
+            foreach (var srcId in inSourceIds)
             {
-                var src = allNodes.FirstOrDefault(n => n.NodeId == l.SourceNodeId);
+                var src = topo.GetNode(srcId);
                 // 入边源节点完成判定：源节点若为网关(7/8/4)则视为瞬时完成（它们不生成任务，由流转自然跳过），
                 // 实际并行分支的"完成"体现在分支末端的审批/抄送节点；这里只校验真实业务节点（审批/抄送）的完成。
                 if (src != null && (src.NodeType == (int)WfNodeType.Audit || src.NodeType == (int)WfNodeType.Cc))
@@ -1859,69 +1836,53 @@ namespace ZR.Workflow.Service
         /// **link 为唯一串联事实，NodeOrder 仅作展示排序 / 存量数据兜底**。
         /// 前端为每条边（含直线）生成一条 WfNodeLink（直线 ConditionJson 留空），
         /// 分支终点 / 末节点则**不生成出边**——即"无出边 = 流程终点"，与 ValidateLinks 的口径一致。
-        /// - 当前节点存在出边：按连线 + ConditionJson 选边（条件命中走该边，无任一边命中且有默认分支则走默认分支；仍无则流程结束）。
+        /// - 当前节点存在出边：按连线 + 条件选边（条件命中走该边，无任一边命中且有默认分支则走默认分支；仍无则流程结束）。
         /// - 当前节点无出边且流程存在 link 数据：此节点就是终点 → 返回 null（流程结束）。
         ///   ⚠️ 此处**绝不能** fallback 到 NodeOrder（条件分支叶子节点天然无出边，顺延会错误流入另一分支）。
         /// - 整个流程**完全没有 link**（存量老数据）：才 fallback 到 NodeOrder 串联，避免老实例卡死。
         /// </summary>
-        private WfFlowNode ResolveNextNode(WfFlowNode current, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues)
+        private WfFlowNode ResolveNextNode(WfFlowNode current, WorkflowTopology topo, Dictionary<string, string> formValues)
         {
-            var nexts = ResolveNextNodes(current, allNodes, linksBySource, formValues);
+            var nexts = ResolveNextNodes(current, topo, formValues);
             return nexts.Count > 0 ? nexts[0] : null;
         }
 
         /// <summary>
         /// 取下一审批/抄送节点（跳过开始/结束），NodeOrder fallback 通道使用。
         /// </summary>
-        private WfFlowNode GetNextAuditNode(List<WfFlowNode> allNodes, int currentOrder)
+        private WfFlowNode GetNextAuditNode(WorkflowTopology topo, int currentOrder)
         {
-            return allNodes
+            return topo.OrderedNodes
                 .Where(n => n.NodeOrder > currentOrder && IsAuditableNode(n.NodeType))
                 .OrderBy(n => n.NodeOrder)
                 .FirstOrDefault();
         }
 
         /// <summary>
-        /// 评估连线条件（ConditionJson）。空 JSON 视为无条件（默认分支），由 <see cref="ResolveNextNode"/> 上层分流，
-        /// 各调用方（ResolveNextNodes / ShouldActivateForkMember / SkipRejectedBranches / 条件网关兜底）均在调用前
-        /// 过滤空 ConditionJson，故不进入本方法。
+        /// 运行时评估已预解析的连线条件（<see cref="Model.Topology.WfWorkflowTopologyBuilder"/> 已在构建拓扑时
+        /// 完成 JSON 反序列化 + 静态配置校验，此处只做"取表单字段值 + 比较"）。
         ///
         /// **失败语义（2026-08-20 收紧，区分"业务不满足"与"配置错误"）**：
         /// - 条件不满足（业务 false）→ 返回 false：字段在表单中存在但值为空、或比较结果为 false。
         ///   此时走正常分支逻辑（可落入默认分支或视为未命中）。
-        /// - 条件配置错误（系统无法判断）→ 抛出 <see cref="CustomException"/>：JSON 解析失败、条件字段 field 缺失、
-        ///   运算符 op 缺失/无效（None 或越界）、比较值 value 缺失、条件字段不在提交的表单中。
+        /// - 条件配置错误（系统无法判断）→ 抛出 <see cref="CustomException"/>：JSON 解析失败 / field 缺失 /
+        ///   op 缺失或无效 / value 缺失（<paramref name="link"/> 的 <see cref="ResolvedOutLink.ConditionError"/>）、
+        ///   以及"条件字段不在提交的表单中"。
         ///   这是关键安全语义：若配置错误被吞掉并返回 false，当"所有条件分支都因错误而不满足"时，排他条件网关会把流程
         ///   误判为正常结束（CompleteInstance），一个配错的流程看起来像"正常审批完成"。故配置错误必须显式失败并触发事务回滚。
-        /// 复用 <see cref="CompareValue"/> 的比较语义，仅数据源来自连线 JSON。
+        /// 复用 <see cref="CompareValue"/> 的比较语义，仅数据源来自连线条件。
         /// </summary>
-        private bool EvalLinkCondition(string conditionJson, Dictionary<string, string> formValues)
+        private bool EvalParsedCondition(ResolvedOutLink link, Dictionary<string, string> formValues)
         {
-            if (string.IsNullOrWhiteSpace(conditionJson)) return false;
-            WfLinkCondition cond;
-            try
-            {
-                cond = JsonConvert.DeserializeObject<WfLinkCondition>(conditionJson);
-            }
-            catch (Exception ex)
-            {
-                throw new CustomException($"条件配置错误：连线条件 JSON 解析失败，{ex.Message}");
-            }
-            if (cond == null)
-                throw new CustomException("条件配置错误：连线条件 JSON 内容为空");
-            if (string.IsNullOrWhiteSpace(cond.Field))
-                throw new CustomException("条件配置错误：连线条件缺少条件字段 field");
-            if (!cond.Op.HasValue)
-                throw new CustomException($"条件配置错误：连线条件[{cond.Field}]缺少运算符 op");
-            var op = (WfConditionOp)cond.Op.Value;
-            if (op == WfConditionOp.None || !System.Enum.IsDefined(typeof(WfConditionOp), cond.Op.Value))
-                throw new CustomException($"条件配置错误：连线条件[{cond.Field}]运算符 op={cond.Op.Value} 无效");
-            if (string.IsNullOrWhiteSpace(cond.Value))
-                throw new CustomException($"条件配置错误：连线条件[{cond.Field}]缺少比较值 value");
+            if (!link.HasCondition) return false;
+            if (link.ConditionError != null)
+                throw new CustomException(link.ConditionError);
+            var cond = link.Condition;
+            if (cond == null) return false;
             if (!formValues.TryGetValue(cond.Field, out var raw))
                 throw new CustomException($"条件配置错误：连线条件引用的表单字段【{cond.Field}】不在提交的表单中");
             if (string.IsNullOrWhiteSpace(raw)) return false; // 字段存在但值为空：业务不满足（保守，不误走该分支）
-            return CompareValue(op, raw, cond.Value);
+            return CompareValue((WfConditionOp)cond.Op.Value, raw, cond.Value);
         }
 
         /// <summary>
@@ -1944,15 +1905,15 @@ namespace ZR.Workflow.Service
         /// 网关节点（4/7/8）本身不生成任务、由流转自然跳过，无需加载；<see cref="IsJoinComplete"/> 也只会对
         /// Audit/Cc 分支节点做完成判定，故此处仅加载这些分支节点即可与 join 判定口径一致。
         /// </summary>
-        private Dictionary<long, List<WfFlowTask>> LoadJoinBranchTasks(long instanceId, WfFlowNode joinNode, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksByTarget)
+        private Dictionary<long, List<WfFlowTask>> LoadJoinBranchTasks(long instanceId, WfFlowNode joinNode, WorkflowTopology topo)
         {
-            if (!linksByTarget.TryGetValue(joinNode.NodeId, out var inLinks) || inLinks.Count == 0)
+            var inSourceIds = topo.GetInSourceIds(joinNode.NodeId);
+            if (inSourceIds.Count == 0)
                 return new Dictionary<long, List<WfFlowTask>>();
-            var branchNodeIds = inLinks
-                .Select(l => l.SourceNodeId)
+            var branchNodeIds = inSourceIds
                 .Where(srcId =>
                 {
-                    var src = allNodes.FirstOrDefault(n => n.NodeId == srcId);
+                    var src = topo.GetNode(srcId);
                     return src != null && (src.NodeType == (int)WfNodeType.Audit || src.NodeType == (int)WfNodeType.Cc);
                 })
                 .Distinct()
@@ -2009,15 +1970,15 @@ namespace ZR.Workflow.Service
         ///   兼容回退到成员自身的节点级 ConditionField（旧模型），字段齐全才判定，避免存量并行组丢失条件语义。
         /// 条件不满足的成员由调用方建 Skipped 留痕（保持现有语义）。
         /// </summary>
-        private bool ShouldActivateForkMember(WfFlowNode forkNode, WfFlowNode member, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<string, string> formValues)
+        private bool ShouldActivateForkMember(WfFlowNode forkNode, WfFlowNode member, WorkflowTopology topo, Dictionary<string, string> formValues)
         {
-            if (forkNode != null && linksBySource.TryGetValue(forkNode.NodeId, out var outLinks) && outLinks.Count > 0)
+            if (forkNode != null)
             {
-                var link = outLinks.FirstOrDefault(l => l.TargetNodeId == member.NodeId);
+                var link = topo.GetOutLinks(forkNode.NodeId).FirstOrDefault(l => l.TargetNodeId == member.NodeId);
                 if (link != null)
                 {
-                    if (string.IsNullOrWhiteSpace(link.ConditionJson)) return true; // 无条件出边：并发激活
-                    return EvalLinkCondition(link.ConditionJson, formValues);
+                    if (!link.HasCondition) return true; // 无条件出边：并发激活
+                    return EvalParsedCondition(link, formValues);
                 }
             }
             // 存量兼容：无显式分叉网关或该成员无对应出边时，回退到成员自身的节点级条件（旧模型，供老数据）。
@@ -2316,16 +2277,17 @@ namespace ZR.Workflow.Service
         /// （激活态走正常判定；跳过态 Skipped→完成；无 task 只可能出现在"本就不该走到"的分支，Join 不会等待它）。
         /// 级联边界：遇 ParallelFork(7)/ParallelJoin(8)/流程终点停止，不跨汇聚网关污染其它分支；节点已存在任务（Pending/Done/Skipped）则跳过，避免重复留痕。
         /// </summary>
-        private void SkipRejectedBranches(WfFlowInstance instance, WfFlowNode node, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, int depth)
+        private void SkipRejectedBranches(WfFlowInstance instance, WfFlowNode node, WorkflowTopology topo, Dictionary<string, string> formValues, int depth)
         {
-            if (!linksBySource.TryGetValue(node.NodeId, out var outLinks) || outLinks.Count == 0) return;
+            var outLinks = topo.GetOutLinks(node.NodeId);
+            if (outLinks.Count == 0) return;
             foreach (var link in outLinks)
             {
                 // 仅处理"条件不满足"的出边（无条件默认分支视为满足，已被 ResolveNextNode 顺延走到，不在此标）
-                if (string.IsNullOrWhiteSpace(link.ConditionJson) || EvalLinkCondition(link.ConditionJson, formValues)) continue;
-                var target = allNodes.FirstOrDefault(n => n.NodeId == link.TargetNodeId);
+                if (!link.HasCondition || EvalParsedCondition(link, formValues)) continue;
+                var target = topo.GetNode(link.TargetNodeId);
                 if (target == null) continue;
-                SkipBranchChain(instance, target, allNodes, linksBySource, linksByTarget, formValues, new HashSet<long>(), depth);
+                SkipBranchChain(instance, target, topo, formValues, new HashSet<long>(), depth);
             }
         }
 
@@ -2337,7 +2299,7 @@ namespace ZR.Workflow.Service
         /// - ParallelFork(7)/流程终点：停止，不跨并行子图。
         /// 已存在任务（Pending/Done/Skipped）的节点跳过留痕，但仍继续向下游级联（如条件网关已留痕但下游分支还需标）。
         /// </summary>
-        private void SkipBranchChain(WfFlowInstance instance, WfFlowNode branchStart, List<WfFlowNode> allNodes, Dictionary<long, List<WfNodeLink>> linksBySource, Dictionary<long, List<WfNodeLink>> linksByTarget, Dictionary<string, string> formValues, HashSet<long> visited, int depth)
+        private void SkipBranchChain(WfFlowInstance instance, WfFlowNode branchStart, WorkflowTopology topo, Dictionary<string, string> formValues, HashSet<long> visited, int depth)
         {
             if (branchStart == null || visited.Contains(branchStart.NodeId)) return;
             visited.Add(branchStart.NodeId);
@@ -2345,7 +2307,7 @@ namespace ZR.Workflow.Service
             // 汇聚网关：激活它（等其它分支），不跨网关继续
             if (branchStart.NodeType == (int)WfNodeType.ParallelJoin)
             {
-                ArriveNode(instance, branchStart, allNodes, linksBySource, linksByTarget, formValues, depth: depth);
+                ArriveNode(instance, branchStart, topo, formValues, depth: depth);
                 return;
             }
             // 分叉网关 / 终点：不进入并行子图，停止
@@ -2359,13 +2321,10 @@ namespace ZR.Workflow.Service
             }
 
             // 向下游继续级联（终点无出边自然停止）
-            if (linksBySource.TryGetValue(branchStart.NodeId, out var outs) && outs.Count > 0)
+            foreach (var l in topo.GetOutLinks(branchStart.NodeId))
             {
-                foreach (var l in outs)
-                {
-                    var next = allNodes.FirstOrDefault(n => n.NodeId == l.TargetNodeId);
-                    if (next != null) SkipBranchChain(instance, next, allNodes, linksBySource, linksByTarget, formValues, visited, depth);
-                }
+                var next = topo.GetNode(l.TargetNodeId);
+                if (next != null) SkipBranchChain(instance, next, topo, formValues, visited, depth);
             }
         }
 
