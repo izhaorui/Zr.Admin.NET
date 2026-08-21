@@ -282,6 +282,7 @@ namespace ZR.Workflow.Service
                 RejectTargetNodeId = src.RejectTargetNodeId,
                 EmptyApproverStrategy = src.EmptyApproverStrategy,
                 DefaultApproverId = src.DefaultApproverId,
+                DefaultApproverName = src.DefaultApproverName,
                 TimeoutHours = src.TimeoutHours,
                 TimeoutAction = src.TimeoutAction,
                 TimeoutTransferUserId = src.TimeoutTransferUserId,
@@ -453,16 +454,16 @@ namespace ZR.Workflow.Service
                         throw new CustomException(ResultCode.CUSTOM_ERROR,
                             $"并行分叉「{node.NodeName}」至少需 2 条出边（并行分支）", null);
                 }
-                // 并行汇聚网关(8)：需 ≥1 条入边（来自并行分支）且 ≥1 条出边（汇聚后继续），否则汇聚无意义
+                // 并行汇聚网关(8)：需 ≥1 条入边（来自并行分支）汇聚；出边可空——汇聚后直接结束（流程终点）。
+                // 结束节点由前端隐式处理（不进 dto.Nodes），并行汇聚若为流程最终汇聚点则无出边，
+                // 引擎 ResolveNextNode 对无出边节点返回 null → 汇聚后 CompleteInstance 正常结束（与普通节点"无出边=终点"语义一致）。
                 else if (node.NodeType == (int)Enum.WfNodeType.ParallelJoin)
                 {
                     var inCount = links.Count(l => l.TargetNodeId == node.NodeId
                         && l.SourceNodeId != 0 && l.TargetNodeId != 0 && l.SourceNodeId != l.TargetNodeId);
-                    var outCount = links.Count(l => l.SourceNodeId == node.NodeId
-                        && l.SourceNodeId != 0 && l.TargetNodeId != 0 && l.SourceNodeId != l.TargetNodeId);
-                    if (inCount < 1 || outCount < 1)
+                    if (inCount < 1)
                         throw new CustomException(ResultCode.CUSTOM_ERROR,
-                            $"并行汇聚「{node.NodeName}」需至少 1 条入边与 1 条出边", null);
+                            $"并行汇聚「{node.NodeName}」需至少 1 条入边（来自并行分支）", null);
                 }
             }
 

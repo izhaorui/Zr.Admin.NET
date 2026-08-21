@@ -1333,7 +1333,11 @@ namespace ZR.Workflow.Service
 
             // 并行分支：首次到达该分组时，同时激活组内所有满足条件的节点。
             // 但管理员跳转（singleNodeOnly=true）到组内某成员时，跳过整组 fork，落到下方"非并行节点"分支只激活目标节点自身。
-            if (node.ParallelGroup > 0 && !singleNodeOnly)
+            // ⚠️ 若该分组存在并行分叉网关(7)，则并行激活已由 ParallelFork 分支 fork 其出边目标完成，
+            //    成员到达不再走"整组 fork"（那是纯并行分组无网关时的机制）——否则全成员 AutoSkip（不加活动集）
+            //    会使 groupActive 恒为 false，ParallelFork 对每个出边目标各触发一次整组 fork，导致成员重复 AutoSkip。
+            if (node.ParallelGroup > 0 && !singleNodeOnly
+                && !(topo.ForkByGroup.TryGetValue(node.ParallelGroup, out var forkGw) && forkGw != null))
             {
                 logger.Info($"并行分组进入：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) ParallelGroup={node.ParallelGroup}");
                 var groupNodes = topo.GetGroupNodes(node.ParallelGroup);
@@ -1354,6 +1358,9 @@ namespace ZR.Workflow.Service
                     var forkNode = topo.ForkByGroup.TryGetValue(node.ParallelGroup, out var fk) ? fk : null;
                     foreach (var g in groupNodes)
                     {
+                        // 并行分叉/汇聚网关(7/8) 由 switch 分派各自处理（ParallelFork 已 fork 出边、ParallelJoin 负责汇聚），
+                        // 不作为并行分组业务成员 fork——否则网关会被当普通节点"审批人为空自动跳过"并重复留痕。
+                        if (g.NodeType == (int)WfNodeType.ParallelFork || g.NodeType == (int)WfNodeType.ParallelJoin) continue;
                         if (!ShouldActivateForkMember(forkNode, g, topo, formValues))
                         {
                             // 分支条件不满足：明确留痕 Skipped（区别于"从未激活"），使 IsNodeComplete 能区分"跳过"与"未走到"；
