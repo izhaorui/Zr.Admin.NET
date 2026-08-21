@@ -181,16 +181,40 @@ namespace ZR.Workflow.Model.Topology
             }
             if (cond == null)
                 return (null, "条件配置错误：连线条件 JSON 内容为空");
-            if (string.IsNullOrWhiteSpace(cond.Field))
-                return (null, "条件配置错误：连线条件缺少条件字段 field");
-            if (!cond.Op.HasValue)
-                return (null, $"条件配置错误：连线条件[{cond.Field}]缺少运算符 op");
-            var op = (WfConditionOp)cond.Op.Value;
-            if (op == WfConditionOp.None || !System.Enum.IsDefined(typeof(WfConditionOp), cond.Op.Value))
-                return (null, $"条件配置错误：连线条件[{cond.Field}]运算符 op={cond.Op.Value} 无效");
-            if (string.IsNullOrWhiteSpace(cond.Value))
-                return (null, $"条件配置错误：连线条件[{cond.Field}]缺少比较值 value");
+            var err = ValidateCondition(cond);
+            if (err != null) return (null, err);
             return (cond, null);
+        }
+
+        /// <summary>递归静态校验条件（叶子或组合），返回错误文案；合法返回 null。</summary>
+        private static string ValidateCondition(WfLinkCondition c)
+        {
+            if (c == null)
+                return "条件配置错误：连线条件内容为空";
+            // 组合条件：含子条件数组 → 递归校验每个子条件
+            if (c.Conditions != null && c.Conditions.Count > 0)
+            {
+                var logic = (c.Logic ?? string.Empty).ToLowerInvariant();
+                if (logic != "and" && logic != "or")
+                    return $"条件配置错误：组合条件 logic 仅支持 and/or，当前为“{c.Logic}”";
+                for (var i = 0; i < c.Conditions.Count; i++)
+                {
+                    var sub = ValidateCondition(c.Conditions[i]);
+                    if (sub != null) return sub;
+                }
+                return null;
+            }
+            // 叶子条件：field + op + value 必填
+            if (string.IsNullOrWhiteSpace(c.Field))
+                return "条件配置错误：连线条件缺少条件字段 field";
+            if (!c.Op.HasValue)
+                return $"条件配置错误：连线条件[{c.Field}]缺少运算符 op";
+            var op = (WfConditionOp)c.Op.Value;
+            if (op == WfConditionOp.None || !System.Enum.IsDefined(typeof(WfConditionOp), c.Op.Value))
+                return $"条件配置错误：连线条件[{c.Field}]运算符 op={c.Op.Value} 无效";
+            if (string.IsNullOrWhiteSpace(c.Value))
+                return $"条件配置错误：连线条件[{c.Field}]缺少比较值 value";
+            return null;
         }
     }
 }

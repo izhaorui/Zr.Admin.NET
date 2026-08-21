@@ -1899,6 +1899,28 @@ namespace ZR.Workflow.Service
                 throw new CustomException(link.ConditionError);
             var cond = link.Condition;
             if (cond == null) return false;
+            return EvalLinkCondition(cond, formValues);
+        }
+
+        /// <summary>
+        /// 递归评估连线条件（叶子单比较 或 And/Or 组合），返回是否满足。
+        /// 组合条件：logic=and 全部满足才 true；logic=or 任一满足即 true。子条件可递归嵌套。
+        /// 配置错误（字段不在表单中）抛出异常触发事务回滚，防止"配置错误导致条件全不满足→流程误结束"。
+        /// </summary>
+        private bool EvalLinkCondition(WfLinkCondition cond, Dictionary<string, string> formValues)
+        {
+            if (cond.IsComposite)
+            {
+                var logic = (cond.Logic ?? string.Empty).ToLowerInvariant() == "or";
+                foreach (var sub in cond.Conditions)
+                {
+                    var hit = EvalLinkCondition(sub, formValues);
+                    if (logic && hit) return true;   // or：任一满足即 true
+                    if (!logic && !hit) return false; // and：任一不满足即 false
+                }
+                return logic ? false : true; // or：全不满足 → false；and：全满足 → true
+            }
+            // 叶子条件：单比较
             if (!formValues.TryGetValue(cond.Field, out var raw))
                 throw new CustomException($"条件配置错误：连线条件引用的表单字段【{cond.Field}】不在提交的表单中");
             if (string.IsNullOrWhiteSpace(raw)) return false; // 字段存在但值为空：业务不满足（保守，不误走该分支）
