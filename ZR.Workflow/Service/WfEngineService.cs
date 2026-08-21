@@ -1987,10 +1987,20 @@ namespace ZR.Workflow.Service
             if (node.SignType == (int)WfSignType.And || node.SignType == (int)WfSignType.Sequential)
                 // 会签/依次：已减签(Skipped)或被跳过(AutoSkip)的任务不阻塞完成判定，仅校验未跳过的任务是否全部 Done
                 return tasks.Where(t => t.Status != (int)WfTaskStatus.Skipped).All(t => t.Status == (int)WfTaskStatus.Done);
+            if (node.SignType == (int)WfSignType.Percent)
+            {
+                // 比例会签：未跳过的任务中 Done 数 / 总数 ≥ PassRatio（默认 1=全数）即完成；
+                // 跳过(Skipped)的任务不参与分母，与或签/会签的"已跳过不阻塞"语义一致。
+                var effective = tasks.Where(t => t.Status != (int)WfTaskStatus.Skipped).ToList();
+                if (effective.Count == 0) return true; // 整节点被跳过视为完成
+                var done = effective.Count(t => t.Status == (int)WfTaskStatus.Done);
+                var ratio = node.PassRatio ?? 1m;
+                return (decimal)done / effective.Count >= ratio;
+            }
             // 或签：已跳过(AutoSkip)的 Skipped 任务同样不阻塞（如审批人为空自动跳过）。
             // 若无未跳过任务（整节点被跳过），视为完成；否则要求未跳过的任务中任一 Done 即可。
-            var effective = tasks.Where(t => t.Status != (int)WfTaskStatus.Skipped).ToList();
-            return effective.Count == 0 || effective.Any(t => t.Status == (int)WfTaskStatus.Done);
+            var nonSkipped = tasks.Where(t => t.Status != (int)WfTaskStatus.Skipped).ToList();
+            return nonSkipped.Count == 0 || nonSkipped.Any(t => t.Status == (int)WfTaskStatus.Done);
         }
 
         /// <summary>

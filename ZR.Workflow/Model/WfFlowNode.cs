@@ -61,6 +61,13 @@ namespace ZR.Workflow.Model
         public int SignType { get; set; } = 0;
 
         /// <summary>
+        /// 比例会签通过比例（SignType=3 时生效，0~1，如 0.5=50%）。
+        /// 达到该比例的审批人通过（Done 数 / 未跳过任务数 ≥ 该值）即推进节点；默认 1（100%）等价于全数会签。
+        /// </summary>
+        [SugarColumn(DefaultValue = "1", IsNullable = true)]
+        public decimal? PassRatio { get; set; } = 1;
+
+        /// <summary>
         /// 条件字段（表单字段 key，如 amount）。为空表示无条件，节点必经。
         /// </summary>
         [SugarColumn(Length = 100, IsNullable = true)]

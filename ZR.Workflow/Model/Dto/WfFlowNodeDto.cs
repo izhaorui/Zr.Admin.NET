@@ -30,8 +30,11 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>节点顺序（仅展示/兜底排序用；串联走向由 NodeLinks 决定）</summary>
         public int NodeOrder { get; set; } = 1;
 
-        /// <summary>签类型 0=或签 1=会签（开始/结束等非审批节点不传）</summary>
+        /// <summary>签类型 0=或签 1=会签 2=依次审批 3=比例会签（开始/结束等非审批节点不传）</summary>
         public int? SignType { get; set; }
+
+        /// <summary>比例会签通过比例（SignType=3 时生效，0~1，如 0.5=50%）</summary>
+        public decimal? PassRatio { get; set; }
 
         /// <summary>条件字段（表单字段 key，如 amount），为空表示无条件</summary>
         public string ConditionField { get; set; }

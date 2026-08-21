@@ -272,6 +272,7 @@ namespace ZR.Workflow.Service
                 ApproverNames = src.ApproverNames,
                 NodeOrder = src.NodeOrder,
                 SignType = src.SignType,
+                PassRatio = src.PassRatio,
                 ConditionField = src.ConditionField,
                 ConditionOp = src.ConditionOp,
                 ConditionValue = src.ConditionValue,
