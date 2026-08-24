@@ -50,7 +50,7 @@ namespace ZR.Workflow.Controllers
         public IActionResult Approve([FromBody] WfApproveInput parm)
         {
             var userId = HttpContext.GetUId();
-            _engine.Approve(parm.TaskId, parm.Opinion, userId);
+            _engine.Approve(parm.TaskId, parm.Opinion, userId, parm.FormContent);
             return SUCCESS(1);
         }
 

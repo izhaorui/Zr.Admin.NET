@@ -6,7 +6,7 @@ namespace ZR.Workflow.Service.IService
     public interface IWfFlowInstanceService
     {
         PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, long userId, bool allUser = false);
-        WfFlowInstanceDto GetInfo(long instanceId);
+        WfFlowInstanceDto GetInfo(long instanceId, long? viewerId = null);
         long Start(WfFlowInstanceDto dto, LoginUser user);
         /// <summary>
         /// 驳回后重新提交：申请人修改内容再次发起，回到首节点重新审批。

@@ -287,6 +287,7 @@ namespace ZR.Workflow.Service
                 TimeoutHours = src.TimeoutHours,
                 TimeoutAction = src.TimeoutAction,
                 TimeoutTransferUserId = src.TimeoutTransferUserId,
+                FieldPermission = src.FieldPermission,
                 Create_by = userName,
                 Create_time = DateTime.Now
             };

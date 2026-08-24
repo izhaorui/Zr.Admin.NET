@@ -90,6 +90,10 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>审批意见</summary>
         public string Opinion { get; set; }
+
+        /// <summary>审批人修改后的表单（JSON，可选）。仅提交当前节点有权编辑的字段变更；
+        /// 引擎会按节点 FieldPermission 校验：无权字段若被修改则拒绝。为空表示审批人不改表单。</summary>
+        public string FormContent { get; set; }
     }
 
     /// <summary>

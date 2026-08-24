@@ -66,6 +66,10 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>表单内容（JSON）</summary>
         public string FormContent { get; set; }
 
+        /// <summary>表单字段权限视图（详情接口按当前查看者视角返回，前端据此控制字段可见/只读/可编辑）。Restricted=false 时全放开。</summary>
+        [SugarColumn(IsIgnore = true)]
+        public WfFieldPermissionView FieldPermissionView { get; set; }
+
         /// <summary>附件</summary>
         public string Attachment { get; set; }
 

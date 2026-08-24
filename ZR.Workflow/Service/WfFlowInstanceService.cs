@@ -160,8 +160,12 @@ namespace ZR.Workflow.Service
         /// 性能说明：当前 4 次查询（实例 / 流程定义 / 当前节点 / 任务 / 记录），
         /// 任务/记录总量可控时无 N+1 风险；若未来详情页要展示评论附件等大字段，可考虑改用
         /// <c>Queryable().Includes(t => t.Tasks).Includes(r => r.Records)</c> 一次拉取。
+        ///
+        /// 表单字段权限：按查看者视角（viewerId）对 FormContent 做字段级过滤。
+        /// - 申请人为本人、实例非审批中（已通过/驳回/撤回/结束）或节点未配置权限 → 全放开；
+        /// - 当前审批人 → 按该节点 FieldPermission 剔除隐藏字段，并返回权限视图供前端控制只读/可编辑。
         /// </summary>
-        public WfFlowInstanceDto GetInfo(long instanceId)
+        public WfFlowInstanceDto GetInfo(long instanceId, long? viewerId = null)
         {
             var inst = Queryable().First(i => i.InstanceId == instanceId);
             if (inst == null) return null;
@@ -214,7 +218,115 @@ namespace ZR.Workflow.Service
                     }
                 }
             }
+            ApplyFieldPermission(dto, inst, viewerId);
             return dto;
+        }
+
+        /// <summary>
+        /// 按查看者视角对实例表单做字段级权限过滤：
+        /// - 申请人本人 → AllEditable=true（可编辑全部，用于回填/修改）。
+        /// - 实例非审批中（已通过/驳回/撤回/结束）或未传入查看者 → 全可见只读（ReadonlyFields/HiddenFields 空，历史实例直接放开）。
+        /// - 当前审批人 → 取活动节点 FieldPermission：
+        ///   节点未配置 → 全部字段默认可编辑（AllEditable=true）；
+        ///   已配置 → perm=0 可编辑、perm=1 只读、perm=2 隐藏（FormContent 过滤掉隐藏字段），返回 ReadonlyFields/HiddenFields。
+        /// </summary>
+        private void ApplyFieldPermission(WfFlowInstanceDto dto, WfFlowInstance inst, long? viewerId)
+        {
+            if (inst == null || dto == null) return;
+            var view = new WfFieldPermissionView();
+
+            // 申请人本人 → 可编辑全部字段
+            if (viewerId.HasValue && inst.ApplyUserId.HasValue && inst.ApplyUserId.Value == viewerId.Value)
+            {
+                view.AllEditable = true;
+                dto.FieldPermissionView = view;
+                return;
+            }
+
+            // 非审批中实例 / 未传入查看者 → 历史直接放开（全可见只读）
+            if (!viewerId.HasValue || inst.Status != (int)WfInstanceStatus.Approval)
+            {
+                dto.FieldPermissionView = view;
+                return;
+            }
+
+            var activeNodeIds = ParseActiveNodeIds(inst.CurrentNodeIds, inst.CurrentNodeId);
+            if (activeNodeIds.Count == 0)
+            {
+                dto.FieldPermissionView = view;
+                return;
+            }
+
+            // 汇总当前活动节点的字段权限（并行多活动节点取同字段最严格权限）
+            var merged = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var hasAnyConfig = false;
+            var nodes = Context.Queryable<WfFlowNode>()
+                .Where(n => activeNodeIds.Contains(n.NodeId) && n.FieldPermission != null)
+                .ToList();
+            foreach (var n in nodes)
+            {
+                if (string.IsNullOrWhiteSpace(n.FieldPermission)) continue;
+                hasAnyConfig = true;
+                List<WfFieldPermissionItem> items;
+                try
+                {
+                    items = JsonConvert.DeserializeObject<List<WfFieldPermissionItem>>(n.FieldPermission) ?? new List<WfFieldPermissionItem>();
+                }
+                catch (Exception)
+                {
+                    continue; // 配置损坏则忽略该节点，避免整单打不开
+                }
+                foreach (var it in items)
+                {
+                    if (string.IsNullOrWhiteSpace(it.Field)) continue;
+                    var perm = NormalizePerm(it.Perm);
+                    if (!merged.TryGetValue(it.Field, out var oldPerm))
+                        merged[it.Field] = perm;
+                    else
+                        merged[it.Field] = Math.Max(oldPerm, perm); // 0<1<2，取最大=最严格
+                }
+            }
+
+            // 节点未配置任何字段权限 → 全部字段默认可编辑
+            if (!hasAnyConfig || merged.Count == 0)
+            {
+                view.AllEditable = true;
+                dto.FieldPermissionView = view;
+                return;
+            }
+
+            view.ReadonlyFields = merged.Where(kv => kv.Value == 1).Select(kv => kv.Key).ToList();
+            view.HiddenFields = merged.Where(kv => kv.Value == 2).Select(kv => kv.Key).ToList();
+
+            // 剔除隐藏字段：FormContent 排除 perm=2 的字段
+            if (view.HiddenFields.Count > 0 && !string.IsNullOrWhiteSpace(inst.FormContent))
+            {
+                try
+                {
+                    var kv = JsonConvert.DeserializeObject<Dictionary<string, string>>(inst.FormContent);
+                    if (kv != null)
+                    {
+                        var hidden = new HashSet<string>(view.HiddenFields, StringComparer.OrdinalIgnoreCase);
+                        var filtered = kv.Where(p => !hidden.Contains(p.Key))
+                            .ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
+                        dto.FormContent = JsonConvert.SerializeObject(filtered);
+                    }
+                }
+                catch (Exception)
+                {
+                    // FormContent 非标准 JSON 时不过滤，交由前端容错
+                }
+            }
+
+            dto.FieldPermissionView = view;
+        }
+
+        /// <summary>
+        /// 规范化权限值：仅识别 0/1/2，其它值按 0（可编辑）处理。
+        /// </summary>
+        private static int NormalizePerm(int perm)
+        {
+            return perm == 1 || perm == 2 ? perm : 0;
         }
 
         /// <summary>

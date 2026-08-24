@@ -135,6 +135,18 @@ namespace ZR.Workflow.Model
         public string DefaultApproverName { get; set; }
 
         /// <summary>
+        /// 表单字段权限（JSON 字符串，钉钉式字段级权限控制）。
+        /// 结构：[{"field":"amount","perm":0}]：
+        /// - perm=0 可编辑，perm=1 只读，perm=2 隐藏；
+        /// - 未在列表中声明的字段默认可编辑；
+        /// - 列表中 perm=2 的字段会从详情表单中剔除。
+        /// 为空表示该节点不做字段限制（全部字段默认可编辑）。
+        /// 仅对「审批节点」生效；发起人/申请人/已结束实例一律全放开。
+        /// </summary>
+        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString, IsNullable = true)]
+        public string FieldPermission { get; set; }
+
+        /// <summary>
         /// 节点超时时长（小时）。0=不超时（默认）；>0 时引擎在生成待办时计算 DeadlineTime=ArriveTime+TimeoutHours。
         /// </summary>
         [SugarColumn(DefaultValue = "0")]

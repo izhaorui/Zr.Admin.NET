@@ -86,7 +86,7 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 通过
         /// </summary>
-        public void Approve(long taskId, string opinion, long operatorId)
+        public void Approve(long taskId, string opinion, long operatorId, string formContent = null)
         {
             var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
             if (instance.Status != (int)WfInstanceStatus.Approval)
@@ -123,6 +123,13 @@ namespace ZR.Workflow.Service
                     .Where(t => t.TaskId == taskId && t.Status == (int)WfTaskStatus.Pending).ExecuteCommand();
                 // 数据库级 CAS 抢占：能否审批由 UPDATE 命中行数决定，命中 0 行说明任务已被并发处理（重复点击/或签他人已审）
                 if (rows != 1) throw new CustomException("任务已处理");
+
+                // 审批人编辑字段回写：仅当提交了 formContent 时按当前节点 FieldPermission 校验并更新实例表单，
+                // 回写后持久化到库，后续节点条件/展示基于新值。无权字段被修改则抛异常回滚本事务。
+                if (!string.IsNullOrWhiteSpace(formContent))
+                {
+                    ApplyApproveFormEdit(instance, node, formContent, op.UserName, now);
+                }
 
                 AddRecord(instance.InstanceId, taskId, task.NodeId, op, (int)WfAction.Approve, delegatedNote + opinion);
 
@@ -1043,6 +1050,71 @@ namespace ZR.Workflow.Service
             }
             catch { /* JSON 解析失败（格式错误或类型不匹配），视为无条件 */ }
             return dict;
+        }
+
+        /// <summary>
+        /// 审批人编辑字段回写：按当前节点 <see cref="WfFlowNode.FieldPermission"/> 校验并持久化更新实例表单。
+        /// 仅允许更新 perm=0（可编辑）的字段；perm=1（只读）/perm=2（隐藏）/未在列表中声明但节点已配置其它字段 的字段被修改则抛异常。
+        /// 节点完全未配置 FieldPermission 时，按"未配置字段默认可编辑"处理，允许审批人提交变更。
+        /// 回写成功后同时更新数据库 FormContent 与审计字段，后续节点条件/展示使用新值。
+        /// </summary>
+        /// <param name="instance">流程实例（事务内内存对象，回写 FormContent）</param>
+        /// <param name="node">当前审批节点</param>
+        /// <param name="formContent">审批人提交的表单变更（JSON，字段-&gt;值，值均为字符串）</param>
+        /// <param name="updateBy">当前操作人用户名（写入 Update_by）</param>
+        /// <param name="updateTime">当前操作时间（写入 Update_time）</param>
+        private void ApplyApproveFormEdit(WfFlowInstance instance, WfFlowNode node, string formContent, string updateBy, DateTime updateTime)
+        {
+            var submitted = JsonConvert.DeserializeObject<Dictionary<string, string>>(formContent)
+                ?? throw new CustomException("表单数据格式错误");
+            if (submitted.Count == 0) return;
+
+            // 节点未配置任何字段权限 → 全部字段默认可编辑
+            if (string.IsNullOrWhiteSpace(node.FieldPermission))
+            {
+                MergeFormContent(instance, submitted, updateBy, updateTime);
+                return;
+            }
+
+            // 解析节点字段权限：perm=0 可编辑；perm=1 只读；perm=2 隐藏；其它值按 0 处理。
+            // 未在列表中声明的字段默认可编辑（与详情过滤侧语义一致）。
+            var restrictedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var items = JsonConvert.DeserializeObject<List<WfFieldPermissionItem>>(node.FieldPermission) ?? new List<WfFieldPermissionItem>();
+            foreach (var it in items)
+            {
+                if (string.IsNullOrWhiteSpace(it.Field)) continue;
+                if (it.Perm == 1 || it.Perm == 2) restrictedFields.Add(it.Field);
+            }
+
+            // 越权校验：提交的字段若被显式声明为 perm=1（只读）或 perm=2（隐藏）则拒绝；未声明字段默认可编辑。
+            foreach (var f in submitted.Keys)
+            {
+                if (restrictedFields.Contains(f))
+                    throw new CustomException($"无权限修改表单字段「{f}」");
+            }
+
+            MergeFormContent(instance, submitted, updateBy, updateTime);
+        }
+
+        /// <summary>
+        /// 合并审批人提交的字段变更到实例表单并持久化。
+        /// </summary>
+        private void MergeFormContent(WfFlowInstance instance, Dictionary<string, string> submitted, string updateBy, DateTime updateTime)
+        {
+            var current = string.IsNullOrWhiteSpace(instance.FormContent)
+                ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                : (JsonConvert.DeserializeObject<Dictionary<string, string>>(instance.FormContent)
+                    ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+            foreach (var f in submitted)
+                current[f.Key] = f.Value;
+            instance.FormContent = JsonConvert.SerializeObject(current);
+            instance.Update_time = updateTime;
+            instance.Update_by = updateBy;
+
+            // 持久化到库：本次审批人对有权字段的修改必须与审批操作原子提交
+            Context.Updateable(instance)
+                .UpdateColumns(i => new { i.FormContent, i.Update_time, i.Update_by })
+                .ExecuteCommand();
         }
 
         #endregion
@@ -2284,6 +2356,13 @@ namespace ZR.Workflow.Service
         /// </summary>
         private void CreateAutoSkipTask(WfFlowInstance instance, WfFlowNode node, string reason)
         {
+            // 幂等保护：同一节点已存在任何任务（Pending/Done/Skipped）则不再建第二条 Skipped 留痕。
+            // 重复来源：同一多入边/并行分叉节点可能同时被两条路径处理——
+            //   ① SkipBranchChain 级联（"上游条件不满足，分支自动跳过"）
+            //   ② ArriveNode 实际到达（"审批人为空，节点自动跳过" / 并行分组 fork）
+            // 两条路径在同一事务内先后执行，任一路径先建任务后，另一路径必须跳过，否则同一节点出现两条不同原因的 AutoSkip 记录。
+            var existed = Context.Queryable<WfFlowTask>().Any(t => t.InstanceId == instance.InstanceId && t.NodeId == node.NodeId);
+            if (existed) return;
             // Assignee 列 NOT NULL，自动跳过无具体审批人，用申请人登录名占位（或系统常量兜底）。
             var skipAssignee = string.IsNullOrEmpty(instance.ApplyUser) ? "__SYSTEM__" : instance.ApplyUser;
             Context.Insertable(new WfFlowTask
@@ -2346,11 +2425,10 @@ namespace ZR.Workflow.Service
             // 分叉网关 / 终点：不进入并行子图，停止
             if (branchStart.NodeType == (int)WfNodeType.ParallelFork) return;
 
-            // 真实业务节点（Audit/Cc）：建 Skipped 留痕（已存在任务则跳过），继续沿下游链级联
+            // 真实业务节点（Audit/Cc）：建 Skipped 留痕（CreateAutoSkipTask 内部已做"已存在任务则跳过"的幂等保护），继续沿下游链级联
             if (branchStart.NodeType == (int)WfNodeType.Audit || branchStart.NodeType == (int)WfNodeType.Cc)
             {
-                var existing = Context.Queryable<WfFlowTask>().Any(t => t.InstanceId == instance.InstanceId && t.NodeId == branchStart.NodeId);
-                if (!existing) CreateAutoSkipTask(instance, branchStart, "上游条件不满足，分支自动跳过");
+                CreateAutoSkipTask(instance, branchStart, "上游条件不满足，分支自动跳过");
             }
 
             // 向下游继续级联（终点无出边自然停止）

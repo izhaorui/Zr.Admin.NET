@@ -21,7 +21,7 @@ namespace ZR.Workflow.Service.IService
         /// <param name="taskId">任务Id</param>
         /// <param name="opinion">审批意见</param>
         /// <param name="operatorId">操作人 userId（须为该任务的 AssigneeId）</param>
-        void Approve(long taskId, string opinion, long operatorId);
+        void Approve(long taskId, string opinion, long operatorId, string formContent = null);
 
         /// <summary>
         /// 驳回
