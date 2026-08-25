@@ -2247,7 +2247,7 @@ namespace ZR.Workflow.Service
             }
         }
 
-        /// <summary>表单字段动态审批人：ApproverId 为表单字段 key，字段值为逗号分隔的 userId。</summary>
+        /// <summary>表单字段动态审批人：ApproverId 为表单字段 key，字段值为逗号分隔的 userId（兼容 "userId:userName" 格式，取冒号前的数字部分）。</summary>
         private sealed class FormFieldApproverResolver : ApproverResolverBase
         {
             public FormFieldApproverResolver(WfEngineService engine) : base(engine) { }
@@ -2258,8 +2258,13 @@ namespace ZR.Workflow.Service
                 if (string.IsNullOrWhiteSpace(key) || formValues == null || !formValues.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
                     return new List<SysUser>();
                 var userIds = raw.SplitByComma()
-                    .Where(s => long.TryParse(s, out var id) && id > 0)
-                    .Select(s => long.Parse(s))
+                    .Select(s => {
+                        // 兼容 "userId:userName" 格式：取冒号前的纯数字部分
+                        var idx = s.IndexOf(':');
+                        var numStr = idx > 0 ? s.Substring(0, idx) : s;
+                        return long.TryParse(numStr, out var id) && id > 0 ? id : 0;
+                    })
+                    .Where(id => id > 0)
                     .Distinct()
                     .ToList();
                 if (userIds.Count == 0) return new List<SysUser>();
