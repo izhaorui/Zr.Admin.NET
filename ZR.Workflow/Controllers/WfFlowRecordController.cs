@@ -60,5 +60,17 @@ namespace ZR.Workflow.Controllers
             var userId = HttpContext.GetUId();
             return SUCCESS(_service.GetUnreadCount(userId));
         }
+
+        /// <summary>
+        /// 手动生成/重生成单条审批记录的 AI 摘要（审批后自动落痕失败或无摘要时可手动触发）
+        /// </summary>
+        [HttpPost("summarize/{recordId}")]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "AI审批摘要", BusinessType = BusinessType.UPDATE)]
+        public async Task<IActionResult> Summarize(long recordId)
+        {
+            var summary = await _service.RegenerateSummary(recordId);
+            return SUCCESS(summary);
+        }
     }
 }

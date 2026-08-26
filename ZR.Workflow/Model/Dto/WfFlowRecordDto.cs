@@ -61,5 +61,8 @@ namespace ZR.Workflow.Model.Dto
 
         /// <summary>审批意见</summary>
         public string Opinion { get; set; }
+
+        /// <summary>AI 自动生成的审批摘要（提交后异步生成，可空；未生成时前端可手动触发）</summary>
+        public string Summary { get; set; }
     }
 }

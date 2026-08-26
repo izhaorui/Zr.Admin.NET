@@ -6,6 +6,13 @@ namespace ZR.Workflow.Service
     [AppService(ServiceType = typeof(IWfFlowRecordService))]
     public class WfFlowRecordService : BaseService<WfFlowRecord>, IWfFlowRecordService
     {
+        private readonly IWfAiService _aiService;
+
+        public WfFlowRecordService(IWfAiService aiService)
+        {
+            _aiService = aiService;
+        }
+
         public PagedInfo<WfFlowRecordDto> GetList(WfFlowRecordQueryDto parm)
         {
             var query = BuildRecordQuery()
@@ -29,6 +36,7 @@ namespace ZR.Workflow.Service
                     Action = r.Action,
                     IsRead = r.IsRead,
                     Opinion = r.Opinion,
+                    Summary = r.Summary,
                     Create_time = r.Create_time
                 });
             return query.ToPage(parm);
@@ -60,6 +68,7 @@ namespace ZR.Workflow.Service
                     OperatorNickName = r.OperatorNickName,
                     IsRead = r.IsRead,
                     Opinion = r.Opinion,
+                    Summary = r.Summary,
                     Create_time = r.Create_time
                 });
             return query.ToPage(parm);
@@ -93,6 +102,43 @@ namespace ZR.Workflow.Service
                 .SetColumns(r => new WfFlowRecord { IsRead = true })
                 .Where(r => ids.Contains(r.RecordId) && r.OperatorId == userId)
                 .ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 手动生成/重生成单条审批记录的 AI 摘要（前端详情页可触发）。读取记录及其实例表单，调用
+        /// <see cref="IWfAiService.SummarizeApprovalAsync"/> 生成并写回 <see cref="WfFlowRecord.Summary"/>，返回摘要文本。
+        /// 适用于自动落痕失败 / 记录无摘要 / 想重新生成的场景。AI 未启用或调用失败时抛出友好异常。
+        /// </summary>
+        public async Task<string> RegenerateSummary(long recordId)
+        {
+            var record = await Context.Queryable<WfFlowRecord>()
+                .LeftJoin<WfFlowNode>((r, n) => r.NodeId == n.NodeId)
+                .Where(r => r.RecordId == recordId)
+                .Select((r, n) => new { Record = r, NodeName = n.NodeName })
+                .FirstAsync();
+            if (record == null)
+            {
+                throw new CustomException("审批记录不存在");
+            }
+
+            var formContent = await Context.Queryable<WfFlowInstance>()
+                .Where(i => i.InstanceId == record.Record.InstanceId)
+                .Select(i => i.FormContent)
+                .FirstAsync();
+
+            var result = await _aiService.SummarizeApprovalAsync(string.Empty, record.NodeName, record.Record.Opinion, formContent);
+            var summary = result?.Summary;
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                throw new CustomException("AI 未返回摘要内容，请稍后重试");
+            }
+
+            await Context.Updateable<WfFlowRecord>()
+                .SetColumns(r => r.Summary == summary)
+                .Where(r => r.RecordId == recordId)
+                .ExecuteCommandAsync();
+
+            return summary;
         }
     }
 }
