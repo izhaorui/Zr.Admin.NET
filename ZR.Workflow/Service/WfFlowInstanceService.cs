@@ -25,10 +25,12 @@ namespace ZR.Workflow.Service
     public class WfFlowInstanceService : BaseService<WfFlowInstance>, IWfFlowInstanceService
     {
         private readonly IWfEngineService _engine;
+        private readonly IWfAiService _aiService;
 
-        public WfFlowInstanceService(IWfEngineService engine)
+        public WfFlowInstanceService(IWfEngineService engine, IWfAiService aiService)
         {
             _engine = engine;
+            _aiService = aiService;
         }
 
         #region 列表
@@ -221,6 +223,70 @@ namespace ZR.Workflow.Service
             ApplyFieldPermission(dto, inst, viewerId);
             return dto;
         }
+
+        /// <summary>
+        /// AI 审批链汇总：读取某实例的标题/状态/表单与全部审批记录，组装成审批链上下文文本，
+        /// 交由 <see cref="IWfAiService.SummarizeApprovalChainAsync"/> 生成审批全过程结论/风险/建议。
+        /// 数据组装在本类（有 Context）完成，AI 服务保持纯编排，避免 Service 层循环依赖。
+        /// </summary>
+        public async Task<WfAiInstanceSummaryResult> SummarizeInstance(long instanceId)
+        {
+            if (instanceId <= 0)
+            {
+                throw new CustomException("流程实例 Id 不能为空");
+            }
+
+            var inst = Queryable().First(i => i.InstanceId == instanceId)
+                ?? throw new CustomException("流程实例不存在");
+
+            var records = Context.Queryable<WfFlowRecord>()
+                .LeftJoin<WfFlowNode>((r, n) => r.NodeId == n.NodeId)
+                .Where(r => r.InstanceId == instanceId)
+                .OrderBy(r => r.RecordId)
+                .Select((r, n) => new { r, NodeName = n.NodeName })
+                .ToList();
+
+            var recordsDesc = string.Join("\n", records.Select(x =>
+                $"- {x.r.Create_time:yyyy-MM-dd HH:mm} {x.r.OperatorNickName ?? x.r.Operator} 执行「{ActionName(x.r.Action)}」节点「{x.NodeName}」意见：{(string.IsNullOrWhiteSpace(x.r.Opinion) ? "（无）" : x.r.Opinion)}"));
+            if (string.IsNullOrWhiteSpace(recordsDesc))
+            {
+                recordsDesc = "（暂无审批记录）";
+            }
+
+            var formText = string.IsNullOrWhiteSpace(inst.FormContent) ? "（表单为空）" : inst.FormContent;
+            var context = $"申请标题：{inst.Title}\n流程名称：{inst.FlowName}\n最终状态：{InstanceStatusName(inst.Status)}\n表单内容：{formText}\n审批链记录：\n{recordsDesc}";
+
+            return await _aiService.SummarizeApprovalChainAsync(context);
+        }
+
+        /// <summary>动作数字 → 中文名（对齐 WfAction）。</summary>
+        private static string ActionName(int action) => action switch
+        {
+            (int)WfAction.Submit => "提交",
+            (int)WfAction.Approve => "通过",
+            (int)WfAction.Reject => "驳回",
+            (int)WfAction.Transfer => "转交",
+            (int)WfAction.Withdraw => "撤回",
+            (int)WfAction.AddSign => "加签",
+            (int)WfAction.Resubmit => "重新提交",
+            (int)WfAction.Cc => "抄送",
+            (int)WfAction.AutoSkip => "自动跳过",
+            (int)WfAction.RemoveSign => "减签",
+            (int)WfAction.Delegate => "委托代审",
+            _ => $"动作{action}"
+        };
+
+        /// <summary>实例状态数字 → 中文名（对齐 WfInstanceStatus）。</summary>
+        private static string InstanceStatusName(int status) => status switch
+        {
+            (int)WfInstanceStatus.Approval => "审批中",
+            (int)WfInstanceStatus.Approved => "通过",
+            (int)WfInstanceStatus.Rejected => "驳回",
+            (int)WfInstanceStatus.Withdrawn => "撤回",
+            (int)WfInstanceStatus.Suspended => "已挂起",
+            (int)WfInstanceStatus.Terminated => "已终止",
+            _ => $"状态{status}"
+        };
 
         /// <summary>
         /// 按查看者视角对实例表单做字段级权限过滤：

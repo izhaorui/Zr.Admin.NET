@@ -31,5 +31,11 @@ namespace ZR.Workflow.Service.IService
         /// 自然语言发起申请（Web 端匹配流程 + 预填表单）
         /// </summary>
         Task<WfAiMatchFillResult> MatchAndFillFormAsync(WfAiMatchFillInput input);
+
+        /// <summary>
+        /// 汇总整个审批链：接收调用方已组装的审批链上下文，生成审批全过程结论 / 风险提示 / 改进建议。
+        /// 纯 AI 编排，不访问数据，避免循环依赖。
+        /// </summary>
+        Task<WfAiInstanceSummaryResult> SummarizeApprovalChainAsync(string userContext);
     }
 }

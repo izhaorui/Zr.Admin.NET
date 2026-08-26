@@ -27,5 +27,9 @@ namespace ZR.Workflow.Service.IService
         /// isAdmin=true 时放开为全部用户实例（管理员全局视图）；flowId 可选，按流程定义维度过滤。
         /// </summary>
         WfEfficiencyStatsDto GetEfficiencyStats(long userId, bool isAdmin = false, long? flowId = null);
+        /// <summary>
+        /// AI 审批链汇总：读取实例审批链并生成审批全过程结论/风险/建议。
+        /// </summary>
+        Task<WfAiInstanceSummaryResult> SummarizeInstance(long instanceId);
     }
 }

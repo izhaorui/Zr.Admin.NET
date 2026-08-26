@@ -1019,6 +1019,243 @@ namespace ZR.Workflow.Service
             return result;
         }
 
+        // ===== 审批链 AI 汇总（提示词见 Prompts/flow-summary.md，复用 GenerateFlowAsync 的多轮工具自纠闭环） =====
+
+        /// <summary>
+        /// 构建 validateInstanceSummary 工具的 function schema（OpenAI 兼容）。
+        /// </summary>
+        private static object BuildInstanceSummaryToolSchema()
+        {
+            return new
+            {
+                type = "function",
+                function = new
+                {
+                    name = "validateInstanceSummary",
+                    description = "校验审批链汇总结构是否符合约束：conclusion 非空、riskLevel 合法、risks/suggestions 为数组。errors 为空表示通过。",
+                    parameters = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            conclusion = new { type = "string", description = "审批全过程结论" },
+                            riskLevel = new { type = "string", description = "风险等级：low/mid/high" },
+                            risks = new { type = "array", description = "风险提示数组", items = new { type = "string" } },
+                            suggestions = new { type = "array", description = "改进建议数组", items = new { type = "string" } }
+                        },
+                        required = new[] { "conclusion", "riskLevel", "risks", "suggestions" }
+                    }
+                }
+            };
+        }
+
+        private static readonly object InstanceSummaryToolSchema = BuildInstanceSummaryToolSchema();
+
+        /// <summary>
+        /// 审批链 AI 汇总：接收调用方已组装的审批链上下文文本（含标题/流程/状态/表单/逐条记录），
+        /// 走 LLM 多轮工具自纠闭环（validateInstanceSummary 工具回灌 + 兜底解析），返回结构化结论/风险/建议。
+        /// 纯 AI 编排，不访问数据库，也不依赖任何业务 Service，避免与 <see cref="IWfFlowInstanceService"/> 等形成循环依赖。
+        /// 数据组装由调用方（如 <see cref="WfFlowInstanceService"/>）完成。
+        /// </summary>
+        public async Task<WfAiInstanceSummaryResult> SummarizeApprovalChainAsync(string userContext)
+        {
+            if (string.IsNullOrWhiteSpace(userContext))
+            {
+                throw new Exception("审批链上下文不能为空");
+            }
+
+            var options = EnsureAiEnabled();
+            var messages = new List<object>
+            {
+                new { role = "system", content = GetPromptOrThrow("flow-summary.md", "审批链汇总") },
+                new { role = "user", content = userContext }
+            };
+            var tools = new object[] { InstanceSummaryToolSchema };
+
+            string lastJson = null;
+            var requestId = Guid.NewGuid().ToString("N");
+
+            for (var round = 0; round <= MaxRepairRounds; round++)
+            {
+                AiLlmClient.ChatToolResult turn;
+                try
+                {
+                    turn = await AiLlmClient.ChatWithToolsAsync(options, messages.ToArray(), tools).ConfigureAwait(false);
+                }
+                catch (HttpRequestException ex)
+                {
+                    throw new Exception("调用 AI 服务失败：" + ex.Message);
+                }
+                catch (TaskCanceledException)
+                {
+                    throw new Exception("调用 AI 服务超时，请稍后重试");
+                }
+
+                if (turn.ToolCalls.Count > 0)
+                {
+                    foreach (var call in turn.ToolCalls)
+                    {
+                        if (!string.Equals(call.Name, "validateInstanceSummary", StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        var errors = RunInstanceSummaryValidateTool(call.Arguments, out var parsedJson);
+                        if (!string.IsNullOrWhiteSpace(parsedJson))
+                        {
+                            lastJson = parsedJson;
+                        }
+
+                        var assistantMsg = BuildAssistantToolMessage(turn.Content, call);
+                        messages.Add(assistantMsg);
+                        messages.Add(new
+                        {
+                            role = "tool",
+                            tool_call_id = call.Id,
+                            name = call.Name,
+                            content = STJson.JsonSerializer.Serialize(new { errors })
+                        });
+                    }
+
+                    continue;
+                }
+
+                lastJson = turn.Content;
+                break;
+            }
+
+            return FinalizeInstanceSummary(requestId, lastJson);
+        }
+
+        /// <summary>
+        /// 执行 validateInstanceSummary 工具：解析参数并本地校验，返回错误列表；parsedJson 携带成功解析的结构。
+        /// </summary>
+        private static List<string> RunInstanceSummaryValidateTool(string arguments, out string parsedJson)
+        {
+            parsedJson = null;
+            if (string.IsNullOrWhiteSpace(arguments))
+            {
+                return new List<string> { "validateInstanceSummary 调用缺少参数" };
+            }
+
+            WfAiInstanceSummaryResult draft;
+            try
+            {
+                draft = STJson.JsonSerializer.Deserialize<WfAiInstanceSummaryResult>(arguments, JsonOptions);
+            }
+            catch (STJson.JsonException ex)
+            {
+                return new List<string> { "validateInstanceSummary 参数无法解析：" + ex.Message };
+            }
+
+            if (draft == null)
+            {
+                return new List<string> { "validateInstanceSummary 参数为空结构" };
+            }
+
+            NormalizeInstanceSummary(draft);
+            parsedJson = STJson.JsonSerializer.Serialize(draft);
+            return ValidateInstanceSummary(draft);
+        }
+
+        /// <summary>
+        /// 业务校验（validateInstanceSummary 工具的本地实现）：返回错误列表，空表示通过。
+        /// </summary>
+        private static List<string> ValidateInstanceSummary(WfAiInstanceSummaryResult result)
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(result.Conclusion))
+            {
+                errors.Add("conclusion（审批全过程结论）不能为空，请概括该申请的审批走向与最终结果");
+            }
+            if (!string.Equals(result.RiskLevel, "low", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(result.RiskLevel, "mid", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(result.RiskLevel, "high", StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add($"riskLevel 只能是 low/mid/high，当前为「{result.RiskLevel}」");
+            }
+            if (result.Risks == null || result.Risks.Count == 0)
+            {
+                // 无风险是合法的：允许 risks 为空数组，不强制报错
+            }
+            if (result.Suggestions == null || result.Suggestions.Count == 0)
+            {
+                // 无建议同样合法
+            }
+            return errors;
+        }
+
+        /// <summary>
+        /// 审批链汇总收尾：先直接反序列化，失败则 ExtractFirstJsonObject 兜底，再失败抛异常。
+        /// </summary>
+        private static WfAiInstanceSummaryResult FinalizeInstanceSummary(string requestId, string lastJson)
+        {
+            if (string.IsNullOrWhiteSpace(lastJson))
+            {
+                throw new Exception("AI 未返回审批链汇总，请稍后重试");
+            }
+
+            var result = TryDeserializeInstanceSummary(lastJson);
+            if (result == null)
+            {
+                var extracted = JsonHelper.ExtractFirstJsonObject(lastJson);
+                if (!string.IsNullOrWhiteSpace(extracted))
+                {
+                    result = TryDeserializeInstanceSummary(extracted);
+                }
+            }
+
+            if (result == null)
+            {
+                Log.WriteLine(ConsoleColor.Red, "[WfAi] AI 审批链汇总输出无法解析为合法 JSON");
+                Logger.LogWarning("[WfAi][{RequestId}] 原始输出：{Raw}", requestId, lastJson);
+                throw new Exception("AI 审批链汇总格式错误，请稍后重试");
+            }
+
+            NormalizeInstanceSummary(result);
+            var errors = ValidateInstanceSummary(result);
+            if (errors.Count > 0)
+            {
+                Log.WriteLine(ConsoleColor.Red, $"[WfAi] 审批链汇总校验失败：{errors[0]}");
+                throw new Exception(errors[0]);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 直接反序列化审批链汇总；成功返回对象，失败返回 null。
+        /// </summary>
+        private static WfAiInstanceSummaryResult TryDeserializeInstanceSummary(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return null;
+            try
+            {
+                return STJson.JsonSerializer.Deserialize<WfAiInstanceSummaryResult>(json, JsonOptions);
+            }
+            catch (STJson.JsonException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 归一化审批链汇总：riskLevel 转小写并校正非法值，数组空则置空列表。
+        /// </summary>
+        private static void NormalizeInstanceSummary(WfAiInstanceSummaryResult result)
+        {
+            result.RiskLevel = (result.RiskLevel ?? string.Empty).Trim().ToLowerInvariant();
+            if (!string.Equals(result.RiskLevel, "low", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(result.RiskLevel, "mid", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(result.RiskLevel, "high", StringComparison.OrdinalIgnoreCase))
+            {
+                result.RiskLevel = "low";
+            }
+            result.Risks ??= new List<string>();
+            result.Suggestions ??= new List<string>();
+            result.Conclusion = (result.Conclusion ?? string.Empty).Trim();
+        }
+
         #endregion
     }
 }

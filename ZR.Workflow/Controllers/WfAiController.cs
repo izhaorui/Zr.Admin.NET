@@ -10,10 +10,12 @@ namespace ZR.Workflow.Controllers
     public class WfAiController : BaseController
     {
         private readonly IWfAiService _service;
+        private readonly IWfFlowInstanceService _instanceService;
 
-        public WfAiController(IWfAiService service)
+        public WfAiController(IWfAiService service, IWfFlowInstanceService instanceService)
         {
             _service = service;
+            _instanceService = instanceService;
         }
 
         /// <summary>
@@ -80,6 +82,24 @@ namespace ZR.Workflow.Controllers
             try
             {
                 var result = await _service.MatchAndFillFormAsync(input);
+                return SUCCESS(result);
+            }
+            catch (Exception ex)
+            {
+                return ToResponse(ResultCode.FAIL, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// AI 审批链汇总：对某实例的完整审批过程生成结论 / 风险提示 / 改进建议
+        /// </summary>
+        [HttpPost("instance-summary/{instanceId}")]
+        [ActionPermissionFilter(Permission = "common")]
+        public async Task<IActionResult> InstanceSummary(long instanceId)
+        {
+            try
+            {
+                var result = await _instanceService.SummarizeInstance(instanceId);
                 return SUCCESS(result);
             }
             catch (Exception ex)

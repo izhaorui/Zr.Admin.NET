@@ -113,4 +113,30 @@ namespace ZR.Workflow.Model.Dto
         /// </summary>
         public string Reason { get; set; }
     }
+
+    /// <summary>
+    /// AI 审批链汇总 - 输出：对某实例的完整审批过程做结构化结论 / 风险提示 / 改进建议。
+    /// </summary>
+    public class WfAiInstanceSummaryResult
+    {
+        /// <summary>
+        /// 审批全过程结论（一段话，说明流程走向与最终结果）
+        /// </summary>
+        public string Conclusion { get; set; }
+
+        /// <summary>
+        /// 风险等级：low / mid / high（低 / 中 / 高）
+        /// </summary>
+        public string RiskLevel { get; set; } = "low";
+
+        /// <summary>
+        /// 风险提示列表（如金额异常、意见分歧、驳回反复等）
+        /// </summary>
+        public List<string> Risks { get; set; } = new();
+
+        /// <summary>
+        /// 改进建议列表（对流程或申请人/审批人的优化建议）
+        /// </summary>
+        public List<string> Suggestions { get; set; } = new();
+    }
 }
