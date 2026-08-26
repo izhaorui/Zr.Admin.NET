@@ -275,6 +275,13 @@ namespace Infrastructure.Model
         public int TimeoutSeconds { get; set; } = 60;
 
         /// <summary>
+        /// 是否开启思考模式（reasoning）。仅对支持 enable_thinking 的混合思考模型
+        /// （如 Qwen3 系列 qwen3.7-plus 等）生效，显式传给请求体；true 开启、false 关闭。
+        /// 关闭思考可显著降低首字延迟、减少 token 消耗。默认 false。
+        /// </summary>
+        public bool EnableThinking { get; set; } = false;
+
+        /// <summary>
         /// 提供商配置列表（用于不同provider使用不同ApiKey）
         /// </summary>
         public List<AiProviderOptions> Providers { get; set; }

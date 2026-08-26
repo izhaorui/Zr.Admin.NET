@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace Infrastructure.Helper
     /// </summary>
     public static class AiLlmClient
     {
-        private static readonly ILogger Logger = LoggerFactory.Create(_ => { }).CreateLogger("Infrastructure.Helper.AiLlmClient");
+        private static readonly ILogger Logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger("Infrastructure.Helper.AiLlmClient");
 
         public static Uri BuildRequestUri(AiOptions options)
         {
@@ -67,14 +68,15 @@ namespace Infrastructure.Helper
         {
             var resolved = ResolveProvider(options);
             var uri = BuildRequestUri(options);
-            var payload = new
+            var payload = new Dictionary<string, object>
             {
-                model = resolved.Model,
-                messages = messages,
-                temperature = options.Temperature,
-                max_tokens = options.MaxTokens,
-                stream = false
+                ["model"] = resolved.Model,
+                ["messages"] = messages,
+                ["temperature"] = options.Temperature,
+                ["max_tokens"] = options.MaxTokens,
+                ["stream"] = false
             };
+            ApplyThinkingOptions(payload, resolved.Provider, options.EnableThinking);
 
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
             {
@@ -101,12 +103,14 @@ namespace Infrastructure.Helper
             try
             {
                 using var doc = JsonDocument.Parse(responseText);
+                EnsureNoProviderError(responseText, doc.RootElement);
                 var content = ReadContent(doc.RootElement);
                 LogUsage(doc.RootElement, resolved.Provider, resolved.Model);
                 return content;
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
+                Logger.LogError(ex, "解析 AI 响应失败，按纯文本处理");
                 // 非标准 JSON（如直接返回纯文本）时原样返回，由上层剥离/解析
                 return responseText;
             }
@@ -152,8 +156,19 @@ namespace Infrastructure.Helper
         {
             try
             {
-                var promptTokens = ReadUsage(root, "prompt_tokens");
-                var completionTokens = ReadUsage(root, "completion_tokens");
+                // 千问(DashScope)兼容 OpenAI 协议时 usage 字段名为 input_tokens/output_tokens，
+                // 与 OpenAI 标准的 prompt_tokens/completion_tokens 不同；deepseek 等仍用标准字段。
+                var isQwen = string.Equals((provider ?? "").Trim(), "qwen", StringComparison.OrdinalIgnoreCase);
+                var inputKey = isQwen ? "input_tokens" : "prompt_tokens";
+                var outputKey = isQwen ? "output_tokens" : "completion_tokens";
+
+                var promptTokens = ReadUsage(root, inputKey);
+                var completionTokens = ReadUsage(root, outputKey);
+
+                // 若目标字段缺失（如千问网关同时返回两套字段名），回退读取另一套字段名
+                if (promptTokens == 0) promptTokens = ReadUsage(root, "prompt_tokens");
+                if (completionTokens == 0) completionTokens = ReadUsage(root, "completion_tokens");
+
                 var totalTokens = ReadUsage(root, "total_tokens");
                 Logger.LogInformation("AI token usage [provider={Provider}, model={Model}] 输入(prompt)={PromptTokens} 输出(completion)={CompletionTokens} 合计(total)={TotalTokens}",
                     provider, model, promptTokens, completionTokens, totalTokens);
@@ -228,6 +243,7 @@ namespace Infrastructure.Helper
                 ["max_tokens"] = options.MaxTokens,
                 ["stream"] = false
             };
+            ApplyThinkingOptions(payload, resolved.Provider, options.EnableThinking);
 
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
             {
@@ -254,6 +270,7 @@ namespace Infrastructure.Helper
             try
             {
                 using var doc = JsonDocument.Parse(responseText);
+                EnsureNoProviderError(responseText, doc.RootElement);
                 var result = ReadToolResult(doc.RootElement);
                 LogUsage(doc.RootElement, resolved.Provider, resolved.Model);
                 return result;
@@ -398,6 +415,36 @@ namespace Infrastructure.Helper
             }
 
             return responseText;
+        }
+
+        /// <summary>
+        /// 响应若携带 provider 错误（如 OpenAI/千问 error 节点：配额耗尽、鉴权失败等），
+        /// 提取 error.message 抛 HttpRequestException，避免被当作空内容静默吞掉难以排查。
+        /// 无 error 节点时不做处理。
+        /// </summary>
+        private static void EnsureNoProviderError(string responseText, JsonElement root)
+        {
+            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("error", out _))
+            {
+                return;
+            }
+
+            var message = TryReadProviderErrorMessage(responseText);
+            Logger.LogError("AI 服务返回错误响应：{Message}", message);
+            throw new HttpRequestException(string.IsNullOrWhiteSpace(message) ? "AI 服务返回错误响应" : message);
+        }
+
+        /// <summary>
+        /// 按 provider 判断是否支持 enable_thinking（混合思考模型：Qwen3 系列等），
+        /// 支持则在请求体显式写入该参数，避免默认开启思考导致首字延迟高。其余 provider 不加。
+        /// </summary>
+        private static void ApplyThinkingOptions(Dictionary<string, object> payload, string provider, bool enableThinking)
+        {
+            var isQwen = string.Equals((provider ?? "").Trim(), "qwen", StringComparison.OrdinalIgnoreCase);
+            if (isQwen)
+            {
+                payload["enable_thinking"] = enableThinking;
+            }
         }
 
         private static string GetDefaultBaseUrl(string provider)
