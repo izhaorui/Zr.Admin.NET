@@ -1,3 +1,5 @@
+using ZR.Workflow.Helper;
+
 namespace ZR.Workflow.Service
 {
     /// <summary>
@@ -27,6 +29,7 @@ namespace ZR.Workflow.Service
         private readonly IWfEngineService _engine;
         private readonly IWfAiService _aiService;
 
+        private NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         public WfFlowInstanceService(IWfEngineService engine, IWfAiService aiService)
         {
             _engine = engine;
@@ -229,22 +232,24 @@ namespace ZR.Workflow.Service
         /// 交由 <see cref="IWfAiService.SummarizeApprovalChainAsync"/> 生成审批全过程结论/风险/建议。
         /// 数据组装在本类（有 Context）完成，AI 服务保持纯编排，避免 Service 层循环依赖。
         /// </summary>
-        public async Task<WfAiInstanceSummaryResult> SummarizeInstance(long instanceId)
+        public async Task<WfAiInstanceSummaryResult> SummarizeInstance(long instanceId, long viewerId, bool adminView = false)
         {
             if (instanceId <= 0)
             {
                 throw new CustomException("流程实例 Id 不能为空");
             }
 
-            var inst = Queryable().First(i => i.InstanceId == instanceId)
+            var inst = await Queryable().FirstAsync(i => i.InstanceId == instanceId)
                 ?? throw new CustomException("流程实例不存在");
 
-            var records = Context.Queryable<WfFlowRecord>()
+            await EnsureInstanceReadable(inst, viewerId, adminView);
+
+            var records = await Context.Queryable<WfFlowRecord>()
                 .LeftJoin<WfFlowNode>((r, n) => r.NodeId == n.NodeId)
                 .Where(r => r.InstanceId == instanceId)
                 .OrderBy(r => r.RecordId)
                 .Select((r, n) => new { r, NodeName = n.NodeName })
-                .ToList();
+                .ToListAsync();
 
             var recordsDesc = string.Join("\n", records.Select(x =>
                 $"- {x.r.Create_time:yyyy-MM-dd HH:mm} {x.r.OperatorNickName ?? x.r.Operator} 执行「{ActionName(x.r.Action)}」节点「{x.NodeName}」意见：{(string.IsNullOrWhiteSpace(x.r.Opinion) ? "（无）" : x.r.Opinion)}"));
@@ -253,10 +258,70 @@ namespace ZR.Workflow.Service
                 recordsDesc = "（暂无审批记录）";
             }
 
-            var formText = string.IsNullOrWhiteSpace(inst.FormContent) ? "（表单为空）" : inst.FormContent;
-            var context = $"申请标题：{inst.Title}\n流程名称：{inst.FlowName}\n最终状态：{InstanceStatusName(inst.Status)}\n表单内容：{formText}\n审批链记录：\n{recordsDesc}";
+            var formItems = await GetFormItemsAsync(inst.FlowId);
+            var form = await BuildFormTextWithAttachmentsAsync(inst.FormContent, formItems, inst.AttachmentParsed);
+            var context = $"申请标题：{inst.Title}\n流程名称：{inst.FlowName}\n最终状态：{InstanceStatusName(inst.Status)}\n表单内容：\n{form.FormText}\n审批链记录：\n{recordsDesc}";
 
             return await _aiService.SummarizeApprovalChainAsync(context);
+        }
+
+        /// <summary>
+        /// AI 审批风险预判：读取某待办任务对应的实例表单与审批链，站在当前节点审批人视角生成风险提示。
+        /// 数据组装在本类（有 Context）完成，AI 服务保持纯编排，避免循环依赖。
+        /// </summary>
+        public async Task<WfAiRiskCheckResult> TaskRiskCheck(long taskId, long operatorId)
+        {
+            if (taskId <= 0)
+            {
+                throw new CustomException("审批任务 Id 不能为空");
+            }
+
+            var task = await Context.Queryable<WfFlowTask>().FirstAsync(t => t.TaskId == taskId)
+                ?? throw new CustomException("审批任务不存在");
+
+            // 越权防护：仅该任务的审批人/被委托人可发起（对齐引擎 Audit 的 AssigneeId/DelegateId 口径）
+            if (task.AssigneeId != operatorId && task.DelegateId != operatorId)
+            {
+                throw new CustomException("仅该任务审批人可执行风险预判");
+            }
+
+            var inst = await Context.Queryable<WfFlowInstance>().FirstAsync(i => i.InstanceId == task.InstanceId)
+                ?? throw new CustomException("流程实例不存在");
+
+            var records = await Context.Queryable<WfFlowRecord>()
+                .LeftJoin<WfFlowNode>((r, n) => r.NodeId == n.NodeId)
+                .Where(r => r.InstanceId == inst.InstanceId)
+                .OrderBy(r => r.RecordId)
+                .Select((r, n) => new { r, NodeName = n.NodeName })
+                .ToListAsync();
+
+            var recordsDesc = string.Join("\n", records.Select(x =>
+                $"- {x.r.Create_time:yyyy-MM-dd HH:mm} {x.r.OperatorNickName ?? x.r.Operator} 执行「{ActionName(x.r.Action)}」节点「{x.NodeName}」意见：{(string.IsNullOrWhiteSpace(x.r.Opinion) ? "（无）" : x.r.Opinion)}"));
+            if (string.IsNullOrWhiteSpace(recordsDesc))
+            {
+                recordsDesc = "（暂无审批记录）";
+            }
+
+            var formItems = await GetFormItemsAsync(inst.FlowId);
+            var form = await BuildFormTextWithAttachmentsAsync(inst.FormContent, formItems, inst.AttachmentParsed);
+            var context = $"申请标题：{inst.Title}\n流程名称：{inst.FlowName}\n当前审批节点：{task.NodeName}\n表单内容：\n{form.FormText}\n已发生的审批链记录：\n{recordsDesc}";
+
+            return await _aiService.RiskCheckAsync(context, form.ImageUrls);
+        }
+
+        /// <summary>
+        /// 实例 AI 视角读取权限：管理员、申请人或该实例任务的审批人/被委托人可读，防止凭 Id 越权拉取他人申请内容。
+        /// </summary>
+        private async Task EnsureInstanceReadable(WfFlowInstance inst, long viewerId, bool adminView)
+        {
+            if (adminView || inst.ApplyUserId == viewerId) return;
+
+            var involved = await Context.Queryable<WfFlowTask>()
+                .AnyAsync(t => t.InstanceId == inst.InstanceId && (t.AssigneeId == viewerId || t.DelegateId == viewerId));
+            if (!involved)
+            {
+                throw new CustomException("无权查看该流程实例的 AI 分析");
+            }
         }
 
         /// <summary>动作数字 → 中文名（对齐 WfAction）。</summary>
@@ -287,6 +352,117 @@ namespace ZR.Workflow.Service
             (int)WfInstanceStatus.Terminated => "已终止",
             _ => $"状态{status}"
         };
+
+        /// <summary>
+        /// 按流程 Id 读取定义表单字段配置（FormItems JSON）。AI 表单上下文相关取数的统一入口，
+        /// 转换逻辑（<see cref="BuildFormTextWithAttachmentsAsync"/>）保持为不查库的静态纯方法。
+        /// </summary>
+        private async Task<string> GetFormItemsAsync(long flowId)
+        {
+            return await Context.Queryable<WfFlowDefinition>()
+                .Where(d => d.FlowId == flowId)
+                .Select(d => d.FormItems)
+                .FirstAsync();
+        }
+
+        /// <summary>
+        /// 组装供 AI 使用的表单上下文文本与图片 URL（静态纯方法，不做数据库查询）。
+        /// 优先读取提交时异步填充的 AttachmentParsed（避免重复下载/抽取）；
+        /// 为空（历史实例或未解析完成）时降级为实时抽取以兼容。
+        /// formItems 由调用方经 <see cref="GetFormItemsAsync"/> 取得。
+        /// 注意：降级分支内的附件下载属于本方法的固有取材（文件文本抽取），不属于数据环境依赖。
+        /// </summary>
+        private static async Task<(string FormText, List<string> ImageUrls)> BuildFormTextWithAttachmentsAsync(
+            string formContent, string formItems, string attachmentParsed)
+        {
+            if (string.IsNullOrWhiteSpace(formContent)) return ("（表单为空）", new List<string>());
+
+            var cached = WfAttachmentParser.Deserialize(attachmentParsed);
+            if (cached.Count > 0)
+            {
+                // 命中提交时解析缓存：直接渲染，不再下载/抽取
+                var lines = new List<string>();
+                var imageUrls = new List<string>();
+                var metaMap = WfFormTextHelper.ParseFieldLabels(formItems);
+                Dictionary<string, string> values = null;
+                try { values = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(formContent); }
+                catch (Newtonsoft.Json.JsonException) { values = null; }
+
+                if (values != null)
+                {
+                    foreach (var kv in values)
+                    {
+                        if (string.IsNullOrWhiteSpace(kv.Value)) continue;
+                        var isAttachment = cached.Any(c => !string.IsNullOrEmpty(c.Url) && kv.Value.Contains(c.Url));
+                        if (isAttachment)
+                        {
+                            // 附件字段：图片占位 or 文件文本（来自缓存）
+                            foreach (var c in cached.Where(c => !string.IsNullOrEmpty(c.Url) && kv.Value.Contains(c.Url)))
+                            {
+                                if (WfAttachmentParser.IsImage(c))
+                                {
+                                    imageUrls.Add(c.Url);
+                                    lines.Add($"【图片附件：({imageUrls.Count}) {c.Url}】");
+                                }
+                                else if (!string.IsNullOrEmpty(c.Text))
+                                {
+                                    lines.Add($"【文件附件：{c.FileName}】\n{c.Text}");
+                                }
+                                else
+                                {
+                                    lines.Add($"【文件附件：{c.FileName}】（系统无法解析该文件内容，仅附文件名）");
+                                }
+                            }
+                            continue;
+                        }
+
+                        var label = metaMap.TryGetValue(kv.Key, out var l) ? l : kv.Key;
+                        var val = kv.Value;
+                        lines.Add($"{label}：{val}");
+                    }
+                    return (string.Join("\n", lines), imageUrls);
+                }
+                // formContent 非法 JSON 时掉出缓存分支，走下方实时抽取兜底
+            }
+
+            // 降级：实时抽取（兼容历史实例）
+            var result = await WfFormTextHelper.TranslateToTextWithAttachments(formContent, formItems).ConfigureAwait(false);
+            return (result.FormText ?? formContent, result.ImageUrls ?? new List<string>());
+        }
+
+        /// <summary>
+        /// 把某实例的 FormContent 翻译为"中文label：值"的多行文本（供 Controller/跨 Service 复用，
+        /// 如审批意见建议 AI 需要把表单字段技术名换成中文属性名）。
+        /// 按实例查流程定义 FormItems 翻译，失败回退原始 formContent。
+        /// </summary>
+        public async Task<string> TranslateFormContent(long instanceId, string formContent)
+        {
+            if (string.IsNullOrWhiteSpace(formContent)) return formContent;
+
+            var inst = await Context.Queryable<WfFlowInstance>()
+                .Where(i => i.InstanceId == instanceId)
+                .FirstAsync()
+                ?? throw new CustomException("流程实例不存在");
+            var formItems = await Context.Queryable<WfFlowDefinition>()
+                .Where(d => d.FlowId == inst.FlowId)
+                .Select(d => d.FormItems)
+                .FirstAsync();
+
+            return WfFormTextHelper.TranslateToText(formContent, formItems) ?? formContent;
+        }
+
+        /// <summary>
+        /// 读取实例提交时异步填充的附件解析结果（AttachmentParsed）。
+        /// 供审批意见建议等 AI 场景在服务端取数，避免信任客户端传入值被伪造。
+        /// </summary>
+        public async Task<string> GetInstanceAttachmentParsed(long instanceId)
+        {
+            if (instanceId <= 0) return null;
+            return await Queryable()
+                .Where(i => i.InstanceId == instanceId)
+                .Select(i => i.AttachmentParsed)
+                .FirstAsync();
+        }
 
         /// <summary>
         /// 按查看者视角对实例表单做字段级权限过滤：
@@ -427,7 +603,53 @@ namespace ZR.Workflow.Service
             instance.ApplyNickName = user.NickName;
             instance.Status = (int)WfInstanceStatus.Approval;
             instance.Create_by = user.UserName;
-            return _engine.Start(instance);
+            var instanceId = _engine.Start(instance);
+            // 提交后异步解析附件并填充 AttachmentParsed，避免审批侧每次重新下载/抽取
+            FillAttachmentParsedAsync(instanceId, instance.FlowId, instance.FormContent);
+            return instanceId;
+        }
+
+        /// <summary>
+        /// 提交后异步填充实例的 AttachmentParsed（附件解析结果）。
+        /// 解析失败不影响流程，仅记日志；审批侧读取为空时自动降级实时抽取以兼容历史实例。
+        /// 注意：后台线程不能复用请求级 scoped <c>Context</c>（请求结束后连接释放、租户上下文丢失），
+        /// 须在请求内先捕获租户 Id，任务内用 <see cref="SqlSugar.IOC.DbScoped.SugarScope"/>.CopyNew() 独立连接并按租户路由。
+        /// </summary>
+        private void FillAttachmentParsedAsync(long instanceId, long flowId, string formContent)
+        {
+            if (string.IsNullOrWhiteSpace(formContent)) return;
+            // 请求上下文内捕获租户 Id，供后台线程路由到正确租户库
+            var tenantId = App.IsTenantEnabled() ? App.GetCurrentTenantId() : null;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var scope = SqlSugar.IOC.DbScoped.SugarScope.CopyNew();
+                    ISqlSugarClient db = App.IsTenantEnabled() && !string.IsNullOrWhiteSpace(tenantId)
+                        ? scope.AsTenant().GetConnectionScope(tenantId)
+                        : scope;
+
+                    var formItems = await db.Queryable<WfFlowDefinition>()
+                        .Where(d => d.FlowId == flowId)
+                        .Select(d => d.FormItems)
+                        .FirstAsync();
+                    var items = await WfAttachmentParser.ParseAsync(formContent, formItems).ConfigureAwait(false);
+                    var parsed = WfAttachmentParser.Serialize(items);
+                    if (!string.IsNullOrEmpty(parsed))
+                    {
+                        await db.Updateable<WfFlowInstance>()
+                            .SetColumns(i => i.AttachmentParsed == parsed)
+                            .Where(i => i.InstanceId == instanceId)
+                            .ExecuteCommandAsync();
+                    }
+                    logger.Debug($"异步填充实例附件解析结果 InstanceId={instanceId},parsed={parsed}");
+                }
+                catch (Exception ex)
+                {
+                    // 附件解析为辅助能力，失败不影响主流程
+                    logger.Error(ex, "附件解析失败 InstanceId=" + instanceId);
+                }
+            });
         }
 
         /// <summary>
@@ -442,6 +664,14 @@ namespace ZR.Workflow.Service
         public void Resubmit(long instanceId, string formContent, string attachment, string title, long userId)
         {
             _engine.Resubmit(instanceId, formContent, attachment, title, userId);
+            if (!string.IsNullOrWhiteSpace(formContent))
+            {
+                var flowId = Context.Queryable<WfFlowInstance>()
+                    .Where(i => i.InstanceId == instanceId)
+                    .Select(i => i.FlowId)
+                    .First();
+                FillAttachmentParsedAsync(instanceId, flowId, formContent);
+            }
         }
 
         #endregion

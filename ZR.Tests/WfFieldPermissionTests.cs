@@ -32,7 +32,7 @@ namespace ZR.Tests
             _db.Clean();
             _db.EnsureUsers("applier", "approver");
             _engine = new WfEngineService(Mock.Of<ISysUserMsgService>(), Mock.Of<IWfWebhookService>(), Mock.Of<IWfAiService>());
-            _instanceService = new WfFlowInstanceService(_engine);
+            _instanceService = new WfFlowInstanceService(_engine, Mock.Of<IWfAiService>());
         }
 
         /// <summary>

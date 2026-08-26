@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -121,6 +122,42 @@ namespace Infrastructure
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             return await SendAsync(request, 30, headers);
+        }
+
+        /// <summary>
+        /// 下载文件为二进制字节数组，带大小上限与超时保护。用于 AI 附件（图片/文档）解析前的取数。
+        /// 超出 maxBytes 或下载失败/超时抛出 InvalidOperationException，由调用方降级处理（如"仅列文件名"）。
+        /// </summary>
+        /// <param name="url">完整 http(s) 地址</param>
+        /// <param name="timeOut">超时秒数，默认 30</param>
+        /// <param name="maxBytes">字节上限，默认 20MB；超过直接拒绝，避免大文件拖垮 AI 请求</param>
+        public static async Task<byte[]> HttpDownloadBytesAsync(string url, int timeOut = 30, int maxBytes = 20 * 1024 * 1024)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var cts = new CancellationTokenSource(timeOut * 1000);
+            using var response = await SharedClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+            response.EnsureSuccessStatusCode();
+
+            if (response.Content.Headers.ContentLength.HasValue && response.Content.Headers.ContentLength.Value > maxBytes)
+            {
+                throw new InvalidOperationException($"文件过大（{response.Content.Headers.ContentLength.Value} 字节），超过上限 {maxBytes} 字节，已跳过下载。");
+            }
+
+            using var stream = await response.Content.ReadAsStreamAsync(cts.Token);
+            using var ms = new MemoryStream();
+            var buffer = new byte[8192];
+            int read;
+            long total = 0;
+            while ((read = await stream.ReadAsync(buffer, 0, buffer.Length, cts.Token)) > 0)
+            {
+                total += read;
+                if (total > maxBytes)
+                {
+                    throw new InvalidOperationException($"文件下载超过上限 {maxBytes} 字节，已中断。");
+                }
+                ms.Write(buffer, 0, read);
+            }
+            return ms.ToArray();
         }
 
         /// <summary>

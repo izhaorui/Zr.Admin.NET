@@ -84,6 +84,16 @@ namespace ZR.Workflow.Model
         public string Attachment { get; set; }
 
         /// <summary>
+        /// 附件解析结果（JSON 数组，提交时异步填充）。每条结构：
+        /// { url, fileName, fileType, text, metadata, fields }。
+        /// - image 类型：仅填 url/fileName/fileType，text/fields 留空（图片文本需视觉模型实时理解）；
+        /// - file 类型：text 为纯文本抽取结果，metadata 含页数等，fields 在 A 阶段留空对象 {}（B 阶段由 AI 结构化填充）。
+        /// 审批侧（AI 建议/风险预判）优先读取此字段避免重复下载与解析；为空时降级实时抽取以兼容历史实例。
+        /// </summary>
+        [SugarColumn(ColumnDataType = StaticConfig.CodeFirst_BigString, IsNullable = true)]
+        public string AttachmentParsed { get; set; }
+
+        /// <summary>
         /// 最近一次催办时间。用于申请人催办的 24 小时限频：距上次催办不足 24h 则拒绝再次催办。
         /// </summary>
         [SugarColumn(IsNullable = true)]

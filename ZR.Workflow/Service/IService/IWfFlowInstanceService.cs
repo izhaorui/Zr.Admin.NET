@@ -29,7 +29,21 @@ namespace ZR.Workflow.Service.IService
         WfEfficiencyStatsDto GetEfficiencyStats(long userId, bool isAdmin = false, long? flowId = null);
         /// <summary>
         /// AI 审批链汇总：读取实例审批链并生成审批全过程结论/风险/建议。
+        /// 仅申请人本人 / 该实例任务的审批人或被委托人 / 管理员(adminView)可调用。
         /// </summary>
-        Task<WfAiInstanceSummaryResult> SummarizeInstance(long instanceId);
+        Task<WfAiInstanceSummaryResult> SummarizeInstance(long instanceId, long viewerId, bool adminView = false);
+        /// <summary>
+        /// AI 审批风险预判：站在当前节点审批人视角，对某待办任务对应申请生成风险提示/建议。
+        /// 仅该任务的 AssigneeId/DelegateId 可调用。
+        /// </summary>
+        Task<WfAiRiskCheckResult> TaskRiskCheck(long taskId, long operatorId);
+        /// <summary>
+        /// 把某实例的 FormContent 翻译为"中文label：值"的多行文本（供审批意见建议等 AI 场景复用，避免暴露字段技术名）。
+        /// </summary>
+        Task<string> TranslateFormContent(long instanceId, string formContent);
+        /// <summary>
+        /// 读取实例提交时异步填充的附件解析结果（AttachmentParsed），供 AI 场景服务端取数，避免信任客户端传值。
+        /// </summary>
+        Task<string> GetInstanceAttachmentParsed(long instanceId);
     }
 }

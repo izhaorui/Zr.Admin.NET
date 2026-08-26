@@ -11,6 +11,8 @@
 	<ItemGroup>
 		<PackageReference Include="FluentValidation" Version="11.11.0" />
 		<PackageReference Include="Quartz" Version="3.18.1" />
+		<PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
+		<PackageReference Include="DocumentFormat.OpenXml" Version="3.1.1" />
 		<ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
 		<ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
 	</ItemGroup>

@@ -1,7 +1,8 @@
 using Infrastructure.Helper;
 using Microsoft.Extensions.Logging;
-using System.Reflection;
+using Newtonsoft.Json;
 using System.Text.Json;
+using ZR.Workflow.Helper;
 using STJson = System.Text.Json;
 
 namespace ZR.Workflow.Service
@@ -810,11 +811,65 @@ namespace ZR.Workflow.Service
                 throw new Exception("缺少当前审批节点名称，无法生成审批建议，请刷新页面后重试");
             }
 
-            var formText = string.IsNullOrWhiteSpace(input.FormContent) ? "（表单为空）" : input.FormContent;
             var draft = string.IsNullOrWhiteSpace(input.DraftOpinion) ? string.Empty : $"\n已有草稿意见：{input.DraftOpinion}";
+
+            // 优先复用提交时解析的附件结果，避免重复下载/抽取
+            var cached = WfAttachmentParser.Deserialize(input.AttachmentParsed);
+            string formText;
+            List<string> imgUrls;
+            if (cached.Count > 0)
+            {
+                var lines = new List<string>();
+                imgUrls = new List<string>();
+                foreach (var item in cached)
+                {
+                    if (WfAttachmentParser.IsImage(item))
+                    {
+                        imgUrls.Add(item.Url);
+                        lines.Add($"【图片附件：({imgUrls.Count}) {item.Url}】");
+                    }
+                    else if (!string.IsNullOrWhiteSpace(item.Text))
+                    {
+                        lines.Add($"【文件附件：{item.FileName}】\n{item.Text}");
+                    }
+                    else
+                    {
+                        lines.Add($"【文件附件：{item.FileName}】（系统无法解析该文件内容，仅附文件名）");
+                    }
+                }
+                var baseForm = string.IsNullOrWhiteSpace(input.FormContent) ? "（表单为空）" : input.FormContent;
+                // 附件字段已在上方按【图片/文件附件】块渲染，剔除原始表单转储中的附件行，避免同内容重复占 AI 上下文
+                var urlSet = new HashSet<string>(
+                    cached.Where(c => !string.IsNullOrEmpty(c.Url)).Select(c => c.Url),
+                    StringComparer.OrdinalIgnoreCase);
+                if (urlSet.Count > 0 && !string.IsNullOrWhiteSpace(input.FormContent))
+                {
+                    baseForm = string.Join("\n", baseForm.Split('\n')
+                        .Where(line => !urlSet.Any(u => line.Contains(u))));
+                }
+                lines.Add("表单字段（原始）：\n" + baseForm);
+                formText = string.Join("\n", lines);
+            }
+            else
+            {
+                formText = string.IsNullOrWhiteSpace(input.FormContent) ? "（表单为空）" : input.FormContent;
+                imgUrls = input.ImageUrls?.Where(u => !string.IsNullOrWhiteSpace(u)).ToList() ?? new List<string>();
+            }
+
             var user = $"审批节点：{input.NodeName}\n表单内容：{formText}{draft}";
 
-            var text = await ChatSafeAsync(GetPromptOrThrow("approval-suggest.md", "审批意见建议"), user).ConfigureAwait(false);
+            var options = EnsureAiEnabled();
+            string text;
+            if (imgUrls.Count > 0)
+            {
+                // 含图片附件：走视觉模型多模态理解（VisionModel 未配置时此方法内部抛友好提示）
+                text = await AiLlmClient.ChatWithImagesAsync(
+                    options, GetPromptOrThrow("approval-suggest.md", "审批意见建议"), user, imgUrls).ConfigureAwait(false);
+            }
+            else
+            {
+                text = await ChatSafeAsync(GetPromptOrThrow("approval-suggest.md", "审批意见建议"), user).ConfigureAwait(false);
+            }
             if (string.IsNullOrWhiteSpace(text))
             {
                 throw new Exception("AI 未返回建议内容，请稍后重试");
@@ -1168,12 +1223,6 @@ namespace ZR.Workflow.Service
             {
                 errors.Add("conclusion（审批全过程结论）不能为空，请概括该申请的审批走向与最终结果");
             }
-            if (!string.Equals(result.RiskLevel, "low", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(result.RiskLevel, "mid", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(result.RiskLevel, "high", StringComparison.OrdinalIgnoreCase))
-            {
-                errors.Add($"riskLevel 只能是 low/mid/high，当前为「{result.RiskLevel}」");
-            }
             if (result.Risks == null || result.Risks.Count == 0)
             {
                 // 无风险是合法的：允许 risks 为空数组，不强制报错
@@ -1231,29 +1280,90 @@ namespace ZR.Workflow.Service
             if (string.IsNullOrWhiteSpace(json)) return null;
             try
             {
-                return STJson.JsonSerializer.Deserialize<WfAiInstanceSummaryResult>(json, JsonOptions);
+                return JsonConvert.DeserializeObject<WfAiInstanceSummaryResult>(json);
             }
-            catch (STJson.JsonException)
+            catch (Newtonsoft.Json.JsonException)
             {
                 return null;
             }
         }
 
         /// <summary>
-        /// 归一化审批链汇总：riskLevel 转小写并校正非法值，数组空则置空列表。
+        /// 归一化审批链汇总：数组空则置空列表（riskLevel 已由枚举与 JSON 转换器保证合法）。
         /// </summary>
         private static void NormalizeInstanceSummary(WfAiInstanceSummaryResult result)
         {
-            result.RiskLevel = (result.RiskLevel ?? string.Empty).Trim().ToLowerInvariant();
-            if (!string.Equals(result.RiskLevel, "low", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(result.RiskLevel, "mid", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(result.RiskLevel, "high", StringComparison.OrdinalIgnoreCase))
-            {
-                result.RiskLevel = "low";
-            }
             result.Risks ??= new List<string>();
             result.Suggestions ??= new List<string>();
             result.Conclusion = (result.Conclusion ?? string.Empty).Trim();
+        }
+
+        // ===== AI 审批风险预判（提示词见 Prompts/risk-check.md，单次问答模式，复用 ChatSafeAsync） =====
+
+        /// <summary>
+        /// 审批风险预判：接收调用方已组装的待审批上下文文本（含标题/流程/当前节点/表单/审批链），
+        /// 站在当前节点审批人视角生成风险等级/风险提示/建议。纯 AI 编排，不访问数据，避免循环依赖。
+        /// 数据组装由调用方（如 <see cref="WfFlowInstanceService"/>）完成。
+        /// imageUrls 非空时自动切换视觉模型多模态理解（图片附件），VisionModel 未配置则抛友好提示。
+        /// </summary>
+        public async Task<WfAiRiskCheckResult> RiskCheckAsync(string userContext, List<string> imageUrls = null)
+        {
+            if (string.IsNullOrWhiteSpace(userContext))
+            {
+                throw new Exception("审批上下文不能为空");
+            }
+
+            var imgUrls = imageUrls?.Where(u => !string.IsNullOrWhiteSpace(u)).ToList() ?? new List<string>();
+            string text;
+            if (imgUrls.Count > 0)
+            {
+                var options = EnsureAiEnabled();
+                text = await AiLlmClient.ChatWithImagesAsync(
+                    options, GetPromptOrThrow("risk-check.md", "审批风险预判"), userContext, imgUrls).ConfigureAwait(false);
+            }
+            else
+            {
+                text = await ChatSafeAsync(GetPromptOrThrow("risk-check.md", "审批风险预判"), userContext).ConfigureAwait(false);
+            }
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new Exception("AI 未返回风险预判，请稍后重试");
+            }
+            return ParseRiskCheckResult(text);
+        }
+
+        /// <summary>
+        /// 解析风险预判输出：Newtonsoft 自动反序列化 riskLevel/risks/suggestions（枚举经 StringEnumConverter），
+        /// JSON 解析失败（含根节点非对象）则降级为原样文本。
+        /// </summary>
+        private static WfAiRiskCheckResult ParseRiskCheckResult(string raw)
+        {
+            var result = new WfAiRiskCheckResult();
+            if (string.IsNullOrWhiteSpace(raw)) return result;
+
+            var json = JsonHelper.StripMarkdown(raw);
+            if (string.IsNullOrWhiteSpace(json)) return result;
+
+            try
+            {
+                var parsed = JsonConvert.DeserializeObject<WfAiRiskCheckResult>(json);
+                if (parsed != null) result = parsed;
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                result.Risks = [raw.Trim()];
+            }
+            NormalizeRiskCheck(result);
+            return result;
+        }
+
+        /// <summary>
+        /// 归一化风险预判：数组空则置空列表（riskLevel 已由枚举与 JSON 转换器保证合法）。
+        /// </summary>
+        private static void NormalizeRiskCheck(WfAiRiskCheckResult result)
+        {
+            result.Risks ??= [];
+            result.Suggestions ??= [];
         }
 
         #endregion

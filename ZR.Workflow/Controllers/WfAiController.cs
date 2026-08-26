@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ZR.Workflow.Helper;
 
 namespace ZR.Workflow.Controllers
 {
@@ -45,6 +47,16 @@ namespace ZR.Workflow.Controllers
         {
             try
             {
+                // 把表单字段技术名翻译为中文属性名，避免 input_1 等暴露给 AI/用户
+                if (input.InstanceId > 0)
+                {
+                    if (!string.IsNullOrWhiteSpace(input.FormContent))
+                    {
+                        input.FormContent = await _instanceService.TranslateFormContent(input.InstanceId, input.FormContent);
+                    }
+                    // 附件解析结果以服务端落库值为准，不信任客户端传值（防伪造污染 AI 上下文）
+                    input.AttachmentParsed = await _instanceService.GetInstanceAttachmentParsed(input.InstanceId);
+                }
                 var result = await _service.SuggestApprovalAsync(input);
                 return SUCCESS(result);
             }
@@ -99,7 +111,7 @@ namespace ZR.Workflow.Controllers
         {
             try
             {
-                var result = await _instanceService.SummarizeInstance(instanceId);
+                var result = await _instanceService.SummarizeInstance(instanceId, HttpContext.GetUId(), HttpContext.IsAdmin());
                 return SUCCESS(result);
             }
             catch (Exception ex)
@@ -107,5 +119,32 @@ namespace ZR.Workflow.Controllers
                 return ToResponse(ResultCode.FAIL, ex.Message);
             }
         }
+
+        /// <summary>
+        /// AI 审批风险预判：站在当前节点审批人视角，对待办任务对应申请做风险提示
+        /// </summary>
+        [HttpPost("risk-check/{taskId}")]
+        [ActionPermissionFilter(Permission = "common")]
+        public async Task<IActionResult> RiskCheck(long taskId)
+        {
+            try
+            {
+                var result = await _instanceService.TaskRiskCheck(taskId, HttpContext.GetUId());
+                return SUCCESS(result);
+            }
+            catch (Exception ex)
+            {
+                return ToResponse(ResultCode.FAIL, ex.Message);
+            }
+        }
+
+        //[HttpGet("test")]
+        //[AllowAnonymous]
+        //public async Task<IActionResult> Test(long recordId)
+        //{
+        //    var url = "http://192.168.31.184:8888/2026/0826/1bb77a40e2c4ef08.docx";
+        //    var text = await WfAttachmentHelper.ExtractTextAsync(url).ConfigureAwait(false);
+        //    return SUCCESS(text);
+        //}
     }
 }

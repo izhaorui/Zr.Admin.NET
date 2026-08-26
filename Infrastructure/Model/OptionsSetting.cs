@@ -292,6 +292,40 @@ namespace Infrastructure.Model
         /// 文件缺失不会阻断编译或启动，仅会在对应能力调用时抛出友好异常。
         /// </summary>
         public string PromptDir { get; set; }
+
+        /// <summary>
+        /// 视觉模型 Provider（如 openai / qwen）。用于图片多模态理解，与文本模型解耦。
+        /// 留空则复用顶层 Provider。
+        /// </summary>
+        public string VisionProvider { get; set; }
+
+        /// <summary>
+        /// 视觉模型接口基地址。留空则按 VisionProvider 取默认值。
+        /// </summary>
+        public string VisionBaseUrl { get; set; }
+
+        /// <summary>
+        /// 视觉模型聊天接口路径。留空则按 VisionProvider 取默认值。
+        /// </summary>
+        public string VisionChatEndpoint { get; set; }
+
+        /// <summary>
+        /// 视觉模型名称（必须支持多模态，如 gpt-4o-mini）。留空表示未配置视觉模型，
+        /// 调用看图能力时抛出友好提示。
+        /// </summary>
+        public string VisionModel { get; set; }
+
+        /// <summary>
+        /// 视觉模型 API Key。留空则复用顶层 ApiKey。
+        /// </summary>
+        public string VisionApiKey { get; set; }
+
+        /// <summary>
+        /// AI 附件下载/发图域名白名单（SSRF 与内网信息泄露防护）。
+        /// 留空=不限制（默认，兼容内网自托管附件部署）；配置后仅允许从这些 host
+        /// 下载附件文本或把图片 URL 发给视觉模型，如 ["upload.example.com"]。
+        /// </summary>
+        public List<string> AttachmentDownloadAllowedHosts { get; set; }
     }
 
     public class AiProviderOptions

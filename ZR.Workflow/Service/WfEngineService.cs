@@ -1,4 +1,5 @@
 ﻿using ZR.ServiceCore.Services;
+using ZR.Workflow.Helper;
 
 namespace ZR.Workflow.Service
 {
@@ -2523,17 +2524,22 @@ namespace ZR.Workflow.Service
         {
             try
             {
-                var formContent = Context.Queryable<WfFlowInstance>()
+                var inst = await Context.Queryable<WfFlowInstance>()
                     .Where(i => i.InstanceId == instanceId)
-                    .Select(i => i.FormContent)
-                    .First();
-                var summary = await _aiService.SummarizeApprovalAsync(string.Empty, nodeName, opinion, formContent);
+                    .FirstAsync();
+                var formItems = await Context.Queryable<WfFlowDefinition>()
+                    .Where(d => d.FlowId == inst.FlowId)
+                    .Select(d => d.FormItems)
+                    .FirstAsync();
+                // 表单字段技术名翻译为中文label，避免 input_1 等暴露给 AI/用户
+                var formText = WfFormTextHelper.TranslateToText(inst.FormContent, formItems) ?? inst.FormContent;
+                var summary = await _aiService.SummarizeApprovalAsync(string.Empty, nodeName, opinion, formText);
                 if (!string.IsNullOrWhiteSpace(summary?.Summary))
                 {
-                    Context.Updateable<WfFlowRecord>()
+                    await Context.Updateable<WfFlowRecord>()
                         .SetColumns(r => r.Summary == summary.Summary)
                         .Where(r => r.RecordId == recordId)
-                        .ExecuteCommand();
+                        .ExecuteCommandAsync();
                 }
             }
             catch (Exception ex)

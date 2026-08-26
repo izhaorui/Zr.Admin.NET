@@ -1,5 +1,3 @@
-using ZR.Workflow.Model.Dto;
-
 namespace ZR.Workflow.Service.IService
 {
     /// <summary>
@@ -37,5 +35,10 @@ namespace ZR.Workflow.Service.IService
         /// 纯 AI 编排，不访问数据，避免循环依赖。
         /// </summary>
         Task<WfAiInstanceSummaryResult> SummarizeApprovalChainAsync(string userContext);
+        /// <summary>
+        /// 审批风险预判：接收调用方已组装的待审批上下文，站在当前审批人视角生成风险等级 / 风险提示 / 建议。
+        /// 纯 AI 编排，不访问数据，避免循环依赖。imageUrls 非空时切换视觉模型多模态理解图片附件。
+        /// </summary>
+        Task<WfAiRiskCheckResult> RiskCheckAsync(string userContext, List<string> imageUrls = null);
     }
 }

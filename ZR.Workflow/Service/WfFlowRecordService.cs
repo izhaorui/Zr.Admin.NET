@@ -1,3 +1,5 @@
+using ZR.Workflow.Helper;
+
 namespace ZR.Workflow.Service
 {
     /// <summary>
@@ -121,12 +123,17 @@ namespace ZR.Workflow.Service
                 throw new CustomException("审批记录不存在");
             }
 
-            var formContent = await Context.Queryable<WfFlowInstance>()
+            var inst = await Context.Queryable<WfFlowInstance>()
                 .Where(i => i.InstanceId == record.Record.InstanceId)
-                .Select(i => i.FormContent)
                 .FirstAsync();
+            var formItems = await Context.Queryable<WfFlowDefinition>()
+                .Where(d => d.FlowId == inst.FlowId)
+                .Select(d => d.FormItems)
+                .FirstAsync();
+            // 表单字段技术名翻译为中文label，避免 input_1 等暴露给 AI/用户
+            var formText = WfFormTextHelper.TranslateToText(inst.FormContent, formItems) ?? inst.FormContent;
 
-            var result = await _aiService.SummarizeApprovalAsync(string.Empty, record.NodeName, record.Record.Opinion, formContent);
+            var result = await _aiService.SummarizeApprovalAsync(string.Empty, record.NodeName, record.Record.Opinion, formText);
             var summary = result?.Summary;
             if (string.IsNullOrWhiteSpace(summary))
             {

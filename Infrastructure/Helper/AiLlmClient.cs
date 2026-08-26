@@ -19,7 +19,15 @@ namespace Infrastructure.Helper
 
         public static Uri BuildRequestUri(AiOptions options)
         {
-            var resolved = ResolveProvider(options);
+            return BuildRequestUriWith(options, ResolveProvider(options));
+        }
+
+        /// <summary>
+        /// 基于已解析的 provider 元组构造聊天接口 URI。多模态场景传入已解析的视觉 provider，
+        /// 实现文本/视觉模型指向不同端点。
+        /// </summary>
+        private static Uri BuildRequestUriWith(AiOptions options, (string Provider, string BaseUrl, string ChatEndpoint, string Model, string ApiKey) resolved)
+        {
             var provider = resolved.Provider;
             var baseUrl = (resolved.BaseUrl ?? string.Empty).Trim().TrimEnd('/');
             var endpoint = (resolved.ChatEndpoint ?? string.Empty).Trim();
@@ -63,11 +71,13 @@ namespace Infrastructure.Helper
         /// <summary>
         /// ChatAsync / ChatWithMessagesAsync 共用的请求核心：拼装负载、POST、解析 content、记录 token 用量。
         /// 非标准 JSON 响应按纯文本兜底返回。
+        /// resolvedOverride 非空时（多模态场景）覆盖 model/baseUrl/endpoint，实现文本与视觉模型解耦。
         /// </summary>
-        private static async Task<string> ChatCoreAsync(AiOptions options, object messages)
+        private static async Task<string> ChatCoreAsync(AiOptions options, object messages,
+            (string Provider, string BaseUrl, string ChatEndpoint, string Model, string ApiKey)? resolvedOverride = null)
         {
-            var resolved = ResolveProvider(options);
-            var uri = BuildRequestUri(options);
+            var resolved = resolvedOverride ?? ResolveProvider(options);
+            var uri = BuildRequestUriWith(options, resolved);
             var payload = new Dictionary<string, object>
             {
                 ["model"] = resolved.Model,
@@ -195,6 +205,70 @@ namespace Infrastructure.Helper
             }
 
             return tokenEl.TryGetInt32(out var value) ? value : 0;
+        }
+
+        /// <summary>
+        /// 解析视觉模型配置：从 AiOptions 的 Vision* 字段取配置，空字段回退顶层文本配置与默认值。
+        /// 返回用于实际请求的 provider/baseUrl/endpoint/model/apiKey。
+        /// 注意：视觉模型不做默认值回退——仅当显式配置 VisionModel，或显式指定 VisionProvider 时继承该分项 Model；
+        /// 否则保持为空，由 ChatWithImagesAsync 抛"未配置视觉模型"友好提示（否则图片会被静默发给不支持视觉的文本模型）。
+        /// </summary>
+        public static (string Provider, string BaseUrl, string ChatEndpoint, string Model, string ApiKey) ResolveVisionProvider(AiOptions options)
+        {
+            var visionProviderSet = !string.IsNullOrWhiteSpace(options.VisionProvider);
+            var provider = (options.VisionProvider ?? options.Provider ?? "openai").Trim().ToLowerInvariant();
+            var baseUrl = (options.VisionBaseUrl ?? string.Empty).Trim();
+            var endpoint = (options.VisionChatEndpoint ?? string.Empty).Trim();
+            var model = (options.VisionModel ?? string.Empty).Trim();
+            var apiKey = (options.VisionApiKey ?? options.ApiKey ?? string.Empty).Trim();
+
+            var matched = (options.Providers ?? new List<AiProviderOptions>())
+                .FirstOrDefault(p => string.Equals((p.Provider ?? string.Empty).Trim(), provider, StringComparison.OrdinalIgnoreCase));
+
+            if (matched != null)
+            {
+                if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = (matched.BaseUrl ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(endpoint)) endpoint = (matched.ChatEndpoint ?? string.Empty).Trim();
+                // 仅在显式指定 VisionProvider 时才允许继承分项 Model；分项 Model 属于文本模型，
+                // 未显式指定时静默继承会把图片发给不支持视觉的模型
+                if (visionProviderSet && string.IsNullOrWhiteSpace(model)) model = (matched.Model ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(apiKey)) apiKey = (matched.ApiKey ?? string.Empty).Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = GetDefaultBaseUrl(provider);
+            if (string.IsNullOrWhiteSpace(endpoint)) endpoint = GetDefaultEndpoint(provider);
+            Logger.LogInformation("解析 AI 视觉 provider: {Provider}, baseUrl={BaseUrl}, endpoint={Endpoint}, model={Model}", provider, baseUrl, endpoint, model);
+            return (provider, baseUrl, endpoint, model, apiKey);
+        }
+
+        /// <summary>
+        /// 多模态对话：把文本提示与一组图片 URL 一并发送给支持视觉的模型（如 gpt-4o-mini）。
+        /// 图片 URL 须为完整 http(s) 地址（由调用方确保已下载可达）。VisionModel 为空时抛友好异常。
+        /// </summary>
+        public static async Task<string> ChatWithImagesAsync(AiOptions options, string systemPrompt, string textPrompt, List<string> imageUrls)
+        {
+            var resolved = ResolveVisionProvider(options);
+            if (string.IsNullOrWhiteSpace(resolved.Model))
+            {
+                throw new InvalidOperationException("未配置视觉模型（AiOptions:VisionModel），无法使用图片理解能力。请在配置中指定支持多模态的模型，如 gpt-4o-mini。");
+            }
+
+            var content = new List<object>
+            {
+                new { type = "text", text = textPrompt }
+            };
+            foreach (var url in imageUrls ?? new List<string>())
+            {
+                if (string.IsNullOrWhiteSpace(url)) continue;
+                content.Add(new { type = "image_url", image_url = new { url } });
+            }
+
+            var messages = new[]
+            {
+                new { role = "system", content = (object)systemPrompt },
+                new { role = "user", content = (object)content }
+            };
+            return await ChatCoreAsync(options, messages, resolved).ConfigureAwait(false);
         }
 
         /// <summary>

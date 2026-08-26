@@ -73,6 +73,9 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>附件</summary>
         public string Attachment { get; set; }
 
+        /// <summary>附件解析结果（JSON 数组，提交时异步填充）。审批侧优先读取以避免重复下载/抽取。</summary>
+        public string AttachmentParsed { get; set; }
+
         /// <summary>最近一次催办时间（申请人催办 24h 限频用，列表前端据此禁用催办按钮）</summary>
         public DateTime? LastUrgeTime { get; set; }
 
