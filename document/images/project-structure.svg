@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="structTitle structDesc" style="max-width:100%;height:auto" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif">
+  <title id="structTitle">ZR.Admin.NET 项目结构</title>
+  <desc id="structDesc">分层结构图：客户端层、接入层 ZR.Admin.WebApi、业务服务层 ZR.Service / ZR.ServiceCore / ZR.Workflow / ZR.Mall / ZR.CodeGenerator、数据访问层 ZR.Repository、实体层 ZR.Model、存储与中间件，以及横向共享的公共支撑 Infrastructure / ZR.Common / ZR.Tasks / ZR.Tests。</desc>
+
+  <defs>
+    <marker id="arrowDown" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#9aa8b8"/>
+    </marker>
+    <marker id="arrowShared" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#c8b48c"/>
+    </marker>
+  </defs>
+
+  <!-- 标题 -->
+  <text x="32" y="46" font-size="20" font-weight="700" fill="#1f2d3d">ZR.Admin.NET 项目结构</text>
+  <text x="1248" y="46" font-size="12.5" fill="#94a3b8" text-anchor="end">分层架构 · 依赖自上而下 · 公共能力横向共享</text>
+
+  <!-- 分层底板 -->
+  <g fill="#f8fafc" stroke="#e6ebf2" stroke-width="1.2">
+    <rect x="32" y="74" width="856" height="92" rx="12"/>
+    <rect x="32" y="192" width="856" height="92" rx="12"/>
+    <rect x="32" y="310" width="856" height="92" rx="12"/>
+    <rect x="32" y="428" width="856" height="92" rx="12"/>
+    <rect x="32" y="546" width="856" height="92" rx="12"/>
+    <rect x="32" y="664" width="856" height="92" rx="12"/>
+    <rect x="940" y="310" width="308" height="328" rx="12"/>
+  </g>
+
+  <!-- 层名 -->
+  <g font-size="14" font-weight="700" fill="#55657a">
+    <text x="52" y="125">客户端层</text>
+    <text x="52" y="243">接入层</text>
+    <text x="52" y="361">业务服务层</text>
+    <text x="52" y="479">数据访问层</text>
+    <text x="52" y="597">实体层</text>
+    <text x="52" y="715">存储与中间件</text>
+  </g>
+  <text x="1094" y="302" font-size="12.5" font-weight="700" fill="#8a5a12" text-anchor="middle">公共支撑与运行时</text>
+
+  <!-- 依赖箭头：自上而下 -->
+  <g stroke="#9aa8b8" stroke-width="2" marker-end="url(#arrowDown)">
+    <line x1="544" y1="168" x2="544" y2="190"/>
+    <line x1="544" y1="286" x2="544" y2="308"/>
+    <line x1="544" y1="404" x2="544" y2="426"/>
+    <line x1="544" y1="522" x2="544" y2="544"/>
+    <line x1="544" y1="640" x2="544" y2="662"/>
+  </g>
+  <g font-size="10.5" fill="#94a3b8">
+    <text x="558" y="184">HTTP / JSON · OpenAPI</text>
+    <text x="558" y="302">调用业务服务</text>
+    <text x="558" y="420">仓储调用</text>
+    <text x="558" y="538">引用实体</text>
+    <text x="558" y="656">持久化落库</text>
+  </g>
+
+  <!-- 横向共享：双向虚线 -->
+  <g stroke="#c8b48c" stroke-width="1.6" stroke-dasharray="5 4" marker-start="url(#arrowShared)" marker-end="url(#arrowShared)">
+    <line x1="890" y1="356" x2="938" y2="356"/>
+    <line x1="890" y1="474" x2="938" y2="474"/>
+    <line x1="890" y1="592" x2="938" y2="592"/>
+  </g>
+
+  <!-- 客户端层 -->
+  <g fill="#e8f1fe" stroke="#a9c8f0" stroke-width="1.2">
+    <rect x="212" y="92" width="212.7" height="56" rx="8"/>
+    <rect x="437.7" y="92" width="212.6" height="56" rx="8"/>
+    <rect x="663.3" y="92" width="212.7" height="56" rx="8"/>
+  </g>
+  <g font-size="13" font-weight="600" fill="#17457f" text-anchor="middle">
+    <text x="318.4" y="116">ZR.Vue</text>
+    <text x="544" y="116">Vue3 管理端</text>
+    <text x="769.7" y="116">移动端 Uniapp</text>
+  </g>
+  <g font-size="11" fill="#5a7292" text-anchor="middle">
+    <text x="318.4" y="134">Vue2 管理端（旧版）</text>
+    <text x="544" y="134">独立仓库 · 推荐</text>
+    <text x="769.7" y="134">H5 / 小程序 / App</text>
+  </g>
+
+  <!-- 接入层 -->
+  <g fill="#ede9fe" stroke="#c4b5fd" stroke-width="1.2">
+    <rect x="212" y="210" width="664" height="56" rx="8"/>
+  </g>
+  <g font-size="13" font-weight="600" fill="#4c1d95" text-anchor="middle">
+    <text x="544" y="234">ZR.Admin.WebApi</text>
+  </g>
+  <g font-size="11" fill="#6b5ca5" text-anchor="middle">
+    <text x="544" y="252">唯一宿主：Controller · Swagger · 鉴权与限流 · SignalR 实时通知</text>
+  </g>
+
+  <!-- 业务服务层 -->
+  <g fill="#e6f7f5" stroke="#9fdcd4" stroke-width="1.2">
+    <rect x="212" y="328" width="123.2" height="56" rx="8"/>
+    <rect x="347.2" y="328" width="123.2" height="56" rx="8"/>
+    <rect x="482.4" y="328" width="123.2" height="56" rx="8"/>
+    <rect x="617.6" y="328" width="123.2" height="56" rx="8"/>
+    <rect x="752.8" y="328" width="123.2" height="56" rx="8"/>
+  </g>
+  <g font-size="12" font-weight="600" fill="#0f5f57" text-anchor="middle">
+    <text x="273.6" y="352">ZR.Service</text>
+    <text x="408.8" y="352">ZR.ServiceCore</text>
+    <text x="544" y="352">ZR.Workflow</text>
+    <text x="679.2" y="352">ZR.Mall</text>
+    <text x="814.4" y="352">ZR.CodeGenerator</text>
+  </g>
+  <g font-size="10.5" fill="#4e7c78" text-anchor="middle">
+    <text x="273.6" y="371">业务服务层</text>
+    <text x="408.8" y="371">系统核心服务</text>
+    <text x="544" y="371">审批流引擎</text>
+    <text x="679.2" y="371">商城后端</text>
+    <text x="814.4" y="371">代码生成器</text>
+  </g>
+
+  <!-- 数据访问层 -->
+  <g fill="#eaf6ea" stroke="#b6e0b6" stroke-width="1.2">
+    <rect x="212" y="446" width="664" height="56" rx="8"/>
+  </g>
+  <g font-size="13" font-weight="600" fill="#1f5f2a" text-anchor="middle">
+    <text x="544" y="470">ZR.Repository</text>
+  </g>
+  <g font-size="11" fill="#4d7a55" text-anchor="middle">
+    <text x="544" y="488">仓储层：SqlSugar 封装 · 存储过程调用 · 数据访问</text>
+  </g>
+
+  <!-- 实体层 -->
+  <g fill="#fdecef" stroke="#f5c2cb" stroke-width="1.2">
+    <rect x="212" y="564" width="664" height="56" rx="8"/>
+  </g>
+  <g font-size="13" font-weight="600" fill="#8a2135" text-anchor="middle">
+    <text x="544" y="588">ZR.Model</text>
+  </g>
+  <g font-size="11" fill="#a1566a" text-anchor="middle">
+    <text x="544" y="606">实体层：业务表实体 · DTO · ViewModel（被各层引用）</text>
+  </g>
+
+  <!-- 存储与中间件 -->
+  <g fill="#f1f3f6" stroke="#d3dae3" stroke-width="1.2">
+    <rect x="212" y="682" width="157" height="56" rx="8"/>
+    <rect x="381" y="682" width="157" height="56" rx="8"/>
+    <rect x="550" y="682" width="157" height="56" rx="8"/>
+    <rect x="719" y="682" width="157" height="56" rx="8"/>
+  </g>
+  <g font-size="12" font-weight="600" fill="#3b4657" text-anchor="middle">
+    <text x="290.5" y="706">SQL Server / MySQL</text>
+    <text x="459.5" y="706">Redis</text>
+    <text x="628.5" y="706">文件存储</text>
+    <text x="797.5" y="706">外部服务</text>
+  </g>
+  <g font-size="10.5" fill="#6b7787" text-anchor="middle">
+    <text x="290.5" y="725">主业务库 · 分库</text>
+    <text x="459.5" y="725">缓存 · 会话 · 推送</text>
+    <text x="628.5" y="725">本地 / 阿里云 OSS</text>
+    <text x="797.5" y="725">邮件 · 短信 · LLM</text>
+  </g>
+
+  <!-- 公共支撑与运行时 -->
+  <g fill="#fdf3e3" stroke="#f3d9a4" stroke-width="1.2">
+    <rect x="956" y="328" width="276" height="64" rx="8"/>
+    <rect x="956" y="404" width="276" height="64" rx="8"/>
+    <rect x="956" y="480" width="276" height="64" rx="8"/>
+    <rect x="956" y="556" width="276" height="64" rx="8"/>
+  </g>
+  <g font-size="13" font-weight="600" fill="#7a4b12" text-anchor="middle">
+    <text x="1094" y="355">Infrastructure</text>
+    <text x="1094" y="431">ZR.Common</text>
+    <text x="1094" y="507">ZR.Tasks</text>
+    <text x="1094" y="583">ZR.Tests</text>
+  </g>
+  <g font-size="11" fill="#8f7346" text-anchor="middle">
+    <text x="1094" y="375">基础设施：AI 治理 · 缓存 · 日志 · 工具</text>
+    <text x="1094" y="451">通用工具 · 扩展 · 帮助类</text>
+    <text x="1094" y="527">Quartz 定时任务 · 后台作业</text>
+    <text x="1094" y="603">单元测试 · 集成测试</text>
+  </g>
+
+  <!-- 脚注 -->
+  <text x="32" y="784" font-size="11" fill="#94a3b8">说明：document/ 为已弃用的数据库脚本目录；Vue3 前端与移动端为独立仓库（推荐 vue3）。</text>
+</svg>

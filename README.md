@@ -74,7 +74,7 @@ init-run.bat
 
 | H5                                                                                     | 工作流 |
 | -------------------------------------------------------------------------------------- |--------|
-| ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcodeH5.png) |![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/workflow_demo.png) |
+| <img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcodeH5.png" alt="H5 体验" width="200" height="200" /> | <img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/workflow_demo.png" alt="工作流体验" width="200" height="200" /> |
 
 ```
 由于是个人项目，资金有限，体验服务器是低配，请大家爱惜，轻戳，不胜感激！！！
@@ -139,6 +139,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 26. 商城管理：商城功能，包含订单管理、发货、分类、品牌管理、销售统计；（前端还在开发中）
 27. saas多租户：内置完整的多租户 SaaS 体系，支持租户全生命周期管理、套餐授权、用户配额、到期提醒等。
 28. 工作流模块：内置轻量级可视化审批流引擎，支持动态表单、流程设计复制、通过/驳回/撤回/转办/加签等全场景流转、运行数据面板，并提供软删除与防呆校验保障数据安全。
+29. AI 助手：内置全局办公助手（对话/工具编排/发图）、业务页 AI、工作流 AI 与安全图表能力，并配套 AI 治理（多级限额、模型价格、用量统计、配置检查与探活）。
 
 ## 🏢 SaaS 多租户
 
@@ -185,9 +186,28 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 - **软删除与防呆**：删除流程定义时保留全部历史数据（节点/实例/任务/记录），且存在审批中或撤回中实例时拒绝删除，保障数据可追溯。
 - **多端协同**：配套独立的移动端工作流工作台菜单，按权限过滤展示，随时随地发起与审批。
 
+## 🤖 AI 功能
+
+内置开箱即用的 AI 能力，助手、业务页、工作流共用同一套 LLM 客户端与「AI 治理」，统一管控额度、成本与审计；模型走 OpenAI 兼容协议（`openai` / `deepseek` / `qwen` / `ollama`），每个供应商可分别配置文本 `Model` 与 `VisionModel`。
+
+### 能力总览
+
+| 域 | 关键能力 |
+| ---- | ---- |
+| 办公助手 | 多轮会话、SSE 流式、停止生成、自动标题、按登录用户隔离；有图走视觉（最多 4 张）、无图走工具编排 |
+| 助手工具 | 日程查询 / 日程解析草稿 / 周报草稿；登录安全分析、操作健康分析；工作流待办；预注册图表查询；失败会提示并再给一轮纠错 |
+| 发图看图 | 上传或粘贴图片；本机/内网文件转 data URI 并发模型前压缩；看图 token 落库；工作流审批建议 / 风险预判也可带图片附件 |
+| 业务页 AI | 多语言翻译、Cron 生成、代码生成列推断、登录/操作日志分析（各页独立按钮权限） |
+| 工作流 AI | 自然语言生成流程、审批建议、流程体检、意图填单、实例摘要、风险预判、审批记录摘要 |
+| 图表管道 | 白名单数据集（禁止 NL2SQL）：每日登录数、登录地域、操作日志多维统计；对话内组装折线/柱状/饼图 |
+| 治理与成本 | 多级策略（user > role > tenant > global）、模型价格、用量统计/导出、配置检查（含 `VisionModel` 名）、Provider 探活；助手头栏展示 Token 与金额额度 |
+| 模型接入 | OpenAI 兼容协议：`openai` / `deepseek` / `qwen` / `ollama`；供应商分项可配文本 `Model` 与 `VisionModel` |
+
 ## 🍻 项目结构
 
-![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/kj.png)
+<p align="center">
+  <img src="./document/images/project-structure.svg" alt="ZR.Admin.NET 项目结构（分层架构图）" width="1100" />
+</p>
 
 ```
 ├─ZR.Service                ->[你的业务服务层类库]：提供自己业务数据Api接口调用；
@@ -265,6 +285,10 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 	<tr>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/29.png"/></td>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/30.png"/></td>
+	</tr>
+    <tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/ai1.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/ai2.png"/></td>
 	</tr>
 </table>
 
