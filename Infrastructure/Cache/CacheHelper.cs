@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 //不改命名空间，要修改很多地方
 namespace ZR.Common
@@ -8,14 +10,16 @@ namespace ZR.Common
     public class CacheHelper
     {
         public static MemoryCache Cache { get; set; }
-        private static readonly List<string> _keys;
+        // 必须线程安全：SetCaches/Remove/GetCacheKeys 会被并发请求调用，
+        // 普通 List<string> 并发读写在 .NET 8 下会静默丢失/损坏数据。
+        private static readonly ConcurrentDictionary<string, byte> _keys;
         static CacheHelper()
         {
             Cache = new MemoryCache(new MemoryCacheOptions
             {
                 //SizeLimit = 1024
             });
-            _keys = [];
+            _keys = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
         }
 
         /// <summary>
@@ -76,10 +80,7 @@ namespace ZR.Common
         /// <param name="Timeout">过期时间（秒）</param>
         public static void SetCaches(string CacheKey, object objObject, int Timeout)
         {
-            if (!_keys.Contains(CacheKey))
-            {
-                _keys.Add(CacheKey);
-            }
+            _keys.TryAdd(CacheKey, 0);
             Cache.Set(CacheKey, objObject, DateTime.Now.AddSeconds(Timeout));
         }
 
@@ -112,7 +113,7 @@ namespace ZR.Common
         /// <param name="key">key</param>
         public static void Remove(string key)
         {
-            _keys.Remove(key);
+            _keys.TryRemove(key, out _);
             Cache.Remove(key);
         }
 
@@ -153,7 +154,8 @@ namespace ZR.Common
         //}
         public static List<string> GetCacheKeys()
         {
-            return new List<string>(_keys);
+            // ConcurrentDictionary.Keys 返回快照，避免复制过程中被并发修改
+            return _keys.Keys.ToList();
         }
 
         // 销毁缓存

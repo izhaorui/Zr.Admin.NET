@@ -1,6 +1,6 @@
 using CSRedis;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using ZR.Common;       // 复用 CacheHelper 作为本地内存实现
 
 namespace Infrastructure.Cache
@@ -99,19 +99,20 @@ namespace Infrastructure.Cache
     /// </summary>
     public static class CacheStore
     {
-        private static readonly Dictionary<CacheBackend, ICache> _instances = new();
+        // 必须线程安全：For() 会在每个请求（GetUserSession/SetUserSession/RemoveUserSession）中被并发调用，
+        // 普通 Dictionary 并发读+写会抛 "Operations that change non-concurrent collections must have exclusive access"。
+        private static readonly ConcurrentDictionary<CacheBackend, ICache> _instances = new();
 
         /// <summary>
         /// 获取指定后端的缓存实例。对应 Redis 连接为 null 时回退本地内存。
         /// </summary>
         public static ICache For(CacheBackend backend)
         {
-            if (_instances.TryGetValue(backend, out var cached)) return cached;
-
-            CSRedisClient redis = backend == CacheBackend.Session ? RedisServer.Session : RedisServer.Cache;
-            ICache store = redis != null ? new RedisCacheStore(redis) : new MemoryCacheStore();
-            _instances[backend] = store;
-            return store;
+            return _instances.GetOrAdd(backend, static b =>
+            {
+                CSRedisClient redis = b == CacheBackend.Session ? RedisServer.Session : RedisServer.Cache;
+                return redis != null ? new RedisCacheStore(redis) : (ICache)new MemoryCacheStore();
+            });
         }
 
         /// <summary>
