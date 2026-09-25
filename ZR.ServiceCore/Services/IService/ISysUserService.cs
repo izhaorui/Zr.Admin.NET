@@ -54,6 +54,20 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public int ResetPwd(long userid, string password, string notifyContent = null);
 
+        /// <summary>
+        /// 是否为初始（默认）密码：开启 sys.account.initPasswordModify 且从未改过密码。
+        /// </summary>
+        /// <param name="pwdUpdateTime">用户最后密码更新时间，null 表示从未修改</param>
+        /// <returns></returns>
+        public bool IsInitPassword(DateTime? pwdUpdateTime);
+
+        /// <summary>
+        /// 密码是否已过期：按 sys.account.passwordExpireDay 判定，未配置或配置 &lt;=0 时永不过期。
+        /// </summary>
+        /// <param name="pwdUpdateTime">用户最后密码更新时间，null 视为已过期</param>
+        /// <returns></returns>
+        public bool IsPasswordExpired(DateTime? pwdUpdateTime);
+
         public int ChangeUserStatus(SysUser user);
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
 using UAParser;
@@ -606,6 +607,12 @@ namespace ZR.ServiceCore.Services
                 .Where(it => it.LoginTime >= begin && it.LoginTime <= end);
         }
 
+        /// <summary>
+        /// 检查登录是否发生异地，并生成系统消息提醒用户（仅在成功登录时调用）。
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="currentLoginIp"></param>
+        /// <returns></returns>
         public string GetAbnormalLoginNotice(SysUser user, string currentLoginIp)
         {
             if (user == null || user.UserId <= 0)
@@ -629,6 +636,22 @@ namespace ZR.ServiceCore.Services
             var content = $"⚠️ 账号异地登录提醒\n\n检测到您的账号发生异地登录，请确认是否为本人操作：\n\n账号：{user.UserName}\n本次地点：{currentLocation}\n上次地点：{previousLocation}\n登录 IP：{currentLoginIp}\n\n如非本人操作，请立即修改密码！";
             sysUserMsgService.AddSysUserMsg(user.UserId, content, UserMsgType.SYSTEM);
             return content;
+        }
+
+        /// <summary>
+        /// 登录时预计算合并后的数据权限等级（取所有角色中最宽松的权限）
+        /// </summary>
+        public static int ComputeScopeType(List<SysRole> roles)
+        {
+            if (roles.Any(r => r.RoleKey == GlobalConstant.AdminRole || r.DataScope == (int)DataPermiEnum.All))
+                return (int)MergedScopeType.All;
+            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.DEPT_CHILD || r.DataScope == (int)DataPermiEnum.CUSTOM))
+                return (int)MergedScopeType.DeptList;
+            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.DEPT))
+                return (int)MergedScopeType.Dept;
+            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.SELF))
+                return (int)MergedScopeType.Self;
+            return (int)MergedScopeType.None;
         }
 
         private static string GetLocationByIp(string ip)

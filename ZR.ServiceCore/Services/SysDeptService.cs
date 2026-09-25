@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Model;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -322,6 +323,37 @@ namespace ZR.ServiceCore.Services
                 rows = RoleDeptRepository.Insert(list);
             }
             return rows;
+        }
+
+        /// <summary>
+        /// 登录时预计算用户数据权限部门集合（DEPT_CHILD + CUSTOM 并集），
+        /// 存入 JWT Token 后 QueryFilter 直接读缓存，避免每次查询 SQL EXISTS 子查询。
+        /// </summary>
+        public List<long> ComputeDataScopeDeptIds(List<SysRole> roles, long deptId)
+        {
+            var result = new HashSet<long>();
+
+            var isAdmin = roles.Any(r => r.RoleKey == GlobalConstant.AdminRole || r.DataScope == (int)DataPermiEnum.All);
+            var deptChildRoles = roles.Where(r => r.DataScope == (int)DataPermiEnum.DEPT_CHILD).ToList();
+            var customRoles = roles.Where(r => r.DataScope == (int)DataPermiEnum.CUSTOM).ToList();
+
+            // 非管理员始终包含自己的部门（避免空列表导致 SQL IN() 语法错误）
+            if (!isAdmin)
+            {
+                result.Add(deptId);
+            }
+            if (deptChildRoles.Count != 0)
+            {
+                var childIds = GetChildDeptIds(deptId);
+                if (childIds != null) result.UnionWith(childIds);
+            }
+            if (customRoles.Count != 0)
+            {
+                var roleIds = customRoles.Select(r => r.RoleId).ToList();
+                var customDeptIds = SelectRoleDeptsBatch(roleIds);
+                if (customDeptIds != null) result.UnionWith(customDeptIds);
+            }
+            return [.. result];
         }
         #endregion
     }

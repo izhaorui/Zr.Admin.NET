@@ -861,12 +861,42 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 获取移动端工作台菜单
+        /// 获取移动端工作台菜单。
+        /// 契约：<see cref="Meta.Permi"/> 为 null 表示"所有登录用户可见"的公共页（如演示、通知公告）；
+        /// 其余必须与 sys_menu.perms 中的权限码保持一致，否则权限码调整后对应菜单会静默消失。
         /// </summary>
-        /// <param name="perms"></param>
-        /// <param name="v"></param>
-        /// <returns></returns>
+        /// <param name="perms">当前用户权限码（多租户下已由 GetMenuPermission 按套餐取交集）</param>
+        /// <param name="v">预留的多端版本号参数，当前未使用</param>
+        /// <returns>按权限过滤后的移动端菜单树</returns>
         public List<RouterVo> GetAppMenus(List<string> perms, int v)
+        {
+            var router = BuildAppMenuTemplate();
+
+            // 管理员通配权限（*:*:*）直接下发全量菜单
+            if (perms?.Contains(GlobalConstant.AdminPerm) == true)
+            {
+                return router;
+            }
+
+            // 非管理员按权限码过滤；Permi 为 null 表示公共页，所有登录用户可见
+            var granted = new HashSet<string>(perms ?? new List<string>());
+            foreach (var item in router)
+            {
+                item.Children = item.Children?
+                    .Where(c => c.Meta.Permi == null || granted.Contains(c.Meta.Permi))
+                    .ToList();
+            }
+
+            // 无可见子菜单的分组不下发给移动端
+            return router.Where(p => p.Children is { Count: > 0 }).ToList();
+        }
+
+        /// <summary>
+        /// 移动端工作台菜单模板。
+        /// 每次调用新建，避免多个请求共享同一对象图后被调用方改写；
+        /// 注意：功能演示分组仅供演示环境使用，生产部署可按需移除该分组。
+        /// </summary>
+        private static List<RouterVo> BuildAppMenuTemplate()
         {
             var demoList = new List<RouterVo>(){
                 new()
@@ -885,15 +915,7 @@ namespace ZR.ServiceCore.Services
                     Meta = new Meta("水平表格", "list")
                 }
             };
-            if (v >= 1)
-            {
-                demoList.Add(new RouterVo
-                {
-                    Path = "/pages/dashboard/index",
-                    Meta = new Meta("控制台", "list")
-                });
-            }
-            var router = new List<RouterVo>
+            return new List<RouterVo>
             {
                 new()
                 {
@@ -947,7 +969,8 @@ namespace ZR.ServiceCore.Services
                     new()
                     {
                         Path = "/pages/monitor/logininfo",
-                        Meta = new Meta("登录日志", "clock")
+                        // 与 PC 端一致：登录日志为敏感页，需 monitor:logininfor:list 权限
+                        Meta = new Meta("登录日志", "clock"){ Permi = "monitor:logininfor:list" }
                     },
                      new()
                     {
@@ -957,37 +980,6 @@ namespace ZR.ServiceCore.Services
                 }
                 },
             };
-            if (perms.Contains(GlobalConstant.AdminPerm))
-            {
-                return router;
-            }
-            var newRouter = new List<RouterVo>();
-            foreach (var item in router)
-            {
-                RouterVo routerVo = new()
-                {
-                    Children = new List<RouterVo>()
-                };
-                for (var i = 0; i < item.Children.Count; i++)
-                {
-                    var chd = item.Children[i];
-                    if (chd.Meta.Permi != null && perms.Contains(chd.Meta.Permi))
-                    {
-                        routerVo.Children.Add(chd);
-                    }
-                    else if (chd.Meta.Permi == null)
-                    {
-                        routerVo.Children.Add(chd);
-                    }
-                }
-
-                if (routerVo.Children.Count > 0)
-                {
-                    routerVo.Meta = item.Meta;
-                    newRouter.Add(routerVo);
-                }
-            }
-            return newRouter;
         }
     }
 }

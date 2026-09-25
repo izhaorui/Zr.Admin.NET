@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using ZR.Model.System;
+﻿using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Vo;
 
@@ -25,6 +24,7 @@ namespace ZR.ServiceCore.Services
         List<long> GetChildDeptIds(long deptId);
         bool DeleteRoleDeptByRoleId(long roleId);
         int InsertRoleDepts(SysRole role);
+        public List<long> ComputeDataScopeDeptIds(List<SysRole> roles, long deptId);
     }
 
     public interface ISysRoleDeptService : IBaseService<SysRoleDept>

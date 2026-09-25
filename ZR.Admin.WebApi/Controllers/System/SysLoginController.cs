@@ -84,10 +84,10 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 TenantId = loginBody.TenantId,
                 Permissions = permissions,
-                ScopeType = ComputeScopeType(roles),
+                ScopeType = SysLoginService.ComputeScopeType(roles),
+                SessionId = Guid.NewGuid().ToString("N")// 单设备登录：每次登录生成新会话ID并缓存，旧会话将被中间件判定失效
             };
-            // 单设备登录：每次登录生成新会话ID并缓存，旧会话将被中间件判定失效
-            loginUser.SessionId = Guid.NewGuid().ToString("N");
+            
             CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
             var token = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
             ApiResult apiResult = new((int)ResultCode.SUCCESS, "success", token);
@@ -134,7 +134,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             CacheService.SetUserPerms(GlobalConstant.UserPermKEY + userId, permissions);
             // 数据权限部门 ID 缓存（与权限缓存统一管理，前端登录/刷新后自动刷新）
             var userRoles = roleService.SelectUserRoleListByUserId(userId);
-            CacheService.SetDataScopeDeptIds(userId, ComputeDataScopeDeptIds(userRoles, user.DeptId));
+            CacheService.SetDataScopeDeptIds(userId, deptService.ComputeDataScopeDeptIds(userRoles, user.DeptId));
 
             // 登录后全局品牌信息（顶栏/侧边栏展示租户Logo等），无需额外请求
             object tenant = null;
@@ -156,8 +156,8 @@ namespace ZR.Admin.WebApi.Controllers.System
                 user = user.Adapt<SysUserDto>(),
                 roles,
                 permissions,
-                isDefaultModifyPwd = InitPassword(user.PwdUpdateTime),
-                isPasswordExpired = CheckPasswordExpire(user.PwdUpdateTime),
+                isDefaultModifyPwd = sysUserService.IsInitPassword(user.PwdUpdateTime),
+                isPasswordExpired = sysUserService.IsPasswordExpired(user.PwdUpdateTime),
                 tenant
             });
         }
@@ -302,7 +302,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="uuid"></param>
         /// <param name="deviceId"></param>
         /// <returns></returns>
-        [HttpGet("/GenerateQrcode")]
+        [HttpGet("/generateQrcode")]
         [AllowAnonymous]
         public IActionResult GenerateQrcode(string uuid, string deviceId)
         {
@@ -326,7 +326,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        [HttpPost("/VerifyScan")]
+        [HttpPost("/verifyScan")]
         [AllowAnonymous]
         public IActionResult VerifyScan([FromBody] ScanDto dto)
         {
@@ -351,7 +351,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        [HttpPost("/ScanLogin")]
+        [HttpPost("/scanLogin")]
         [Log(Title = "扫码登录")]
         public IActionResult ScanLogin([FromBody] ScanDto dto)
         {
@@ -366,9 +366,11 @@ namespace ZR.Admin.WebApi.Controllers.System
                 // 单设备登录：扫码登录视为一次新登录，生成新会话ID踢掉旧设备
                 tokenModel.SessionId = Guid.NewGuid().ToString("N");
                 CacheService.SetUserSession(tokenModel.UserId, tokenModel.SessionId);
-                Dictionary<string, object> dict = new() { };
-                dict.Add("status", "success");
-                dict.Add("token", JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(tokenModel)));
+                Dictionary<string, object> dict = new()
+                {
+                    { "status", "success" },
+                    { "token", JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(tokenModel)) }
+                };
                 CacheService.SetScanLogin(dto.Uuid, dict);
 
                 return SUCCESS(1);
@@ -455,10 +457,10 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 TenantId = loginBody.TenantId,
                 Permissions = permissions,
-                ScopeType = ComputeScopeType(roles),
+                ScopeType = SysLoginService.ComputeScopeType(roles),
+                // 单设备登录：手机号登录同样生成新会话ID
+                SessionId = Guid.NewGuid().ToString("N")
             };
-            // 单设备登录：手机号登录同样生成新会话ID
-            loginUser.SessionId = Guid.NewGuid().ToString("N");
             CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }
@@ -468,7 +470,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <param name="loginBody"></param>
         /// <returns></returns>
-        [Route("/PhoneBind")]
+        [Route("/phoneBind")]
         [HttpPost]
         [Log(Title = "手机号绑定")]
         [AllowAnonymous]
@@ -511,75 +513,6 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ResultCode.CUSTOM_ERROR, "密码错误,请重新输入");
             }
             return SUCCESS(1);
-        }
-
-        /// <summary>
-        /// 登录时预计算合并后的数据权限等级（取所有角色中最宽松的权限）
-        /// </summary>
-        private static int ComputeScopeType(List<SysRole> roles)
-        {
-            if (roles.Any(r => r.RoleKey == GlobalConstant.AdminRole || r.DataScope == (int)DataPermiEnum.All))
-                return (int)MergedScopeType.All;
-            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.DEPT_CHILD || r.DataScope == (int)DataPermiEnum.CUSTOM))
-                return (int)MergedScopeType.DeptList;
-            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.DEPT))
-                return (int)MergedScopeType.Dept;
-            if (roles.Any(r => r.DataScope == (int)DataPermiEnum.SELF))
-                return (int)MergedScopeType.Self;
-            return (int)MergedScopeType.None;
-        }
-
-        /// <summary>
-        /// 登录时预计算用户数据权限部门集合（DEPT_CHILD + CUSTOM 并集），
-        /// 存入 JWT Token 后 QueryFilter 直接读缓存，避免每次查询 SQL EXISTS 子查询。
-        /// </summary>
-        private List<long> ComputeDataScopeDeptIds(List<SysRole> roles, long deptId)
-        {
-            var result = new HashSet<long>();
-
-            var isAdmin = roles.Any(r => r.RoleKey == GlobalConstant.AdminRole || r.DataScope == (int)DataPermiEnum.All);
-            var deptChildRoles = roles.Where(r => r.DataScope == (int)DataPermiEnum.DEPT_CHILD).ToList();
-            var customRoles = roles.Where(r => r.DataScope == (int)DataPermiEnum.CUSTOM).ToList();
-
-            // 非管理员始终包含自己的部门（避免空列表导致 SQL IN() 语法错误）
-            if (!isAdmin)
-            {
-                result.Add(deptId);
-            }
-            if (deptChildRoles.Count != 0)
-            {
-                var childIds = deptService.GetChildDeptIds(deptId);
-                if (childIds != null) result.UnionWith(childIds);
-            }
-            if (customRoles.Count != 0)
-            {
-                var roleIds = customRoles.Select(r => r.RoleId).ToList();
-                var customDeptIds = deptService.SelectRoleDeptsBatch(roleIds);
-                if (customDeptIds != null) result.UnionWith(customDeptIds);
-            }
-            return [.. result];
-        }
-
-        /// <summary>
-        /// 检查密码是否提醒
-        /// </summary>
-        private bool InitPassword(DateTime? pwdUpdateTime)
-        {
-            var initPasswordModify = sysConfigService.GetSysConfigByKey("sys.account.initPasswordModify");
-            return initPasswordModify != null && initPasswordModify.ConfigValue == "1" && pwdUpdateTime == null;
-        }
-
-        private bool CheckPasswordExpire(DateTime? pwdUpdateTime)
-        {
-            var passwordExpireDayConfig = sysConfigService.GetSysConfigByKey("sys.account.passwordExpireDay");
-            if (passwordExpireDayConfig != null && int.TryParse(passwordExpireDayConfig.ConfigValue, out int passwordExpireDay) && passwordExpireDay > 0)
-            {
-                if (pwdUpdateTime == null || DateTime.Now > pwdUpdateTime.Value.AddDays(passwordExpireDay))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 }

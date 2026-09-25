@@ -23,17 +23,23 @@ namespace ZR.ServiceCore.Services
         private readonly ISysUserRoleService UserRoleService;
         private readonly ISysUserPostService UserPostService;
         private readonly ISysUserMsgService UserMsgService;
+        // 密码策略配置（sys.account.*）在主库 sys_config，必须经 ISysConfigService 读取，
+        // 不能用 Queryable<SysConfig>()（会按 SysUser 的租户连接查错库）
+        private readonly ISysConfigService SysConfigService;
 
         public SysUserService(
             ISysRoleService sysRoleService,
             ISysUserRoleService userRoleService,
             ISysUserPostService userPostService,
-            ISysUserMsgService userMsgService)
+            ISysUserMsgService userMsgService,
+            ISysConfigService sysConfigService,
+            ISysDeptService deptService)
         {
             RoleService = sysRoleService;
             UserRoleService = userRoleService;
             UserPostService = userPostService;
             UserMsgService = userMsgService;
+            SysConfigService = sysConfigService;
         }
 
         /// <summary>
@@ -247,6 +253,35 @@ namespace ZR.ServiceCore.Services
                 UserMsgService.AddSysUserMsg(userid, notifyContent, UserMsgType.SYSTEM);
             }
             return result;
+        }
+
+        /// <summary>
+        /// 是否为初始（默认）密码：开启 sys.account.initPasswordModify 且从未改过密码。
+        /// </summary>
+        /// <param name="pwdUpdateTime">用户最后密码更新时间，null 表示从未修改</param>
+        /// <returns></returns>
+        public bool IsInitPassword(DateTime? pwdUpdateTime)
+        {
+            var initPasswordModify = SysConfigService.GetSysConfigByKey("sys.account.initPasswordModify");
+            return initPasswordModify != null && initPasswordModify.ConfigValue == "1" && pwdUpdateTime == null;
+        }
+
+        /// <summary>
+        /// 密码是否已过期：按 sys.account.passwordExpireDay 判定，未配置或配置 &lt;=0 时永不过期。
+        /// </summary>
+        /// <param name="pwdUpdateTime">用户最后密码更新时间，null 视为已过期</param>
+        /// <returns></returns>
+        public bool IsPasswordExpired(DateTime? pwdUpdateTime)
+        {
+            var passwordExpireDayConfig = SysConfigService.GetSysConfigByKey("sys.account.passwordExpireDay");
+            if (passwordExpireDayConfig != null && int.TryParse(passwordExpireDayConfig.ConfigValue, out int passwordExpireDay) && passwordExpireDay > 0)
+            {
+                if (pwdUpdateTime == null || DateTime.Now > pwdUpdateTime.Value.AddDays(passwordExpireDay))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
