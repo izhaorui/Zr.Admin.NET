@@ -9,6 +9,7 @@ using ZR.Infrastructure.IPTools;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Enums;
 using ZR.Repository;
 
 namespace ZR.ServiceCore.Services
@@ -55,7 +56,7 @@ namespace ZR.ServiceCore.Services
             exp.AndIF(user.BeginTime != DateTime.MinValue && user.BeginTime != null, u => u.Create_time >= user.BeginTime);
             exp.AndIF(user.EndTime != DateTime.MinValue && user.EndTime != null, u => u.Create_time <= user.EndTime);
             exp.AndIF(!user.Phonenumber.IsEmpty(), u => u.Phonenumber == user.Phonenumber);
-            exp.And(u => u.DelFlag == 0);
+            exp.And(u => u.DelFlag == DelFlagEnum.Normal);
 
             if (user.DeptId != 0)
             {
@@ -93,7 +94,7 @@ namespace ZR.ServiceCore.Services
         {
             var userModel = Queryable()
                 .Filter(null, true).WithCache(60 * 5)
-                .Where(f => f.UserId == userId && f.DelFlag == 0)
+                .Where(f => f.UserId == userId && f.DelFlag == DelFlagEnum.Normal)
                 .First();
             var user = userModel.Adapt<SysUserDto>();
             if (user != null && user.UserId > 0)
@@ -125,7 +126,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public string CheckUserNameUnique(string userName)
         {
-            int count = Count(it => it.UserName == userName && it.DelFlag == 0);
+            int count = Count(it => it.UserName == userName && it.DelFlag == DelFlagEnum.Normal);
             if (count > 0)
             {
                 return UserConstants.NOT_UNIQUE;
@@ -321,7 +322,7 @@ namespace ZR.ServiceCore.Services
                 UserRoleService.DeleteUserRoleByUserId((int)userid);
                 // 删除用户与岗位关联
                 UserPostService.Delete(userid);
-                Update(new SysUser() { UserId = userid, DelFlag = 2 }, it => new { it.DelFlag }, f => f.UserId == userid);
+                Update(new SysUser() { UserId = userid, DelFlag = DelFlagEnum.Deleted }, it => new { it.DelFlag }, f => f.UserId == userid);
             });
             return result.IsSuccess ? 1 : 0;
         }
@@ -406,7 +407,7 @@ namespace ZR.ServiceCore.Services
             {
                 x.Create_time = DateTime.Now;
                 x.Status = 0;
-                x.DelFlag = 0;
+                x.DelFlag = DelFlagEnum.Normal;
                 x.Password = "E10ADC3949BA59ABBE56E057F20F883E";
                 x.Remark = x.Remark.IsEmpty() ? "数据导入" : x.Remark;
             });
@@ -450,7 +451,7 @@ namespace ZR.ServiceCore.Services
         public SysUser Login(LoginBodyDto user)
         {
             return Context.Queryable<SysUser>()
-                .Where(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower() && it.DelFlag == 0)
+                .Where(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower() && it.DelFlag == DelFlagEnum.Normal)
                 .First();
         }
 

@@ -2,6 +2,7 @@ using Infrastructure;
 using Microsoft.Extensions.Configuration;
 using SqlSugar.IOC;
 using ZR.Model.System;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Tenant;
 
 namespace ZR.ServiceCore.Services.Seed
@@ -232,7 +233,7 @@ namespace ZR.ServiceCore.Services.Seed
                 return "[套餐菜单] 多租户未启用，跳过";
 
             var db = DbScoped.SugarScope;
-            var plans = db.Queryable<SysTenantPlan>().Where(x => x.DelFlag == 0).ToList();
+            var plans = db.Queryable<SysTenantPlan>().Where(x => x.DelFlag == DelFlagEnum.Normal).ToList();
             if (!plans.Any())
                 return "[套餐菜单] 无套餐，跳过";
 

@@ -12,11 +12,11 @@ namespace ZR.Workflow.Service
         private sealed record ResolvedApprover(long UserId, string UserName, string NickName);
 
         /// <summary>
-        /// 有效用户查询起点：未删除（DelFlag==0）且未停用（Status==0）。
+        /// 有效用户查询起点：未删除（DelFlag=Normal）且未停用（Status==0）。
         /// 引擎内所有取用户处统一复用，避免审批人解析/转办等场景选到已删除或停用的用户导致流程卡死。
         /// </summary>
         private ISugarQueryable<SysUser> ActiveUsers()
-            => Context.Queryable<SysUser>().Where(u => u.DelFlag == 0 && u.Status == 0);
+            => Context.Queryable<SysUser>().Where(u => u.DelFlag == DelFlagEnum.Normal && u.Status == 0);
 
         /// <summary>
         /// 解析节点审批人列表，统一返回 (UserId, UserName, NickName)。
@@ -163,7 +163,7 @@ namespace ZR.Workflow.Service
                 var deptIds = ParseIds(node.ApproverId);
                 if (deptIds.Count == 0) return new List<SysUser>();
                 var leaderIdStrs = Engine.Context.Queryable<SysDept>()
-                    .Where(d => deptIds.Contains(d.DeptId) && d.DelFlag == 0)
+                    .Where(d => deptIds.Contains(d.DeptId) && d.DelFlag == DelFlagEnum.Normal)
                     .Select(d => d.LeaderIds)
                     .ToList()
                     .Where(s => !string.IsNullOrWhiteSpace(s))

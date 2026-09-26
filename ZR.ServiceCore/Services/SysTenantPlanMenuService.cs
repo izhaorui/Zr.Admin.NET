@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Middleware;
 
@@ -263,7 +264,7 @@ namespace ZR.ServiceCore.Services
         {
             // 清除所有可能绑定该套餐的租户权限缓存
             var bindings = Context.Queryable<SysTenantPlanBinding>()
-                .Where(x => x.PlanCode == planCode && x.DelFlag == 0 && x.Status == 0)
+                .Where(x => x.PlanCode == planCode && x.DelFlag == DelFlagEnum.Normal && x.Status == 0)
                 .Select(x => x.TenantId)
                 .Distinct()
                 .ToList();

@@ -7,6 +7,7 @@ using System.Diagnostics;
 using ZR.Model;
 using ZR.Model.AI;
 using ZR.Model.AI.Dto;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Tenant;
 using ZR.ServiceCore.AI.IService;
 using ZR.ServiceCore.Services;
@@ -85,7 +86,7 @@ namespace ZR.ServiceCore.AI.Governance
             if (string.Equals(scopeType, "role", StringComparison.OrdinalIgnoreCase))
             {
                 return _roleService.Queryable()
-                    .Where(r => r.DelFlag == 0)
+                    .Where(r => r.DelFlag == DelFlagEnum.Normal)
                     .WhereIF(!string.IsNullOrEmpty(key), r => r.RoleName.Contains(key) || r.RoleKey.Contains(key))
                     .OrderBy(r => r.RoleSort)
                     .Take(200)

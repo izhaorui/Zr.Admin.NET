@@ -4,6 +4,7 @@ using SqlSugar.IOC;
 using ZR.Common;
 using ZR.Model.Content;
 using ZR.Model.System;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Services.Seed;
 
@@ -264,7 +265,7 @@ namespace ZR.ServiceCore.Services
             var mainDb = App.MainDbConfigId;
             var db = DbScoped.SugarScope;
 
-            if (db.Queryable<SysTenant>().Any(x => x.DelFlag == 0 && x.TenantId == mainDb))
+            if (db.Queryable<SysTenant>().Any(x => x.DelFlag == DelFlagEnum.Normal && x.TenantId == mainDb))
                 return "[默认租户] 已存在，跳过";
 
             db.Insertable(new SysTenant
@@ -273,7 +274,7 @@ namespace ZR.ServiceCore.Services
                 TenantName = "默认租户",
                 CompanyName = "默认租户",
                 Status = 0,
-                DelFlag = 0,
+                DelFlag = DelFlagEnum.Normal,
                 Remark = "种子初始化自动补齐"
             }).ExecuteCommand();
 

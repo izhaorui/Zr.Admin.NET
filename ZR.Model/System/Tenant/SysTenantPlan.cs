@@ -32,6 +32,6 @@ namespace ZR.Model.System.Tenant
         public int Sort { get; set; } = 99;
 
         [SugarColumn(DefaultValue = "0")]
-        public int DelFlag { get; set; }
+        public DelFlagEnum DelFlag { get; set; }
     }
 }

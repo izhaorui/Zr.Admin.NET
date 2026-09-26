@@ -2,6 +2,7 @@
 using System.Collections;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Enums;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -146,11 +147,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         [Log(Title = "部门管理", BusinessType = BusinessType.DELETE)]
         public IActionResult Remove(long deptId)
         {
-            if (DeptService.Queryable().Count(it => it.ParentId == deptId && it.DelFlag == 0) > 0)
+            if (DeptService.Queryable().Count(it => it.ParentId == deptId && it.DelFlag == DelFlagEnum.Normal) > 0)
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, $"存在下级部门，不允许删除");
             }
-            if (UserService.Queryable().Count(it => it.DeptId == deptId && it.DelFlag == 0) > 0)
+            if (UserService.Queryable().Count(it => it.DeptId == deptId && it.DelFlag == DelFlagEnum.Normal) > 0)
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, $"部门存在用户，不允许删除");
             }

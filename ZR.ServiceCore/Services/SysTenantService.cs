@@ -11,6 +11,7 @@ using ZR.Model.Models;
 using ZR.Model.social;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Sms;
 using ZR.ServiceCore.Signalr;
@@ -95,7 +96,7 @@ namespace ZR.ServiceCore.Services
         public PagedInfo<SysTenant> GetPageList(SysTenantQueryDto parm)
         {
             var predicate = Expressionable.Create<SysTenant>();
-            predicate = predicate.And(x => x.DelFlag == 0);
+            predicate = predicate.And(x => x.DelFlag == DelFlagEnum.Normal);
             predicate = predicate.AndIF(!string.IsNullOrWhiteSpace(parm.TenantId), x => x.TenantId.Contains(parm.TenantId));
             predicate = predicate.AndIF(!string.IsNullOrWhiteSpace(parm.TenantName), x => x.TenantName.Contains(parm.TenantName));
             predicate = predicate.AndIF(!string.IsNullOrWhiteSpace(parm.Domain), x => x.Domain.Contains(parm.Domain));
@@ -109,7 +110,7 @@ namespace ZR.ServiceCore.Services
         public string CheckTenantIdUnique(SysTenant tenant)
         {
             var tenantId = tenant?.Id ?? 0;
-            var info = Queryable().First(x => x.TenantId == tenant.TenantId && x.DelFlag == 0);
+            var info = Queryable().First(x => x.TenantId == tenant.TenantId && x.DelFlag == DelFlagEnum.Normal);
             if (info != null && info.Id != tenantId)
             {
                 return UserConstants.NOT_UNIQUE;
@@ -119,7 +120,7 @@ namespace ZR.ServiceCore.Services
 
         public SysTenant GetByTenantId(string tenantId)
         {
-            return Queryable().First(x => x.TenantId == tenantId && x.DelFlag == 0);
+            return Queryable().First(x => x.TenantId == tenantId && x.DelFlag == DelFlagEnum.Normal);
         }
 
         private static readonly string TenantDomainMapCacheKey = "TENANT_DOMAIN_MAP";
@@ -136,7 +137,7 @@ namespace ZR.ServiceCore.Services
                 return map;
             }
 
-            var list = Queryable().Where(x => x.DelFlag == 0 && x.Status == 0).ToList();
+            var list = Queryable().Where(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0).ToList();
             map = list
                 .Where(x => !string.IsNullOrWhiteSpace(x.Domain))
                 .ToDictionary(x => x.Domain.Trim().ToLowerInvariant(), x => x.TenantId, StringComparer.OrdinalIgnoreCase);
@@ -163,7 +164,7 @@ namespace ZR.ServiceCore.Services
                 return UserConstants.UNIQUE;
             }
 
-            var info = Queryable().First(x => x.Domain == domain.Trim() && x.DelFlag == 0);
+            var info = Queryable().First(x => x.Domain == domain.Trim() && x.DelFlag == DelFlagEnum.Normal);
             if (info != null && info.Id != excludeId)
             {
                 return UserConstants.NOT_UNIQUE;
@@ -247,7 +248,7 @@ namespace ZR.ServiceCore.Services
                 Logo = dto.Logo,
                 Status = dto.EnableAfterInit ? 0 : 1,
                 ExpireTime = dto.ExpireTime,
-                DelFlag = 0,
+                DelFlag = DelFlagEnum.Normal,
                 Remark = dto.Remark,
                 Create_by = operatorName,
                 Create_time = DateTime.Now
@@ -369,7 +370,7 @@ namespace ZR.ServiceCore.Services
                         TenantId = tenantId,
                         TenantName = tenantId,
                         Status = 0,
-                        DelFlag = 0,
+                        DelFlag = DelFlagEnum.Normal,
                         Remark = "初始化流程自动创建",
                         Create_time = DateTime.Now
                     });
@@ -487,7 +488,7 @@ namespace ZR.ServiceCore.Services
                     Update_by = operatorName,
                     Update_time = DateTime.Now
                 })
-                .Where(x => x.TenantId == tenantId && x.DelFlag == 0 && x.Status == 0)
+                .Where(x => x.TenantId == tenantId && x.DelFlag == DelFlagEnum.Normal && x.Status == 0)
                 .ExecuteCommand();
             if (bindingRows > 0)
             {
@@ -545,7 +546,7 @@ namespace ZR.ServiceCore.Services
 
             if (dto.DeleteRecord)
             {
-                tenant.DelFlag = 2;
+                tenant.DelFlag = DelFlagEnum.Deleted;
                 Update(tenant, it => new { it.Status, it.DelFlag, it.Remark, it.Update_by, it.Update_time });
                 AppendStep(result, "delete-record", true, "租户记录已逻辑删除");
             }
@@ -605,7 +606,7 @@ namespace ZR.ServiceCore.Services
             EnsureDefaultPlans();
 
             var plans = Context.Queryable<SysTenantPlan>()
-                .Where(x => x.DelFlag == 0)
+                .Where(x => x.DelFlag == DelFlagEnum.Normal)
                 .OrderBy(x => x.Sort)
                 .OrderBy(x => x.Id)
                 .ToList();
@@ -633,21 +634,21 @@ namespace ZR.ServiceCore.Services
         public SysTenantPlan GetPlanById(long id)
         {
             return Context.Queryable<SysTenantPlan>()
-                .Where(x => x.Id == id && x.DelFlag == 0)
+                .Where(x => x.Id == id && x.DelFlag == DelFlagEnum.Normal)
                 .First();
         }
 
         public SysTenantPlan GetPlanByCode(string planCode)
         {
             return Context.Queryable<SysTenantPlan>()
-                .Where(x => x.PlanCode == planCode && x.DelFlag == 0)
+                .Where(x => x.PlanCode == planCode && x.DelFlag == DelFlagEnum.Normal)
                 .First();
         }
 
         public long InsertPlan(SysTenantPlan plan)
         {
             var exists = Context.Queryable<SysTenantPlan>()
-                .Any(x => x.PlanCode == plan.PlanCode && x.DelFlag == 0);
+                .Any(x => x.PlanCode == plan.PlanCode && x.DelFlag == DelFlagEnum.Normal);
             if (exists)
                 throw new CustomException($"套餐编码[{plan.PlanCode}]已存在");
 
@@ -680,12 +681,12 @@ namespace ZR.ServiceCore.Services
                 throw new CustomException("套餐不存在");
 
             var hasBinding = Context.Queryable<SysTenantPlanBinding>()
-                .Any(x => x.PlanCode == plan.PlanCode && x.DelFlag == 0 && x.Status == 0);
+                .Any(x => x.PlanCode == plan.PlanCode && x.DelFlag == DelFlagEnum.Normal && x.Status == 0);
             if (hasBinding)
                 throw new CustomException($"套餐[{plan.PlanName}]下仍有租户绑定，不可删除");
 
             Context.Updateable<SysTenantPlan>()
-                .SetColumns(x => new SysTenantPlan { DelFlag = 1, Update_time = DateTime.Now })
+                .SetColumns(x => new SysTenantPlan { DelFlag = DelFlagEnum.Deleted, Update_time = DateTime.Now })
                 .Where(x => x.Id == id)
                 .ExecuteCommand();
 
@@ -726,7 +727,7 @@ namespace ZR.ServiceCore.Services
             if (dbConfigExists)
             {
                 var tenantDb = ResolveTenantDb(tenantId);
-                currentUsers = tenantDb.Queryable<SysUser>().Count(x => x.DelFlag == 0);
+                currentUsers = tenantDb.Queryable<SysUser>().Count(x => x.DelFlag == DelFlagEnum.Normal);
             }
 
             return new TenantCurrentPlanDto
@@ -761,7 +762,7 @@ namespace ZR.ServiceCore.Services
                 throw new CustomException("租户不存在");
             }
 
-            var plan = Context.Queryable<SysTenantPlan>().First(x => x.PlanCode == planCode && x.DelFlag == 0 && x.Status == 0);
+            var plan = Context.Queryable<SysTenantPlan>().First(x => x.PlanCode == planCode && x.DelFlag == DelFlagEnum.Normal && x.Status == 0);
             if (plan == null)
             {
                 throw new CustomException($"套餐[{planCode}]不存在或不可用");
@@ -774,7 +775,7 @@ namespace ZR.ServiceCore.Services
                     Update_by = operatorName,
                     Update_time = DateTime.Now
                 })
-                .Where(x => x.TenantId == tenantId && x.DelFlag == 0 && x.Status == 0)
+                .Where(x => x.TenantId == tenantId && x.DelFlag == DelFlagEnum.Normal && x.Status == 0)
                 .ExecuteCommand();
 
             Context.Insertable(new SysTenantPlanBinding
@@ -785,7 +786,7 @@ namespace ZR.ServiceCore.Services
                 StartTime = dto.StartTime ?? DateTime.Now,
                 EndTime = dto.EndTime,
                 MaxUsersOverride = dto.MaxUsersOverride,
-                DelFlag = 0,
+                DelFlag = DelFlagEnum.Normal,
                 Remark = dto.Remark,
                 Create_by = operatorName,
                 Create_time = DateTime.Now
@@ -883,7 +884,7 @@ namespace ZR.ServiceCore.Services
         public List<TenantLoginInfoDto> GetLoginTenantList()
         {
             return Queryable()
-                .Where(x => x.DelFlag == 0 && x.Status == 0)
+                .Where(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0)
                 .OrderBy(x => x.TenantName)
                 .Select(x => new TenantLoginInfoDto
                 {
@@ -906,7 +907,7 @@ namespace ZR.ServiceCore.Services
 
             var now = DateTime.Now;
             var expired = Queryable()
-                .Where(x => x.DelFlag == 0 && x.Status == 0 && x.ExpireTime != null && x.ExpireTime < now)
+                .Where(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0 && x.ExpireTime != null && x.ExpireTime < now)
                 .ToList();
 
             var count = 0;
@@ -938,7 +939,7 @@ namespace ZR.ServiceCore.Services
             }
 
             var targets = Queryable()
-                .Where(x => x.DelFlag == 0 && x.Status == 0)
+                .Where(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0)
                 .ToList();
             if (dto.TenantIds is { Count: > 0 })
             {
@@ -971,7 +972,7 @@ namespace ZR.ServiceCore.Services
             var now = DateTime.Now;
             var maxStage = ExpireRemindStages.Max();
             var candidates = Queryable()
-                .Where(x => x.DelFlag == 0 && x.Status == 0
+                .Where(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0
                     && x.ExpireTime != null && x.ExpireTime >= now && x.ExpireTime <= now.AddDays(maxStage))
                 .ToList();
 
@@ -1024,7 +1025,7 @@ namespace ZR.ServiceCore.Services
             EnsureTenantFeatureEnabled();
 
             var expiredBindings = Context.Queryable<SysTenantPlanBinding>()
-                .Where(x => x.DelFlag == 0 && x.Status == 0 && x.EndTime != null && x.EndTime < DateTime.Now)
+                .Where(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0 && x.EndTime != null && x.EndTime < DateTime.Now)
                 .ToList();
 
             var notified = 0;
@@ -1074,7 +1075,7 @@ namespace ZR.ServiceCore.Services
             var until = now.AddDays(withinDays);
 
             var tenants = Context.Queryable<SysTenant>()
-                .Where(x => x.DelFlag == 0 && x.ExpireTime != null && x.ExpireTime <= until)
+                .Where(x => x.DelFlag == DelFlagEnum.Normal && x.ExpireTime != null && x.ExpireTime <= until)
                 .OrderBy(x => x.ExpireTime)
                 .ToList();
 
@@ -1256,7 +1257,7 @@ namespace ZR.ServiceCore.Services
             if (string.IsNullOrWhiteSpace(planCode)) return;
 
             var tenantIds = Context.Queryable<SysTenantPlanBinding>()
-                .Where(x => x.PlanCode == planCode && x.DelFlag == 0)
+                .Where(x => x.PlanCode == planCode && x.DelFlag == DelFlagEnum.Normal)
                 .Select(x => x.TenantId)
                 .Distinct()
                 .ToList();
@@ -1278,7 +1279,7 @@ namespace ZR.ServiceCore.Services
 
         private void EnsureDefaultPlans()
         {
-            var hasAny = Context.Queryable<SysTenantPlan>().Any(x => x.DelFlag == 0);
+            var hasAny = Context.Queryable<SysTenantPlan>().Any(x => x.DelFlag == DelFlagEnum.Normal);
             if (hasAny)
             {
                 return;
@@ -1287,8 +1288,8 @@ namespace ZR.ServiceCore.Services
             // 首次运行时写入默认套餐，之后可通过后台管理系统自行维护
             var plans = new List<SysTenantPlan>
             {
-                new() { PlanCode = "free", PlanName = "免费版", MaxUsers = 5, IsDefault = 1, Sort = 10, Status = 0, DelFlag = 0, Remark = "系统默认套餐", Create_time = DateTime.Now },
-                new() { PlanCode = "pro", PlanName = "专业版", MaxUsers = 100, IsDefault = 0, Sort = 20, Status = 0, DelFlag = 0, Remark = "系统默认套餐", Create_time = DateTime.Now }
+                new() { PlanCode = "free", PlanName = "免费版", MaxUsers = 5, IsDefault = 1, Sort = 10, Status = 0, DelFlag = DelFlagEnum.Normal, Remark = "系统默认套餐", Create_time = DateTime.Now },
+                new() { PlanCode = "pro", PlanName = "专业版", MaxUsers = 100, IsDefault = 0, Sort = 20, Status = 0, DelFlag = DelFlagEnum.Normal, Remark = "系统默认套餐", Create_time = DateTime.Now }
             };
             Context.Insertable(plans).ExecuteCommand();
         }
@@ -1299,13 +1300,13 @@ namespace ZR.ServiceCore.Services
         private string GetDefaultPlanCode()
         {
             var plan = Context.Queryable<SysTenantPlan>()
-                .Where(x => x.DelFlag == 0 && x.IsDefault == 1)
+                .Where(x => x.DelFlag == DelFlagEnum.Normal && x.IsDefault == 1)
                 .OrderBy(x => x.Sort)
                 .First();
             if (plan != null) return plan.PlanCode;
 
             plan = Context.Queryable<SysTenantPlan>()
-                .Where(x => x.DelFlag == 0)
+                .Where(x => x.DelFlag == DelFlagEnum.Normal)
                 .OrderBy(x => x.Sort)
                 .First();
             return plan?.PlanCode ?? "free";
@@ -1314,7 +1315,7 @@ namespace ZR.ServiceCore.Services
         private SysTenantPlanBinding ResolveActiveTenantPlanBinding(string tenantId)
         {
             return Context.Queryable<SysTenantPlanBinding>()
-                .Where(x => x.TenantId == tenantId && x.DelFlag == 0 && x.Status == 0)
+                .Where(x => x.TenantId == tenantId && x.DelFlag == DelFlagEnum.Normal && x.Status == 0)
                 .OrderBy(x => x.Id, OrderByType.Desc)
                 .First(x => x.EndTime == null || x.EndTime >= DateTime.Now);
         }
@@ -1324,7 +1325,7 @@ namespace ZR.ServiceCore.Services
             if (binding != null)
             {
                 var activePlan = Context.Queryable<SysTenantPlan>()
-                    .First(x => x.PlanCode == binding.PlanCode && x.DelFlag == 0 && x.Status == 0);
+                    .First(x => x.PlanCode == binding.PlanCode && x.DelFlag == DelFlagEnum.Normal && x.Status == 0);
                 if (activePlan != null)
                 {
                     return activePlan;
@@ -1334,11 +1335,11 @@ namespace ZR.ServiceCore.Services
             return Context.Queryable<SysTenantPlan>()
                 .OrderBy(x => x.Sort)
                 .OrderBy(x => x.Id)
-                .First(x => x.DelFlag == 0 && x.Status == 0 && x.IsDefault == 1)
+                .First(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0 && x.IsDefault == 1)
                 ?? Context.Queryable<SysTenantPlan>()
                     .OrderBy(x => x.Sort)
                     .OrderBy(x => x.Id)
-                    .First(x => x.DelFlag == 0 && x.Status == 0);
+                    .First(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0);
         }
 
         private string SeedTenantBaseDataFromMainDb(string tenantId)

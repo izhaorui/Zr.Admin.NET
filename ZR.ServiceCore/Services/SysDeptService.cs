@@ -4,6 +4,7 @@ using Infrastructure.Model;
 using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Vo;
 
 namespace ZR.ServiceCore.Services
@@ -27,7 +28,7 @@ namespace ZR.ServiceCore.Services
         public List<SysDeptDto> GetList(SysDeptQueryDto dept)
         {
             var predicate = Expressionable.Create<SysDept>();
-            predicate = predicate.And(it => it.DelFlag == 0);
+            predicate = predicate.And(it => it.DelFlag == DelFlagEnum.Normal);
             predicate = predicate.AndIF(dept.DeptName.IfNotEmpty(), it => it.DeptName.Contains(dept.DeptName));
             predicate = predicate.AndIF(dept.Status != null, it => it.Status == dept.Status);
 
@@ -49,7 +50,7 @@ namespace ZR.ServiceCore.Services
         public List<SysDept> GetSysDepts(SysDeptQueryDto dept)
         {
             var predicate = Expressionable.Create<SysDept>();
-            predicate = predicate.And(it => it.DelFlag == 0);
+            predicate = predicate.And(it => it.DelFlag == DelFlagEnum.Normal);
             predicate = predicate.AndIF(dept.DeptName.IfNotEmpty(), it => it.DeptName.Contains(dept.DeptName));
             predicate = predicate.AndIF(dept.Status != null, it => it.Status == dept.Status);
 
@@ -279,7 +280,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public List<long> GetChildDeptIds(long deptId)
         {
-            var allDepts = Context.Queryable<SysDept>().Where(d => d.DelFlag == 0).ToList();
+            var allDepts = Context.Queryable<SysDept>().Where(d => d.DelFlag == DelFlagEnum.Normal).ToList();
             var result = new List<long>();
             CollectChildDeptIds(allDepts, deptId, result);
             return result;

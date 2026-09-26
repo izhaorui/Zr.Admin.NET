@@ -1,5 +1,6 @@
 global using ZR.Model;
 global using ZR.Model.System;
+global using ZR.Model.System.Enums;
 global using ZR.Repository;
 global using ZR.ServiceCore;
 global using ZR.ServiceCore.Sms;

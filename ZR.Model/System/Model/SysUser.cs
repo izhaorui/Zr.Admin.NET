@@ -53,10 +53,10 @@
         public int Status { get; set; }
 
         /// <summary>
-        /// 删除标志（0代表存在 2代表删除）
+        /// 删除标志
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
-        public int DelFlag { get; set; }
+        public DelFlagEnum DelFlag { get; set; }
 
         /// <summary>
         /// 最后登录IP

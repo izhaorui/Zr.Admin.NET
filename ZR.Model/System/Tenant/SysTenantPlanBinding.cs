@@ -29,6 +29,6 @@ namespace ZR.Model.System.Tenant
         public int? MaxUsersOverride { get; set; }
 
         [SugarColumn(DefaultValue = "0")]
-        public int DelFlag { get; set; }
+        public DelFlagEnum DelFlag { get; set; }
     }
 }

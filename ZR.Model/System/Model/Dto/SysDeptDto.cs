@@ -3,7 +3,7 @@
     public class SysDeptQueryDto : PagerInfo
     {
         public int? Status { get; set; }
-        public int? DelFlag { get; set; }
+        public DelFlagEnum? DelFlag { get; set; }
         public string DeptName { get; set; }
     }
     public class SysDeptDto : SysBase
@@ -31,7 +31,7 @@
 
         public int Status { get; set; }
 
-        public int DelFlag { get; set; }
+        public DelFlagEnum DelFlag { get; set; }
         public int UserNum { get; set; }
     }
 }

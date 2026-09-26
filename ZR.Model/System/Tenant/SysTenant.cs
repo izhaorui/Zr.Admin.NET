@@ -69,9 +69,9 @@ namespace ZR.Model.System.Tenant
         public DateTime? ExpireTime { get; set; }
 
         /// <summary>
-        /// 删除标志：0存在 2删除
+        /// 删除标志
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
-        public int DelFlag { get; set; }
+        public DelFlagEnum DelFlag { get; set; }
     }
 }

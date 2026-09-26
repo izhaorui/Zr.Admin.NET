@@ -4,6 +4,7 @@ using System.Collections;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Enums;
 using ZR.Repository;
 
 namespace ZR.ServiceCore.Services
@@ -36,7 +37,7 @@ namespace ZR.ServiceCore.Services
         public PagedInfo<SysRole> SelectRoleList(SysRole sysRole, PagerInfo pager)
         {
             var exp = Expressionable.Create<SysRole>();
-            exp.And(role => role.DelFlag == 0);
+            exp.And(role => role.DelFlag == DelFlagEnum.Normal);
             exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleName), role => role.RoleName.Contains(sysRole.RoleName));
             exp.AndIF(sysRole.Status != -1, role => role.Status == sysRole.Status);
             exp.AndIF(!string.IsNullOrEmpty(sysRole.RoleKey), role => role.RoleKey == sysRole.RoleKey);
@@ -59,7 +60,7 @@ namespace ZR.ServiceCore.Services
         public List<SysRole> SelectRoleAll()
         {
             return Queryable()
-                .Where(role => role.DelFlag == 0)
+                .Where(role => role.DelFlag == DelFlagEnum.Normal)
                 .OrderBy(role => role.RoleSort)
                 .ToList();
         }
@@ -72,7 +73,7 @@ namespace ZR.ServiceCore.Services
         public List<SysRole> SelectRolePermissionByUserId(long userId)
         {
             return Queryable()
-                .Where(role => role.DelFlag == 0)
+                .Where(role => role.DelFlag == DelFlagEnum.Normal)
                 .Where(it => SqlFunc.Subqueryable<SysUserRole>().Where(s => s.UserId == userId).Any())
                 .OrderBy(role => role.RoleSort)
                 .ToList();

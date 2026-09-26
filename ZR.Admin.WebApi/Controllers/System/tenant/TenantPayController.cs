@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ZR.Model.System.Enums;
 using ZR.ServiceCore.Payment;
 
 // 创建时间：2026-08-28
@@ -63,7 +64,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
                 throw new CustomException("平台主库租户无需在线续费");
             }
             var tenant = _sysTenantService.GetByTenantId(tenantId);
-            if (tenant == null || tenant.DelFlag != 0)
+            if (tenant == null || tenant.DelFlag != DelFlagEnum.Normal)
             {
                 throw new CustomException("租户不存在");
             }
@@ -110,7 +111,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
                 throw new CustomException("平台主库租户无需在线续费");
             }
             var tenant = _sysTenantService.GetByTenantId(tenantId);
-            if (tenant == null || tenant.DelFlag != 0)
+            if (tenant == null || tenant.DelFlag != DelFlagEnum.Normal)
             {
                 throw new CustomException("租户不存在");
             }

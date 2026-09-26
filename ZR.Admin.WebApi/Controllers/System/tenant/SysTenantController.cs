@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Tenant;
 using ZR.ServiceCore.SqlSugar;
 
@@ -111,7 +112,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
         [ActionPermissionFilter(Permission = "system:tenant:query")]
         public IActionResult GetInfo(long id)
         {
-            var response = _sysTenantService.GetFirst(x => x.Id == id && x.DelFlag == 0);
+            var response = _sysTenantService.GetFirst(x => x.Id == id && x.DelFlag == DelFlagEnum.Normal);
             return SUCCESS(response);
         }
 
@@ -135,7 +136,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
             }
 
             var model = dto.Adapt<SysTenant>().ToCreate(HttpContext);
-            model.DelFlag = 0;
+            model.DelFlag = DelFlagEnum.Normal;
             if (UserConstants.NOT_UNIQUE.Equals(_sysTenantService.CheckTenantIdUnique(model)))
             {
                 return ToResponse(ApiResult.Error($"新增租户[{model.TenantId}]失败，租户标识已存在"));
@@ -191,7 +192,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
 
             // TenantId 对应 dbConfigs[].ConfigId，创建后禁止修改，防止断开与租户库的绑定；
             // 该校验同时保护默认租户（主库标识）不被篡改。
-            var existingTenant = _sysTenantService.GetFirst(x => x.Id == dto.Id && x.DelFlag == 0);
+            var existingTenant = _sysTenantService.GetFirst(x => x.Id == dto.Id && x.DelFlag == DelFlagEnum.Normal);
             if (existingTenant == null)
             {
                 return ToResponse(ApiResult.Error("租户不存在"));
@@ -212,7 +213,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
                 return ToResponse(ApiResult.Error($"修改租户失败，域名绑定[{model.Domain}]已被其他租户占用"));
             }
 
-            var response = _sysTenantService.Update(w => w.Id == model.Id && w.DelFlag == 0, it => new SysTenant
+            var response = _sysTenantService.Update(w => w.Id == model.Id && w.DelFlag == DelFlagEnum.Normal, it => new SysTenant
             {
                 TenantName = model.TenantName,
                 TenantId = model.TenantId,
@@ -240,7 +241,7 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
         [Log(Title = "租户管理", BusinessType = BusinessType.UPDATE)]
         public IActionResult ChangeStatus(long id, int status)
         {
-            var model = _sysTenantService.GetFirst(x => x.Id == id && x.DelFlag == 0);
+            var model = _sysTenantService.GetFirst(x => x.Id == id && x.DelFlag == DelFlagEnum.Normal);
             if (model == null)
             {
                 return ToResponse(ApiResult.Error("租户不存在"));
@@ -353,15 +354,15 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
             }
 
             var mainDb = App.MainDbConfigId;
-            var hasMainTenant = _sysTenantService.Queryable().Any(x => idArr.Contains(x.Id) && x.TenantId == mainDb && x.DelFlag == 0);
+            var hasMainTenant = _sysTenantService.Queryable().Any(x => idArr.Contains(x.Id) && x.TenantId == mainDb && x.DelFlag == DelFlagEnum.Normal);
             if (hasMainTenant)
             {
                 return ToResponse(ApiResult.Error("默认租户不允许删除"));
             }
 
-            var response = _sysTenantService.Update(x => idArr.Contains(x.Id) && x.DelFlag == 0, x => new SysTenant
+            var response = _sysTenantService.Update(x => idArr.Contains(x.Id) && x.DelFlag == DelFlagEnum.Normal, x => new SysTenant
             {
-                DelFlag = 2,
+                DelFlag = DelFlagEnum.Deleted,
                 Update_by = HttpContext.GetName(),
                 Update_time = DateTime.Now
             });

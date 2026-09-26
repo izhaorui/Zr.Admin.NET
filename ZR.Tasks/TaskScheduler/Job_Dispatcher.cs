@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using ZR.Model.System;
+using ZR.Model.System.Enums;
 using ZR.Model.System.Tenant;
 using ZR.ServiceCore.Services;
 
@@ -112,7 +113,7 @@ namespace ZR.Tasks.TaskScheduler
             if (expr == "*")
             {
                 return DbScoped.SugarScope.Queryable<SysTenant>()
-                    .Where(x => x.DelFlag == 0 && x.Status == 0)
+                    .Where(x => x.DelFlag == DelFlagEnum.Normal && x.Status == 0)
                     .Select(x => x.TenantId)
                     .ToList();
             }
