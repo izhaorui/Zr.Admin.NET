@@ -80,6 +80,67 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
         }
 
         /// <summary>
+        /// 创建微信小程序（JSAPI）在线续费支付单，返回 wx.requestPayment 所需的全部参数。
+        /// 小程序内无法使用 H5 支付，必须走此通道；OpenId 由 wx.login 的 code 现场换取。
+        /// </summary>
+        /// <param name="durationDays">续费时长（天），30~730</param>
+        /// <param name="code">wx.login 获取的临时登录凭证</param>
+        /// <returns></returns>
+        [HttpPost("create-jsapi")]
+        [ActionPermissionFilter(Permission = "tenant:my")]
+        [Log(Title = "租户在线续费下单(小程序)", BusinessType = BusinessType.INSERT)]
+        public async Task<IActionResult> CreateJsapi([FromQuery] int durationDays, [FromQuery] string code)
+        {
+            if (durationDays < MinDays || durationDays > MaxDays)
+            {
+                throw new CustomException($"续费时长须在{MinDays}~{MaxDays}天之间");
+            }
+            if (!_wechatPayGateway.Enabled)
+            {
+                throw new CustomException("在线支付未启用，请联系平台管理员线下续费");
+            }
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                throw new CustomException("缺少小程序登录凭证 code，无法获取支付 OpenId");
+            }
+
+            var tenantId = App.GetCurrentTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId) || string.Equals(tenantId, App.MainDbConfigId, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new CustomException("平台主库租户无需在线续费");
+            }
+            var tenant = _sysTenantService.GetByTenantId(tenantId);
+            if (tenant == null || tenant.DelFlag != 0)
+            {
+                throw new CustomException("租户不存在");
+            }
+
+            var amount = DailyPrice * durationDays;
+
+            // 与 H5 通道一致：先落 pending 流水再下单，金额/时长/租户以流水为准，回调只认单号
+            var order = _sysTenantService.CreateTenantRenewOrder(tenantId, durationDays, amount, HttpContext.GetName());
+
+            var openId = await _wechatPayGateway.GetOpenIdAsync(code);
+            var prepay = await _wechatPayGateway.CreateJSApiPayAsync(
+                order.OrderNo, $"租户续费{durationDays}天", amount, openId);
+
+            return SUCCESS(new
+            {
+                orderNo = order.OrderNo,
+                amount,
+                // 微信支付 v3 JSAPI 调起参数：signType 固定 RSA（服务端用商户私钥签名）
+                payParams = new
+                {
+                    timeStamp = prepay.TimeStamp,
+                    nonceStr = prepay.NonceStr,
+                    package = prepay.Package,
+                    signType = "RSA",
+                    paySign = prepay.PaySign
+                }
+            });
+        }
+
+        /// <summary>
         /// 【仅 Development 环境】模拟微信支付成功回调，用于无商户号时验证回调全链路。
         /// 用与真实回调相同的密钥生成签名与加密体，再 HTTP 自调用商城的 wechat/notify 入口，
         /// 因此验签、解密、分发、金额比对、幂等、续费、置付等逻辑与线上完全一致。

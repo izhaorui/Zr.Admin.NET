@@ -917,7 +917,7 @@ namespace ZR.ServiceCore.Services
                     Meta = new Meta("水平表格", "list")
                 }
             };
-            return new List<RouterVo>
+            var router = new List<RouterVo>
             {
                 new()
                 {
@@ -959,6 +959,11 @@ namespace ZR.ServiceCore.Services
                     {
                         Path = $"{packagePrefix}/notice/index",
                         Meta = new Meta("通知公告", "volume")
+                    },
+                       new()
+                    {
+                        Path = $"{packagePrefix}/tenant/expire",
+                        Meta = new Meta("租户到期提醒", "bell") { Permi = "system:tenant:list" }
                     }
                 }
                 },
@@ -982,6 +987,8 @@ namespace ZR.ServiceCore.Services
                 }
                 },
             };
+
+            return router;
         }
     }
 }
