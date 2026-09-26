@@ -10,6 +10,8 @@ namespace ZR.Workflow.Enum
         /// <summary>驳回到上一审批节点：回到当前节点的上一个 Audit 节点重新审批，流程保持审批中</summary>
         ToPrevNode = 1,
         /// <summary>驳回到指定节点：回到 RejectTargetNodeId 指向的节点重新审批</summary>
-        ToSpecifiedNode = 2
+        ToSpecifiedNode = 2,
+        /// <summary>审批人自选：驳回时由审批人选择回退方式（0/1/2）。超时自动驳回无运行时选择，退化为驳回发起人</summary>
+        ApproverSelect = 3
     }
 }

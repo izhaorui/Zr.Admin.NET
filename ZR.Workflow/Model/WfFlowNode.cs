@@ -104,7 +104,7 @@ namespace ZR.Workflow.Model
         public long? LeaveWebhookId { get; set; }
 
         /// <summary>
-        /// 驳回策略（对应 WfRejectStrategy）：0=驳回发起人（默认）；1=驳回到上一审批节点；2=驳回到指定节点。
+        /// 驳回策略（对应 WfRejectStrategy）：0=驳回发起人（默认）；1=驳回到上一审批节点；2=驳回到指定节点；3=审批人自选。
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public int RejectStrategy { get; set; } = 0;

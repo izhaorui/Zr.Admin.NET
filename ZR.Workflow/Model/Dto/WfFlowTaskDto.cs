@@ -94,6 +94,15 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>审批人修改后的表单（JSON，可选）。仅提交当前节点有权编辑的字段变更；
         /// 引擎会按节点 FieldPermission 校验：无权字段若被修改则拒绝。为空表示审批人不改表单。</summary>
         public string FormContent { get; set; }
+
+        /// <summary>
+        /// 运行时驳回策略（仅当前节点 RejectStrategy=审批人自选 时生效）：0=驳回发起人；1=上一节点；2=指定节点。
+        /// 固定策略节点忽略该字段。
+        /// </summary>
+        public int? RejectStrategy { get; set; }
+
+        /// <summary>运行时驳回目标节点（RejectStrategy=2 时必填，且须为当前节点之前的审批节点）</summary>
+        public long? RejectTargetNodeId { get; set; }
     }
 
     /// <summary>

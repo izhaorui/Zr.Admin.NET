@@ -30,7 +30,9 @@ namespace ZR.Workflow.Service.IService
         /// <param name="taskId">任务Id</param>
         /// <param name="opinion">驳回原因</param>
         /// <param name="operatorId">操作人 userId（须为该任务的 AssigneeId）</param>
-        void Reject(long taskId, string opinion, long operatorId);
+        /// <param name="rejectStrategy">运行时驳回策略。仅当前节点为审批人自选时生效：0=驳回发起人；1=上一节点；2=指定节点</param>
+        /// <param name="rejectTargetNodeId">运行时驳回目标（rejectStrategy=2 时必填）</param>
+        void Reject(long taskId, string opinion, long operatorId, int? rejectStrategy = null, long? rejectTargetNodeId = null);
 
         /// <summary>
         /// 重新提交：驳回后由申请人修改表单再次发起，回到首节点重新审批

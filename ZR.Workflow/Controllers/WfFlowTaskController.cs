@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using ZR.Common;
 
 namespace ZR.Workflow.Controllers
 {
@@ -63,7 +62,7 @@ namespace ZR.Workflow.Controllers
         public IActionResult Reject([FromBody] WfApproveInput parm)
         {
             var userId = HttpContext.GetUId();
-            _engine.Reject(parm.TaskId, parm.Opinion, userId);
+            _engine.Reject(parm.TaskId, parm.Opinion, userId, parm.RejectStrategy, parm.RejectTargetNodeId);
             return SUCCESS(1);
         }
 

@@ -450,6 +450,7 @@ namespace ZR.Workflow.Service
 
         /// <summary>
         /// 策略 2（驳回到指定节点）保存校验：必须选中本流程中、位于当前节点之前的审批节点。
+        /// 策略 3（审批人自选）不要求设计期目标，目标由审批人驳回时提交。
         /// 前端 clientId（含负数临时 id）按 NodeId 对齐；运行态引擎对存量脏数据另有退化逻辑。
         /// </summary>
         private void ValidateRejectTargets(List<WfFlowNodeDto> nodes)

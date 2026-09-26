@@ -172,9 +172,9 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 驳回
+        /// 驳回。节点策略为审批人自选时，按本次提交的策略/目标回退；其它策略忽略请求覆盖。
         /// </summary>
-        public void Reject(long taskId, string opinion, long operatorId)
+        public void Reject(long taskId, string opinion, long operatorId, int? rejectStrategy = null, long? rejectTargetNodeId = null)
         {
             var (task, instance) = LoadPendingTaskAndInstance(taskId, operatorId);
             var op = LoadUser(operatorId);
@@ -182,6 +182,15 @@ namespace ZR.Workflow.Service
             logger.Info($"审批驳回：InstanceId={instance.InstanceId} TaskId={taskId} Node={task.NodeName}({task.NodeId}) 操作人={op.NickName}({operatorId}){delegatedNote}");
             var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId);
             var topo = LoadTopology(instance.FlowId);
+            var nodeStrategy = node == null ? WfRejectStrategy.ToApplicant : (WfRejectStrategy)node.RejectStrategy;
+            // 自选策略在事务外先校验，非法选择直接失败，不把任务标成已处理
+            WfFlowNode selectedTarget = null;
+            WfRejectStrategy? runtimeStrategy = null;
+            if (nodeStrategy == WfRejectStrategy.ApproverSelect)
+            {
+                selectedTarget = ResolveApproverSelectedTarget(node, topo, rejectStrategy, rejectTargetNodeId);
+                runtimeStrategy = (WfRejectStrategy)rejectStrategy.GetValueOrDefault();
+            }
 
             RunInTx(() =>
             {
@@ -205,12 +214,17 @@ namespace ZR.Workflow.Service
 
                 NotifyUser(instance.ApplyUserId, $"【审批驳回】{instance.Title} 被 {op.NickName} 驳回{(string.IsNullOrEmpty(opinion) ? "" : "：" + opinion)}");
 
-                var targetNode = ResolveRejectTarget(node, topo);
+                var targetNode = runtimeStrategy.HasValue
+                    ? selectedTarget
+                    : ResolveRejectTarget(node, topo);
+                var usedStrategy = runtimeStrategy ?? nodeStrategy;
 
                 if (targetNode == null)
                 {
-                    // 退化策略：无上一节点 / 未配置指定节点 → 驳回发起人（默认行为）
-                    logger.Info($"驳回退化：InstanceId={instance.InstanceId} 无回退目标节点 → 直接驳回发起人");
+                    if (usedStrategy == WfRejectStrategy.ToApplicant)
+                        logger.Info($"驳回发起人：InstanceId={instance.InstanceId} 策略={usedStrategy}");
+                    else
+                        logger.Info($"驳回退化：InstanceId={instance.InstanceId} 无回退目标节点 → 直接驳回发起人（策略={usedStrategy}）");
                     instance.Status = (int)WfInstanceStatus.Rejected;
                     Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
                     Context.Updateable<WfFlowTask>()
@@ -221,19 +235,24 @@ namespace ZR.Workflow.Service
                 }
 
                 // 回退到目标节点重新审批：清掉目标及之后所有任务（轨迹保留在 WfFlowRecord），重置活动集并重新进入目标节点
-                logger.Info($"驳回回退：InstanceId={instance.InstanceId} 回退到节点 {targetNode?.NodeName}({targetNode?.NodeId})（策略={(WfRejectStrategy)node.RejectStrategy}）");
+                logger.Info($"驳回回退：InstanceId={instance.InstanceId} 回退到节点 {targetNode.NodeName}({targetNode.NodeId})（策略={usedStrategy}）");
                 RollbackToNode(instance, targetNode, topo);
             }, "驳回失败");
         }
 
         /// <summary>
-        /// 按节点驳回策略解析回退目标。策略 0 或找不到合法审批节点时返回 null（调用方驳回发起人）。
+        /// 按节点驳回策略解析回退目标。策略 0、策略 3（无运行时选择）或找不到合法审批节点时返回 null（调用方驳回发起人）。
         /// 策略 2 存量数据只要目标仍是本流程审批节点即回退，不因 NodeOrder 在当前节点之后而拒绝。
         /// </summary>
         private WfFlowNode ResolveRejectTarget(WfFlowNode node, WorkflowTopology topo)
         {
             if (node == null || topo == null) return null;
             var strategy = (WfRejectStrategy)node.RejectStrategy;
+            if (strategy == WfRejectStrategy.ApproverSelect)
+            {
+                logger.Info($"驳回策略为审批人自选且无运行时选择 → 退化为驳回发起人 Node={node.NodeName}({node.NodeId})");
+                return null;
+            }
             if (strategy == WfRejectStrategy.ToPrevNode)
             {
                 return topo.OrderedNodes
@@ -262,6 +281,41 @@ namespace ZR.Workflow.Service
                 return target;
             }
             return null;
+        }
+
+        /// <summary>
+        /// 审批人自选：按本次提交的 0/1/2 解析目标。非法选择抛业务异常，不静默退化。
+        /// 策略 0 返回 null（驳回发起人）；策略 1 取 NodeOrder 上一个审批节点；策略 2 校验指定目标在当前节点之前。
+        /// </summary>
+        private WfFlowNode ResolveApproverSelectedTarget(WfFlowNode node, WorkflowTopology topo, int? rejectStrategy, long? rejectTargetNodeId)
+        {
+            if (node == null || topo == null) throw new CustomException("驳回失败");
+            if (!rejectStrategy.HasValue
+                || rejectStrategy.Value < (int)WfRejectStrategy.ToApplicant
+                || rejectStrategy.Value > (int)WfRejectStrategy.ToSpecifiedNode)
+                throw new CustomException("请选择驳回方式");
+
+            var strategy = (WfRejectStrategy)rejectStrategy.Value;
+            if (strategy == WfRejectStrategy.ToApplicant) return null;
+
+            if (strategy == WfRejectStrategy.ToPrevNode)
+            {
+                var prev = topo.OrderedNodes
+                    .Where(n => n.NodeType == (int)WfNodeType.Audit && n.NodeOrder < node.NodeOrder)
+                    .OrderByDescending(n => n.NodeOrder)
+                    .FirstOrDefault();
+                if (prev == null) throw new CustomException("没有可回退的上一审批节点");
+                return prev;
+            }
+
+            if (!rejectTargetNodeId.HasValue || rejectTargetNodeId.Value == 0)
+                throw new CustomException("请选择驳回目标节点");
+            var target = topo.GetNode(rejectTargetNodeId.Value);
+            if (target == null) throw new CustomException("驳回目标不在本流程中");
+            if (target.NodeType != (int)WfNodeType.Audit) throw new CustomException("驳回目标必须是审批节点");
+            if (target.NodeId == node.NodeId) throw new CustomException("驳回目标不能是自身");
+            if (target.NodeOrder >= node.NodeOrder) throw new CustomException("驳回目标须为当前节点之前的审批节点");
+            return target;
         }
 
         /// <summary>

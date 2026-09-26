@@ -54,7 +54,7 @@ namespace ZR.Workflow.Model.Dto
         /// <summary>节点离开事件钩子关联的 Webhook 配置Id（WfWebhook.WebhookId），为空不通知。</summary>
         public long? LeaveWebhookId { get; set; }
 
-        /// <summary>驳回策略（WfRejectStrategy）：0=驳回发起人；1=驳回到上一节点；2=驳回到指定节点</summary>
+        /// <summary>驳回策略（WfRejectStrategy）：0=驳回发起人；1=驳回到上一节点；2=驳回到指定节点；3=审批人自选</summary>
         public int RejectStrategy { get; set; }
 
         /// <summary>驳回目标节点（RejectStrategy=2 时生效）</summary>

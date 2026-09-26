@@ -103,7 +103,7 @@ namespace ZR.ServiceCore.Services
                     Buttons: [
                         new("发起", "workflow:instance:start"), 
                         new("撤回", "workflow:instance:withdraw"),
-                        // 管理员运维操作（P0）：终止 / 挂起 / 恢复 / 改派 / 跳转
+                        // 管理员运维操作：终止 / 挂起 / 恢复 / 改派 / 跳转
                         new("终止", "workflow:instance:terminate"),
                         new("挂起", "workflow:instance:suspend"),
                         new("恢复", "workflow:instance:resume"),
