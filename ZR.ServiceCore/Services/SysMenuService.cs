@@ -870,7 +870,7 @@ namespace ZR.ServiceCore.Services
         /// <returns>按权限过滤后的移动端菜单树</returns>
         public List<RouterVo> GetAppMenus(List<string> perms, int v)
         {
-            var router = BuildAppMenuTemplate();
+            var router = BuildAppMenuTemplate(v);
 
             // 管理员通配权限（*:*:*）直接下发全量菜单
             if (perms?.Contains(GlobalConstant.AdminPerm) == true)
@@ -895,23 +895,25 @@ namespace ZR.ServiceCore.Services
         /// 移动端工作台菜单模板。
         /// 每次调用新建，避免多个请求共享同一对象图后被调用方改写；
         /// 注意：功能演示分组仅供演示环境使用，生产部署可按需移除该分组。
+        /// <paramref name="v"/>
         /// </summary>
-        private static List<RouterVo> BuildAppMenuTemplate()
+        private static List<RouterVo> BuildAppMenuTemplate(int v)
         {
+            var packagePrefix = v == 1 ? "/packageAdmin" : "/pages";
             var demoList = new List<RouterVo>(){
                 new()
                 {
-                    Path = "/pages/demo/index",
+                    Path = $"{packagePrefix}/demo/index",
                     Meta = new Meta("功能演示", "bookmark")
                 },
                     new()
                 {
-                    Path = "/pages/demo/table/table",
+                    Path = $"{packagePrefix}/demo/table/table",
                     Meta = new Meta("列表表格", "grid")
                 },
                     new()
                 {
-                    Path = "/pages/demo/table/table2",
+                    Path = $"{packagePrefix}/demo/table/table2",
                     Meta = new Meta("水平表格", "list")
                 }
             };
@@ -930,32 +932,32 @@ namespace ZR.ServiceCore.Services
                 {
                     new()
                     {
-                        Path = "/pages/system/sysConfig/sysConfig",
+                        Path = $"{packagePrefix}/system/sysConfig/sysConfig",
                         Meta = new Meta("系统配置", "setting"){ Permi = "system:config:list"},
                     },
                      new()
                     {
-                        Path = "/pages/monitor/tasks/index",
+                        Path = $"{packagePrefix}/monitor/tasks/index",
                         Meta = new Meta("任务管理", "hourglass-half-fill"){Permi = "monitor:job:list"}
                     },
                      new()
                     {
-                        Path = "/pages/monitor/onlineuser",
+                        Path = $"{packagePrefix}/monitor/onlineuser",
                         Meta = new Meta("在线用户", "grid"){ Permi = "admin"}
                     },
                       new()
                     {
-                        Path = "/pages/system/user/user",
+                        Path = $"{packagePrefix}/system/user/user",
                         Meta = new Meta("用户管理", "account"){ Permi = "system:user:list" }
                     },
                        new()
                     {
-                        Path = "/pages/monitor/server",
+                        Path = $"{packagePrefix}/monitor/server",
                         Meta = new Meta("系统监控", "play-right"){ Permi = "monitor:server:list"}
                     },
                        new()
                     {
-                        Path = "/pages/notice/index",
+                        Path = $"{packagePrefix}/notice/index",
                         Meta = new Meta("通知公告", "volume")
                     }
                 }
@@ -968,13 +970,13 @@ namespace ZR.ServiceCore.Services
                 {
                     new()
                     {
-                        Path = "/pages/monitor/logininfo",
+                        Path = $"{packagePrefix}/monitor/logininfo",
                         // 与 PC 端一致：登录日志为敏感页，需 monitor:logininfor:list 权限
                         Meta = new Meta("登录日志", "clock"){ Permi = "monitor:logininfor:list" }
                     },
                      new()
                     {
-                        Path = "/pages/monitor/operlog",
+                        Path = $"{packagePrefix}/monitor/operlog",
                         Meta = new Meta("操作日志", "file-text"){ Permi = "monitor:operlog:list" }
                     }
                 }
