@@ -65,7 +65,7 @@ namespace ZR.Workflow.Controllers
         /// 手动生成/重生成单条审批记录的 AI 摘要（审批后自动落痕失败或无摘要时可手动触发）
         /// </summary>
         [HttpPost("summarize/{recordId}")]
-        [ActionPermissionFilter(Permission = "common")]
+        [ActionPermissionFilter(Permission = "workflow:ai:summary")]
         [Log(Title = "AI审批摘要", BusinessType = BusinessType.UPDATE)]
         public async Task<IActionResult> Summarize(long recordId)
         {

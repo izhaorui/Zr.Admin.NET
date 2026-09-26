@@ -106,7 +106,7 @@ namespace ZR.Workflow.Controllers
         /// AI 审批链汇总：对某实例的完整审批过程生成结论 / 风险提示 / 改进建议
         /// </summary>
         [HttpPost("instance-summary/{instanceId}")]
-        [ActionPermissionFilter(Permission = "common")]
+        [ActionPermissionFilter(Permission = "workflow:ai:summary")]
         public async Task<IActionResult> InstanceSummary(long instanceId)
         {
             try
@@ -124,7 +124,7 @@ namespace ZR.Workflow.Controllers
         /// AI 审批风险预判：站在当前节点审批人视角，对待办任务对应申请做风险提示
         /// </summary>
         [HttpPost("risk-check/{taskId}")]
-        [ActionPermissionFilter(Permission = "common")]
+        [ActionPermissionFilter(Permission = "workflow:ai:risk-check")]
         public async Task<IActionResult> RiskCheck(long taskId)
         {
             try

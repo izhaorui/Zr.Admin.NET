@@ -109,7 +109,10 @@ namespace ZR.ServiceCore.Services
                         new("恢复", "workflow:instance:resume"),
                         new("改派", "workflow:instance:reassign"),
                         new("跳转", "workflow:instance:jump"),
-                        new("催办", "workflow:task:urge")
+                        new("催办", "workflow:task:urge"),
+                        // AI审批汇总：控件在详情弹窗 WfDetailDialog 内（我发起的/已办任务/审批记录/抄送给我 四个列表页
+                        // 都会打开该弹窗），但权限码全局生效，此处只登记一条 F 记录，避免同一权限在多页重复建按钮。
+                        new("AI审批汇总", "workflow:ai:summary")
                     ]),
                 new(Name: "待我审批", Path: "todo", Component: "workflow/todo/index", Perms: "workflow:task:list", OrderNum: 2, Category: 1, Icon: "gonggao",
                     Buttons:
@@ -117,6 +120,7 @@ namespace ZR.ServiceCore.Services
                         new("通过", "workflow:task:approve"), new("驳回", "workflow:task:reject"), new("转办", "workflow:task:transfer"),
                         new("加签", "workflow:task:addsign"), new("减签", "workflow:task:removesign"), new("委托", "workflow:task:delegate"), new("评论", "workflow:comment:list"), new("发表评论", "workflow:comment:add"),
                         new("AI建议", "workflow:task:ai"),
+                        new("AI风险预判", "workflow:ai:risk-check"),
                     ]),
                 new(Name: "已办任务", Path: "done", Component: "workflow/done/index", Perms: "workflow:task:list", OrderNum: 3, Category: 1, Icon: "checkbox",
                     Buttons: []),
