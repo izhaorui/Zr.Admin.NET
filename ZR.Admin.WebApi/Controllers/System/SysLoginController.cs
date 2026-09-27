@@ -210,7 +210,17 @@ namespace ZR.Admin.WebApi.Controllers.System
             long uid = HttpContext.GetUId();
             var perms = permissionService.GetMenuPermission(new SysUserDto() { UserId = uid });
 
-            return SUCCESS(sysMenuService.GetAppMenus(perms, v));
+            var menus = sysMenuService.GetAppMenus(perms, v);
+
+            // 非主租户过滤平台专属菜单（monitor:* 等，见 TenantSettings:PlatformMenuPermPrefixes），
+            // 与 PC 端 /getRouters 保持一致，避免子租户拿到入口但点击/请求被 403「当前租户不允许访问平台级能力」。
+            if (App.IsTenantEnabled())
+            {
+                var isMainTenant = string.Equals(App.GetCurrentTenantId(), App.MainDbConfigId, StringComparison.OrdinalIgnoreCase);
+                menus = TenantFeaturePolicy.FilterPlatformMenusForNonMainTenant(menus, isMainTenant);
+            }
+
+            return SUCCESS(menus);
         }
 
         /// <summary>

@@ -943,7 +943,7 @@ namespace ZR.ServiceCore.Services
                      new()
                     {
                         Path = $"{packagePrefix}/monitor/onlineuser",
-                        Meta = new Meta("在线用户", "grid"){ Permi = "admin"}
+                        Meta = new Meta("在线用户", "grid"){ Permi = "monitor:onlineuser:list"}
                     },
                       new()
                     {
