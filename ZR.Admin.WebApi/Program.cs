@@ -27,6 +27,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseNLog();
 
 builder.Services.AddDynamicApi();
+// 内网宿主不暴露任何 C 端接口：约定 [PublicApi] 只归公网宿主 ZR.Front.WebApi。
+// 被移除的控制器不会生成路由/endpoint，也不进 Swagger，因此本宿主无需 MemberJwt 配置。
+builder.Services.ExcludePublicApiControllers();
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation(options =>
