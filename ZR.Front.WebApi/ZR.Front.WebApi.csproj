@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<NoWarn>1701;1702;1591;1570;8603;8602;8604;8600;8618</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- 只引用商城模块；Infrastructure/ZR.Common/ZR.Model/ZR.Repository/ZR.ServiceCore 由它传递 -->
+		<ProjectReference Include="..\ZR.Mall\ZR.Mall.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="NLog.Web.AspNetCore" Version="6.0.4" />
+		<PackageReference Include="FluentValidation" Version="11.11.0" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+		<PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Mvc" Version="2.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- 复用内网宿主的 IP 归属地库文件，避免二进制重复入库 -->
+		<None Include="..\ZR.Admin.WebApi\ip2region_v4.xdb" Link="ip2region_v4.xdb">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- NLog 配置随部署带到输出目录 -->
+		<Content Update="NLog.config">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
+
+</Project>

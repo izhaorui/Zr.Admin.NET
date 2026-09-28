@@ -1,5 +1,6 @@
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authorization;
+using ZR.Mall.Common;
 using ZR.Mall.Model;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
@@ -11,11 +12,12 @@ using ZR.ServiceCore.Payment;
 using ZR.ServiceCore.Services;
 
 //创建时间：2026-07-25
-namespace ZR.Mall.Controllers
+namespace ZR.Mall.Controllers.Front
 {
     /// <summary>
     /// 商城C端/游客接口（匿名可访问，与后台 shopping/Order 区分）
     /// </summary>
+    [PublicApi]
     [Route("shopping/front/order")]
     [ApiExplorerSettings(GroupName = "shopping")]
     [AllowAnonymous]
@@ -66,7 +68,10 @@ namespace ZR.Mall.Controllers
             {
                 return ToResponse(ResultCode.FAIL, quotaMsg);
             }
-            var order = _OMSOrderService.CreateOrder(parm);
+            // 携带会员令牌（mall-token）时把订单绑定到该会员，供"我的订单"免验证码按会员身份查询；
+            // 未携带则保持原有游客匿名下单行为不变。
+            var member = MemberJwt.GetMember(HttpContext);
+            var order = _OMSOrderService.CreateOrder(parm, member?.MemberId);
             return SUCCESS(new { order.OrderNo, order.Id, order.TotalAmount, order.OrderStatus });
         }
 

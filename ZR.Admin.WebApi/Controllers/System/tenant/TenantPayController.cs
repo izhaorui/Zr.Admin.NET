@@ -40,44 +40,21 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
         }
 
         /// <summary>
-        /// 创建微信 H5 在线续费支付单，返回 h5_url 供前端跳转拉起微信支付。
+        /// 【已停用】创建微信 H5 在线续费支付单。
+        /// 停用原因：公网 C 端与后台拆分后，内网后台宿主在公网不可达，而微信 H5 支付需要
+        /// 用户手机可访问的回跳站点（scene.h5_info.app_url 取自 WechatPay:H5ReturnUrl，
+        /// 该配置为单值且已归公网商城 H5 使用）。
+        /// 租户续费请改用 <see cref="CreateJsapi"/>（系统小程序内支付，参数由服务端直传、无需回跳站点），
+        /// 或联系平台线下续费。保留路由是为了给出明确提示，避免前端拿到语义不明的 404。
+        /// 如需恢复 H5 通道，请先为租户续费提供公网可达的回跳落地页，见《公网C端与后台拆分部署说明》。
         /// </summary>
         /// <param name="durationDays">续费时长（天），30~730</param>
-        /// <returns></returns>
         [HttpPost("create")]
         //[ActionPermissionFilter(Permission = "tenant:my")]
-        [Log(Title = "租户在线续费下单", BusinessType = BusinessType.INSERT)]
-        public async Task<IActionResult> Create([FromQuery] int durationDays)
+        [Log(Title = "租户在线续费下单(H5-已停用)", BusinessType = BusinessType.INSERT)]
+        public IActionResult Create([FromQuery] int durationDays)
         {
-            if (durationDays < MinDays || durationDays > MaxDays)
-            {
-                throw new CustomException($"续费时长须在{MinDays}~{MaxDays}天之间");
-            }
-            if (!_wechatPayGateway.Enabled)
-            {
-                throw new CustomException("在线支付未启用，请联系平台管理员线下续费");
-            }
-
-            var tenantId = App.GetCurrentTenantId();
-            if (string.IsNullOrWhiteSpace(tenantId) || string.Equals(tenantId, App.MainDbConfigId, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new CustomException("平台主库租户无需在线续费");
-            }
-            var tenant = _sysTenantService.GetByTenantId(tenantId);
-            if (tenant == null || tenant.DelFlag != DelFlagEnum.Normal)
-            {
-                throw new CustomException("租户不存在");
-            }
-
-            var amount = DailyPrice * durationDays;
-
-            // 先落 pending 流水再下单：金额、时长、租户全部以流水为准，回调只认单号
-            var order = _sysTenantService.CreateTenantRenewOrder(tenantId, durationDays, amount, HttpContext.GetName());
-
-            var prepay = await _wechatPayGateway.CreateH5PayAsync(
-                order.OrderNo, $"租户续费{durationDays}天", amount, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
-
-            return SUCCESS(new { orderNo = order.OrderNo, amount, h5Url = prepay.H5Url });
+            throw new CustomException("租户续费暂不支持 H5 支付，请在系统小程序内续费，或联系平台线下续费");
         }
 
         /// <summary>
@@ -168,8 +145,18 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
 
             var mock = _wechatPayGateway.BuildMockNotify(order.OrderNo, "MOCK" + Guid.NewGuid().ToString("N")[..12], amountFen);
 
-            // 自调用真实回调入口（商城 wechat/notify），确保走完整验签解密分发链路
-            var notifyUrl = $"{Request.Scheme}://{Request.Host}/shopping/front/order/wechat/notify";
+            // 自调用真实回调入口，确保走完整验签解密分发链路。
+            // 拆分后回调入口在公网 C 端宿主上，内网宿主的 Host 已无该路由，
+            // 因此优先读 WechatPay:MockNotifyUrl，其次 WechatPay:NotifyUrl，最后才回退本机地址。
+            var notifyUrl = App.Configuration["WechatPay:MockNotifyUrl"];
+            if (string.IsNullOrWhiteSpace(notifyUrl))
+            {
+                notifyUrl = App.Configuration["WechatPay:NotifyUrl"];
+            }
+            if (string.IsNullOrWhiteSpace(notifyUrl))
+            {
+                notifyUrl = $"{Request.Scheme}://{Request.Host}/shopping/front/order/wechat/notify";
+            }
             using var http = new HttpClient();
             http.DefaultRequestHeaders.Add("Wechatpay-Timestamp", mock.Timestamp);
             http.DefaultRequestHeaders.Add("Wechatpay-Nonce", mock.Nonce);

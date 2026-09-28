@@ -1,0 +1,37 @@
+{
+  //接口请求限制（客户端模式：计数按登录用户 user:{id}，匿名请求回退按客户端 IP ip:{ip}）
+  "ClientRateLimiting": {
+    "EnableEndpointRateLimiting": true,
+    "StackBlockedRequests": false,
+    "RealIpHeader": "X-Real-IP",
+    "ClientIdHeader": "X-ClientId",
+    "HttpStatusCode": 429,
+    "EndpointWhitelist": [ "*:/msghub/negotiate", "*:/LogOut" ],
+    "QuotaExceededResponse": {
+      "Content": "{{\"code\":429,\"msg\":\"访问过于频繁，请稍后重试\"}}",
+      "ContentType": "application/json",
+      "StatusCode": 429
+    },
+    //通用规则，api规则,结尾一定要带*
+    "GeneralRules": [
+      {
+        // 会员发码：同 IP 每分钟 5 次（业务侧另有同手机号 1 分钟限流）
+        "Endpoint": "*:/front/member/send-code",
+        "Period": "60s",
+        "Limit": 5
+      },
+      {
+        // 下单：同 IP 每分钟 10 次（业务侧另有 IP/手机号配额）
+        "Endpoint": "*:/shopping/front/order/create",
+        "Period": "60s",
+        "Limit": 10
+      },
+      {
+        // 其余写操作：与内网宿主保持一致
+        "Endpoint": "((post)|(put)):*",
+        "Period": "5s",
+        "Limit": 1
+      }
+    ]
+  }
+}

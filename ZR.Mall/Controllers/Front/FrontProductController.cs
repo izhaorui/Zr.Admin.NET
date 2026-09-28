@@ -1,18 +1,17 @@
-using Infrastructure.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Mall.Enum;
-using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
 
 //创建时间：2026-07-25
-namespace ZR.Mall.Controllers
+namespace ZR.Mall.Controllers.Front
 {
     /// <summary>
     /// 商城C端/游客商品浏览接口（匿名可访问，与后台 shopping/product 区分）
     /// 仅返回已上架商品，不暴露管理字段
     /// </summary>
+    [PublicApi]
     [Route("shopping/front/product")]
     [ApiExplorerSettings(GroupName = "shopping")]
     [AllowAnonymous]

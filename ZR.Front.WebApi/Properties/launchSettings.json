@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "ZR.Front.WebApi": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:62823;http://localhost:62824"
+    }
+  }
+}

@@ -1,4 +1,6 @@
 services:
+  # 内网后台宿主：系统管理 + 商城后台管理（仅内网访问）
+  # 单实例动作（--initdb 建表/种子、定时任务、字典初始化、SignalR）只在本服务执行
   zradmin:
     image: zradmin-webapi:latest
     container_name: zradmin-webapi
@@ -9,6 +11,21 @@ services:
       - /data/zradmin/logs:/app/logs
       - /data/zradmin/wwwroot/uploads:/app/wwwroot/uploads
       - /data/zradmin/wwwroot/export:/app/wwwroot/export
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    restart: unless-stopped
+
+  # 公网 C 端宿主：只暴露 [PublicApi] 标记的商城 C 端/会员接口与微信支付回调
+  # 后台管理接口在本服务上不可达（404）；不执行任何单实例动作
+  # 数据库/租户/短信/微信支付/令牌配置必须与 zradmin 保持一致（workId 必须不同）
+  zradmin-front:
+    image: zradmin-front-webapi:latest
+    container_name: zradmin-front-webapi
+    ports:
+      - "1889:8888"
+    volumes:
+      - /data/zradmin-front/DataProtection:/app/DataProtection
+      - /data/zradmin-front/logs:/app/logs
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
     restart: unless-stopped
