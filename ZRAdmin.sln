@@ -38,12 +38,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "04.Solution Items", "04.Sol
 		AGENTS.md = AGENTS.md
 		CONTRIBUTING.md = CONTRIBUTING.md
 		DockerBuild.bat = DockerBuild.bat
-		init-run.bat = init-run.bat
 		LICENSE = LICENSE
 		README.en.md = README.en.md
 		README.md = README.md
-		run.bat = run.bat
-		startup.bat = startup.bat
+		bat\init-run.bat = bat\init-run.bat
+		bat\run-mall.bat = bat\run-mall.bat
+		bat\run.bat = bat\run.bat
+		bat\startup.bat = bat\startup.bat
 	EndProjectSection
 EndProject
 Global
