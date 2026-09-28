@@ -900,6 +900,7 @@ namespace ZR.ServiceCore.Services
         private static List<RouterVo> BuildAppMenuTemplate(int v)
         {
             var packagePrefix = v == 1 ? "/packageAdmin" : "/pages";
+            var packageAi = "/packageAi";
             var demoList = new List<RouterVo>(){
                 new()
                 {
@@ -964,6 +965,11 @@ namespace ZR.ServiceCore.Services
                     {
                         Path = $"{packagePrefix}/tenant/expire",
                         Meta = new Meta("租户到期提醒", "bell") { Permi = "system:tenant:list" }
+                    },
+                       new()
+                    {
+                        Path = $"{packageAi}/chat/index",
+                        Meta = new Meta("AI 助手", "chat") { Permi = "ai:chat" }
                     }
                 }
                 },

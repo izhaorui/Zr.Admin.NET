@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ZR.Model.Content;
 using ZR.Model.Content.Dto;
+using ZR.Model.Enum;
 using ZR.Service.Content.IService;
 using ZR.Service.Social.IService;
 
@@ -51,6 +52,20 @@ namespace ZR.Admin.WebApi.Controllers
             _ArticleTopicService = articleTopicService;
             _ArticleUserCirclesService = articleUserCirclesService;
             _FansInfoService = fansInfoService;
+        }
+
+        /// <summary>
+        /// 查询我的
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("mylist")]
+        public IActionResult QueryMyList([FromQuery] ArticleQueryDto parm)
+        {
+            parm.UserId = HttpContext.GetUId();
+            parm.ArticleType = (int)ArticleTypeEnum.Article;
+            var response = _ArticleService.GetMyList(parm);
+
+            return SUCCESS(response);
         }
 
         /// <summary>
