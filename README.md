@@ -58,8 +58,8 @@ dotnet run --project ZR.Admin.WebApi -- --initdb
 dotnet run --project ZR.Admin.WebApi -- -i
 
 # 或者 
-双击执行
-init-run.bat
+双击执行（脚本位于 bat 目录）
+bat/init-run.bat
 ```
 
 ## 🍿 在线体验

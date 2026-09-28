@@ -1,1 +1,0 @@
-dotnet run --project ZR.Admin.WebApi run

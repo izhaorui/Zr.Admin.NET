@@ -1,1 +1,0 @@
-dotnet watch --project ZR.Admin.WebApi run
