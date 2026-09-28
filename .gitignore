@@ -276,3 +276,5 @@ __pycache__/
 /ZRAdmin-vue
 /ZR.Admin.WebApi/ZRModel.xml
 ZR.Tests
+/ZR.Front.WebApi/appsettings.Development.json
+DataProtection

@@ -21,8 +21,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- 复用内网宿主的 IP 归属地库文件，避免二进制重复入库 -->
-		<None Include="..\ZR.Admin.WebApi\ip2region_v4.xdb" Link="ip2region_v4.xdb">
+		<!-- IP 归属地库：本宿主自带一份，不依赖内网宿主（随构建复制到输出与发布目录） -->
+		<None Update="ip2region_v4.xdb">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</None>

@@ -20,7 +20,12 @@ namespace ZR.ServiceCore.SqlSugar
         /// </summary>
         /// <param name="services"></param>
         /// <param name="environment"></param>
-        public static void AddDb(this IServiceCollection services, IWebHostEnvironment environment)
+        /// <param name="checkMigration">
+        /// 是否执行存量库幂等迁移（补多租户列 / 补业务表）。默认 true。
+        /// 多实例部署时迁移属单实例动作：公网宿主传 false，由内网宿主（或 --initdb）负责，
+        /// 避免多副本并发执行 DDL。传 false 的前提是内网宿主已完成过一次迁移。
+        /// </param>
+        public static void AddDb(this IServiceCollection services, IWebHostEnvironment environment, bool checkMigration = true)
         {
             var options = App.OptionsSetting;
             List<DbConfigs> dbConfigs = options.DbConfigs;
@@ -69,10 +74,13 @@ namespace ZR.ServiceCore.SqlSugar
             DataScopeExtensions.RegisterScopeFilter<SysLogininfor>(q => q.ApplyScope());
             DataScopeExtensions.RegisterScopeFilter<UserOnlineLog>(q => q.ApplyScope());
 
-            // 存量库迁移：补加多租户隔离列 TenantId（幂等，所有环境执行，避免过滤器运行时报"未知列"）
-            // 实体来源与 DbMigrationService.Migrate 共用显式注册表；新装库由 CodeFirst 自动建列。
-            DbMigrationService.MigrateTenantColumns();
-            DbMigrationService.EnsureTenantBusinessTables();
+            if (checkMigration)
+            {
+                // 存量库迁移：补加多租户隔离列 TenantId（幂等，避免过滤器运行时报"未知列"）
+                // 实体来源与 DbMigrationService.Migrate 共用显式注册表；新装库由 CodeFirst 自动建列。
+                DbMigrationService.MigrateTenantColumns();
+                DbMigrationService.EnsureTenantBusinessTables();
+            }
 
             // 注意：全量"迁移 + 种子数据"已不再耦合进 Web 启动主链路，改由 CLI 参数 --initdb 显式触发
             // （见 Program.cs 的 --initdb 分支），避免每次启动被阻塞/拖慢。此处仅保留幂等补列。

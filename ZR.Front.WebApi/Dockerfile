@@ -36,8 +36,8 @@ RUN dotnet publish "./ZR.Front.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/pu
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-# 显式拷贝 IP 库文件，避免未被 publish 带入导致运行时报文件不存在
-COPY --from=build /src/ZR.Admin.WebApi/ip2region_v4.xdb ./ip2region_v4.xdb
+# IP 库为本站自有文件（csproj 已配置 CopyToPublishDirectory），此处再显式兜底一次
+COPY --from=build /src/ZR.Front.WebApi/ip2region_v4.xdb ./ip2region_v4.xdb
 
 RUN mkdir -p /app/DataProtection \
     && chmod -R 777 /app/DataProtection
