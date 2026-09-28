@@ -1,6 +1,7 @@
 using Infrastructure;
 using SqlSugar.IOC;
 using ZR.Mall.Model;
+using ZR.Model.Member;
 using ZR.ServiceCore.Services;
 using ZR.ServiceCore.SqlSugar;
 
@@ -53,6 +54,7 @@ namespace ZR.Mall.Service
 			typeof(OMSOrderLog),
 			typeof(OMSPayment),
 			typeof(MMSUserAddress),
+			typeof(UmsMember),
 			typeof(SpecTemplate),
 		};
 
