@@ -114,9 +114,6 @@ if (builder.Configuration["RedisServer:open"] == "1")
     RedisServer.Initalize();
 }
 
-// SqlSugar 多连接 + 多租户路由（含幂等补列/补表，与内网宿主同源）
-builder.Services.AddDb(builder.Environment);
-
 // 本地化
 builder.Services.AddLocalization(options => options.ResourcesPath = "");
 
@@ -128,6 +125,9 @@ InternalApp.ServiceProvider = app.Services;
 InternalApp.Configuration = builder.Configuration;
 InternalApp.WebHostEnvironment = app.Environment;
 IpTool.Configure(app.Services.GetRequiredKeyedService<ISearcher>("IP2Region.Net"));
+
+// SqlSugar 多连接 + 多租户路由（含幂等补列/补表，与内网宿主同源）。
+builder.Services.AddDb(app.Environment);
 
 // 雪花ID工作号：必须与内网宿主不同，避免两宿主生成重复 ID（见 appsettings.json 的 workId）
 var workId = builder.Configuration["workId"].ParseToInt();
