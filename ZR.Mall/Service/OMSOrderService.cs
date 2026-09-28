@@ -93,6 +93,81 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
+        /// 会员"我的订单"分页：会员本人下单(MemberId) + 同手机号的历史游客订单(GuestPhone) 合并。
+        /// 手机号在会员登录时已通过短信验证归属，故合并展示不会越权。
+        /// </summary>
+        public PagedInfo<OMSOrderDto> GetMemberOrders(long memberId, string phone, MemberOrderQueryDto parm)
+        {
+            if (memberId <= 0)
+            {
+                throw new CustomException("会员身份无效");
+            }
+            parm ??= new MemberOrderQueryDto();
+
+            // 逐段 Where 拼接，避免把 OR 混进 AND 组合时出现优先级问题
+            var query = Queryable().Includes(x => x.Items).Where(it => it.IsDelete == 0);
+            if (string.IsNullOrWhiteSpace(phone))
+            {
+                query = query.Where(it => it.MemberId == memberId);
+            }
+            else
+            {
+                query = query.Where(it => it.MemberId == memberId || it.GuestPhone == phone);
+            }
+            query = query.WhereIF(parm.OrderStatus != null, it => it.OrderStatus == parm.OrderStatus);
+
+            return query
+                .OrderBy(it => it.Id, OrderByType.Desc)
+                .ToPage<OMSOrder, OMSOrderDto>(parm);
+        }
+
+        /// <summary>
+        /// 会员订单详情（校验归属，不属于该会员返回 null）
+        /// </summary>
+        public OMSOrder GetMemberOrder(long memberId, string phone, long id)
+        {
+            if (memberId <= 0)
+            {
+                throw new CustomException("会员身份无效");
+            }
+            var order = Queryable().Includes(x => x.Items).First(x => x.Id == id && x.IsDelete == 0);
+            return order != null && BelongsToMember(order, memberId, phone) ? order : null;
+        }
+
+        /// <summary>
+        /// 会员取消自己的订单（校验归属后复用 CancelOrder：仅待付款/待发货可取消并回补库存）
+        /// </summary>
+        public int CancelMemberOrder(long memberId, string phone, long id)
+        {
+            if (memberId <= 0)
+            {
+                throw new CustomException("会员身份无效");
+            }
+            var order = Queryable().First(x => x.Id == id && x.IsDelete == 0);
+            if (order == null || !BelongsToMember(order, memberId, phone))
+            {
+                throw new CustomException("订单不存在或无权限");
+            }
+            return CancelOrder(id);
+        }
+
+        /// <summary>
+        /// 订单是否属于该会员：会员下单绑定 MemberId；接入会员体系前的历史游客订单按手机号归属
+        /// </summary>
+        private static bool BelongsToMember(OMSOrder order, long memberId, string phone)
+        {
+            if (order.MemberId.HasValue && order.MemberId.Value == memberId)
+            {
+                return true;
+            }
+            if (string.IsNullOrWhiteSpace(phone))
+            {
+                return false;
+            }
+            return order.GuestPhone == phone || order.AddressSnapshot?.Phone == phone;
+        }
+
+        /// <summary>
         /// 游客/C端下单
         /// 1. 校验商品/SKU 存在、上架、库存充足（读阶段在事务外）
         /// 2. 计算订单金额（单价 × 数量，累加）
@@ -101,7 +176,7 @@ namespace ZR.Mall.Service
         /// 游客下单 UserId 为 null，手机号记录在 AddressSnapshot.Phone 作为身份锚点。
         /// 幂等：同一 RequestId（或相同手机号+订单项签名）短窗口内只创建一次订单。
         /// </summary>
-        public OMSOrder CreateOrder(CreateOrderDto dto)
+        public OMSOrder CreateOrder(CreateOrderDto dto, long? memberId = null)
         {
             var db = Context;
             var dbDate = db.GetDate();
@@ -174,7 +249,8 @@ namespace ZR.Mall.Service
                 order = new OMSOrder
                 {
                     OrderNo = ZR.Mall.Common.OrderNoGenerator.Generate(),
-                    UserId = null, // 游客匿名下单
+                    UserId = null, // 后台账号体系未使用；游客匿名下单
+                    MemberId = memberId, // C 端会员下单时绑定，用于"我的订单"归属
                     TotalAmount = totalAmount,
                     PayAmount = totalAmount,
                     OrderStatus = Enum.OrderStatusEnum.None, // 待付款：下单后进入模拟支付环节，支付成功才转待发货

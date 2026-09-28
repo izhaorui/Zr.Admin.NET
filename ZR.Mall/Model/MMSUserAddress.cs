@@ -4,13 +4,19 @@
     /// 收货地址表
     /// </summary>
     [SugarTable("mms_address")]
+    [SugarIndex("idx_mms_address_member", nameof(MemberId), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class MMSUserAddress
     {
         [SugarColumn(IsIdentity = true, IsPrimaryKey = true)]
         public long Id { get; set; }
         /// <summary>
-        /// 用户ID
+        /// 会员ID（C 端会员归属；会员接口一律按此列过滤，禁止跨会员访问）
+        /// </summary>
+        [SugarColumn(DefaultValue = "0", ColumnDescription = "会员ID")]
+        public long MemberId { get; set; }
+        /// <summary>
+        /// 用户ID（历史字段，接入 C 端会员体系后不再使用）
         /// </summary>
         public long UserId { get; set; }
         /// <summary>

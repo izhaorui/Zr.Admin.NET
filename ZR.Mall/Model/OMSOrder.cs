@@ -8,6 +8,7 @@ namespace ZR.Mall.Model
     /// </summary>
     [SugarTable("oms_order", "订单表")]
     [SugarIndex("index_orderNo", nameof(OrderNo), OrderByType.Asc, true)]
+    [SugarIndex("idx_oms_order_member", nameof(MemberId), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class OMSOrder
     {
@@ -33,6 +34,13 @@ namespace ZR.Mall.Model
         /// </summary>
         [SugarColumn(Length = 20, IsNullable = true)]
         public string GuestPhone { get; set; }
+
+        /// <summary>
+        /// 会员ID（C 端会员下单时绑定，用于"我的订单"按会员身份查询）。
+        /// 与 <see cref="UserId"/>（后台账号体系）是两套身份，勿混用。
+        /// </summary>
+        [SugarColumn(IsNullable = true, ColumnDescription = "会员ID")]
+        public long? MemberId { get; set; }
 
         /// <summary>
         /// 赠送用户ID
