@@ -10,6 +10,12 @@ namespace ZR.Mall.Model.Dto
     {
         public string OrderNo { get; set; }
         public long? UserId { get; set; }
+
+        /// <summary>
+        /// C 端会员ID（ums_member.Id）。用于后台按会员查订单；不传表示不限。
+        /// </summary>
+        public long? MemberId { get; set; }
+
         public OrderStatusEnum? OrderStatus { get; set; }
         public DateTime? BeginCreateTime { get; set; }
         public DateTime? EndCreateTime { get; set; }
@@ -34,8 +40,19 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "订单号")]
         public string OrderNo { get; set; }
 
+        /// <summary>
+        /// 后台账号体系用户ID。商城 C 端下单从不写入（恒为 null），仅为后台账号域保留；
+        /// 保持可空，避免接口与导出输出误导性的 0。
+        /// </summary>
         [ExcelColumn(Name = "用户ID")]
-        public long UserId { get; set; }
+        public long? UserId { get; set; }
+
+        /// <summary>
+        /// C 端会员ID（ums_member.Id；null = 游客或后台账号下单）。
+        /// 与 UserId 是两套身份（见 OMSOrder.MemberId 注释），勿混用。
+        /// </summary>
+        [ExcelColumn(Name = "会员ID")]
+        public long? MemberId { get; set; }
 
         [ExcelColumn(Name = "总金额")]
         public decimal TotalAmount { get; set; }

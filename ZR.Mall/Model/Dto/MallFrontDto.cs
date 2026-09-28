@@ -33,10 +33,12 @@ namespace ZR.Mall.Model.Dto
         public string RequestId { get; set; }
 
         /// <summary>
-        /// 短信验证码：下单前需对本手机号获取并校验，证明手机号归属（防止填他人手机号下单）。
-        /// 与 Address.Phone 配对使用。
+        /// 短信验证码：证明 Address.Phone 归属（防止填他人手机号下单），与 Address.Phone 配对使用。
+        /// 免验证条件：携带有效会员令牌（mall-token）且 Address.Phone 与会员手机号一致 ——
+        /// 该号码在登录时已通过短信验证过归属，此时可为空（判定见 FrontOrderController.CreateOrder）。
+        /// 注意：这里刻意不加 [Required]，否则模型校验会在进入 action 之前直接 400，
+        /// 使"会员本人手机号免验证"分支永远走不到（公网宿主已开启自动模型校验）。
         /// </summary>
-        [Required(ErrorMessage = "请先获取并输入短信验证码")]
         public string Code { get; set; }
     }
 

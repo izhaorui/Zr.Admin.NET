@@ -220,7 +220,7 @@ namespace ZR.Mall.Service
                 {
                     ProductId = product.ProductId,
                     ProductName = product.ProductName,
-                    ProductPic = sku.ImageUrl,
+                    ProductPic = ResolveItemPic(sku, product),
                     SkuId = sku.SkuId,
                     UnitPrice = unitPrice,
                     TotalPrice = itemTotal,
@@ -308,6 +308,27 @@ namespace ZR.Mall.Service
             // 记录幂等键 -> 订单号（15 分钟内同单只创建一次）
             CacheHelper.SetCache(idemKey, order.OrderNo, 15);
             return order;
+        }
+
+        /// <summary>
+        /// 订单项商品图快照：优先 SKU 图，缺失时回退商品主图，再回退多图（逗号/换行分隔）首张。
+        /// 很多商品只在商品级配主图、SKU 不单独配图，此前只取 sku.ImageUrl 会存下空串，
+        /// 导致订单列表/详情无图可显示（后台页面前端只能自己兜占位图）。
+        /// </summary>
+        private static string ResolveItemPic(Skus sku, Product product)
+        {
+            if (!string.IsNullOrWhiteSpace(sku.ImageUrl))
+            {
+                return sku.ImageUrl;
+            }
+            if (!string.IsNullOrWhiteSpace(product.MainImage))
+            {
+                return product.MainImage;
+            }
+            return (product.ImageUrls ?? string.Empty)
+                .Split(new[] { ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .FirstOrDefault(x => x.Length > 0) ?? string.Empty;
         }
 
         /// <summary>
@@ -856,6 +877,8 @@ namespace ZR.Mall.Service
             }
             predicate = predicate.AndIF(parm.OrderNo.IsNotEmpty(), it => it.OrderNo == parm.OrderNo);
             predicate = predicate.AndIF(parm.UserId != null, it => it.UserId == parm.UserId);
+            // C 端会员ID（与后台账号体系的 UserId 是两套身份，见 OMSOrder.MemberId 注释）
+            predicate = predicate.AndIF(parm.MemberId != null, it => it.MemberId == parm.MemberId);
             predicate = predicate.AndIF(parm.OrderStatus != null, it => it.OrderStatus == parm.OrderStatus);
 
             //predicate = predicate.AndIF(parm.ConfirmStatus != null, it => it.ConfirmStatus == parm.ConfirmStatus);

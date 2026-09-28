@@ -21,9 +21,11 @@
         public string ProductPic { get; set; }
         public long SkuId { get; set; }
         /// <summary>
-        /// 下单时的商品单价快照
+        /// 下单时的商品单价快照。
+        /// 注意：属性名必须与实体 OMSOrderItem.UnitPrice 保持一致 —— 实体与 DTO 由 Mapster
+        /// 按属性名映射，早期命名为 Price 时匹配不到源属性，导致接口下发的单价恒为 0。
         /// </summary>
-        public decimal Price { get; set; }
+        public decimal UnitPrice { get; set; }
         /// <summary>
         /// 总价(单价 * 数量)
         /// </summary>

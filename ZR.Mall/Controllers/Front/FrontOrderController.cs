@@ -37,7 +37,10 @@ namespace ZR.Mall.Controllers.Front
         }
 
         /// <summary>
-        /// 游客下单（无需登录）
+        /// 游客下单（无需登录）。
+        /// 身份校验：收货手机号 + 短信验证码配对（证明号码归属）；
+        /// 免验证例外：携带有效会员令牌且收货手机号 = 会员本人手机号（登录时已验证过归属）。
+        /// 携带 mall-token 时订单额外绑定会员，"我的订单"据此免验证码查询。
         /// </summary>
         [HttpPost("create")]
         public IActionResult CreateOrder([FromBody] CreateOrderDto parm)
@@ -55,14 +58,28 @@ namespace ZR.Mall.Controllers.Front
             {
                 return ToResponse(ResultCode.PARAM_ERROR, "手机号格式不正确");
             }
+            // 会员身份（携带 mall-token 时）：既用于订单归属绑定，也用于判定能否免短信验证码。
+            var member = MemberJwt.GetMember(HttpContext);
+
             // 下单身份校验：验证码必须与 Address.Phone 配对且通过，证明手机号归属。
             // 否则任何人可填他人手机号下单，后续 pay/cancel/查订单都会基于错误归属 —— 这是原漏洞根因。
-            if (string.IsNullOrWhiteSpace(parm.Code) || !CacheService.CheckPhoneCode(parm.Address.Phone, parm.Code))
+            // 免验证例外：已登录会员 + 收货手机号就是会员本人手机号。该号码在会员登录时已用短信验证过归属
+            // （见 MemberService.LoginByPhone），此处再验一次无额外安全增益，只是多一条短信与一次输入；
+            // 换成他人手机号（给家人/朋友下单）时归属并未被证明，仍必须走验证码。
+            var phoneVerifiedByMember = member != null
+                && !string.IsNullOrWhiteSpace(member.Phone)
+                && string.Equals(member.Phone, parm.Address.Phone, StringComparison.Ordinal);
+            if (!phoneVerifiedByMember)
             {
-                return ToResponse(ResultCode.PARAM_ERROR, "短信验证码错误或已过期，请重新获取");
+                if (string.IsNullOrWhiteSpace(parm.Code) || !CacheService.CheckPhoneCode(parm.Address.Phone, parm.Code))
+                {
+                    return ToResponse(ResultCode.PARAM_ERROR, "短信验证码错误或已过期，请重新获取");
+                }
+                CacheService.RemovePhoneCode(parm.Address.Phone); // 一次性校验，防重放
             }
-            CacheService.RemovePhoneCode(parm.Address.Phone); // 一次性校验，防重放
+
             // #2 游客下单防刷/限流（IP + 手机号维度）
+            // 注意：与验证码相互独立 —— 会员免验证码同样要受配额约束，不能一并跳过。
             var ip = HttpContextExtension.GetClientUserIp(HttpContext);
             if (!TryAcquireCreateQuota(ip, parm.Address.Phone, out var quotaMsg))
             {
@@ -70,7 +87,6 @@ namespace ZR.Mall.Controllers.Front
             }
             // 携带会员令牌（mall-token）时把订单绑定到该会员，供"我的订单"免验证码按会员身份查询；
             // 未携带则保持原有游客匿名下单行为不变。
-            var member = MemberJwt.GetMember(HttpContext);
             var order = _OMSOrderService.CreateOrder(parm, member?.MemberId);
             return SUCCESS(new { order.OrderNo, order.Id, order.TotalAmount, order.OrderStatus });
         }
