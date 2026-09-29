@@ -1,7 +1,6 @@
 using Infrastructure.Extensions;
 using ZR.Common;
 using ZR.Mall.Enum;
-using ZR.Model;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -173,7 +172,7 @@ namespace ZR.Mall.Service
         /// 2. 计算订单金额（单价 × 数量，累加）
         /// 3. 写订单主表 + 订单项（商品/SKU/价格快照）
         /// 4. 乐观锁扣减库存、累加销量（防超卖）
-        /// 游客下单 UserId 为 null，手机号记录在 AddressSnapshot.Phone 作为身份锚点。
+        /// 身份：游客单不绑会员（MemberId 为空），手机号写入 GuestPhone 并同步到 AddressSnapshot.Phone 作为锚点。
         /// 幂等：同一 RequestId（或相同手机号+订单项签名）短窗口内只创建一次订单。
         /// </summary>
         public OMSOrder CreateOrder(CreateOrderDto dto, long? memberId = null)
@@ -248,8 +247,7 @@ namespace ZR.Mall.Service
             {
                 order = new OMSOrder
                 {
-                    OrderNo = ZR.Mall.Common.OrderNoGenerator.Generate(),
-                    UserId = null, // 后台账号体系未使用；游客匿名下单
+                    OrderNo = Common.OrderNoGenerator.Generate(),
                     MemberId = memberId, // C 端会员下单时绑定，用于"我的订单"归属
                     TotalAmount = totalAmount,
                     PayAmount = totalAmount,
@@ -639,7 +637,7 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 通知买家订单变化：有账号(userId)走站内信(IMessageNotifier 自动推送)，游客降级为短信。
+        /// 通知买家订单变化：游客短信。
         /// 异常仅记录，不影响主流程。
         /// </summary>
         private void NotifyBuyer(OMSOrder order, string title, string content)
@@ -647,16 +645,12 @@ namespace ZR.Mall.Service
             if (order == null) return;
             try
             {
-                if (order.UserId.HasValue)
-                {
-                    _msgService.AddSysUserMsg(order.UserId.Value, $"[{title}] {content}", UserMsgType.ORDER);
-                }
-                else if (!string.IsNullOrWhiteSpace(order.GuestPhone))
+                if (!string.IsNullOrWhiteSpace(order.GuestPhone))
                 {
                     _smsCodeLogService.SendSmsNotice(order.GuestPhone, $"[{title}] {content}", 6);
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 买家通知失败(OrderNo={order.OrderNo}): {ex.Message}");
             }
@@ -669,7 +663,6 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public async Task<int> OrderDelivery(OMSOrder model)
         {
-            var dbDate = Context.GetDate();
             if (model.DeliveryStatus != DeliveryStatusEnum.NotDelivered)
             {
                 return -1;//已发货
@@ -683,35 +676,52 @@ namespace ZR.Mall.Service
             {
                 return -3; // 非待发货状态，不可发货
             }
-            var result = await UpdateAsync(w => w.OrderNo == model.OrderNo, it => new OMSOrder()
+            // 条件更新：除订单号外再校验"待发货"（参照 PayOrderByOrderNo 的防并发写法）。
+            // 上面的 model.OrderStatus 校验读的是调用前的快照，校验与写入之间存在窗口，
+            // 并发重复发货会双双通过校验、重复释放锁定库存；把状态放进 Where 后只有一方能命中。
+            var result = await UpdateAsync(w => w.OrderNo == model.OrderNo && w.OrderStatus == OrderStatusEnum.TobeShipped, it => new OMSOrder()
             {
                 DeliveryCompany = model.DeliveryCompany,
                 DeliveryNo = model.DeliveryNo,
                 OrderStatus = OrderStatusEnum.Shipped, // 已发货
                 DeliveryStatus = DeliveryStatusEnum.Delivering, // 已发货
-                ShipTime = dbDate
+                ShipTime = SqlFunc.GetDate()
             });
-            // 发货成功 → 释放锁定库存 + 写日志 + 通知买家（游客短信 / 有账号站内信）
+            // 发货成功 → 释放锁定库存 + 写日志 + 通知买家（游客短信）
             if (result > 0)
             {
                 try
                 {
-                    var items = Context.Queryable<OMSOrderItem>().Where(i => i.OrderId == model.Id).ToList();
-                    foreach (var it in items)
+                    var items = await Context.Queryable<OMSOrderItem>()
+                        .Where(i => i.OrderId == model.Id).ToListAsync();
+
+                    // 释放锁定库存：按扣减数量分组，每组一条 UPDATE ... WHERE SkuId IN (...)，
+                    // 替代原先"每个订单项一条 UPDATE"（买 5 种商品就发 5 条 SQL）。典型订单数量一致，只占 1 次往返。
+                    // 扣减仍写在 SQL 端（LockStock - qty，下限 0）而不是先读后算，避免并发发货丢更新。
+                    foreach (var group in items.GroupBy(i => i.Quantity))
                     {
-                        Context.Updateable<Skus>()
-                            .SetColumns(s => new Skus { LockStock = SqlFunc.IIF(s.LockStock - it.Quantity < 0, 0, s.LockStock - it.Quantity) })
-                            .Where(s => s.SkuId == it.SkuId)
-                            .ExecuteCommand();
+                        var skuIds = group.Select(i => i.SkuId).ToList();
+                        var qty = group.Key;
+                        await Context.Updateable<Skus>()
+                            .SetColumns(s => new Skus { LockStock = SqlFunc.IIF(s.LockStock - qty < 0, 0, s.LockStock - qty) })
+                            .Where(s => skuIds.Contains(s.SkuId))
+                            .ExecuteCommandAsync();
                     }
-                    _orderLogService.AddLog(model.Id, model.OrderNo, (int)OrderStatusEnum.TobeShipped, (int)OrderStatusEnum.Shipped, "DELIVERY", null, $"{model.DeliveryCompany} {model.DeliveryNo}");
+
+                    await _orderLogService.AddLogAsync(model.Id, model.OrderNo, (int)OrderStatusEnum.TobeShipped, (int)OrderStatusEnum.Shipped, "DELIVERY", null, $"{model.DeliveryCompany} {model.DeliveryNo}");
                     NotifyBuyer(model, "订单已发货", $"您的订单({model.OrderNo})已发货，{model.DeliveryCompany} 运单号 {model.DeliveryNo}，请留意查收。");
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     // 库存/通知异常仅记录，不影响发货结果
                     Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 发货后处理失败(OrderNo={model.OrderNo}): {ex.Message}");
                 }
+            }
+            else if (result == 0)
+            {
+                // 条件更新未命中：状态在上面的校验之后被并发变更（另一请求已发货、或订单被取消/关闭）。
+                // 此时不能再释放锁定库存，也不应写第二条发货日志，按"不可发货"返回。
+                return -3;
             }
             return result;
         }
@@ -876,8 +886,6 @@ namespace ZR.Mall.Service
                 predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime >= parm.BeginCreateTime && it.CreateTime <= parm.EndCreateTime);
             }
             predicate = predicate.AndIF(parm.OrderNo.IsNotEmpty(), it => it.OrderNo == parm.OrderNo);
-            predicate = predicate.AndIF(parm.UserId != null, it => it.UserId == parm.UserId);
-            // C 端会员ID（与后台账号体系的 UserId 是两套身份，见 OMSOrder.MemberId 注释）
             predicate = predicate.AndIF(parm.MemberId != null, it => it.MemberId == parm.MemberId);
             predicate = predicate.AndIF(parm.OrderStatus != null, it => it.OrderStatus == parm.OrderStatus);
 
