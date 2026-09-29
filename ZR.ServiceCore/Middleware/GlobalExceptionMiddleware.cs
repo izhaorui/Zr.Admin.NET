@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
@@ -21,7 +22,9 @@ namespace ZR.ServiceCore.Middleware
     public class GlobalExceptionMiddleware
     {
         private readonly RequestDelegate next;
-        private readonly ISysOperLogService SysOperLogService;
+        // 注意：不要在此处注入 ISysOperLogService。它是瞬态服务，而中间件在应用生命周期内只构造一次，
+        // 构造注入会把该实例及其依赖（SqlSugar 上下文）永久捕获并跨请求共享（captive dependency）。
+        // 改为在异常处理时从当前请求作用域解析，见 HandleExceptionAsync。
 
         static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static readonly textJson.JsonSerializerOptions JsonOptions = new()
@@ -35,11 +38,13 @@ namespace ZR.ServiceCore.Middleware
         /// 
         /// </summary>
         /// <param name="next"></param>
-        /// <param name="sysOperLog"></param>
-        public GlobalExceptionMiddleware(RequestDelegate next, ISysOperLogService sysOperLog)
+        /// <remarks>
+        /// 构造函数只接受 next：日志服务是瞬态的，若在此处注入会被中间件永久捕获（captive dependency），
+        /// 因此改为在 HandleExceptionAsync 中按请求作用域解析。
+        /// </remarks>
+        public GlobalExceptionMiddleware(RequestDelegate next)
         {
             this.next = next;
-            this.SysOperLogService = sysOperLog;
         }
 
         public async Task Invoke(HttpContext context)
@@ -154,7 +159,8 @@ namespace ZR.ServiceCore.Middleware
 
             try
             {
-                SysOperLogService.InsertOperlog(sysOperLog);
+                // 从当前请求作用域解析：瞬态服务及其依赖按请求创建与释放，不会被中间件长期持有
+                context.RequestServices.GetService<ISysOperLogService>()?.InsertOperlog(sysOperLog);
             }
             catch (Exception logEx)
             {
