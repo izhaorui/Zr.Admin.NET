@@ -6,12 +6,28 @@ namespace ZR.ServiceCore.Oss
 {
     /// <summary>
     /// 阿里云 OSS 实现
+    ///
+    /// ⚠️ 现状：上传/删除<b>尚未实现</b>（内部调 SDK 的代码被注释掉，UploadAsync 恒返回 BadRequest）。
+    /// 因此生产环境<b>不要</b>把 OptionsSetting.OssProvider 配成 Aliyun —— 需要对象存储时请使用
+    /// S3CompatibleOssProvider（配置 OssProvider=s3，适用于 RustFS / MinIO / Ceph 等 S3 兼容服务）。
+    /// 本类保留是因为阿里云 OSS 不提供 S3 兼容端点，将来要真正支持阿里云需在此用阿里云官方 SDK 实现。
     /// </summary>
     public class AliyunOssProvider : IOssProvider
     {
         private readonly ALIYUN_OSS _config;
 
         public string ProviderName => "Aliyun";
+
+        /// <summary>
+        /// 配置缺失（_config 为 null，例如宿主未配置 ALIYUN_OSS 节点）时回退到默认上限
+        /// </summary>
+        public int MaxSize => _config != null && _config.MaxSize > 0 ? _config.MaxSize : 100;
+
+        public bool IsConfigured =>
+            !string.IsNullOrWhiteSpace(_config?.REGIONID)
+            && !string.IsNullOrWhiteSpace(_config?.KEY)
+            && !string.IsNullOrWhiteSpace(_config?.SECRET)
+            && !string.IsNullOrWhiteSpace(_config?.BucketName);
 
         public AliyunOssProvider(IOptions<OptionsSetting> options)
         {

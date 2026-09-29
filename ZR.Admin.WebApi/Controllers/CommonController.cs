@@ -5,6 +5,7 @@ using MiniExcelLibs;
 using ZR.Infrastructure.IPTools;
 using ZR.Model.Dto;
 using ZR.Model.System;
+using ZR.ServiceCore.Oss;
 using ZR.ServiceCore.Resources;
 
 namespace ZR.Admin.WebApi.Controllers
@@ -21,6 +22,11 @@ namespace ZR.Admin.WebApi.Controllers
 
         private IWebHostEnvironment WebHostEnvironment;
         private ISysFileService SysFileService;
+        /// <summary>
+        /// 对象存储实现工厂：上传分支按用户所选的 StoreType 取对应实现（2=阿里云 / 6=S3 兼容），
+        /// 并用它做"配置是否齐全 / 大小上限"校验，避免直接读某个厂商的配置节。
+        /// </summary>
+        private readonly IOssProviderFactory _ossProviderFactory;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
         /// <summary>
@@ -30,15 +36,18 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="options"></param>
         /// <param name="webHostEnvironment"></param>
         /// <param name="fileService"></param>
+        /// <param name="ossProviderFactory"></param>
         public CommonController(
             IStringLocalizer<SharedResource> stringLocalizer,
             IOptions<OptionsSetting> options,
             IWebHostEnvironment webHostEnvironment,
-            ISysFileService fileService)
+            ISysFileService fileService,
+            IOssProviderFactory ossProviderFactory)
         {
             WebHostEnvironment = webHostEnvironment;
             SysFileService = fileService;
             OptionsSetting = options.Value;
+            _ossProviderFactory = ossProviderFactory;
             _localizer = stringLocalizer;
         }
 
@@ -152,9 +161,33 @@ namespace ZR.Admin.WebApi.Controllers
                         ClassifyType = uploadDto.ClassifyType,
                         CategoryId = uploadDto.CategoryId,
                     };
-                    sysfile = await SysFileService.SaveFileToOss(sysfile, uploadDto, formFile);
+                    sysfile = await SysFileService.SaveFileToOss(sysfile, uploadDto, formFile, StoreType.ALIYUN);
 
                     if (sysfile.Id <= 0) { return ToResponse(ApiResult.Error("oss连接失败")); }
+                    break;
+                case StoreType.S3:
+                    // S3 兼容存储（RustFS / MinIO / Ceph RGW 等）：按存储类型取实现，与上面的阿里云分支各自独立 ——
+                    // 前端选「S3 兼容存储」就一定用 S3 客户端，不再受全局 OssProvider 配置影响（避免选择与实现错配）。
+                    var s3Provider = _ossProviderFactory.Get(StoreType.S3);
+                    if (!s3Provider.IsConfigured)
+                    {
+                        return ToResponse(ResultCode.CUSTOM_ERROR, $"{s3Provider.ProviderName} 对象存储配置不完整，请检查 appsettings.json 的 S3 配置节");
+                    }
+                    int s3MaxContentLength = s3Provider.MaxSize;
+                    if ((fileSize / 1024) > s3MaxContentLength)
+                    {
+                        return ToResponse(ResultCode.CUSTOM_ERROR, "上传文件过大，不能超过 " + s3MaxContentLength + " MB");
+                    }
+                    sysfile = new(formFile.FileName, uploadDto.FileName, fileExt, fileSize + "kb", uploadDto.FileDir, HttpContext.GetName())
+                    {
+                        StoreType = (int)StoreType.S3,
+                        FileType = formFile.ContentType,
+                        ClassifyType = uploadDto.ClassifyType,
+                        CategoryId = uploadDto.CategoryId,
+                    };
+                    sysfile = await SysFileService.SaveFileToOss(sysfile, uploadDto, formFile, StoreType.S3);
+
+                    if (sysfile.Id <= 0) { return ToResponse(ApiResult.Error($"{s3Provider.ProviderName} 上传失败，请检查对象存储配置与网络")); }
                     break;
                 case StoreType.TENCENT:
                     break;

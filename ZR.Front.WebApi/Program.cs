@@ -106,18 +106,14 @@ builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 // 业务服务注册（[AppService] 按引用闭包扫描 ZR.* 程序集）
 builder.Services.AddAppService();
 
-// 对象存储(OSS)提供程序：SysFileService 等由 AddAppService 自动注册，但其依赖的 IOssProvider
-// 不在扫描范围内，必须显式注册（与内网宿主同源；按 OptionsSetting.OssProvider 选择厂商）
+// 对象存储(OSS)提供程序：SysFileService 等由 AddAppService 自动注册，但其依赖的 IOssProviderFactory
+// 不在扫描范围内，必须显式注册（与内网宿主同源）
+//   上传按调用方传入的 StoreType 取实现（2=阿里云 / 6=S3 兼容），由工厂统一路由；
+//   IOssProvider（默认实现）取 OptionsSetting.OssProvider，仅作兜底。
+// 本宿主当前不处理上传（公网不暴露管理端上传接口），注册是为了将来 C 端上传接口复用同一套配置。
+builder.Services.AddSingleton<IOssProviderFactory, OssProviderFactory>();
 builder.Services.AddSingleton<IOssProvider>(sp =>
-{
-    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OptionsSetting>>();
-    var provider = (options.Value.OssProvider ?? "Aliyun").Trim().ToLowerInvariant();
-    return provider switch
-    {
-        "aliyun" => new AliyunOssProvider(options),
-        _ => new AliyunOssProvider(options)
-    };
-});
+    sp.GetRequiredService<IOssProviderFactory>().GetDefault());
 
 // SignalR：仅注册服务以提供 IHubContext<MessageHub>
 // （SysUserMsgService → IMessageNotifier 依赖它；订单通知会用到）。

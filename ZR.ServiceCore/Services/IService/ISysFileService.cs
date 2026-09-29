@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Infrastructure.Enums;
+using Microsoft.AspNetCore.Http;
 using ZR.ServiceCore.Oss;
 using ZR.Model;
 using ZR.Model.Dto;
@@ -29,8 +30,9 @@ namespace ZR.ServiceCore.Services
         /// <param name="file"></param>
         /// <param name="dto"></param>
         /// <param name="formFile"></param>
+        /// <param name="storeType">存储类型：决定使用哪个对象存储实现（2=阿里云 / 6=S3 兼容），默认阿里云</param>
         /// <returns></returns>
-        Task<SysFile> SaveFileToOss(SysFile file, UploadDto dto, IFormFile formFile);
+        Task<SysFile> SaveFileToOss(SysFile file, UploadDto dto, IFormFile formFile, StoreType storeType = StoreType.ALIYUN);
         
         /// <summary>
         /// 按时间来创建文件夹

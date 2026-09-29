@@ -8,9 +8,23 @@ namespace ZR.ServiceCore.Oss
     public interface IOssProvider
     {
         /// <summary>
-        /// 提供程序名称（Aliyun / Tencent / Qiniu ...）
+        /// 提供程序名称（Aliyun / Tencent / Qiniu / S3 ...）
         /// </summary>
         string ProviderName { get; }
+
+        /// <summary>
+        /// 单文件大小上限(MB)。
+        /// 由各厂商自己的配置决定，供上传入口统一校验 —— 调用方不应再去读某个具体厂商的配置节
+        /// （否则每加一个厂商都要在上传入口复制一份分支）。
+        /// </summary>
+        int MaxSize { get; }
+
+        /// <summary>
+        /// 关键配置是否齐全（端点 / 密钥 / 桶名等）。
+        /// 上传入口据此直接给出可读错误，而不是让底层 SDK 抛异常。
+        /// 约定：配置不齐全时构造函数<b>不得</b>抛异常（避免"环境没配好导致宿主起不来"）。
+        /// </summary>
+        bool IsConfigured { get; }
 
         /// <summary>
         /// 上传对象

@@ -87,17 +87,13 @@ builder.Services.AddJwt();
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 //app服务注册
 builder.Services.AddAppService();
-// 对象存储(OSS)提供程序：根据配置 OptionsSetting.OssProvider 选择厂商，便于对接阿里云/腾讯云/七牛等
+// 对象存储(OSS)提供程序：注册工厂 + 默认实现
+//   上传接口按调用方传入的 StoreType 取实现（2=阿里云 / 6=S3 兼容），统一由 IOssProviderFactory 路由 ——
+//   存储类型是"文件存到哪里"的选择，必须与实现一致，不能由全局配置单方面决定。
+//   IOssProvider（默认实现）取 OptionsSetting.OssProvider，仅作兜底与兼容历史调用方。
+builder.Services.AddSingleton<IOssProviderFactory, OssProviderFactory>();
 builder.Services.AddSingleton<IOssProvider>(sp =>
-{
-    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OptionsSetting>>();
-    var provider = (options.Value.OssProvider ?? "Aliyun").Trim().ToLowerInvariant();
-    return provider switch
-    {
-        "aliyun" => new AliyunOssProvider(options),
-        _ => new AliyunOssProvider(options)
-    };
-});
+    sp.GetRequiredService<IOssProviderFactory>().GetDefault());
 //开启计划任务
 builder.Services.AddTaskSchedulers();
 //请求大小限制

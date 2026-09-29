@@ -38,7 +38,9 @@ namespace Infrastructure.Model
         /// </summary>
         public Upload Upload { get; set; }
         /// <summary>
-        /// 当前启用的对象存储(OSS)提供程序，可选：Aliyun / Tencent / Qiniu，默认 Aliyun
+        /// 当前启用的对象存储(OSS)提供程序，可选：s3 / aliyun，默认 Aliyun。
+        /// s3     → S3CompatibleOssProvider（S3 兼容服务：RustFS / MinIO / Ceph RGW / R2 等，读 S3 配置节）
+        /// aliyun → AliyunOssProvider（上传功能尚未实现，见该类注释）
         /// </summary>
         public string OssProvider { get; set; } = "Aliyun";
 
@@ -46,6 +48,11 @@ namespace Infrastructure.Model
         /// 阿里云oss
         /// </summary>
         public ALIYUN_OSS ALIYUN_OSS { get; set; }
+
+        /// <summary>
+        /// S3 兼容对象存储（RustFS / MinIO / Ceph RGW / R2 等）
+        /// </summary>
+        public S3Compatible S3 { get; set; }
         public JwtSettings JwtSettings { get; set; }
         /// <summary>
         /// 代码生成配置
@@ -181,6 +188,52 @@ namespace Infrastructure.Model
         public string BucketName { get; set; }
         public string DomainUrl { get; set; }
         public int MaxSize { get; set; } = 100;
+    }
+
+    /// <summary>
+    /// S3 兼容对象存储（RustFS / MinIO / Ceph RGW / Cloudflare R2 / Backblaze B2 / AWS S3 等）
+    /// </summary>
+    public class S3Compatible
+    {
+        /// <summary>展示与日志用名称，如 RustFS / MinIO</summary>
+        public string DisplayName { get; set; } = "S3";
+
+        /// <summary>服务端点，例：http://192.168.1.10:9000；云厂商形如 https://s3.cn-north-1.amazonaws.com.cn</summary>
+        public string Endpoint { get; set; }
+
+        public string AccessKey { get; set; }
+
+        public string SecretKey { get; set; }
+
+        public string BucketName { get; set; }
+
+        /// <summary>
+        /// 可公开读取的访问域名，用于拼接 SysFile.AccessUrl。
+        /// 必须保证浏览器 / 小程序能直接访问（bucket 公开读或反向代理 + HTTPS），否则前端图片 403。
+        /// 留空时 GetAccessUrl 降级返回对象键（相对路径）。
+        /// </summary>
+        public string DomainUrl { get; set; }
+
+        /// <summary>
+        /// 路径风格寻址（http://ip:port/bucket/key）。
+        /// 自建 S3 兼容服务必须为 true —— 否则 SDK 按 Virtual-host 拼成 bucket.ip:port，域名无法解析。
+        /// </summary>
+        public bool ForcePathStyle { get; set; } = true;
+
+        /// <summary>SDK 签名必填项，自建服务通常忽略该值</summary>
+        public string Region { get; set; } = "us-east-1";
+
+        /// <summary>单文件大小上限(MB)</summary>
+        public int MaxSize { get; set; } = 100;
+
+        /// <summary>
+        /// 对象缓存头（Cache-Control），随上传写入对象元数据。
+        /// 作用是让浏览器 / Nginx / CDN 缓存图片，避免每次浏览都重新下载 —— 这是自建存储省流量的关键一项。
+        /// 留空则不发送该头（即不缓存）。
+        /// 注意：若对象键可能被覆盖（同名文件重复上传），应缩短 max-age，否则用户会长时间看到旧图；
+        /// 默认 30 天是基于"对象键含日期目录 + 随机文件名、几乎不会覆盖"的前提。
+        /// </summary>
+        public string CacheControl { get; set; } = "public, max-age=2592000";
     }
 
     /// <summary>

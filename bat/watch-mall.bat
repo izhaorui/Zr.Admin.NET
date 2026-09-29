@@ -1,0 +1,1 @@
+dotnet watch --project ../ZR.Front.WebApi run

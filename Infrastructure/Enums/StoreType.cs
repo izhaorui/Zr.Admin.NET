@@ -35,6 +35,12 @@ namespace Infrastructure.Enums
         /// 远程
         /// </summary>
         [Description("远程")]
-        REMOTE = 5
+        REMOTE = 5,
+
+        /// <summary>
+        /// S3 兼容对象存储（RustFS / MinIO / Ceph RGW / R2 等，具体实例由 S3 配置节决定）
+        /// </summary>
+        [Description("S3 兼容存储")]
+        S3 = 6
     }
 }

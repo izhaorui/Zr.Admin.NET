@@ -29,7 +29,11 @@ namespace ZR.ServiceCore.Services
     public class SysFileService : BaseService<SysFile>, ISysFileService
     {
         private readonly ISysConfigService SysConfigService;
-        private readonly IOssProvider _ossProvider;
+        /// <summary>
+        /// 对象存储实现工厂：上传时按调用方传入的 StoreType 选择实现。
+        /// 不用单例 IOssProvider —— 否则会出现"前端选 S3、后端却拿阿里云客户端去传"的错配。
+        /// </summary>
+        private readonly IOssProviderFactory _ossProviderFactory;
         private OptionsSetting OptionsSetting;
 
         private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -37,10 +41,10 @@ namespace ZR.ServiceCore.Services
             ".jpg", ".jpeg", ".png", ".gif", ".bmp"
         };
 
-        public SysFileService(ISysConfigService sysConfigService, IOssProvider ossProvider, IOptions<OptionsSetting> options)
+        public SysFileService(ISysConfigService sysConfigService, IOssProviderFactory ossProviderFactory, IOptions<OptionsSetting> options)
         {
             SysConfigService = sysConfigService;
-            _ossProvider = ossProvider;
+            _ossProviderFactory = ossProviderFactory;
             OptionsSetting = options.Value;
         }
 
@@ -108,9 +112,14 @@ namespace ZR.ServiceCore.Services
         /// <param name="file"></param>
         /// <param name="dto"></param>
         /// <param name="formFile"></param>
+        /// <param name="storeType">存储类型：决定使用哪个对象存储实现（2=阿里云 / 6=S3 兼容）</param>
         /// <returns></returns>
-        public async Task<SysFile> SaveFileToOss(SysFile file, UploadDto dto, IFormFile formFile)
+        public async Task<SysFile> SaveFileToOss(SysFile file, UploadDto dto, IFormFile formFile, StoreType storeType = StoreType.ALIYUN)
         {
+            // 按存储类型取实现，与调用方落库的 StoreType 保持一致，
+            // 避免"类型记成 S3、实际却用阿里云客户端上传"的错配
+            var ossProvider = _ossProviderFactory.Get(storeType);
+
             string fileExt = string.IsNullOrWhiteSpace(file.FileExt) ? Path.GetExtension(formFile.FileName) : file.FileExt;
             file.FileExt = fileExt;
             file.FileName = BuildFileName(file.FileName, fileExt);
@@ -121,13 +130,13 @@ namespace ZR.ServiceCore.Services
 
             await using (var uploadStream = await CreateUploadStreamAsync(formFile, dto.Quality, fileExt))
             {
-                statusCode = await _ossProvider.UploadAsync(uploadStream, finalPath);
+                statusCode = await ossProvider.UploadAsync(uploadStream, finalPath);
             }
 
             if (statusCode != HttpStatusCode.OK) return file;
 
             file.FileUrl = finalPath;
-            file.AccessUrl = _ossProvider.GetAccessUrl(finalPath);
+            file.AccessUrl = ossProvider.GetAccessUrl(finalPath);
             file.Id = await InsertFile(file);
 
             return file;
