@@ -43,7 +43,6 @@ namespace ZR.Mall.Common
         private const string ClaimKey = "MemberData";
         private const string DefaultIssuer = "ZRAdmin.Member";
         private const string DefaultAudience = "ZRAdmin.Member.App";
-        private const string SecretSuffix = "-MEMBER-CHANNEL";
         private const int DefaultExpireMinutes = 20160; // 14 天
 
         /// <summary>
@@ -91,6 +90,15 @@ namespace ZR.Mall.Common
             }
             token = token.Replace("Bearer ", string.Empty).Trim();
 
+            // fail-closed：密钥未配置时拒绝识别任何会员身份（上层 MemberAuthorize 返回 OAUTH_FAIL），
+            // 这里不抛异常，避免把"未配置"变成所有会员接口的 500。
+            if (string.IsNullOrWhiteSpace(App.Configuration["MemberJwt:SecretKey"]))
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(
+                    "MemberJwt:SecretKey 未配置，已拒绝解析 mall-token。请通过环境配置文件或环境变量 MemberJwt__SecretKey 注入。");
+                return null;
+            }
+
             try
             {
                 var handler = new JwtSecurityTokenHandler();
@@ -132,17 +140,20 @@ namespace ZR.Mall.Common
         }
 
         /// <summary>
-        /// 独立密钥：MemberJwt:SecretKey 优先；未配置时由后台密钥派生，保证与后台密钥必然不同（双向不可互换）
+        /// 会员令牌专用密钥：只认 MemberJwt:SecretKey，必须显式配置。
+        /// 不再从后台 JwtSettings:SecretKey 派生 —— 派生后缀是源码里的公开常量，
+        /// 一旦 MemberJwt 未配置就会退化成"可由仓库公开值推算"的弱密钥，可被用来伪造会员身份。
         /// </summary>
         private static string GetSecretKey()
         {
             var key = App.Configuration["MemberJwt:SecretKey"];
-            if (!string.IsNullOrWhiteSpace(key))
+            if (string.IsNullOrWhiteSpace(key))
             {
-                return key;
+                throw new InvalidOperationException(
+                    "MemberJwt:SecretKey 未配置，无法签发/校验会员令牌。" +
+                    "请通过 appsettings.Development.json / appsettings.Production.json（均已被 gitignore）或环境变量 MemberJwt__SecretKey 注入。");
             }
-            var baseKey = App.Configuration["JwtSettings:SecretKey"] ?? "ZRAdmin.Member.Default.Secret.Key";
-            return baseKey + SecretSuffix;
+            return key;
         }
 
         private static SymmetricSecurityKey GetSecurityKey()

@@ -63,17 +63,18 @@ namespace Infrastructure
             return tokenHandler.WriteToken(token);
         }
         /// <summary>
-        /// 验证Token
+        /// 尝试获取后台令牌校验参数；JwtSettings 未配置（SecretKey 为空）时返回 null，不抛异常。
+        /// 用于"不校验后台令牌"的宿主（如公网宿主 ZR.Front.WebApi）的优雅降级路径：
+        /// 解析不到参数即视为"没有有效的后台令牌"，而不是让异常冒泡成 500。
         /// </summary>
-        /// <returns></returns>
-        public static TokenValidationParameters ValidParameters()
+        public static TokenValidationParameters? TryGetValidParameters()
         {
             JwtSettings jwtSettings = new();
             AppSettings.Bind("JwtSettings", jwtSettings);
 
             if (jwtSettings == null || jwtSettings.SecretKey.IsEmpty())
             {
-                throw new Exception("JwtSettings获取失败");
+                return null;
             }
             var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
 
@@ -91,6 +92,17 @@ namespace Infrastructure
             };
             return tokenDescriptor;
         }
+
+        /// <summary>
+        /// 验证Token（严格版）：未配置时抛异常。
+        /// 供 AddJwtBearer 等必须在启动阶段确定校验参数的场景使用（见 JwtExtension.AddJwtSetup）。
+        /// 仅需"能解析就解析"的场景请用 TryGetValidParameters。
+        /// </summary>
+        public static TokenValidationParameters ValidParameters()
+        {
+            return TryGetValidParameters() ?? throw new Exception("JwtSettings获取失败");
+        }
+
         /// <summary>
         /// 从令牌中获取数据声明
         /// </summary>
@@ -99,7 +111,11 @@ namespace Infrastructure
         public static JwtSecurityToken? ParseToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var validateParameter = ValidParameters();
+            // 优雅降级：未配置后台 JwtSettings（如公网宿主）时拿不到校验参数，
+            // 视为"没有有效的后台令牌"直接返回 null，避免 JwtSettings获取失败 冒泡成 500。
+            var validateParameter = TryGetValidParameters();
+            if (validateParameter == null) return null;
+
             token = token.Replace("Bearer ", "");
             try
             {

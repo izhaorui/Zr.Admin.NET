@@ -98,11 +98,6 @@ builder.Services.AddDataProtection()
 builder.Services.Configure<OptionsSetting>(builder.Configuration);
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 
-// 后台鉴权管线已移除（AddJwt/UseAuthentication/JwtAuthMiddleware 均不注册）：
-// 公网宿主全部端点均为 [AllowAnonymous]，不存在 [Authorize] 端点，无需解析后台令牌；
-// 也因此公网宿主不持有后台 JWT 签名密钥（JwtSettings:SecretKey 配置为独立占位密钥）。
-// 会员身份由 mall-token + MemberAuthorize 过滤器校验（见 ZR.Mall/Common）。
-
 // 业务服务注册（[AppService] 按引用闭包扫描 ZR.* 程序集）
 builder.Services.AddAppService();
 
@@ -160,8 +155,14 @@ if (app.Environment.IsDevelopment())
 }
 SnowFlakeSingle.WorkId = workId;
 
-// 全局异常中间件
-app.UseMiddleware<GlobalExceptionMiddleware>();
+// 启动自检：MemberJwt:SecretKey 在仓库里默认为空，需由环境配置文件或环境变量注入。
+// 只告警不阻断，日志中不含密钥本身。未配置时为 fail-closed：拒绝签发会员令牌、拒绝识别会员身份。
+if (string.IsNullOrWhiteSpace(builder.Configuration["MemberJwt:SecretKey"]))
+{
+    app.Logger.LogWarning(
+        "MemberJwt:SecretKey 未配置，会员令牌将拒绝签发且无法识别会员身份（长度需大于 16 位）。" +
+        "请通过 appsettings.Development.json / appsettings.Production.json（均已被 gitignore）或环境变量 MemberJwt__SecretKey 注入。");
+}
 
 // 本地化
 var supportedCultures = new List<CultureInfo> { new("zh-Hant"), new("zh-CN"), new("en") };
@@ -181,6 +182,10 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 
 app.UseRouting();
 app.UseCors("Policy");
+// 全局异常中间件
+// 必须放在 UseRouting/UseCors 之后：中间件内部通过 IEndpointFeature 取 endpoint 上的 [LogAttribute]，
+// 注册过早会取不到 endpoint，导致异常操作日志的 Title/BusinessType/请求参数开关全部丢失。
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // 多租户解析：匿名 C 端请求按访问域名定位租户库
 app.UseMiddleware<TenantResolveMiddleware>();

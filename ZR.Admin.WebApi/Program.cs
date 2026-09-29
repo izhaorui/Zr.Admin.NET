@@ -157,8 +157,16 @@ if (app.Environment.IsDevelopment())
     workId += 1;
 }
 SnowFlakeSingle.WorkId = workId;
-//使用全局异常中间件
-app.UseMiddleware<GlobalExceptionMiddleware>();
+
+// 启动自检：SecretKey 在仓库里默认为空，需由环境配置文件或环境变量注入。
+// 只告警不阻断 —— 缺失时 JwtUtil.ValidParameters() 会在运行期抛 "JwtSettings获取失败"，
+// 启动期给出明确提示可避免事后排查困难。日志中不含密钥本身。
+if (string.IsNullOrWhiteSpace(builder.Configuration["JwtSettings:SecretKey"]))
+{
+    var msg = "JwtSettings:SecretKey 未配置，令牌签发与校验将失败（长度需大于 16 位）。" +
+        "请通过 appsettings.Development.json / appsettings.Production.json（均已被 gitignore）或环境变量 JwtSettings__SecretKey 注入。";
+    app.Logger.LogWarning(msg);
+}
 
 // 配置中间件以支持本地化
 var supportedCultures = new List<CultureInfo> {
@@ -197,6 +205,11 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("Policy");//要放在app.UseEndpoints前。
 //app.UseHttpsRedirection();
+//使用全局异常中间件
+// 必须放在 UseRouting/UseCors 之后：中间件内部通过 IEndpointFeature 取 endpoint 上的 [LogAttribute]，
+// 注册过早会取不到 endpoint，导致异常操作日志的 Title/BusinessType/请求参数开关全部丢失。
+// 放在 UseAuthentication 之前，可同时捕获鉴权/租户中间件的异常并统一返回格式。
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseMiddleware<TenantResolveMiddleware>();
 //启用认证中间件（必须在 UseAuthorization 之前）
