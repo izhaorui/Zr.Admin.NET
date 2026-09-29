@@ -103,12 +103,17 @@ namespace ZR.Admin.WebApi.Controllers
         /// </summary>
         /// <param name="uploadDto">自定义文件名</param>
         /// <param name="file"></param>
-        /// <param name="storeType">上传类型1、保存到本地 2、保存到阿里云</param>
+        /// <param name="storeType">存储类型：1 本地 / 2 阿里云 / 6 S3 兼容；不传则取配置项 upload.defaultStoreType</param>
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "common")]
-        public async Task<IActionResult> UploadFile([FromForm] UploadDto uploadDto, IFormFile file, StoreType storeType = StoreType.LOCAL)
+        public async Task<IActionResult> UploadFile([FromForm] UploadDto uploadDto, IFormFile file, StoreType? storeType = null)
         {
+            // 未显式指定时取配置的默认存储类型（appsettings 的 upload.defaultStoreType）。
+            // 好处：把商品图等业务上传统一切到对象存储，只需改这一处配置，不必逐个改前端上传入口。
+            //（参数默认值只能是编译期常量，所以用 null 表示"调用方未指定"。）
+            var targetStoreType = storeType ?? OptionsSetting.Upload.DefaultStoreType;
+
             if (file == null) throw new CustomException(ResultCode.PARAM_ERROR, "上传文件不能为空");
             SysFile sysfile = new();
             IFormFile formFile = file;
@@ -127,7 +132,7 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 uploadDto.FileName = SysFileService.HashFileName();
             }
-            switch (storeType)
+            switch (targetStoreType)
             {
                 case StoreType.LOCAL:
                     string savePath = Path.Combine(WebHostEnvironment.WebRootPath);

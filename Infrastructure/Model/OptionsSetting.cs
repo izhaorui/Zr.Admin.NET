@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Infrastructure.Enums;
+using System.Collections.Generic;
 
 namespace Infrastructure.Model
 {
@@ -175,7 +176,14 @@ namespace Infrastructure.Model
         public string UploadUrl { get; set; }
         public string LocalSavePath { get; set; }
         public int MaxSize { get; set; }
-        public string[] NotAllowedExt { get; set; } = new string[0];
+        public string[] NotAllowedExt { get; set; } = [];
+
+        /// <summary>
+        /// 默认存储类型：调用方未显式传 storeType 时使用（配置值写 Local / ALIYUN / S3）。
+        /// 显式传入的 storeType 优先，这里只决定"没传时去哪"。
+        /// 想让商品图等所有业务上传都进对象存储，改这一项即可，无需逐个改前端上传入口。
+        /// </summary>
+        public StoreType DefaultStoreType { get; set; } = StoreType.LOCAL;
     }
     /// <summary>
     /// 阿里云存储
