@@ -63,13 +63,16 @@ namespace ZR.Mall.Controllers.Front
 
             // 下单身份校验：验证码必须与 Address.Phone 配对且通过，证明手机号归属。
             // 否则任何人可填他人手机号下单，后续 pay/cancel/查订单都会基于错误归属 —— 这是原漏洞根因。
-            // 免验证例外：已登录会员 + 收货手机号就是会员本人手机号。该号码在会员登录时已用短信验证过归属
-            // （见 MemberService.LoginByPhone），此处再验一次无额外安全增益，只是多一条短信与一次输入；
-            // 换成他人手机号（给家人/朋友下单）时归属并未被证明，仍必须走验证码。
-            var phoneVerifiedByMember = member != null
-                && !string.IsNullOrWhiteSpace(member.Phone)
-                && string.Equals(member.Phone, parm.Address.Phone, StringComparison.Ordinal);
-            if (!phoneVerifiedByMember)
+            //
+            // 免验证例外：**已登录会员一律免验证**（与主流商城一致 —— 地址簿里存家人手机号是常态，
+            // 不该因为收货手机号与登录号不同就多要一条短信与一次输入）。
+            // 安全性不再由收货手机号承担，而由会员身份承担，两处配套保证：
+            //   1) 订单归属只认 MemberId（见 OMSOrderService.BelongsToMember），手机号不再是归属凭据；
+            //   2) 订单通知发给会员本人手机号（见 OMSOrderService.NotifyBuyer），收货号不再是短信发送目标。
+            // 因此"填他人手机号"对会员不再有可利用面。
+            // 游客仍必须验证码：游客没有账号，收货手机号是其订单唯一的身份锚点。
+            var memberExemptFromCode = member != null;
+            if (!memberExemptFromCode)
             {
                 if (string.IsNullOrWhiteSpace(parm.Code) || !CacheService.CheckPhoneCode(parm.Address.Phone, parm.Code))
                 {

@@ -92,9 +92,8 @@ namespace ZR.Mall.Controllers
         [Log(Title = "商品库存", BusinessType = BusinessType.DELETE)]
         public IActionResult DeleteShoppingSkus([FromRoute]string ids)
         {
-            var idArr = Tools.SplitAndConvert<int>(ids);
-
-            return ToResponse(_ShoppingSkusService.Delete(idArr));
+            // 走 Service 而非基类 Delete：删除后需要回写所属商品的价格区间/规格摘要
+            return ToResponse(_ShoppingSkusService.DeleteShoppingSkus(ids));
         }
     }
 }

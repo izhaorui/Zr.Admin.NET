@@ -17,20 +17,25 @@ namespace ZR.Mall.Service
         private ISkusService _shopSkusService;
         private readonly ISmsCodeLogService _smsCodeLogService;
         private readonly IOMSPaymentService _paymentService;
-        private readonly ISysUserMsgService _msgService;
         private readonly IOMSOrderLogService _orderLogService;
+        private readonly IMemberService _memberService;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="shopSkusService"></param>
+        /// <param name="smsCodeLogService"></param>
+        /// <param name="paymentService"></param>
+        /// <param name="orderLogService"></param>
+        /// <param name="memberService"></param>
         public OMSOrderService(ISkusService shopSkusService, ISmsCodeLogService smsCodeLogService, IOMSPaymentService paymentService,
-            ISysUserMsgService msgService, IOMSOrderLogService orderLogService)
+            IOMSOrderLogService orderLogService, IMemberService memberService)
         {
             _shopSkusService = shopSkusService;
             _smsCodeLogService = smsCodeLogService;
             _paymentService = paymentService;
-            _msgService = msgService;
             _orderLogService = orderLogService;
-            // 不再固定 MallDb：商城实体按其 [Tenant("MallDb")] 属性（非多租户模式）或
-            // 当前解析租户（多租户模式，含子域名解析的匿名请求）路由到对应库，
-            // 由 BaseService 默认逻辑处理，保证匿名写入与登录读取落到同一租户库。
+            _memberService = memberService;
         }
 
         /// <summary>
@@ -93,7 +98,11 @@ namespace ZR.Mall.Service
 
         /// <summary>
         /// 会员"我的订单"分页：会员本人下单(MemberId) + 同手机号的历史游客订单(GuestPhone) 合并。
-        /// 手机号在会员登录时已通过短信验证归属，故合并展示不会越权。
+        ///
+        /// 手机号合并**只对真正的游客订单（MemberId 为空）生效**：会员已免短信验证码，
+        /// 收货手机号不再经过归属校验，不能再用它认领订单 —— 否则会员 A 用会员 B 的手机号下单后，
+        /// 该订单会出现在 B 的列表里。
+        /// 历史游客订单（接入会员体系前产生，MemberId 为空）仍按手机号归属，行为不变。
         /// </summary>
         public PagedInfo<OMSOrderDto> GetMemberOrders(long memberId, string phone, MemberOrderQueryDto parm)
         {
@@ -111,7 +120,8 @@ namespace ZR.Mall.Service
             }
             else
             {
-                query = query.Where(it => it.MemberId == memberId || it.GuestPhone == phone);
+                // 会员订单只按 MemberId 认领；手机号仅用于认领 MemberId 为空的游客订单
+                query = query.Where(it => it.MemberId == memberId || (it.MemberId == null && it.GuestPhone == phone));
             }
             query = query.WhereIF(parm.OrderStatus != null, it => it.OrderStatus == parm.OrderStatus);
 
@@ -151,13 +161,17 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 订单是否属于该会员：会员下单绑定 MemberId；接入会员体系前的历史游客订单按手机号归属
+        /// 订单是否属于该会员：
+        /// - 会员订单（MemberId 有值）**只认 MemberId**，任何手机号都不能替代 ——
+        ///   会员免验证码后收货手机号不再校验归属，若仍允许"手机号匹配即放行"，
+        ///   任何会员都能用他人手机号下单，并借此读到/取消他人订单；
+        /// - 游客订单（MemberId 为空，含接入会员体系前的历史单）按手机号归属，行为不变。
         /// </summary>
         private static bool BelongsToMember(OMSOrder order, long memberId, string phone)
         {
-            if (order.MemberId.HasValue && order.MemberId.Value == memberId)
+            if (order.MemberId.HasValue)
             {
-                return true;
+                return order.MemberId.Value == memberId;
             }
             if (string.IsNullOrWhiteSpace(phone))
             {
@@ -419,7 +433,8 @@ namespace ZR.Mall.Service
             // 写入/更新支付流水（订单快照仅保留最近一次支付，完整生命周期以 oms_payment 为准）
             _paymentService.UpsertPaid(order, payType, transactionId, dbDate, callbackRaw);
             _orderLogService.AddLog(order.Id, order.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.TobeShipped, "PAY", order.GuestPhone, "支付成功");
-            NotifyBuyer(order, "支付成功", $"您的订单({order.OrderNo})已支付成功，等待发货。");
+            // 不发通知：用户刚在页面上完成支付，已有即时反馈，再发一条只是烧短信费。
+            // 将来若要"已支付"提醒，走站内信/订阅消息，不要走短信（见 NotifyBuyer 的发送策略）。
             return order;
         }
 
@@ -534,7 +549,8 @@ namespace ZR.Mall.Service
                 throw new CustomException("取消订单失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
             _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Cancel, "CANCEL", null, "取消订单并回补库存");
-            NotifyBuyer(order, "订单已取消", $"您的订单({order.OrderNo})已取消，占用库存已释放。");
+            // 不发短信：用户自己取消时页面已反馈；商家/系统取消的场景确实需要告知，
+            // 但那属于站内信/订阅消息，不用短信（见 NotifyBuyer 的发送策略）。
             return 1;
         }
 
@@ -569,7 +585,7 @@ namespace ZR.Mall.Service
                     });
                     RestoreStock(order.Id);
                     _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)OrderStatusEnum.Cancel, "CANCEL", null, "批量取消并回补库存");
-                    NotifyBuyer(order, "订单已取消", $"您的订单({order.OrderNo})已取消，占用库存已释放。");
+                    // 不发短信：后台批量操作，逐单一条会在瞬间形成短信风暴（见 NotifyBuyer 的发送策略）
                     count++;
                 }
             });
@@ -637,7 +653,19 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 通知买家订单变化：游客短信。
+        /// 通知买家订单变化（**对外可达的短信通道**）。
+        ///
+        /// 发送策略：只发两类"必须主动触达"的事件 ——
+        /// - 发货：状态由商家推进、用户在等货，运单号要靠它送达；
+        /// - 退款：钱相关，必须让用户知道。
+        /// 支付成功、取消订单**不在这里发**：支付成功用户刚在页面上操作过、已有即时反馈；
+        /// 取消订单（含商家/系统触发）更适合站内信或订阅消息 —— 用短信只是烧钱，
+        /// 批量取消更糟：逐单一条会在瞬间形成短信风暴。
+        ///
+        /// 接收号码：**发给下单人本人**
+        /// - 会员订单：发会员本人手机号。收货手机号可能是家人/朋友的，未经归属校验，
+        ///   不能当发送目标 —— 否则"会员免验证码"就等于开放了一个给任意号码发短信的接口；
+        /// - 游客订单：发收货手机号（下单时已用短信验证过归属）。
         /// 异常仅记录，不影响主流程。
         /// </summary>
         private void NotifyBuyer(OMSOrder order, string title, string content)
@@ -645,14 +673,38 @@ namespace ZR.Mall.Service
             if (order == null) return;
             try
             {
-                if (!string.IsNullOrWhiteSpace(order.GuestPhone))
+                var phone = GetNotifyPhone(order);
+                if (!string.IsNullOrWhiteSpace(phone))
                 {
-                    _smsCodeLogService.SendSmsNotice(order.GuestPhone, $"[{title}] {content}", 6);
+                    _smsCodeLogService.SendSmsNotice(phone, $"[{title}] {content}", 6);
                 }
             }
             catch (Exception ex)
             {
                 Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 买家通知失败(OrderNo={order.OrderNo}): {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 订单通知的接收手机号：会员订单取会员本人手机号，游客订单取收货手机号。
+        /// 会员手机号取不到（会员被删或数据异常）时返回 null —— 宁可不发，
+        /// 也不把通知发到未经归属证明的收货号上。
+        /// </summary>
+        private string GetNotifyPhone(OMSOrder order)
+        {
+            if (!order.MemberId.HasValue || order.MemberId.Value <= 0)
+            {
+                return order.GuestPhone;
+            }
+            try
+            {
+                var member = _memberService.GetById(order.MemberId.Value);
+                return member != null && member.IsDelete == 0 ? member.Phone : null;
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 读取会员手机号失败(MemberId={order.MemberId}): {ex.Message}");
+                return null;
             }
         }
 

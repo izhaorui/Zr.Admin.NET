@@ -13,5 +13,10 @@ namespace ZR.Mall.Service.IService
         List<Skus> GetSkus(long ProductId);
         Skus AddShoppingSkus(Skus parm);
         long UpdateShoppingSkus(Skus parm);
+
+        /// <summary>
+        /// 删除商品库存（支持逗号分隔的批量），并同步所属商品的 SKU 汇总列
+        /// </summary>
+        long DeleteShoppingSkus(string ids);
     }
 }
