@@ -4,6 +4,13 @@
 * text=auto
 
 ###############################################################################
+# git hooks 脚本必须保持 LF：CRLF 会让 sh 的解释器路径带上 \r 而无法执行。
+# 注意本条须位于上面的 * text=auto 之后（同一文件中后定义的规则优先）。
+###############################################################################
+.githooks/* text eol=lf
+bat/*.bat    text eol=crlf
+
+###############################################################################
 # Set default behavior for command prompt diff.
 #
 # This is need for earlier builds of msysgit that does not have it on by

@@ -1,0 +1,107 @@
+#!/bin/sh
+# =============================================================================
+# 提交信息校验（gitmoji 风格）—— git 在 commit 时自动调用
+#
+# 格式：:emoji:(scope) 描述
+#   :sparkles:(mall,member) 会员ID自增起始值改为100000
+#   :bug:(host) 修正公网宿主 AddDb 早于 InternalApp 赋值导致启动即失败
+#
+# 规则：
+#   1. 必须以 :emoji: 开头，emoji 取 gitmoji 短代码且在下方的白名单内
+#   2. scope 可选，多个用逗号分隔，一律小写
+#   3. 描述必填，动词开头，结尾不加句号
+#   4. 首行不超过 100 个字符
+#
+# 安装（每台机器 clone 后执行一次）：bat\init-hooks.bat
+# 手动校验某条消息：sh .githooks/commit-msg <消息文件>
+# 设计说明：纯 POSIX sh，不依赖 Node/npm；只约束新提交，不改写历史提交。
+# =============================================================================
+
+# 允许的 gitmoji。与旧 commitlint 配置保持一致，增删需同步 CONTRIBUTING.md。
+ALLOWED="bug sparkles zap pencil art fire arrow_up twisted_rightwards_arrows truck card_file_box recycle lock wrench"
+
+MSG_FILE="$1"
+[ -n "$MSG_FILE" ] && [ -f "$MSG_FILE" ] || exit 0
+
+# 取首行有效内容：跳过注释行与空行（与 commitlint 行为一致），并剔除 CR
+HEADER=$(grep -v '^#' "$MSG_FILE" | sed '/^[[:space:]]*$/d' | head -n 1 | tr -d '\r')
+[ -n "$HEADER" ] || exit 0
+
+# 合并 / 回滚等自动生成的提交不校验
+case "$HEADER" in
+  "Merge "*|"Merged "*|"Auto-merge "*|"Revert "*|revert:*) exit 0 ;;
+esac
+
+fail() {
+  printf '\n' >&2
+  printf '✖ 提交信息不符合规范：%s\n\n' "$1" >&2
+  printf '  格式：:emoji:(scope) 描述\n' >&2
+  printf '  示例：:bug:(host) 修正公网宿主启动失败\n' >&2
+  printf '  可用：%s\n\n' "$ALLOWED" >&2
+  printf '  你的提交：%s\n\n' "$HEADER" >&2
+  printf '  规则详见 CONTRIBUTING.md\n\n' >&2
+  exit 1
+}
+
+# —— 1. 必须以 :emoji: 开头 ——
+case "$HEADER" in
+  :*:*) ;;
+  *) fail "必须以 :emoji: 开头（如 :bug:、:sparkles:）" ;;
+esac
+
+TMP=${HEADER#:}
+TYPE=${TMP%%:*}
+AFTER=${TMP#*:}
+
+# —— 2. emoji 短代码只允许小写字母与下划线 ——
+case "$TYPE" in
+  *[!a-z_]*) fail "emoji 短代码只能用小写字母和下划线：'$TYPE'" ;;
+esac
+
+# —— 3. emoji 必须在白名单内 ——
+case " $ALLOWED " in
+  *" $TYPE "*) ;;
+  *) fail "不支持的 emoji ':$TYPE:'" ;;
+esac
+
+# —— 4. 拆分 scope 与描述 ——
+SCOPE=""
+case "$AFTER" in
+  "("*)
+    TMP2=${AFTER#?}
+    SCOPE=${TMP2%%\)*}
+    SUBJECT=${TMP2#*\)}
+    ;;
+  *)
+    SUBJECT=$AFTER
+    ;;
+esac
+
+SUBJECT=$(printf '%s' "$SUBJECT" | sed 's/^[[:space:]]*//')
+
+# —— 5. scope 校验（可选；须小写且不含空格）——
+if [ -n "$SCOPE" ]; then
+  case "$SCOPE" in
+    *[A-Z]*) fail "scope 必须小写：'$SCOPE'" ;;
+  esac
+  case "$SCOPE" in
+    *[[:space:]]*) fail "scope 内不能有空格，多个用逗号分隔：'$SCOPE'" ;;
+  esac
+fi
+
+# —— 6. 描述校验 ——
+[ -n "$SUBJECT" ] || fail "缺少描述内容"
+
+case "$SUBJECT" in
+  *。) fail "描述结尾不要加中文句号" ;;
+esac
+
+# —— 7. 首行长度（按字符数计，非字节数）——
+# 不能用 wc -m：它依赖 locale，Git for Windows 下常退化为按字节计数，
+# 会把中文按 3 倍计算导致中文描述被误拦（实测过）。
+# 这里直接按 UTF-8 编码规则统计：单字节 ASCII(<0x80) 与多字节首字节(>=0xC0) 各记 1 个字符，
+# 后续字节(0x80-0xBF) 不单独计数。
+LEN=$(printf '%s' "$HEADER" | od -An -tu1 -v | awk '{for(i=1;i<=NF;i++){v=$i; if(v<128 || v>=192) n++}} END{printf "%d", n+0}')
+[ "$LEN" -le 100 ] || fail "首行 $LEN 个字符，超过 100 上限"
+
+exit 0
