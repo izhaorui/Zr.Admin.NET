@@ -1,4 +1,5 @@
 using ZR.Common;
+using ZR.Mall.Common;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -55,6 +56,11 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public Skus AddShoppingSkus(Skus model)
         {
+            // 规格校验必须放在 UseTran 之前：UseTran 会把异常吞成 result.ErrorMessage，
+            // 之后统一抛"添加失败"，用户看不到具体原因（同 ProductSpecValidator 的处理方式）。
+            EnsureSpecCombinationValid(model.ProductId, model.SpecCombination, 0);
+            model.Specs = BuildSpecGroups(model.SpecCombination);
+
             var result = UseTran(() =>
             {
                 Insertable(model).ExecuteReturnEntity();
@@ -74,6 +80,10 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public long UpdateShoppingSkus(Skus model)
         {
+            // 同上：校验在事务外；排除自身后再判断规格组合是否与同商品其他 SKU 重复
+            EnsureSpecCombinationValid(model.ProductId, model.SpecCombination, model.SkuId);
+            model.Specs = BuildSpecGroups(model.SpecCombination);
+
             long affected = 0;
             var result = UseTran(() =>
             {
@@ -108,7 +118,13 @@ namespace ZR.Mall.Service
                     .Distinct()
                     .ToList();
 
-                affected = Delete(idArr);
+                // 软删除：与商品编辑页删 SKU 保持一致。
+                // mms_skus 有 IsDelete 列，且历史订单项仍会引用这些 SkuId，物理删除会让引用悬空。
+                affected = Deleteable()
+                    .Where(f => idArr.Contains(f.SkuId) && f.IsDelete == 0)
+                    .IsLogic()
+                    .ExecuteCommand();
+
                 RefreshProductSummary(productIds.ToArray());
             });
             if (!result.IsSuccess)
@@ -120,82 +136,143 @@ namespace ZR.Mall.Service
 
         /// <summary>
         /// 回写所属商品的 SKU 汇总列（最低价 / 最高价 / 规格摘要）。
-        /// 这几列是冗余汇总（见 Product 实体注释），原先只在商品保存流程由 ProductService.CalcProduct 计算；
-        /// 独立的 SKU 管理入口（本 Service 的增改删）必须同样回写，
-        /// 否则从 SKU 页面改价后，商品列表的价格区间与规格会一直停留在旧值。
+        /// 这几列是冗余汇总（见 Product 实体注释），商品保存流程与独立 SKU 管理流程共用本方法，
+        /// 避免"两处各算一次"导致的长期不同步（从 SKU 页改价后商品列表价格区间不更新就是这么来的）。
         /// </summary>
-        private void RefreshProductSummary(params long[] productIds)
+        /// <param name="productIds">商品 Id，可传多个</param>
+        public void RefreshProductSummary(params long[] productIds)
         {
             foreach (var productId in productIds.Distinct().Where(id => id > 0))
             {
-                var skus = Queryable()
+                var prices = Queryable()
                     .Where(f => f.ProductId == productId && f.IsDelete == 0)
-                    .Select(f => new { f.Price, f.SpecCombination })
+                    .Select(f => f.Price)
                     .ToList();
 
-                if (skus.Count == 0)
+                if (prices.Count == 0)
                 {
                     // 该商品已无可用 SKU：保持原值。置 0 会让列表/前台显示 ￥0，反而更误导；
                     // 此刻商品本就该下架，价格区间不再有展示意义。
                     continue;
                 }
 
-                var min = skus.Min(s => s.Price);
-                var max = skus.Max(s => s.Price);
-                var summary = BuildSpecSummary(skus.Select(s => s.SpecCombination));
+                var min = prices.Min();
+                var max = prices.Max();
 
-                Context.Updateable<Product>()
-                    .SetColumns(p => new Product { Price = min, MaxPrice = max, SpecSummary = summary })
-                    .Where(p => p.ProductId == productId)
-                    .ExecuteCommand();
+                // 规格摘要取自规格定义表（mms_product_spec），而不是从各 SKU 的组合聚合：
+                // 定义里存在、但暂时没有任何 SKU 的规格值，同样应该出现在商品规格摘要里。
+                var definitions = LoadSpecDefinitions(productId);
+                if (definitions.Count > 0)
+                {
+                    var summary = ProductSpecFormatter.FormatSummary(definitions);
+
+                    Context.Updateable<Product>()
+                        .SetColumns(p => new Product { Price = min, MaxPrice = max, SpecSummary = summary })
+                        .Where(p => p.ProductId == productId)
+                        .ExecuteCommand();
+                }
+                else
+                {
+                    // 规格定义缺失（历史数据或无规格商品）：不覆盖原有 SpecSummary，避免把有效摘要清空
+                    Context.Updateable<Product>()
+                        .SetColumns(p => new Product { Price = min, MaxPrice = max })
+                        .Where(p => p.ProductId == productId)
+                        .ExecuteCommand();
+                }
             }
         }
 
         /// <summary>
-        /// 由各 SKU 的规格组合快照重建商品规格摘要，格式与 ProductService.CalcProduct 保持一致：
-        /// "颜色: 红/蓝, 尺码: S/M/L"。同名规格的取值按 SKU 出现顺序去重合并。
-        /// 数据源取 SpecCombination 而非 Specs：SKU 编辑页只提交前者（Update 忽略 null 列），
-        /// Specs 这条路径上不会更新，拿它聚合会得到过期结果。
+        /// 校验 SKU 的规格组合是否由该商品的规格定义（mms_product_spec）构成，并检查同商品下是否重复。
+        /// mms_product_spec 是规格名的唯一来源：SKU 侧只允许在已定义的维度与取值范围内组合，
+        /// 否则会出现定义之外的取值 —— 前台选不到对应 SKU，商品规格与订单快照口径全部错乱。
+        /// 校验必须放在事务之外：UseTran 会把异常吞成笼统的失败信息。
         /// </summary>
-        private static string BuildSpecSummary(IEnumerable<string> combinations)
+        /// <param name="productId">SKU 所属商品</param>
+        /// <param name="specCombination">规格组合快照，形如 "颜色:红;尺寸:XL"</param>
+        /// <param name="excludeSkuId">重复检查时排除自身（修改场景传当前 SkuId，新增传 0）</param>
+        private void EnsureSpecCombinationValid(long productId, string specCombination, long excludeSkuId)
         {
-            // 规格名 -> 取值（按首次出现顺序去重）；同名规格忽略大小写（与 ProductSpecValidator 的判定口径一致）
-            var groups = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            var definitions = LoadSpecDefinitions(productId);
+            var pairs = ProductSpecFormatter.ParseCombination(specCombination);
 
-            foreach (var combination in combinations)
+            if (definitions.Count == 0)
             {
-                if (string.IsNullOrWhiteSpace(combination))
+                // 无规格商品：不允许带规格组合，否则规格定义永远追不上 SKU
+                if (pairs.Count > 0)
                 {
-                    continue;
+                    throw new CustomException($"该商品未定义规格，不能设置规格组合「{specCombination}」");
                 }
-                // 形如 "颜色:红;尺寸:XL"
-                foreach (var pair in combination.Split(';', StringSplitOptions.RemoveEmptyEntries))
-                {
-                    var separator = pair.IndexOf(':');
-                    if (separator <= 0)
-                    {
-                        continue;
-                    }
-                    var name = pair[..separator].Trim();
-                    var value = pair[(separator + 1)..].Trim();
-                    if (name.Length == 0 || value.Length == 0)
-                    {
-                        continue;
-                    }
+                return;
+            }
 
-                    if (!groups.TryGetValue(name, out var values))
-                    {
-                        values = new List<string>();
-                        groups[name] = values;
-                    }
-                    if (!values.Contains(value, StringComparer.OrdinalIgnoreCase))
-                    {
-                        values.Add(value);
-                    }
+            if (pairs.Count == 0)
+            {
+                throw new CustomException("该商品已定义规格，请为 SKU 选择完整的规格组合");
+            }
+
+            // 每个规格维度都必须且只能出现一次，且取值必须在该维度的可选值内
+            foreach (var definition in definitions)
+            {
+                var matched = pairs
+                    .Where(p => string.Equals(p.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (matched.Count == 0)
+                {
+                    throw new CustomException($"规格组合缺少规格「{definition.Name}」");
+                }
+                if (matched.Count > 1)
+                {
+                    throw new CustomException($"规格组合中「{definition.Name}」重复出现");
+                }
+
+                var value = matched[0].Value;
+                var allowed = definition.SpecValues ?? new List<string>();
+                if (!allowed.Contains(value, StringComparer.OrdinalIgnoreCase))
+                {
+                    throw new CustomException($"规格「{definition.Name}」没有取值「{value}」，请先在商品编辑页补充该规格值");
                 }
             }
 
-            return string.Join(", ", groups.Select(g => $"{g.Key}: {string.Join("/", g.Value)}"));
+            // 反向检查：组合里出现了定义之外的规格维度
+            var unknown = pairs.Find(p => !definitions.Any(d =>
+                string.Equals(d.Name, p.Name, StringComparison.OrdinalIgnoreCase)));
+            if (unknown != null)
+            {
+                throw new CustomException($"规格「{unknown.Name}」不在该商品的规格定义中");
+            }
+
+            // 同一商品下不允许重复的规格组合
+            var duplicated = Queryable().Any(f => f.ProductId == productId
+                && f.SkuId != excludeSkuId
+                && f.IsDelete == 0
+                && f.SpecCombination == specCombination);
+            if (duplicated)
+            {
+                throw new CustomException($"规格组合「{specCombination}」已存在，不能重复添加");
+            }
+        }
+
+        /// <summary>
+        /// 读取商品的规格定义（mms_product_spec）
+        /// </summary>
+        private List<ProductSpec> LoadSpecDefinitions(long productId)
+        {
+            return Context.Queryable<ProductSpec>()
+                .Where(f => f.ProductId == productId)
+                .ToList();
+        }
+
+        /// <summary>
+        /// 由规格组合快照派生 Skus.Specs（JSON 列）的值。
+        /// 该列原先只有商品保存流程会写，SKU 编辑路径因 Update 忽略 null 列而从不更新；
+        /// 这里统一由 SpecCombination 派生，保证两者永远一致。无规格组合时返回 null（保持该列不更新）。
+        /// </summary>
+        private static List<ProductSpecGroup> BuildSpecGroups(string specCombination)
+        {
+            var groups = ProductSpecFormatter.ParseCombination(specCombination);
+            return groups.Count > 0 ? groups : null;
         }
 
         /// <summary>

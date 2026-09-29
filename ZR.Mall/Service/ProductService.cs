@@ -1,4 +1,3 @@
-using SqlSugar.IOC;
 using ZR.Mall.Common;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
@@ -86,8 +85,6 @@ namespace ZR.Mall.Service
             var model = dto.Adapt<Product>();
             var result = UseTran(() =>
             {
-                CalcProduct(dto, model);
-
                 model = InsertReturnEntity(model) ?? throw new Exception("添加商品失败");
 
                 if (dto.Skus != null)
@@ -95,7 +92,7 @@ namespace ZR.Mall.Service
                     dto.Skus.ForEach(it =>
                     {
                         it.ProductId = model.ProductId;
-                        it.SpecCombination = string.Join(";", it.Specs.Select(x => $"{x.Name}:{x.Value}"));
+                        it.SpecCombination = ProductSpecFormatter.BuildCombination(it.Specs);
                     });
 
                     skusService.Insert(dto.Skus.Adapt<List<Skus>>());
@@ -103,6 +100,10 @@ namespace ZR.Mall.Service
                 //插入商品规格
                 dto.Spec.ForEach(x => x.ProductId = model.ProductId);
                 specService.InsertRange(dto.Spec.Adapt<List<ProductSpec>>());
+
+                // 价格区间与规格摘要统一由 SKU 侧回写（与 SKU 管理页共用同一实现）：
+                // 必须在 SKU 与规格定义都落库之后，否则算出来的是空的。
+                skusService.RefreshProductSummary(model.ProductId);
             });
             if (result.IsSuccess)
             {
@@ -125,12 +126,9 @@ namespace ZR.Mall.Service
             var result = UseTran(() =>
             {
                 model.Skus.ForEach(f => f.ProductId = model.ProductId);
-                CalcProduct(dto, model);
-
                 Update(model, true, "修改商品");
 
                 var skus = skusService.GetSkus(model.ProductId);
-                var allSkuIds = skus.Select(f => f.SkuId).ToList();
 
                 // 删除旧的规格
                 //specService.DeleteSpecByProductId(model.ProductId);
@@ -154,10 +152,10 @@ namespace ZR.Mall.Service
                     logger.Info($"删除的skuid={deleteSkus.Select(f => f.SkuId)}");
                 }
 
-                //更新现有的sku
+                //生成规格组合快照
                 foreach (var item in insertSkus)
                 {
-                    item.SpecCombination = UpdateCombination(item);
+                    item.SpecCombination = ProductSpecFormatter.BuildCombination(item.Specs);
                 }
 
                 // 插入新的sku
@@ -166,20 +164,18 @@ namespace ZR.Mall.Service
                 foreach (var item in updateSkus)
                 {
                     item.ProductId = model.ProductId;
-                    item.SpecCombination = UpdateCombination(item);
+                    item.SpecCombination = ProductSpecFormatter.BuildCombination(item.Specs);
                     skusService.Update(item, true, "修改商品sku");
                 }
+
+                // 价格区间与规格摘要统一由 SKU 侧回写：本次的新增、修改与软删除都会在重算中体现
+                skusService.RefreshProductSummary(model.ProductId);
             });
             if (!result.IsSuccess)
             {
                 throw new CustomException(ResultCode.CUSTOM_ERROR, "修改失败", result.ErrorMessage);
             }
             return model;
-        }
-
-        private string UpdateCombination(Skus item)
-        {
-            return string.Join(";", item.Specs.Select(x => $"{x.Name}:{x.Value}"));
         }
 
         /// <summary>
@@ -208,18 +204,6 @@ namespace ZR.Mall.Service
             }, true);
 
             return result;
-        }
-
-        private void CalcProduct(ProductDto dto, Product model)
-        {
-            var summary = string.Join(", ", dto.Spec.Select(s =>
-                $"{s.Name}: {string.Join("/", s.SpecValues)}"
-            ));
-
-            //最低价
-            model.Price = dto.Skus.Min(s => s.Price);
-            model.MaxPrice = dto.Skus.Max(s => s.Price);
-            model.SpecSummary = summary;
         }
 
         /// <summary>
