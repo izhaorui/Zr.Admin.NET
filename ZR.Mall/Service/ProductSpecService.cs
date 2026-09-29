@@ -1,3 +1,4 @@
+using ZR.Mall.Common;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -44,6 +45,10 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public long UpdateProductSpec(long productId, List<ProductSpec> newSpecs)
         {
+            // 底层写入兜底校验：商品编辑入口已校验过，这里防的是将来新增调用方绕过校验直接写规格表
+            // （mms_product_spec 是规格名的唯一来源，一旦写脏，SKU/订单/前台全部受影响）。
+            ProductSpecValidator.Validate(newSpecs);
+
             var result = 0;
             // 获取数据库中旧数据
             var oldSpecs = GetList(f => f.ProductId == productId);

@@ -1,4 +1,5 @@
 using SqlSugar.IOC;
+using ZR.Mall.Common;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -78,6 +79,10 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public Product AddShoppingProduct(ProductDto dto)
         {
+            // 规格名校验必须放在 UseTran 之前：UseTran 会把异常吞成 result.ErrorMessage，
+            // 之后统一抛"添加失败"，用户看不到具体原因。详见 ProductSpecValidator。
+            ProductSpecValidator.Validate(dto.Spec);
+
             var model = dto.Adapt<Product>();
             var result = UseTran(() =>
             {
@@ -113,6 +118,9 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public Product UpdateShoppingProduct(ProductDto dto)
         {
+            // 同上：校验必须在 UseTran 之前，否则错误信息会被吞成笼统的"修改失败"
+            ProductSpecValidator.Validate(dto.Spec);
+
             var model = dto.Adapt<Product>();
             var result = UseTran(() =>
             {
