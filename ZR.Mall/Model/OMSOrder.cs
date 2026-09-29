@@ -1,4 +1,3 @@
-
 using ZR.Mall.Enum;
 
 namespace ZR.Mall.Model
@@ -24,11 +23,6 @@ namespace ZR.Mall.Model
         public string OrderNo { get; set; }
 
         /// <summary>
-        /// 用户ID（游客/匿名下单时为 null，后期接入用户体系后绑定真实用户Id）
-        /// </summary>
-        public long? UserId { get; set; }
-
-        /// <summary>
         /// 游客下单手机号（身份锚点的一等公民列，用于 SQL 过滤查询订单，避免解析 AddressSnapshot JSON）。
         /// 下单时与验证码配对写入，与 AddressSnapshot.Phone 同源。
         /// </summary>
@@ -37,7 +31,6 @@ namespace ZR.Mall.Model
 
         /// <summary>
         /// 会员ID（C 端会员下单时绑定，用于"我的订单"按会员身份查询）。
-        /// 与 <see cref="UserId"/>（后台账号体系）是两套身份，勿混用。
         /// </summary>
         [SugarColumn(IsNullable = true, ColumnDescription = "会员ID")]
         public long? MemberId { get; set; }

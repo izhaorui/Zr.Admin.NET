@@ -16,10 +16,6 @@
         [SugarColumn(DefaultValue = "0", ColumnDescription = "会员ID")]
         public long MemberId { get; set; }
         /// <summary>
-        /// 用户ID（历史字段，接入 C 端会员体系后不再使用）
-        /// </summary>
-        public long UserId { get; set; }
-        /// <summary>
         /// 收件人姓名
         /// </summary>
         public string UserName { get; set; }
