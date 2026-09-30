@@ -84,7 +84,18 @@ ZR.Vue        旧版 Vue2（新功能勿优先改）
 
 ## 11. 日志、异常、事务
 
-- 用项目已有日志方案，业务代码勿大量 `Console.WriteLine()`。关键日志含用户/租户/业务 ID/操作/状态/异常。**禁记密码/Token/Secret/完整卡号等敏感信息**。
+**日志**
+
+- **通道看场景**：业务代码里"事后要能查到"的信息用 NLog（`private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();`）；NLog 未就绪（宿主启动早期、非 Web 宿主工具）或只需控制台可见时用 `Infrastructure.Log.WriteLine`（带颜色、不落文件）。
+- **落点**：业务日志 → `logs/all.log` + 控制台；`logs/error.log` 只收 `GlobalExceptionMiddleware` 的未处理异常（业务 `logger.Error` 也在 all.log）。
+- **写法**：插值 `logger.Info($"下单成功：OrderNo={orderNo}")`，不用占位符 `("...{OrderNo}...", orderNo)`；异常必须传参 `logger.Error(ex, $"...")`，否则堆栈不输出。
+- **级别**：`Info`=状态成功流转；`Warn`=业务拒绝与并发未命中；`Error`=事务失败、安全事件、后端异常；`Debug`=高频项（幂等命中、任务空跑）。
+- **内容**：中文 + `Key=Value`，含业务标识（订单号/ID/会员/金额/状态 `from→to`）与具体失败原因；批量操作记汇总（数量 + 前 20 个 ID），循环里不打 `Info`。
+- **脱敏**：手机号/姓名/证件/卡号/邮箱/IP 统一用 `ZR.Infrastructure.Helper.MaskUtil`，**禁记密码/Token/Secret/完整卡号**；收货人、详细地址不入技术日志。
+- **事务**：失败记 `tran.ErrorMessage`；校验类逻辑放 `UseTran` **之前**，否则异常被吞成笼统的"添加失败/修改失败"。
+
+**异常与事务**
+
 - 禁止空 `catch (Exception) {}` 吞异常；捕获后须记录、判断可否恢复、必要时重抛。用全局异常处理，不为每个 Controller 自创返回格式。
 - 多个必须同时成功的操作须用事务，保证失败不部分成功，不拆成互不相关提交。
 
