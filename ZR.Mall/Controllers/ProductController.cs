@@ -48,9 +48,16 @@ namespace ZR.Mall.Controllers
         public IActionResult GetShoppingProduct(int ProductId)
         {
             var response = _ShoppingProductService.GetInfo(ProductId);
+            // GetInfo 对不存在的商品返回 null（见 ProductService 的说明）。
+            // 不判空的话 Mapster 会把 null 原样 Adapt 成 null，
+            // 接口就变成 code=200 + data=null，前端拿到后照常渲染一片空白。
+            if (response == null)
+            {
+                return ToResponse(ResultCode.FAIL, "商品不存在");
+            }
 
-            var info = response.Adapt<ProductDto>();
-            return SUCCESS(info);
+            // GetInfo 返回的已经是 ProductDto，无需再 Adapt 一次
+            return SUCCESS(response);
         }
 
         /// <summary>

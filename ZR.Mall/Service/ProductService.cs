@@ -54,13 +54,28 @@ namespace ZR.Mall.Service
         /// 获取详情
         /// </summary>
         /// <param name="ProductId"></param>
-        /// <returns></returns>
+        /// <returns>商品详情；商品不存在时返回 <c>null</c>，由调用方决定返回什么错误</returns>
         public ProductDto GetInfo(long ProductId)
         {
-            var response = Queryable()
+            // ⚠️ 查不到商品必须返回 null，不能让异常冒出去：
+            // 原先的 First() 会抛 NullReferenceException，
+            // 导致 FrontProductController 里的 `response == null` 判断永远走不到，
+            // 「商品不存在或已下架」这条提示变成 500 + 原始异常堆栈（C 端用户可见）。
+            //
+            // 这里用 Take(1).ToList() 而非 FirstOrDefault()：
+            // 本文件没有 using System.Linq，Enumerable.FirstOrDefault 不可见，
+            // 只剩 System.Collections.Immutable 的同名扩展参与解析，会报 CS0411。
+            // 显式取一条再判空，生成的 SQL 也是 TOP 1 / LIMIT 1。
+            var list = Queryable()
                 .Where(x => x.ProductId == ProductId)
-                .First();
-            var info = response.Adapt<ProductDto>();
+                .Take(1)
+                .ToList();
+            if (list.Count == 0)
+            {
+                return null;
+            }
+
+            var info = list[0].Adapt<ProductDto>();
 
             var spec = specService.GetList(f => f.ProductId == info.ProductId);
             var skus = skusService.GetSkus(info.ProductId);

@@ -39,8 +39,8 @@ namespace ZR.Mall.Controllers.Front
             var ip = HttpContextExtension.GetClientUserIp(HttpContext);
             var log = _memberService.SendLoginCode(dto.Phone, ip);
 
-            var mock = App.Configuration["MockSms:Enabled"];
-            var devCode = mock == "true" ? log.SmsCode : null;
+            var mock = AppSettings.Get<bool>("MockSms:Enabled");
+            var devCode = mock ? log.SmsCode : null;
             return SUCCESS(new { sent = true, devCode });
         }
 
