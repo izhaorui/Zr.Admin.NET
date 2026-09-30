@@ -271,9 +271,12 @@ namespace ZR.Mall.Service
                 logger.Error($"退款事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 退款金额={order.PayAmount}元 原状态={fromStatus} 错误={tran?.ErrorMessage}");
                 throw new CustomException("退款失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
-            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Closed, "REFUND", null, "订单退款并回补库存");
+            // 退款是后台人工动作：渠道退款由人工在支付渠道完成后，再点这里做"标记 + 回补库存"，
+            // 因此必须留下操作人，便于与渠道退款流水核对。
+            var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
+            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Closed, "REFUND", oper, "订单退款并回补库存（渠道退款由人工完成）");
             NotifyBuyer(order, "订单已退款", $"您的订单({order.OrderNo})已退款，款项将原路退回，库存已回补。");
-            logger.Info($"订单退款完成并回补库存：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 退款金额={order.PayAmount}元 原状态={fromStatus}");
+            logger.Info($"订单退款完成并回补库存：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 退款金额={order.PayAmount}元 原状态={fromStatus} 操作人={oper}");
             return 1;
         }
 
