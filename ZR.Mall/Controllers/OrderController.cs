@@ -19,13 +19,19 @@ namespace ZR.Mall.Controllers
         private NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
         /// <summary>
-        /// 订单管理接口
+        /// 后台订单运营：查询 / 导出 / 统计 / 修改
         /// </summary>
         private readonly IOMSOrderService _OMSOrderService;
 
-        public OrderController(IOMSOrderService OMSOrderService)
+        /// <summary>
+        /// 订单状态内核：取消 / 批量取消 / 发货
+        /// </summary>
+        private readonly IOMSOrderStateService _orderStateService;
+
+        public OrderController(IOMSOrderService OMSOrderService, IOMSOrderStateService orderStateService)
         {
             _OMSOrderService = OMSOrderService;
+            _orderStateService = orderStateService;
         }
 
         /// <summary>
@@ -113,7 +119,7 @@ namespace ZR.Mall.Controllers
         [Log(Title = "订单取消", BusinessType = BusinessType.UPDATE)]
         public IActionResult CancelOMSOrder(long id)
         {
-            var response = _OMSOrderService.CancelOrder(id);
+            var response = _orderStateService.CancelOrder(id);
 
             return ToResponse(response);
         }
@@ -126,7 +132,7 @@ namespace ZR.Mall.Controllers
         [Log(Title = "订单批量取消", BusinessType = BusinessType.UPDATE)]
         public IActionResult CancelOMSOrders([FromBody] List<long> ids)
         {
-            var response = _OMSOrderService.CancelOrders(ids);
+            var response = _orderStateService.CancelOrders(ids);
 
             return ToResponse(response);
         }
@@ -164,7 +170,7 @@ namespace ZR.Mall.Controllers
             }
             orderInfo.DeliveryCompany = parm.DeliveryCompany;
             orderInfo.DeliveryNo = parm.DeliveryNo;
-            var response = await _OMSOrderService.OrderDelivery(orderInfo);
+            var response = await _orderStateService.OrderDelivery(orderInfo);
             if (response > 0)
             {
                 return ToResponse(ResultCode.SUCCESS, "发货成功");
@@ -242,7 +248,7 @@ namespace ZR.Mall.Controllers
                 orderInfo.DeliveryCompany = item.DeliveryCompany;
                 orderInfo.DeliveryNo = item.DeliveryNo;
 
-                var result =  await _OMSOrderService.OrderDelivery(orderInfo);
+                var result =  await _orderStateService.OrderDelivery(orderInfo);
                 item.Status = result > 0 ? "发货成功" : "发货失败";
                 resultList.Add(item);
             }

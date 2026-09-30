@@ -16,9 +16,9 @@ namespace ZR.Mall.Payment
         /// </summary>
         public const string TenantOrderPrefix = "TO";
 
-        private readonly IOMSOrderService _orderService;
+        private readonly IOMSOrderStateService _orderService;
 
-        public MallWechatPayHandler(IOMSOrderService orderService)
+        public MallWechatPayHandler(IOMSOrderStateService orderService)
         {
             _orderService = orderService;
         }

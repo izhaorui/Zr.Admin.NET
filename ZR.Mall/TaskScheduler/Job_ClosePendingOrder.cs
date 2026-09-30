@@ -15,7 +15,7 @@ namespace ZR.Mall.TaskScheduler
         {
             try
             {
-                var svc = (IOMSOrderService)App.GetRequiredService(typeof(IOMSOrderService));
+                var svc = (IOMSOrderStateService)App.GetRequiredService(typeof(IOMSOrderStateService));
                 var closed = svc.CloseExpiredPendingOrders(30); // 30 分钟未支付自动取消
                 Console.WriteLine($"[Job_ClosePendingOrder] 已自动取消 {closed} 笔超时待付款订单");
                 return Task.CompletedTask;

@@ -17,9 +17,9 @@ namespace ZR.Mall.Controllers.Front
     [AllowAnonymous]
     public class FrontMemberOrderController : BaseController
     {
-        private readonly IOMSOrderService _orderService;
+        private readonly IFrontOrderService _orderService;
 
-        public FrontMemberOrderController(IOMSOrderService orderService)
+        public FrontMemberOrderController(IFrontOrderService orderService)
         {
             _orderService = orderService;
         }

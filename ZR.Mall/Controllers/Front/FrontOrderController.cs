@@ -23,14 +23,16 @@ namespace ZR.Mall.Controllers.Front
     [AllowAnonymous]
     public class FrontOrderController : BaseController
     {
-        private readonly IOMSOrderService _OMSOrderService;
+        private readonly IFrontOrderService _frontOrderService;
+        private readonly IOMSOrderStateService _orderStateService;
         private readonly ISmsCodeLogService _smsCodeLogService;
         private readonly WechatPayGateway _wechatPayGateway;
         private readonly IOMSPaymentService _paymentService;
 
-        public FrontOrderController(IOMSOrderService OMSOrderService, ISmsCodeLogService smsCodeLogService, WechatPayGateway wechatPayGateway, IOMSPaymentService paymentService)
+        public FrontOrderController(IFrontOrderService frontOrderService, IOMSOrderStateService orderStateService, ISmsCodeLogService smsCodeLogService, WechatPayGateway wechatPayGateway, IOMSPaymentService paymentService)
         {
-            _OMSOrderService = OMSOrderService;
+            _frontOrderService = frontOrderService;
+            _orderStateService = orderStateService;
             _smsCodeLogService = smsCodeLogService;
             _wechatPayGateway = wechatPayGateway;
             _paymentService = paymentService;
@@ -84,13 +86,13 @@ namespace ZR.Mall.Controllers.Front
             // #2 游客下单防刷/限流（IP + 手机号维度）
             // 注意：与验证码相互独立 —— 会员免验证码同样要受配额约束，不能一并跳过。
             var ip = HttpContextExtension.GetClientUserIp(HttpContext);
-            if (!TryAcquireCreateQuota(ip, parm.Address.Phone, out var quotaMsg))
+            if (!_frontOrderService.TryAcquireCreateQuota(ip, parm.Address.Phone, out var quotaMsg))
             {
                 return ToResponse(ResultCode.FAIL, quotaMsg);
             }
             // 携带会员令牌（mall-token）时把订单绑定到该会员，供"我的订单"免验证码按会员身份查询；
             // 未携带则保持原有游客匿名下单行为不变。
-            var order = _OMSOrderService.CreateOrder(parm, member?.MemberId);
+            var order = _frontOrderService.CreateOrder(parm, member?.MemberId);
             return SUCCESS(new { order.OrderNo, order.Id, order.TotalAmount, order.OrderStatus });
         }
 
@@ -110,12 +112,12 @@ namespace ZR.Mall.Controllers.Front
             if (!_wechatPayGateway.Enabled)
             {
                 // 模拟支付通道（开发环境）
-                var mockOrder = _OMSOrderService.PayOrder(dto.OrderNo, dto.Phone);
+                var mockOrder = _frontOrderService.PayOrder(dto.OrderNo, dto.Phone);
                 return SUCCESS(new { mockOrder.OrderNo, mockOrder.OrderStatus, mockOrder.PayType, mockOrder.PayTime, mockOrder.PayAmount });
             }
 
             // 真实支付：校验归属与状态后按通道创建微信预付单
-            var order = _OMSOrderService.Queryable()
+            var order = _frontOrderService.Queryable()
                 .Includes(x => x.Items)
                 .Where(x => x.OrderNo == dto.OrderNo && x.IsDelete == 0)
                 .First();
@@ -239,40 +241,13 @@ namespace ZR.Mall.Controllers.Front
             }
             CacheService.RemovePhoneCode(dto.Phone); // 一次性校验
 
-            var order = _OMSOrderService.Queryable().First(x => x.Id == dto.Id && x.IsDelete == 0);
+            var order = _frontOrderService.Queryable().First(x => x.Id == dto.Id && x.IsDelete == 0);
             if (order == null || order.AddressSnapshot?.Phone != dto.Phone)
             {
                 return ToResponse(ResultCode.FAIL, "订单不存在或无权限");
             }
-            var res = _OMSOrderService.CancelOrder(dto.Id);
+            var res = _orderStateService.CancelOrder(dto.Id);
             return ToResponse(res > 0 ? ResultCode.SUCCESS : ResultCode.FAIL, res > 0 ? "取消成功" : "取消失败");
-        }
-
-        /// <summary>
-        /// #2 防刷限流：IP 与手机号双维度配额（10 分钟内）。返回 false 时 msg 为提示。
-        /// 备注：AspNetCoreRateLimit 已有全局 POST 1次/3s 兜底，此处为业务级配额。
-        /// </summary>
-        private bool TryAcquireCreateQuota(string ip, string phone, out string msg)
-        {
-            msg = string.Empty;
-            var ipKey = "mall_front_order_ip_" + ip;
-            var ipCount = CacheHelper.Get(ipKey) is int ic ? ic : 0;
-            if (ipCount >= 10)
-            {
-                msg = "下单过于频繁，请稍后再试";
-                return false;
-            }
-            CacheHelper.SetCache(ipKey, ipCount + 1, 10);
-
-            var phoneKey = "mall_front_order_phone_" + phone;
-            var phoneCount = CacheHelper.Get(phoneKey) is int pc ? pc : 0;
-            if (phoneCount >= 30)
-            {
-                msg = "该手机号下单过于频繁，请稍后再试";
-                return false;
-            }
-            CacheHelper.SetCache(phoneKey, phoneCount + 1, 10);
-            return true;
         }
 
         /// <summary>
@@ -298,8 +273,8 @@ namespace ZR.Mall.Controllers.Front
                 Location = HttpContextExtension.GetIpInfo(ip)
             });
             // 真实短信发送待接入；开发期可开启 MockSms:Enabled 返回验证码便于联调
-            var mock = App.Configuration["MockSms:Enabled"];
-            var devCode = mock == "true" ? log.SmsCode : null;
+            var mock = AppSettings.Get<bool>("MockSms:Enabled");
+            var devCode = mock ? log.SmsCode : null;
             return SUCCESS(new { sent = true, devCode });
         }
 
@@ -325,7 +300,7 @@ namespace ZR.Mall.Controllers.Front
 
             // GuestPhone 是一等公民列（下单时与验证码配对写入），可直接 SQL 过滤，
             // 避免此前“全表拉取 + 内存按 JSON 手机号过滤”的性能问题。
-            var paged = _OMSOrderService.Queryable()
+            var paged = _frontOrderService.Queryable()
                 .Includes(x => x.Items)
                 .Where(it => it.IsDelete == 0 && it.GuestPhone == parm.Phone)
                 .OrderBy(it => it.Id, OrderByType.Desc)
@@ -349,7 +324,7 @@ namespace ZR.Mall.Controllers.Front
             }
             CacheService.RemovePhoneCode(phone);
 
-            var order = _OMSOrderService.Queryable()
+            var order = _frontOrderService.Queryable()
                 .Includes(x => x.Items)
                 .Where(x => x.Id == Id && x.IsDelete == 0)
                 .First();
@@ -372,7 +347,7 @@ namespace ZR.Mall.Controllers.Front
             {
                 return ToResponse(ResultCode.PARAM_ERROR, "参数不完整");
             }
-            var order = _OMSOrderService.Queryable()
+            var order = _frontOrderService.Queryable()
                 .Includes(x => x.Items)
                 .Where(x => x.OrderNo == orderNo && x.IsDelete == 0)
                 .First();

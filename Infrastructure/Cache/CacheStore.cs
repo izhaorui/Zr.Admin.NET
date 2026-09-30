@@ -38,6 +38,13 @@ namespace Infrastructure.Cache
         /// 供限流计数等需要跨实例原子性的场景使用。
         /// </summary>
         long Increment(string key, int expireMinutes);
+
+        /// <summary>
+        /// 原子「仅当键不存在时写入」（Redis 后端 = SET key value NX EX seconds；内存后端以进程内锁保证）。
+        /// 返回 true 表示本次写入成功（抢占成功），false 表示键已存在。
+        /// 供幂等占位、防并发重复提交等「只允许第一个」的场景使用。
+        /// </summary>
+        bool TrySet<T>(string key, T value, int expireMinutes);
     }
 
     /// <summary>
@@ -62,6 +69,19 @@ namespace Infrastructure.Cache
                 var next = (current is long value ? value : 0L) + 1;
                 CacheHelper.SetCache(key, next, expireMinutes);
                 return next;
+            }
+        }
+
+        // 原子占位需「检查存在性 + 写入」同处一个临界区，否则并发调用会双双判为不存在而都占用成功
+        private static readonly object TrySetLock = new();
+
+        public bool TrySet<T>(string key, T value, int expireMinutes)
+        {
+            lock (TrySetLock)
+            {
+                if (CacheHelper.Exists(key)) return false;
+                CacheHelper.SetCache(key, value, expireMinutes);
+                return true;
             }
         }
     }
@@ -90,6 +110,11 @@ namespace Infrastructure.Cache
             }
             return value;
         }
+
+        // SET key value NX EX seconds：键已存在时不写入并返回 false，Redis 端原子。
+        // 第三参为秒；第四参 RedisExistence.Nx 表示「仅当键不存在」。
+        public bool TrySet<T>(string key, T value, int expireMinutes)
+            => _redis.Set(key, value, (int)TimeSpan.FromMinutes(expireMinutes).TotalSeconds, RedisExistence.Nx);
     }
 
     /// <summary>
