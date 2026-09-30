@@ -74,6 +74,7 @@ namespace ZR.Mall.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPut]
+        [ActionPermissionFilter(Permission = "oms:order:edit")]
         [Log(Title = "订单管理", BusinessType = BusinessType.UPDATE)]
         public IActionResult UpdateOMSOrder([FromBody] OMSOrderDto parm)
         {
@@ -106,6 +107,7 @@ namespace ZR.Mall.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost("refund")]
+        [ActionPermissionFilter(Permission = "oms:order:refund")]
         [Log(Title = "订单退款", BusinessType = BusinessType.UPDATE)]
         public IActionResult RefundOrder([FromBody] OMSOrderDto parm)
         {

@@ -89,6 +89,13 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public int UpdateOMSOrder(int operType, OMSOrder model)
         {
+            // 除退款（内部按订单号查）外，其余分支都按 OrderNo 定位。OrderNo 为空时
+            // Where 会退化成"命中所有 OrderNo 为空的订单"，必须挡住。
+            if (string.IsNullOrWhiteSpace(model?.OrderNo))
+            {
+                throw new CustomException("订单号不能为空");
+            }
+
             switch ((OrderUpdateOperType)operType)
             {
                 //修改商家备注
@@ -103,9 +110,15 @@ namespace ZR.Mall.Service
                 //订单退款：关闭订单 + 回补库存（简易版无支付，退款即退回库存）—— 状态迁移动交状态内核
                 case OrderUpdateOperType.Refund:
                     return _orderStateService.RefundOrder(model);
-                //通用更新（整体更新非空字段）
+                //通用更新：原实现是 Update(model, true)（按主键整体更新非空字段），
+                //意味着请求方传 OrderStatus / PayAmount / TotalAmount 就能直接改订单状态与金额 —— 属于越权改账。
+                //改为字段白名单：只允许改"非交易字段"，交易字段一律由状态内核（OMSOrderStateService）维护。
                 case OrderUpdateOperType.General:
-                    return Update(model, true);
+                    return Update(w => w.OrderNo == model.OrderNo, it => new OMSOrder()
+                    {
+                        MerchantNote = model.MerchantNote,
+                        OrderNote = model.OrderNote,
+                    });
                 default:
                     // 原实现对未识别值静默走 Update(model, true)，误传操作码会改动整单字段；改为明确报错
                     throw new CustomException($"不支持的订单操作类型：{operType}");
@@ -188,7 +201,12 @@ namespace ZR.Mall.Service
         public async Task<dynamic> GetTotalSales(OMSOrderQueryDto dto)
         {
             var result = await Queryable()
-                //.Where(o => o.OrderStatus == Enum.OrderStatusEnum.Completed)
+                // 口径：只统计「实际付过款且未作废」的订单
+                // （PayTime 非空 = 已支付；排除已取消/已关闭与软删除，原先只按 PayTime 区间聚合会把作废单也算进销售额）
+                .Where(o => o.IsDelete == 0
+                    && o.PayTime != null
+                    && o.OrderStatus != Enum.OrderStatusEnum.Cancel
+                    && o.OrderStatus != Enum.OrderStatusEnum.Closed)
                 .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
                 .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
                 .Select(o => new
@@ -208,6 +226,11 @@ namespace ZR.Mall.Service
         public async Task<dynamic> GetSaleTreandByDay(OMSOrderQueryDto dto)
         {
             var trend = await Queryable()
+            // 与销售总额口径一致：只统计已支付且未作废的订单
+            .Where(o => o.IsDelete == 0
+                && o.PayTime != null
+                && o.OrderStatus != Enum.OrderStatusEnum.Cancel
+                && o.OrderStatus != Enum.OrderStatusEnum.Closed)
             .WhereIF(dto.BeginCreateTime == null, o => o.PayTime >= DateTime.Now.AddDays(-7))
             .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
             .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
@@ -233,6 +256,11 @@ namespace ZR.Mall.Service
         {
             var topProducts = await Context.Queryable<OMSOrderItem>()
                 .InnerJoin<OMSOrder>((oi, o) => oi.OrderId == o.Id)
+                // 与销售额口径保持一致：只统计已支付且未作废的订单
+                .Where((oi, o) => o.IsDelete == 0
+                    && o.PayTime != null
+                    && o.OrderStatus != Enum.OrderStatusEnum.Cancel
+                    && o.OrderStatus != Enum.OrderStatusEnum.Closed)
                 .WhereIF(dto.BeginCreateTime != null, (oi, o) => o.PayTime >= dto.BeginCreateTime)
                 .WhereIF(dto.EndCreateTime != null, (oi, o) => o.PayTime <= dto.EndCreateTime)
                 .GroupBy((oi, o) => oi.ProductId)
@@ -241,7 +269,8 @@ namespace ZR.Mall.Service
                 {
                     oi.ProductId,
                     TotalSold = SqlFunc.AggregateSum(oi.Quantity),
-                    TotalSales = SqlFunc.AggregateSum(oi.Quantity * oi.TotalPrice)
+                    // TotalPrice 本身就是「单价 × 数量」（见 OMSOrderItem），再乘 Quantity 会算成「单价 × 数量²」
+                    TotalSales = SqlFunc.AggregateSum(oi.TotalPrice)
                 })
                 .Take(10)
                 .MergeTable()

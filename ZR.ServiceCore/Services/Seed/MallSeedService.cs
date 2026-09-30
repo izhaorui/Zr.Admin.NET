@@ -81,6 +81,7 @@ namespace ZR.ServiceCore.Services
                     Buttons:
                     [
                         new("发货", "oms:order:ship"), new("取消", "oms:order:cancel"),
+                        new("修改", "oms:order:edit"), new("退款", "oms:order:refund"),
                         new("删除", "oms:order:delete"), new("导出", "oms:order:export"),
                     ]),
                 new(Name: "支付流水", Path: "payment", Component: "shopping/Payment", Perms: "oms:payment:list", OrderNum: 7, Icon: "money",
