@@ -49,12 +49,12 @@ namespace ZR.Model.Public
         public int? ClicksNumber { get; set; }
 
         /// <summary>
-        /// 是否显示 
+        /// 是否显示 0.显示 1.隐藏
         /// </summary>
         public int ShowStatus { get; set; }
 
         /// <summary>
-        /// 广告类型 
+        /// 广告类型（取值见字典 sys_ad_type：1=移动端首页，99=商城首页）
         /// </summary>
         public int AdType { get; set; }
 
