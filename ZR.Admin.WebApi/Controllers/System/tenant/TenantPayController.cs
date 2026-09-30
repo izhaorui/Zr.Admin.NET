@@ -77,6 +77,10 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
             {
                 throw new CustomException("在线支付未启用，请联系平台管理员线下续费");
             }
+            if (!_wechatPayGateway.IsConfigured)
+            {
+                throw new CustomException("微信支付已启用但配置不完整（商户号/证书/APIv3 密钥/回调地址需齐全），请联系平台管理员");
+            }
             if (string.IsNullOrWhiteSpace(code))
             {
                 throw new CustomException("缺少小程序登录凭证 code，无法获取支付 OpenId");

@@ -25,6 +25,9 @@ namespace ZR.Mall.Controllers.Front
         private readonly WechatPayGateway _wechatPayGateway;
         private readonly IOMSPaymentService _paymentService;
 
+        /// <summary>技术日志（NLog → logs/all.log）</summary>
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         public FrontMemberOrderController(IFrontOrderService orderService, WechatPayGateway wechatPayGateway, IOMSPaymentService paymentService)
         {
             _orderService = orderService;
@@ -89,6 +92,14 @@ namespace ZR.Mall.Controllers.Front
                 // 模拟支付通道（开发环境）
                 var mockOrder = _orderService.PayOrder(dto.OrderNo, member.MemberId);
                 return SUCCESS(new { mockOrder.OrderNo, mockOrder.OrderStatus, mockOrder.PayType, mockOrder.PayTime, mockOrder.PayAmount });
+            }
+
+            // 开关已打开但关键配置留空：建预付单会在 SDK 内部抛异常，错误信息对用户无意义，提前提示。
+            // ⚠️ 这里不能"降级成模拟支付" —— 那等于把没收到钱的订单标记为已收款。
+            if (!_wechatPayGateway.IsConfigured)
+            {
+                logger.Error($"微信支付已启用但配置不完整，已拒绝发起支付：OrderNo={dto.OrderNo} MemberId={member.MemberId}");
+                return ToResponse(ResultCode.FAIL, "微信支付未配置完整，请联系管理员补全支付配置");
             }
 
             // 真实支付：校验归属与状态后按通道创建微信预付单

@@ -28,6 +28,21 @@ namespace ZR.ServiceCore.Payment
 
         public bool Enabled => _options.Enabled;
 
+        /// <summary>
+        /// 真实支付所需的关键配置是否齐全（商户号 / 证书序列号 / 商户私钥 / APIv3 密钥 / 回调地址）。
+        ///
+        /// 只看 <see cref="Enabled"/> 是不够的：开关打开但配置留空时，客户端构造与建预付单会在 SDK 内部
+        /// 抛"参数不能为空"之类的异常，调用方拿不到可读原因。支付入口应先判断本属性再给出明确提示。
+        ///
+        /// 与 <c>IOssProvider.IsConfigured</c> 同一约定：配置不齐时不抛异常，由入口负责提示。
+        /// </summary>
+        public bool IsConfigured =>
+            !string.IsNullOrWhiteSpace(_options.MerchantId)
+            && !string.IsNullOrWhiteSpace(_options.MerchantCertificateSerialNumber)
+            && !string.IsNullOrWhiteSpace(_options.MerchantCertificatePrivateKey)
+            && !string.IsNullOrWhiteSpace(_options.MerchantV3Key)
+            && !string.IsNullOrWhiteSpace(_options.NotifyUrl);
+
         private WechatTenpayClient BuildClient()
         {
             var clientOptions = new WechatTenpayClientOptions
