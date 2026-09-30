@@ -1,11 +1,8 @@
 using Infrastructure.Cache;
-using Infrastructure.Extensions;
-using ZR.Common;
 using ZR.Mall.Enum;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
-using ZR.ServiceCore.Services;
 
 namespace ZR.Mall.Service
 {
@@ -18,6 +15,8 @@ namespace ZR.Mall.Service
     public class FrontOrderService : BaseService<OMSOrder>, IFrontOrderService
     {
         private readonly IOMSOrderStateService _orderStateService;
+
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         public FrontOrderService(IOMSOrderStateService orderStateService)
         {
@@ -207,6 +206,7 @@ namespace ZR.Mall.Service
         {
             if (dto?.Items == null || dto.Items.Count == 0)
             {
+                logger.Warn($"下单失败：商品项为空。MemberId={memberId}");
                 throw new CustomException("下单商品不能为空");
             }
 
@@ -218,6 +218,7 @@ namespace ZR.Mall.Service
             var skus = db.Queryable<Skus>().Where(s => skuIds.Contains(s.SkuId) && s.IsDelete == 0).ToList();
             if (skus.Count != skuIds.Count)
             {
+                logger.Warn($"下单失败：存在无效/已删除的商品规格。MemberId={memberId} 请求SKU数={skuIds.Count} 有效SKU数={skus.Count} SkuIds={string.Join(",", skuIds)}");
                 throw new CustomException("存在无效或已下架的商品规格");
             }
             // 预建字典，替换后续所有 List.First(...) 线性查找
@@ -227,6 +228,7 @@ namespace ZR.Mall.Service
             var products = db.Queryable<Product>().Where(p => productIds.Contains(p.ProductId) && p.IsDelete == 0).ToList();
             if (products.Count != productIds.Count)
             {
+                logger.Warn($"下单失败：存在无效/已删除的商品。MemberId={memberId} ProductIds={string.Join(",", productIds)}");
                 throw new CustomException("存在无效或已下架的商品");
             }
             var productMap = products.ToDictionary(p => p.ProductId);
@@ -263,6 +265,7 @@ namespace ZR.Mall.Service
 
                 if (limit.SingleLimit > 0 && req.Quantity > limit.SingleLimit)
                 {
+                    logger.Warn($"下单失败：超过每单限购。MemberId={memberId} ProductId={product.ProductId} 商品={product.ProductName} 请求数量={req.Quantity} 每单限购={limit.SingleLimit}");
                     throw new CustomException($"商品「{product.ProductName}」每单限购 {limit.SingleLimit} 件");
                 }
 
@@ -275,6 +278,7 @@ namespace ZR.Mall.Service
                     }
                     if (bought + req.Quantity > limit.TotalLimit)
                     {
+                        logger.Warn($"下单失败：超过总限购。MemberId={memberId} ProductId={product.ProductId} 商品={product.ProductName} 已购={bought} 本次={req.Quantity} 总限购={limit.TotalLimit}");
                         throw new CustomException(
                             $"商品「{product.ProductName}」限购 {limit.TotalLimit} 件（已购 {bought} 件），无法再下单");
                     }
@@ -290,10 +294,12 @@ namespace ZR.Mall.Service
 
                 if (product.SaleStatus != Enum.SaleStatus.OnSale)
                 {
+                    logger.Warn($"下单失败：商品已下架。MemberId={memberId} ProductId={product.ProductId} 商品={product.ProductName}");
                     throw new CustomException($"商品「{product.ProductName}」已下架，无法购买");
                 }
                 if (sku.Stock < item.Quantity)
                 {
+                    logger.Warn($"下单失败：库存不足。MemberId={memberId} SkuId={sku.SkuId} 商品={product.ProductName} 剩余库存={sku.Stock} 需={item.Quantity}");
                     throw new CustomException($"商品「{product.ProductName}」库存不足（剩余 {sku.Stock}，需 {item.Quantity}）");
                 }
 
@@ -327,8 +333,13 @@ namespace ZR.Mall.Service
             if (!string.IsNullOrEmpty(cachedNo))
             {
                 var exist = Queryable().First(x => x.OrderNo == cachedNo && x.IsDelete == 0);
-                if (exist != null && IsIdemOrderReusable(exist)) return exist;
+                if (exist != null && IsIdemOrderReusable(exist))
+                {
+                    logger.Info($"下单幂等命中，复用已有订单：OrderNo={exist.OrderNo} OrderId={exist.Id} MemberId={memberId} 金额={exist.PayAmount}元（短窗口内重复提交）");
+                    return exist;
+                }
                 idemCache.Remove(idemKey); // 陈旧键（订单已取消/关闭/删除），清除后允许重建
+                logger.Debug($"下单幂等键已失效（原订单已取消/关闭/删除），允许重新下单：原OrderNo={cachedNo} MemberId={memberId}");
             }
 
             // 原子占位：并发相同请求只有一个能进入建单，其余短暂等待并复用结果，避免重复下单。
@@ -336,7 +347,12 @@ namespace ZR.Mall.Service
             if (!idemCache.TrySet(idemLockKey, 1, 2))
             {
                 var reused = WaitReuseOrder(idemCache, idemKey);
-                if (reused != null) return reused;
+                if (reused != null)
+                {
+                    logger.Info($"下单并发占位未拿到，复用另一请求已建订单：OrderNo={reused.OrderNo} OrderId={reused.Id} MemberId={memberId}");
+                    return reused;
+                }
+                logger.Warn($"下单被拒绝：相同请求正在处理中（并发重复提交）。MemberId={memberId} 金额={totalAmount}元");
                 throw new CustomException("订单正在处理中，请勿重复提交");
             }
 
@@ -410,6 +426,7 @@ namespace ZR.Mall.Service
                         // 命中行数少于组内 SKU 数 → 至少一个 SKU 库存不足（或被并发扣走），整单回滚
                         if (affected < groupSkuIds.Count)
                         {
+                            logger.Warn($"下单扣减库存未命中（库存不足或被并发扣走），整单将回滚：MemberId={memberId} 本组SKU数={groupSkuIds.Count} 命中={affected} 本组数量={qty} SkuIds={string.Join(",", groupSkuIds)}");
                             ThrowStockShortage(db, productMap, groupSkuIds, qty);
                         }
                     }
@@ -420,11 +437,14 @@ namespace ZR.Mall.Service
                 // 双保险：即使某些异常未被抛出，事务失败也直接报错，绝不返回半成品订单
                 if (tran == null || !tran.IsSuccess)
                 {
+                    logger.Error($"下单事务失败：MemberId={memberId} 金额={totalAmount}元 明细={string.Join(",", orderItems.Select(i => i.SkuId + "x" + i.Quantity))} 错误={tran?.ErrorMessage}");
                     throw new CustomException("下单失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
                 }
 
                 // 记录幂等键 -> 订单号（15 分钟内同单只创建一次）
                 idemCache.Set(idemKey, order.OrderNo, 15);
+                // 下单成功是"钱与货"的起点：后续支付/发货/退款/排查全靠这个订单号串联，必须留痕
+                logger.Info($"下单成功：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={memberId} 金额={order.PayAmount}元 件数={orderItems.Count} 明细={string.Join(",", orderItems.Select(i => i.SkuId + "x" + i.Quantity))}");
                 return order;
             }
             finally

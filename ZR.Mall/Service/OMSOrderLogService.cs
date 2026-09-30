@@ -9,10 +9,10 @@ namespace ZR.Mall.Service
     [AppService(ServiceType = typeof(IOMSOrderLogService))]
     public class OMSOrderLogService : BaseService<OMSOrderLog>, IOMSOrderLogService
     {
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         /// <summary>
-        /// 记录一条状态变更（CreateTime 由 SqlSugar 服务器时间自动填充）。
-        /// 审计日志属次要路径：写入失败只告警，不上抛 —— 否则会让"已成功"的主业务
-        /// （支付/取消/退款/发货）误报失败，或把主事务拖下水。
+        /// 记录一条状态变更
         /// </summary>
         public void AddLog(long orderId, string orderNo, int fromStatus, int toStatus, string operType, string oper, string remark)
         {
@@ -22,7 +22,7 @@ namespace ZR.Mall.Service
             }
             catch (Exception ex)
             {
-                Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrderLog] 写入状态变更日志失败(OrderNo={orderNo} OperType={operType}): {ex.Message}");
+                logger.Error(ex, $"写入订单操作日志失败（不影响订单状态，但该次状态变更无审计记录）：OrderNo={orderNo} 操作类型={operType} 状态变更={fromStatus}→{toStatus}");
             }
         }
 
@@ -38,7 +38,7 @@ namespace ZR.Mall.Service
             }
             catch (Exception ex)
             {
-                Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrderLog] 写入状态变更日志失败(OrderNo={orderNo} OperType={operType}): {ex.Message}");
+                logger.Error(ex, $"写入订单操作日志失败（异步，不影响订单状态，但该次状态变更无审计记录）：OrderNo={orderNo} 操作类型={operType} 状态变更={fromStatus}→{toStatus}");
             }
         }
 

@@ -1,3 +1,4 @@
+using ZR.Infrastructure.Helper;
 using ZR.Mall.Enum;
 using ZR.Mall.Model;
 using ZR.Mall.Service.IService;
@@ -17,6 +18,15 @@ namespace ZR.Mall.Service
         private readonly ISmsCodeLogService _smsCodeLogService;
         private readonly IMemberService _memberService;
 
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="paymentService"></param>
+        /// <param name="orderLogService"></param>
+        /// <param name="smsCodeLogService"></param>
+        /// <param name="memberService"></param>
         public OMSOrderStateService(IOMSPaymentService paymentService, IOMSOrderLogService orderLogService,
             ISmsCodeLogService smsCodeLogService, IMemberService memberService)
         {
@@ -37,6 +47,7 @@ namespace ZR.Mall.Service
             var order = Queryable().First(x => x.OrderNo == orderNo && x.IsDelete == 0);
             if (order == null)
             {
+                logger.Warn($"支付失败：订单不存在。OrderNo={orderNo} 支付方式={payType}");
                 throw new CustomException("订单不存在");
             }
             // 回调金额一致性校验：微信/支付宝回调带回的是分，订单库为元，按四舍五入换算后比对
@@ -45,7 +56,8 @@ namespace ZR.Mall.Service
                 var expectedFen = Math.Round(order.PayAmount * 100, MidpointRounding.AwayFromZero);
                 if (callbackTotalFen.Value != expectedFen)
                 {
-                    Log.WriteLine(ConsoleColor.Red, $"[OMSOrder] 支付回调金额不一致！OrderNo={orderNo} 订单应付={order.PayAmount}元({expectedFen}分) 回调={callbackTotalFen.Value}分，疑似伪造回调，已拒绝支付。");
+                    // 安全事件：金额不符可能是伪造/篡改回调，必须留痕（Error 级，进 error.log）
+                    logger.Error($"支付回调金额不一致，已拒绝支付（疑似伪造回调）：OrderNo={orderNo} OrderId={order.Id} MemberId={order.MemberId} 订单应付={order.PayAmount}元({expectedFen}分) 回调={callbackTotalFen.Value}分 支付方式={payType}");
                     throw new CustomException("支付回调金额与订单金额不一致，支付失败");
                 }
             }
@@ -54,10 +66,13 @@ namespace ZR.Mall.Service
                 order.OrderStatus == Enum.OrderStatusEnum.Shipped ||
                 order.OrderStatus == Enum.OrderStatusEnum.Completed)
             {
+                // 渠道回调会重试，这里可能频繁命中
+                logger.Debug($"支付回调幂等命中（订单已支付，忽略重复通知）：OrderNo={orderNo} OrderId={order.Id} 当前状态={order.OrderStatus} 支付方式={payType}");
                 return order;
             }
             if (order.OrderStatus != Enum.OrderStatusEnum.None)
             {
+                logger.Warn($"支付被拒绝：订单已取消或已关闭。OrderNo={orderNo} OrderId={order.Id} 当前状态={order.OrderStatus}");
                 throw new CustomException("该订单已取消或已关闭，无法支付");
             }
 
@@ -75,6 +90,8 @@ namespace ZR.Mall.Service
                 .ExecuteCommand();
             if (affected <= 0)
             {
+                // 条件更新未命中：校验与写入之间状态被并发改掉（另一请求已支付、或被取消/关单）
+                logger.Warn($"支付失败：订单状态已变更（并发重复支付或取消竞态）。OrderNo={orderNo} OrderId={order.Id} 支付方式={payType}");
                 throw new CustomException("支付失败：订单状态已变更，请刷新后重试");
             }
             order.OrderStatus = Enum.OrderStatusEnum.TobeShipped;
@@ -86,6 +103,7 @@ namespace ZR.Mall.Service
             _orderLogService.AddLog(order.Id, order.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.TobeShipped, "PAY", order.GuestPhone, "支付成功");
             // 不发通知：用户刚在页面上完成支付，已有即时反馈，再发一条只是烧短信费。
             // 将来若要"已支付"提醒，走站内信/订阅消息，不要走短信（见 NotifyBuyer 的发送策略）。
+            logger.Info($"订单支付成功：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 金额={order.PayAmount}元 支付方式={payType} 渠道流水号={transactionId}");
             return order;
         }
 
@@ -99,10 +117,12 @@ namespace ZR.Mall.Service
             var order = Queryable().Includes(x => x.Items).First(x => x.Id == id && x.IsDelete == 0);
             if (order == null)
             {
+                logger.Warn($"取消订单失败：订单不存在。OrderId={id}");
                 throw new CustomException("订单不存在");
             }
             if (order.OrderStatus != Enum.OrderStatusEnum.None && order.OrderStatus != Enum.OrderStatusEnum.TobeShipped)
             {
+                logger.Warn($"取消订单被拒绝：状态不允许取消。OrderNo={order.OrderNo} OrderId={order.Id} 当前状态={order.OrderStatus}");
                 throw new CustomException("仅待付款/待发货状态的订单可取消");
             }
 
@@ -118,21 +138,19 @@ namespace ZR.Mall.Service
             });
             if (tran == null || !tran.IsSuccess)
             {
+                logger.Error($"取消订单事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 原状态={fromStatus} 错误={tran?.ErrorMessage}");
                 throw new CustomException("取消订单失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
             _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Cancel, "CANCEL", null, "取消订单并回补库存");
             // 不发短信：用户自己取消时页面已反馈；商家/系统取消的场景确实需要告知，
             // 但那属于站内信/订阅消息，不用短信（见 NotifyBuyer 的发送策略）。
+            logger.Info($"订单已取消并回补库存：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 原状态={fromStatus} 金额={order.PayAmount}元");
             return 1;
         }
 
         /// <summary>
         /// 确认收货（C 端会员）：已发货 → 已完成
         ///
-        /// 幂等：已是"已完成"直接返回 1，不报错 —— 用户在订单列表/详情连点两次、
-        /// 或支付回调与手动确认并发时，不该给他一个失败提示。
-        ///
-        /// 条件更新（把状态写进 Where，参照 OrderDelivery 的防并发写法）：
         /// 上面的状态校验读的是调用前快照，校验与写入之间存在窗口，
         /// 并发确认会让双方都通过校验。放进 Where 后只有一方能命中。
         ///
@@ -143,14 +161,17 @@ namespace ZR.Mall.Service
             var order = Queryable().First(x => x.Id == id && x.IsDelete == 0);
             if (order == null)
             {
+                logger.Warn($"确认收货失败：订单不存在。OrderId={id}");
                 throw new CustomException("订单不存在");
             }
             if (order.OrderStatus == Enum.OrderStatusEnum.Completed)
             {
+                logger.Debug($"确认收货幂等命中（订单已完成）：OrderNo={order.OrderNo} OrderId={order.Id}");
                 return 1;
             }
             if (order.OrderStatus != Enum.OrderStatusEnum.Shipped)
             {
+                logger.Warn($"确认收货被拒绝：状态不允许。OrderNo={order.OrderNo} OrderId={order.Id} 当前状态={order.OrderStatus}");
                 throw new CustomException("仅已发货状态的订单可确认收货");
             }
 
@@ -158,18 +179,17 @@ namespace ZR.Mall.Service
             var rows = Update(x => x.Id == id && x.OrderStatus == Enum.OrderStatusEnum.Shipped, it => new OMSOrder
             {
                 OrderStatus = Enum.OrderStatusEnum.Completed,
-                // 用 SqlFunc.GetDate()（SQL 端求值）而不是 Context.GetDate()：
-                // 后者会在表达式里先发一条独立 SELECT GETDATE()，在 Update 的
-                // SetColumns 表达式中会让 SqlSugar 的表达式解析走到不支持的分支
-                // （抛 "Index was outside the bounds of the array"）。与 OrderDelivery 保持一致。
                 ConfirmTime = SqlFunc.GetDate()
             });
             if (rows <= 0)
             {
                 // 并发下被另一方抢先确认：按幂等处理，不当失败
-                return Context.Queryable<OMSOrder>().Any(x => x.Id == id && x.OrderStatus == Enum.OrderStatusEnum.Completed) ? 1 : 0;
+                var alreadyDone = Context.Queryable<OMSOrder>().Any(x => x.Id == id && x.OrderStatus == Enum.OrderStatusEnum.Completed);
+                logger.Debug($"确认收货条件更新未命中（并发处理）：OrderNo={order.OrderNo} OrderId={order.Id} 已完成为={alreadyDone}");
+                return alreadyDone ? 1 : 0;
             }
             _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Completed, "CONFIRM_RECEIPT", null, "用户确认收货");
+            logger.Info($"订单确认收货完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 原状态={fromStatus}");
             return 1;
         }
         /// <summary>
@@ -209,8 +229,11 @@ namespace ZR.Mall.Service
             });
             if (tran == null || !tran.IsSuccess)
             {
+                logger.Error($"批量取消订单事务失败：请求数={ids.Count} 已取消={count} 错误={tran?.ErrorMessage}");
                 throw new CustomException("批量取消订单失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
+            // 批量操作只记汇总（逐单一条会刷屏，明细看订单操作日志表）
+            logger.Info($"批量取消订单完成：请求数={ids.Count} 实际取消={count} 跳过={ids.Count - count} Ids={string.Join(",", ids.Take(20))}");
             return count;
         }
 
@@ -224,10 +247,12 @@ namespace ZR.Mall.Service
             var order = Queryable().Includes(x => x.Items).First(x => x.OrderNo == model.OrderNo && x.IsDelete == 0);
             if (order == null)
             {
+                logger.Warn($"退款失败：订单不存在。OrderNo={model.OrderNo}");
                 throw new CustomException("订单不存在");
             }
             if (order.OrderStatus == Enum.OrderStatusEnum.Cancel || order.OrderStatus == Enum.OrderStatusEnum.Closed)
             {
+                logger.Warn($"退款被拒绝：订单状态不可退款。OrderNo={order.OrderNo} OrderId={order.Id} 当前状态={order.OrderStatus}");
                 throw new CustomException("该订单状态不可退款");
             }
 
@@ -243,10 +268,12 @@ namespace ZR.Mall.Service
             });
             if (tran == null || !tran.IsSuccess)
             {
+                logger.Error($"退款事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 退款金额={order.PayAmount}元 原状态={fromStatus} 错误={tran?.ErrorMessage}");
                 throw new CustomException("退款失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
             _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Closed, "REFUND", null, "订单退款并回补库存");
             NotifyBuyer(order, "订单已退款", $"您的订单({order.OrderNo})已退款，款项将原路退回，库存已回补。");
+            logger.Info($"订单退款完成并回补库存：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 退款金额={order.PayAmount}元 原状态={fromStatus}");
             return 1;
         }
 
@@ -279,15 +306,18 @@ namespace ZR.Mall.Service
         {
             if (model.DeliveryStatus != DeliveryStatusEnum.NotDelivered)
             {
+                logger.Warn($"发货被拒绝：该订单已发货。OrderNo={model.OrderNo} OrderId={model.Id} 发货状态={model.DeliveryStatus}");
                 return -1;//已发货
             }
             if (model.AddressSnapshot == null)
             {
+                logger.Warn($"发货被拒绝：收货地址为空。OrderNo={model.OrderNo} OrderId={model.Id}");
                 return -2; // 地址信息不能为空
             }
             // 仅"待发货"订单可发货，防止把待付款/已取消/已关闭/已发货单误改为已发货
             if (model.OrderStatus != OrderStatusEnum.TobeShipped)
             {
+                logger.Warn($"发货被拒绝：订单非待发货状态。OrderNo={model.OrderNo} OrderId={model.Id} 订单状态={model.OrderStatus}");
                 return -3; // 非待发货状态，不可发货
             }
             // 条件更新：除订单号外再校验"待发货"（参照 PayOrderByOrderNo 的防并发写法）。
@@ -324,17 +354,19 @@ namespace ZR.Mall.Service
 
                     await _orderLogService.AddLogAsync(model.Id, model.OrderNo, (int)OrderStatusEnum.TobeShipped, (int)OrderStatusEnum.Shipped, "DELIVERY", null, $"{model.DeliveryCompany} {model.DeliveryNo}");
                     NotifyBuyer(model, "订单已发货", $"您的订单({model.OrderNo})已发货，{model.DeliveryCompany} 运单号 {model.DeliveryNo}，请留意查收。");
+                    logger.Info($"订单发货成功：OrderNo={model.OrderNo} OrderId={model.Id} MemberId={model.MemberId} 快递={model.DeliveryCompany} 运单号={model.DeliveryNo} 订单项数={items.Count}");
                 }
                 catch (Exception ex)
                 {
-                    // 库存/通知异常仅记录，不影响发货结果
-                    Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 发货后处理失败(OrderNo={model.OrderNo}): {ex.Message}");
+                    // 库存/通知异常仅记录，不影响发货结果（订单状态已置为已发货）
+                    logger.Error(ex, $"发货成功但后续处理失败（订单状态已更新为已发货，锁定库存/通知可能未完成）：OrderNo={model.OrderNo} OrderId={model.Id} 快递={model.DeliveryCompany} 运单号={model.DeliveryNo}");
                 }
             }
             else if (result == 0)
             {
                 // 条件更新未命中：状态在上面的校验之后被并发变更（另一请求已发货、或订单被取消/关闭）。
                 // 此时不能再释放锁定库存，也不应写第二条发货日志，按"不可发货"返回。
+                logger.Warn($"发货条件更新未命中（并发发货或被取消/关闭）：OrderNo={model.OrderNo} OrderId={model.Id}");
                 return -3;
             }
             return result;
@@ -364,7 +396,12 @@ namespace ZR.Mall.Service
                     })
                     .Where(x => x.OrderStatus == Enum.OrderStatusEnum.None && x.IsDelete == 0 && x.CreateTime < expireTime)
                     .ExecuteCommand();
-                if (affected <= 0) return;
+                if (affected <= 0)
+                {
+                    // 定时任务每轮都会跑，无单可关时不记 Info（避免刷屏）；保留 Debug 便于确认任务在正常执行
+                    logger.Debug($"超时订单清理：本轮无待付款超时订单。超时阈值={expireMinutes}分钟");
+                    return;
+                }
 
                 // 2) 仅回补"本次刚取消"的订单（CancelTime 在极近窗口内），避免重复回补
                 var cancelled = db.Queryable<OMSOrder>()
@@ -379,12 +416,18 @@ namespace ZR.Mall.Service
                     var o = db.Queryable<OMSOrder>().First(x => x.Id == id);
                     RestoreStock(id);
                     _orderLogService.AddLog(id, o?.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.Cancel, "EXPIRE", "system", "超时未支付自动关闭并回补库存");
+                    logger.Debug($"超时订单已关闭并回补库存：OrderNo={o?.OrderNo} OrderId={id}");
                 }
                 closed = affected;
             });
             if (tran == null || !tran.IsSuccess)
             {
+                logger.Error($"超时订单清理事务失败：超时阈值={expireMinutes}分钟 错误={tran?.ErrorMessage}");
                 throw new CustomException("超时订单清理失败" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
+            }
+            if (closed > 0)
+            {
+                logger.Info($"超时未支付订单自动关闭完成：超时阈值={expireMinutes}分钟 关闭数量={closed} 截止时间={expireTime}");
             }
             return closed;
         }
@@ -413,11 +456,18 @@ namespace ZR.Mall.Service
                 if (!string.IsNullOrWhiteSpace(phone))
                 {
                     _smsCodeLogService.SendSmsNotice(phone, $"[{title}] {content}", 6);
+                    logger.Info($"订单通知短信已发送：OrderNo={order.OrderNo} 场景={title} 接收号码={MaskUtil.MaskPhone(phone)}");
+                }
+                else
+                {
+                    // 取不到会员手机号时宁可不发（见 GetNotifyPhone），但必须留痕，
+                    // 否则"用户说没收到短信"时无从判断是"没发"还是"发了没到"
+                    logger.Warn($"订单通知未发送：取不到接收号码（会员手机号缺失或会员已删除）。OrderNo={order.OrderNo} 场景={title} MemberId={order.MemberId}");
                 }
             }
             catch (Exception ex)
             {
-                Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 买家通知失败(OrderNo={order.OrderNo}): {ex.Message}");
+                logger.Error(ex, $"订单通知短信发送失败（不影响订单状态本身）：OrderNo={order.OrderNo} 场景={title}");
             }
         }
 
@@ -439,7 +489,7 @@ namespace ZR.Mall.Service
             }
             catch (Exception ex)
             {
-                Log.WriteLine(ConsoleColor.Yellow, $"[OMSOrder] 读取会员手机号失败(MemberId={order.MemberId}): {ex.Message}");
+                logger.Error(ex, $"读取会员手机号失败（订单通知将跳过）：MemberId={order.MemberId} OrderNo={order.OrderNo}");
                 return null;
             }
         }

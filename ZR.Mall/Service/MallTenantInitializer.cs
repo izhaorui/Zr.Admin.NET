@@ -13,6 +13,8 @@ namespace ZR.Mall.Service
 	[AppService(ServiceType = typeof(ITenantModuleInitializer))]
 	public class MallTenantInitializer : ITenantModuleInitializer
 	{
+		private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
 		public string ModuleName => "Mall";
 
 		public string InitializeTenant(string tenantId)
@@ -107,17 +109,16 @@ namespace ZR.Mall.Service
 						db.Ado.ExecuteCommand($"ALTER TABLE {table} AUTO_INCREMENT = {MemberIdStart}");
 						break;
 					default:
-						Log.WriteLine(ConsoleColor.Yellow,
-							$"[Mall] 会员ID起始值：当前数据库({db.CurrentConnectionConfig.DbType})不支持自动校正，请按部署文档手工把 {table} 的自增起始值设为 {MemberIdStart}");
+						logger.Warn($"会员ID起始值：当前数据库({db.CurrentConnectionConfig.DbType})不支持自动校正，请按部署文档手工把 {table} 的自增起始值设为 {MemberIdStart}");
 						return;
 				}
 
-				Log.WriteLine(ConsoleColor.Green, $"[Mall] 会员ID自增起始值已校正为 {MemberIdStart}（{table}）");
+				logger.Info($"会员ID自增起始值已校正为 {MemberIdStart}（{table}）");
 			}
 			catch (Exception ex)
 			{
 				// 校正失败不影响建表与业务可用性（最坏情况仍从 1 起），仅记录待人工处理
-				Log.WriteLine(ConsoleColor.Yellow, $"[Mall] 会员ID起始值校正失败（忽略）：{ex.Message}");
+				logger.Warn(ex, "会员ID起始值校正失败（忽略，不影响建表与业务可用性）");
 			}
 		}
 	}
