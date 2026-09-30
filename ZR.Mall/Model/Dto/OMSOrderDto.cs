@@ -41,8 +41,8 @@ namespace ZR.Mall.Model.Dto
         public string OrderNo { get; set; }
 
         /// <summary>
-        /// C 端会员ID（ums_member.Id；null = 游客下单）。
-        /// 商城订单只认这一种账号身份：会员单看 MemberId，游客单看 GuestPhone（见 OMSOrder 注释）。
+        /// C 端会员ID（ums_member.Id）。商城订单**只认这一种账号身份**，归属判定一律按它
+        /// （商城已取消游客下单，新订单必然有值；为 null 只可能是极早期遗留数据）。
         /// </summary>
         [ExcelColumn(Name = "会员ID")]
         public long? MemberId { get; set; }
@@ -88,6 +88,14 @@ namespace ZR.Mall.Model.Dto
 
         [ExcelColumn(Name = "发货时间")]
         public DateTime? ShipTime { get; set; }
+
+        /// <summary>
+        /// 确认收货时间：已发货 → 已完成 时写入（见 OMSOrderStateService.ConfirmReceipt）。
+        /// 原先 DTO 缺这个字段，导致 C 端订单详情无从展示"什么时候确认收货的"，
+        /// 前端只能按状态反推。这里补上后前端才有 <c>order.confirmTime</c> 可用。
+        /// </summary>
+        [ExcelColumn(Name = "确认收货时间", Format = "yyyy-MM-dd HH:mm:ss", Width = 20)]
+        public DateTime? ConfirmTime { get; set; }
 
         [ExcelColumn(Name = "订单状态")]
         public string OrderStatusLabel { get; set; }

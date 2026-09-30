@@ -8,7 +8,7 @@ using ZR.Mall.Service.IService;
 namespace ZR.Mall.Controllers.Front
 {
     /// <summary>
-    /// 商城C端/游客商品浏览接口（匿名可访问，与后台 shopping/product 区分）
+    /// 商城 C 端商品浏览接口（匿名可访问，与后台 shopping/product 区分）
     /// 仅返回已上架商品，不暴露管理字段
     /// </summary>
     [PublicApi]
@@ -27,19 +27,19 @@ namespace ZR.Mall.Controllers.Front
         }
 
         /// <summary>
-        /// 游客商品列表（仅上架商品）
+        /// 匿名商品列表（仅上架商品）
         /// </summary>
         [HttpGet("list")]
         public IActionResult QueryShoppingProduct([FromQuery] ShoppingProductQueryDto parm)
         {
             parm ??= new ShoppingProductQueryDto();
-            parm.SaleStatus = SaleStatus.OnSale; // 游客只能看在售商品
+            parm.SaleStatus = SaleStatus.OnSale; // 匿名访客只能看在售商品
             var response = _ShoppingProductService.GetFrontList(parm);
             return SUCCESS(response);
         }
 
         /// <summary>
-        /// 游客商品详情（仅上架商品）
+        /// 匿名商品详情（仅上架商品）
         /// </summary>
         [HttpGet("{ProductId}")]
         public IActionResult GetShoppingProduct(long ProductId)
@@ -53,15 +53,13 @@ namespace ZR.Mall.Controllers.Front
         }
 
         /// <summary>
-        /// 游客可见的商品分类列表（匿名），用于 C 端首页分类筛选。
-        /// 仅返回 ShowStatus=1（展示中）的分类，按 OrderNum 升序。
+        /// 匿名可见的商品分类列表，用于 C 端首页分类筛选。
+        /// 仅返回 ShowStatus=1（展示中）且未删除的分类，按 OrderNum 升序；过滤与缓存均在 Service 内完成。
         /// </summary>
         [HttpGet("category/list")]
         public IActionResult QueryFrontCategory()
         {
-            var list = _CategoryService.GetAll()
-                .Where(c => c.ShowStatus == 1 && c.IsDelete == 0)
-                .OrderBy(c => c.OrderNum)
+            var list = _CategoryService.GetFrontCategories()
                 .Select(c => new { categoryId = c.CategoryId, name = c.Name, icon = c.Icon })
                 .ToList();
             return SUCCESS(list);

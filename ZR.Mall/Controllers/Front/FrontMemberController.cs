@@ -69,7 +69,7 @@ namespace ZR.Mall.Controllers.Front
         }
 
         /// <summary>
-        /// 当前登录会员信息（身份取自令牌，不信任前端入参）
+        /// 当前登录会员信息
         /// </summary>
         [HttpGet("info")]
         [MemberAuthorize]

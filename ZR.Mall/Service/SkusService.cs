@@ -36,14 +36,14 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 获取详情
+        /// 获取详情（已软删除的 SKU 不返回）
         /// </summary>
         /// <param name="SkuId"></param>
         /// <returns></returns>
         public Skus GetInfo(long SkuId)
         {
             var response = Queryable()
-                .Where(x => x.SkuId == SkuId)
+                .Where(x => x.SkuId == SkuId && x.IsDelete == 0)
                 .First();
 
             return response;
@@ -284,6 +284,9 @@ namespace ZR.Mall.Service
         {
             var predicate = Expressionable.Create<Skus>();
             predicate = predicate.AndIF(parm.ProductId.HasValue && parm.ProductId.Value > 0, x => x.ProductId == parm.ProductId.Value);
+            // SKU 是软删除（见 DeleteShoppingSkus 的 IsLogic），列表必须排除已删除项，
+            // 否则后台会列出已删除的 SKU —— 与商品列表（ProductService.QueryExp 有 IsDelete 条件）口径不一致。
+            predicate = predicate.And(x => x.IsDelete == 0);
 
             return predicate;
         }

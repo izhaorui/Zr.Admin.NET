@@ -10,7 +10,7 @@ namespace ZR.Mall.Service
     /// 后台订单管理 Service（运营侧）：查询、概览、修改/备注、导出、销售统计。
     ///
     /// 职责边界（与本次拆分前相比）：状态迁移（发货/取消/退款/支付）已移至 <see cref="IOMSOrderStateService"/>；
-    /// C 端交易（下单/我的订单/会员取消/游客支付）已移至 <see cref="FrontOrderService"/>。
+    /// C 端交易（下单/支付/我的订单/会员取消）已移至 <see cref="FrontOrderService"/>。
     /// 本类只保留"运营视角"的只读查询与编排，不再直接改订单状态或库存。
     /// </summary>
     [AppService(ServiceType = typeof(IOMSOrderService))]

@@ -158,11 +158,10 @@ namespace ZR.Mall.Model
 
         /// <summary>
         /// 总限购件数（同一身份累计购买上限）。
-        /// 已实现：后端 OMSOrderService.CreateOrder 校验，见其 QueryBoughtQuantity 的口径说明。
+        /// 已实现：后端 FrontOrderService.CreateOrder 校验，见其 QueryBoughtQuantity 的口径说明。
         /// <para>口径：<b>不累计</b>已取消(Cancel) / 已关闭(Closed) / 已退款完成(Refunded / Returned)的订单 ——
         /// 取消或退款成功即释放额度；退款中(Refunding) / 退货中(Returning)仍计入。</para>
-        /// <para>身份：会员按 MemberId 累计，并入同手机号的历史游客单（与"我的订单"归属口径一致）；
-        /// 游客单按下单手机号累计。</para>
+        /// <para>身份：只按会员 MemberId 累计（与"我的订单"归属口径一致）。</para>
         /// <para>前端暂未按它限制数量（商品详情页的「最多可购 N 件」只反映 SingleLimit 与库存），
         /// 因此超总限购要提交后才由服务端拒绝。</para>
         /// </summary>

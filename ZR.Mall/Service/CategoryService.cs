@@ -49,6 +49,23 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
+        /// C 端可见分类：ShowStatus=1（展示中）+ 未删除，按 OrderNum 升序。
+        ///
+        /// 走查询缓存（后端由 RedisServer:dbCache 决定 Redis 或内存）：数据量小、读极多写极少，
+        /// 后台增删改 mms_category 时 IsAutoRemoveDataCache 会自动失效，无需手动清理。
+        /// 原实现是 Controller 里 GetAll().Where(...)：把整表拉进内存再过滤，且完全没有缓存。
+        /// </summary>
+        public List<CategoryDto> GetFrontCategories()
+        {
+            return Queryable()
+                .WithCache(60 * 5)
+                .Where(c => c.ShowStatus == 1 && c.IsDelete == 0)
+                .OrderBy(c => c.OrderNum)
+                .ToList()
+                .Adapt<List<CategoryDto>>();
+        }
+
+        /// <summary>
         /// 添加目录
         /// </summary>
         /// <param name="parm"></param>

@@ -90,7 +90,7 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 取消订单（游客/后台通用）：仅"待发货/待付款"可取消，回补库存
+        /// 取消订单（C 端会员/后台通用）：仅"待发货/待付款"可取消，回补库存
         /// </summary>
         public int CancelOrder(long id)
         {
@@ -126,6 +126,52 @@ namespace ZR.Mall.Service
             return 1;
         }
 
+        /// <summary>
+        /// 确认收货（C 端会员）：已发货 → 已完成
+        ///
+        /// 幂等：已是"已完成"直接返回 1，不报错 —— 用户在订单列表/详情连点两次、
+        /// 或支付回调与手动确认并发时，不该给他一个失败提示。
+        ///
+        /// 条件更新（把状态写进 Where，参照 OrderDelivery 的防并发写法）：
+        /// 上面的状态校验读的是调用前快照，校验与写入之间存在窗口，
+        /// 并发确认会让双方都通过校验。放进 Where 后只有一方能命中。
+        ///
+        /// 不动库存：确认收货时锁定库存已在发货环节释放过（见 OrderDelivery），此处再动会重复扣减。
+        /// </summary>
+        public int ConfirmReceipt(long id)
+        {
+            var order = Queryable().First(x => x.Id == id && x.IsDelete == 0);
+            if (order == null)
+            {
+                throw new CustomException("订单不存在");
+            }
+            if (order.OrderStatus == Enum.OrderStatusEnum.Completed)
+            {
+                return 1;
+            }
+            if (order.OrderStatus != Enum.OrderStatusEnum.Shipped)
+            {
+                throw new CustomException("仅已发货状态的订单可确认收货");
+            }
+
+            var fromStatus = (int)order.OrderStatus;
+            var rows = Update(x => x.Id == id && x.OrderStatus == Enum.OrderStatusEnum.Shipped, it => new OMSOrder
+            {
+                OrderStatus = Enum.OrderStatusEnum.Completed,
+                // 用 SqlFunc.GetDate()（SQL 端求值）而不是 Context.GetDate()：
+                // 后者会在表达式里先发一条独立 SELECT GETDATE()，在 Update 的
+                // SetColumns 表达式中会让 SqlSugar 的表达式解析走到不支持的分支
+                // （抛 "Index was outside the bounds of the array"）。与 OrderDelivery 保持一致。
+                ConfirmTime = SqlFunc.GetDate()
+            });
+            if (rows <= 0)
+            {
+                // 并发下被另一方抢先确认：按幂等处理，不当失败
+                return Context.Queryable<OMSOrder>().Any(x => x.Id == id && x.OrderStatus == Enum.OrderStatusEnum.Completed) ? 1 : 0;
+            }
+            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Completed, "CONFIRM_RECEIPT", null, "用户确认收货");
+            return 1;
+        }
         /// <summary>
         /// 批量取消订单：一次性事务内遍历，仅处理待付款/待发货状态的订单，其余状态跳过；返回成功取消条数
         /// </summary>
@@ -255,7 +301,7 @@ namespace ZR.Mall.Service
                 DeliveryStatus = DeliveryStatusEnum.Delivering, // 已发货
                 ShipTime = SqlFunc.GetDate()
             });
-            // 发货成功 → 释放锁定库存 + 写日志 + 通知买家（游客短信）
+            // 发货成功 → 释放锁定库存 + 写日志 + 通知买家（短信）
             if (result > 0)
             {
                 try
@@ -353,10 +399,9 @@ namespace ZR.Mall.Service
         /// 取消订单（含商家/系统触发）更适合站内信或订阅消息 —— 用短信只是烧钱，
         /// 批量取消更糟：逐单一条会在瞬间形成短信风暴。
         ///
-        /// 接收号码：**发给下单人本人**
-        /// - 会员订单：发会员本人手机号。收货手机号可能是家人/朋友的，未经归属校验，
-        ///   不能当发送目标 —— 否则"会员免验证码"就等于开放了一个给任意号码发短信的接口；
-        /// - 游客订单：发收货手机号（下单时已用短信验证过归属）。
+        /// 接收号码：**只发会员本人手机号**。
+        /// 收货手机号是联系方式（可能是家人/朋友的），未经归属证明，绝不能当发送目标 ——
+        /// 否则就等于开放了一个"给任意号码发短信"的接口。
         /// 异常仅记录，不影响主流程。
         /// </summary>
         private void NotifyBuyer(OMSOrder order, string title, string content)
@@ -377,15 +422,15 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 订单通知的接收手机号：会员订单取会员本人手机号，游客订单取收货手机号。
-        /// 会员手机号取不到（会员被删或数据异常）时返回 null —— 宁可不发，
+        /// 订单通知的接收手机号：**只取会员本人手机号**。
+        /// 会员手机号取不到（未绑定会员、会员被删或数据异常）时返回 null —— 宁可不发，
         /// 也不把通知发到未经归属证明的收货号上。
         /// </summary>
         private string GetNotifyPhone(OMSOrder order)
         {
             if (!order.MemberId.HasValue || order.MemberId.Value <= 0)
             {
-                return order.GuestPhone;
+                return null;
             }
             try
             {
@@ -400,3 +445,4 @@ namespace ZR.Mall.Service
         }
     }
 }
+

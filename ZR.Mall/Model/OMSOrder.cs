@@ -23,8 +23,8 @@ namespace ZR.Mall.Model
         public string OrderNo { get; set; }
 
         /// <summary>
-        /// 游客下单手机号（身份锚点的一等公民列，用于 SQL 过滤查询订单，避免解析 AddressSnapshot JSON）。
-        /// 下单时与验证码配对写入，与 AddressSnapshot.Phone 同源。
+        /// 下单手机号快照（= 收货手机号）。⚠️ **非身份凭据**，订单归属只认 MemberId（见 OrderOwnership）。
+        /// 与 AddressSnapshot.Phone 同源；单独成列仅为后台订单日志/展示取号方便。
         /// </summary>
         [SugarColumn(Length = 20, IsNullable = true)]
         public string GuestPhone { get; set; }

@@ -93,8 +93,11 @@ namespace ZR.Mall.Service
             predicate = predicate.AndIF(parm.PayType != null, it => it.PayType == parm.PayType);
             predicate = predicate.AndIF(parm.Status != null, it => it.Status == parm.Status);
             predicate = predicate.AndIF(parm.ChannelTradeNo.IsNotEmpty(), it => it.ChannelTradeNo.Contains(parm.ChannelTradeNo));
-            predicate = predicate.AndIF(parm.BeginCreateTime != null,
-                it => it.CreateTime >= parm.BeginCreateTime && it.CreateTime <= parm.EndCreateTime);
+            // 时间边界各自独立拼接：判断键必须与比较字段一致。
+            // 原写法用 BeginCreateTime 判断却比较 EndCreateTime —— 只传开始时间会生成
+            // `CreateTime <= NULL`（恒假、查空），只传结束时间则整个条件被跳过。
+            predicate = predicate.AndIF(parm.BeginCreateTime != null, it => it.CreateTime >= parm.BeginCreateTime);
+            predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime <= parm.EndCreateTime);
             return predicate;
         }
     }

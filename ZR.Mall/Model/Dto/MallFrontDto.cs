@@ -5,7 +5,7 @@ using ZR.Mall.Model;
 namespace ZR.Mall.Model.Dto
 {
     /// <summary>
-    /// 游客/C端下单请求
+    /// C 端下单请求（**需登录**；收货手机号仅供联系，不作身份凭据）
     /// </summary>
     public class CreateOrderDto
     {
@@ -16,7 +16,9 @@ namespace ZR.Mall.Model.Dto
         public List<CreateOrderItemDto> Items { get; set; } = new();
 
         /// <summary>
-        /// 收货信息（必填，游客无账号，手机号作为身份锚点）
+        /// 收货信息（必填）。
+        /// 手机号只是联系方式，**不承担身份/归属作用**（归属由会员令牌决定），
+        /// 因此地址簿里存家人手机号也能正常下单，无需任何短信验证码。
         /// </summary>
         [Required(ErrorMessage = "收货信息不能为空")]
         public AddressSnapshot Address { get; set; }
@@ -31,42 +33,10 @@ namespace ZR.Mall.Model.Dto
         /// 不传则按“手机号 + 订单项 + 金额”自动去重。
         /// </summary>
         public string RequestId { get; set; }
-
-        /// <summary>
-        /// 短信验证码：证明 Address.Phone 归属（防止填他人手机号下单），与 Address.Phone 配对使用。
-        /// 免验证条件：携带有效会员令牌（mall-token）且 Address.Phone 与会员手机号一致 ——
-        /// 该号码在登录时已通过短信验证过归属，此时可为空（判定见 FrontOrderController.CreateOrder）。
-        /// 注意：这里刻意不加 [Required]，否则模型校验会在进入 action 之前直接 400，
-        /// 使"会员本人手机号免验证"分支永远走不到（公网宿主已开启自动模型校验）。
-        /// </summary>
-        public string Code { get; set; }
     }
 
     /// <summary>
-    /// 游客取消自己订单（需短信验证码校验归属）
-    /// </summary>
-    public class FrontCancelOrderDto
-    {
-        /// <summary>
-        /// 订单Id
-        /// </summary>
-        public long Id { get; set; }
-
-        /// <summary>
-        /// 下单手机号（与订单收货手机号一致）
-        /// </summary>
-        [Required(ErrorMessage = "手机号不能为空")]
-        public string Phone { get; set; }
-
-        /// <summary>
-        /// 短信验证码（证明手机号归属）
-        /// </summary>
-        [Required(ErrorMessage = "验证码不能为空")]
-        public string Code { get; set; }
-    }
-
-    /// <summary>
-    /// 游客模拟支付请求（订单号 + 下单手机号双重匹配，防止误付他人订单）
+    /// C 端发起支付请求（归属由会员令牌判定，无需手机号）
     /// </summary>
     public class FrontPayOrderDto
     {
@@ -77,12 +47,6 @@ namespace ZR.Mall.Model.Dto
         public string OrderNo { get; set; }
 
         /// <summary>
-        /// 下单手机号（与订单收货手机号一致）
-        /// </summary>
-        [Required(ErrorMessage = "手机号不能为空")]
-        public string Phone { get; set; }
-
-        /// <summary>
         /// 支付通道：h5（默认，微信内/H5 浏览器跳转）/ miniProgram（微信小程序 JSAPI）/ app（App 原生支付）。
         /// 真实支付（WechatPay:Enabled=true）时按此字段选择预付单类型；模拟支付忽略。
         /// </summary>
@@ -90,7 +54,7 @@ namespace ZR.Mall.Model.Dto
 
         /// <summary>
         /// 微信小程序支付所需的用户 OpenId（channel=miniProgram 时必填）。
-        /// 由前端通过 wx.login 换取后传入（见 shopping/front/order/wx-openid）。
+        /// 由前端通过 wx.login 换取后传入（见 shopping/front/order/wx/openid）。
         /// </summary>
         public string OpenId { get; set; }
     }
@@ -111,40 +75,5 @@ namespace ZR.Mall.Model.Dto
         /// </summary>
         [Range(1, int.MaxValue, ErrorMessage = "购买数量必须大于0")]
         public int Quantity { get; set; } = 1;
-    }
-
-    /// <summary>
-    /// 游客查询自己订单（按手机号）请求
-    /// </summary>
-    public class FrontOrderQueryDto : PagerInfo
-    {
-        /// <summary>
-        /// 收货手机号（与下单时一致）
-        /// </summary>
-        [Required(ErrorMessage = "手机号不能为空")]
-        public string Phone { get; set; }
-
-        /// <summary>
-        /// 短信验证码（证明手机号归属，防止查他人订单）
-        /// </summary>
-        [Required(ErrorMessage = "验证码不能为空")]
-        public string Code { get; set; }
-    }
-
-    /// <summary>
-    /// 发送验证码请求（type: 4=查询订单, 5=下单。复用同一缓存键按手机号隔离）
-    /// </summary>
-    public class SendCodeDto
-    {
-        /// <summary>
-        /// 收货手机号
-        /// </summary>
-        [Required(ErrorMessage = "手机号不能为空")]
-        public string Phone { get; set; }
-
-        /// <summary>
-        /// 验证码用途：4=查询订单（默认），5=下单。用于短信日志区分，校验时按手机号统一比对。
-        /// </summary>
-        public int Type { get; set; } = 4;
     }
 }

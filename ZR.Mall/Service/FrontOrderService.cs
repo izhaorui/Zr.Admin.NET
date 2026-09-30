@@ -10,7 +10,7 @@ using ZR.ServiceCore.Services;
 namespace ZR.Mall.Service
 {
     /// <summary>
-    /// C 端（游客 / 会员）订单交易实现：下单、支付入口、我的订单、会员取消。
+    /// C 端会员订单交易实现：下单、支付入口、我的订单、会员取消。
     /// 只负责"用户侧"编排与归属校验；状态迁移委托给 <see cref="IOMSOrderStateService"/>，
     /// 与后台运营（OMSOrderService）物理隔离。
     /// </summary>
@@ -25,14 +25,12 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 会员"我的订单"分页：会员本人下单(MemberId) + 同手机号的历史游客订单(GuestPhone) 合并。
+        /// 会员"我的订单"分页：**只按 MemberId 过滤**。
         ///
-        /// 手机号合并**只对真正的游客订单（MemberId 为空）生效**：会员已免短信验证码，
-        /// 收货手机号不再经过归属校验，不能再用它认领订单 —— 否则会员 A 用会员 B 的手机号下单后，
-        /// 该订单会出现在 B 的列表里。
-        /// 历史游客订单（接入会员体系前产生，MemberId 为空）仍按手机号归属，行为不变。
+        /// 不再用手机号合并任何订单：收货手机号只是联系信息（可能是家人/朋友的），
+        /// 用它认领会把别人的订单算进来（如会员 A 填会员 B 的手机号下单，订单就跑到 B 的列表里）。
         /// </summary>
-        public PagedInfo<OMSOrderDto> GetMemberOrders(long memberId, string phone, MemberOrderQueryDto parm)
+        public PagedInfo<OMSOrderDto> GetMemberOrders(long memberId, MemberOrderQueryDto parm)
         {
             if (memberId <= 0)
             {
@@ -40,18 +38,9 @@ namespace ZR.Mall.Service
             }
             parm ??= new MemberOrderQueryDto();
 
-            // 逐段 Where 拼接，避免把 OR 混进 AND 组合时出现优先级问题
-            var query = Queryable().Includes(x => x.Items).Where(it => it.IsDelete == 0);
-            if (string.IsNullOrWhiteSpace(phone))
-            {
-                query = query.Where(it => it.MemberId == memberId);
-            }
-            else
-            {
-                // 会员订单只按 MemberId 认领；手机号仅用于认领 MemberId 为空的游客订单
-                query = query.Where(it => it.MemberId == memberId || (it.MemberId == null && it.GuestPhone == phone));
-            }
-            query = query.WhereIF(parm.OrderStatus != null, it => it.OrderStatus == parm.OrderStatus);
+            var query = Queryable().Includes(x => x.Items)
+                .Where(it => it.IsDelete == 0 && it.MemberId == memberId)
+                .WhereIF(parm.OrderStatus != null, it => it.OrderStatus == parm.OrderStatus);
 
             return query
                 .OrderBy(it => it.Id, OrderByType.Desc)
@@ -61,33 +50,49 @@ namespace ZR.Mall.Service
         /// <summary>
         /// 会员订单详情（校验归属，不属于该会员返回 null）
         /// </summary>
-        public OMSOrder GetMemberOrder(long memberId, string phone, long id)
+        public OMSOrder GetMemberOrder(long memberId, long id)
         {
             if (memberId <= 0)
             {
                 throw new CustomException("会员身份无效");
             }
             var order = Queryable().Includes(x => x.Items).First(x => x.Id == id && x.IsDelete == 0);
-            return order != null && BelongsToMember(order, memberId, phone) ? order : null;
+            return BelongsToMember(order, memberId) ? order : null;
         }
 
         /// <summary>
         /// 会员取消自己的订单（校验归属后复用状态内核的 CancelOrder：仅待付款/待发货可取消并回补库存）
         /// </summary>
-        public int CancelMemberOrder(long memberId, string phone, long id)
+        public int CancelMemberOrder(long memberId, long id)
         {
             if (memberId <= 0)
             {
                 throw new CustomException("会员身份无效");
             }
             var order = Queryable().First(x => x.Id == id && x.IsDelete == 0);
-            if (order == null || !BelongsToMember(order, memberId, phone))
+            if (!BelongsToMember(order, memberId))
             {
                 throw new CustomException("订单不存在或无权限");
             }
             return _orderStateService.CancelOrder(id);
         }
 
+        /// <summary>
+        /// 会员确认收货（校验归属后复用状态内核的 ConfirmReceipt：仅已发货可确认，幂等）
+        /// </summary>
+        public int ConfirmMemberReceipt(long memberId, long id)
+        {
+            if (memberId <= 0)
+            {
+                throw new CustomException("会员身份无效");
+            }
+            var order = Queryable().First(x => x.Id == id && x.IsDelete == 0);
+            if (!BelongsToMember(order, memberId))
+            {
+                throw new CustomException("订单不存在或无权限");
+            }
+            return _orderStateService.ConfirmReceipt(id);
+        }
         /// <summary>
         /// 下单防刷限流：IP 与手机号双维度配额（10 分钟窗口）。返回 false 时 msg 为提示。
         /// 备注：AspNetCoreRateLimit 已有全局 POST 1次/3s 兜底，此处为业务级配额。
@@ -117,34 +122,20 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 订单是否属于该会员：
-        /// - 会员订单（MemberId 有值）**只认 MemberId**，任何手机号都不能替代 ——
-        ///   会员免验证码后收货手机号不再校验归属，若仍允许"手机号匹配即放行"，
-        ///   任何会员都能用他人手机号下单，并借此读到/取消他人订单；
-        /// - 游客订单（MemberId 为空，含接入会员体系前的历史单）按手机号归属，行为不变。
+        /// 订单是否属于该会员。规则收敛在 <see cref="Common.OrderOwnership.IsOwnedBy"/>：只认 MemberId。
         /// </summary>
-        private static bool BelongsToMember(OMSOrder order, long memberId, string phone)
-        {
-            if (order.MemberId.HasValue)
-            {
-                return order.MemberId.Value == memberId;
-            }
-            if (string.IsNullOrWhiteSpace(phone))
-            {
-                return false;
-            }
-            return order.GuestPhone == phone || order.AddressSnapshot?.Phone == phone;
-        }
+        private static bool BelongsToMember(OMSOrder order, long memberId)
+            => Common.OrderOwnership.IsOwnedBy(order, memberId);
 
         /// <summary>
-        /// 模拟支付（游客直接支付）：待付款 → 待发货，记录支付时间。
-        /// 校验订单号+手机号双重匹配（游客无账号，手机号即身份锚点）后委托状态内核 PayOrderByOrderNo。
+        /// 模拟支付（C 端会员直接支付）：待付款 → 待发货，记录支付时间。
+        /// 归属校验见 <see cref="Common.OrderOwnership.IsOwnedBy"/>：只认会员身份（memberId）。
         /// 幂等：已支付（待发货及之后）直接返回成功，不重复变更。
         /// </summary>
-        public OMSOrder PayOrder(string orderNo, string phone)
+        public OMSOrder PayOrder(string orderNo, long memberId)
         {
             var order = Queryable().First(x => x.OrderNo == orderNo && x.IsDelete == 0);
-            if (order == null || order.AddressSnapshot?.Phone != phone)
+            if (!Common.OrderOwnership.IsOwnedBy(order, memberId))
             {
                 throw new CustomException("订单不存在或无权限");
             }
@@ -160,19 +151,16 @@ namespace ZR.Mall.Service
         /// - 退款状态排除 Refunded(已退款完成) 与 Returned(已退货完成)。
         ///   Refunding(退款中) / Returning(退货中) 仍计入，避免退款流程中被重复下单占用额度。
         ///
-        /// 身份口径与"我的订单"保持一致（见 <see cref="BelongsToMember"/>）：
-        /// 会员累计 = 该 MemberId 的订单 ∪ 同手机号的历史游客单。
-        /// 否则同一个用户「先游客下单、再登录下单」即可绕过总限购。
+        /// 身份口径与"我的订单"保持一致（见 <see cref="BelongsToMember"/>）：**只按 MemberId 累计**。
         ///
         /// ⚠️ 并发：两次同时下单可能读到同一份已购件数而都通过校验。
         /// 与库存校验同性质（库存靠写阶段的乐观锁兜底），总限购被突破的损失也远小于超卖，暂不额外加锁。
         /// </summary>
         /// <param name="db">租户商城库客户端</param>
         /// <param name="productIds">本次下单涉及的商品（只统计这些，避免全表扫）</param>
-        /// <param name="memberId">会员 ID；为 null 表示游客单，按手机号归属</param>
-        /// <param name="phone">下单手机号（游客单的归属锚点；会员单用它并入同号游客单）</param>
+        /// <param name="memberId">会员 ID（下单必绑会员）</param>
         private static Dictionary<long, int> QueryBoughtQuantity(
-            ISqlSugarClient db, List<long> productIds, long? memberId, string phone)
+            ISqlSugarClient db, List<long> productIds, long memberId)
         {
             var result = new Dictionary<long, int>();
             if (productIds.Count == 0) return result;
@@ -186,15 +174,8 @@ namespace ZR.Mall.Service
                     && o.RefundStatus != RefundStatusEnum.Refunded
                     && o.RefundStatus != RefundStatusEnum.Returned);
 
-            // ⚠️ 归属条件必须在 C# 层分支，不能写成 Where 里的三元表达式
-            // （如 `(memberId.HasValue ? A : B)`）：
-            // SqlSugar 会把它翻译成 SqlFunc.IIF，再套上 || 就直接报
-            // "SqlFunc.IIF(arg1,arg2,arg3) ... argument do not support"，整个接口 500。
-            // 另外也不能统一成 `MemberId == memberId || (...)`：
-            // 游客单 memberId 为 null 时该条件会退化成「所有游客单」，把别人的额度也算进来。
-            query = memberId.HasValue
-                ? query.Where((oi, o) => o.MemberId == memberId || (o.MemberId == null && o.GuestPhone == phone))
-                : query.Where((oi, o) => o.MemberId == null && o.GuestPhone == phone);
+            // 归属只认会员身份
+            query = query.Where((oi, o) => o.MemberId == memberId);
 
             var rows = query
                 .GroupBy((oi, o) => oi.ProductId)
@@ -209,17 +190,20 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 游客/C端下单
+        /// C 端下单（**必须已登录**）
         /// 1. 校验商品/SKU 存在、上架、库存充足、未超每单限购与总限购（读阶段在事务外）
         /// 2. 计算订单金额（单价 × 数量，累加）
         /// 3. 写订单主表 + 订单项（商品/SKU/价格快照）
         /// 4. 乐观锁扣减库存、累加销量（防超卖）
-        /// 身份：游客单不绑会员（MemberId 为空），手机号写入 GuestPhone 并同步到 AddressSnapshot.Phone 作为锚点。
+        ///
+        /// 身份：订单一律绑定会员（memberId 必填，来自 mall-token）。商城已取消游客下单。
+        /// 收货手机号仍写入 GuestPhone 列，但它只是「下单手机号快照」（便于后台按手机号筛单），
+        /// **不承担任何归属判定** —— 归属只认 MemberId。
         /// 幂等：同一 RequestId（或相同手机号+订单项签名）短窗口内只创建一次订单。
         /// 限购：SingleLimit（每单限购）与 TotalLimit（总限购件数）均已实现，
         ///       两者都按「商品」维度累计 —— 同一商品拆成多个 SKU 行也会合并后再判断。
         /// </summary>
-        public OMSOrder CreateOrder(CreateOrderDto dto, long? memberId = null)
+        public OMSOrder CreateOrder(CreateOrderDto dto, long memberId)
         {
             if (dto?.Items == null || dto.Items.Count == 0)
             {
@@ -268,7 +252,7 @@ namespace ZR.Mall.Service
                 .ToList();
 
             var boughtQty = limitedProductIds.Count > 0
-                ? QueryBoughtQuantity(db, limitedProductIds, memberId, dto.Address?.Phone)
+                ? QueryBoughtQuantity(db, limitedProductIds, memberId)
                 : new Dictionary<long, int>();
 
             foreach (var req in requestedByProduct)
@@ -335,7 +319,7 @@ namespace ZR.Mall.Service
             // 后端自动选择：Redis 已初始化（RedisServer:open=1）时用 Redis（跨实例共享），
             // 否则回退本地内存（见 CacheStore）。多实例部署务必开 Redis，否则幂等只在单进程内生效。
             var idemCache = CacheStore.Default;
-            var idemKey = BuildCreateIdemKey(dto, totalAmount);
+            var idemKey = BuildCreateIdemKey(dto, totalAmount, memberId);
             var idemLockKey = idemKey + ":lock";
 
             // 已完成：命中则复用（仅当订单仍有效；已取消/关闭的不算，允许重新下单）
@@ -376,7 +360,7 @@ namespace ZR.Mall.Service
                     order = new OMSOrder
                     {
                         OrderNo = Common.OrderNoGenerator.Generate(),
-                        MemberId = memberId, // C 端会员下单时绑定，用于"我的订单"归属
+                        MemberId = memberId, // 下单会员：归属判定与"我的订单"的唯一凭据
                         TotalAmount = totalAmount,
                         PayAmount = totalAmount,
                         OrderStatus = Enum.OrderStatusEnum.None, // 待付款：下单后进入模拟支付环节，支付成功才转待发货
@@ -385,7 +369,7 @@ namespace ZR.Mall.Service
                         CreateTime = dbDate,
                         OrderNote = dto.OrderNote,
                         AddressSnapshot = dto.Address,
-                        GuestPhone = dto.Address?.Phone // 身份锚点一等公民列，供 SQL 过滤查询
+                        GuestPhone = dto.Address?.Phone // 下单手机号快照（后台筛单用，非归属凭据）
                     };
 
                     // 写入订单主表，返回自增 Id
@@ -472,16 +456,18 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 计算下单幂等键：优先用前端传入的 RequestId，否则按“手机号+订单项+金额”签名
+        /// 计算下单幂等键：优先用前端传入的 RequestId，否则按“会员+订单项+金额”签名。
+        /// 用会员而非手机号：手机号是收货联系方式（可填家人），不同会员可能填同一个号，
+        /// 会把两笔不同会员的订单误判为重复。
         /// </summary>
-        private static string BuildCreateIdemKey(CreateOrderDto dto, decimal totalAmount)
+        private static string BuildCreateIdemKey(CreateOrderDto dto, decimal totalAmount, long memberId)
         {
             if (!string.IsNullOrWhiteSpace(dto.RequestId))
             {
                 return "mall_order_idem_req_" + dto.RequestId;
             }
             var itemsSig = string.Join("|", dto.Items.OrderBy(x => x.SkuId).Select(x => $"{x.SkuId}:{x.Quantity}"));
-            return "mall_order_idem_sig_" + $"{dto.Address?.Phone}|{itemsSig}|{totalAmount}";
+            return "mall_order_idem_sig_" + $"{memberId}|{itemsSig}|{totalAmount}";
         }
 
         /// <summary>

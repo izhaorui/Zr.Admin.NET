@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Mall.Common;
 using ZR.Mall.Model.Dto;
@@ -13,7 +12,7 @@ namespace ZR.Mall.Controllers.Front
     [PublicApi]
     [Route("front/member/address")]
     [ApiExplorerSettings(GroupName = "shopping")]
-    [AllowAnonymous]
+    [MemberAuthorize]
     public class FrontMemberAddressController : BaseController
     {
         private readonly IMemberAddressService _addressService;
@@ -27,7 +26,6 @@ namespace ZR.Mall.Controllers.Front
         /// 我的地址列表（默认地址排最前）
         /// </summary>
         [HttpGet("list")]
-        [MemberAuthorize]
         public IActionResult List()
         {
             var memberId = CurrentMemberId();
@@ -39,7 +37,6 @@ namespace ZR.Mall.Controllers.Front
         /// 新增收货地址（首条自动设为默认）
         /// </summary>
         [HttpPost("add")]
-        [MemberAuthorize]
         public IActionResult Add([FromBody] MemberAddressDto dto)
         {
             var memberId = CurrentMemberId();
@@ -51,7 +48,6 @@ namespace ZR.Mall.Controllers.Front
         /// 修改收货地址（仅能修改自己的地址）
         /// </summary>
         [HttpPut("update")]
-        [MemberAuthorize]
         public IActionResult Update([FromBody] MemberAddressDto dto)
         {
             var memberId = CurrentMemberId();
@@ -63,7 +59,6 @@ namespace ZR.Mall.Controllers.Front
         /// 删除收货地址（删除默认地址后自动把最新一条设为默认）
         /// </summary>
         [HttpPost("delete/{id}")]
-        [MemberAuthorize]
         public IActionResult Delete(long id)
         {
             var memberId = CurrentMemberId();
@@ -75,7 +70,6 @@ namespace ZR.Mall.Controllers.Front
         /// 设为默认收货地址
         /// </summary>
         [HttpPost("set-default/{id}")]
-        [MemberAuthorize]
         public IActionResult SetDefault(long id)
         {
             var memberId = CurrentMemberId();
