@@ -59,6 +59,11 @@ namespace ZR.Mall.Controllers
         public IActionResult GetOMSOrder(long Id)
         {
             var response = _OMSOrderService.GetInfo(Id);
+            // GetInfo 对不存在的订单返回 null；不判空会导致 Adapt(null) 后返回 200 + data:null（或 NRE）
+            if (response == null)
+            {
+                return ToResponse(ResultCode.FAIL, "订单不存在");
+            }
 
             var info = response.Adapt<OMSOrderDto>();
             return SUCCESS(info);
@@ -105,7 +110,7 @@ namespace ZR.Mall.Controllers
         public IActionResult RefundOrder([FromBody] OMSOrderDto parm)
         {
             var modal = parm.Adapt<OMSOrder>().ToUpdate(HttpContext);
-            var response = _OMSOrderService.UpdateOMSOrder(4, modal);
+            var response = _OMSOrderService.UpdateOMSOrder((int)Enum.OrderUpdateOperType.Refund, modal);
 
             return ToResponse(response);
         }

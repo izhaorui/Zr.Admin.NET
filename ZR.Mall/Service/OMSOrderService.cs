@@ -82,33 +82,34 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 修改订单管理
+        /// 修改订单管理（按 <see cref="OrderUpdateOperType"/> 分发）
         /// </summary>
-        /// <param name="operType"></param>
+        /// <param name="operType"><see cref="OrderUpdateOperType"/> 的值</param>
         /// <param name="model"></param>
         /// <returns></returns>
         public int UpdateOMSOrder(int operType, OMSOrder model)
         {
-            //修改商家备注
-            if (operType == 2)
+            switch ((OrderUpdateOperType)operType)
             {
-                return UpdateMerchantNote(model);
+                //修改商家备注
+                case OrderUpdateOperType.MerchantNote:
+                    return UpdateMerchantNote(model);
+                //修改地址
+                case OrderUpdateOperType.Address:
+                    return Update(w => w.OrderNo == model.OrderNo, it => new OMSOrder()
+                    {
+                        AddressSnapshot = model.AddressSnapshot,
+                    });
+                //订单退款：关闭订单 + 回补库存（简易版无支付，退款即退回库存）—— 状态迁移动交状态内核
+                case OrderUpdateOperType.Refund:
+                    return _orderStateService.RefundOrder(model);
+                //通用更新（整体更新非空字段）
+                case OrderUpdateOperType.General:
+                    return Update(model, true);
+                default:
+                    // 原实现对未识别值静默走 Update(model, true)，误传操作码会改动整单字段；改为明确报错
+                    throw new CustomException($"不支持的订单操作类型：{operType}");
             }
-            //修改地址
-            if (operType == 3)
-            {
-                var result = Update(w => w.OrderNo == model.OrderNo, it => new OMSOrder()
-                {
-                    AddressSnapshot = model.AddressSnapshot,
-                });
-                return result;
-            }
-            //订单退款：关闭订单 + 回补库存（简易版无支付，退款即退回库存）—— 状态迁移动交状态内核
-            if (operType == 4)
-            {
-                return _orderStateService.RefundOrder(model);
-            }
-            return Update(model, true);
         }
 
         /// <summary>
@@ -163,7 +164,9 @@ namespace ZR.Mall.Service
 
             predicate = predicate.And(it => it.OrderStatus == Enum.OrderStatusEnum.TobeShipped);
             predicate = predicate.And(it => it.DeliveryStatus == Enum.DeliveryStatusEnum.NotDelivered);
-            predicate = predicate.And(it => it.PayTime >= parm.BeginCreateTime && it.PayTime <= parm.EndCreateTime);
+            // 时间边界各自独立拼接：缺哪个就不加哪个，避免 `PayTime <= NULL` 恒假导致导出为空
+            predicate = predicate.AndIF(parm.BeginCreateTime != null, it => it.PayTime >= parm.BeginCreateTime);
+            predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.PayTime <= parm.EndCreateTime);
 
             var response = await Queryable()
                 .Where(predicate.ToExpression())
@@ -187,7 +190,7 @@ namespace ZR.Mall.Service
             var result = await Queryable()
                 //.Where(o => o.OrderStatus == Enum.OrderStatusEnum.Completed)
                 .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
-                .WhereIF(dto.BeginCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
+                .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
                 .Select(o => new
                 {
                     TotalSales = SqlFunc.AggregateSum(o.PayAmount),
@@ -207,7 +210,7 @@ namespace ZR.Mall.Service
             var trend = await Queryable()
             .WhereIF(dto.BeginCreateTime == null, o => o.PayTime >= DateTime.Now.AddDays(-7))
             .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
-            .WhereIF(dto.BeginCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
+            .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
             .GroupBy(o => SqlFunc.ToDateShort(o.PayTime))
             .OrderBy(o => SqlFunc.ToDateShort(o.PayTime))
             .Select(o => new
@@ -231,7 +234,7 @@ namespace ZR.Mall.Service
             var topProducts = await Context.Queryable<OMSOrderItem>()
                 .InnerJoin<OMSOrder>((oi, o) => oi.OrderId == o.Id)
                 .WhereIF(dto.BeginCreateTime != null, (oi, o) => o.PayTime >= dto.BeginCreateTime)
-                .WhereIF(dto.BeginCreateTime != null, (oi, o) => o.PayTime <= dto.EndCreateTime)
+                .WhereIF(dto.EndCreateTime != null, (oi, o) => o.PayTime <= dto.EndCreateTime)
                 .GroupBy((oi, o) => oi.ProductId)
                 .OrderBy((oi, o) => SqlFunc.AggregateSum(oi.Quantity), OrderByType.Desc)
                 .Select((oi, o) => new
@@ -262,13 +265,16 @@ namespace ZR.Mall.Service
         private static Expressionable<OMSOrder> QueryExp(OMSOrderQueryDto parm)
         {
             var predicate = Expressionable.Create<OMSOrder>();
-            if (parm.OrderStatus == null && parm.BeginCreateTime == null)
+            // 无任何条件时默认只看最近 7 天；否则按传入的时间边界逐条拼接（缺哪个就不加哪个），
+            // 避免 `CreateTime >= NULL`（只传结束时间）或 `<= NULL`（只传开始时间）导致静默查空。
+            if (parm.OrderStatus == null && parm.BeginCreateTime == null && parm.EndCreateTime == null)
             {
                 predicate = predicate.And(it => it.CreateTime >= DateTime.Now.AddDays(-7).ToShortDateString().ParseToDateTime());
             }
             else
             {
-                predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime >= parm.BeginCreateTime && it.CreateTime <= parm.EndCreateTime);
+                predicate = predicate.AndIF(parm.BeginCreateTime != null, it => it.CreateTime >= parm.BeginCreateTime);
+                predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime <= parm.EndCreateTime);
             }
             predicate = predicate.AndIF(parm.OrderNo.IsNotEmpty(), it => it.OrderNo == parm.OrderNo);
             predicate = predicate.AndIF(parm.MemberId != null, it => it.MemberId == parm.MemberId);

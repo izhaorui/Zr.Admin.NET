@@ -28,7 +28,8 @@ namespace ZR.Mall.Model.Dto
     public class OMSOrderDto
     {
         /// <summary>
-        /// 操作类型 1.发货 2.修改平台备注
+        /// 操作类型，取值见 <see cref="OrderUpdateOperType"/>：
+        /// 1=通用更新 / 2=修改平台备注 / 3=修改收货地址 / 4=退款。
         /// </summary>
         [ExcelColumn(Ignore = true)]
         public int OperType { get; set; }

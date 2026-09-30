@@ -33,7 +33,8 @@ namespace ZR.Mall.Service.IService
         Dictionary<int, int> GetOrderStatusStats();
 
         /// <summary>
-        /// 修改订单（operType 分发：2=商家备注 / 3=修改地址 / 4=退款 / 其它=通用更新）
+        /// 修改订单（operType 取值见 <see cref="ZR.Mall.Enum.OrderUpdateOperType"/>：
+        /// 1=通用更新 / 2=修改平台备注 / 3=修改收货地址 / 4=退款；未识别的值会抛出业务异常）
         /// </summary>
         int UpdateOMSOrder(int operType, OMSOrder parm);
 
