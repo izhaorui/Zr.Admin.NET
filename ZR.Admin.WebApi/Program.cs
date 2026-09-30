@@ -68,6 +68,9 @@ builder.Configuration.AddJsonFile("iprate.json");
 // CreateBuilder 之后再 AddJsonFile 会盖掉已加载的 UserSecrets/环境变量，因此这里补挂回去。
 builder.Configuration.AddJsonFile("ai.json", optional: false, reloadOnChange: true);
 builder.Configuration.AddJsonFile($"ai.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+// 代码生成独立配置：codeGen.json < appsettings.{Environment}.json < UserSecrets < 环境变量 < 命令行
+// 必须放在下方 UserSecrets/环境变量/命令行之前加载，否则本文件会反过来盖掉环境变量（CodeGen__vuePath 等将失效）。
+builder.Configuration.AddJsonFile("codeGen.json", optional: true, reloadOnChange: true);
 if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets(typeof(Program).Assembly, optional: true);
@@ -80,7 +83,6 @@ builder.Services.AddUserRateLimiting(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 //绑定整个对象到Model上
 builder.Services.Configure<OptionsSetting>(builder.Configuration);
-builder.Configuration.AddJsonFile("codeGen.json");
 //jwt 认证
 builder.Services.AddJwt();
 //配置文件
