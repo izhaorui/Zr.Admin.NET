@@ -13,7 +13,8 @@
         /// <summary>
         /// 会员ID（C 端会员归属；会员接口一律按此列过滤，禁止跨会员访问）
         /// </summary>
-        [SugarColumn(DefaultValue = "0", ColumnDescription = "会员ID")]
+        // 同 OMSOrder.MemberId：映射到库中的历史列 userId
+        [SugarColumn(ColumnName = "userId", DefaultValue = "0", ColumnDescription = "会员ID")]
         public long MemberId { get; set; }
         /// <summary>
         /// 收件人姓名

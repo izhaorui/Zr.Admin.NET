@@ -32,7 +32,7 @@ namespace ZR.Mall.Model
         /// <summary>
         /// 会员ID（C 端会员下单时绑定，用于"我的订单"按会员身份查询）。
         /// </summary>
-        [SugarColumn(IsNullable = true, ColumnDescription = "会员ID")]
+        [SugarColumn(IsNullable = true, ColumnDescription = "会员ID", ColumnName = "userId")]
         public long? MemberId { get; set; }
 
         /// <summary>
