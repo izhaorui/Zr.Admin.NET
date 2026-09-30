@@ -34,9 +34,43 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public PagedInfo<ProductDto> GetList(ShoppingProductQueryDto parm)
         {
+            return QueryList(parm, useCache: false);
+        }
+
+        /// <summary>
+        /// C 端商品列表。只让「首页默认列表」进查询缓存：无任何筛选条件 + 第 1 页。
+        /// 这类查询参数固定、重复率最高；带筛选/翻页的组合无限，缓存键会随之膨胀，故不缓存。
+        ///
+        /// 说明：SaleStatus 由 C 端 Controller 强制为「在售」，是常量，不参与「是否默认查询」的判定，
+        /// 否则条件永远不成立、缓存形同虚设。
+        /// </summary>
+        public PagedInfo<ProductDto> GetFrontList(ShoppingProductQueryDto parm)
+        {
+            var isDefaultList = parm.PageNum <= 1
+                && string.IsNullOrWhiteSpace(parm.ProductName)
+                && string.IsNullOrWhiteSpace(parm.ProductCode)
+                && parm.ProductId == null
+                && parm.CategoryId == null
+                && parm.BrandId == null
+                && parm.BeginAddTime == null
+                && parm.EndAddTime == null;
+
+            return QueryList(parm, useCache: isDefaultList);
+        }
+
+        /// <summary>
+        /// 商品列表查询主体：后台走 GetList（不缓存），C 端走 GetFrontList（仅默认列表缓存）。
+        ///
+        /// 缓存注意：本查询 Includes(Skus) 会 JOIN mms_skus，下单扣库存与 SKU 维护都会触发
+        /// IsAutoRemoveDataCache 自动清缓存 —— 好处是库存/销量不会被缓存拖旧（成交后即刷新），
+        /// 代价是命中率受写入频率影响。TTL 60 秒仅作兜底。
+        /// </summary>
+        private PagedInfo<ProductDto> QueryList(ShoppingProductQueryDto parm, bool useCache)
+        {
             var predicate = QueryExp(parm);
 
             var response = Queryable()
+                .WithCacheIF(useCache, 60)
                 .Where(predicate.ToExpression())
                 .Includes(x => x.Skus.Where(f => f.IsDelete == 0).ToList())
                 .Includes(x => x.Category)
@@ -57,15 +91,6 @@ namespace ZR.Mall.Service
         /// <returns>商品详情；商品不存在时返回 <c>null</c>，由调用方决定返回什么错误</returns>
         public ProductDto GetInfo(long ProductId)
         {
-            // ⚠️ 查不到商品必须返回 null，不能让异常冒出去：
-            // 原先的 First() 会抛 NullReferenceException，
-            // 导致 FrontProductController 里的 `response == null` 判断永远走不到，
-            // 「商品不存在或已下架」这条提示变成 500 + 原始异常堆栈（C 端用户可见）。
-            //
-            // 这里用 Take(1).ToList() 而非 FirstOrDefault()：
-            // 本文件没有 using System.Linq，Enumerable.FirstOrDefault 不可见，
-            // 只剩 System.Collections.Immutable 的同名扩展参与解析，会报 CS0411。
-            // 显式取一条再判空，生成的 SQL 也是 TOP 1 / LIMIT 1。
             var list = Queryable()
                 .Where(x => x.ProductId == ProductId)
                 .Take(1)

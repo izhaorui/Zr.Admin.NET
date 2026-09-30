@@ -34,7 +34,7 @@ namespace ZR.Mall.Controllers.Front
         {
             parm ??= new ShoppingProductQueryDto();
             parm.SaleStatus = SaleStatus.OnSale; // 游客只能看在售商品
-            var response = _ShoppingProductService.GetList(parm);
+            var response = _ShoppingProductService.GetFrontList(parm);
             return SUCCESS(response);
         }
 
