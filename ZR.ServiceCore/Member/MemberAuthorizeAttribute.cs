@@ -1,14 +1,16 @@
+using Infrastructure;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace ZR.Mall.Common
+namespace ZR.ServiceCore.Member
 {
     /// <summary>
     /// 会员鉴权过滤器：校验 mall-token，失败返回业务码 OAUTH_FAIL(201)（HTTP 200）。
     /// 刻意避开 401，防止前端共享拦截器误触发后台"会话过期重新登录"流程；
     /// 与后台 JwtAuthMiddleware / ActionPermissionFilter 完全解耦，对后台链路零改动。
+    /// 会员身份为平台级通用能力，置于框架共享层供各业务模块（商城/内容/社交等）的 C 端控制器复用。
     /// </summary>
     public class MemberAuthorizeAttribute : ActionFilterAttribute
     {

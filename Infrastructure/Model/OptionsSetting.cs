@@ -94,6 +94,12 @@ namespace Infrastructure.Model
         public bool Saas { get; set; }
 
         /// <summary>
+        /// 初始化会员能力：建会员表 ums_member（与商城同库 MallDb）+ 自增种子校正。
+        /// 会员身份为平台级通用能力（与 sys_user 对等），与商城/内容/社交等业务模块相互独立。
+        /// </summary>
+        public bool Member { get; set; }
+
+        /// <summary>
         /// 初始化商城模块：建商城业务表 + 商城内置定时任务 + 商城菜单。
         /// </summary>
         public bool Mall { get; set; }

@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Attribute;
+using Infrastructure.Helper;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -60,6 +61,19 @@ namespace Infrastructure
 
             // 入口/指定根程序集始终纳入扫描（宿主程序集也可能标注 [AppService]）
             TryAdd(root);
+
+            // 输出目录物理扫描（与控制器/校验器装配同源，见 AssemblyUtils）。
+            // ⚠️ 不可只依赖引用闭包：编译器会把"宿主代码未直接使用"的程序集引用从产物中裁掉
+            //（Assembly.GetReferencedAssemblies() 不含它们），但此类"仅传递引用"的业务模块
+            // 的控制器仍会被宿主从输出目录装配 —— 闭包扫描漏掉它就会出现
+            // "控制器可达、[AppService] 服务未注册"的运行期 500（DI 解析失败）。
+            foreach (var assembly in AssemblyUtils.GetAssemblies())
+            {
+                if (IsScanCandidate(assembly))
+                {
+                    TryAdd(assembly);
+                }
+            }
 
             var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var queue = new Queue<AssemblyName>(root.GetReferencedAssemblies());

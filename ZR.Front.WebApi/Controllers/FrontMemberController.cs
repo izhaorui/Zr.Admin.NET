@@ -1,16 +1,20 @@
+using Infrastructure;
+using Infrastructure.Attribute;
+using Infrastructure.Controllers;
 using Infrastructure.Extensions;
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ZR.Mall.Common;
-using ZR.Mall.Service.IService;
 using ZR.Model.Member.Dto;
+using ZR.ServiceCore.Member;
 
-namespace ZR.Mall.Controllers.Front
+namespace ZR.Front.WebApi.Controllers
 {
     /// <summary>
     /// C 端会员接口（匿名可访问，会员身份由 mall-token 校验）。
     /// 与后台管理端账号/令牌完全隔离；首版仅支持手机号 + 短信验证码登录（登录即注册）。
-    /// 供后期独立商城 App 消费。
+    /// 会员登录属平台级 C 端能力，中立不绑任何业务模块，故置于公网宿主（项目约定：Controller 只放宿主或业务模块，框架/服务库不放）。
+    /// 供商城、内容、社交等 C 端业务共用同一套会员身份。
     /// </summary>
     [PublicApi]
     [Route("front/member")]

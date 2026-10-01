@@ -67,8 +67,8 @@ namespace ZR.Mall.Controllers
             {
                 try
                 {
-                    var seedDataService = new SeedDataService();
-                    var seedResult = seedDataService.InitMallMenuSeedData();
+                    // 商城菜单种子已内聚到 MallModuleInitProvider（随模块），不再经由框架层 SeedDataService 转发
+                    var seedResult = new MallModuleInitProvider().SeedMenu();
                     logs.AddRange(seedResult);
                 }
                 catch (Exception ex)

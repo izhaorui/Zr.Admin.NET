@@ -35,6 +35,7 @@ ZR.Vue        旧版 Vue2（新功能勿优先改）
 - **Service**：业务逻辑、查询、事务、状态流转的主要位置。不为"分层"增加项目中不存在的层。
 - 普通查询优先现有 SqlSugar 用法（`Queryable/Insertable/Updateable/Deleteable/SqlFunc`），不为普通查询新建 Repository 架构。
 - Service 中勿随意定义大量 DTO，新增实体/DTO 优先参考同类已有文件。
+- **using 与 GlobalUsing**：各工程根目录的 `GlobalUsing.cs` 已统一引入常用命名空间（如 `Infrastructure`、`Infrastructure.Attribute`、`Infrastructure.Extensions`、`Infrastructure.Model`、`SqlSugar`、`ZR.Model.System` 等，各工程清单不同）。写代码前先看所在工程的 GlobalUsing.cs，**GlobalUsing 已引入的命名空间不要在文件里重复 `using`**；新增常用命名空间优先加进 GlobalUsing，而不是逐个文件补。文件内只写 GlobalUsing 未覆盖的 using。
 - 修改 `ZR.ServiceCore` 系统核心需特别谨慎，不因业务需求直接改核心逻辑。
 
 ## 4. 数据库与 SqlSugar

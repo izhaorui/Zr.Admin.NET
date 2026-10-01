@@ -2,6 +2,7 @@ using ZR.Infrastructure.Helper;
 using ZR.Mall.Enum;
 using ZR.Mall.Model;
 using ZR.Mall.Service.IService;
+using ZR.ServiceCore.Member;
 using ZR.ServiceCore.Services;
 
 namespace ZR.Mall.Service

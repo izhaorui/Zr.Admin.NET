@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using ZR.Mall.Common;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
+using ZR.ServiceCore.Member;
 
 namespace ZR.Mall.Controllers.Front
 {

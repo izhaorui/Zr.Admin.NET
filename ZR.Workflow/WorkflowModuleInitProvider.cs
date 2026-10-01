@@ -1,13 +1,45 @@
+using Infrastructure.ModuleInit;
 using SqlSugar.IOC;
-using ZR.Model.System;
+using ZR.ServiceCore.Services;
 
-namespace ZR.ServiceCore.Services
+namespace ZR.Workflow
 {
     /// <summary>
-    /// 工作流模块种子：菜单/按钮权限。建好后由 EnsureTenantPlanMenuSeedData 自动纳入默认套餐，租户开箱可见。
+    /// 工作流模块初始化 Provider：工作流菜单/按钮权限 + 工作流内置定时任务种子。
+    /// 随工作流模块内聚（框架层不再持有工作流菜单与任务定义），由 ModuleInitRunner 按 ModuleInit.Workflow 开关调度。
+    /// 建好后由 EnsureTenantPlanMenuSeedData 自动纳入默认套餐，租户开箱可见。
     /// </summary>
-    internal sealed class WorkflowSeedService
+    [AppService(ServiceType = typeof(IModuleInitProvider))]
+    public class WorkflowModuleInitProvider : IModuleInitProvider
     {
+        public string ModuleName => "Workflow";
+
+        public string DisplayName => "工作流";
+
+        /// <summary>先于 Pro(800)/Saas(900) 执行，与原 ModuleInitRunner 字典枚举顺序（Mall→Workflow→Pro→Saas）等价。</summary>
+        public int Order => 200;
+
+        public bool IsEnabled(OptionsSetting options) => options.ModuleInit.Workflow;
+
+        /// <summary>
+        /// 非菜单种子：工作流内置定时任务（超时自动处理 + Webhook Outbox 重试）。
+        /// </summary>
+        public void Seed()
+        {
+            Log.WriteLine(ConsoleColor.White, EnsureTasksSeedData());
+        }
+
+        /// <summary>
+        /// 菜单/按钮权限种子。
+        /// </summary>
+        public List<string> SeedMenu()
+        {
+            return new List<string>
+            {
+                EnsureMenuSeedData()
+            };
+        }
+
         /// <summary>
         /// 确保工作流模块菜单与按钮权限存在（幂等）。与商城菜单一致，通过代码维护而非 data.xlsx。
         /// </summary>
@@ -101,7 +133,7 @@ namespace ZR.ServiceCore.Services
                     Buttons: []),
                 new(Name: "我发起的", Path: "my", Component: "workflow/instance/index", Perms: "workflow:instance:list", OrderNum: 1, Category: 1, Icon: "guide",
                     Buttons: [
-                        new("发起", "workflow:instance:start"), 
+                        new("发起", "workflow:instance:start"),
                         new("撤回", "workflow:instance:withdraw"),
                         // 管理员运维操作：终止 / 挂起 / 恢复 / 改派 / 跳转
                         new("终止", "workflow:instance:terminate"),
@@ -234,16 +266,54 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 单独初始化工作流模块：创建工作流菜单与按钮权限，并纳入默认套餐使其对租户可见。
-        /// 由 CLI --initdb 触发，并按 appsettings 的 ModuleInit.Workflow 开关决定是否执行。
+        /// 确保工作流内置定时任务存在（超时自动处理 + Webhook Outbox 重试）。幂等。
+        /// 工作流数据在租户库，TenantId 设 "*" 由 Job_Dispatcher 按所有启用租户展开执行。
+        /// 注意：ID/AssemblyName/ClassName 字符串标识不可改动，否则会破坏既有调度数据。
         /// </summary>
-        public List<string> InitMenuSeedData()
+        public string EnsureTasksSeedData()
         {
-            var result = new List<string>
+            var mainTenantId = App.MainDbConfigId;
+            var db = DbScoped.SugarScope.GetConnectionScope(mainTenantId);
+
+            if (db.Queryable<SysTasks>().ClearFilter().Any(x => x.ID == "20260813000001"))
             {
-                EnsureMenuSeedData(),
-            };
-            return result;
+                return "[工作流任务] 工作流超时自动处理已存在，跳过";
+            }
+
+            db.Insertable(new SysTasks
+            {
+                ID = "20260813000001",
+                Name = "工作流超时自动处理",
+                JobGroup = "workflow",
+                Cron = "0 0/5 * * * ?",
+                AssemblyName = "ZR.Workflow",
+                ClassName = "Job_WfTimeoutAutoProcess",
+                TriggerType = 1,
+                IntervalSecond = 0,
+                IsStart = 1,
+                TaskType = 1,
+                TenantId = "*",
+                Create_by = "system"
+            }).ExecuteCommand();
+
+            // 工作流 Webhook Outbox 重试（默认每 2 分钟，按租户展开）
+            db.Insertable(new SysTasks
+            {
+                ID = "20260813000002",
+                Name = "工作流Webhook投递",
+                JobGroup = "workflow",
+                Cron = "0 0/2 * * * ?",
+                AssemblyName = "ZR.Workflow",
+                ClassName = "Job_WfWebhookRetry",
+                TriggerType = 1,
+                IntervalSecond = 0,
+                IsStart = 1,
+                TaskType = 1,
+                TenantId = "*",
+                Create_by = "system"
+            }).ExecuteCommand();
+
+            return "[工作流任务] 写入工作流超时自动处理";
         }
     }
 }

@@ -1,15 +1,47 @@
-using Infrastructure;
+using Infrastructure.Model;
+using Infrastructure.ModuleInit;
 using SqlSugar.IOC;
 using ZR.Model.System;
+using ZR.ServiceCore.Services;
 
-namespace ZR.ServiceCore.Services
+namespace ZR.Mall.Service
 {
     /// <summary>
-    /// 商城模块种子：菜单/按钮权限 + 商城内置定时任务。
+    /// 商城模块初始化 Provider：商城后台管理菜单/按钮权限 + 商城内置定时任务种子。
+    /// 随商城模块内聚（框架层不再持有商城菜单与任务定义），由 ModuleInitRunner 按 ModuleInit.Mall 开关调度。
     /// 建好后由 EnsureTenantPlanMenuSeedData 自动纳入默认套餐，租户开箱可见。
     /// </summary>
-    internal sealed class MallSeedService
+    [AppService(ServiceType = typeof(IModuleInitProvider))]
+    public class MallModuleInitProvider : IModuleInitProvider
     {
+        public string ModuleName => "Mall";
+
+        public string DisplayName => "商城";
+
+        /// <summary>先于 Pro(800)/Saas(900) 执行，与原 ModuleInitRunner 字典枚举顺序（Mall→Workflow→Pro→Saas）等价。</summary>
+        public int Order => 100;
+
+        public bool IsEnabled(OptionsSetting options) => options.ModuleInit.Mall;
+
+        /// <summary>
+        /// 非菜单种子：商城内置定时任务（待付款超时自动取消）。
+        /// </summary>
+        public void Seed()
+        {
+            Log.WriteLine(ConsoleColor.White, EnsureTasksSeedData());
+        }
+
+        /// <summary>
+        /// 菜单/按钮权限种子。
+        /// </summary>
+        public List<string> SeedMenu()
+        {
+            return new List<string>
+            {
+                EnsureMenuSeedData()
+            };
+        }
+
         /// <summary>
         /// 确保商城后台管理菜单与按钮权限存在（幂等）
         /// </summary>
@@ -155,6 +187,7 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 确保商城系统内置定时任务存在（待付款超时自动取消）。幂等。
         /// SaaS 开启时 TenantId="*" 由 Job_Dispatcher 按启用租户展开；未开启时写主库标识单次执行。
+        /// 注意：AssemblyName/ClassName 字符串标识不可改动，否则会破坏既有调度数据。
         /// </summary>
         public string EnsureTasksSeedData()
         {
@@ -195,19 +228,6 @@ namespace ZR.ServiceCore.Services
             }).ExecuteCommand();
 
             return "[商城任务] 写入待付款超时自动取消";
-        }
-
-        /// <summary>
-        /// 单独初始化商城模块：创建商城菜单与按钮权限，并纳入默认套餐使其对租户可见。
-        /// 由 CLI --initdb 触发，并按 appsettings 的 ModuleInit.Mall 开关决定是否执行。
-        /// </summary>
-        public List<string> InitMenuSeedData()
-        {
-            var result = new List<string>
-            {
-                EnsureMenuSeedData()
-            };
-            return result;
         }
     }
 }

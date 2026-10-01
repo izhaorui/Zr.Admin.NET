@@ -3,6 +3,7 @@ using FluentValidation;
 using Infrastructure;
 using Infrastructure.Cache;
 using Infrastructure.Extensions;
+using Infrastructure.Helper;
 using Infrastructure.Model;
 using IP2Region.Net.Abstractions;
 using IP2Region.Net.XDB;
@@ -37,8 +38,11 @@ builder.Host.UseNLog();
 
 // ---------------------------------------------------------------------------
 // 控制器注册：fail-closed 白名单
-// 不能使用 AddDynamicApi()：它会加载输出目录全部 ZR*.dll 并放行所有 ControllerBase，
-// 导致后台管理接口被公网暴露。此处只挂 ZR.Mall 程序集，且只放行带 [PublicApi] 的控制器。
+// 不能使用 AddDynamicApi()：它会放行所有 ControllerBase，导致后台管理接口被公网暴露。
+// 此处挂载输出目录全部 ZR.* 业务程序集（含本宿主，由 AssemblyUtils 按入口程序集前缀扫描），
+// 再由 PublicControllerFeatureProvider 只放行带 [PublicApi] 的控制器——
+// 未标记 [PublicApi] 的后台管理控制器在本宿主上一律不注册（404）。
+// 新增业务模块（如未来的内容/社交）只要带 [PublicApi] C 端接口即自动可达，无需改本宿主。
 // ---------------------------------------------------------------------------
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
@@ -51,7 +55,11 @@ builder.Services.AddControllers()
     .ConfigureApplicationPartManager(m =>
     {
         m.ApplicationParts.Clear();
-        m.ApplicationParts.Add(new AssemblyPart(typeof(ZR.Mall.Model.Product).Assembly));
+        foreach (var assembly in AssemblyUtils.GetAssemblies())
+        {
+            if (m.ApplicationParts.Any(it => it.Name.Equals(assembly.GetName().Name, StringComparison.OrdinalIgnoreCase))) continue;
+            m.ApplicationParts.Add(new AssemblyPart(assembly));
+        }
         m.FeatureProviders.Clear();
         m.FeatureProviders.Add(new PublicControllerFeatureProvider());
     });
@@ -61,12 +69,8 @@ builder.Services.AddFluentValidationAutoValidation(options =>
 {
     options.DisableBuiltInModelValidation = false;
 });
-builder.Services.AddValidatorsFromAssemblies(new[]
-{
-    typeof(Program).Assembly,
-    typeof(PagerInfo).Assembly,
-    typeof(ZR.Mall.Model.Product).Assembly
-});
+// FluentValidation 校验器随 ZR.* 程序集自动发现（与控制器装配同源，新增模块零改动生效）
+builder.Services.AddValidatorsFromAssemblies(AssemblyUtils.GetAssemblies());
 
 builder.Services.AddHttpClient();
 

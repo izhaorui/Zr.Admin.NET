@@ -39,7 +39,8 @@ namespace ZR.ServiceCore.SqlSugar
                     var moduleInitializers = scope.ServiceProvider.GetServices<ITenantModuleInitializer>();
                     foreach (var mi in moduleInitializers)
                     {
-                        // 已注册为独立模块的（商城/工作流）由各自开关控制，避免与全量初始化重复执行
+                        // 已注册为独立模块的（实现 IModuleInitProvider 的商城/工作流等）由各自开关控制，
+                        // 避免与 RunEnabledModules 重复执行同一模块建表
                         if (ModuleInitRunner.Contains(mi.ModuleName)) continue;
                         mi.InitializeNonSaaS();
                     }

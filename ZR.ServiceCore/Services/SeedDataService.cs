@@ -348,7 +348,7 @@ namespace ZR.ServiceCore.Services
                 // 而非 ModuleInit.Saas 这个"菜单种子"开关）。两个 Job 最终调用的
                 // SysTenantService.SuspendExpiredTenants/RemindExpiringTenants 首行即 EnsureTenantFeatureEnabled()，
                 // 在 UseTenant!=1 时直接抛异常；若无条件落库，非 SaaS 部署会形成"每日必失败"的僵尸任务。
-                // 工作流/商城的内置任务不在此处，随各自模块开关由 ModuleInitRunner.Modules[].Seed 写入。
+                // 工作流/商城的内置任务不在此处，随各自模块开关由对应 IModuleInitProvider.Seed 写入。
                 if (App.IsTenantEnabled())
                 {
                     result.Add(new SystemTaskSeedService().EnsureSystemTasksSeedData());
@@ -364,50 +364,10 @@ namespace ZR.ServiceCore.Services
             }
 
             // 模块级初始化（建表 + 模块内置任务 + 菜单）不在此处：统一由 ModuleInitRunner.RunEnabledModules
-            // 按 ModuleInit.Saas/Mall/Workflow/Pro 开关驱动，避免"同一套开关散落两处、菜单被重复写入"。
+            // 经 DI 发现各模块 IModuleInitProvider 并按其 IsEnabled 开关驱动，避免"同一套开关散落两处、菜单被重复写入"。
             // Pro 的 AI 按钮/页面依赖本方法内 InitMenuData 已写入的系统菜单，故由调用方在同一链路之后触发。
 
             return result;
-        }
-
-        /// <summary>
-        /// 单独初始化商城模块：创建商城菜单与按钮权限，并纳入默认套餐使其对租户可见。
-        /// 委托给 MallSeedService，由 CLI --initdb 触发、按 ModuleInit.Mall 开关决定是否执行。
-        /// </summary>
-        public List<string> InitMallMenuSeedData()
-        {
-            return new MallSeedService().InitMenuSeedData();
-        }
-
-        /// <summary>
-        /// 单独初始化工作流模块：创建工作流菜单与按钮权限，并纳入默认套餐使其对租户可见。
-        /// 委托给 WorkflowSeedService，由 CLI --initdb 触发、按 ModuleInit.Workflow 开关决定是否执行。
-        /// </summary>
-        public List<string> InitWorkflowMenuSeedData()
-        {
-            return new WorkflowSeedService().InitMenuSeedData();
-        }
-
-        /// <summary>
-        /// 初始化saas模块菜单种子数据（租户管理、套餐菜单、字典种子）。
-        /// </summary>
-        public List<string> InitSaasMenuSeedData()
-        {
-            return new SaasMenuSeedService().EnsureAllSeedMenus();
-        }
-
-        /// <summary>
-        /// 单独初始化专业版(AI)菜单种子：data.xlsx 系统页下的 AI 能力按钮 +「用量管理 / 我的用量 / AI 办公助手」页面。
-        /// 由 CLI --initdb 触发、按 appsettings 的 ModuleInit.Pro 开关决定是否执行；依赖 InitMenuData 已写入系统菜单。
-        /// </summary>
-        public List<string> InitProMenuSeedData()
-        {
-            var svc = new SystemMenuSeedService();
-            return
-            [
-                svc.EnsureAiPermSeedData(),
-                svc.EnsureAiUsageMenuSeedData()
-            ];
         }
     }
 }

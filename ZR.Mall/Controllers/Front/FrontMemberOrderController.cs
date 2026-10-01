@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using ZR.Mall.Common;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
+using ZR.ServiceCore.Member;
 using ZR.ServiceCore.Payment;
 
 namespace ZR.Mall.Controllers.Front

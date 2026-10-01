@@ -1,11 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using ZR.Model.Member;
 
-namespace ZR.Mall.Common
+namespace ZR.ServiceCore.Member
 {
     /// <summary>
     /// C 端会员令牌载荷（仅放非敏感标识，不放昵称/头像等易变数据）
@@ -32,6 +33,8 @@ namespace ZR.Mall.Common
     /// 会员令牌签发/校验工具。
     /// 使用独立密钥与 Issuer/Audience，与后台 JwtSettings 双向隔离：
     /// 后台 JwtUtil 无法校验会员令牌，本工具也无法校验后台令牌。
+    /// 会员身份为平台级通用能力（与 sys_user 对等），故置于框架共享层 ZR.ServiceCore，
+    /// 供商城/内容/社交等业务模块共用，各模块无需引用商城工程。
     /// </summary>
     public static class MemberJwt
     {

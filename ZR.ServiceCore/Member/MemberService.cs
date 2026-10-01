@@ -1,15 +1,17 @@
+using Infrastructure;
+using Infrastructure.Attribute;
 using System.Text.RegularExpressions;
-using Infrastructure.Extensions;
-using ZR.Mall.Service.IService;
+using ZR.Infrastructure.Helper;
 using ZR.Model.Member;
 using ZR.Model.Models;
 using ZR.ServiceCore.Services;
 
-namespace ZR.Mall.Service
+namespace ZR.ServiceCore.Member
 {
     /// <summary>
     /// 通用会员 Service 业务层处理。
     /// 与后台 sys_user 完全隔离；首版仅支持手机号 + 短信验证码登录（登录即注册）。
+    /// 会员身份为平台级通用能力，置于框架共享层 ZR.ServiceCore，供各业务模块共用。
     /// </summary>
     [AppService(ServiceType = typeof(IMemberService))]
     public class MemberService : BaseService<UmsMember>, IMemberService
@@ -133,7 +135,8 @@ namespace ZR.Mall.Service
             var entity = new UmsMember
             {
                 Phone = phone,
-                NickName = "会员" + MaskPhone(phone),
+                // 手机号脱敏统一走 MaskUtil（AGENTS.md：手机号/姓名/证件/卡号/邮箱/IP 统一用 MaskUtil）
+                NickName = "会员" + MaskUtil.MaskPhone(phone),
                 RegisterTime = DateTime.Now,
                 Status = 0,
                 Gender = 0,
@@ -162,18 +165,6 @@ namespace ZR.Mall.Service
             {
                 throw new CustomException("手机号格式不正确");
             }
-        }
-
-        /// <summary>
-        /// 手机号脱敏（作为默认昵称，避免明文暴露）
-        /// </summary>
-        private static string MaskPhone(string phone)
-        {
-            if (string.IsNullOrWhiteSpace(phone) || phone.Length != 11)
-            {
-                return phone;
-            }
-            return phone.Substring(0, 3) + "****" + phone.Substring(7);
         }
     }
 }

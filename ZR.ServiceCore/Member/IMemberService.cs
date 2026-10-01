@@ -1,10 +1,12 @@
 using ZR.Model.Member;
 using ZR.Model.Models;
 
-namespace ZR.Mall.Service.IService
+namespace ZR.ServiceCore.Member
 {
     /// <summary>
-    /// 通用会员 service 接口
+    /// 通用会员 service 接口。
+    /// 会员身份为平台级通用能力（与 sys_user 对等、完全隔离），置于框架共享层，
+    /// 供商城/内容/社交等业务模块共用，各模块无需引用商城工程。
     /// </summary>
     public interface IMemberService : IBaseService<UmsMember>
     {
