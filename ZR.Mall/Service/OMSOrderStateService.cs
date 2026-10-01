@@ -390,39 +390,51 @@ namespace ZR.Mall.Service
             int closed = 0;
             var tran = UseTran(() =>
             {
-                var now = db.GetDate();
-                // 1) 原子将超时待付款单置为取消（条件更新，重复执行 affected=0 不重复处理）
-                var affected = db.Updateable<OMSOrder>()
-                    .SetColumns(it => new OMSOrder
-                    {
-                        OrderStatus = Enum.OrderStatusEnum.Cancel,
-                        CancelTime = now
-                    })
-                    .Where(x => x.OrderStatus == Enum.OrderStatusEnum.None && x.IsDelete == 0 && x.CreateTime < expireTime)
-                    .ExecuteCommand();
-                if (affected <= 0)
+                // 1) 先取本轮候选订单（仅"待付款且已超时"），只取 Id/订单号，避免整单实体入内存。
+                //    关单与回补都以这份候选列表为准 —— 原实现用「CancelTime 在最近 10 秒内」反推
+                //    "哪些是本次关的"，会把同一时段被用户/后台取消的老订单也算进来，
+                //    对同一笔取消重复回补库存（CancelOrder 已回补过一次）。
+                var candidates = db.Queryable<OMSOrder>()
+                    .Where(x => x.OrderStatus == Enum.OrderStatusEnum.None
+                                && x.IsDelete == 0
+                                && x.CreateTime < expireTime)
+                    .Select(x => new { x.Id, x.OrderNo })
+                    .ToList();
+                if (candidates.Count == 0)
                 {
                     // 定时任务每轮都会跑，无单可关时不记 Info（避免刷屏）；保留 Debug 便于确认任务在正常执行
                     logger.Debug($"超时订单清理：本轮无待付款超时订单。超时阈值={expireMinutes}分钟");
                     return;
                 }
 
-                // 2) 仅回补"本次刚取消"的订单（CancelTime 在极近窗口内），避免重复回补
-                var cancelled = db.Queryable<OMSOrder>()
-                    .Where(x => x.OrderStatus == Enum.OrderStatusEnum.Cancel
-                                && x.IsDelete == 0
-                                && x.CreateTime < expireTime
-                                && x.CancelTime >= now.AddSeconds(-10))
-                    .Select(x => x.Id)
-                    .ToList();
-                foreach (var id in cancelled)
+                var now = db.GetDate();
+                // 2) 逐单条件关单：仅当该单此刻仍是"待付款且超时"才置为取消。
+                //    条件更新天然防并发（并发支付/取消的那一单会命中 0 行被跳过）；
+                //    且只对"本次确实关掉的这一单"回补库存，不再依赖时间窗口去猜，杜绝重复回补。
+                foreach (var c in candidates)
                 {
-                    var o = db.Queryable<OMSOrder>().First(x => x.Id == id);
-                    RestoreStock(id);
-                    _orderLogService.AddLog(id, o?.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.Cancel, "EXPIRE", "system", "超时未支付自动关闭并回补库存");
-                    logger.Debug($"超时订单已关闭并回补库存：OrderNo={o?.OrderNo} OrderId={id}");
+                    var affected = db.Updateable<OMSOrder>()
+                        .SetColumns(it => new OMSOrder
+                        {
+                            OrderStatus = Enum.OrderStatusEnum.Cancel,
+                            CancelTime = now
+                        })
+                        .Where(x => x.Id == c.Id
+                                    && x.OrderStatus == Enum.OrderStatusEnum.None
+                                    && x.IsDelete == 0
+                                    && x.CreateTime < expireTime)
+                        .ExecuteCommand();
+                    if (affected <= 0)
+                    {
+                        // 校验与写入之间被并发改掉（已支付/已取消）：跳过，不回补库存
+                        continue;
+                    }
+
+                    RestoreStock(c.Id);
+                    _orderLogService.AddLog(c.Id, c.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.Cancel, "EXPIRE", "system", "超时未支付自动关闭并回补库存");
+                    logger.Debug($"超时订单已关闭并回补库存：OrderNo={c.OrderNo} OrderId={c.Id}");
+                    closed++;
                 }
-                closed = affected;
             });
             if (tran == null || !tran.IsSuccess)
             {

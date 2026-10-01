@@ -19,6 +19,32 @@ namespace ZR.Mall.Service
         public OMSPayment CreatePrepay(OMSOrder order, PayTypeEnum payType, string prepayData)
         {
             var db = Context;
+            var now = db.GetDate();
+
+            // 同一订单+渠道只保留一条"预支付"流水：用户反复点"去支付"时**更新**原记录，
+            // 而不是每次插入新行。原实现每点一次插一条 Prepay，回调 UpsertPaid 只把其中一条
+            // 更新为 Paid，其余永远停在 Prepay —— 对账时全是无法归因的噪音。
+            var prepay = db.Queryable<OMSPayment>()
+                .First(x => x.OrderNo == order.OrderNo && x.PayType == (int)payType
+                            && x.Status == (int)PaymentStatusEnum.Prepay && x.IsDelete == 0);
+            if (prepay != null)
+            {
+                db.Updateable<OMSPayment>()
+                    .SetColumns(it => new OMSPayment
+                    {
+                        Amount = order.PayAmount,
+                        PrepayData = prepayData,
+                        CreateTime = now
+                    })
+                    .Where(it => it.Id == prepay.Id)
+                    .ExecuteCommand();
+
+                prepay.Amount = order.PayAmount;
+                prepay.PrepayData = prepayData;
+                prepay.CreateTime = now;
+                return prepay;
+            }
+
             var p = new OMSPayment
             {
                 OrderNo = order.OrderNo,
@@ -27,7 +53,7 @@ namespace ZR.Mall.Service
                 Amount = order.PayAmount,
                 Status = (int)PaymentStatusEnum.Prepay,
                 PrepayData = prepayData,
-                CreateTime = db.GetDate()
+                CreateTime = now
             };
             p.Id = db.Insertable(p).ExecuteReturnIdentity();
             return p;

@@ -44,8 +44,11 @@ namespace ZR.Mall.Controllers
         public IActionResult QueryOMSOrder([FromQuery] OMSOrderQueryDto parm)
         {
             var response = _OMSOrderService.GetList(parm);
-            response.Extra.Add("NotDelivereOrder", _OMSOrderService.NotDelivereOrder());
-            response.Extra.Add("StatusStats", _OMSOrderService.GetOrderStatusStats());
+            // 列表 + 概览共 2 条 SQL：概览（各状态计数 + 待发货未发货数）由 GetOrderOverview 一次 GROUP BY 得出，
+            // 替代原先额外两次 COUNT。Extra 键名保持不变，前端仍读 data.extra.statusStats。
+            var overview = _OMSOrderService.GetOrderOverview();
+            response.Extra.Add("NotDelivereOrder", overview.NotDelivered);
+            response.Extra.Add("StatusStats", overview.StatusStats);
             return SUCCESS(response);
         }
 
@@ -167,6 +170,7 @@ namespace ZR.Mall.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPut("delivery")]
+        [ActionPermissionFilter(Permission = "oms:order:ship")]
         [Log(Title = "订单发货", BusinessType = BusinessType.UPDATE)]
         public async Task<IActionResult> Delivery([FromBody] OMSOrderDto parm)
         {
@@ -182,8 +186,22 @@ namespace ZR.Mall.Controllers
             {
                 return ToResponse(ResultCode.SUCCESS, "发货成功");
             }
-            return ToResponse(ResultCode.CUSTOM_ERROR, $"发货失败{response}");
+            // 不再把内部结果码（-1/-2/-3）直接抛给用户，映射成可读原因
+            return ToResponse(ResultCode.CUSTOM_ERROR, DeliveryFailReason(response));
         }
+
+        /// <summary>
+        /// 发货结果码 → 用户可读提示。
+        /// 取值来自 <see cref="IOMSOrderStateService.OrderDelivery"/>：&gt;0 成功；
+        /// -1 已发货；-2 缺收货地址；-3 非待发货状态（已取消/关闭或并发变更）。
+        /// </summary>
+        private static string DeliveryFailReason(int result) => result switch
+        {
+            -1 => "该订单已发货，请勿重复操作",
+            -2 => "该订单缺少收货信息，无法发货",
+            -3 => "订单当前状态不可发货（可能已取消/关闭或已被处理），请刷新后重试",
+            _ => "发货失败，请刷新后重试"
+        };
 
         /// <summary>
         /// 导出待发货订单
@@ -256,7 +274,7 @@ namespace ZR.Mall.Controllers
                 orderInfo.DeliveryNo = item.DeliveryNo;
 
                 var result =  await _orderStateService.OrderDelivery(orderInfo);
-                item.Status = result > 0 ? "发货成功" : "发货失败";
+                item.Status = result > 0 ? "发货成功" : DeliveryFailReason(result);
                 resultList.Add(item);
             }
 

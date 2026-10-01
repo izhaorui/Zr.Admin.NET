@@ -45,6 +45,10 @@ namespace ZR.Mall.Controllers
         /// <param name="ProductId"></param>
         /// <returns></returns>
         [HttpGet("{ProductId}")]
+        // 该详情被「商品编辑页(shop:product:edit)」与「库存/SKU 页(shop:skus:list)」共同调用，
+        // 故按 OR 放开这三种权限（过滤器支持逗号分隔取交集），既不再对任意登录用户开放，
+        // 也不会误伤上述两个页面的正常回显。
+        [ActionPermissionFilter(Permission = "shop:product:query,shop:product:edit,shop:skus:list")]
         public IActionResult GetShoppingProduct(int ProductId)
         {
             var response = _ShoppingProductService.GetInfo(ProductId);

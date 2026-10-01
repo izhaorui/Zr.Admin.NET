@@ -166,7 +166,34 @@ namespace ZR.Mall.Service
             var result = UseTran(() =>
             {
                 model.Skus.ForEach(f => f.ProductId = model.ProductId);
-                Update(model, true, "修改商品");
+                // 字段白名单更新：只允许改"商品业务字段"。
+                // 原实现 Update(model, true, ...) 是按非空字段整行更新，请求方传 IsDelete/SalesVolume/
+                // TotalSalesVolume/AddTime 等就能直接改删除标记与销量统计 —— 属于越权改账。
+                // Price/MaxPrice/SpecSummary 不在此列：由下方 RefreshProductSummary 依据 SKU 重新回写。
+                // 用 Context 直连是为保留原链路上的差异日志（EnableDiffLogEvent("修改商品")），
+                // BaseService 的字段白名单重载不带差异日志。
+                Context.Updateable(model)
+                    .UpdateColumns(t => new
+                    {
+                        t.SortId,
+                        t.ProductName,
+                        t.ProductCode,
+                        t.MainImage,
+                        t.ImageUrls,
+                        t.VideoUrl,
+                        t.SaleStatus,
+                        t.CategoryId,
+                        t.BrandId,
+                        t.Introduce,
+                        t.Unit,
+                        t.OriginalPrice,
+                        t.DetailsHtml,
+                        t.SpecType,
+                        t.PurchaseLimit
+                    })
+                    .IgnoreColumns(true)
+                    .EnableDiffLogEvent("修改商品")
+                    .ExecuteCommand();
 
                 var skus = skusService.GetSkus(model.ProductId);
 

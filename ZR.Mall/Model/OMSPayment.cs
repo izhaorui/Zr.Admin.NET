@@ -8,6 +8,10 @@ namespace ZR.Mall.Model
     /// 完整生命周期以本表为准。
     /// </summary>
     [SugarTable("oms_payment", "支付流水表")]
+    // (OrderNo, PayType) 复合索引：支撑 CreatePrepay / UpsertPaid 按"订单号+渠道"定位预支付记录，
+    // 以及后台流水列表按订单号查询，避免全表扫描。多列索引按同名特性声明，顺序即列序。
+    [SugarIndex("idx_oms_payment_order", nameof(OrderNo), OrderByType.Asc, false)]
+    [SugarIndex("idx_oms_payment_order", nameof(PayType), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class OMSPayment
     {

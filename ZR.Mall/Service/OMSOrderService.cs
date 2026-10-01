@@ -41,29 +41,41 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 查询未发货的订单数
-        /// </summary>
-        /// <returns></returns>
-        public int NotDelivereOrder()
-        {
-            return Queryable()
-                .Where(f => f.OrderStatus == Enum.OrderStatusEnum.TobeShipped && f.DeliveryStatus == Enum.DeliveryStatusEnum.NotDelivered)
-                .Count();
-        }
-
-        /// <summary>
-        /// 订单各状态计数统计（用于列表顶部概览卡）。
-        /// 一次 GroupBy 统计全部状态，比多次 COUNT 高效。
+        /// 订单概览统计（列表顶部概览卡）：一次 GROUP BY 同时得出「各状态计数」与「待发货未发货数」。
+        ///
+        /// 合并原因：原先列表接口要跑 3 条 SQL（分页列表 + NotDelivereOrder + GetOrderStatusStats），
+        /// 后两者统计的是同一张表、同一批数据，只是维度不同 —— 按 (状态, 发货状态) 分组后，
+        /// 各状态计数是它的上卷，"待发货未发货"正好是其中一个分组，一次查询即可全部得出。
         /// 仅统计未删除订单(IsDelete=0)。
         /// </summary>
-        public Dictionary<int, int> GetOrderStatusStats()
+        public OrderOverviewDto GetOrderOverview()
         {
-            return Queryable()
+            var rows = Queryable()
                 .Where(f => f.IsDelete == 0)
-                .GroupBy(f => f.OrderStatus)
-                .Select(f => new { Status = (int)f.OrderStatus, Count = SqlFunc.AggregateCount(f.Id) })
-                .ToList()
-                .ToDictionary(x => x.Status, x => x.Count);
+                .GroupBy(f => new { f.OrderStatus, f.DeliveryStatus })
+                .Select(f => new
+                {
+                    f.OrderStatus,
+                    f.DeliveryStatus,
+                    Count = SqlFunc.AggregateCount(f.Id)
+                })
+                .ToList();
+
+            var overview = new OrderOverviewDto();
+            foreach (var row in rows)
+            {
+                var status = (int)row.OrderStatus;
+                overview.StatusStats[status] = overview.StatusStats.TryGetValue(status, out var exists)
+                    ? exists + row.Count
+                    : row.Count;
+
+                if (row.OrderStatus == Enum.OrderStatusEnum.TobeShipped
+                    && row.DeliveryStatus == Enum.DeliveryStatusEnum.NotDelivered)
+                {
+                    overview.NotDelivered += row.Count;
+                }
+            }
+            return overview;
         }
 
         /// <summary>

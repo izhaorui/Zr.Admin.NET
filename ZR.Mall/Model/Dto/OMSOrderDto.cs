@@ -125,6 +125,21 @@ namespace ZR.Mall.Model.Dto
     }
 
     /// <summary>
+    /// 订单概览统计（列表顶部概览卡）：各状态计数 + 待发货未发货数。
+    /// 由 <c>OMSOrderService.GetOrderOverview</c> 一次 GROUP BY 查询得出。
+    /// </summary>
+    public class OrderOverviewDto
+    {
+        /// <summary>各状态订单数，key = <see cref="OrderStatusEnum"/> 值</summary>
+        public Dictionary<int, int> StatusStats { get; set; } = new();
+
+        /// <summary>
+        /// 待发货且未发货的订单数（比"待发货"总数更严格：已标记发货的待发货单不计入）。
+        /// </summary>
+        public int NotDelivered { get; set; }
+    }
+
+    /// <summary>
     /// 快递发货
     /// </summary>
     public class DeliveryExpressDto

@@ -328,25 +328,25 @@ namespace ZR.Mall.Service
             var idemKey = BuildCreateIdemKey(dto, totalAmount, memberId);
             var idemLockKey = idemKey + ":lock";
 
-            // 已完成：命中则复用（仅当订单仍有效；已取消/关闭的不算，允许重新下单）
+            // 已完成：命中则复用（仅当订单仍有效、且属于当前会员；已取消/关闭的不算，允许重新下单）
             var cachedNo = idemCache.Get<string>(idemKey);
             if (!string.IsNullOrEmpty(cachedNo))
             {
-                var exist = Queryable().First(x => x.OrderNo == cachedNo && x.IsDelete == 0);
-                if (exist != null && IsIdemOrderReusable(exist))
+                var exist = TryReuseOrder(cachedNo, memberId);
+                if (exist != null)
                 {
                     logger.Info($"下单幂等命中，复用已有订单：OrderNo={exist.OrderNo} OrderId={exist.Id} MemberId={memberId} 金额={exist.PayAmount}元（短窗口内重复提交）");
                     return exist;
                 }
-                idemCache.Remove(idemKey); // 陈旧键（订单已取消/关闭/删除），清除后允许重建
-                logger.Debug($"下单幂等键已失效（原订单已取消/关闭/删除），允许重新下单：原OrderNo={cachedNo} MemberId={memberId}");
+                idemCache.Remove(idemKey); // 陈旧键（订单已取消/关闭/删除，或不属于当前会员），清除后允许重建
+                logger.Debug($"下单幂等键已失效（原订单已取消/关闭/删除或非本人），允许重新下单：原OrderNo={cachedNo} MemberId={memberId}");
             }
 
             // 原子占位：并发相同请求只有一个能进入建单，其余短暂等待并复用结果，避免重复下单。
             // 原实现是「读缓存 → 建单 → 写缓存」的 check-then-act，并发下会双双判定未命中而各建一单。
             if (!idemCache.TrySet(idemLockKey, 1, 2))
             {
-                var reused = WaitReuseOrder(idemCache, idemKey);
+                var reused = WaitReuseOrder(idemCache, idemKey, memberId);
                 if (reused != null)
                 {
                     logger.Info($"下单并发占位未拿到，复用另一请求已建订单：OrderNo={reused.OrderNo} OrderId={reused.Id} MemberId={memberId}");
@@ -364,12 +364,8 @@ namespace ZR.Mall.Service
             try
             {
                 // 抢到占位后再确认一次：上一个请求可能刚好完成并写入结果，避免重复建单
-                var justCachedNo = idemCache.Get<string>(idemKey);
-                if (!string.IsNullOrEmpty(justCachedNo))
-                {
-                    var justExist = Queryable().First(x => x.OrderNo == justCachedNo && x.IsDelete == 0);
-                    if (justExist != null && IsIdemOrderReusable(justExist)) return justExist;
-                }
+                var justExist = TryReuseOrder(idemCache.Get<string>(idemKey), memberId);
+                if (justExist != null) return justExist;
 
                 var tran = UseTran(() =>
                 {
@@ -479,15 +475,37 @@ namespace ZR.Mall.Service
         /// 计算下单幂等键：优先用前端传入的 RequestId，否则按“会员+订单项+金额”签名。
         /// 用会员而非手机号：手机号是收货联系方式（可填家人），不同会员可能填同一个号，
         /// 会把两笔不同会员的订单误判为重复。
+        ///
+        /// ⚠️ **两个分支都必须包含 memberId**：RequestId 由前端生成、并非密钥，
+        /// 若不带会员前缀，别的会员只要拿到同一个 RequestId 就会命中同一条幂等记录，
+        /// 进而复用到他人的订单（地址快照/明细/金额全部泄露）。
         /// </summary>
         private static string BuildCreateIdemKey(CreateOrderDto dto, decimal totalAmount, long memberId)
         {
             if (!string.IsNullOrWhiteSpace(dto.RequestId))
             {
-                return "mall_order_idem_req_" + dto.RequestId;
+                return "mall_order_idem_req_" + $"{memberId}|{dto.RequestId}";
             }
             var itemsSig = string.Join("|", dto.Items.OrderBy(x => x.SkuId).Select(x => $"{x.SkuId}:{x.Quantity}"));
             return "mall_order_idem_sig_" + $"{memberId}|{itemsSig}|{totalAmount}";
+        }
+
+        /// <summary>
+        /// 按幂等结果复用订单：**必须同时满足「仍有效」与「归属当前会员」**才返回，否则返回 null。
+        ///
+        /// 归属校验不可省：幂等命中后会直接把订单对象返回给调用方（前端据此展示/继续支付），
+        /// 不校验会员则任何拿到同一幂等键的人都能读到他人订单的地址、明细与金额。
+        /// </summary>
+        private OMSOrder TryReuseOrder(string orderNo, long memberId)
+        {
+            if (string.IsNullOrEmpty(orderNo))
+            {
+                return null;
+            }
+            var exist = Queryable().First(x => x.OrderNo == orderNo && x.IsDelete == 0);
+            return exist != null && IsIdemOrderReusable(exist) && Common.OrderOwnership.IsOwnedBy(exist, memberId)
+                ? exist
+                : null;
         }
 
         /// <summary>
@@ -504,17 +522,13 @@ namespace ZR.Mall.Service
         /// 并发相同请求时的短暂等待：另一请求正在建单，轮询其幂等结果，拿到则复用，
         /// 避免同一订单被并发创建两笔；超时未拿到由调用方提示"处理中"。
         /// </summary>
-        private OMSOrder WaitReuseOrder(ICache cache, string idemKey)
+        private OMSOrder WaitReuseOrder(ICache cache, string idemKey, long memberId)
         {
             for (var i = 0; i < 5; i++)
             {
                 System.Threading.Thread.Sleep(200);
-                var no = cache.Get<string>(idemKey);
-                if (!string.IsNullOrEmpty(no))
-                {
-                    var exist = Queryable().First(x => x.OrderNo == no && x.IsDelete == 0);
-                    if (exist != null && IsIdemOrderReusable(exist)) return exist;
-                }
+                var exist = TryReuseOrder(cache.Get<string>(idemKey), memberId);
+                if (exist != null) return exist;
             }
             return null;
         }

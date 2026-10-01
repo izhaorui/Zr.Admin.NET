@@ -121,7 +121,9 @@ namespace ZR.Mall.Service
         {
             var predicate = Expressionable.Create<Brand>();
 
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Name), it => it.Name == parm.Name);
+            // 名称走模糊匹配（与商品/分类等列表一致）：原实现是精确相等，
+            // 用户少打一个字或带空格就查不到，体验与其它模块不一致。
+            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.Name), it => it.Name.Contains(parm.Name));
             return predicate;
         }
     }

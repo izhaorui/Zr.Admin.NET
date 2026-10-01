@@ -23,14 +23,9 @@ namespace ZR.Mall.Service.IService
         OMSOrder GetInfo(long Id);
 
         /// <summary>
-        /// 未发货订单数
+        /// 订单概览统计（列表顶部概览卡）：各状态计数与"待发货未发货"数一次查询得出。
         /// </summary>
-        int NotDelivereOrder();
-
-        /// <summary>
-        /// 订单各状态计数统计（列表顶部概览卡）
-        /// </summary>
-        Dictionary<int, int> GetOrderStatusStats();
+        OrderOverviewDto GetOrderOverview();
 
         /// <summary>
         /// 修改订单（operType 取值见 <see cref="ZR.Mall.Enum.OrderUpdateOperType"/>：
