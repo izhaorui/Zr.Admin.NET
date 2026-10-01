@@ -1,9 +1,13 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using SqlSugar;
 using System.Text.RegularExpressions;
 using ZR.Infrastructure.Helper;
+using ZR.Model;
 using ZR.Model.Member;
+using ZR.Model.Member.Dto;
 using ZR.Model.Models;
+using ZR.Repository;
 using ZR.ServiceCore.Services;
 
 namespace ZR.ServiceCore.Member
@@ -125,6 +129,83 @@ namespace ZR.ServiceCore.Member
             }
 
             return update.Where(it => it.Id == memberId && it.IsDelete == 0).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 后台会员分页列表（手机号/昵称模糊、状态、注册时间区间筛选）。
+        /// 与后台 sys_user 完全隔离，只读展示 + 状态管理，会员数据由 C 端注册产生。
+        /// </summary>
+        public PagedInfo<UmsMember> GetPageList(MemberQueryDto parm)
+        {
+            return Queryable()
+                .Where(x => x.IsDelete == 0)
+                .WhereIF(!string.IsNullOrWhiteSpace(parm.Phone), x => x.Phone.Contains(parm.Phone))
+                .WhereIF(!string.IsNullOrWhiteSpace(parm.NickName), x => x.NickName.Contains(parm.NickName))
+                .WhereIF(parm.Status != null, x => x.Status == parm.Status)
+                .WhereIF(parm.BeginRegisterTime != null, x => x.RegisterTime >= parm.BeginRegisterTime)
+                .WhereIF(parm.EndRegisterTime != null, x => x.RegisterTime <= parm.EndRegisterTime)
+                // 前端未指定排序时按 Id 倒序（新会员在前）
+                .OrderByIF(string.IsNullOrWhiteSpace(parm.Sort), x => x.Id, OrderByType.Desc)
+                .ToPage(parm);
+        }
+
+        /// <summary>
+        /// 后台启用/禁用会员。成功后立即清除状态缓存，
+        /// 会员后续请求经 <see cref="MemberAuthorizeAttribute"/> 状态复核被拒绝（多实例下最迟一个缓存周期）。
+        /// </summary>
+        public int SetStatus(long memberId, int status)
+        {
+            if (memberId <= 0)
+            {
+                throw new CustomException("会员身份无效");
+            }
+            if (status != 0 && status != 1)
+            {
+                throw new CustomException("状态值不合法");
+            }
+
+            var rows = Context.Updateable<UmsMember>()
+                .SetColumns(it => it.Status == status)
+                .Where(it => it.Id == memberId && it.IsDelete == 0)
+                .ExecuteCommand();
+            if (rows > 0)
+            {
+                CacheService.RemoveMemberStatus(memberId);
+            }
+            return rows;
+        }
+
+        /// <summary>
+        /// 会员是否可用（未禁用且未删除）。JWT 无状态，仅靠登录时查 Status 挡不住
+        /// "先登录后被禁用，存量令牌在有效期内仍可调用"——本方法在过滤器里做状态复核。
+        /// 状态走 60 秒缓存（Redis/内存由 CacheStore 按配置自动切换），SetStatus 时主动清除，
+        /// 禁用指令多实例下最迟 60 秒全端生效；缓存未命中时回查一次库。
+        /// </summary>
+        public bool IsMemberActive(long memberId)
+        {
+            if (memberId <= 0)
+            {
+                return false;
+            }
+
+            var cached = CacheService.GetMemberStatus(memberId);
+            if (cached.HasValue)
+            {
+                return cached.Value == 0;
+            }
+
+            var member = Queryable()
+                .Where(x => x.Id == memberId)
+                .Select(x => new UmsMember { Status = x.Status, IsDelete = x.IsDelete })
+                .First();
+            if (member == null)
+            {
+                return false;
+            }
+
+            var status = member.Status == 1 || member.IsDelete == 1 ? 1 : 0;
+            CacheService.SetMemberStatus(memberId, status);
+            return status == 0;
         }
 
         /// <summary>

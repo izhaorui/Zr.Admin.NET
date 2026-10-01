@@ -39,6 +39,16 @@ namespace ZR.ServiceCore.Member
                 return Task.CompletedTask;
             }
 
+            // 状态复核：JWT 无状态，禁用/删除的会员即使令牌未过期也须立即拒绝。
+            // 状态走 60 秒缓存（后台 SetStatus 会主动清除）；缓存未命中回查库，
+            // 查询异常时放行（业务层查询同样依赖 DB，失败请求无安全增量）。
+            var memberService = App.GetService<IMemberService>();
+            if (memberService != null && !memberService.IsMemberActive(member.MemberId))
+            {
+                context.Result = new JsonResult(new ApiResult((int)ResultCode.OAUTH_FAIL, "账号已被禁用，请联系客服"));
+                return Task.CompletedTask;
+            }
+
             context.HttpContext.Items[MemberContextKey] = member;
             return base.OnActionExecutionAsync(context, next);
         }

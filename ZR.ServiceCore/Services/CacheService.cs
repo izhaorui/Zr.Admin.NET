@@ -160,5 +160,35 @@ namespace ZR.ServiceCore.Services
 
             CacheHelper.Remove(ck);
         }
+
+        #region 会员状态缓存（C 端鉴权状态复核，TTL 60 秒）
+        private static readonly string MemberStatusPrefix = "CACHE-MEMBER-STATUS_";
+
+        /// <summary>
+        /// 缓存会员可用状态（1=不可用/已禁用或已删除，0=正常）。
+        /// 供 MemberAuthorize 状态复核；Redis 未启用时由 CacheStore 自动回退本地内存。
+        /// TTL 仅 1 分钟 + SetStatus 主动清除，保证禁用指令快速全端生效。
+        /// </summary>
+        public static void SetMemberStatus(long memberId, int status)
+        {
+            CacheStore.For(CacheBackend.Cache).Set(BuildTenantKey(MemberStatusPrefix + memberId), status, 1);
+        }
+
+        /// <summary>
+        /// 读取缓存的会员可用状态；未命中返回 null（调用方回查库）
+        /// </summary>
+        public static int? GetMemberStatus(long memberId)
+        {
+            return CacheStore.For(CacheBackend.Cache).Get<int?>(BuildTenantKey(MemberStatusPrefix + memberId));
+        }
+
+        /// <summary>
+        /// 清除会员状态缓存（启用/禁用后调用）
+        /// </summary>
+        public static void RemoveMemberStatus(long memberId)
+        {
+            CacheStore.For(CacheBackend.Cache).Remove(BuildTenantKey(MemberStatusPrefix + memberId));
+        }
+        #endregion
     }
 }

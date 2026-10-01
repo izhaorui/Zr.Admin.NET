@@ -109,7 +109,7 @@ namespace ZR.Mall.Service
                         new("查询", "shop:skus:query"), new("新增", "shop:skus:add"),
                         new("修改", "shop:skus:edit"), new("删除", "shop:skus:delete"),
                     ]),
-                new(Name: "订单管理", Path: "order", Component: "shopping/Order", Perms: "oms:order:list", OrderNum: 6, Icon: "list",
+                new(Name: "订单管理", Path: "order", Component: "order/Index", Perms: "oms:order:list", OrderNum: 6, Icon: "list",
                     Buttons:
                     [
                         new("发货", "oms:order:ship"), new("取消", "oms:order:cancel"),
@@ -118,6 +118,12 @@ namespace ZR.Mall.Service
                     ]),
                 new(Name: "支付流水", Path: "payment", Component: "shopping/Payment", Perms: "oms:payment:list", OrderNum: 7, Icon: "money",
                     Buttons: [new("查询", "oms:payment:list")]),
+                new(Name: "会员管理", Path: "member", Component: "shopping/Member", Perms: "shop:member:list", OrderNum: 9, Icon: "peoples",
+                    Buttons:
+                    [
+                        new("查询", "shop:member:query"),
+                        new("启用/禁用", "shop:member:edit"),
+                    ]),
                 new(Name: "商品编辑", Path: "productEdit", Component: "shopping/ProductEdit", Perms: "shop:product:edit", OrderNum: 8, Visible: "1",
                     Buttons: []),
                 new(Name: "订单详情", Path: "/orderDetails", Component: "order/Details", Perms: "oms:order:query", OrderNum: 8, Visible: "1",

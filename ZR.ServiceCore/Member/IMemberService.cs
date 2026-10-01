@@ -1,4 +1,6 @@
+using ZR.Model;
 using ZR.Model.Member;
+using ZR.Model.Member.Dto;
 using ZR.Model.Models;
 
 namespace ZR.ServiceCore.Member
@@ -33,5 +35,24 @@ namespace ZR.ServiceCore.Member
         /// <param name="nickName">昵称（null 表示不修改）</param>
         /// <param name="avatar">头像地址（null 表示不修改）</param>
         int UpdateProfile(long memberId, string nickName, string avatar);
+
+        /// <summary>
+        /// 后台会员分页列表（手机号/昵称模糊、状态、注册时间区间筛选）
+        /// </summary>
+        PagedInfo<UmsMember> GetPageList(MemberQueryDto parm);
+
+        /// <summary>
+        /// 后台启用/禁用会员。禁用后立即清除状态缓存，
+        /// 各实例请求经 <see cref="MemberAuthorizeAttribute"/> 状态复核最迟一个缓存周期（60 秒）内拒绝。
+        /// </summary>
+        /// <param name="memberId">会员Id</param>
+        /// <param name="status">0正常 1禁用</param>
+        int SetStatus(long memberId, int status);
+
+        /// <summary>
+        /// 会员是否可用（未禁用且未删除）。供 <see cref="MemberAuthorizeAttribute"/> 在令牌验签后做状态复核，
+        /// 弥补 JWT 无状态导致"禁用后存量令牌在有效期内仍可调用"的缺口。状态走短 TTL 缓存。
+        /// </summary>
+        bool IsMemberActive(long memberId);
     }
 }
