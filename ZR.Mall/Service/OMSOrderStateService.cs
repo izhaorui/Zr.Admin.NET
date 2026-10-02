@@ -224,6 +224,86 @@ namespace ZR.Mall.Service
             logger.Info($"订单确认收货完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 原状态={fromStatus}");
             return 1;
         }
+
+        /// <summary>
+        /// 自动确认收货（定时任务 Job_AutoConfirmReceipt 调用）：已发货且发货时间超过 N 天 → 已完成。
+        /// </summary>
+        /// <remarks>
+        /// 与 <see cref="ConfirmReceipt"/> 的区别：那个是会员手动点，这个由系统兜底 ——
+        /// 没有它订单会永远停在"已发货"，售后期限与商家结算都无法收口。
+        /// 幂等靠条件更新（仅"已发货"能命中）：重复执行只影响仍处于已发货且已超时的单。
+        /// 不动库存：锁定库存在发货环节已释放（见 <see cref="OrderDelivery"/>），此处再动会重复扣减。
+        /// </remarks>
+        /// <param name="autoConfirmDays">发货后自动确认的天数（默认 7）</param>
+        /// <returns>实际确认收货的订单数</returns>
+        public int AutoConfirmReceipt(int autoConfirmDays = 7)
+        {
+            // 单轮处理上限：一轮跑太久会长时间占着事务；本任务按小时执行，超出的下一轮继续。
+            const int batchSize = 500;
+
+            var db = Context;
+            var expireTime = db.GetDate().AddDays(-autoConfirmDays);
+            int confirmed = 0;
+
+            var tran = UseTran(() =>
+            {
+                // 候选：已发货且已超过阈值。ShipTime 为空的已发货单（异常/历史数据）用 CreateTime 兜底 ——
+                // 否则它们永远等不到自动确认，正是本任务要消除的问题。
+                var candidates = db.Queryable<OMSOrder>()
+                    .Where(x => x.OrderStatus == Enum.OrderStatusEnum.Shipped
+                                && x.IsDelete == 0
+                                && ((x.ShipTime != null && x.ShipTime < expireTime)
+                                    || (x.ShipTime == null && x.CreateTime < expireTime)))
+                    .Select(x => new { x.Id, x.OrderNo })
+                    .Take(batchSize)
+                    .ToList();
+                if (candidates.Count == 0)
+                {
+                    // 每轮都跑，无单可确认时不记 Info（避免刷屏）；留 Debug 便于确认任务在正常执行
+                    logger.Debug($"自动确认收货：本轮无可确认订单。阈值={autoConfirmDays}天");
+                    return;
+                }
+
+                var now = db.GetDate();
+                foreach (var c in candidates)
+                {
+                    // 条件更新：仅当此刻仍是"已发货"才置为已完成。
+                    // 并发下会员自己先确认过（或订单被退款关闭）会命中 0 行，跳过即可。
+                    var affected = db.Updateable<OMSOrder>()
+                        .SetColumns(it => new OMSOrder
+                        {
+                            OrderStatus = Enum.OrderStatusEnum.Completed,
+                            ConfirmTime = now
+                        })
+                        .Where(x => x.Id == c.Id
+                                    && x.OrderStatus == Enum.OrderStatusEnum.Shipped
+                                    && x.IsDelete == 0)
+                        .ExecuteCommand();
+                    if (affected <= 0)
+                    {
+                        continue;
+                    }
+
+                    _orderLogService.AddLog(c.Id, c.OrderNo,
+                        (int)Enum.OrderStatusEnum.Shipped, (int)Enum.OrderStatusEnum.Completed,
+                        "AUTO_CONFIRM", "system", $"发货后 {autoConfirmDays} 天未操作，系统自动确认收货");
+                    logger.Debug($"订单已自动确认收货：OrderNo={c.OrderNo} OrderId={c.Id}");
+                    confirmed++;
+                }
+            });
+
+            if (tran == null || !tran.IsSuccess)
+            {
+                logger.Error($"自动确认收货事务失败：阈值={autoConfirmDays}天 错误={tran?.ErrorMessage}");
+                throw new CustomException("自动确认收货失败" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
+            }
+            if (confirmed > 0)
+            {
+                logger.Info($"自动确认收货完成：阈值={autoConfirmDays}天 确认数量={confirmed} 截止时间={expireTime}");
+            }
+            return confirmed;
+        }
+
         /// <summary>
         /// 批量取消订单：一次性事务内遍历，仅处理待付款/待发货状态的订单，其余状态跳过；返回成功取消条数
         /// </summary>
@@ -406,6 +486,97 @@ namespace ZR.Mall.Service
                 "REFUND_CONFIRM", oper, "确认渠道退款完成，退款状态置为已退款");
             NotifyBuyer(order, "退款已完成", $"您的订单({order.OrderNo})退款已完成，款项将原路退回。");
             logger.Info($"确认退款完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 金额={order.PayAmount}元 操作人={oper}");
+            return 1;
+        }
+
+        /// <summary>
+        /// 售后退款落账：把售后单的退款写进订单（累计 RefundAmount、置退款状态、按情况回补库存）。
+        /// </summary>
+        /// <remarks>
+        /// <para><b>与 <see cref="RefundOrder"/> 的区别</b>：那个是运营直接对订单退款，会把订单置为已关闭；
+        /// 售后是**订单完成之后**才可能发生的事，把已完成订单改成"已关闭"会丢掉"曾经完成"这个事实
+        ///（销售统计、售后率都依赖它）。故这里只在订单**尚未发货**时关闭订单，已发货/已完成只写退款状态。</para>
+        ///
+        /// <para><b>库存口径 —— 只有货真的回到仓库才加回可售</b>：
+        /// ① 未发货（货还在仓）→ 回补；② 退货退款且商家已确认收到 → 回补；
+        /// ③ 已发货的仅退款（货在买家手里且不退回）→ 不回补，只冲减销量（与 <see cref="RefundOrder"/> 一致）。
+        /// 具体由调用方判定后传入 <paramref name="restoreSellable"/>。</para>
+        ///
+        /// <para><b>超额护栏</b>：RefundAmount 累加后不得超过 PayAmount，护栏放在 Where 里 ——
+        /// 否则重复退款会把"已退金额"累到比实付还高，对账直接崩。</para>
+        /// </remarks>
+        /// <param name="orderId">订单 Id</param>
+        /// <param name="amount">本次实际退款金额（元）</param>
+        /// <param name="restoreSellable">是否回补可售库存</param>
+        /// <returns>落账成功返回 1</returns>
+        public int ApplyAfterSaleRefund(long orderId, decimal amount, bool restoreSellable)
+        {
+            if (amount <= 0m)
+            {
+                throw new CustomException("退款金额必须大于 0");
+            }
+
+            var order = Queryable().First(x => x.Id == orderId && x.IsDelete == 0);
+            if (order == null)
+            {
+                logger.Warn($"售后退款落账失败：订单不存在。OrderId={orderId}");
+                throw new CustomException("订单不存在");
+            }
+            if (order.OrderStatus == Enum.OrderStatusEnum.Cancel || order.OrderStatus == Enum.OrderStatusEnum.Closed)
+            {
+                logger.Warn($"售后退款落账被拒绝：订单状态不可退款。OrderNo={order.OrderNo} OrderId={order.Id} 当前状态={order.OrderStatus}");
+                throw new CustomException("该订单状态不可退款");
+            }
+
+            var fromStatus = order.OrderStatus;
+            // 未发货的订单必须关闭，否则商家仍可能发货；已发货/已完成保持原状态（见 remarks）
+            var targetStatus = fromStatus == Enum.OrderStatusEnum.TobeShipped
+                ? Enum.OrderStatusEnum.Closed
+                : fromStatus;
+
+            var tran = UseTran(() =>
+            {
+                var affected = Context.Updateable<OMSOrder>()
+                    .SetColumns(it => new OMSOrder
+                    {
+                        OrderStatus = targetStatus,
+                        RefundAmount = it.RefundAmount + amount,
+                        RefundStatus = Enum.RefundStatusEnum.Refunded
+                    })
+                    .Where(x => x.Id == orderId
+                                && x.IsDelete == 0
+                                && x.OrderStatus == fromStatus
+                                && x.RefundAmount + amount <= x.PayAmount)
+                    .ExecuteCommand();
+                if (affected <= 0)
+                {
+                    // 两种可能：状态被并发变更，或"累加后超过实付"被护栏拦下 —— 必须区分，提示完全不同
+                    var current = Context.Queryable<OMSOrder>().First(x => x.Id == orderId);
+                    if (current != null && current.RefundAmount + amount > current.PayAmount)
+                    {
+                        logger.Warn($"售后退款落账被拒绝：退款额将超过实付。OrderNo={current.OrderNo} 已退={current.RefundAmount}元 本次={amount}元 实付={current.PayAmount}元");
+                        throw new CustomException("退款金额超过订单实付金额，已拒绝（请核对是否重复退款）");
+                    }
+                    throw new CustomException("退款落账失败：订单状态已变更，请刷新后重试");
+                }
+
+                RestoreStock(orderId, restoreSellable);
+                _paymentService.MarkRefunded(order.OrderNo);
+            });
+
+            if (tran == null || !tran.IsSuccess)
+            {
+                logger.Error($"售后退款落账事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 本次金额={amount}元 错误={tran?.ErrorMessage}");
+                throw new CustomException("退款落账失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
+            }
+
+            var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
+            var totalRefunded = order.RefundAmount + amount;
+            _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)targetStatus,
+                "AFTER_SALE_REFUND", oper,
+                $"售后退款 {amount} 元（累计 {totalRefunded}/{order.PayAmount}），渠道退款由人工完成，回补可售={restoreSellable}");
+            NotifyBuyer(order, "退款已完成", $"您的订单({order.OrderNo})退款 {amount} 元已完成，款项将原路退回。");
+            logger.Info($"售后退款落账完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 本次={amount}元 累计={totalRefunded}元 实付={order.PayAmount}元 原状态={(int)fromStatus} 目标状态={(int)targetStatus} 回补可售={restoreSellable} 操作人={oper}");
             return 1;
         }
 

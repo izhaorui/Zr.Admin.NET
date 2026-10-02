@@ -54,7 +54,7 @@ namespace ZR.Mall.Model.Dto
         public decimal TotalAmount { get; set; }
 
         /// <summary>
-        /// 运费。运费模板未上线，恒为 0；导出保留该列以便对账时核对完整金额构成。
+        /// 运费。由运费模板按「收货地区编码 + 商品件数/重量」算出；未绑定模板且无默认模板时为 0。
         /// </summary>
         [ExcelColumn(Name = "运费")]
         public decimal FreightAmount { get; set; }
@@ -78,7 +78,7 @@ namespace ZR.Mall.Model.Dto
         public decimal PayAmount { get; set; }
 
         /// <summary>
-        /// 已退金额累计。售后单未上线，恒为 0；导出保留该列便于对账。
+        /// 已退金额累计（订单页直接退款与售后退款都写这里）；导出保留该列便于对账。
         /// </summary>
         [ExcelColumn(Name = "已退金额")]
         public decimal RefundAmount { get; set; }

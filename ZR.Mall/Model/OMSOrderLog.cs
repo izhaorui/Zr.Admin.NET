@@ -37,7 +37,7 @@ namespace ZR.Mall.Model
         public int ToStatus { get; set; }
 
         /// <summary>
-        /// 操作类型：PAY / CANCEL / EXPIRE / DELIVERY / REFUND
+        /// 操作类型：PAY / CANCEL / EXPIRE / DELIVERY / CONFIRM_RECEIPT / AUTO_CONFIRM / REFUND
         /// </summary>
         [SugarColumn(Length = 32, IsNullable = true)]
         public string OperType { get; set; }

@@ -134,6 +134,12 @@ namespace ZR.Mall
                         new("查询", "shop:member:query"),
                         new("启用/禁用", "shop:member:edit"),
                     ]),
+                new(Name: "售后管理", Path: "afterSale", Component: "shopping/AfterSale", Perms: "shop:aftersale:list", OrderNum: 10, Icon: "form",
+                    Buttons:
+                    [
+                        new("查询", "shop:aftersale:query"), new("审核", "shop:aftersale:audit"),
+                        new("登记退款", "shop:aftersale:refund"),
+                    ]),
                 new(Name: "商品编辑", Path: "productEdit", Component: "shopping/ProductEdit", Perms: "shop:product:edit", OrderNum: 8, Visible: "1",
                     Buttons: []),
                 new(Name: "订单详情", Path: "/orderDetails", Component: "order/Details", Perms: "oms:order:query", OrderNum: 8, Visible: "1",
@@ -201,7 +207,7 @@ namespace ZR.Mall
         }
 
         /// <summary>
-        /// 确保商城系统内置定时任务存在（待付款超时自动取消）。幂等。
+        /// 确保商城系统内置定时任务存在（待付款超时自动取消、发货后自动确认收货）。幂等。
         /// SaaS 开启时 TenantId="*" 由 Job_Dispatcher 按启用租户展开；未开启时写主库标识单次执行。
         /// 注意：AssemblyName/ClassName 字符串标识不可改动，否则会破坏既有调度数据。
         /// </summary>
@@ -211,39 +217,71 @@ namespace ZR.Mall
             var db = DbScoped.SugarScope.GetConnectionScope(mainTenantId);
             var targetTenantId = App.IsTenantEnabled() ? "*" : mainTenantId;
 
+            var tasks = new List<SysTasks>
+            {
+                new()
+                {
+                    ID = "mall_close_pending",
+                    Name = "商城待付款订单超时自动取消",
+                    JobGroup = "mall",
+                    Cron = "0 0/5 * * * ?",
+                    AssemblyName = "ZR.Mall",
+                    ClassName = "Job_ClosePendingOrder",
+                    TriggerType = 1,
+                    IntervalSecond = 0,
+                    IsStart = 1,
+                    TaskType = 1,
+                    TenantId = targetTenantId,
+                    Create_by = "system"
+                },
+                // 每小时一轮。没有它订单会永远停在"已发货"（用户不手动点就没人推进），
+                // 售后期限与商家结算都无法收口。天数见 Job_AutoConfirmReceipt。
+                new()
+                {
+                    ID = "mall_auto_confirm",
+                    Name = "商城发货后自动确认收货",
+                    JobGroup = "mall",
+                    Cron = "0 0 * * * ?",
+                    AssemblyName = "ZR.Mall",
+                    ClassName = "Job_AutoConfirmReceipt",
+                    TriggerType = 1,
+                    IntervalSecond = 0,
+                    IsStart = 1,
+                    TaskType = 1,
+                    TenantId = targetTenantId,
+                    Create_by = "system"
+                }
+            };
+
+            var results = tasks.Select(t => EnsureOneTask(db, t, targetTenantId));
+            return $"[商城任务] {string.Join("；", results)}";
+        }
+
+        /// <summary>
+        /// 幂等写入单个内置任务：已存在则只在 TenantId 变化时更新 —— 不覆盖运营在后台改过的 Cron 等配置。
+        /// </summary>
+        private static string EnsureOneTask(ISqlSugarClient db, SysTasks task, string targetTenantId)
+        {
             var existingRows = db.Queryable<SysTasks>().ClearFilter()
-                .Where(x => x.ID == "mall_close_pending")
+                .Where(x => x.ID == task.ID)
                 .Select(x => x.TenantId)
                 .ToList();
             if (existingRows.Count > 0)
             {
                 if (string.Equals(existingRows[0], targetTenantId, StringComparison.OrdinalIgnoreCase))
-                    return "[商城任务] 待付款超时自动取消已存在，跳过";
+                {
+                    return $"{task.Name}已存在，跳过";
+                }
 
                 db.Updateable<SysTasks>()
                     .SetColumns(x => x.TenantId == targetTenantId)
-                    .Where(x => x.ID == "mall_close_pending")
+                    .Where(x => x.ID == task.ID)
                     .ExecuteCommand();
-                return $"[商城任务] 待付款超时自动取消 TenantId 已更新为 {targetTenantId}";
+                return $"{task.Name} TenantId 已更新为 {targetTenantId}";
             }
 
-            db.Insertable(new SysTasks
-            {
-                ID = "mall_close_pending",
-                Name = "商城待付款订单超时自动取消",
-                JobGroup = "mall",
-                Cron = "0 0/5 * * * ?",
-                AssemblyName = "ZR.Mall",
-                ClassName = "Job_ClosePendingOrder",
-                TriggerType = 1,
-                IntervalSecond = 0,
-                IsStart = 1,
-                TaskType = 1,
-                TenantId = targetTenantId,
-                Create_by = "system"
-            }).ExecuteCommand();
-
-            return "[商城任务] 写入待付款超时自动取消";
+            db.Insertable(task).ExecuteCommand();
+            return $"写入{task.Name}";
         }
     }
 }

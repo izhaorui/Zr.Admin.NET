@@ -34,7 +34,7 @@ namespace ZR.Mall.Service.IService
 
         /// <summary>
         /// 确认收货（已发货 → 已完成，写 ConfirmTime）。幂等：已是已完成直接返回 1。
-        /// 供会员在订单列表/详情手动确认；系统自动确认收货的定时任务将来也走这里，保证状态机只有一份。
+        /// 供会员在订单列表/详情手动确认；系统兜底走 <see cref="AutoConfirmReceipt"/>。
         /// </summary>
         int ConfirmReceipt(long id);
 
@@ -52,8 +52,26 @@ namespace ZR.Mall.Service.IService
         Task<int> OrderDelivery(OMSOrder model);
 
         /// <summary>
+        /// 售后退款落账：累计订单的 RefundAmount、置退款状态、按情况回补库存（售后单流程调用）。
+        /// 与 <see cref="RefundOrder"/> 的区别：售后发生在订单完成之后，**不把已完成订单改成已关闭**，
+        /// 只在订单尚未发货时关闭；RefundAmount 累加且不得超过实付（超额护栏在 Where 里）。
+        /// </summary>
+        /// <param name="orderId">订单 Id</param>
+        /// <param name="amount">本次实际退款金额（元）</param>
+        /// <param name="restoreSellable">是否回补可售库存（仅当货确实回到仓库才为 true）</param>
+        int ApplyAfterSaleRefund(long orderId, decimal amount, bool restoreSellable);
+
+        /// <summary>
         /// 关闭超时未支付的待付款订单并回补库存（定时任务 Job_ClosePendingOrder 调用，幂等）
         /// </summary>
         int CloseExpiredPendingOrders(int expireMinutes = 30);
+
+        /// <summary>
+        /// 自动确认收货：已发货且发货时间超过 N 天的订单置为已完成（定时任务 Job_AutoConfirmReceipt 调用，幂等）。
+        /// 与 <see cref="ConfirmReceipt"/> 的区别是"系统兜底"而非会员手动 ——
+        /// 没有它订单会永远停在"已发货"，售后期限与商家结算都无法收口。
+        /// </summary>
+        /// <param name="autoConfirmDays">发货后自动确认的天数（默认 7）</param>
+        int AutoConfirmReceipt(int autoConfirmDays = 7);
     }
 }

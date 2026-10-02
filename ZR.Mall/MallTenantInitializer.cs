@@ -61,7 +61,9 @@ namespace ZR.Mall
 			typeof(SpecTemplate),
 			// 运费模板与不配送地区：订单运费的数据来源
 			typeof(FreightTemplate),
-			typeof(FreightTemplateExcludeRegion)
+			typeof(FreightTemplateExcludeRegion),
+			// 售后单（仅退款 / 退货退款）
+			typeof(OMSAfterSale)
 		};
 
 		private static void InitCore(ISqlSugarClient db)

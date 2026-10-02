@@ -148,16 +148,24 @@ namespace ZR.Mall.Common
                 return new FrontFreightInfoDto { FreeShipping = true };
             }
 
+            // 计费参数按实际生效的那一组回传（按件用 FirstPiece/AddPiece，按重用 FirstWeight/AddWeight），
+            // 前端据此展示「按件/按重」的规则说明，不必知道模板的两套参数都存了什么。
+            var byWeight = template.ChargeType == (int)FreightChargeTypeEnum.ByWeight;
+            var info = new FrontFreightInfoDto
+            {
+                ChargeType = template.ChargeType,
+                FirstUnit = byWeight ? template.FirstWeight : template.FirstPiece,
+                AddUnit = byWeight ? template.AddWeight : template.AddPiece,
+                Freight = template.Freight
+            };
+
             if (template.FreeShippingThreshold > 0m)
             {
-                return new FrontFreightInfoDto
-                {
-                    FreeShipping = true,
-                    FreeShippingThreshold = template.FreeShippingThreshold
-                };
+                info.FreeShipping = true;
+                info.FreeShippingThreshold = template.FreeShippingThreshold;
             }
 
-            return new FrontFreightInfoDto { FreeShipping = false };
+            return info;
         }
 
         /// <summary>

@@ -17,5 +17,19 @@ namespace ZR.Mall.Model.Dto
         /// <see cref="FreeShipping"/> 为 false 时无意义，恒为 0。
         /// </summary>
         public decimal FreeShippingThreshold { get; set; }
+
+        /// <summary>
+        /// 计费方式：1 按件 / 2 按重（见 FreightChargeTypeEnum）。无生效模板时为 0，前端据此不展示规则文案。
+        /// </summary>
+        public int ChargeType { get; set; }
+
+        /// <summary>首件 / 首重数量（单位由 <see cref="ChargeType"/> 决定：件 或 kg）</summary>
+        public decimal FirstUnit { get; set; }
+
+        /// <summary>续件 / 续重单位（每满该数量加收一份 <see cref="Freight"/>）</summary>
+        public decimal AddUnit { get; set; }
+
+        /// <summary>首件 / 首重那一份的运费（元），同时也是每续一单位的加收金额</summary>
+        public decimal Freight { get; set; }
     }
 }

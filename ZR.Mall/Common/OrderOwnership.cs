@@ -17,12 +17,22 @@ namespace ZR.Mall.Common
         /// 订单是否属于该会员。memberId 为 null（未携带会员令牌）时一律返回 false。
         /// </summary>
         public static bool IsOwnedBy(OMSOrder order, long? memberId)
+            => order != null && IsOwnedBy(order.MemberId, memberId);
+
+        /// <summary>
+        /// 归属判定（按会员 Id）。
+        /// </summary>
+        /// <remarks>
+        /// 售后单等「从订单派生的单据」复用这一份实现 —— 它们各自的 MemberId 是下单时从订单抄来的，
+        /// 规则与订单完全一致，另写一份只会让两处慢慢漂移。
+        /// </remarks>
+        public static bool IsOwnedBy(long? ownerMemberId, long? memberId)
         {
-            if (order == null || !memberId.HasValue || memberId.Value <= 0)
+            if (!ownerMemberId.HasValue || !memberId.HasValue || memberId.Value <= 0)
             {
                 return false;
             }
-            return order.MemberId.HasValue && order.MemberId.Value == memberId.Value;
+            return ownerMemberId.Value == memberId.Value;
         }
     }
 }

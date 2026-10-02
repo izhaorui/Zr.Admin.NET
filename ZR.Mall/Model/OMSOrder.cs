@@ -42,8 +42,7 @@ namespace ZR.Mall.Model
 
         // ── 金额模型（对齐主流开源商城口径：total/freight/discount/integral/pay/refund）──
         // 公式：PayAmount = TotalAmount + FreightAmount - DiscountAmount - IntegralAmount
-        // 其中四个附加列本期恒为 0（对应能力尚未上线），此时 PayAmount == TotalAmount。
-        // 先把列铺齐，等运费模板 / 优惠券 / 积分 / 售后单上线时直接取用，无需再改表。
+        // 运费与售后退款均已上线；优惠券与积分尚未上线，那两列此刻恒为 0。
 
         /// <summary>
         /// 商品总额（= Σ 订单项 单价×数量）。**不含**运费、优惠与积分抵扣，是销售额统计的唯口径。
@@ -76,7 +75,8 @@ namespace ZR.Mall.Model
         public decimal PayAmount { get; set; }
 
         /// <summary>
-        /// 已退金额累计。恒 ≤ PayAmount，是部分退款 / 重复退款的超额护栏；售后单尚未上线，本期恒为 0。
+        /// 已退金额累计（订单页直接退款与售后退款都写这里）。恒 ≤ PayAmount —— 这个上限就是落账护栏，
+        /// 防止重复退款把已退金额累到比实付还高。0 表示从未退过款。
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public decimal RefundAmount { get; set; }
@@ -92,7 +92,9 @@ namespace ZR.Mall.Model
         public DeliveryStatusEnum DeliveryStatus { get; set; }
 
         /// <summary>
-        /// 退款状态：0->无退款；1->退款中；2->已退款；3->正在退货；4->已退货
+        /// 退款状态：0->无退款；1->退款中；2->已退款；3->正在退货；4->已退货。
+        /// 仅用于后台订单列表决定是否展示「确认退款」入口；售后退款的退货进度记在
+        /// oms_after_sale 自己的状态机上，故 3/4（正在退货 / 已退货）当前无写入方。
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public RefundStatusEnum RefundStatus { get; set; }
