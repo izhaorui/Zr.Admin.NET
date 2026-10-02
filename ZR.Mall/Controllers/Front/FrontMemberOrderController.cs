@@ -25,15 +25,18 @@ namespace ZR.Mall.Controllers.Front
         private readonly IFrontOrderService _orderService;
         private readonly WechatPayGateway _wechatPayGateway;
         private readonly IOMSPaymentService _paymentService;
+        private readonly IFreightService _freightService;
 
         /// <summary>技术日志（NLog → logs/all.log）</summary>
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public FrontMemberOrderController(IFrontOrderService orderService, WechatPayGateway wechatPayGateway, IOMSPaymentService paymentService)
+        public FrontMemberOrderController(IFrontOrderService orderService, WechatPayGateway wechatPayGateway,
+            IOMSPaymentService paymentService, IFreightService freightService)
         {
             _orderService = orderService;
             _wechatPayGateway = wechatPayGateway;
             _paymentService = paymentService;
+            _freightService = freightService;
         }
 
         /// <summary>
@@ -79,6 +82,75 @@ namespace ZR.Mall.Controllers.Front
                 order.FreightAmount,
                 order.DiscountAmount,
                 order.OrderStatus
+            });
+        }
+
+        /// <summary>
+        /// 运费试算（需登录）。
+        ///
+        /// 供确认订单页在选定收货地址后实时展示运费与合计。
+        /// <para><b>刻意不返回最终实付</b>：优惠与积分能力尚未上线，实付此刻就等于
+        /// 商品总额 + 运费；等它们上线后本接口需同步补上优惠试算，否则前端展示的实付
+        /// 会与下单结果不一致。</para>
+        ///
+        /// <para><b>与下单的关系</b>：本接口与下单主流程调同一个 <c>IFreightService</c>，
+        /// 因此运费必然一致；下单时服务端仍会**重算**一遍，不采信这里返回的值。
+        /// 命中「不配送地区」时这里直接返回错误，前端据此禁用提交按钮 ——
+        /// 与下单的拦截时机一致，不会出现"能试算却下不了单"。</para>
+        /// </summary>
+        [HttpPost("calc-freight")]
+        [MemberAuthorize]
+        public IActionResult CalcFreight([FromBody] CalcFreightDto dto)
+        {
+            if (dto?.Items == null || dto.Items.Count == 0)
+            {
+                return ToResponse(ResultCode.PARAM_ERROR, "试算商品不能为空");
+            }
+            if (dto.Address == null || string.IsNullOrWhiteSpace(dto.Address.Province)
+                || string.IsNullOrWhiteSpace(dto.Address.City))
+            {
+                return ToResponse(ResultCode.PARAM_ERROR, "请先选择收货地区");
+            }
+
+            // 身份取自令牌：试算同样限已登录会员，避免被当作免费的运费计算器滥用
+            MemberAuthorizeAttribute.GetMember(HttpContext);
+
+            var items = dto.Items
+                .Select(x => new FreightCheckoutItem { SkuId = x.SkuId, Quantity = x.Quantity })
+                .ToList();
+            var address = new AreaQueryDto
+            {
+                Province = dto.Address.Province,
+                ProvinceCode = dto.Address.ProvinceCode,
+                City = dto.Address.City,
+                CityCode = dto.Address.CityCode,
+                District = dto.Address.District,
+                DistrictCode = dto.Address.DistrictCode,
+            };
+
+            // 命中不配送地区时 FreightService 抛 CustomException，由全局异常处理转成可读提示
+            var result = _freightService.CalculateForCheckout(items, dto.GoodsAmount ?? 0m, address);
+
+            return SUCCESS(new
+            {
+                // 前端展示用：运费为 0 时隐藏该行，故用 nullable 区分"真的是 0"与"没算出来"
+                freightAmount = result.Freight,
+                goodsAmount = result.GoodsAmount,
+                freeShipping = result.FreeShipping,
+                // 合计 = 商品总额 + 运费（优惠与积分尚未上线）
+                payAmount = result.GoodsAmount + result.Freight,
+                details = result.Details.Select(x => new
+                {
+                    x.TemplateId,
+                    x.TemplateName,
+                    x.TotalPiece,
+                    x.TotalWeight,
+                    x.Freight,
+                    x.FreeShipping,
+                    x.NoTemplate
+                }),
+                // 未绑定模板的件数：前端可提示"该商品未配置运费"
+                noTemplate = result.NoTemplate
             });
         }
 

@@ -184,6 +184,9 @@ namespace ZR.Mall.Service
                         t.SaleStatus,
                         t.CategoryId,
                         t.BrandId,
+                        // 运费模板绑定：漏加会导致后台选了模板但保存不生效，
+                        // 而运费是下单时才用到的问题，极难被察觉
+                        t.FreightTemplateId,
                         t.Introduce,
                         t.Unit,
                         t.OriginalPrice,

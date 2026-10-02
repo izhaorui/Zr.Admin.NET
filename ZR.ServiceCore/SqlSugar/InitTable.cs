@@ -32,6 +32,12 @@ namespace ZR.ServiceCore.SqlSugar
                 // 确保默认租户存在（收敛到种子数据 SeedDataService.EnsureDefaultTenant）
                 new SeedDataService().EnsureDefaultTenant();
 
+                // 主库公共参考数据（行政区划 sys_area）。
+                // 必须放在这里、且**不加任何模块开关**：本方法上方的 Migrate 会无条件把
+                // SystemEntityTypes 里的表建出来（含 sys_area），若灌数挂在业务模块的
+                // IModuleInitProvider 上，模块一关就会留下一张永远空的表 —— 比缺表更隐蔽。
+                MainDbReferenceSeed.EnsureAreas(db);
+
                 // 调度各业务模块的非SaaS初始化（如商城、内容等）
                 if (InternalApp.ServiceProvider != null)
                 {

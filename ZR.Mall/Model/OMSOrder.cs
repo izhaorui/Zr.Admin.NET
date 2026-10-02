@@ -51,7 +51,8 @@ namespace ZR.Mall.Model
         public decimal TotalAmount { get; set; }
 
         /// <summary>
-        /// 运费。运费模板尚未上线，本期恒为 0；上线后由运费模板按收货地区 code 计算。
+        /// 运费。由运费模板按「收货地区编码 + 商品件数/重量」计算，
+        /// 服务端在下单时重算（不信任前端试算结果），详见 FreightService。
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public decimal FreightAmount { get; set; }
@@ -179,8 +180,21 @@ namespace ZR.Mall.Model
         public string UserName { get; set; }
         public string Phone { get; set; }
         public string Province { get; set; }
+
+        /// <summary>
+        /// 省级行政编码（下单那一刻的快照）
+        /// </summary>
+        /// <remarks>
+        /// 订单要长期留存"送到哪儿"的稳定标识：地区名称会因行政区划更名而漂移，
+        /// 编码不会。故快照里名称与编码并存 —— 名称照抄下单时的用户输入（不规范化，
+        /// 那是历史留痕），编码用于事后按地区对账与统计。
+        /// </remarks>
+        public string ProvinceCode { get; set; }
+
         public string City { get; set; }
+        public string CityCode { get; set; }
         public string District { get; set; }
+        public string DistrictCode { get; set; }
         public string DetailAddress { get; set; }
     }
 }

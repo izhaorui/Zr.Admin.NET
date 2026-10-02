@@ -45,6 +45,18 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "品牌")]
         public string BrandName { get; set; }
 
+        /// <summary>
+        /// 运费模板 Id；为空表示走默认模板（无默认模板则计 0 运费）
+        /// </summary>
+        [ExcelColumn(Ignore = true)]
+        public long? FreightTemplateId { get; set; }
+
+        /// <summary>
+        /// 运费模板名称（列表与详情回显用，避免前端再查一次模板表）
+        /// </summary>
+        [ExcelColumn(Ignore = true)]
+        public string FreightTemplateName { get; set; }
+
         [ExcelColumn(Name = "sku最低价格")]
         public decimal Price { get; set; }
 

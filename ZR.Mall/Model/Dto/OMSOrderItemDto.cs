@@ -35,5 +35,17 @@
         /// 规格快照(例如:颜色:红色;尺码:XL)
         /// </summary>
         public string SkuSpec { get; set; }
+
+        /// <summary>
+        /// 命中的运费模板 Id（下单时快照）
+        /// </summary>
+        /// <remarks>为 null 表示该行未绑定模板且无默认模板（计 0 运费）</remarks>
+        public long? FreightTemplateId { get; set; }
+
+        /// <summary>
+        /// 运费模板名称（下单时快照的冗余）
+        /// </summary>
+        /// <remarks>模板被改名或删除后，订单详情仍可读出"当时按哪个模板计的"</remarks>
+        public string FreightTemplateName { get; set; }
     }
 }

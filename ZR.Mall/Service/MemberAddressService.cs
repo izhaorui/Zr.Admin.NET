@@ -49,8 +49,11 @@ namespace ZR.Mall.Service
                 Phone = dto.Phone.Trim(),
                 PhoneCode = dto.PhoneCode?.Trim(),
                 Province = dto.Province.Trim(),
+                ProvinceCode = dto.ProvinceCode?.Trim(),
                 City = dto.City.Trim(),
+                CityCode = dto.CityCode?.Trim(),
                 District = dto.District.Trim(),
+                DistrictCode = dto.DistrictCode?.Trim(),
                 DetailAddress = dto.DetailAddress.Trim(),
                 IsDefault = makeDefault ? 1 : 0,
                 AddTime = DateTime.Now
@@ -91,6 +94,12 @@ namespace ZR.Mall.Service
             var targetDefault = makeDefault ? 1 : exist.IsDefault;
             var affected = 0;
 
+            // 地区编码先在事务外取好：SetColumns 的 Lambda 是表达式树，
+            // 里面**不允许** `?.`（CS8072），只能在外部求值后作为常量捕获
+            var provinceCode = dto.ProvinceCode?.Trim() ?? string.Empty;
+            var cityCode = dto.CityCode?.Trim() ?? string.Empty;
+            var districtCode = dto.DistrictCode?.Trim() ?? string.Empty;
+
             var tran = UseTran(() =>
             {
                 if (makeDefault && exist.IsDefault != 1)
@@ -104,8 +113,11 @@ namespace ZR.Mall.Service
                         Phone = dto.Phone.Trim(),
                         PhoneCode = dto.PhoneCode,
                         Province = dto.Province.Trim(),
+                        ProvinceCode = provinceCode,
                         City = dto.City.Trim(),
+                        CityCode = cityCode,
                         District = dto.District.Trim(),
+                        DistrictCode = districtCode,
                         DetailAddress = dto.DetailAddress.Trim(),
                         IsDefault = targetDefault
                     })

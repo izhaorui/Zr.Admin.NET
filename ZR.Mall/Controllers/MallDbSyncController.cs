@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using SqlSugar.IOC;
-using ZR.Mall.Service;
 using ZR.ServiceCore.Services;
 using ZR.ServiceCore.SqlSugar;
 

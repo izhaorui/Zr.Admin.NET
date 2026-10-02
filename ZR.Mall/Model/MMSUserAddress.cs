@@ -31,9 +31,28 @@
         /// <summary>
         /// 省市区地址
         /// </summary>
+        /// <remarks>
+        /// 名称与编码**并存**：名称用于展示与地址回显，编码用于运费模板的地区匹配。
+        /// 编码由 C 端地区选择器回传，历史数据为空 —— 运费计算时会按名称兜底反查
+        /// （见 <c>AreaService.ResolveCodes</c>），不因存量数据缺编码而无法下单。
+        /// </remarks>
         public string Province { get; set; }
+
+        /// <summary>省级行政编码（2 位，如 33）；历史数据可能为空</summary>
+        [SugarColumn(Length = 16)]
+        public string ProvinceCode { get; set; }
+
         public string City { get; set; }
+
+        /// <summary>市级行政编码（4 位，如 3301）；历史数据可能为空</summary>
+        [SugarColumn(Length = 16)]
+        public string CityCode { get; set; }
+
         public string District { get; set; }
+
+        /// <summary>区县级行政编码（6 位；东莞市等不设区地级市为 9 位街道/镇码）</summary>
+        [SugarColumn(Length = 16)]
+        public string DistrictCode { get; set; }
         /// <summary>
         /// 详细地址
         /// </summary>

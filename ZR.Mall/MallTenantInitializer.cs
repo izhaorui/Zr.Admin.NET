@@ -1,16 +1,19 @@
-using Infrastructure;
 using SqlSugar.IOC;
 using ZR.Mall.Model;
 using ZR.ServiceCore.Services;
 using ZR.ServiceCore.SqlSugar;
 
-namespace ZR.Mall.Service
+namespace ZR.Mall
 {
 	/// <summary>
 	/// 商城模块租户级表初始化器。
 	/// 会员表（ums_member）的建表与自增种子校正已移交 ZR.ServiceCore.Member.MemberTenantInitializer，
 	/// 商城不再自持会员能力，仅保留商城业务实体。
 	/// </summary>
+	/// <remarks>
+	/// 放项目根而非 <c>Service/</c>：它是启动引导（实现 Infrastructure 的框架契约、只在建库/建租户时被调度），
+	/// 不是业务服务；与 <c>ZR.Workflow</c> 的同名初始化器归属一致。
+	/// </remarks>
 	[AppService(ServiceType = typeof(ITenantModuleInitializer))]
 	public class MallTenantInitializer : ITenantModuleInitializer
 	{
@@ -56,6 +59,9 @@ namespace ZR.Mall.Service
 			typeof(OMSPayment),
 			typeof(MMSUserAddress),
 			typeof(SpecTemplate),
+			// 运费模板与不配送地区：订单运费的数据来源
+			typeof(FreightTemplate),
+			typeof(FreightTemplateExcludeRegion)
 		};
 
 		private static void InitCore(ISqlSugarClient db)

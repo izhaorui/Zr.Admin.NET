@@ -7,6 +7,8 @@ namespace ZR.Mall.Model
     /// 商品管理
     /// </summary>
     [SugarTable("mms_product", "商品管理")]
+    // 删除运费模板前的引用校验、列表页「已绑商品数」都按它查
+    [SugarIndex("idx_mms_product_freight", nameof(FreightTemplateId), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class Product : SysBase
     {
@@ -41,6 +43,15 @@ namespace ZR.Mall.Model
         /// 商品分类 
         /// </summary>
         public int? CategoryId { get; set; }
+
+        /// <summary>
+        /// 运费模板 Id
+        /// </summary>
+        /// <remarks>
+        /// 为 null 时下单按**默认模板**计费；默认模板也不存在则计 0 运费。
+        /// 留空是合法配置（虚拟商品、赠品等本就不需要运费），故可空。
+        /// </remarks>
+        public long? FreightTemplateId { get; set; }
 
         /// <summary>
         /// sku最低价格(自动根据sku计算)
@@ -144,6 +155,12 @@ namespace ZR.Mall.Model
         /// </summary>
         [Navigate(NavigateType.OneToOne, nameof(BrandId), nameof(Model.Brand.Id))] //自定义关系映射
         public Brand Brand { get; set; }
+
+        /// <summary>
+        /// 运费模板
+        /// </summary>
+        [Navigate(NavigateType.OneToOne, nameof(FreightTemplateId), nameof(Model.FreightTemplate.Id))] //自定义关系映射
+        public FreightTemplate FreightTemplate { get; set; }
     }
 
     /// <summary>

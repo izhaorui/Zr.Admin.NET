@@ -14,7 +14,7 @@ namespace ZR.Model.Member
         /// 会员Id（数据库自增，但**起始值为 100000**，不要改回从 1 开始）。
         /// 会员Id 会对外暴露（令牌载荷、接口参数、后台展示），从 1 起的连续小号容易被外部按号
         /// 遍历/估算注册量，因此自增种子统一从 100000 起。
-        /// 种子由 ZR.Mall/Service/MallTenantInitializer.cs 的 EnsureMemberIdSeed 校正
+        /// 种子由 ZR.ServiceCore/Member/MemberTenantInitializer.cs 的 EnsureMemberIdSeed 校正
         /// （CodeFirst 建表默认 IDENTITY(1,1)，且 EnsureEntitySchemas 只建表/补列、不改种子）；
         /// 既有库请执行 document/doc/商城会员接口对接文档.md 中给出的一次性 SQL。
         /// </summary>

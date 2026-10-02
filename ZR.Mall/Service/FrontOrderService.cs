@@ -16,11 +16,17 @@ namespace ZR.Mall.Service
     {
         private readonly IOMSOrderStateService _orderStateService;
 
+        /// <summary>
+        /// 运费编排服务：与 C 端试算接口共用，保证「试算多少就付多少」
+        /// </summary>
+        private readonly IFreightService _freightService;
+
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public FrontOrderService(IOMSOrderStateService orderStateService)
+        public FrontOrderService(IOMSOrderStateService orderStateService, IFreightService freightService)
         {
             _orderStateService = orderStateService;
+            _freightService = freightService;
         }
 
         /// <summary>
@@ -322,15 +328,27 @@ namespace ZR.Mall.Service
             }
 
             // ---- 金额构成：下单只负责算与存，公式收敛在 CalcPayAmount ----
-            // 商品总额 totalAmount 来自上面的订单项累加；下面三项对应能力尚未上线，先恒为 0 占位：
-            //   freightAmount  —— 运费（运费模板 + 地区 code 包邮规则，尚未上线）
+            // 商品总额 totalAmount 来自上面的订单项累加。
+            // 运费走运费模板：与 C 端试算接口调同一个 FreightService，保证「试算多少就付多少」。
+            // **服务端重算、不采信前端传值** —— 前端传运费等于把定价权交给客户端。
+            // 命中「不配送地区」时 FreightService 抛 CustomException，订单建不起来（先于扣库存）。
+            var freightCalc = _freightService.CalculateForCheckout(
+                dto.Items.Select(x => new FreightCheckoutItem { SkuId = x.SkuId, Quantity = x.Quantity }).ToList(),
+                totalAmount,
+                BuildAreaQuery(dto.Address));
+
+            // ---- 优惠与积分：对应能力尚未上线，先恒为 0 占位 ----
             //   discountAmount —— 优惠合计（优惠券 / 满减 / 促销折扣，尚未上线）
             //   integralAmount —— 积分抵扣（会员积分，尚未上线）
-            // 运费模板上线时只需替换 freightAmount 的取值来源，订单主流程与支付链路零改动。
-            decimal freightAmount = 0m;
+            // 上线时只需替换这两个的取值来源，订单主流程与支付链路零改动。
+            var freightAmount = freightCalc.Freight;
             decimal discountAmount = 0m;
             decimal integralAmount = 0m;
             var payAmount = CalcPayAmount(totalAmount, freightAmount, discountAmount, integralAmount);
+
+            // 订单项写入命中的运费模板快照：订单运费是"按模板分段求和"的结果，
+            // 事后要能反查是哪几个模板、当时各是什么规则（模板改名/删除后订单仍可读）
+            StampFreightTemplate(orderItems, freightCalc);
 
             // ---- #3 幂等去重（事务外）----
             // 后端自动选择：Redis 已初始化（RedisServer:open=1）时用 Redis（跨实例共享），
@@ -454,8 +472,10 @@ namespace ZR.Mall.Service
 
                 // 记录幂等键 -> 订单号（15 分钟内同单只创建一次）
                 idemCache.Set(idemKey, order.OrderNo, 15);
-                // 下单成功是"钱与货"的起点：后续支付/发货/退款/排查全靠这个订单号串联，必须留痕
-                logger.Info($"下单成功：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={memberId} 金额={order.PayAmount}元 件数={orderItems.Count} 明细={string.Join(",", orderItems.Select(i => i.SkuId + "x" + i.Quantity))}");
+                // 下单成功是"钱与货"的起点：后续支付/发货/退款/排查全靠这个订单号串联，必须留痕。
+                // 金额三项都记：只看实付无法区分是优惠还是运费导致的差额，出问题时无从查起。
+                // ⚠️ 不打印地址快照（PII）
+                logger.Info($"下单成功：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={memberId} 商品总额={order.TotalAmount}元 运费={order.FreightAmount}元 实付={order.PayAmount}元 件数={orderItems.Count} 明细={string.Join(",", orderItems.Select(i => i.SkuId + "x" + i.Quantity))} 运费模板={string.Join(",", freightCalc.SkuTemplates.Values.Select(t => t.Id).Distinct())}");
                 return order;
             }
             finally
@@ -475,6 +495,56 @@ namespace ZR.Mall.Service
                                            decimal discountAmount, decimal integralAmount)
         {
             return totalAmount + freightAmount - discountAmount - integralAmount;
+        }
+
+        /// <summary>
+        /// 把下单地址转成地区查询入参（名称 + 编码）。
+        /// </summary>
+        /// <remarks>
+        /// 编码来自前端回传（地址表已落编码），编码缺失时 FreightService 会经
+        /// AreaService 按名称兜底反查，因此老客户端与历史地址同样能算出正确运费。
+        /// </remarks>
+        private static AreaQueryDto BuildAreaQuery(AddressSnapshot address)
+        {
+            if (address == null)
+            {
+                return null;
+            }
+            return new AreaQueryDto
+            {
+                Province = address.Province,
+                ProvinceCode = address.ProvinceCode,
+                City = address.City,
+                CityCode = address.CityCode,
+                District = address.District,
+                DistrictCode = address.DistrictCode,
+            };
+        }
+
+        /// <summary>
+        /// 给订单项盖上命中的运费模板快照。
+        /// </summary>
+        /// <remarks>
+        /// 运费是"按模板分段求和"的结果，只在订单主表留一个总数无法反查构成。
+        /// 映射里没有的 SKU（未绑定模板且无默认模板）保持 null —— 这正是
+        /// "该行未计运费"的如实留痕，而不是漏填。
+        /// </remarks>
+        private static void StampFreightTemplate(List<OMSOrderItem> orderItems, FreightCalcResult freightCalc)
+        {
+            var skuTemplates = freightCalc?.SkuTemplates;
+            if (orderItems == null || orderItems.Count == 0 || skuTemplates == null || skuTemplates.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var item in orderItems)
+            {
+                if (skuTemplates.TryGetValue(item.SkuId, out var template))
+                {
+                    item.FreightTemplateId = template.Id;
+                    item.FreightTemplateName = template.TemplateName;
+                }
+            }
         }
 
         /// <summary>

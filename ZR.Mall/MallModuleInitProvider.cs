@@ -4,13 +4,17 @@ using SqlSugar.IOC;
 using ZR.Model.System;
 using ZR.ServiceCore.Services;
 
-namespace ZR.Mall.Service
+namespace ZR.Mall
 {
     /// <summary>
     /// 商城模块初始化 Provider：商城后台管理菜单/按钮权限 + 商城内置定时任务种子。
     /// 随商城模块内聚（框架层不再持有商城菜单与任务定义），由 ModuleInitRunner 按 ModuleInit.Mall 开关调度。
     /// 建好后由 EnsureTenantPlanMenuSeedData 自动纳入默认套餐，租户开箱可见。
     /// </summary>
+    /// <remarks>
+    /// 放项目根而非 <c>Service/</c>：它是启动引导（实现 Infrastructure 的框架契约、只在建库/建租户时被调度），
+    /// 不是业务服务；与 <c>ZR.Workflow</c> 的同名两个初始化器归属一致。
+    /// </remarks>
     [AppService(ServiceType = typeof(IModuleInitProvider))]
     public class MallModuleInitProvider : IModuleInitProvider
     {
@@ -118,6 +122,12 @@ namespace ZR.Mall.Service
                     ]),
                 new(Name: "支付流水", Path: "payment", Component: "shopping/Payment", Perms: "oms:payment:list", OrderNum: 7, Icon: "money",
                     Buttons: [new("查询", "oms:payment:list")]),
+                new(Name: "运费模板", Path: "freightTemplate", Component: "shopping/FreightTemplate", Perms: "shop:freight:list", OrderNum: 8, Icon: "documentation",
+                    Buttons:
+                    [
+                        new("查询", "shop:freight:query"), new("新增", "shop:freight:add"),
+                        new("修改", "shop:freight:edit"), new("删除", "shop:freight:delete"),
+                    ]),
                 new(Name: "会员管理", Path: "member", Component: "shopping/Member", Perms: "shop:member:list", OrderNum: 9, Icon: "peoples",
                     Buttons:
                     [

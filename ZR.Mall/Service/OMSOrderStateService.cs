@@ -301,7 +301,8 @@ namespace ZR.Mall.Service
         /// <summary>
         /// 退款（运营动作，约定：调用前渠道退款已由人工在渠道侧完成）。
         /// ① 订单已取消且退款状态为"退款中"：仅确认退款完成（不动订单状态与库存，取消时已回补）；
-        /// ② 其余未取消状态：关闭订单，未出库回补可售库存，已发货/已完成只冲减销量。
+        /// ② 待付款：**拒绝** —— 没有款可退，正解是「取消」（见 CancelOrder）；
+        /// ③ 待发货/已发货/已完成：关闭订单，待发货回补可售库存，已发货/已完成只冲减销量。
         /// 条件更新，避免重复回补。
         /// </summary>
         public int RefundOrder(OMSOrder model)
@@ -326,20 +327,31 @@ namespace ZR.Mall.Service
                 throw new CustomException("该订单状态不可退款");
             }
 
+            // 未付款的单没有款可退，明确拒绝而不是"关单了事"。
+            // 原实现对未付款单走的是「关闭订单 + 回补库存 + 退款状态置无退款」，看着像退款成功，
+            // 实际一分钱都没退，运营看到的「已关闭 + 无退款」与按钮名完全对不上；
+            // 更麻烦的是同一张待付款单走「取消」得到 Cancel(4)、走「退款」得到 Closed(5)，
+            // 钱和库存处理一模一样、订单状态却分裂成两个值，后续对账要同时兼容两套口径。
+            // 待付款单的正解是「取消」（同一行左侧就有那个按钮），由 CancelOrder 处理。
+            if (order.OrderStatus == Enum.OrderStatusEnum.None)
+            {
+                logger.Warn($"退款被拒绝：订单未付款，无可退款项。OrderNo={order.OrderNo} OrderId={order.Id} 当前状态={order.OrderStatus}（应使用取消）");
+                throw new CustomException("该订单未付款，无可退款项，请使用「取消」关闭订单");
+            }
+
             var fromStatus = order.OrderStatus;
-            // 未付款的单没有款可退，不写退款状态（避免"从未收款却标记已退款"）；
-            // 已付款的单属运营确认"渠道已退完"，直接置为已退款。
-            var paid = fromStatus != Enum.OrderStatusEnum.None;
-            // 未出库（待付款/待发货）货还在仓库，退款加回可售；已发货/已完成货已出库，不能自动加库存。
-            var restoreSellable = fromStatus == Enum.OrderStatusEnum.None
-                || fromStatus == Enum.OrderStatusEnum.TobeShipped;
+            // 走到这里必然已付款：待付款已被上面拒绝，已取消/已关闭已被更早的判断拦下，
+            // 剩下的 TobeShipped/Shipped/Completed 三个状态都对应"渠道已收款"。
+            // 故退款状态与支付流水都直接置已退款，无需再按"是否已付"分支。
+            // 未出库（待发货）货还在仓库，退款加回可售；已发货/已完成货已出库，不能自动加库存。
+            var restoreSellable = fromStatus == Enum.OrderStatusEnum.TobeShipped;
             var tran = UseTran(() =>
             {
                 var affected = Context.Updateable<OMSOrder>()
                     .SetColumns(it => new OMSOrder
                     {
                         OrderStatus = Enum.OrderStatusEnum.Closed,
-                        RefundStatus = paid ? Enum.RefundStatusEnum.Refunded : Enum.RefundStatusEnum.None
+                        RefundStatus = Enum.RefundStatusEnum.Refunded
                     })
                     .Where(x => x.OrderNo == model.OrderNo && x.IsDelete == 0 && x.OrderStatus == fromStatus)
                     .ExecuteCommand();
@@ -348,14 +360,7 @@ namespace ZR.Mall.Service
                     throw new CustomException("退款失败：订单状态已变更，请刷新后重试");
                 }
                 RestoreStock(order.Id, restoreSellable);
-                if (paid)
-                {
-                    _paymentService.MarkRefunded(order.OrderNo);
-                }
-                else
-                {
-                    _paymentService.CloseUnpaid(order.OrderNo);
-                }
+                _paymentService.MarkRefunded(order.OrderNo);
             });
             if (tran == null || !tran.IsSuccess)
             {
