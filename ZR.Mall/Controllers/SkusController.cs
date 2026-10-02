@@ -47,7 +47,11 @@ namespace ZR.Mall.Controllers
         public IActionResult GetShoppingSkus(int SkuId)
         {
             var response = _ShoppingSkusService.GetInfo(SkuId);
-            
+            if (response == null)
+            {
+                return ToResponse(ResultCode.FAIL, "商品规格不存在");
+            }
+
             var info = response.Adapt<SkusDto>();
             return SUCCESS(info);
         }

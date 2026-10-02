@@ -87,7 +87,23 @@ namespace ZR.Mall.Service
             long affected = 0;
             var result = UseTran(() =>
             {
-                affected = Update(model, true);
+                // 库存页允许改可售库存和价格，但不写锁定库存、销量、版本号、删除标记。
+                // 原 Update(model, true) 会把请求里缺省的 LockStock/Version 写成 0。
+                affected = Context.Updateable(model)
+                    .UpdateColumns(s => new
+                    {
+                        s.ProductId,
+                        s.Price,
+                        s.Stock,
+                        s.ImageUrl,
+                        s.SpecCombination,
+                        s.Specs,
+                        s.SpecIds,
+                        s.Weight,
+                        s.SortId
+                    })
+                    .Where(s => s.SkuId == model.SkuId && s.IsDelete == 0)
+                    .ExecuteCommand();
                 RefreshProductSummary(model.ProductId);
             });
             if (!result.IsSuccess)

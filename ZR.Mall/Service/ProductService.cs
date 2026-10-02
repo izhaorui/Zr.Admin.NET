@@ -227,12 +227,28 @@ namespace ZR.Mall.Service
 
                 // 插入新的sku
                 skusService.Insert(insertSkus);
-                //更新现有的sku
+                // 更新现有 SKU：只改展示/价格/规格。库存仅在本次提交与库内不一致时写入（商家主动改库存）。
+                // 不写 LockStock / SalesVolume / Version / IsDelete —— 这些是下单副作用，
+                // 整行更新会把锁定库存和销量写成 0，或用打开页面时的库存盖掉期间的扣减。
                 foreach (var item in updateSkus)
                 {
                     item.ProductId = model.ProductId;
                     item.SpecCombination = ProductSpecFormatter.BuildCombination(item.Specs);
-                    skusService.Update(item, true, "修改商品sku");
+                    var original = skus.First(s => s.SkuId == item.SkuId);
+                    if (item.Stock != original.Stock)
+                    {
+                        Context.Updateable(item)
+                            .UpdateColumns(s => new { s.Price, s.Stock, s.ImageUrl, s.SpecCombination, s.Specs, s.SpecIds, s.Weight, s.SortId })
+                            .EnableDiffLogEvent("修改商品sku")
+                            .ExecuteCommand();
+                    }
+                    else
+                    {
+                        Context.Updateable(item)
+                            .UpdateColumns(s => new { s.Price, s.ImageUrl, s.SpecCombination, s.Specs, s.SpecIds, s.Weight, s.SortId })
+                            .EnableDiffLogEvent("修改商品sku")
+                            .ExecuteCommand();
+                    }
                 }
 
                 // 价格区间与规格摘要统一由 SKU 侧回写：本次的新增、修改与软删除都会在重算中体现

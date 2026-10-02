@@ -80,6 +80,14 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "快递状态")]
         public DeliveryStatusEnum DeliveryStatus { get; set; }
 
+        /// <summary>
+        /// 退款状态：0无退款 / 1退款中 / 2已退款 / 3正在退货 / 4已退货。
+        /// 取消"已支付"订单会先置为 1（退款中），待运营确认渠道退款完成后转 2（已退款）；
+        /// 后台列表据此决定是否展示"确认退款"入口。
+        /// </summary>
+        [ExcelColumn(Name = "退款状态", Ignore = true)]
+        public RefundStatusEnum RefundStatus { get; set; }
+
         [ExcelColumn(Name = "物流公司")]
         public string DeliveryCompany { get; set; }
 

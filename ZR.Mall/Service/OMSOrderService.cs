@@ -18,6 +18,8 @@ namespace ZR.Mall.Service
     {
         private readonly IOMSOrderStateService _orderStateService;
 
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         public OMSOrderService(IOMSOrderStateService orderStateService)
         {
             _orderStateService = orderStateService;
@@ -113,12 +115,18 @@ namespace ZR.Mall.Service
                 //修改商家备注
                 case OrderUpdateOperType.MerchantNote:
                     return UpdateMerchantNote(model);
-                //修改地址
+                //修改地址：已发货及之后地址已交给物流，不再改快照
                 case OrderUpdateOperType.Address:
-                    return Update(w => w.OrderNo == model.OrderNo, it => new OMSOrder()
+                    var addressRows = Update(w => w.OrderNo == model.OrderNo && w.IsDelete == 0
+                        && (w.OrderStatus == Enum.OrderStatusEnum.None || w.OrderStatus == Enum.OrderStatusEnum.TobeShipped), it => new OMSOrder()
                     {
                         AddressSnapshot = model.AddressSnapshot,
                     });
+                    if (addressRows <= 0)
+                    {
+                        throw new CustomException("仅待付款或待发货的订单可修改收货地址");
+                    }
+                    return addressRows;
                 //订单退款：关闭订单 + 回补库存（简易版无支付，退款即退回库存）—— 状态迁移动交状态内核
                 case OrderUpdateOperType.Refund:
                     return _orderStateService.RefundOrder(model);
@@ -135,6 +143,58 @@ namespace ZR.Mall.Service
                     // 原实现对未识别值静默走 Update(model, true)，误传操作码会改动整单字段；改为明确报错
                     throw new CustomException($"不支持的订单操作类型：{operType}");
             }
+        }
+
+        /// <summary>
+        /// 软删除订单。待付款/待发货先走取消（条件更新 + 回补库存），再标记删除，
+        /// 避免逻辑删除后超时关单看不到这张单、锁定库存无法释放。
+        ///
+        /// ⚠️ 语义：删除"已支付未发货"订单会走取消流程 —— 等价于「取消 + 待退款」
+        /// （退款状态置为 Refunding，渠道退款仍由人工完成）。若只想清理脏数据而不触发退款，
+        /// 请先与运营确认或改走状态变更。
+        ///
+        /// 并发：单笔取消时若订单状态已被支付/发货/关单改掉，按跳过处理（该单不会被删除），
+        /// 其余继续。原实现让异常直接冒泡，会留下"前面已删、后面未处理"的半成品且无回滚。
+        /// </summary>
+        public int DeleteOrders(long[] ids)
+        {
+            if (ids == null || ids.Length == 0)
+            {
+                return 0;
+            }
+
+            var requestIds = ids.Distinct().ToList();
+            var count = 0;
+            var skipped = 0;
+            foreach (var id in requestIds)
+            {
+                var order = Queryable().First(x => x.Id == id && x.IsDelete == 0);
+                if (order == null)
+                {
+                    continue;
+                }
+                if (order.OrderStatus == Enum.OrderStatusEnum.None || order.OrderStatus == Enum.OrderStatusEnum.TobeShipped)
+                {
+                    try
+                    {
+                        _orderStateService.CancelOrder(id);
+                    }
+                    catch (Exception ex)
+                    {
+                        // 并发下被支付/发货/关单抢先改掉：跳过该单，不影响其余（与批量取消的跳过口径一致）
+                        skipped++;
+                        logger.Warn($"删除订单时取消失败，已跳过该单：OrderNo={order.OrderNo} OrderId={id} 错误={ex.Message}");
+                        continue;
+                    }
+                }
+                count += Context.Updateable<OMSOrder>()
+                    .SetColumns(it => new OMSOrder { IsDelete = 1 })
+                    .Where(it => it.Id == id && it.IsDelete == 0)
+                    .ExecuteCommand();
+            }
+
+            logger.Info($"批量删除订单完成：请求数={requestIds.Count} 实际删除={count} 跳过={skipped} Ids={string.Join(",", requestIds.Take(20))}");
+            return count;
         }
 
         /// <summary>

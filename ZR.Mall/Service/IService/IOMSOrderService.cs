@@ -39,6 +39,11 @@ namespace ZR.Mall.Service.IService
         int UpdateMerchantNote(OMSOrder model);
 
         /// <summary>
+        /// 软删除订单。待付款/待发货会先按取消规则回补库存，避免逻辑删除后锁定库存无法释放。
+        /// </summary>
+        int DeleteOrders(long[] ids);
+
+        /// <summary>
         /// 导出订单
         /// </summary>
         PagedInfo<OMSOrderDto> ExportList(OMSOrderQueryDto parm);

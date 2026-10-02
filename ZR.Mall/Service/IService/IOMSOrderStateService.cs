@@ -20,7 +20,10 @@ namespace ZR.Mall.Service.IService
         OMSOrder PayOrderByOrderNo(string orderNo, ZR.Mall.Enum.PayTypeEnum payType = ZR.Mall.Enum.PayTypeEnum.Mock, string transactionId = null, string callbackRaw = null, long? callbackTotalFen = null);
 
         /// <summary>
-        /// 取消订单（待付款/待发货可取消，回补库存）。供会员取消与后台取消共用。
+        /// 取消订单（待付款/待发货可取消，回补可售库存并冲减销量）。
+        /// 条件更新：与支付、发货、超时关单并发时只有一方能命中，避免重复回补。
+        /// 已支付订单此时并未退款（钱还在账上、渠道退款未发生），故只把退款状态置为"退款中(Refunding)"、
+        /// 支付流水保持已支付；待运营在渠道侧退款完成后调用 <see cref="RefundOrder"/> 确认，才置为"已退款"。
         /// </summary>
         int CancelOrder(long id);
 
@@ -36,7 +39,10 @@ namespace ZR.Mall.Service.IService
         int ConfirmReceipt(long id);
 
         /// <summary>
-        /// 退款：关闭订单 + 回补库存（简易版无支付，退款即退回库存）
+        /// 退款（运营动作，约定：调用前渠道退款已由人工在渠道侧完成）。
+        /// ① 订单已取消且退款状态为"退款中"：仅确认退款完成（置已退款并同步支付流水），不动订单状态与库存；
+        /// ② 其余未取消状态：关闭订单，未出库回补可售库存，已发货/已完成只冲减销量。
+        /// 条件更新，重复退款不会二次回补。
         /// </summary>
         int RefundOrder(OMSOrder model);
 

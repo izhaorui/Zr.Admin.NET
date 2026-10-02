@@ -127,25 +127,56 @@ namespace ZR.Mall.Service
                 throw new CustomException("仅待付款/待发货状态的订单可取消");
             }
 
-            var fromStatus = (int)order.OrderStatus;
+            var fromStatus = order.OrderStatus;
+            var paid = fromStatus == Enum.OrderStatusEnum.TobeShipped;
             var tran = UseTran(() =>
             {
-                Update(x => x.Id == id, it => new OMSOrder
+                // 条件更新：只取消调用前读到的那个状态。支付/发货/超时关单抢先改掉时命中 0 行，不再回补。
+                var affected = paid
+                    ? Context.Updateable<OMSOrder>()
+                        .SetColumns(it => new OMSOrder
+                        {
+                            OrderStatus = Enum.OrderStatusEnum.Cancel,
+                            CancelTime = dbDate,
+                            // 已支付订单此刻**还没退款**（钱在账上、渠道退款尚未发生），
+                            // 因此置"退款中"而非"已退款"；待运营确认渠道退款完成时再推进（见 RefundOrder）。
+                            RefundStatus = Enum.RefundStatusEnum.Refunding
+                        })
+                        .Where(x => x.Id == id && x.IsDelete == 0 && x.OrderStatus == fromStatus)
+                        .ExecuteCommand()
+                    : Context.Updateable<OMSOrder>()
+                        .SetColumns(it => new OMSOrder
+                        {
+                            OrderStatus = Enum.OrderStatusEnum.Cancel,
+                            CancelTime = dbDate
+                        })
+                        .Where(x => x.Id == id && x.IsDelete == 0 && x.OrderStatus == fromStatus)
+                        .ExecuteCommand();
+                if (affected <= 0)
                 {
-                    OrderStatus = Enum.OrderStatusEnum.Cancel,
-                    CancelTime = dbDate
-                });
-                RestoreStock(order.Id);
+                    throw new CustomException("取消失败：订单状态已变更，请刷新后重试");
+                }
+                RestoreStock(order.Id, restoreSellable: true);
+                if (!paid)
+                {
+                    // 未支付：把挂起的预支付流水关掉（Paid 流水不存在，无需处理）
+                    _paymentService.CloseUnpaid(order.OrderNo);
+                }
+                // 已支付：**不动支付流水**（保持 Paid = 已收未退，与真实资金状态一致），
+                // 待确认退款完成时由 RefundOrder 置为 Refunded。
             });
             if (tran == null || !tran.IsSuccess)
             {
-                logger.Error($"取消订单事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 原状态={fromStatus} 错误={tran?.ErrorMessage}");
+                logger.Error($"取消订单事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 原状态={(int)fromStatus} 错误={tran?.ErrorMessage}");
                 throw new CustomException("取消订单失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
-            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Cancel, "CANCEL", null, "取消订单并回补库存");
+            var cancelRemark = paid
+                ? "取消已支付订单并回补库存（渠道退款需人工完成）"
+                : "取消订单并回补库存";
+            _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)Enum.OrderStatusEnum.Cancel, "CANCEL", null, cancelRemark);
             // 不发短信：用户自己取消时页面已反馈；商家/系统取消的场景确实需要告知，
             // 但那属于站内信/订阅消息，不用短信（见 NotifyBuyer 的发送策略）。
-            logger.Info($"订单已取消并回补库存：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 原状态={fromStatus} 金额={order.PayAmount}元");
+            logger.Info($"订单已取消并回补库存：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 原状态={(int)fromStatus} 金额={order.PayAmount}元 已支付={paid}");
             return 1;
         }
 
@@ -216,14 +247,43 @@ namespace ZR.Mall.Service
                         continue; // 仅跳过不可取消的订单，不影响其余
                     }
 
-                    var fromStatus = (int)order.OrderStatus;
-                    Update(x => x.Id == id, it => new OMSOrder
+                    var fromStatus = order.OrderStatus;
+                    var paid = fromStatus == OrderStatusEnum.TobeShipped;
+                    var affected = paid
+                        ? db.Updateable<OMSOrder>()
+                            .SetColumns(it => new OMSOrder
+                            {
+                                OrderStatus = OrderStatusEnum.Cancel,
+                                CancelTime = dbDate,
+                                // 同 CancelOrder：已支付但尚未退款，置"退款中"
+                                RefundStatus = RefundStatusEnum.Refunding
+                            })
+                            .Where(x => x.Id == id && x.IsDelete == 0 && x.OrderStatus == fromStatus)
+                            .ExecuteCommand()
+                        : db.Updateable<OMSOrder>()
+                            .SetColumns(it => new OMSOrder
+                            {
+                                OrderStatus = OrderStatusEnum.Cancel,
+                                CancelTime = dbDate
+                            })
+                            .Where(x => x.Id == id && x.IsDelete == 0 && x.OrderStatus == fromStatus)
+                            .ExecuteCommand();
+                    if (affected <= 0)
                     {
-                        OrderStatus = Enum.OrderStatusEnum.Cancel,
-                        CancelTime = dbDate
-                    });
-                    RestoreStock(order.Id);
-                    _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)OrderStatusEnum.Cancel, "CANCEL", null, "批量取消并回补库存");
+                        // 校验与写入之间被支付/发货/关单改掉：跳过，不回补
+                        continue;
+                    }
+                    RestoreStock(order.Id, restoreSellable: true);
+                    if (!paid)
+                    {
+                        // 未支付：关掉挂起的预支付流水
+                        _paymentService.CloseUnpaid(order.OrderNo);
+                    }
+                    // 已支付：不动支付流水（保持 Paid = 已收未退），待确认退款完成时由 RefundOrder 置为 Refunded
+                    var batchRemark = paid
+                        ? "批量取消已支付订单并回补库存（渠道退款需人工完成）"
+                        : "批量取消并回补库存";
+                    _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)OrderStatusEnum.Cancel, "CANCEL", null, batchRemark);
                     // 不发短信：后台批量操作，逐单一条会在瞬间形成短信风暴（见 NotifyBuyer 的发送策略）
                     count++;
                 }
@@ -239,65 +299,146 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 退款：关闭订单 + 回补库存（简易版无支付，退款即退回库存）
+        /// 退款（运营动作，约定：调用前渠道退款已由人工在渠道侧完成）。
+        /// ① 订单已取消且退款状态为"退款中"：仅确认退款完成（不动订单状态与库存，取消时已回补）；
+        /// ② 其余未取消状态：关闭订单，未出库回补可售库存，已发货/已完成只冲减销量。
+        /// 条件更新，避免重复回补。
         /// </summary>
         public int RefundOrder(OMSOrder model)
         {
-            var db = Context;
-            var dbDate = db.GetDate();
             var order = Queryable().Includes(x => x.Items).First(x => x.OrderNo == model.OrderNo && x.IsDelete == 0);
             if (order == null)
             {
                 logger.Warn($"退款失败：订单不存在。OrderNo={model.OrderNo}");
                 throw new CustomException("订单不存在");
             }
+
+            // ① 取消后待确认渠道退款的单：只推进退款状态，避免"已取消但退款状态永远停在退款中"。
+            if (order.OrderStatus == Enum.OrderStatusEnum.Cancel
+                && order.RefundStatus == Enum.RefundStatusEnum.Refunding)
+            {
+                return ConfirmRefundCompleted(order);
+            }
+
             if (order.OrderStatus == Enum.OrderStatusEnum.Cancel || order.OrderStatus == Enum.OrderStatusEnum.Closed)
             {
                 logger.Warn($"退款被拒绝：订单状态不可退款。OrderNo={order.OrderNo} OrderId={order.Id} 当前状态={order.OrderStatus}");
                 throw new CustomException("该订单状态不可退款");
             }
 
-            var fromStatus = (int)order.OrderStatus;
+            var fromStatus = order.OrderStatus;
+            // 未付款的单没有款可退，不写退款状态（避免"从未收款却标记已退款"）；
+            // 已付款的单属运营确认"渠道已退完"，直接置为已退款。
+            var paid = fromStatus != Enum.OrderStatusEnum.None;
+            // 未出库（待付款/待发货）货还在仓库，退款加回可售；已发货/已完成货已出库，不能自动加库存。
+            var restoreSellable = fromStatus == Enum.OrderStatusEnum.None
+                || fromStatus == Enum.OrderStatusEnum.TobeShipped;
             var tran = UseTran(() =>
             {
-                Update(x => x.OrderNo == model.OrderNo, it => new OMSOrder
+                var affected = Context.Updateable<OMSOrder>()
+                    .SetColumns(it => new OMSOrder
+                    {
+                        OrderStatus = Enum.OrderStatusEnum.Closed,
+                        RefundStatus = paid ? Enum.RefundStatusEnum.Refunded : Enum.RefundStatusEnum.None
+                    })
+                    .Where(x => x.OrderNo == model.OrderNo && x.IsDelete == 0 && x.OrderStatus == fromStatus)
+                    .ExecuteCommand();
+                if (affected <= 0)
                 {
-                    OrderStatus = Enum.OrderStatusEnum.Closed,
-                    RefundStatus = Enum.RefundStatusEnum.Refunded
-                });
-                RestoreStock(order.Id);
+                    throw new CustomException("退款失败：订单状态已变更，请刷新后重试");
+                }
+                RestoreStock(order.Id, restoreSellable);
+                if (paid)
+                {
+                    _paymentService.MarkRefunded(order.OrderNo);
+                }
+                else
+                {
+                    _paymentService.CloseUnpaid(order.OrderNo);
+                }
             });
             if (tran == null || !tran.IsSuccess)
             {
-                logger.Error($"退款事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 退款金额={order.PayAmount}元 原状态={fromStatus} 错误={tran?.ErrorMessage}");
+                logger.Error($"退款事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 退款金额={order.PayAmount}元 原状态={(int)fromStatus} 错误={tran?.ErrorMessage}");
                 throw new CustomException("退款失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
             // 退款是后台人工动作：渠道退款由人工在支付渠道完成后，再点这里做"标记 + 回补库存"，
             // 因此必须留下操作人，便于与渠道退款流水核对。
             var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
-            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Closed, "REFUND", oper, "订单退款并回补库存（渠道退款由人工完成）");
-            NotifyBuyer(order, "订单已退款", $"您的订单({order.OrderNo})已退款，款项将原路退回，库存已回补。");
-            logger.Info($"订单退款完成并回补库存：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 退款金额={order.PayAmount}元 原状态={fromStatus} 操作人={oper}");
+            var refundRemark = restoreSellable
+                ? "订单退款并回补库存（渠道退款由人工完成）"
+                : "订单退款（已出库，未自动加回可售库存；渠道退款由人工完成）";
+            _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)Enum.OrderStatusEnum.Closed, "REFUND", oper, refundRemark);
+            var refundNotice = restoreSellable
+                ? $"您的订单({order.OrderNo})已退款，款项将原路退回，库存已回补。"
+                : $"您的订单({order.OrderNo})已退款，款项将原路退回。";
+            NotifyBuyer(order, "订单已退款", refundNotice);
+            logger.Info($"订单退款完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 退款金额={order.PayAmount}元 原状态={(int)fromStatus} 回补可售={restoreSellable} 操作人={oper}");
             return 1;
         }
 
         /// <summary>
-        /// 按订单项回补 SKU 库存（事务内调用，单条 UPDATE 原子加回）
+        /// 确认退款完成：把"已取消 + 退款中(Refunding)"的订单推进为"已退款(Refunded)"，并同步支付流水为已退款。
+        /// 不动订单状态与库存（取消时已回补），仅用于运营在渠道侧退款完成后做标记 ——
+        /// 这是"取消已支付订单"之后唯一的收口动作，否则退款状态会永远停在"退款中"。
         /// </summary>
-        private void RestoreStock(long orderId)
+        private int ConfirmRefundCompleted(OMSOrder order)
+        {
+            var affected = Context.Updateable<OMSOrder>()
+                .SetColumns(it => new OMSOrder { RefundStatus = Enum.RefundStatusEnum.Refunded })
+                .Where(x => x.Id == order.Id && x.IsDelete == 0 && x.RefundStatus == Enum.RefundStatusEnum.Refunding)
+                .ExecuteCommand();
+            if (affected <= 0)
+            {
+                // 并发下已被另一次确认改掉：报错让运营刷新（幂等重试即可）
+                logger.Warn($"确认退款失败：退款状态已变更。OrderNo={order.OrderNo} OrderId={order.Id}");
+                throw new CustomException("确认退款失败：退款状态已变更，请刷新后重试");
+            }
+
+            _paymentService.MarkRefunded(order.OrderNo);
+            var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
+            _orderLogService.AddLog(order.Id, order.OrderNo, (int)order.OrderStatus, (int)order.OrderStatus,
+                "REFUND_CONFIRM", oper, "确认渠道退款完成，退款状态置为已退款");
+            NotifyBuyer(order, "退款已完成", $"您的订单({order.OrderNo})退款已完成，款项将原路退回。");
+            logger.Info($"确认退款完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 金额={order.PayAmount}元 操作人={oper}");
+            return 1;
+        }
+
+        /// <summary>
+        /// 按 SKU 合计回冲下单副作用（事务内调用）。
+        /// restoreSellable=true：可售加回、锁定释放、销量冲减（取消、超时关单、未发货退款）。
+        /// restoreSellable=false：只冲减销量（已发货/已完成退款，货已出库，锁定已在发货时释放）。
+        /// 同一 SKU 多行先加总再更新，避免按行更新与发货释放口径不一致。
+        /// </summary>
+        private void RestoreStock(long orderId, bool restoreSellable)
         {
             var items = Context.Queryable<OMSOrderItem>().Where(i => i.OrderId == orderId).ToList();
-            foreach (var it in items)
+            foreach (var group in items.GroupBy(i => i.SkuId))
             {
-                // 回补可售库存，并释放对应的锁定库存（IIF 防负：已发货出库释放过的保持 0）
-                Context.Updateable<Skus>()
-                    .SetColumns(s => new Skus
-                    {
-                        Stock = s.Stock + it.Quantity,
-                        LockStock = SqlFunc.IIF(s.LockStock - it.Quantity < 0, 0, s.LockStock - it.Quantity)
-                    })
-                    .Where(s => s.SkuId == it.SkuId)
-                    .ExecuteCommand();
+                var qty = group.Sum(i => i.Quantity);
+                var skuId = group.Key;
+                if (restoreSellable)
+                {
+                    Context.Updateable<Skus>()
+                        .SetColumns(s => new Skus
+                        {
+                            Stock = s.Stock + qty,
+                            LockStock = SqlFunc.IIF(s.LockStock - qty < 0, 0, s.LockStock - qty),
+                            SalesVolume = SqlFunc.IIF(s.SalesVolume - qty < 0, 0, s.SalesVolume - qty)
+                        })
+                        .Where(s => s.SkuId == skuId)
+                        .ExecuteCommand();
+                }
+                else
+                {
+                    Context.Updateable<Skus>()
+                        .SetColumns(s => new Skus
+                        {
+                            SalesVolume = SqlFunc.IIF(s.SalesVolume - qty < 0, 0, s.SalesVolume - qty)
+                        })
+                        .Where(s => s.SkuId == skuId)
+                        .ExecuteCommand();
+                }
             }
         }
 
@@ -343,16 +484,15 @@ namespace ZR.Mall.Service
                     var items = await Context.Queryable<OMSOrderItem>()
                         .Where(i => i.OrderId == model.Id).ToListAsync();
 
-                    // 释放锁定库存：按扣减数量分组，每组一条 UPDATE ... WHERE SkuId IN (...)，
-                    // 替代原先"每个订单项一条 UPDATE"（买 5 种商品就发 5 条 SQL）。典型订单数量一致，只占 1 次往返。
-                    // 扣减仍写在 SQL 端（LockStock - qty，下限 0）而不是先读后算，避免并发发货丢更新。
-                    foreach (var group in items.GroupBy(i => i.Quantity))
+                    // 按 SKU 合计释放锁定库存。同一 SKU 拆成多行时不能按「数量相同的行」做 IN：
+                    // IN 会把重复 SkuId 收成一行，只减一次数量，锁定库存少释放。
+                    foreach (var group in items.GroupBy(i => i.SkuId))
                     {
-                        var skuIds = group.Select(i => i.SkuId).ToList();
-                        var qty = group.Key;
+                        var skuId = group.Key;
+                        var qty = group.Sum(i => i.Quantity);
                         await Context.Updateable<Skus>()
                             .SetColumns(s => new Skus { LockStock = SqlFunc.IIF(s.LockStock - qty < 0, 0, s.LockStock - qty) })
-                            .Where(s => skuIds.Contains(s.SkuId))
+                            .Where(s => s.SkuId == skuId)
                             .ExecuteCommandAsync();
                     }
 
@@ -430,7 +570,7 @@ namespace ZR.Mall.Service
                         continue;
                     }
 
-                    RestoreStock(c.Id);
+                    RestoreStock(c.Id, restoreSellable: true);
                     _orderLogService.AddLog(c.Id, c.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.Cancel, "EXPIRE", "system", "超时未支付自动关闭并回补库存");
                     logger.Debug($"超时订单已关闭并回补库存：OrderNo={c.OrderNo} OrderId={c.Id}");
                     closed++;

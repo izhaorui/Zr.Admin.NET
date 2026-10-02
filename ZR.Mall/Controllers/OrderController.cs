@@ -97,12 +97,7 @@ namespace ZR.Mall.Controllers
         public IActionResult DeleteOMSOrder([FromRoute] string ids)
         {
             var idArr = Tools.SplitAndConvert<long>(ids);
-
-            return ToResponse(_OMSOrderService.Deleteable()
-                .Where(f => f.IsDelete == 0)
-                .In(idArr)
-                .IsLogic()
-                .ExecuteCommand());
+            return ToResponse(_OMSOrderService.DeleteOrders(idArr));
         }
 
         /// <summary>
