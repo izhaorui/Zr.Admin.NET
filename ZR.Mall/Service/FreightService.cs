@@ -57,6 +57,51 @@ namespace ZR.Mall.Service
             return result;
         }
 
+        /// <inheritdoc />
+        public Dictionary<long, FrontFreightInfoDto> ResolveFrontFreightInfoBatch(
+            IEnumerable<(long ProductId, long? FreightTemplateId)> products)
+        {
+            var result = new Dictionary<long, FrontFreightInfoDto>();
+            var rows = products?.ToList();
+            if (rows == null || rows.Count == 0)
+            {
+                return result;
+            }
+
+            // ① 一次查完所有被绑定的模板（已被删的查不到，自然回落默认模板）；② 默认模板一次。
+            // 两次查询与商品数量无关 —— 列表页逐条查会退化成 N+1，40 个商品就是 80 次往返。
+            var boundIds = rows.Where(x => x.FreightTemplateId != null)
+                .Select(x => x.FreightTemplateId!.Value)
+                .Distinct()
+                .ToList();
+            var boundMap = boundIds.Count == 0
+                ? new Dictionary<long, FreightTemplate>()
+                : Queryable().Where(x => boundIds.Contains(x.Id)).ToList().ToDictionary(x => x.Id);
+            var defaultTemplate = Queryable().First(x => x.IsDefault == 1);
+
+            foreach (var (productId, templateId) in rows)
+            {
+                FreightTemplate bound = null;
+                if (templateId != null)
+                {
+                    boundMap.TryGetValue(templateId.Value, out bound);
+                }
+                result[productId] = ToFrontFreightInfo(bound, defaultTemplate);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 把「已查到的绑定模板 + 默认模板」折算成包邮信息。
+        /// </summary>
+        /// <remarks>
+        /// 回落规则只在 <see cref="FreightCalculator.PickTemplate"/> 里实现：单个商品的详情与批量列表
+        /// 都经这里，避免两条链路对同一个商品得出不同的包邮结论。
+        /// </remarks>
+        private static FrontFreightInfoDto ToFrontFreightInfo(FreightTemplate bound, FreightTemplate defaultTemplate)
+            => FreightCalculator.BuildFreightInfo(FreightCalculator.PickTemplate(bound, defaultTemplate));
+
         /// <summary>
         /// 组装引擎入参：查 sku/商品/模板/排除地区，摊平成 <see cref="FreightCalcRequest"/>。
         /// </summary>
@@ -145,10 +190,8 @@ namespace ZR.Mall.Service
                 {
                     templateMap.TryGetValue(boundId.Value, out template);
                 }
-                if (template == null)
-                {
-                    template = defaultTemplate;
-                }
+                // 回落规则只在 PickTemplate 里实现（详情页包邮标签共用同一条）
+                template = FreightCalculator.PickTemplate(template, defaultTemplate);
 
                 request.Items.Add(new FreightCalcItem
                 {

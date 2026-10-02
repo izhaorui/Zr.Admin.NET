@@ -122,6 +122,45 @@ namespace ZR.Mall.Common
         }
 
         /// <summary>
+        /// 模板回落规则（唯一实现）：商品绑定的模板优先，未绑定或模板已被删则回落默认模板；
+        /// 两者都没有则返回 null —— 引擎按 0 运费计，即事实上的包邮。
+        /// </summary>
+        /// <remarks>
+        /// 之所以抽成方法：下单计费与「详情页包邮标签」都要用它，两处各写一遍的话，
+        /// 一旦有人只改了一处，就会出现「详情页显示包邮、下单却收运费」这种自相矛盾的展示。
+        /// </remarks>
+        public static FreightTemplate PickTemplate(FreightTemplate bound, FreightTemplate fallback)
+            => bound ?? fallback;
+
+        /// <summary>
+        /// 由生效模板推导 C 端展示用的包邮信息。
+        /// </summary>
+        /// <remarks>
+        /// 判定顺序必须与 <see cref="Calculate"/> 的实收结果一致，否则展示与实收会矛盾：
+        /// ① 无模板 → 引擎计 0 运费；② 运费为 0（首件与续件都不收钱）→ 买多少都是 0；
+        /// 两者都是**无条件包邮**。③ 只有包邮门槛 → 满额包邮。④ 其余 → 不包邮。
+        /// </remarks>
+        /// <param name="template">生效模板；可为 null（未绑定且无默认模板）</param>
+        public static FrontFreightInfoDto BuildFreightInfo(FreightTemplate template)
+        {
+            if (template == null || template.Freight <= 0m)
+            {
+                return new FrontFreightInfoDto { FreeShipping = true };
+            }
+
+            if (template.FreeShippingThreshold > 0m)
+            {
+                return new FrontFreightInfoDto
+                {
+                    FreeShipping = true,
+                    FreeShippingThreshold = template.FreeShippingThreshold
+                };
+            }
+
+            return new FrontFreightInfoDto { FreeShipping = false };
+        }
+
+        /// <summary>
         /// 判断某条不配送地区规则是否命中收货地区。
         /// </summary>
         /// <remarks>

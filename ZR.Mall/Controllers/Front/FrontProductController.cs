@@ -19,11 +19,14 @@ namespace ZR.Mall.Controllers.Front
     {
         private readonly IProductService _ShoppingProductService;
         private readonly ICategoryService _CategoryService;
+        private readonly IFreightService _freightService;
 
-        public FrontProductController(IProductService ShoppingProductService, ICategoryService categoryService)
+        public FrontProductController(IProductService ShoppingProductService, ICategoryService categoryService,
+            IFreightService freightService)
         {
             _ShoppingProductService = ShoppingProductService;
             _CategoryService = categoryService;
+            _freightService = freightService;
         }
 
         /// <summary>
@@ -35,6 +38,7 @@ namespace ZR.Mall.Controllers.Front
             parm ??= new ShoppingProductQueryDto();
             parm.SaleStatus = SaleStatus.OnSale; // 匿名访客只能看在售商品
             var response = _ShoppingProductService.GetFrontList(parm);
+            FillFreightInfo(response.Result);
             return SUCCESS(response);
         }
 
@@ -49,7 +53,36 @@ namespace ZR.Mall.Controllers.Front
             {
                 return ToResponse(ResultCode.FAIL, "商品不存在或已下架");
             }
+
+            FillFreightInfo(new[] { response });
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 批量回填包邮标签（列表与详情共用）。
+        /// </summary>
+        /// <remarks>
+        /// 两处走同一个入口，同一个商品不会出现「列表说包邮、详情说不包邮」；
+        /// 且无论多少商品都只查 2 次库，列表页不会退化成 N+1。
+        /// 只回「是否包邮 + 门槛」不回金额：两处都拿不到收货地区，列表更不知道整单总额。
+        /// </remarks>
+        private void FillFreightInfo(IEnumerable<ProductDto> products)
+        {
+            var list = products?.ToList();
+            if (list == null || list.Count == 0)
+            {
+                return;
+            }
+
+            var infoMap = _freightService.ResolveFrontFreightInfoBatch(
+                list.Select(x => (x.ProductId, x.FreightTemplateId)));
+            foreach (var product in list)
+            {
+                if (infoMap.TryGetValue(product.ProductId, out var info))
+                {
+                    product.FreightInfo = info;
+                }
+            }
         }
 
         /// <summary>

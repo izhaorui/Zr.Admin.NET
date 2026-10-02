@@ -52,10 +52,14 @@ namespace ZR.Mall.Model.Dto
         public long? FreightTemplateId { get; set; }
 
         /// <summary>
-        /// 运费模板名称（列表与详情回显用，避免前端再查一次模板表）
+        /// 运费信息（C 端商品详情页的包邮标签）
         /// </summary>
+        /// <remarks>
+        /// 只在 C 端详情接口回填（见 FrontProductController），后台接口保持 null ——
+        /// 后台商品编辑页用的是原始模板 Id，不需要这层展示口径。
+        /// </remarks>
         [ExcelColumn(Ignore = true)]
-        public string FreightTemplateName { get; set; }
+        public FrontFreightInfoDto FreightInfo { get; set; }
 
         [ExcelColumn(Name = "sku最低价格")]
         public decimal Price { get; set; }

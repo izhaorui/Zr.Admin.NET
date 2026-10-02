@@ -48,5 +48,19 @@ namespace ZR.Mall.Service.IService
         /// <returns>计算结果，含合计运费、是否包邮与按模板分段的明细</returns>
         FreightCalcResult CalculateForCheckout(List<FreightCheckoutItem> items,
             decimal goodsAmount, AreaQueryDto address);
+
+        /// <summary>
+        /// 批量取多个商品的包邮信息（C 端列表与详情共用）
+        /// </summary>
+        /// <param name="products">商品 Id 与该商品绑定的运费模板 Id（null 表示未绑定）</param>
+        /// <returns>商品 Id → 包邮信息；未绑定或模板已被删的商品按默认模板折算</returns>
+        /// <remarks>
+        /// 模板回落与 <see cref="CalculateForCheckout"/> 同源（<c>FreightCalculator.PickTemplate</c>），
+        /// 否则会出现「详情页显示包邮、下单却收运费」。
+        /// 无论商品多少个都只查 2 次库（绑定的模板一批 + 默认模板一次），列表页不会退化成 N+1。
+        /// 只给「是否包邮 + 门槛」不给金额 —— 列表与详情都拿不到收货地区，也没有整单总额。
+        /// </remarks>
+        Dictionary<long, FrontFreightInfoDto> ResolveFrontFreightInfoBatch(
+            IEnumerable<(long ProductId, long? FreightTemplateId)> products);
     }
 }
