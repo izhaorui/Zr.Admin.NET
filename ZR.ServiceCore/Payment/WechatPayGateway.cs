@@ -17,6 +17,8 @@ namespace ZR.ServiceCore.Payment
     [AppService(ServiceType = typeof(WechatPayGateway), ServiceLifetime = LifeTime.Scoped)]
     public class WechatPayGateway
     {
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private readonly WechatPayOptions _options;
         private readonly IEnumerable<IWechatPayNotifyHandler> _notifyHandlers;
 
@@ -81,7 +83,7 @@ namespace ZR.ServiceCore.Payment
                 NotifyUrl = _options.NotifyUrl,
                 Amount = new CreatePayTransactionH5Request.Types.Amount
                 {
-                    Total = (int)Math.Round(amount * 100)
+                    Total = ToFen(amount)
                 },
                 Scene = new CreatePayTransactionH5Request.Types.Scene
                 {
@@ -124,7 +126,7 @@ namespace ZR.ServiceCore.Payment
                 NotifyUrl = _options.NotifyUrl,
                 Amount = new CreatePayTransactionJsapiRequest.Types.Amount
                 {
-                    Total = (int)Math.Round(amount * 100)
+                    Total = ToFen(amount)
                 },
                 Payer = new CreatePayTransactionJsapiRequest.Types.Payer
                 {
@@ -151,7 +153,7 @@ namespace ZR.ServiceCore.Payment
                 NotifyUrl = _options.NotifyUrl,
                 Amount = new CreatePayTransactionAppRequest.Types.Amount
                 {
-                    Total = (int)Math.Round(amount * 100)
+                    Total = ToFen(amount)
                 }
             };
 
@@ -228,9 +230,17 @@ namespace ZR.ServiceCore.Payment
         /// <summary>
         /// 处理微信支付异步回调：验签 + 解密，成功交易按商户单号分发给注册的 IWechatPayNotifyHandler。
         /// 返回 true 表示验签成功且分发完成（业务处理失败会抛异常向上传递，由回调端记日志）。
+        /// 失败原因统一走 NLog（落 logs/all.log），便于线上排查"回调丢单/无 handler/金额非法"。
         /// </summary>
         public bool HandleNotify(string timestamp, string nonce, string signature, string serial, string body)
         {
+            // 配置不齐时无法验签/解密：一律拒绝（绝不能放行未验证的回调），并记 Error 让运维发现"回调地址已配但参数缺失"
+            if (!IsConfigured)
+            {
+                logger.Error($"[微信支付] 收到回调但 WechatPay 配置不完整（商户号/证书序列号/商户私钥/APIv3密钥/回调地址），已拒绝。Serial={serial}");
+                return false;
+            }
+
             var client = BuildClient();
             if (!client.VerifyEventSignature(
                 webhookTimestamp: timestamp,
@@ -239,6 +249,7 @@ namespace ZR.ServiceCore.Payment
                 webhookSignature: signature,
                 webhookSerialNumber: serial))
             {
+                logger.Warn($"[微信支付] 回调验签失败，已拒绝。Serial={serial}");
                 return false;
             }
 
@@ -250,23 +261,27 @@ namespace ZR.ServiceCore.Payment
                 // 安全校验：未支付成功、金额缺失均视为非法回调，直接拒绝
                 if (!string.Equals(resource.TradeState, "SUCCESS", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    Log.WriteLine(ConsoleColor.Yellow, $"[WechatPay] 回调交易状态非 SUCCESS(={resource.TradeState})，已忽略。OutTradeNo={resource.OutTradeNumber}");
+                    logger.Warn($"[微信支付] 回调交易状态非 SUCCESS(={resource.TradeState})，已忽略。OutTradeNo={resource.OutTradeNumber}");
                     return false;
                 }
                 if (resource.Amount == null || resource.Amount.Total <= 0)
                 {
-                    Log.WriteLine(ConsoleColor.Red, $"[WechatPay] 回调金额缺失或非法，已拒绝！OutTradeNo={resource.OutTradeNumber}");
+                    logger.Error($"[微信支付] 回调金额缺失或非法，已拒绝！OutTradeNo={resource.OutTradeNumber}");
                     return false;
                 }
 
                 var handler = _notifyHandlers.FirstOrDefault(h => h.CanHandle(resource.OutTradeNumber));
                 if (handler == null)
                 {
-                    Log.WriteLine(ConsoleColor.Red, $"[WechatPay] 无 handler 认领商户单号 {resource.OutTradeNumber}，请检查 IWechatPayNotifyHandler 注册");
+                    logger.Error($"[微信支付] 无 handler 认领商户单号 {resource.OutTradeNumber}，请检查 IWechatPayNotifyHandler 注册");
                     return false;
                 }
 
-                handler.HandlePaid(resource.OutTradeNumber, resource.TransactionId, resource.Amount.Total);
+                // 解密后的资源报文原样传给业务方落库（oms_payment.CallbackRaw），供对账/排查
+                var callbackRaw = Newtonsoft.Json.JsonConvert.SerializeObject(resource);
+                logger.Info($"[微信支付] 回调分发开始：OutTradeNo={resource.OutTradeNumber} TransactionId={resource.TransactionId} 金额={resource.Amount.Total}分 Handler={handler.GetType().Name}");
+                handler.HandlePaid(resource.OutTradeNumber, resource.TransactionId, resource.Amount.Total, callbackRaw);
+                logger.Info($"[微信支付] 回调分发完成：OutTradeNo={resource.OutTradeNumber} TransactionId={resource.TransactionId}");
             }
             return true;
         }
@@ -406,6 +421,14 @@ namespace ZR.ServiceCore.Payment
                 Serial = _options.MerchantCertificateSerialNumber
             };
         }
+
+        /// <summary>
+        /// 元 → 分。统一使用 AwayFromZero，与回调侧的金额校验
+        /// （OMSOrderStateService.PayOrderByOrderNo 的 expectedFen）保持一致 ——
+        /// 两处若一个用默认的银行家舍入、一个用 AwayFromZero，极端金额下会差 1 分，
+        /// 导致真实回调被误判为"金额不一致"而拒绝。
+        /// </summary>
+        private static int ToFen(decimal amount) => (int)Math.Round(amount * 100, MidpointRounding.AwayFromZero);
 
         private static string Truncate(string s, int maxByte)
         {

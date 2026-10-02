@@ -571,6 +571,9 @@ namespace ZR.Mall.Service
                     }
 
                     RestoreStock(c.Id, restoreSellable: true);
+                    // 收口预支付流水：用户在超时前点过"去支付"会留下 Prepay 记录，
+                    // 不关掉的话订单已取消、流水却永远停在"预支付"（与取消/退款路径口径不一致）。
+                    _paymentService.CloseUnpaid(c.OrderNo);
                     _orderLogService.AddLog(c.Id, c.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.Cancel, "EXPIRE", "system", "超时未支付自动关闭并回补库存");
                     logger.Debug($"超时订单已关闭并回补库存：OrderNo={c.OrderNo} OrderId={c.Id}");
                     closed++;

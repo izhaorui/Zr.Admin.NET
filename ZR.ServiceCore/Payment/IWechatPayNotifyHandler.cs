@@ -17,6 +17,9 @@ namespace ZR.ServiceCore.Payment
         /// <param name="orderNo">商户单号 OutTradeNumber</param>
         /// <param name="transactionId">微信支付订单号</param>
         /// <param name="totalFen">实际支付金额（分）</param>
-        void HandlePaid(string orderNo, string transactionId, int totalFen);
+        /// <param name="callbackRaw">
+        /// 回调资源报文（解密后的 JSON），供落库对账/排查；网关无法解密时为 null。
+        /// </param>
+        void HandlePaid(string orderNo, string transactionId, int totalFen, string callbackRaw = null);
     }
 }

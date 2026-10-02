@@ -18,6 +18,9 @@ namespace ZR.Mall.Controllers.Front
     [AllowAnonymous]
     public class FrontOrderController : BaseController
     {
+        /// <summary>技术日志（NLog → logs/all.log）</summary>
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private readonly WechatPayGateway _wechatPayGateway;
 
         public FrontOrderController(WechatPayGateway wechatPayGateway)
@@ -66,12 +69,14 @@ namespace ZR.Mall.Controllers.Front
                 {
                     return new JsonResult(new { code = "SUCCESS", message = "成功" });
                 }
+                // 失败原因（未配置/验签失败/金额非法/无 handler）已在网关内记 NLog，这里只回失败应答
                 return StatusCode(400, new { code = "FAIL", message = "验签失败" });
             }
             catch (Exception ex)
             {
-                // 业务异常（如订单不存在）也返回 FAIL 让微信重推，便于排查
-                return StatusCode(500, new { code = "FAIL", message = ex.Message });
+                // 业务异常（如订单不存在）也返回 FAIL 让微信重推；异常详情只进日志，不回给调用方
+                logger.Error(ex, $"[微信支付回调] 处理失败，已返回 FAIL 触发微信重推。Serial={serial} BodyLength={body?.Length ?? 0}");
+                return StatusCode(500, new { code = "FAIL", message = "回调处理失败" });
             }
         }
     }

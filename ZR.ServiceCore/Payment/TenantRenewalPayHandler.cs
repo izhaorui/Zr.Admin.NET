@@ -28,7 +28,7 @@ namespace ZR.ServiceCore.Payment
                 && outTradeNo.StartsWith("TO", StringComparison.OrdinalIgnoreCase);
         }
 
-        public void HandlePaid(string orderNo, string transactionId, int totalFen)
+        public void HandlePaid(string orderNo, string transactionId, int totalFen, string callbackRaw = null)
         {
             var order = _tenantService.GetTenantOrderByNo(orderNo);
             if (order == null)

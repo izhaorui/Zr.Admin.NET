@@ -145,7 +145,8 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
             {
                 throw new CustomException("支付单不存在");
             }
-            var amountFen = totalFen ?? (int)Math.Round((order.Amount ?? 0m) * 100);
+            // 与 WechatPayGateway.ToFen / 回调金额校验保持一致：统一 AwayFromZero，避免差 1 分
+            var amountFen = totalFen ?? (int)Math.Round((order.Amount ?? 0m) * 100, MidpointRounding.AwayFromZero);
 
             var mock = _wechatPayGateway.BuildMockNotify(order.OrderNo, "MOCK" + Guid.NewGuid().ToString("N")[..12], amountFen);
 
