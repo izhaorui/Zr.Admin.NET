@@ -21,6 +21,7 @@ using ZR.Infrastructure.WebExtensions;
 using ZR.Model;
 using ZR.ServiceCore.Middleware;
 using ZR.ServiceCore.Oss;
+using ZR.ServiceCore.Serialization;
 using ZR.ServiceCore.SqlSugar;
 
 // ============================================================================
@@ -47,10 +48,12 @@ builder.Host.UseNLog();
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
     {
-        // 与内网宿主保持一致：时间格式 + 驼峰命名
+        // 时间格式与内网宿主保持一致。
+        // 这里的契约解析器只覆盖「过滤器直接返回 JsonResult」这类零星情况 ——
+        // 控制器的正常响应（SUCCESS / ToResponse）不走 MVC 格式化器，主开关见下方
+        // App.ResponseContractResolver，改这里对它们没有效果。
         options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
-        options.SerializerSettings.ContractResolver =
-            new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
+        options.SerializerSettings.ContractResolver = new FrontContractResolver();
     })
     .ConfigureApplicationPartManager(m =>
     {
@@ -63,6 +66,12 @@ builder.Services.AddControllers()
         m.FeatureProviders.Clear();
         m.FeatureProviders.Add(new PublicControllerFeatureProvider());
     });
+
+// 「移除审计字段」的真正开关。
+// SUCCESS / ToResponse 统一经 BaseController.GetJsonStr 自建 settings 序列化后以字符串返回，
+// 绕过了 MVC 的输出格式化器 —— 所以只改上面的 AddNewtonsoftJson 是无效的。
+// C 端面向公网：SysBase 的创建人/创建时间/更新人/更新时间/备注一律不返回。
+App.ResponseContractResolver = new FrontContractResolver();
 
 // 模型校验：与内网宿主一致，保持既有 C 端请求校验契约
 builder.Services.AddFluentValidationAutoValidation(options =>

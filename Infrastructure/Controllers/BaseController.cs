@@ -160,8 +160,10 @@ namespace Infrastructure.Controllers
             }
             var serializerSettings = new JsonSerializerSettings
             {
-                // 设置为驼峰命名
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                // 默认驼峰命名；公网 C 端宿主换成 FrontContractResolver 移除审计字段。
+                // 契约解析器走 App.ResponseContractResolver 而不是在这里写死，也不依赖宿主的
+                // AddNewtonsoftJson —— 本方法自建 settings 序列化，MVC 的格式化器完全不参与。
+                ContractResolver = App.ResponseContractResolver,
                 DateFormatString = timeFormatStr
             };
 

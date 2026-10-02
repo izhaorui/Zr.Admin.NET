@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -16,6 +17,31 @@ namespace Infrastructure
         /// 全局配置文件
         /// </summary>
         public static OptionsSetting OptionsSetting => CatchOrDefault(() => ServiceProvider?.GetService<IOptions<OptionsSetting>>()?.Value);
+
+        /// <summary>默认响应契约：驼峰命名。两端前端都按 camelCase 取值，不可改。</summary>
+        private static readonly IContractResolver CamelCaseResolver = new CamelCasePropertyNamesContractResolver();
+
+        private static IContractResolver _responseContractResolver = CamelCaseResolver;
+
+        /// <summary>
+        /// 统一响应（ApiResult）序列化所使用的契约解析器。
+        /// </summary>
+        /// <remarks>
+        /// <para><b>要调整响应里的字段，改这里，改宿主的 AddNewtonsoftJson 是没用的</b>：
+        /// 控制器响应统一经 <c>BaseController.GetJsonStr</c> 自行序列化后以字符串返回
+        ///（<c>SUCCESS</c> / <c>ToResponse</c> 都走它），根本不经过 MVC 的输出格式化器。</para>
+        ///
+        /// <para>公网 C 端宿主在启动时换成 FrontContractResolver，移除 SysBase 的审计字段
+        ///（创建人/创建时间/更新人/更新时间/备注）；内网后台宿主保持默认 ——
+        /// 后台的商品/分类/支付流水列表要展示「添加时间」这类审计字段。</para>
+        /// </remarks>
+        public static IContractResolver ResponseContractResolver
+        {
+            get => _responseContractResolver;
+            // 传 null 视为恢复默认：不能静默落到 Newtonsoft 的内置默认契约上，
+            // 那会让字段名从 camelCase 变成 PascalCase，一次性改坏所有前端。
+            set => _responseContractResolver = value ?? CamelCaseResolver;
+        }
 
         /// <summary>
         /// 服务提供器
