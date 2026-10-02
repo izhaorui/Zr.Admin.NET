@@ -40,15 +40,45 @@ namespace ZR.Mall.Model
         /// </summary>
         public long? ToUserId { get; set; }
 
+        // ── 金额模型（对齐主流开源商城口径：total/freight/discount/integral/pay/refund）──
+        // 公式：PayAmount = TotalAmount + FreightAmount - DiscountAmount - IntegralAmount
+        // 其中四个附加列本期恒为 0（对应能力尚未上线），此时 PayAmount == TotalAmount。
+        // 先把列铺齐，等运费模板 / 优惠券 / 积分 / 售后单上线时直接取用，无需再改表。
+
         /// <summary>
-        /// 总金额 
+        /// 商品总额（= Σ 订单项 单价×数量）。**不含**运费、优惠与积分抵扣，是销售额统计的唯口径。
         /// </summary>
         public decimal TotalAmount { get; set; }
 
         /// <summary>
-        /// 付款金额 
+        /// 运费。运费模板尚未上线，本期恒为 0；上线后由运费模板按收货地区 code 计算。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public decimal FreightAmount { get; set; }
+
+        /// <summary>
+        /// 优惠合计（优惠券 / 满减 / 促销折扣，可叠加）。优惠券尚未上线，本期恒为 0。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public decimal DiscountAmount { get; set; }
+
+        /// <summary>
+        /// 积分抵扣金额。会员积分尚未上线，本期恒为 0。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public decimal IntegralAmount { get; set; }
+
+        /// <summary>
+        /// 实付应付 = 商品总额 + 运费 − 优惠 − 积分抵扣。
+        /// 支付预下单、回调金额一致性校验、支付流水金额、退款金额均以本字段为准。
         /// </summary>
         public decimal PayAmount { get; set; }
+
+        /// <summary>
+        /// 已退金额累计。恒 ≤ PayAmount，是部分退款 / 重复退款的超额护栏；售后单尚未上线，本期恒为 0。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public decimal RefundAmount { get; set; }
 
         /// <summary>
         /// 订单状态 0待付款 1待发货 2已发货 3已完成 4已取消 5已退款

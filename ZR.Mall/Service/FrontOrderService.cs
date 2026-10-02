@@ -321,6 +321,17 @@ namespace ZR.Mall.Service
                 });
             }
 
+            // ---- 金额构成：下单只负责算与存，公式收敛在 CalcPayAmount ----
+            // 商品总额 totalAmount 来自上面的订单项累加；下面三项对应能力尚未上线，先恒为 0 占位：
+            //   freightAmount  —— 运费（运费模板 + 地区 code 包邮规则，尚未上线）
+            //   discountAmount —— 优惠合计（优惠券 / 满减 / 促销折扣，尚未上线）
+            //   integralAmount —— 积分抵扣（会员积分，尚未上线）
+            // 运费模板上线时只需替换 freightAmount 的取值来源，订单主流程与支付链路零改动。
+            decimal freightAmount = 0m;
+            decimal discountAmount = 0m;
+            decimal integralAmount = 0m;
+            var payAmount = CalcPayAmount(totalAmount, freightAmount, discountAmount, integralAmount);
+
             // ---- #3 幂等去重（事务外）----
             // 后端自动选择：Redis 已初始化（RedisServer:open=1）时用 Redis（跨实例共享），
             // 否则回退本地内存（见 CacheStore）。多实例部署务必开 Redis，否则幂等只在单进程内生效。
@@ -374,7 +385,11 @@ namespace ZR.Mall.Service
                         OrderNo = Common.OrderNoGenerator.Generate(),
                         MemberId = memberId, // 下单会员：归属判定与"我的订单"的唯一凭据
                         TotalAmount = totalAmount,
-                        PayAmount = totalAmount,
+                        FreightAmount = freightAmount,
+                        DiscountAmount = discountAmount,
+                        IntegralAmount = integralAmount,
+                        PayAmount = payAmount,
+                        RefundAmount = 0m, // 尚无退款单，本期恒 0；部分退款上线后作超额护栏
                         OrderStatus = Enum.OrderStatusEnum.None, // 待付款：下单后进入模拟支付环节，支付成功才转待发货
                         DeliveryStatus = Enum.DeliveryStatusEnum.NotDelivered,
                         RefundStatus = Enum.RefundStatusEnum.None,
@@ -448,6 +463,18 @@ namespace ZR.Mall.Service
                 // 释放占位：无论成功失败都清掉，失败后允许用户重试（Redis 键也带短过期兜底）
                 idemCache.Remove(idemLockKey);
             }
+        }
+
+        /// <summary>
+        /// 实付金额计算（订单金额模型的唯一公式点，对齐主流开源商城口径）：
+        /// <c>PayAmount = 商品总额 + 运费 − 优惠 − 积分抵扣</c>。
+        /// 收敛在此处的意义：运费模板 / 优惠券 / 积分上线时只替换各金额的取值来源，
+        /// 公式本身、下单主流程、支付与退款链路均无需改动。
+        /// </summary>
+        private static decimal CalcPayAmount(decimal totalAmount, decimal freightAmount,
+                                           decimal discountAmount, decimal integralAmount)
+        {
+            return totalAmount + freightAmount - discountAmount - integralAmount;
         }
 
         /// <summary>

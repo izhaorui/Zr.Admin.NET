@@ -68,7 +68,18 @@ namespace ZR.Mall.Controllers.Front
             }
 
             var order = _orderService.CreateOrder(dto, member.MemberId);
-            return SUCCESS(new { order.OrderNo, order.Id, order.TotalAmount, order.OrderStatus });
+            // 返回服务端权威金额构成：totalAmount=商品总额、payAmount=实付、freightAmount=运费。
+            // C 端展示与后续支付一律以这些字段为准，不要在前端用商品单价自行反推实付。
+            return SUCCESS(new
+            {
+                order.OrderNo,
+                order.Id,
+                order.TotalAmount,
+                order.PayAmount,
+                order.FreightAmount,
+                order.DiscountAmount,
+                order.OrderStatus
+            });
         }
 
         /// <summary>

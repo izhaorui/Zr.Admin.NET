@@ -283,7 +283,9 @@ namespace ZR.Mall.Service
                 .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
                 .Select(o => new
                 {
-                    TotalSales = SqlFunc.AggregateSum(o.PayAmount),
+                    // 商品口径：按 TotalAmount（商品总额）聚合，运费不计入 GMV。
+                    // 若改用 PayAmount（含运费），运费模板上线后销售额会随每单运费跳变。
+                    TotalSales = SqlFunc.AggregateSum(o.TotalAmount),
                     OrderCount = SqlFunc.AggregateCount(o.Id)
                 })
                 .FirstAsync();
@@ -311,7 +313,8 @@ namespace ZR.Mall.Service
             .Select(o => new
             {
                 Date = SqlFunc.ToDateShort(o.PayTime),
-                TotalSales = SqlFunc.AggregateSum(o.PayAmount),
+                // 与销售总额同为商品口径：按 TotalAmount 聚合，运费不计入 GMV
+                TotalSales = SqlFunc.AggregateSum(o.TotalAmount),
                 OrderCount = SqlFunc.AggregateCount(o.Id)
             })
             .ToListAsync();

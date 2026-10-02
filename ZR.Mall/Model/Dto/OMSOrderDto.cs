@@ -47,11 +47,41 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "会员ID")]
         public long? MemberId { get; set; }
 
+        /// <summary>
+        /// 商品总额（= Σ 订单项 单价×数量），销售额统计口径。
+        /// </summary>
         [ExcelColumn(Name = "总金额")]
         public decimal TotalAmount { get; set; }
 
+        /// <summary>
+        /// 运费。运费模板未上线，恒为 0；导出保留该列以便对账时核对完整金额构成。
+        /// </summary>
+        [ExcelColumn(Name = "运费")]
+        public decimal FreightAmount { get; set; }
+
+        /// <summary>
+        /// 优惠合计（优惠券/满减/促销折扣）。优惠券未上线，恒为 0。
+        /// </summary>
+        [ExcelColumn(Name = "优惠")]
+        public decimal DiscountAmount { get; set; }
+
+        /// <summary>
+        /// 积分抵扣金额。会员积分未上线，恒为 0。
+        /// </summary>
+        [ExcelColumn(Name = "积分抵扣")]
+        public decimal IntegralAmount { get; set; }
+
+        /// <summary>
+        /// 实付应付 = 商品总额 + 运费 − 优惠 − 积分抵扣。
+        /// </summary>
         [ExcelColumn(Name = "付款金额")]
         public decimal PayAmount { get; set; }
+
+        /// <summary>
+        /// 已退金额累计。售后单未上线，恒为 0；导出保留该列便于对账。
+        /// </summary>
+        [ExcelColumn(Name = "已退金额")]
+        public decimal RefundAmount { get; set; }
 
         [ExcelColumn(Name = "支付方式")]
         public int? PayType { get; set; }
