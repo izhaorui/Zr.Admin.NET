@@ -173,6 +173,50 @@ namespace ZR.Mall.Model.Dto
         public AddressSnapshot AddressSnapshot { get; set; }
         [ExcelColumn(Ignore = true)]
         public List<OMSOrderItemDto> Items { get; set; }
+
+        /// <summary>
+        /// 表单填写值汇总（行项快照拼成一行文本）：供后台列表快速浏览与订单导出。
+        /// </summary>
+        /// <remarks>
+        /// 与 <see cref="Items"/> 的关系：这里是把每个商品行的表单值摊平成一格文本，
+        /// 运营扫一眼就能看到"接收账号填了什么"；要看结构化字段名/类型，订单详情页读
+        /// <c>items[].formValues</c>（那是下单那一刻的快照，含 label/type）。
+        /// <para>行项内多个字段用「；」隔开，行与行之间用「|」隔开 —— 导出单元格里不能有换行。</para>
+        /// <para>不参与 Excel 导出：导出走 <c>OMSOrderService.ExportList</c>，那里刻意不加载行项
+        /// （导出是订单级一行一单，页大小上限 10 万，再带明细会把查询与内存一起拖垮），
+        /// 带过来只会得到一整列空白，不如不进模板。</para>
+        /// </remarks>
+        [ExcelColumn(Ignore = true)]
+        public string FormValuesLabel
+        {
+            get
+            {
+                if (Items == null || Items.Count == 0)
+                {
+                    return string.Empty;
+                }
+
+                var rows = new List<string>();
+                foreach (var item in Items)
+                {
+                    if (item?.FormValues == null || item.FormValues.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var fields = string.Join("；", item.FormValues
+                        .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Value))
+                        .Select(x => $"{x.Label}：{x.Value}"));
+                    if (fields.Length == 0)
+                    {
+                        continue;
+                    }
+                    rows.Add(string.IsNullOrWhiteSpace(item.ProductName) ? fields : $"{item.ProductName} - {fields}");
+                }
+
+                return string.Join(" | ", rows);
+            }
+        }
     }
 
     /// <summary>

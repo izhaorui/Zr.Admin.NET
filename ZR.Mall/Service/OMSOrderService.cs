@@ -216,6 +216,11 @@ namespace ZR.Mall.Service
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
+        /// <remarks>
+        /// 刻意**不加载行项**（<c>Items</c>）：导出是一单一行、页大小上限 10 万，
+        /// 再把明细（含表单值快照）一起带出来，查询与内存都会上一个量级。
+        /// 因此 <see cref="OMSOrderDto.FormValuesLabel"/> 不进 Excel 模板（后台列表与详情仍可见）。
+        /// </remarks>
         public PagedInfo<OMSOrderDto> ExportList(OMSOrderQueryDto parm)
         {
             parm.PageNum = 1;

@@ -65,6 +65,36 @@
         [SugarColumn(Length = 50)]
         public string FreightTemplateName { get; set; }
 
+        /// <summary>
+        /// 买家填写的表单值快照（JSON 列）。为 null/空表示该行商品没有配下单表单。
+        /// </summary>
+        /// <remarks>
+        /// 存快照而不是回查商品当前配置：订单是历史凭证，商品改字段名/删字段后，
+        /// 旧订单仍要能读出"当时填了什么、那个字段叫什么"（与价格/规格快照同理）。
+        /// 列类型显式指定为长文本：多字段 + 长文本域的组合会超出短列上限。
+        /// </remarks>
+        [SugarColumn(IsJson = true, ColumnDataType = StaticConfig.CodeFirst_BigString, ColumnDescription = "表单填写值快照")]
+        public List<OrderFormValue> FormValues { get; set; }
+
         public DateTime AddTime { get; set; }
+    }
+
+    /// <summary>
+    /// 订单项上的表单填写值快照（存 JSON 列，见 <see cref="OMSOrderItem.FormValues"/>）。
+    /// 连 Label/Type 一起存：展示时只读订单即可，不必回查商品是否改过表单。
+    /// </summary>
+    public class OrderFormValue
+    {
+        /// <summary>字段键（对应下单时商品表单定义的 Field）</summary>
+        public string Field { get; set; }
+
+        /// <summary>字段显示名（下单那一刻的文案）</summary>
+        public string Label { get; set; }
+
+        /// <summary>字段类型（下单那一刻的类型）</summary>
+        public string Type { get; set; }
+
+        /// <summary>买家填写的值</summary>
+        public string Value { get; set; }
     }
 }

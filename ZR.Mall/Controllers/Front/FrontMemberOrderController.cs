@@ -40,8 +40,12 @@ namespace ZR.Mall.Controllers.Front
         }
 
         /// <summary>
-        /// 下单收货手机号仅为联系信息，不参与归属判定；
-        /// 会员地址簿里存家人手机号是常态，故不再要求任何短信验证码。
+        /// 下单。收货信息是否必填**按商品形态判定**（实物单要、虚拟单免），故控制器不做这层校验 ——
+        /// 放这里一刀切会把虚拟单全部拦死（虚拟单本就没有收货地址）。
+        /// 校验点在 FrontOrderService.CreateOrder 的读阶段，与形态分流同源。
+        ///
+        /// 收货手机号仅为联系信息，不参与归属判定；会员地址簿里存家人手机号是常态，
+        /// 故不要求任何短信验证码。
         /// </summary>
         [HttpPost("create")]
         [MemberAuthorize]
@@ -51,26 +55,22 @@ namespace ZR.Mall.Controllers.Front
             {
                 return ToResponse(ResultCode.PARAM_ERROR, "下单商品不能为空");
             }
-            if (dto.Address == null || string.IsNullOrWhiteSpace(dto.Address.Phone))
-            {
-                return ToResponse(ResultCode.PARAM_ERROR, "收货手机号不能为空");
-            }
-            if (!Regex.IsMatch(dto.Address.Phone, @"^1\d{10}$"))
-            {
-                return ToResponse(ResultCode.PARAM_ERROR, "手机号格式不正确");
-            }
 
             // 身份取自令牌（MemberAuthorize 已校验通过）
             var member = MemberAuthorizeAttribute.GetMember(HttpContext);
 
+            // 联系手机号：优先用收货手机号，虚拟单没有地址则回落会员手机号。
+            // 两个用途 —— 限流的手机号维度、订单 GuestPhone 快照（后台筛单）。
+            var contactPhone = dto.Address?.Phone ?? member.Phone;
+
             // 下单防刷/限流（IP + 手机号维度）
             var ip = HttpContextExtension.GetClientUserIp(HttpContext);
-            if (!_orderService.TryAcquireCreateQuota(ip, dto.Address.Phone, out var quotaMsg))
+            if (!_orderService.TryAcquireCreateQuota(ip, contactPhone, out var quotaMsg))
             {
                 return ToResponse(ResultCode.FAIL, quotaMsg);
             }
 
-            var order = _orderService.CreateOrder(dto, member.MemberId);
+            var order = _orderService.CreateOrder(dto, member.MemberId, member.Phone);
             // 返回服务端权威金额构成：totalAmount=商品总额、payAmount=实付、freightAmount=运费。
             // C 端展示与后续支付一律以这些字段为准，不要在前端用商品单价自行反推实付。
             return SUCCESS(new

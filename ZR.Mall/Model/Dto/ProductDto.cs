@@ -88,6 +88,14 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "商品类型")]
         public ProductTypeEnum ProductType { get; set; } = ProductTypeEnum.Physical;
 
+        /// <summary>
+        /// 下单表单字段定义：由商品配置原样下发，C 端据此渲染输入框；为空表示下单无需额外填写。
+        /// 虚拟商品的"接收账号/接收手机号"就走这里，不复用收货地址。
+        /// 前端只做提示性校验，最终以服务端下单时的校验为准。
+        /// </summary>
+        [ExcelColumn(Ignore = true)]
+        public List<ProductFormItem> FormItems { get; set; }
+
         [ExcelColumn(Name = "详情", Ignore = true)]
         public string DetailsHtml { get; set; }
 

@@ -13,11 +13,15 @@ namespace ZR.Mall.Service.IService
     public interface IFrontOrderService : IBaseService<OMSOrder>
     {
         /// <summary>
-        /// C 端下单（**必须已登录**）：校验库存、限购、计算金额、写订单与订单项、原子扣库存并累加销量。
+        /// C 端下单（**必须已登录**）：校验库存、限购、表单填写值、计算金额、写订单与订单项、原子扣库存并累加销量。
         /// memberId 必填（来自 mall-token），订单一律绑定会员；商城已取消游客下单。
-        /// 幂等：同一 RequestId（或相同手机号+订单项签名）短窗口内只创建一次订单。
+        /// 收货信息按商品形态校验（实物单必填、虚拟单免），调用方不必也不应自己先判一遍。
+        /// 幂等：同一 RequestId（或相同订单项+金额+表单值签名）短窗口内只创建一次订单。
         /// </summary>
-        OMSOrder CreateOrder(CreateOrderDto dto, long memberId);
+        /// <param name="dto">下单入参</param>
+        /// <param name="memberId">下单会员</param>
+        /// <param name="memberPhone">会员手机号，仅用于虚拟单兜底填 GuestPhone（后台筛单用），可空</param>
+        OMSOrder CreateOrder(CreateOrderDto dto, long memberId, string memberPhone = null);
 
         /// <summary>
         /// 模拟支付（C 端会员直接支付）：校验归属后完成支付（待付款 → 待发货）。

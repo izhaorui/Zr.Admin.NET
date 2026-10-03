@@ -146,6 +146,20 @@ namespace ZR.Mall.Model
         public PurchaseLimit PurchaseLimit { get; set; } = new PurchaseLimit();
 
         /// <summary>
+        /// 下单表单字段定义：买家下单时需要额外填写的输入项（存 JSON 列）。
+        /// 为空表示"下单无需额外填写"；虚拟商品用来收"接收账号/接收手机号"等，实物也能用（如预约配送时间）。
+        /// 规则与字段类型见 <see cref="Common.ProductFormValidator"/>、<see cref="Enum.ProductFormType"/>。
+        /// </summary>
+        /// <remarks>
+        /// 与形态（<see cref="ProductTypeEnum"/>）无关：形态决定地址与运费，表单决定"让买家填什么"，两者正交。
+        /// 后台保存时由 ProductService 调 ValidateDefinition 校验，脏配置不会落库。
+        /// 列类型显式指定为长文本：字段多了 JSON 会变长（如 20 个字段各带 label/options/pattern），
+        /// 交给默认值容易撞上短列上限。
+        /// </remarks>
+        [SugarColumn(IsJson = true, ColumnDataType = StaticConfig.CodeFirst_BigString, ColumnDescription = "下单表单字段")]
+        public List<ProductFormItem> FormItems { get; set; }
+
+        /// <summary>
         /// sku
         /// </summary>
         [Navigate(NavigateType.OneToMany, nameof(ProductId), nameof(Model.Skus.ProductId))] //自定义关系映射
@@ -198,5 +212,51 @@ namespace ZR.Mall.Model
         /// 两者都生效，以服务端为准。
         /// </summary>
         public int SingleLimit { get; set; }
+    }
+
+    /// <summary>
+    /// 商品下单表单的字段定义（存 JSON 列，见 <see cref="Product.FormItems"/>）。
+    /// 一条定义 = 一个输入框；下单时按 <see cref="Field"/> 回传值，值随订单项快照落库。
+    /// </summary>
+    public class ProductFormItem
+    {
+        /// <summary>
+        /// 字段键：下单回传与快照的匹配依据，同一商品内唯一；字母开头，只含字母/数字/下划线。
+        /// 之所以不用中文：键要拼进 JSON 下发给前端当表单 key。
+        /// </summary>
+        public string Field { get; set; }
+
+        /// <summary>显示名（给买家看）；为空时回落为 <see cref="Field"/></summary>
+        public string Label { get; set; }
+
+        /// <summary>
+        /// 字段类型，取值见 <see cref="Enum.ProductFormType"/>。
+        /// 未收录的类型按文本框处理（不报错），后台加新类型不必先改服务端。
+        /// </summary>
+        public string Type { get; set; }
+
+        /// <summary>是否必填</summary>
+        public bool Required { get; set; }
+
+        /// <summary>候选项（select/radio/checkbox 必填），逗号分隔、label 即 value</summary>
+        public string Options { get; set; }
+
+        /// <summary>
+        /// 自定义校验正则（可选）。给了就优先于类型自带规则。
+        /// 保存时校验正则能否编译 —— 写错一次就是所有买家都提交失败。
+        /// </summary>
+        public string Pattern { get; set; }
+
+        /// <summary>
+        /// 长度上限（可选）。缺省按类型给默认值（单行 200 / 多行 1000），
+        /// 且运行期不超过 <see cref="Common.ProductFormValidator.ValueHardLimit"/>。
+        /// </summary>
+        public int? MaxLength { get; set; }
+
+        /// <summary>输入框占位提示</summary>
+        public string Placeholder { get; set; }
+
+        /// <summary>排序（小在前）</summary>
+        public int Sort { get; set; }
     }
 }

@@ -21,5 +21,18 @@ namespace ZR.Mall.Service.IService
         Product UpdateShoppingProduct(ProductDto parm);
         long UpdateInfo(ProductDto dto);
         PagedInfo<ProductDto> ExportList(ShoppingProductQueryDto parm);
+
+        /// <summary>
+        /// 下单表单设计器元数据（内置字段类型 + 各项限制）。
+        /// 纯常量装配、不查库：前端配置表单时据此渲染类型下拉与字数提示，
+        /// 不必自己再维护一份类型映射表。
+        /// </summary>
+        ProductFormMetaDto GetFormMeta();
+
+        /// <summary>
+        /// C 端按 SKU 批量取下单表单定义（结算页渲染输入框用）。
+        /// 已下架 / 不存在的 SKU 直接不出现在结果里（前端按缺项处理即可，不必报错）。
+        /// </summary>
+        List<FrontSkuFormDto> GetFrontFormFields(List<long> skuIds);
     }
 }

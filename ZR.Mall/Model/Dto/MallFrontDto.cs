@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using ZR.Mall.Enum;
 using ZR.Mall.Model;
 
 namespace ZR.Mall.Model.Dto
@@ -73,5 +74,47 @@ namespace ZR.Mall.Model.Dto
         /// </summary>
         [Range(1, int.MaxValue, ErrorMessage = "购买数量必须大于0")]
         public int Quantity { get; set; } = 1;
+
+        /// <summary>
+        /// 表单填写值：key = 商品表单字段的 Field，value = 买家填的内容。
+        ///
+        /// 挂在**行**上而不是订单上：一单可含多个商品（甚至多个虚拟商品），各自的表单不同，
+        /// 放订单级只能填一份。商品没配表单（FormItems 为空）时本字段会被整体忽略。
+        ///
+        /// 服务端按商品配置逐项校验（必填/格式/候选值），前端校验只是提示。
+        /// 定义外的 key 会被丢弃，不落库。
+        /// </summary>
+        public Dictionary<string, string> FormValues { get; set; }
+    }
+
+    /// <summary>
+    /// C 端按 SKU 批量取「下单表单定义」（结算页用）。
+    ///
+    /// 为什么需要批量接口：结算页要拿到**本次结算涉及的全部商品**的表单才能渲染输入框，
+    /// 逐个调商品详情会产生 N 次请求；这里一次查询回全部，缺哪个字段由前端按空处理。
+    /// </summary>
+    public class FrontSkuFormDto
+    {
+        /// <summary>skuId</summary>
+        public long SkuId { get; set; }
+
+        public long ProductId { get; set; }
+
+        public string ProductName { get; set; }
+
+        /// <summary>规格快照（与 SKU 列表同一写法）</summary>
+        public string SkuSpec { get; set; }
+
+        /// <summary>
+        /// 商品形态：1 实物 / 2 虚拟。前端据此决定这一行渲染「收货地址」还是「表单」。
+        /// 服务端不采信它（形态由服务端按商品判定），只是让前端少一次判断就能少一处错。
+        /// </summary>
+        public ProductTypeEnum ProductType { get; set; }
+
+        /// <summary>
+        /// 已归一化的字段定义（type 落词表、label 空则回落 field、按 sort 排序），可直接渲染；
+        /// 空数组表示该商品下单无需额外填写。
+        /// </summary>
+        public List<ProductFormItem> FormItems { get; set; }
     }
 }

@@ -47,5 +47,12 @@
         /// </summary>
         /// <remarks>模板被改名或删除后，订单详情仍可读出"当时按哪个模板计的"</remarks>
         public string FreightTemplateName { get; set; }
+
+        /// <summary>
+        /// 买家填写的表单值快照（该行商品配了下单表单时才有值）。
+        /// 由实体 OMSOrderItem.FormValues 按属性名映射而来；C 端订单详情/列表靠它回显填写内容。
+        /// </summary>
+        [ExcelColumn(Ignore = true)]
+        public List<OrderFormValue> FormValues { get; set; }
     }
 }

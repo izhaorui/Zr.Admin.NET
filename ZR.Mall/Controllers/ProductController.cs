@@ -168,6 +168,22 @@ namespace ZR.Mall.Controllers
         }
 
         /// <summary>
+        /// 下单表单配置元数据（预设字段 + 字段类型 + 长度/数量限制）
+        /// </summary>
+        /// <remarks>
+        /// 后台配置页据此做**勾选式**配置：勾几个预设字段、改改标题与必填即可，
+        /// 不做拖拽式表单设计器（字段就那么几类，设计器属于过度设计）。
+        /// <para>纯常量、不查库，故按"看商品"的权限即可（与商品详情同一口径，
+        /// 不新增按钮权限，免得为了一个下拉框去改菜单种子）。</para>
+        /// </remarks>
+        [HttpGet("formMeta")]
+        [ActionPermissionFilter(Permission = "shop:product:query,shop:product:edit")]
+        public IActionResult GetFormMeta()
+        {
+            return SUCCESS(_ShoppingProductService.GetFormMeta());
+        }
+
+        /// <summary>
         /// 导出商品管理
         /// </summary>
         /// <returns></returns>

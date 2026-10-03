@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ZR.Common;
 using ZR.Mall.Enum;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -56,6 +57,23 @@ namespace ZR.Mall.Controllers.Front
 
             FillFreightInfo(new[] { response });
             return SUCCESS(response);
+        }
+
+        /// <summary>
+        /// 按 SKU 批量取「下单表单定义」：结算页一次性拿到本次结算涉及的全部商品的字段配置，
+        /// 免得逐个调商品详情（N 次请求）。
+        /// </summary>
+        /// <remarks>
+        /// 匿名可访问（与商品详情同一口径）：字段定义不含任何业务数据，只是输入框的元信息。
+        /// 已在售校验与 SKU 上限都在 Service 内（<see cref="IProductService.GetFrontFormFields"/>），
+        /// 这里不重复判断，也不逐个 SKU 报错 —— 缺项前端按"该行无需填写"处理即可。
+        /// </remarks>
+        [HttpGet("formFields")]
+        public IActionResult GetFormFields([FromQuery] string skuIds)
+        {
+            var ids = Tools.SpitLongArrary(skuIds);
+            var list = _ShoppingProductService.GetFrontFormFields(ids?.ToList());
+            return SUCCESS(list);
         }
 
         /// <summary>

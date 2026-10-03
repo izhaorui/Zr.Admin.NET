@@ -1,4 +1,7 @@
 using Infrastructure.Cache;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 using ZR.Mall.Common;
 using ZR.Mall.Enum;
 using ZR.Mall.Model;
@@ -23,6 +26,11 @@ namespace ZR.Mall.Service
         private readonly IFreightService _freightService;
 
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
+        /// <summary>
+        /// 收货手机号格式。与会员注册（MemberService）、收货地址（MemberAddressService）同一口径。
+        /// </summary>
+        private const string PhonePattern = @"^1\d{10}$";
 
         public FrontOrderService(IOMSOrderStateService orderStateService, IFreightService freightService)
         {
@@ -124,6 +132,10 @@ namespace ZR.Mall.Service
         /// 否则回退本地内存的进程内锁（见 CacheStore）。
         /// 原实现是 CacheHelper 的「读-改-写」，并发下会丢计数；且本地内存不跨实例，
         /// 多实例部署时每个节点各算一份配额，限流形同虚设。
+        ///
+        /// 手机号维度对空值直接跳过：虚拟单没有收货手机号，若照旧拼 key，
+        /// 所有虚拟单会共用同一个「mall_front_order_phone_」桶互相挤配额。
+        /// 跳过不等于不限流 —— IP 维度仍然生效，且调用方应传会员手机号兜底（见控制器的 contactPhone）。
         /// </summary>
         public bool TryAcquireCreateQuota(string ip, string phone, out string msg)
         {
@@ -136,7 +148,8 @@ namespace ZR.Mall.Service
                 return false;
             }
             // 手机号维度：10 分钟内最多 30 次
-            if (cache.Increment("mall_front_order_phone_" + phone, 10) > 30)
+            if (!string.IsNullOrWhiteSpace(phone)
+                && cache.Increment("mall_front_order_phone_" + phone, 10) > 30)
             {
                 msg = "该手机号下单过于频繁，请稍后再试";
                 return false;
@@ -222,11 +235,19 @@ namespace ZR.Mall.Service
         /// 身份：订单一律绑定会员（memberId 必填，来自 mall-token）。商城已取消游客下单。
         /// 收货手机号仍写入 GuestPhone 列，但它只是「下单手机号快照」（便于后台按手机号筛单），
         /// **不承担任何归属判定** —— 归属只认 MemberId。
-        /// 幂等：同一 RequestId（或相同手机号+订单项签名）短窗口内只创建一次订单。
+        /// 幂等：同一 RequestId（或相同订单项+金额+表单值签名）短窗口内只创建一次订单。
         /// 限购：SingleLimit（每单限购）与 TotalLimit（总限购件数）均已实现，
         ///       两者都按「商品」维度累计 —— 同一商品拆成多个 SKU 行也会合并后再判断。
+        /// 表单：商品配了下单表单（Product.FormItems）时，按行校验买家填写值并快照到订单项；
+        ///       规则见 <see cref="ProductFormValidator"/>，服务端权威，前端校验只是提示。
         /// </summary>
-        public OMSOrder CreateOrder(CreateOrderDto dto, long memberId)
+        /// <param name="dto">下单入参</param>
+        /// <param name="memberId">下单会员（来自会员令牌）</param>
+        /// <param name="memberPhone">
+        /// 会员手机号（来自令牌，不查库）。仅用于虚拟单兜底：虚拟单没有收货地址，
+        /// 没有它 GuestPhone 会是空的，后台按手机号筛单对虚拟单失效。
+        /// </param>
+        public OMSOrder CreateOrder(CreateOrderDto dto, long memberId, string memberPhone = null)
         {
             if (dto?.Items == null || dto.Items.Count == 0)
             {
@@ -268,10 +289,22 @@ namespace ZR.Mall.Service
             // 形态即订单形态（快照落库）；集合为空只可能出在订单项为空的历史异常调用，按实物兜底
             var orderType = productTypes.Count > 0 ? productTypes[0] : ProductTypeEnum.Physical;
 
-            // 收货地址：实物单必填（虚拟单无地址，故 DTO 上不加 [Required]）
-            if (orderType == ProductTypeEnum.Physical && dto.Address == null)
+            // 收货信息：**按形态判定，不在控制器里判**（虚拟单本就没有地址，控制器一刀切会把虚拟单拦死）。
+            // 实物单必填且手机号要合法；虚拟单免地址 —— 买家要填的东西走商品下单表单，不走收货地址。
+            if (orderType == ProductTypeEnum.Physical)
             {
-                throw new CustomException("收货信息不能为空");
+                if (dto.Address == null)
+                {
+                    throw new CustomException("收货信息不能为空");
+                }
+                if (string.IsNullOrWhiteSpace(dto.Address.Phone))
+                {
+                    throw new CustomException("收货手机号不能为空");
+                }
+                if (!Regex.IsMatch(dto.Address.Phone.Trim(), PhonePattern))
+                {
+                    throw new CustomException("收货手机号格式不正确");
+                }
             }
 
             // ---- 限购校验（按商品维度，不是按 SKU 行）----
@@ -344,6 +377,12 @@ namespace ZR.Mall.Service
                     throw new CustomException($"商品「{product.ProductName}」库存不足（剩余 {sku.Stock}，需 {item.Quantity}）");
                 }
 
+                // 下单表单：按该商品自己的字段定义逐项校验（虚拟商品的接收账号/手机号就走这里），
+                // 校验通过后把填写值快照到订单项 —— 订单是历史凭证，商品事后改表单不影响旧单。
+                // ⚠️ 必须服务端校验：前端渲染与提示只是体验，改一下请求就能绕过（与限购同一思路）。
+                // 走到这里仍在事务外，抛异常无副作用。
+                var formValues = ProductFormValidator.ValidateValues(product, item.FormValues);
+
                 var unitPrice = sku.Price;
                 var itemTotal = unitPrice * item.Quantity;
                 totalAmount += itemTotal;
@@ -358,6 +397,7 @@ namespace ZR.Mall.Service
                     TotalPrice = itemTotal,
                     Quantity = item.Quantity,
                     SkuSpec = sku.SpecCombination,
+                    FormValues = formValues,
                     AddTime = dbDate
                 });
             }
@@ -451,7 +491,9 @@ namespace ZR.Mall.Service
                         CreateTime = dbDate,
                         OrderNote = dto.OrderNote,
                         AddressSnapshot = dto.Address,
-                        GuestPhone = dto.Address?.Phone // 下单手机号快照（后台筛单用，非归属凭据）
+                        // 下单手机号快照（后台筛单用，非归属凭据）：虚拟单没有收货地址，
+                        // 回落成会员手机号 —— 否则虚拟单这一列恒空，后台按手机号筛虚拟单永远筛不到。
+                        GuestPhone = dto.Address?.Phone ?? memberPhone
                     };
 
                     // 写入订单主表，返回自增 Id
@@ -606,9 +648,13 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 计算下单幂等键：优先用前端传入的 RequestId，否则按“会员+订单项+金额”签名。
+        /// 计算下单幂等键：优先用前端传入的 RequestId，否则按“会员+订单项+金额+表单值”签名。
         /// 用会员而非手机号：手机号是收货联系方式（可填家人），不同会员可能填同一个号，
         /// 会把两笔不同会员的订单误判为重复。
+        ///
+        /// 表单值必须进签名：同一批商品换一份填写内容（虚拟商品的接收账号/手机号）是另一笔下单意图，
+        /// 不进签名就会命中 15 分钟内的旧单，用户会看到"改了表单却改不了单"。
+        /// RequestId 分支不加 —— 那是前端声明的"同一次意图"，加了反而会拆成两单。
         ///
         /// ⚠️ **两个分支都必须包含 memberId**：RequestId 由前端生成、并非密钥，
         /// 若不带会员前缀，别的会员只要拿到同一个 RequestId 就会命中同一条幂等记录，
@@ -620,8 +666,34 @@ namespace ZR.Mall.Service
             {
                 return "mall_order_idem_req_" + $"{memberId}|{dto.RequestId}";
             }
-            var itemsSig = string.Join("|", dto.Items.OrderBy(x => x.SkuId).Select(x => $"{x.SkuId}:{x.Quantity}"));
+            var itemsSig = string.Join("|", dto.Items
+                .OrderBy(x => x.SkuId)
+                .Select(x => $"{x.SkuId}:{x.Quantity}:{BuildFormSig(x.FormValues)}"));
             return "mall_order_idem_sig_" + $"{memberId}|{itemsSig}|{totalAmount}";
+        }
+
+        /// <summary>
+        /// 行项表单填写值的签名摘要（无值返回空串）。
+        /// key 排序后拼接，保证同一份内容恒等；再压成定长摘要，避免长文本把缓存 key 撑爆。
+        /// 只取"填了值"的项 —— 空值与非空值的区别已由必填校验兜住，不该进签名。
+        /// </summary>
+        private static string BuildFormSig(Dictionary<string, string> formValues)
+        {
+            if (formValues == null || formValues.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var joined = string.Join(",", formValues
+                .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+                .OrderBy(kv => kv.Key, StringComparer.Ordinal)
+                .Select(kv => $"{kv.Key}={kv.Value.Trim()}"));
+            if (joined.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            return Convert.ToHexString(MD5.HashData(Encoding.UTF8.GetBytes(joined))).Substring(0, 16);
         }
 
         /// <summary>
