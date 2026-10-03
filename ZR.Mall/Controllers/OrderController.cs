@@ -327,6 +327,26 @@ namespace ZR.Mall.Controllers
         }
 
         /// <summary>
+        /// 经营概览（客单价 / 退款率 / 售后率 / 形态占比 / 复购率）
+        /// </summary>
+        [HttpGet("getBusinessOverview")]
+        [ActionPermissionFilter(Permission = "oms:sale:query")]
+        public async Task<IActionResult> GetBusinessOverview([FromQuery] OMSOrderQueryDto dto)
+        {
+            return SUCCESS(await _OMSOrderService.GetBusinessOverview(dto));
+        }
+
+        /// <summary>
+        /// 退款 Top10 商品
+        /// </summary>
+        [HttpGet("getRefundTopProduct")]
+        [ActionPermissionFilter(Permission = "oms:sale:query")]
+        public async Task<IActionResult> GetRefundTopProduct([FromQuery] OMSOrderQueryDto dto)
+        {
+            return SUCCESS(await _OMSOrderService.GetRefundTopProduct(dto));
+        }
+
+        /// <summary>
         /// 查询销售趋势
         /// </summary>
         /// <returns></returns>

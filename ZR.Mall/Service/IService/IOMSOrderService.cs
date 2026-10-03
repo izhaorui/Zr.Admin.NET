@@ -73,5 +73,17 @@ namespace ZR.Mall.Service.IService
         /// 销售排名前 10 的商品
         /// </summary>
         Task<dynamic> GetSaleTopProduct(OMSOrderQueryDto dto);
+
+        /// <summary>
+        /// 经营概览：客单价 / 退款率 / 售后率 / 形态占比 / 复购率。
+        /// 时间范围按支付时间，与销售总额同口径（见 <see cref="Common.MallStatsScope"/>）。
+        /// </summary>
+        Task<BusinessOverviewDto> GetBusinessOverview(OMSOrderQueryDto dto);
+
+        /// <summary>
+        /// 退款 Top10 商品。口径与销售统计**故意不同**（退款单多为 Closed，按有效订单口径过滤会恒空），
+        /// 详见实现注释。
+        /// </summary>
+        Task<List<RefundTopProductDto>> GetRefundTopProduct(OMSOrderQueryDto dto);
     }
 }

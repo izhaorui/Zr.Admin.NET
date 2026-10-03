@@ -351,13 +351,7 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public async Task<dynamic> GetTotalSales(OMSOrderQueryDto dto)
         {
-            var result = await Queryable()
-                // 口径：只统计「实际付过款且未作废」的订单
-                // （PayTime 非空 = 已支付；排除已取消/已关闭与软删除，原先只按 PayTime 区间聚合会把作废单也算进销售额）
-                .Where(o => o.IsDelete == 0
-                    && o.PayTime != null
-                    && o.OrderStatus != Enum.OrderStatusEnum.Cancel
-                    && o.OrderStatus != Enum.OrderStatusEnum.Closed)
+            var result = await MallStatsScope.ValidOrders(Queryable())
                 .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
                 .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
                 .Select(o => new
@@ -378,25 +372,20 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public async Task<dynamic> GetSaleTreandByDay(OMSOrderQueryDto dto)
         {
-            var trend = await Queryable()
-            // 与销售总额口径一致：只统计已支付且未作废的订单
-            .Where(o => o.IsDelete == 0
-                && o.PayTime != null
-                && o.OrderStatus != Enum.OrderStatusEnum.Cancel
-                && o.OrderStatus != Enum.OrderStatusEnum.Closed)
-            .WhereIF(dto.BeginCreateTime == null, o => o.PayTime >= DateTime.Now.AddDays(-7))
-            .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
-            .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
-            .GroupBy(o => SqlFunc.ToDateShort(o.PayTime))
-            .OrderBy(o => SqlFunc.ToDateShort(o.PayTime))
-            .Select(o => new
-            {
-                Date = SqlFunc.ToDateShort(o.PayTime),
-                // 与销售总额同为商品口径：按 TotalAmount 聚合，运费不计入 GMV
-                TotalSales = SqlFunc.AggregateSum(o.TotalAmount),
-                OrderCount = SqlFunc.AggregateCount(o.Id)
-            })
-            .ToListAsync();
+            var trend = await MallStatsScope.ValidOrders(Queryable())
+                .WhereIF(dto.BeginCreateTime == null, o => o.PayTime >= DateTime.Now.AddDays(-7))
+                .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
+                .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
+                .GroupBy(o => SqlFunc.ToDateShort(o.PayTime))
+                .OrderBy(o => SqlFunc.ToDateShort(o.PayTime))
+                .Select(o => new
+                {
+                    Date = SqlFunc.ToDateShort(o.PayTime),
+                    // 与销售总额同为商品口径：按 TotalAmount 聚合，运费不计入 GMV
+                    TotalSales = SqlFunc.AggregateSum(o.TotalAmount),
+                    OrderCount = SqlFunc.AggregateCount(o.Id)
+                })
+                .ToListAsync();
 
             return trend;
         }
@@ -410,7 +399,6 @@ namespace ZR.Mall.Service
         {
             var topProducts = await Context.Queryable<OMSOrderItem>()
                 .InnerJoin<OMSOrder>((oi, o) => oi.OrderId == o.Id)
-                // 与销售额口径保持一致：只统计已支付且未作废的订单
                 .Where((oi, o) => o.IsDelete == 0
                     && o.PayTime != null
                     && o.OrderStatus != Enum.OrderStatusEnum.Cancel
@@ -439,6 +427,169 @@ namespace ZR.Mall.Service
 
             return topProducts;
         }
+
+        /// <summary>
+        /// 经营概览：销售统计页顶部的体温指标（客单价 / 退款率 / 售后率 / 形态占比 / 复购率）。
+        ///
+        /// 三条聚合 SQL 一次算完，不逐指标单查：
+        /// ① 订单侧一次 GROUP BY 出订单数、销售额、实收、退款单数、形态分布；
+        /// ② 会员维度一次 GROUP BY 出复购率（单条 SQL 内先按会员聚合计数，外层数"≥2 次"的人）；
+        /// ③ 售后侧一次 COUNT 出售后单数。
+        /// 比例全部在服务端算好返回：分母为 0 时给 0，不给前端出现 NaN/Infinity 的机会。
+        /// </summary>
+        /// <param name="dto">时间范围按 <b>支付时间</b>，与销售总额/趋势一致</param>
+        public async Task<BusinessOverviewDto> GetBusinessOverview(OMSOrderQueryDto dto)
+        {
+            var orderStat = await MallStatsScope.ValidOrders(Queryable())
+                .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
+                .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
+                .GroupBy(o => o.OrderType)
+                .Select(o => new
+                {
+                    OrderType = o.OrderType,
+                    OrderCount = SqlFunc.AggregateCount(o.Id),
+                    TotalSales = SqlFunc.AggregateSum(o.TotalAmount),
+                    TotalPaid = SqlFunc.AggregateSum(o.PayAmount),
+                    // 发生过退款的订单数：按"有退款金额"判定，与 RefundAmount 同源，不会两处对不上
+                    RefundOrderCount = SqlFunc.AggregateSum(
+                        SqlFunc.IIF(o.RefundAmount > 0, 1, 0)),
+                    RefundAmount = SqlFunc.AggregateSum(o.RefundAmount)
+                })
+                .ToListAsync();
+
+            // 复购率：先按会员分组数出每人的单数，再统计"≥2 单"的会员数与总会员数
+            var memberStat = await MallStatsScope.ValidOrders(Queryable())
+                .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
+                .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
+                .Where(o => o.MemberId != null)
+                .GroupBy(o => o.MemberId)
+                .Select(o => new { OrderCount = SqlFunc.AggregateCount(o.Id) })
+                .ToListAsync();
+
+            // 售后单数：按申请时间落在区间内统计（售后是独立单据，不能靠订单 PayTime 反推）
+            var afterSaleCount = await Context.Queryable<OMSAfterSale>()
+                .Where(x => x.IsDelete == 0)
+                .WhereIF(dto.BeginCreateTime != null, x => x.ApplyTime >= dto.BeginCreateTime)
+                .WhereIF(dto.EndCreateTime != null, x => x.ApplyTime <= dto.EndCreateTime)
+                .CountAsync();
+
+            var orderCount = orderStat.Sum(x => x.OrderCount);
+            var totalSales = orderStat.Sum(x => x.TotalSales);
+            var totalPaid = orderStat.Sum(x => x.TotalPaid);
+            var refundOrderCount = orderStat.Sum(x => x.RefundOrderCount);
+            var refundAmount = orderStat.Sum(x => x.RefundAmount);
+            var virtualCount = orderStat.Where(x => x.OrderType == Enum.ProductTypeEnum.Virtual).Sum(x => x.OrderCount);
+            var memberCount = memberStat.Count;
+            var repurchaseCount = memberStat.Count(x => x.OrderCount >= 2);
+
+            return new BusinessOverviewDto
+            {
+                OrderCount = orderCount,
+                TotalSales = totalSales,
+                TotalPaid = totalPaid,
+                AvgOrderAmount = orderCount > 0 ? Round(totalPaid / orderCount) : 0m,
+                RefundOrderCount = refundOrderCount,
+                RefundAmount = refundAmount,
+                RefundAmountRate = totalPaid > 0 ? Round(refundAmount / totalPaid) : 0m,
+                RefundOrderRate = orderCount > 0 ? Round((decimal)refundOrderCount / orderCount) : 0m,
+                AfterSaleCount = afterSaleCount,
+                AfterSaleRate = orderCount > 0 ? Round((decimal)afterSaleCount / orderCount) : 0m,
+                PhysicalOrderCount = orderCount - virtualCount,
+                VirtualOrderCount = virtualCount,
+                VirtualOrderRate = orderCount > 0 ? Round(virtualCount) / orderCount : 0m,
+                MemberOrderCount = memberCount,
+                RepurchaseRate = memberCount > 0 ? Round(repurchaseCount) / memberCount : 0m
+            };
+        }
+
+        /// <summary>
+        /// 退款 Top10 商品：决定"要不要下架某个商品"的直接依据。
+        ///
+        /// <b>口径与销售统计故意不同</b>，且这个不同是数据模型决定的、绕不开：
+        /// 退款金额是**订单级**字段（<c>OMSOrder.RefundAmount</c>），订单项上没有退款额，
+        /// 所以"某个商品退了多少"在部分退款场景下**无法精确拆分** ——
+        /// 强行按订单项摊会重复计算（一笔退款会摊到该单所有商品上）。
+        /// 故这里给的是两个口径都站得住的指标：
+        /// <list type="bullet">
+        /// <item><c>RefundOrderCount</c>：该商品出现在多少笔退款订单里（准确，内存按 订单+商品 去重）；</item>
+        /// <item><c>RefundSales</c>：这些退款订单里该商品的**销售额**（规模参考，不是退款额 —— 字段名里刻意不写 Refund）。</item>
+        /// </list>
+        ///
+        /// 订单侧过滤只排未付款与已取消，<b>不能</b>排除已退款（<c>Closed</c>）：
+        /// 退款单大多已被整单退款置为 Closed，按有效订单口径过滤会让结果恒为空。
+        /// </summary>
+        public async Task<List<RefundTopProductDto>> GetRefundTopProduct(OMSOrderQueryDto dto)
+        {
+            // 退款订单里的商品行（只取 3 列，行数 = 退款订单的行数，很小）
+            var refundLines = await Context.Queryable<OMSOrderItem>()
+                .InnerJoin<OMSOrder>((oi, o) => oi.OrderId == o.Id)
+                .Where((oi, o) => o.IsDelete == 0
+                    && o.PayTime != null
+                    && o.OrderStatus != Enum.OrderStatusEnum.Cancel
+                    && o.RefundAmount > 0)
+                .WhereIF(dto.BeginCreateTime != null, (oi, o) => o.PayTime >= dto.BeginCreateTime)
+                .WhereIF(dto.EndCreateTime != null, (oi, o) => o.PayTime <= dto.EndCreateTime)
+                .Select((oi, o) => new { oi.ProductId, oi.OrderId, oi.TotalPrice })
+                .ToListAsync();
+
+            if (refundLines.Count == 0)
+            {
+                return new List<RefundTopProductDto>();
+            }
+
+            // 内存按「订单 + 商品」去重后聚合：同一订单里同一商品可能有多行（多规格），
+            // 直接 COUNT 会把笔数算重；去重后每笔订单对该商品只计一次
+            var refundByProduct = refundLines
+                .GroupBy(x => new { x.ProductId, x.OrderId })
+                .Select(g => new { g.Key.ProductId, TotalPrice = g.Sum(x => x.TotalPrice) })
+                .GroupBy(x => x.ProductId)
+                .Select(g => new { ProductId = g.Key, RefundOrderCount = g.Count(), RefundSales = g.Sum(x => x.TotalPrice) })
+                .OrderByDescending(x => x.RefundSales)
+                .Take(10)
+                .ToList();
+
+            // 分母：该商品在区间内的总销售额（有效订单口径，与销售统计同源）
+            var productIds = refundByProduct.Select(x => x.ProductId).ToList();
+            var totalByProduct = await Context.Queryable<OMSOrderItem>()
+                .InnerJoin<OMSOrder>((oi, o) => oi.OrderId == o.Id)
+                .Where((oi, o) => o.IsDelete == 0
+                    && o.PayTime != null
+                    && o.OrderStatus != Enum.OrderStatusEnum.Cancel
+                    && o.OrderStatus != Enum.OrderStatusEnum.Closed
+                    && productIds.Contains(oi.ProductId))
+                .WhereIF(dto.BeginCreateTime != null, (oi, o) => o.PayTime >= dto.BeginCreateTime)
+                .WhereIF(dto.EndCreateTime != null, (oi, o) => o.PayTime <= dto.EndCreateTime)
+                .GroupBy((oi, o) => oi.ProductId)
+                .Select((oi, o) => new { oi.ProductId, TotalSales = SqlFunc.AggregateSum(oi.TotalPrice) })
+                .ToListAsync();
+
+            var names = await Context.Queryable<Product>()
+                .Where(p => productIds.Contains(p.ProductId))
+                .Select(p => new { p.ProductId, p.ProductName })
+                .ToListAsync();
+
+            var nameMap = names.ToDictionary(x => x.ProductId, x => x.ProductName);
+            var totalMap = totalByProduct.ToDictionary(x => x.ProductId, x => x.TotalSales);
+
+            return refundByProduct.Select(x =>
+            {
+                var totalSales = totalMap.TryGetValue(x.ProductId, out var total) ? total : 0m;
+                nameMap.TryGetValue(x.ProductId, out var name);
+                return new RefundTopProductDto
+                {
+                    ProductId = x.ProductId,
+                    ProductName = name,
+                    RefundOrderCount = x.RefundOrderCount,
+                    RefundSales = x.RefundSales,
+                    TotalSales = totalSales,
+                    RefundRate = totalSales > 0 ? Round(x.RefundSales / totalSales) : 0m
+                };
+            }).ToList();
+        }
+
+        /// <summary>统计比率统一保留 4 位小数：前端只负责显示，不做二次换算</summary>
+        private static decimal Round(decimal value) => Math.Round(value, 4, MidpointRounding.AwayFromZero);
+
 
         /// <summary>
         /// 查询导出表达式

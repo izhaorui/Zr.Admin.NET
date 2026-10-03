@@ -244,6 +244,106 @@ namespace ZR.Mall.Model.Dto
     }
 
     /// <summary>
+    /// 经营概览（销售统计页顶部体温区）。
+    ///
+    /// 口径全部与销售总额/趋势/Top10 保持一致：<b>已支付且未作废</b>的订单
+    /// （IsDelete=0、PayTime 非空、OrderStatus ∉ {已取消, 已退款}）。
+    /// 口径不统一时"退款率 > 100%"这种荒唐数字就会出现，故口径只在
+    /// <see cref="Common.MallStatsScope"/> 一处定义，各统计方法都从那里取。
+    /// </summary>
+    /// <remarks>
+    /// 比例类字段都由服务端算好（<c>Rate</c> 系列）：让前端自己拿两个数相除，
+    /// 会出现"分母为 0 时显示 NaN/Infinity"以及各处四舍五入不一致。
+    /// </remarks>
+    public class BusinessOverviewDto
+    {
+        /// <summary>有效订单数（已支付且未作废）</summary>
+        public int OrderCount { get; set; }
+
+        /// <summary>
+        /// 销售额（商品口径 Σ TotalAmount，运费不计入）—— 与销售总额接口同口径
+        /// </summary>
+        public decimal TotalSales { get; set; }
+
+        /// <summary>实收金额（Σ PayAmount，含运费）</summary>
+        public decimal TotalPaid { get; set; }
+
+        /// <summary>客单价 = 实收 / 有效订单数；无订单时为 0</summary>
+        public decimal AvgOrderAmount { get; set; }
+
+        /// <summary>发生退款（含部分退款）的订单数</summary>
+        public int RefundOrderCount { get; set; }
+
+        /// <summary>退款金额合计（Σ 订单的 RefundAmount，不是售后单的申请额）</summary>
+        public decimal RefundAmount { get; set; }
+
+        /// <summary>
+        /// 金额退款率 = 退款金额 / 实收金额（小数，0~1）。
+        /// 比"退款单数占比"更贴近真实：退 1 元的单和退 500 元的单不该同权。
+        /// </summary>
+        public decimal RefundAmountRate { get; set; }
+
+        /// <summary>单量退款率 = 退款订单数 / 有效订单数（小数，0~1）</summary>
+        public decimal RefundOrderRate { get; set; }
+
+        /// <summary>售后单数（含全部状态，按申请时间落在区间内统计）</summary>
+        public int AfterSaleCount { get; set; }
+
+        /// <summary>售后率 = 售后单数 / 有效订单数（小数，0~1）</summary>
+        /// <remarks>
+        /// 一个订单可能产生多笔售后（历史上同订单只限制"同时一笔进行中"），
+        /// 故该值可能大于 100% —— 这是口径事实，不做人为收敛。
+        /// </remarks>
+        public decimal AfterSaleRate { get; set; }
+
+        /// <summary>实物订单数（OrderType=1）</summary>
+        public int PhysicalOrderCount { get; set; }
+
+        /// <summary>虚拟订单数（OrderType=2）</summary>
+        public int VirtualOrderCount { get; set; }
+
+        /// <summary>虚拟订单占比（小数，0~1）</summary>
+        public decimal VirtualOrderRate { get; set; }
+
+        /// <summary>下单会员数（MemberId 非空去重）</summary>
+        public int MemberOrderCount { get; set; }
+
+        /// <summary>
+        /// 复购率 = 下单 ≥2 次的会员数 / 下单会员数（小数，0~1）。
+        /// 反映"有没有回头客"，比客单价更能说明商城健康度。
+        /// </summary>
+        public decimal RepurchaseRate { get; set; }
+    }
+
+    /// <summary>
+    /// 退款 Top10 商品（销售统计页）：判断"要不要下架某个商品"的依据。
+    ///
+    /// 口径诚实说明：退款金额是**订单级**字段，订单项上没有退款额，
+    /// 所以"某商品退了多少"在部分退款场景无法精确拆分到商品。
+    /// 故 <see cref="RefundSales"/> 是"退款订单里该商品的销售额"（规模参考），
+    /// 真正的退款金额请看经营概览里的总额口径。
+    /// </summary>
+    public class RefundTopProductDto
+    {
+        public long ProductId { get; set; }
+
+        /// <summary>商品名（商品已删除时为空）</summary>
+        public string ProductName { get; set; }
+
+        /// <summary>该商品出现在多少笔退款订单里（按订单+商品去重，不会被多规格行算重）</summary>
+        public int RefundOrderCount { get; set; }
+
+        /// <summary>退款订单里该商品的销售额合计（⚠️ 不是退款金额，字段名刻意不叫 RefundAmount）</summary>
+        public decimal RefundSales { get; set; }
+
+        /// <summary>该商品在区间内的总销售额（分母，有效订单口径）</summary>
+        public decimal TotalSales { get; set; }
+
+        /// <summary>退款销售额占比 = RefundSales / TotalSales（小数，0~1）</summary>
+        public decimal RefundRate { get; set; }
+    }
+
+    /// <summary>
     /// 快递发货
     /// </summary>
     public class DeliveryExpressDto
