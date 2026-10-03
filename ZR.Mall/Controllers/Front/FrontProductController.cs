@@ -74,8 +74,10 @@ namespace ZR.Mall.Controllers.Front
                 return;
             }
 
+            // 虚拟商品不回运费信息（FreightInfo 留 null，C 端标签自然不显示）；形态判断只在这一处
             var infoMap = _freightService.ResolveFrontFreightInfoBatch(
-                list.Select(x => (x.ProductId, x.FreightTemplateId)));
+                list.Where(x => x.ProductType == ProductTypeEnum.Physical)
+                    .Select(x => (x.ProductId, x.FreightTemplateId)));
             foreach (var product in list)
             {
                 if (infoMap.TryGetValue(product.ProductId, out var info))

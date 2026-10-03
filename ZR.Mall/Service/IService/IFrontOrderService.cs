@@ -36,6 +36,12 @@ namespace ZR.Mall.Service.IService
         OMSOrder GetMemberOrder(long memberId, long id);
 
         /// <summary>
+        /// 会员订单详情 DTO（校验归属，不属于该会员返回 null）。C 端详情接口用这个：
+        /// 售后时效布尔在此回填，避免调用方各自取时间 / 配置算出不同结论。
+        /// </summary>
+        OMSOrderDto GetMemberOrderDetail(long memberId, long id);
+
+        /// <summary>
         /// 会员取消自己的订单（校验归属后复用状态内核的 CancelOrder：仅待付款/待发货可取消并回补库存）
         /// </summary>
         int CancelMemberOrder(long memberId, long id);

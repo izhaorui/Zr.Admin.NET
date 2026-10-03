@@ -92,6 +92,19 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "订单状态", Ignore = true)]
         public int? OrderStatus { get; set; }
 
+        /// <summary>
+        /// 订单形态：1 实物 / 2 虚拟，下单时的快照，见 OMSOrder.OrderType。
+        /// </summary>
+        [ExcelColumn(Name = "订单类型", Ignore = true)]
+        public ProductTypeEnum OrderType { get; set; } = ProductTypeEnum.Physical;
+
+        /// <summary>
+        /// 是否已超过售后申请期限（服务端按 MallSettings:AfterSaleDays 算好）。只在订单详情回填；
+        /// 只回布尔，客户端不自己算时间。
+        /// </summary>
+        [ExcelColumn(Ignore = true)]
+        public bool AfterSaleExpired { get; set; }
+
         [ExcelColumn(Name = "下单时间", Format = "yyyy-MM-dd HH:mm:ss", Width = 20)]
         public DateTime? CreateTime { get; set; }
 

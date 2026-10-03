@@ -4,7 +4,7 @@ namespace ZR.Model.Public
     /// 行政区划（省 / 市 / 区县三级字典）—— 主库表 sys_area
     /// </summary>
     /// <remarks>
-    /// 全局公共参考数据，故放主库与 ZR.Model（理由见 document/商城运费模板设计.md 第五节）。
+    /// 全局公共参考数据（不属于任一商城租户），故放主库与 ZR.Model。
     /// 层级只能由 <see cref="Level"/> 判定，不能按 AreaCode 位数反推 —— 东莞等不设区地级市为 9 位街道码。
     /// </remarks>
     [SugarTable("sys_area", "行政区划")]

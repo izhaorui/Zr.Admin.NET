@@ -78,11 +78,15 @@ namespace ZR.Mall.Service
             }
 
             var dbDate = Context.GetDate();
+            // 目标状态按形态分流：虚拟单付款即完成，不进「待发货」（其余状态机方法因此都不需要形态分支）
+            var targetStatus = order.OrderType == Enum.ProductTypeEnum.Virtual
+                ? Enum.OrderStatusEnum.Completed
+                : Enum.OrderStatusEnum.TobeShipped;
             // 条件更新：仅待付款状态可支付成功（防并发重复支付/支付与取消竞态）
             var affected = Context.Updateable<OMSOrder>()
                 .SetColumns(it => new OMSOrder
                 {
-                    OrderStatus = Enum.OrderStatusEnum.TobeShipped,
+                    OrderStatus = targetStatus,
                     PayTime = dbDate,
                     PayType = (int)payType,
                     TransactionId = transactionId
@@ -95,13 +99,17 @@ namespace ZR.Mall.Service
                 logger.Warn($"支付失败：订单状态已变更（并发重复支付或取消竞态）。OrderNo={orderNo} OrderId={order.Id} 支付方式={payType}");
                 throw new CustomException("支付失败：订单状态已变更，请刷新后重试");
             }
-            order.OrderStatus = Enum.OrderStatusEnum.TobeShipped;
+            order.OrderStatus = targetStatus;
             order.PayTime = dbDate;
             order.PayType = (int)payType;
             order.TransactionId = transactionId;
             // 写入/更新支付流水（订单快照仅保留最近一次支付，完整生命周期以 oms_payment 为准）
             _paymentService.UpsertPaid(order, payType, transactionId, dbDate, callbackRaw);
-            _orderLogService.AddLog(order.Id, order.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.TobeShipped, "PAY", order.GuestPhone, "支付成功");
+            // 虚拟单的目标状态是「已完成」，日志里点明原因，免得运营以为这一单漏了发货
+            var payRemark = targetStatus == Enum.OrderStatusEnum.Completed
+                ? "支付成功（虚拟商品，订单直接完成）"
+                : "支付成功";
+            _orderLogService.AddLog(order.Id, order.OrderNo, (int)Enum.OrderStatusEnum.None, (int)targetStatus, "PAY", order.GuestPhone, payRemark);
             // 不发通知：用户刚在页面上完成支付，已有即时反馈，再发一条只是烧短信费。
             // 将来若要"已支付"提醒，走站内信/订阅消息，不要走短信（见 NotifyBuyer 的发送策略）。
             logger.Info($"订单支付成功：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 金额={order.PayAmount}元 支付方式={payType} 渠道流水号={transactionId}");
@@ -424,7 +432,9 @@ namespace ZR.Mall.Service
             // 剩下的 TobeShipped/Shipped/Completed 三个状态都对应"渠道已收款"。
             // 故退款状态与支付流水都直接置已退款，无需再按"是否已付"分支。
             // 未出库（待发货）货还在仓库，退款加回可售；已发货/已完成货已出库，不能自动加库存。
-            var restoreSellable = fromStatus == Enum.OrderStatusEnum.TobeShipped;
+            // 虚拟单没有"货已出库"这回事：退款后本就该能再卖，不回补则每退一单可售库存永久少一份
+            var restoreSellable = fromStatus == Enum.OrderStatusEnum.TobeShipped
+                || order.OrderType == Enum.ProductTypeEnum.Virtual;
             var tran = UseTran(() =>
             {
                 var affected = Context.Updateable<OMSOrder>()
@@ -493,17 +503,8 @@ namespace ZR.Mall.Service
         /// 售后退款落账：把售后单的退款写进订单（累计 RefundAmount、置退款状态、按情况回补库存）。
         /// </summary>
         /// <remarks>
-        /// <para><b>与 <see cref="RefundOrder"/> 的区别</b>：那个是运营直接对订单退款，会把订单置为已关闭；
-        /// 售后是**订单完成之后**才可能发生的事，把已完成订单改成"已关闭"会丢掉"曾经完成"这个事实
-        ///（销售统计、售后率都依赖它）。故这里只在订单**尚未发货**时关闭订单，已发货/已完成只写退款状态。</para>
-        ///
-        /// <para><b>库存口径 —— 只有货真的回到仓库才加回可售</b>：
-        /// ① 未发货（货还在仓）→ 回补；② 退货退款且商家已确认收到 → 回补；
-        /// ③ 已发货的仅退款（货在买家手里且不退回）→ 不回补，只冲减销量（与 <see cref="RefundOrder"/> 一致）。
-        /// 具体由调用方判定后传入 <paramref name="restoreSellable"/>。</para>
-        ///
-        /// <para><b>超额护栏</b>：RefundAmount 累加后不得超过 PayAmount，护栏放在 Where 里 ——
-        /// 否则重复退款会把"已退金额"累到比实付还高，对账直接崩。</para>
+        /// 与 RefundOrder 的差异：不把订单置为已关闭（仅未发货时关闭），只累加退款额并置退款状态；
+        /// 库存按调用方传入的 restoreSellable 回补，累计退款额在 Where 里设护栏不超过实付。
         /// </remarks>
         /// <param name="orderId">订单 Id</param>
         /// <param name="amount">本次实际退款金额（元）</param>

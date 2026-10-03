@@ -6,7 +6,7 @@ namespace ZR.Mall.Model
     /// <remarks>
     /// 按行政编码匹配而非名称（会因撤县设区失准），编码取自 <see cref="ZR.Model.Public.Area"/> 字典。
     /// 存省级码排除全省、市级码排除该市、区县码只排该区县；命中即阻止下单，
-    /// 不静默计 0 运费。详见 document/商城运费模板设计.md 第四节。
+    /// 不静默计 0 运费（前台返回「该地区不配送」，不是把运费算成 0）。
     /// </remarks>
     [SugarTable("mms_freight_template_region", "运费模板不配送地区")]
     // 运费计算每次都要按模板取排除区；无索引会退化成全表扫描

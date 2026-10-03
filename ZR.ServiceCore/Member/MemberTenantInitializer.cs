@@ -55,8 +55,7 @@ namespace ZR.ServiceCore.Member
         }
 
         /// <summary>
-        /// 会员自增起始值：不对外暴露 1、2、3 这类连续小号（规则说明与既有库一次性 SQL 见
-        /// document/doc/商城会员接口对接文档.md）。
+        /// 会员自增起始值：不对外暴露 1、2、3 这类连续小号（否则外部可按号遍历、估算注册量）。
         /// 注意：CodeFirst 建表默认 IDENTITY(1,1)，且 EnsureEntitySchemas 只建表/补列、不改自增种子，
         /// 因此必须在此显式校正。
         /// </summary>

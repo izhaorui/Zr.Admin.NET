@@ -182,6 +182,8 @@ namespace ZR.Mall.Service
                         t.ImageUrls,
                         t.VideoUrl,
                         t.SaleStatus,
+                        // 形态：漏加会导致"后台改成虚拟但保存不生效"，且要到下单流程才显形
+                        t.ProductType,
                         t.CategoryId,
                         t.BrandId,
                         // 运费模板绑定：漏加会导致后台选了模板但保存不生效，
@@ -280,8 +282,11 @@ namespace ZR.Mall.Service
                 t.MainImage,
                 t.ImageUrls,
                 t.SaleStatus,
+                // 形态与运费模板都要一起更新：漏一项就是"后台改了但保存不生效"
+                t.ProductType,
                 t.CategoryId,
                 t.BrandId,
+                t.FreightTemplateId,
                 t.Introduce,
                 t.Unit,
                 t.OriginalPrice,

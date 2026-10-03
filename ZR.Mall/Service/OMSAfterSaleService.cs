@@ -10,14 +10,8 @@ namespace ZR.Mall.Service
     /// 售后单服务：买家申请 → 后台审核 →（退货：买家寄回 + 商家确认收货）→ 登记渠道退款 → 完成
     /// </summary>
     /// <remarks>
-    /// <para><b>为什么独立于订单退款</b>：见 <see cref="OMSAfterSale"/> 的说明 —— 售后发生在订单完成之后，
-    /// 不能靠「关闭订单」表达（那会丢掉"曾经完成"这个事实），必须自己建单留痕。</para>
-    ///
-    /// <para><b>渠道退款仍由人工完成</b>：本服务只负责流程与记账（登记退款金额 + 渠道退款单号），
-    /// 与项目既有约定一致（见 OMSOrderStateService.RefundOrder 的注释）。</para>
-    ///
-    /// <para><b>所有状态推进都用条件更新</b>（Where 里带上期望的当前状态）：
-    /// 定时任务、买家与运营可能同时操作同一单，靠读快照再写会重复推进。</para>
+    /// 渠道退款由人工完成，服务只登记退款额与渠道退款单号；ApplyAmount 与 RefundAmount 可以不同，
+    /// 对账以 RefundAmount 为准；状态推进一律用条件更新，避免并发重复推进。
     /// </remarks>
     [AppService(ServiceType = typeof(IOMSAfterSaleService))]
     public class OMSAfterSaleService : BaseService<OMSAfterSale>, IOMSAfterSaleService
@@ -48,6 +42,21 @@ namespace ZR.Mall.Service
             if (!OrderOwnership.IsOwnedBy(order, memberId))
             {
                 throw new CustomException("订单不存在或无权限");
+            }
+
+            // 虚拟商品买家侧不可售后（形态判断只在本处与 C 端「申请售后」入口两处，页面里不要再判）
+            if (order.OrderType == ProductTypeEnum.Virtual)
+            {
+                throw new CustomException("虚拟商品不支持售后");
+            }
+
+            // 售后时效：确认收货后 N 天内可申请（MallSettings:AfterSaleDays，默认 15，0 表示不限）。
+            // 规则与阈值只在 MallAfterSalePolicy 一处，订单详情下发给 C 端的"是否超期"用的是同一个方法
+            var afterSaleDays = MallAfterSalePolicy.ResolveDays();
+            if (MallAfterSalePolicy.IsExpired(order, Context.GetDate(), afterSaleDays))
+            {
+                throw new CustomException(
+                    $"已超过售后申请期限（确认收货后 {afterSaleDays} 天内可申请）。如有质量问题请联系客服处理");
             }
 
             // 只有已付款的订单才有款可退；待付款的正解是取消，不是售后

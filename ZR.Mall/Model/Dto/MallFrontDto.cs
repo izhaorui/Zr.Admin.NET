@@ -16,11 +16,9 @@ namespace ZR.Mall.Model.Dto
         public List<CreateOrderItemDto> Items { get; set; } = new();
 
         /// <summary>
-        /// 收货信息（必填）。
-        /// 手机号只是联系方式，**不承担身份/归属作用**（归属由会员令牌决定），
-        /// 因此地址簿里存家人手机号也能正常下单，无需任何短信验证码。
+        /// 收货信息：实物单必填、虚拟单不需要。故不加 [Required]，必填由
+        /// FrontOrderService.CreateOrder 按订单形态校验。手机号只是联系方式，不承担归属校验。
         /// </summary>
-        [Required(ErrorMessage = "收货信息不能为空")]
         public AddressSnapshot Address { get; set; }
 
         /// <summary>

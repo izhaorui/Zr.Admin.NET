@@ -1,4 +1,5 @@
 using ZR.Mall.Common;
+using ZR.Mall.Enum;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -93,12 +94,8 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 把「已查到的绑定模板 + 默认模板」折算成包邮信息。
+        /// 把「已查到的绑定模板 + 默认模板」折算成包邮信息（回落规则只在 FreightCalculator.PickTemplate）。
         /// </summary>
-        /// <remarks>
-        /// 回落规则只在 <see cref="FreightCalculator.PickTemplate"/> 里实现：单个商品的详情与批量列表
-        /// 都经这里，避免两条链路对同一个商品得出不同的包邮结论。
-        /// </remarks>
         private static FrontFreightInfoDto ToFrontFreightInfo(FreightTemplate bound, FreightTemplate defaultTemplate)
             => FreightCalculator.BuildFreightInfo(FreightCalculator.PickTemplate(bound, defaultTemplate));
 
@@ -106,12 +103,8 @@ namespace ZR.Mall.Service
         /// 组装引擎入参：查 sku/商品/模板/排除地区，摊平成 <see cref="FreightCalcRequest"/>。
         /// </summary>
         /// <remarks>
-        /// <para><b>查询次数恒定 ≤ 4，不随商品行数增长</b>（无 N+1）：
-        /// ① 一次 IN 查 sku → ② 一次 IN 查 product → ③ 一次 IN 查模板 → ④ 一次 IN 查排除地区。
-        /// 第 ③ 步的模板集合要先合并"商品绑定的"与"默认模板"再查，避免多一次往返。</para>
-        ///
-        /// <para><b>地区解析走 <see cref="AreaService.ResolveCodes"/></b>：历史地址只有名称，
-        /// 在这里统一兜底反查出编码，后续不配送地区匹配与包邮判断才有依据。</para>
+        /// 查询次数恒定 ≤ 4、不随商品行数增长（sku / product / 模板 / 排除地区各一次）；
+        /// 地区编码兜底反查走 AreaService.ResolveCodes，不配送匹配与包邮判断才有依据。
         /// </remarks>
         private FreightCalcRequest BuildRequest(List<FreightCheckoutItem> items,
             decimal goodsAmount, AreaQueryDto address,
@@ -130,11 +123,11 @@ namespace ZR.Mall.Service
                 .ToList()
                 .ToDictionary(x => x.SkuId);
 
-            // ---- ② 批量查商品：拿运费模板绑定 ----
+            // ---- ② 批量查商品：拿运费模板绑定与形态 ----
             var productIds = skuMap.Values.Select(x => x.ProductId).Distinct().ToList();
             var productMap = Context.Queryable<Product>()
                 .Where(x => productIds.Contains(x.ProductId) && x.IsDelete == 0)
-                .Select(x => new { x.ProductId, x.FreightTemplateId })
+                .Select(x => new { x.ProductId, x.ProductType, x.FreightTemplateId })
                 .ToList()
                 .ToDictionary(x => x.ProductId);
 
@@ -147,8 +140,9 @@ namespace ZR.Mall.Service
             request.DistrictCode = codes?.DistrictCode;
 
             // ---- ③ 批量查模板：商品绑定的 + 默认模板（一次查完） ----
+            // 虚拟商品不参与：它免运费，把它的模板捎进来只是白查
             var templateIds = productMap.Values
-                .Where(x => x.FreightTemplateId != null)
+                .Where(x => x.ProductType == ProductTypeEnum.Physical && x.FreightTemplateId != null)
                 .Select(x => x.FreightTemplateId!.Value)
                 .ToList();
             var defaultTemplate = Queryable().First(x => x.IsDefault == 1);
@@ -183,8 +177,16 @@ namespace ZR.Mall.Service
                     continue;
                 }
 
+                var hasProduct = productMap.TryGetValue(sku.ProductId, out var product);
+
+                // 虚拟商品免运费：不产生计费行，也不参与「不配送地区」判定（唯一实现处，页面不要再加形态分支）
+                if (hasProduct && product.ProductType == ProductTypeEnum.Virtual)
+                {
+                    continue;
+                }
+
                 // 商品未绑定模板 → 回落到默认模板；两者都没有则 Template 为 null，引擎按 0 运费计
-                var boundId = productMap.TryGetValue(sku.ProductId, out var product) ? product.FreightTemplateId : null;
+                var boundId = hasProduct ? product.FreightTemplateId : null;
                 FreightTemplate template = null;
                 if (boundId != null)
                 {

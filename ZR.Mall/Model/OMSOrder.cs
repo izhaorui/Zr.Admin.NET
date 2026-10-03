@@ -100,6 +100,13 @@ namespace ZR.Mall.Model
         public RefundStatusEnum RefundStatus { get; set; }
 
         /// <summary>
+        /// 订单形态：1 实物 / 2 虚拟（纯服务类），默认实物。见 <see cref="ProductTypeEnum"/>。
+        /// 下单时的形态快照，不回查商品表 —— 读它的支付回调与买家申请售后都在热路径上。
+        /// </summary>
+        [SugarColumn(DefaultValue = "1")]
+        public ProductTypeEnum OrderType { get; set; } = ProductTypeEnum.Physical;
+
+        /// <summary>
         /// 下单时间 
         /// </summary>
         public DateTime? CreateTime { get; set; }

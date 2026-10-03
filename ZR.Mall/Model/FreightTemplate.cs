@@ -4,7 +4,7 @@ namespace ZR.Mall.Model
     /// 运费模板
     /// </summary>
     /// <remarks>
-    /// 本实体只存参数，计费规则在 FreightCalculator —— 见 document/商城运费模板设计.md 第四节。
+    /// 本实体只存参数，计费规则在 FreightCalculator（首重/续重/包邮门槛的算法与精度都在那里）。
     /// 不配送地区见 FreightTemplateExcludeRegion；未绑定模板的商品走 IsDefault = 1 的模板。
     /// </remarks>
     [SugarTable("mms_freight_template", "运费模板")]

@@ -86,17 +86,9 @@ namespace ZR.Mall.Controllers.Front
         }
 
         /// <summary>
-        /// 运费试算（需登录）。
-        ///
-        /// 供确认订单页在选定收货地址后实时展示运费与合计。
-        /// <para><b>刻意不返回最终实付</b>：优惠与积分能力尚未上线，实付此刻就等于
-        /// 商品总额 + 运费；等它们上线后本接口需同步补上优惠试算，否则前端展示的实付
-        /// 会与下单结果不一致。</para>
-        ///
-        /// <para><b>与下单的关系</b>：本接口与下单主流程调同一个 <c>IFreightService</c>，
-        /// 因此运费必然一致；下单时服务端仍会**重算**一遍，不采信这里返回的值。
-        /// 命中「不配送地区」时这里直接返回错误，前端据此禁用提交按钮 ——
-        /// 与下单的拦截时机一致，不会出现"能试算却下不了单"。</para>
+        /// 运费试算（需登录）：供确认订单页选定收货地址后实时展示运费与合计。
+        /// 与下单调同一个 IFreightService，下单时仍会重算；命中「不配送地区」同样直接报错，
+        /// 拦截时机与下单一致，不会出现「能试算却下不了单」。
         /// </summary>
         [HttpPost("calc-freight")]
         [MemberAuthorize]
@@ -269,12 +261,12 @@ namespace ZR.Mall.Controllers.Front
         public IActionResult Detail(long id)
         {
             var member = MemberAuthorizeAttribute.GetMember(HttpContext);
-            var order = _orderService.GetMemberOrder(member.MemberId, id);
-            if (order == null)
+            var dto = _orderService.GetMemberOrderDetail(member.MemberId, id);
+            if (dto == null)
             {
                 return ToResponse(ResultCode.FAIL, "订单不存在或无权限");
             }
-            return SUCCESS(order.Adapt<OMSOrderDto>());
+            return SUCCESS(dto);
         }
 
         /// <summary>

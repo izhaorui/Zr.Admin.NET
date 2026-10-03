@@ -8,19 +8,8 @@ namespace ZR.Mall.Common
     /// 运费计算引擎（纯函数，无数据库 / 缓存 / 租户依赖）
     /// </summary>
     /// <remarks>
-    /// <para><b>为什么做成纯函数</b>：C 端试算与下单主流程都要算运费，两者必须给出完全一致的数，
-    /// 否则用户会看到"试算 8 元、提交变 10 元"。把计算逻辑收敛到无状态纯函数里，
-    /// 两条链路调同一个方法，天然一致；且不依赖数据库意味着所有边界（0 重量、0 数量、
-    /// 多模板合并、decimal 精度）都能被单元测试直接覆盖，不必起库。</para>
-    ///
-    /// <para><b>计费规则</b>（P = 该模板命中的总件数，W = 总重量 kg，G = 整单商品总额）：
-    /// 按件 —— P ≤ FirstPiece 则 Freight；否则 Freight + ceil((P − FirstPiece) / AddPiece) × Freight。
-    /// 按重 —— W ≤ FirstWeight 则 Freight；否则 Freight + ceil((W − FirstWeight) / AddWeight) × Freight。
-    /// 包邮 —— FreeShippingThreshold &gt; 0 且 G ≥ 它，则该模板运费 0。
-    /// 多模板 —— 各模板分段算出后求和（跨模板 = 分段配送，与主流商城一致）。</para>
-    ///
-    /// <para><b>精度</b>：全程 decimal，进位用 Math.Ceiling(decimal)，不经过 double，
-    /// 避免 0.1+0.2 类误差在进位处被放大成多收或少收一单运费。</para>
+    /// 按件 / 按重 / 包邮门槛 / 多模板分段求和；全程 decimal，进位用 Math.Ceiling。
+    /// 模板回落 = PickTemplate(bound, fallback)，下单计费与详情页包邮标签共用，避免两处口径分叉。
     /// </remarks>
     public static class FreightCalculator
     {

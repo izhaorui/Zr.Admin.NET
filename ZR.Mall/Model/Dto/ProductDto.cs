@@ -82,6 +82,12 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "售卖状态", Ignore = true)]
         public SaleStatus SaleStatus { get; set; }
 
+        /// <summary>
+        /// 商品形态：1 实物 / 2 虚拟，默认实物。后台表单绑定与 C 端回填共用本字段。
+        /// </summary>
+        [ExcelColumn(Name = "商品类型")]
+        public ProductTypeEnum ProductType { get; set; } = ProductTypeEnum.Physical;
+
         [ExcelColumn(Name = "详情", Ignore = true)]
         public string DetailsHtml { get; set; }
 

@@ -45,11 +45,18 @@ namespace ZR.Mall.Model
         public int? CategoryId { get; set; }
 
         /// <summary>
+        /// 商品形态：1 实物 / 2 虚拟（纯服务类），默认实物。见 <see cref="ProductTypeEnum"/>。
+        /// 注：虚拟商品免运费由 FreightService 按形态跳过，留空运费模板不是免运费（留空 = 回落默认模板）。
+        /// </summary>
+        [SugarColumn(DefaultValue = "1")]
+        public ProductTypeEnum ProductType { get; set; } = ProductTypeEnum.Physical;
+
+        /// <summary>
         /// 运费模板 Id
         /// </summary>
         /// <remarks>
         /// 为 null 时下单按**默认模板**计费；默认模板也不存在则计 0 运费。
-        /// 留空是合法配置（虚拟商品、赠品等本就不需要运费），故可空。
+        /// 留空是合法配置（赠品等本就不需要运费），故可空。
         /// </remarks>
         public long? FreightTemplateId { get; set; }
 

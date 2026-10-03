@@ -16,7 +16,7 @@ namespace ZR.Model.Member
         /// 遍历/估算注册量，因此自增种子统一从 100000 起。
         /// 种子由 ZR.ServiceCore/Member/MemberTenantInitializer.cs 的 EnsureMemberIdSeed 校正
         /// （CodeFirst 建表默认 IDENTITY(1,1)，且 EnsureEntitySchemas 只建表/补列、不改种子）；
-        /// 既有库请执行 document/doc/商城会员接口对接文档.md 中给出的一次性 SQL。
+        /// 既有库需自行执行 DBCC CHECKIDENT 把种子校正到 100000（只向上补，避免与既有主键冲突）。
         /// </summary>
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
         public long Id { get; set; }

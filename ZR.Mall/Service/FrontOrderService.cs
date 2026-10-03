@@ -1,4 +1,5 @@
 using Infrastructure.Cache;
+using ZR.Mall.Common;
 using ZR.Mall.Enum;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
@@ -63,6 +64,23 @@ namespace ZR.Mall.Service
             }
             var order = Queryable().Includes(x => x.Items).First(x => x.Id == id && x.IsDelete == 0);
             return BelongsToMember(order, memberId) ? order : null;
+        }
+
+        /// <summary>
+        /// 会员订单详情 DTO（校验归属，不属于该会员返回 null）。
+        /// 售后时效布尔在这里回填：规则只在 <see cref="MallAfterSalePolicy"/> 一处，
+        /// 时间取库时间（与买家申请同源，避免应用服务器与数据库的时钟差把边界判反）。
+        /// </summary>
+        public OMSOrderDto GetMemberOrderDetail(long memberId, long id)
+        {
+            var order = GetMemberOrder(memberId, id);
+            if (order == null)
+            {
+                return null;
+            }
+            var dto = order.Adapt<OMSOrderDto>();
+            dto.AfterSaleExpired = MallAfterSalePolicy.IsExpired(order, Context.GetDate(), MallAfterSalePolicy.ResolveDays());
+            return dto;
         }
 
         /// <summary>
@@ -239,6 +257,23 @@ namespace ZR.Mall.Service
             }
             var productMap = products.ToDictionary(p => p.ProductId);
 
+            // ---- 形态校验（先于限购 / 库存 / 运费，失败无副作用）----
+            // 一单只能一种形态（前端已拦，这里仍是最终防线）；按商品去重后的形态集合判断
+            var productTypes = productMap.Values.Select(p => p.ProductType).Distinct().ToList();
+            if (productTypes.Count > 1)
+            {
+                logger.Warn($"下单失败：同一订单混有实物与虚拟商品。MemberId={memberId} ProductIds={string.Join(",", productIds)}");
+                throw new CustomException("虚拟商品需与实物商品分开结算");
+            }
+            // 形态即订单形态（快照落库）；集合为空只可能出在订单项为空的历史异常调用，按实物兜底
+            var orderType = productTypes.Count > 0 ? productTypes[0] : ProductTypeEnum.Physical;
+
+            // 收货地址：实物单必填（虚拟单无地址，故 DTO 上不加 [Required]）
+            if (orderType == ProductTypeEnum.Physical && dto.Address == null)
+            {
+                throw new CustomException("收货信息不能为空");
+            }
+
             // ---- 限购校验（按商品维度，不是按 SKU 行）----
             // ⚠️ 必须先按商品合并本次请求的件数再判断：同一商品可以拆成多个 SKU 行下单
             // （如"默认"×1 + "大"×1），逐行判断的话每行都不超限，合计却超了，等于没限。
@@ -411,6 +446,8 @@ namespace ZR.Mall.Service
                         OrderStatus = Enum.OrderStatusEnum.None, // 待付款：下单后进入模拟支付环节，支付成功才转待发货
                         DeliveryStatus = Enum.DeliveryStatusEnum.NotDelivered,
                         RefundStatus = Enum.RefundStatusEnum.None,
+                        // 下单时的形态快照：决定付款后进「待发货」还是直接「已完成」（见 PayOrderByOrderNo）
+                        OrderType = orderType,
                         CreateTime = dbDate,
                         OrderNote = dto.OrderNote,
                         AddressSnapshot = dto.Address,

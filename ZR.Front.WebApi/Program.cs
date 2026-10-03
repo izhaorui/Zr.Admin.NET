@@ -83,7 +83,7 @@ builder.Services.AddValidatorsFromAssemblies(AssemblyUtils.GetAssemblies());
 
 builder.Services.AddHttpClient();
 
-// 不做 Swagger：公网宿主不对外暴露接口文档（接口说明见 document/商城会员接口对接文档.md）
+// 不做 Swagger：公网宿主不对外暴露接口文档
 
 // IP 归属地库：必须初始化，否则运行时会在以下路径抛 "IpTool is not initialized"：
 //   - 会员发码 MemberService.SendCode / 游客发码 FrontOrderController.SendQueryCode（均经 HttpContextExtension.GetIpInfo）
