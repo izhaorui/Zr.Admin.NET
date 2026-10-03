@@ -390,9 +390,14 @@ namespace ZR.Mall.Service
         /// 退款（运营动作，约定：调用前渠道退款已由人工在渠道侧完成）。
         /// ① 订单已取消且退款状态为"退款中"：仅确认退款完成（不动订单状态与库存，取消时已回补）；
         /// ② 待付款：**拒绝** —— 没有款可退，正解是「取消」（见 CancelOrder）；
-        /// ③ 待发货/已发货/已完成：关闭订单，待发货回补可售库存，已发货/已完成只冲减销量。
+        /// ③ 存在进行中的售后申请：**拒绝** —— 售后登记退款与本动作各退一次就是重复退款；
+        /// ④ 待发货/已发货/已完成：关闭订单，待发货回补可售库存，已发货/已完成只冲减销量。
         /// 条件更新，避免重复回补。
         /// </summary>
+        /// <remarks>
+        /// 退款金额按「实付 - 已退」的余量计算并累加进 <c>RefundAmount</c>（与 <see cref="ApplyAfterSaleRefund"/> 同一口径），
+        /// 渠道侧也应按这个余量退：直接把实付再退一遍就是重复退款。
+        /// </remarks>
         public int RefundOrder(OMSOrder model)
         {
             var order = Queryable().Includes(x => x.Items).First(x => x.OrderNo == model.OrderNo && x.IsDelete == 0);
@@ -435,40 +440,75 @@ namespace ZR.Mall.Service
             // 虚拟单没有"货已出库"这回事：退款后本就该能再卖，不回补则每退一单可售库存永久少一份
             var restoreSellable = fromStatus == Enum.OrderStatusEnum.TobeShipped
                 || order.OrderType == Enum.ProductTypeEnum.Virtual;
+
+            // 有进行中的售后时禁止整单退款：售后登记退款与本动作是两个独立退钱入口，
+            // 各退一次就是重复退款（资损）；且本动作会把订单直接置 Closed，
+            // 之后那笔售后单登记退款必然撞上"累计超过实付"护栏而永久卡在待退款。
+            // 正确顺序：先把售后走完（或撤销），确认无进行中售后后再整单退款。
+            var activeAfterSale = Context.Queryable<OMSAfterSale>()
+                .Where(x => x.OrderId == order.Id && x.IsDelete == 0
+                            && (x.Status == (int)AfterSaleStatusEnum.Pending
+                                || x.Status == (int)AfterSaleStatusEnum.WaitingReturn
+                                || x.Status == (int)AfterSaleStatusEnum.WaitingReceive
+                                || x.Status == (int)AfterSaleStatusEnum.WaitingRefund))
+                .OrderByDescending(x => x.Id)
+                .First();
+            if (activeAfterSale != null)
+            {
+                logger.Warn($"整单退款被拒绝：订单存在进行中的售后申请。OrderNo={order.OrderNo} OrderId={order.Id} AfterSaleNo={activeAfterSale.AfterSaleNo} 售后状态={(AfterSaleStatusEnum)activeAfterSale.Status}");
+                throw new CustomException($"该订单有进行中的售后申请（{activeAfterSale.AfterSaleNo}），请先处理售后再整单退款");
+            }
+
+            // 退"实付 - 已退"的余量，而不是直接退实付：订单可能已通过售后退过一部分。
+            // 原实现既不写 RefundAmount 也按实付记账，导致 C 端/后台显示"已退 0 元"却标着已退款，
+            // 售后的可退余额（PayAmount - RefundAmount）也随之虚高。
+            var remainAmount = order.PayAmount - order.RefundAmount;
+            if (remainAmount <= 0m)
+            {
+                logger.Warn($"整单退款被拒绝：订单已无可退金额。OrderNo={order.OrderNo} OrderId={order.Id} 实付={order.PayAmount}元 已退={order.RefundAmount}元");
+                throw new CustomException("该订单已无可退金额");
+            }
+
             var tran = UseTran(() =>
             {
                 var affected = Context.Updateable<OMSOrder>()
                     .SetColumns(it => new OMSOrder
                     {
                         OrderStatus = Enum.OrderStatusEnum.Closed,
-                        RefundStatus = Enum.RefundStatusEnum.Refunded
+                        RefundStatus = Enum.RefundStatusEnum.Refunded,
+                        // 与 ApplyAfterSaleRefund 同一口径：已退金额必须累加并留护栏，
+                        // 否则两条退款链路各记各的，对账时以 RefundAmount 为准的那个是错的
+                        RefundAmount = it.RefundAmount + remainAmount
                     })
-                    .Where(x => x.OrderNo == model.OrderNo && x.IsDelete == 0 && x.OrderStatus == fromStatus)
+                    .Where(x => x.OrderNo == model.OrderNo && x.IsDelete == 0 && x.OrderStatus == fromStatus
+                                && x.RefundAmount + remainAmount <= x.PayAmount)
                     .ExecuteCommand();
                 if (affected <= 0)
                 {
-                    throw new CustomException("退款失败：订单状态已变更，请刷新后重试");
+                    // 两种可能：订单状态被并发变更，或"已退 + 本次"超过实付被护栏拦下
+                    throw new CustomException("退款失败：订单状态或已退金额已变更，请刷新后重试");
                 }
                 RestoreStock(order.Id, restoreSellable);
                 _paymentService.MarkRefunded(order.OrderNo);
             });
             if (tran == null || !tran.IsSuccess)
             {
-                logger.Error($"退款事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 退款金额={order.PayAmount}元 原状态={(int)fromStatus} 错误={tran?.ErrorMessage}");
+                logger.Error($"退款事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 本次退款={remainAmount}元 累计={order.PayAmount}元 原状态={(int)fromStatus} 错误={tran?.ErrorMessage}");
                 throw new CustomException("退款失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
-            // 退款是后台人工动作：渠道退款由人工在支付渠道完成后，再点这里做"标记 + 回补库存"，
+            // 退款是后台人工动作：渠道退款由人工在支付渠道完成后，再来这里做"标记 + 回补库存"，
             // 因此必须留下操作人，便于与渠道退款流水核对。
             var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
-            var refundRemark = restoreSellable
-                ? "订单退款并回补库存（渠道退款由人工完成）"
-                : "订单退款（已出库，未自动加回可售库存；渠道退款由人工完成）";
+            var refundStockRemark = restoreSellable
+                ? "并回补库存"
+                : "（已出库，未自动加回可售库存）";
+            var refundRemark = $"整单退款 {remainAmount} 元（退款后累计已退 {order.PayAmount} 元）{refundStockRemark}，渠道退款由人工完成";
             _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)Enum.OrderStatusEnum.Closed, "REFUND", oper, refundRemark);
             var refundNotice = restoreSellable
-                ? $"您的订单({order.OrderNo})已退款，款项将原路退回，库存已回补。"
-                : $"您的订单({order.OrderNo})已退款，款项将原路退回。";
+                ? $"您的订单({order.OrderNo})已退款 {remainAmount} 元，款项将原路退回，库存已回补。"
+                : $"您的订单({order.OrderNo})已退款 {remainAmount} 元，款项将原路退回。";
             NotifyBuyer(order, "订单已退款", refundNotice);
-            logger.Info($"订单退款完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 退款金额={order.PayAmount}元 原状态={(int)fromStatus} 回补可售={restoreSellable} 操作人={oper}");
+            logger.Info($"订单退款完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 本次退款={remainAmount}元 累计已退={order.PayAmount}元 实付={order.PayAmount}元 原状态={(int)fromStatus} 回补可售={restoreSellable} 操作人={oper}");
             return 1;
         }
 
@@ -479,9 +519,19 @@ namespace ZR.Mall.Service
         /// </summary>
         private int ConfirmRefundCompleted(OMSOrder order)
         {
+            // 确认渠道退款完成 = 钱确实退了，RefundAmount 必须同步补记（取消动作本身不写该字段）。
+            // 正常路径下这里 RefundAmount 仍为 0（已支付订单的取消是"待退款"状态，不写金额），
+            // 但订单可能先经售后退过一部分，故按余量补记而不是写死 PayAmount —— 与 RefundOrder 同一口径。
+            var remainAmount = order.PayAmount - order.RefundAmount;
+
             var affected = Context.Updateable<OMSOrder>()
-                .SetColumns(it => new OMSOrder { RefundStatus = Enum.RefundStatusEnum.Refunded })
-                .Where(x => x.Id == order.Id && x.IsDelete == 0 && x.RefundStatus == Enum.RefundStatusEnum.Refunding)
+                .SetColumns(it => new OMSOrder
+                {
+                    RefundStatus = Enum.RefundStatusEnum.Refunded,
+                    RefundAmount = it.RefundAmount + remainAmount
+                })
+                .Where(x => x.Id == order.Id && x.IsDelete == 0 && x.RefundStatus == Enum.RefundStatusEnum.Refunding
+                            && x.RefundAmount + remainAmount <= x.PayAmount)
                 .ExecuteCommand();
             if (affected <= 0)
             {
@@ -493,9 +543,9 @@ namespace ZR.Mall.Service
             _paymentService.MarkRefunded(order.OrderNo);
             var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
             _orderLogService.AddLog(order.Id, order.OrderNo, (int)order.OrderStatus, (int)order.OrderStatus,
-                "REFUND_CONFIRM", oper, "确认渠道退款完成，退款状态置为已退款");
-            NotifyBuyer(order, "退款已完成", $"您的订单({order.OrderNo})退款已完成，款项将原路退回。");
-            logger.Info($"确认退款完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 金额={order.PayAmount}元 操作人={oper}");
+                "REFUND_CONFIRM", oper, $"确认渠道退款完成，退款 {remainAmount} 元（累计已退 {order.PayAmount} 元）");
+            NotifyBuyer(order, "退款已完成", $"您的订单({order.OrderNo})退款 {remainAmount} 元已完成，款项将原路退回。");
+            logger.Info($"确认退款完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 本次={remainAmount}元 累计已退={order.PayAmount}元 实付={order.PayAmount}元 操作人={oper}");
             return 1;
         }
 

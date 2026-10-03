@@ -83,17 +83,11 @@ namespace ZR.Mall.Service
                 throw new CustomException($"申请金额超过可退金额（可退 {refundable} 元）");
             }
 
-            // 同一订单同时只允许一笔进行中的售后：多笔并行会让"可退余额"与库存回补互相踩
-            var hasActive = Queryable().Any(x => x.OrderId == order.Id && x.IsDelete == 0
-                && (x.Status == (int)AfterSaleStatusEnum.Pending
-                    || x.Status == (int)AfterSaleStatusEnum.WaitingReturn
-                    || x.Status == (int)AfterSaleStatusEnum.WaitingReceive
-                    || x.Status == (int)AfterSaleStatusEnum.WaitingRefund));
-            if (hasActive)
-            {
-                throw new CustomException("该订单已有进行中的售后申请，请等待处理完成");
-            }
-
+            // 同一订单同时只允许一笔进行中的售后：多笔并行会让"可退余额"与库存回补互相踩。
+            // 原实现是"先查有没有进行中 → 没有就插"，两步之间没有互斥：买家双击提交（或多端同时提交）
+            // 会各自查到"没有进行中"再双双插入，产生两笔 Pending 售后单，只能靠人工撤销收拾。
+            // 修法见下面事务内的两步（占位更新持锁 + 持锁后复查），不改表结构。
+            var fromStatus = order.OrderStatus;
             var entity = new OMSAfterSale
             {
                 // 售后单号复用订单号生成器：同为雪花ID，全局唯一、多实例安全、趋势递增
@@ -111,9 +105,64 @@ namespace ZR.Mall.Service
                 IsDelete = 0,
             };
 
-            var id = Context.Insertable(entity).ExecuteReturnBigIdentity();
+            long newId = 0;
+            string rejectReason = null;
+            string errorDetail = null;
+            // 结果与失败原因都靠外层标志位带回：UseTran 会把异常吞掉，堆栈还会污染给用户看的消息
+            var tran = Context.Ado.UseTran(() =>
+            {
+                try
+                {
+                    // ① 先对订单行做一次「占位更新」：UPDATE 会在事务内持有该行的排他锁，
+                    //    并发的第二笔申请阻塞在这里，直到本事务提交后才能继续，
+                    //    于是它随后读到的是本事务刚提交的那笔售后（READ COMMITTED 下每条语句都是新快照）。
+                    //    这是当前能拿到的最轻互斥手段：不加锁提示、不依赖隔离级别、不加冗余字段。
+                    //    写回同一个状态值即"只占锁不改数据"（订单表没有 UpdateTime 可用）。
+                    //    Where 里带上 OrderStatus 是顺带的事前校验：状态在读快照之后被并发改掉时直接拒掉。
+                    var lockRows = Context.Updateable<OMSOrder>()
+                        .SetColumns(it => new OMSOrder { OrderStatus = fromStatus })
+                        .Where(x => x.Id == order.Id && x.IsDelete == 0 && x.OrderStatus == fromStatus)
+                        .ExecuteCommand();
+                    if (lockRows <= 0)
+                    {
+                        rejectReason = "订单状态已变更，请刷新后重试";
+                        return;
+                    }
+
+                    // ② 持锁后再查进行中的售后，此刻结果可靠
+                    var hasActive = Context.Queryable<OMSAfterSale>().Any(x => x.OrderId == order.Id && x.IsDelete == 0
+                        && (x.Status == (int)AfterSaleStatusEnum.Pending
+                            || x.Status == (int)AfterSaleStatusEnum.WaitingReturn
+                            || x.Status == (int)AfterSaleStatusEnum.WaitingReceive
+                            || x.Status == (int)AfterSaleStatusEnum.WaitingRefund));
+                    if (hasActive)
+                    {
+                        rejectReason = "该订单已有进行中的售后申请，请等待处理完成";
+                        return;
+                    }
+
+                    newId = Context.Insertable(entity).ExecuteReturnBigIdentity();
+                }
+                catch (Exception ex)
+                {
+                    errorDetail = ex.Message;
+                    throw;
+                }
+            });
+
+            if (rejectReason != null)
+            {
+                logger.Warn($"售后申请被拒绝：{rejectReason}。OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId}");
+                throw new CustomException(rejectReason);
+            }
+            if (tran == null || !tran.IsSuccess || newId <= 0)
+            {
+                logger.Error($"售后申请落库失败：AfterSaleNo={entity.AfterSaleNo} OrderNo={order.OrderNo} OrderId={order.Id} 错误={errorDetail}");
+                throw new CustomException("售后申请提交失败，请重试");
+            }
+
             logger.Info($"售后申请已提交：AfterSaleNo={entity.AfterSaleNo} OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 类型={dto.Type} 申请金额={dto.ApplyAmount}元");
-            return id;
+            return newId;
         }
 
         /// <inheritdoc />
