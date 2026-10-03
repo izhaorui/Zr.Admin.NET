@@ -109,7 +109,13 @@ namespace ZR.Mall.Model.Dto
         /// 商品形态：1 实物 / 2 虚拟。前端据此决定这一行渲染「收货地址」还是「表单」。
         /// 服务端不采信它（形态由服务端按商品判定），只是让前端少一次判断就能少一处错。
         /// </summary>
-        public ProductTypeEnum ProductType { get; set; }
+        /// <remarks>
+        /// 必须给默认值：<see cref="Enum.ProductTypeEnum"/> 从 1 开始（没有 0），
+        /// 漏赋值就会下发 <c>productType: 0</c> 这个非法值，客户端再回传进任何非空枚举字段时
+        /// Newtonsoft 直接抛「Error converting value {null} to type 'ProductTypeEnum'」把接口打成 500。
+        /// 本枚举的其余声明（ProductDto / OMSOrder.OrderType / OMSOrderDto.OrderType）都有同样的默认值。
+        /// </remarks>
+        public ProductTypeEnum ProductType { get; set; } = ProductTypeEnum.Physical;
 
         /// <summary>
         /// 已归一化的字段定义（type 落词表、label 空则回落 field、按 sort 排序），可直接渲染；
