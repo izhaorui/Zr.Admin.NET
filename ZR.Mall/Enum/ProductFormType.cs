@@ -112,5 +112,19 @@ namespace ZR.Mall.Enum
             var normalized = Normalize(type);
             return normalized == Select || normalized == Radio || normalized == Checkbox;
         }
+
+        /// <summary>
+        /// 该类型**默认**是否收集敏感信息（用于 <c>ProductFormItem.Sensitive</c> 为 null 时推断）。
+        ///
+        /// 只认手机号与邮箱：这两个类型天然收的是个人联系方式，后台默认脱敏、需要点一次才明文。
+        /// 文本类不默认标 —— "接收账号""备注""预约日期"都走文本，默认标了会让运营每单多点一次，
+        /// 摩擦大到他们会绕开这个机制，反而更危险。文本类里混进来的身份证/银行卡由
+        /// <see cref="Common.OrderFormValueHelper"/> 按**值**兜底，不依赖这里标不标。
+        /// </summary>
+        public static bool DefaultSensitive(string type)
+        {
+            var normalized = Normalize(type);
+            return normalized == Phone || normalized == Email;
+        }
     }
 }

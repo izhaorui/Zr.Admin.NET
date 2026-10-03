@@ -52,6 +52,12 @@ namespace ZR.Mall.Model.Dto
         /// <summary>是否需要候选项（select/radio/checkbox 为 true，保存时缺候选值会被服务端拒绝）</summary>
         public bool NeedOptions { get; set; }
 
+        /// <summary>
+        /// 新建该类型字段时，「收集敏感信息」开关的默认勾选状态（phone/email 为 true）。
+        /// 后台设计器据此预置，运营仍可手动改。
+        /// </summary>
+        public bool DefaultSensitive { get; set; }
+
         /// <summary>未配置 MaxLength 时该类型的默认长度上限</summary>
         public int DefaultMaxLength { get; set; }
     }
@@ -79,6 +85,9 @@ namespace ZR.Mall.Model.Dto
 
         /// <summary>是否需要候选项（select/radio/checkbox 为 true）</summary>
         public bool NeedOptions { get; set; }
+
+        /// <summary>勾选后生成字段时的「收集敏感信息」默认状态（接收手机号为 true，接收账号为 false）</summary>
+        public bool DefaultSensitive { get; set; }
 
         /// <summary>默认是否必填（可改）</summary>
         public bool Required { get; set; }

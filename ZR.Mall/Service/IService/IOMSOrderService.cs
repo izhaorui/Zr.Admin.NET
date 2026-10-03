@@ -23,6 +23,12 @@ namespace ZR.Mall.Service.IService
         OMSOrder GetInfo(long Id);
 
         /// <summary>
+        /// 订单中**敏感字段**的完整值（揭示接口专用）：只返回敏感字段，非敏感字段本就是明文。
+        /// 调用方必须同时具备独立权限 <c>oms:order:sensitive</c> 与操作日志，否则等于开放明文。
+        /// </summary>
+        List<OrderFormValue> GetSensitiveFormValues(long orderId);
+
+        /// <summary>
         /// 订单概览统计（列表顶部概览卡）：各状态计数与"待发货未发货"数一次查询得出。
         /// </summary>
         OrderOverviewDto GetOrderOverview();

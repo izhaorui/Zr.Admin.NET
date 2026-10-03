@@ -1,4 +1,5 @@
 using Infrastructure.Extensions;
+using ZR.Mall.Common;
 using ZR.Mall.Enum;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
@@ -38,6 +39,12 @@ namespace ZR.Mall.Service
                 .Includes(x => x.Items)
                 .Where(predicate.ToExpression())
                 .ToPage<OMSOrder, OMSOrderDto>(parm);
+
+            // 列表不返回表单值：列表用不上（只有详情要看），而它一次就是 10~20 单 × 每行 20 个字段的
+            // JSON 快照 —— 既是报文浪费，也是批量带明文的风险。口径见 OrderFormValueHelper。
+            OrderFormValueHelper.ClearItems(response.Result?
+                .Where(x => x.Items != null)
+                .SelectMany(x => x.Items));
 
             return response;
         }
@@ -92,7 +99,37 @@ namespace ZR.Mall.Service
                 .Where(x => x.Id == Id)
                 .First();
 
+            // 详情要展示买家填的表单值（发货/核对都靠它），敏感字段默认打码：
+            // 非敏感字段（接收账号、备注、预约日期…）直接明文，省掉运营每单多点一次；
+            // 需要明文看 sensitive 字段时走 formValuesRaw（独立权限 + 操作日志).
+            OrderFormValueHelper.ApplyDisplayPolicy(response?.Items);
+
             return response;
+        }
+
+        /// <summary>
+        /// 订单中**敏感字段**的完整值（揭示接口专用）。
+        ///
+        /// 与详情同一套判定，只把敏感字段换成明文：运营发货要的就是这个值
+        /// （虚拟商品的接收手机号/接收账号就在其中）。
+        /// 出口必须同时满足三件事，缺一不可：
+        /// ① 独立权限 <c>oms:order:sensitive</c>；② 记操作日志（谁为哪单看过）；③ 只返回敏感字段，
+        /// 非敏感字段本就是明文，再传一遍只会白扩大数据面。
+        /// </summary>
+        public List<OrderFormValue> GetSensitiveFormValues(long orderId)
+        {
+            var order = Queryable()
+                .Includes(x => x.Items)
+                .Where(x => x.Id == orderId && x.IsDelete == 0)
+                .First();
+            if (order == null)
+            {
+                throw new CustomException("订单不存在");
+            }
+
+            return order.Items
+                .SelectMany(x => OrderFormValueHelper.RevealSensitive(x.FormValues))
+                .ToList();
         }
 
         /// <summary>
@@ -234,11 +271,48 @@ namespace ZR.Mall.Service
                 }, true)
                 .Mapper(it =>
                 {
-                    it.User = $"{it.AddressSnapshot?.UserName} {it.AddressSnapshot?.Phone}"; 
+                    it.User = $"{it.AddressSnapshot?.UserName} {it.AddressSnapshot?.Phone}";
                 })
                 .ToPage(parm);
 
+            FillFormValuesText(response.Result);
+
             return response;
+        }
+
+        /// <summary>
+        /// 给导出结果补上「买家填写信息」列。
+        ///
+        /// 表单值挂在订单项上而导出是订单维度，故这里按导出的订单 Id **一次批量**取回所有订单项，
+        /// 在内存里按 OrderId 聚合 —— 逐单回查就是 N+1 次往返（导出动辄上万行）。
+        /// 值由 <see cref="OrderFormValueHelper.ToText"/> 脱敏：Excel 会被转发、传附件，
+        /// 明文留在这里等于把敏感数据带出系统。
+        /// </summary>
+        private void FillFormValuesText(List<OMSOrderDto> rows)
+        {
+            if (rows == null || rows.Count == 0)
+            {
+                return;
+            }
+
+            var orderIds = rows.Select(x => x.Id).Distinct().ToList();
+            var items = Context.Queryable<OMSOrderItem>()
+                .Where(x => orderIds.Contains(x.OrderId))
+                .Select(x => new { x.OrderId, x.FormValues })
+                .ToList();
+
+            var grouped = items
+                .GroupBy(x => x.OrderId)
+                .ToDictionary(g => g.Key, g => OrderFormValueHelper.ToText(
+                    g.SelectMany(x => x.FormValues ?? new List<OrderFormValue>())));
+
+            foreach (var row in rows)
+            {
+                if (grouped.TryGetValue(row.Id, out var text))
+                {
+                    row.FormValuesText = text;
+                }
+            }
         }
 
         /// <summary>

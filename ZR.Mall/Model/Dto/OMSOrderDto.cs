@@ -41,6 +41,15 @@ namespace ZR.Mall.Model.Dto
         public string OrderNo { get; set; }
 
         /// <summary>
+        /// 买家填写的表单值（该单所有订单项合并，脱敏后拼成一行文本）。
+        ///
+        /// 只用于**导出**：列表不返回（批量带明文风险高），详情走订单项上的 FormValues 结构化返回。
+        /// 值由 <see cref="Common.OrderFormValueHelper.ToText"/> 生成，形如「接收手机号：138****8000；接收账号：abc123」。
+        /// </summary>
+        [ExcelColumn(Name = "买家填写信息")]
+        public string FormValuesText { get; set; }
+
+        /// <summary>
         /// C 端会员ID（ums_member.Id）。商城订单**只认这一种账号身份**，归属判定一律按它
         /// （商城已取消游客下单，新订单必然有值；为 null 只可能是极早期遗留数据）。
         /// </summary>

@@ -73,6 +73,25 @@ namespace ZR.Mall.Controllers
         }
 
         /// <summary>
+        /// 查看订单中**敏感字段**的完整值（发货用）。
+        ///
+        /// 为什么要单独一个接口：订单详情里敏感字段默认脱敏，而虚拟商品发货要的恰恰是
+        /// 接收手机号 / 接收账号这类值。三道约束缺一不可 ——
+        /// ① 独立权限 <c>oms:order:sensitive</c>（普通订单查询权看不到）；
+        /// ② 记操作日志（谁为哪单看过明文，可审计）；
+        /// ③ **不保存请求与响应体**：否则明文会原样落进操作日志表，等于绕开①和②从日志里泄露。
+        ///
+        /// 只返回敏感字段：非敏感字段在详情里本就是明文，再传一遍只会白扩大数据面。
+        /// </summary>
+        [HttpGet("formValuesRaw/{id}")]
+        [ActionPermissionFilter(Permission = "oms:order:sensitive")]
+        [Log(Title = "查看买家敏感信息", BusinessType = BusinessType.OTHER, IsSaveRequestData = false, IsSaveResponseData = false)]
+        public IActionResult GetOrderFormValuesRaw(long id)
+        {
+            return SUCCESS(_OMSOrderService.GetSensitiveFormValues(id));
+        }
+
+        /// <summary>
         /// 更新订单管理
         /// </summary>
         /// <returns></returns>

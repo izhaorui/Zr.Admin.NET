@@ -94,7 +94,22 @@
         /// <summary>字段类型（下单那一刻的类型）</summary>
         public string Type { get; set; }
 
-        /// <summary>买家填写的值</summary>
+        /// <summary>
+        /// 该字段在下单那一刻是否被标记为敏感（快照自 <c>ProductFormItem.Sensitive</c>）。
+        /// 决定后台订单详情默认脱敏还是明文。
+        /// </summary>
+        public bool? Sensitive { get; set; }
+
+        /// <summary>
+        /// 买家填写的值
+        /// </summary>
+        /// <remarks>
+        /// 存储格式约定（后续新增字段类型时必须遵守，否则历史数据要迁移）：
+        /// - 文本类（text/textarea/number/phone/email/date/select/radio/checkbox）：原样存字符串；
+        /// - **文件类（file/image）**：存 JSON 数组字符串，如 <c>["/uploads/2026/10/a.png"]</c>。
+        ///   之所以现在就定死：卡密发放、定制设计稿等都要按它取 URL，事后改格式等于要洗数据。
+        ///   对应字段类型见 <see cref="Enum.ProductFormType"/>。
+        /// </remarks>
         public string Value { get; set; }
     }
 }

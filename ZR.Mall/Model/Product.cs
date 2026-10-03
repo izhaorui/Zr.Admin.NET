@@ -256,6 +256,21 @@ namespace ZR.Mall.Model
         /// <summary>输入框占位提示</summary>
         public string Placeholder { get; set; }
 
+        /// <summary>
+        /// 该字段是否收集敏感信息（手机号 / 身份证 / 银行卡 / 邮箱等）。
+        /// 决定后台订单详情里它是**明文展示**还是**默认脱敏 + 需点「显示完整内容」**。
+        /// </summary>
+        /// <remarks>
+        /// 用 <c>bool?</c> 而不是 <c>bool</c>，是为了区分"没设置"与"运营主动取消"：
+        /// - <c>null</c>：未设置，保存时按类型推断（见 <see cref="Enum.ProductFormType.DefaultSensitive"/>）；
+        /// - <c>true</c>：后台订单详情默认脱敏，需点「显示完整内容」才明文；
+        /// - <c>false</c>：运营明确取消 —— 典型是把"接收账号"这类必须看清的字段设为不敏感。
+        ///
+        /// 无论这里是什么值，服务端都会对**值本身**兜底：命中身份证 / 银行卡格式的一律打码，
+        /// 防止运营忘勾就把敏感信息明文摆出来（见 <see cref="Common.OrderFormValueHelper"/>）。
+        /// </remarks>
+        public bool? Sensitive { get; set; }
+
         /// <summary>排序（小在前）</summary>
         public int Sort { get; set; }
     }

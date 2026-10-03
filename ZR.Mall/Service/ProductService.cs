@@ -391,6 +391,7 @@ namespace ZR.Mall.Service
                     Value = type,
                     Label = ProductFormType.Label(type),
                     NeedOptions = ProductFormType.NeedOptions(type),
+                    DefaultSensitive = ProductFormType.DefaultSensitive(type),
                     DefaultMaxLength = ProductFormValidator.DefaultMaxLengthOf(type)
                 }).ToList(),
                 // 预设字段：后台勾选即可生成字段定义，不必做拖拽式设计器。
@@ -402,6 +403,7 @@ namespace ZR.Mall.Service
                     Type = preset.Type,
                     TypeLabel = ProductFormType.Label(preset.Type),
                     NeedOptions = ProductFormType.NeedOptions(preset.Type),
+                    DefaultSensitive = ProductFormType.DefaultSensitive(preset.Type),
                     Required = preset.Required,
                     Placeholder = preset.Placeholder,
                     DefaultMaxLength = ProductFormValidator.DefaultMaxLengthOf(preset.Type)

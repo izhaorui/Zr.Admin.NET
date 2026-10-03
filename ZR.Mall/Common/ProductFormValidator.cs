@@ -130,6 +130,10 @@ namespace ZR.Mall.Common
                 item.Label = string.IsNullOrWhiteSpace(item.Label) ? field : item.Label.Trim();
                 item.Pattern = string.IsNullOrWhiteSpace(item.Pattern) ? null : item.Pattern.Trim();
                 item.Placeholder = string.IsNullOrWhiteSpace(item.Placeholder) ? null : item.Placeholder.Trim();
+                // 敏感标记：没设置（null）时按类型给默认，手机号/邮箱自动标上。
+                // 运营显式勾选或取消都以他的为准 —— 否则"接收账号"这类必须看清明文的字段
+                // 会被类型默认强制成敏感，运营就没法关掉了。
+                item.Sensitive ??= ProductFormType.DefaultSensitive(item.Type);
                 if (!string.IsNullOrEmpty(item.Options))
                 {
                     item.Options = string.Join(",", ParseOptions(item.Options));
@@ -227,6 +231,9 @@ namespace ZR.Mall.Common
                     Field = field.Field,
                     Label = field.Label,
                     Type = field.Type,
+                    // 快照下单那一刻的敏感标记：商品后来改了配置，历史订单仍按当时的定性强脱敏，
+                    // 不会因为运营把字段改成"不敏感"就把旧订单的身份证号明文放出来。
+                    Sensitive = field.Sensitive ?? ProductFormType.DefaultSensitive(field.Type),
                     Value = value
                 });
             }
@@ -326,16 +333,20 @@ namespace ZR.Mall.Common
         {
             var field = item.Field.Trim();
             var label = (item.Label ?? string.Empty).Trim();
+            var type = ProductFormType.Normalize(item.Type);
             return new ProductFormItem
             {
                 Field = field,
                 Label = label.Length > 0 ? label : field,
-                Type = ProductFormType.Normalize(item.Type),
+                Type = type,
                 Required = item.Required,
                 Options = string.IsNullOrWhiteSpace(item.Options) ? null : item.Options.Trim(),
                 Pattern = string.IsNullOrWhiteSpace(item.Pattern) ? null : item.Pattern.Trim(),
                 MaxLength = item.MaxLength,
                 Placeholder = string.IsNullOrWhiteSpace(item.Placeholder) ? null : item.Placeholder.Trim(),
+                // 敏感标记只在保存时按类型补齐（见 ValidateDefinition），这里原样带出：
+                // 运行期不再推断，判定口径只有"配置里写了什么就是什么"。
+                Sensitive = item.Sensitive,
                 Sort = item.Sort
             };
         }

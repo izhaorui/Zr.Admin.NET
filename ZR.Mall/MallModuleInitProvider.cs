@@ -119,6 +119,9 @@ namespace ZR.Mall
                         new("发货", "oms:order:ship"), new("取消", "oms:order:cancel"),
                         new("修改", "oms:order:edit"), new("退款", "oms:order:refund"),
                         new("删除", "oms:order:delete"), new("导出", "oms:order:export"),
+                        // 查看买家填写的敏感字段明文（虚拟商品发货要接收手机号/账号）。
+                        // 刻意独立成一个权限：给了就能看明文，故默认不给运营角色，只发给确实要发货的人。
+                        new("查看敏感信息", "oms:order:sensitive"),
                     ]),
                 new(Name: "支付流水", Path: "payment", Component: "shopping/Payment", Perms: "oms:payment:list", OrderNum: 7, Icon: "money",
                     Buttons: [new("查询", "oms:payment:list")]),
