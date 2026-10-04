@@ -11,13 +11,19 @@ namespace ZR.Mall.TaskScheduler
     /// </summary>
     public class Job_ClosePendingOrder : IJob
     {
+        /// <summary>
+        /// 技术日志（NLog → logs/all.log）。
+        /// 原先用 Console.WriteLine：容器化/服务化部署后控制台输出不落盘，任务跑了什么、跑了几单全查不到。
+        /// </summary>
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         public Task Execute(IJobExecutionContext context)
         {
             try
             {
                 var svc = (IOMSOrderStateService)App.GetRequiredService(typeof(IOMSOrderStateService));
                 var closed = svc.CloseExpiredPendingOrders(30); // 30 分钟未支付自动取消
-                Console.WriteLine($"[Job_ClosePendingOrder] 已自动取消 {closed} 笔超时待付款订单");
+                logger.Info($"定时任务：已自动取消 {closed} 笔超时待付款订单（30 分钟未支付）");
                 return Task.CompletedTask;
             }
             catch (Exception ex)

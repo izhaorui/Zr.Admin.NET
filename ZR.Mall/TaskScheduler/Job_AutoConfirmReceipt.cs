@@ -20,6 +20,12 @@ namespace ZR.Mall.TaskScheduler
         /// <summary>未配置时的默认天数</summary>
         private const int DefaultDays = 7;
 
+        /// <summary>
+        /// 技术日志（NLog → logs/all.log）。
+        /// 原先用 Console.WriteLine：容器化/服务化部署后控制台输出不落盘，任务跑了什么、跑了几单全查不到。
+        /// </summary>
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         public Task Execute(IJobExecutionContext context)
         {
             try
@@ -27,7 +33,7 @@ namespace ZR.Mall.TaskScheduler
                 var svc = (IOMSOrderStateService)App.GetRequiredService(typeof(IOMSOrderStateService));
                 var days = ResolveDays();
                 var confirmed = svc.AutoConfirmReceipt(days);
-                Console.WriteLine($"[Job_AutoConfirmReceipt] 已自动确认收货 {confirmed} 笔（发货后 {days} 天）");
+                logger.Info($"定时任务：已自动确认收货 {confirmed} 笔（发货后 {days} 天）");
                 return Task.CompletedTask;
             }
             catch (Exception ex)
