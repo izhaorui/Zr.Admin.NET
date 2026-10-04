@@ -54,7 +54,15 @@ namespace ZR.Mall.Service.IService
         /// <summary>
         /// 发货（待发货 → 已发货，释放锁定库存）
         /// </summary>
-        Task<int> OrderDelivery(OMSOrder model);
+        /// <remarks>
+        /// 同步返回（同本接口其余状态迁移）：「订单状态 + 释放锁定库存 + 写订单日志」在同一事务内，
+        /// 短信通知在事务外。三者任一失败即整体回滚，避免出现"状态已发货但锁定库存永久锁死"。
+        /// </remarks>
+        /// <returns>&gt;0 成功；-1 已发货；-2 收货信息不完整；-3 订单不可发货；-4 物流信息不合法</returns>
+        /// <param name="model">订单（发货相关的快递公司/单号取自本对象，其余字段应来自数据库）</param>
+        /// <param name="preloadedItems">预加载的订单项，批量发货时一次查齐传入以避免 N+1；null 则本方法自行查询</param>
+        /// <param name="notifyBuyer">是否发「已发货」短信，批量发货传 false</param>
+        int OrderDelivery(OMSOrder model, List<OMSOrderItem> preloadedItems = null, bool notifyBuyer = true);
 
         /// <summary>
         /// 售后退款落账：累计订单的 RefundAmount、置退款状态、按情况回补库存（售后单流程调用）。

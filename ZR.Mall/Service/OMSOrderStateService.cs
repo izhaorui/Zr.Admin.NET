@@ -1,4 +1,5 @@
 using ZR.Infrastructure.Helper;
+using ZR.Mall.Common;
 using ZR.Mall.Enum;
 using ZR.Mall.Model;
 using ZR.Mall.Service.IService;
@@ -82,29 +83,44 @@ namespace ZR.Mall.Service
             var targetStatus = order.OrderType == Enum.ProductTypeEnum.Virtual
                 ? Enum.OrderStatusEnum.Completed
                 : Enum.OrderStatusEnum.TobeShipped;
-            // 条件更新：仅待付款状态可支付成功（防并发重复支付/支付与取消竞态）
-            var affected = Context.Updateable<OMSOrder>()
-                .SetColumns(it => new OMSOrder
-                {
-                    OrderStatus = targetStatus,
-                    PayTime = dbDate,
-                    PayType = (int)payType,
-                    TransactionId = transactionId
-                })
-                .Where(it => it.OrderNo == orderNo && it.OrderStatus == Enum.OrderStatusEnum.None && it.IsDelete == 0)
-                .ExecuteCommand();
-            if (affected <= 0)
-            {
-                // 条件更新未命中：校验与写入之间状态被并发改掉（另一请求已支付、或被取消/关单）
-                logger.Warn($"支付失败：订单状态已变更（并发重复支付或取消竞态）。OrderNo={orderNo} OrderId={order.Id} 支付方式={payType}");
-                throw new CustomException("支付失败：订单状态已变更，请刷新后重试");
-            }
             order.OrderStatus = targetStatus;
             order.PayTime = dbDate;
             order.PayType = (int)payType;
             order.TransactionId = transactionId;
-            // 写入/更新支付流水（订单快照仅保留最近一次支付，完整生命周期以 oms_payment 为准）
-            _paymentService.UpsertPaid(order, payType, transactionId, dbDate, callbackRaw);
+
+            // 「订单状态置已付」与「写支付流水」必须在同一事务里。
+            // 原实现分两步各自提交：若 UpsertPaid 抛错，订单已标已付而 oms_payment 缺这条流水；
+            // 更糟的是渠道回调会重试，而重试命中上面的幂等分支（订单已是待发货/已发货/已完成）直接 return，
+            // 于是这条缺失的流水**永远不会被补写** —— 对账时订单有金额、流水查无此单。
+            // 收进事务后：UpsertPaid 失败整体回滚，订单状态回到"待付款"，回调重试即可走完整流程补上。
+            var tran = UseTran(() =>
+            {
+                // 条件更新：仅待付款状态可支付成功（防并发重复支付/支付与取消竞态）
+                var affected = Context.Updateable<OMSOrder>()
+                    .SetColumns(it => new OMSOrder
+                    {
+                        OrderStatus = targetStatus,
+                        PayTime = dbDate,
+                        PayType = (int)payType,
+                        TransactionId = transactionId
+                    })
+                    .Where(it => it.OrderNo == orderNo && it.OrderStatus == Enum.OrderStatusEnum.None && it.IsDelete == 0)
+                    .ExecuteCommand();
+                if (affected <= 0)
+                {
+                    // 条件更新未命中：校验与写入之间状态被并发改掉（另一请求已支付、或被取消/关单）
+                    throw new CustomException("支付失败：订单状态已变更，请刷新后重试");
+                }
+                // 写入/更新支付流水（订单快照仅保留最近一次支付，完整生命周期以 oms_payment 为准）
+                _paymentService.UpsertPaid(order, payType, transactionId, dbDate, callbackRaw);
+            });
+            if (tran == null || !tran.IsSuccess)
+            {
+                logger.Error($"支付落账事务失败：OrderNo={orderNo} OrderId={order.Id} 金额={order.PayAmount}元 支付方式={payType} 渠道流水号={transactionId} 错误={tran?.ErrorMessage}");
+                throw new CustomException("支付失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
+            }
+
+            // 订单日志放事务外：AddLog 自身吞异常，放进去只会拉长事务（与取消/发货同一处理）
             // 虚拟单的目标状态是「已完成」，日志里点明原因，免得运营以为这一单漏了发货
             var payRemark = targetStatus == Enum.OrderStatusEnum.Completed
                 ? "支付成功（虚拟商品，订单直接完成）"
@@ -181,7 +197,11 @@ namespace ZR.Mall.Service
             var cancelRemark = paid
                 ? "取消已支付订单并回补库存（渠道退款需人工完成）"
                 : "取消订单并回补库存";
-            _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)Enum.OrderStatusEnum.Cancel, "CANCEL", null, cancelRemark);
+            // 操作人：原实现传 null，出纠纷时订单日志里查不到是谁取消的。
+            // 后台取消时取当前登录管理员；C 端会员自己取消时取不到登录用户，记 system
+            // （该场景订单本身已带 MemberId，仍能追到人）。
+            var cancelOper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
+            _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)Enum.OrderStatusEnum.Cancel, "CANCEL", cancelOper, cancelRemark);
             // 不发短信：用户自己取消时页面已反馈；商家/系统取消的场景确实需要告知，
             // 但那属于站内信/订阅消息，不用短信（见 NotifyBuyer 的发送策略）。
             logger.Info($"订单已取消并回补库存：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 原状态={(int)fromStatus} 金额={order.PayAmount}元 已支付={paid}");
@@ -219,6 +239,10 @@ namespace ZR.Mall.Service
             var rows = Update(x => x.Id == id && x.OrderStatus == Enum.OrderStatusEnum.Shipped, it => new OMSOrder
             {
                 OrderStatus = Enum.OrderStatusEnum.Completed,
+                // 签收即物流送达：DeliveryStatusEnum.Delivered 此前无任何写入方（死枚举），
+                // 与 OrderStatus 双字段并存却不同步。补上写入点后两者才自洽：
+                // OrderStatus 表达交易进度，DeliveryStatus 表达物流进度。
+                DeliveryStatus = DeliveryStatusEnum.Delivered,
                 ConfirmTime = SqlFunc.GetDate()
             });
             if (rows <= 0)
@@ -228,7 +252,10 @@ namespace ZR.Mall.Service
                 logger.Debug($"确认收货条件更新未命中（并发处理）：OrderNo={order.OrderNo} OrderId={order.Id} 已完成为={alreadyDone}");
                 return alreadyDone ? 1 : 0;
             }
-            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Completed, "CONFIRM_RECEIPT", null, "用户确认收货");
+            // 操作人：C 端会员确认收货时取不到登录管理员，记 system（订单本身带 MemberId，仍能追到人）。
+            // 与取消/发货/退款的订单日志口径保持一致，否则同一张单的日志里只有确认收货这行没有操作人。
+            var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
+            _orderLogService.AddLog(order.Id, order.OrderNo, fromStatus, (int)Enum.OrderStatusEnum.Completed, "CONFIRM_RECEIPT", oper, "用户确认收货");
             logger.Info($"订单确认收货完成：OrderNo={order.OrderNo} OrderId={order.Id} MemberId={order.MemberId} 原状态={fromStatus}");
             return 1;
         }
@@ -281,6 +308,9 @@ namespace ZR.Mall.Service
                         .SetColumns(it => new OMSOrder
                         {
                             OrderStatus = Enum.OrderStatusEnum.Completed,
+                            // 同 ConfirmReceipt：自动确认同样代表"已签收"，两处口径必须一致，
+                            // 否则会出现"手动确认的单显示已送达、自动确认的单永远停在已发货"
+                            DeliveryStatus = DeliveryStatusEnum.Delivered,
                             ConfirmTime = now
                         })
                         .Where(x => x.Id == c.Id
@@ -322,6 +352,8 @@ namespace ZR.Mall.Service
             var db = Context;
             var dbDate = db.GetDate();
             int count = 0;
+            // 同 CancelOrder：批量取消是纯后台操作，必须记当前管理员，否则一次误操作无法追责
+            var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
 
             var tran = UseTran(() =>
             {
@@ -371,7 +403,7 @@ namespace ZR.Mall.Service
                     var batchRemark = paid
                         ? "批量取消已支付订单并回补库存（渠道退款需人工完成）"
                         : "批量取消并回补库存";
-                    _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)OrderStatusEnum.Cancel, "CANCEL", null, batchRemark);
+                    _orderLogService.AddLog(order.Id, order.OrderNo, (int)fromStatus, (int)OrderStatusEnum.Cancel, "CANCEL", oper, batchRemark);
                     // 不发短信：后台批量操作，逐单一条会在瞬间形成短信风暴（见 NotifyBuyer 的发送策略）
                     count++;
                 }
@@ -524,23 +556,34 @@ namespace ZR.Mall.Service
             // 但订单可能先经售后退过一部分，故按余量补记而不是写死 PayAmount —— 与 RefundOrder 同一口径。
             var remainAmount = order.PayAmount - order.RefundAmount;
 
-            var affected = Context.Updateable<OMSOrder>()
-                .SetColumns(it => new OMSOrder
-                {
-                    RefundStatus = Enum.RefundStatusEnum.Refunded,
-                    RefundAmount = it.RefundAmount + remainAmount
-                })
-                .Where(x => x.Id == order.Id && x.IsDelete == 0 && x.RefundStatus == Enum.RefundStatusEnum.Refunding
-                            && x.RefundAmount + remainAmount <= x.PayAmount)
-                .ExecuteCommand();
-            if (affected <= 0)
+            // 「订单退款状态/已退金额」与「支付流水置已退款」同事务：原实现分两步提交，
+            // MarkRefunded 失败时订单已标已退款而 oms_payment 仍停在 Paid，
+            // 对账会看到"订单退了、流水没退"，且没有重试入口（订单已不在退款中状态）。
+            // 与 RefundOrder / ApplyAfterSaleRefund 的处理口径一致。
+            var tran = UseTran(() =>
             {
-                // 并发下已被另一次确认改掉：报错让运营刷新（幂等重试即可）
-                logger.Warn($"确认退款失败：退款状态已变更。OrderNo={order.OrderNo} OrderId={order.Id}");
-                throw new CustomException("确认退款失败：退款状态已变更，请刷新后重试");
+                var affected = Context.Updateable<OMSOrder>()
+                    .SetColumns(it => new OMSOrder
+                    {
+                        RefundStatus = Enum.RefundStatusEnum.Refunded,
+                        RefundAmount = it.RefundAmount + remainAmount
+                    })
+                    .Where(x => x.Id == order.Id && x.IsDelete == 0 && x.RefundStatus == Enum.RefundStatusEnum.Refunding
+                                && x.RefundAmount + remainAmount <= x.PayAmount)
+                    .ExecuteCommand();
+                if (affected <= 0)
+                {
+                    // 并发下已被另一次确认改掉：报错让运营刷新（幂等重试即可）
+                    throw new CustomException("确认退款失败：退款状态已变更，请刷新后重试");
+                }
+                _paymentService.MarkRefunded(order.OrderNo);
+            });
+            if (tran == null || !tran.IsSuccess)
+            {
+                logger.Error($"确认退款事务失败：OrderNo={order.OrderNo} OrderId={order.Id} 本次={remainAmount}元 错误={tran?.ErrorMessage}");
+                throw new CustomException("确认退款失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
 
-            _paymentService.MarkRefunded(order.OrderNo);
             var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
             _orderLogService.AddLog(order.Id, order.OrderNo, (int)order.OrderStatus, (int)order.OrderStatus,
                 "REFUND_CONFIRM", oper, $"确认渠道退款完成，退款 {remainAmount} 元（累计已退 {order.PayAmount} 元）");
@@ -673,18 +716,44 @@ namespace ZR.Mall.Service
         /// 发货
         /// </summary>
         /// <param name="model"></param>
-        /// <returns></returns>
-        public async Task<int> OrderDelivery(OMSOrder model)
+        /// <param name="preloadedItems">
+        /// 预加载的订单项。批量发货时由调用方一次查齐传入，避免每单再查一次（N+1）。
+        /// 为 null 时本方法自行查询；传入则<strong>必须</strong>是 model.Id 对应的订单项。
+        /// </param>
+        /// <param name="notifyBuyer">
+        /// 是否给买家发「已发货」短信。批量发货传 false：100 单就是 100 次同步网络往返 + 100 条短信费用，
+        /// 而批量发货本就不逐单通知买家（行业惯例，见 NotifyBuyer 的发送策略说明）。
+        /// </param>
+        /// <returns> >0 成功；-1 已发货；-2 收货信息不完整；-3 订单不可发货；-4 物流信息不合法</returns>
+        public int OrderDelivery(OMSOrder model, List<OMSOrderItem> preloadedItems = null, bool notifyBuyer = true)
         {
+            // ── 校验段：必须留在 UseTran 之前 ──
+            // UseTran 会把事务内异常收敛成 tran.ErrorMessage，若把校验放进事务，用户只会看到
+            // 一句"发货失败，请重试"，而真正的原因（已发货/地址不全/状态不对）就丢了。
             if (model.DeliveryStatus != DeliveryStatusEnum.NotDelivered)
             {
                 logger.Warn($"发货被拒绝：该订单已发货。OrderNo={model.OrderNo} OrderId={model.Id} 发货状态={model.DeliveryStatus}");
                 return -1;//已发货
             }
-            if (model.AddressSnapshot == null)
+            // 地址完整性：原先只判 == null，但下单一单能传进一个"字段全为 null 的空对象"，
+            // 校验会通过 → 发货成功而买家根本收不到货。逐项判空才拦得住（口径见 DeliveryValidator）。
+            var address = model.AddressSnapshot;
+            if (!DeliveryValidator.IsAddressComplete(address))
             {
-                logger.Warn($"发货被拒绝：收货地址为空。OrderNo={model.OrderNo} OrderId={model.Id}");
-                return -2; // 地址信息不能为空
+                logger.Warn($"发货被拒绝：收货信息不完整。OrderNo={model.OrderNo} OrderId={model.Id} 收件人={address?.UserName} 手机号={MaskUtil.MaskPhone(address?.Phone)} 地区={address?.Province} 详细地址={(string.IsNullOrWhiteSpace(address?.DetailAddress) ? "(空)" : "(有)")}");
+                return -2; // 收货信息不完整
+            }
+            // 单号与快递公司：这里只兜"空/超长"，格式规则统一在 DeliveryValidator（Controller 入口已先校验过，
+            // 这里再兜一道是因为本方法也可能被批量导入等其它路径直接调用）。
+            if (string.IsNullOrWhiteSpace(model.DeliveryNo) || model.DeliveryNo.Length > DeliveryValidator.MaxNoLength)
+            {
+                logger.Warn($"发货被拒绝：物流单号为空或超长。OrderNo={model.OrderNo} OrderId={model.Id} 快递={model.DeliveryCompany} 单号长度={model.DeliveryNo?.Length ?? 0}");
+                return -4;
+            }
+            if (string.IsNullOrWhiteSpace(model.DeliveryCompany) || model.DeliveryCompany.Length > DeliveryValidator.MaxCompanyLength)
+            {
+                logger.Warn($"发货被拒绝：物流公司为空或超长。OrderNo={model.OrderNo} OrderId={model.Id} 快递长度={model.DeliveryCompany?.Length ?? 0}");
+                return -4;
             }
             // 仅"待发货"订单可发货，防止把待付款/已取消/已关闭/已发货单误改为已发货
             if (model.OrderStatus != OrderStatusEnum.TobeShipped)
@@ -692,55 +761,86 @@ namespace ZR.Mall.Service
                 logger.Warn($"发货被拒绝：订单非待发货状态。OrderNo={model.OrderNo} OrderId={model.Id} 订单状态={model.OrderStatus}");
                 return -3; // 非待发货状态，不可发货
             }
-            // 条件更新：除订单号外再校验"待发货"（参照 PayOrderByOrderNo 的防并发写法）。
-            // 上面的 model.OrderStatus 校验读的是调用前的快照，校验与写入之间存在窗口，
-            // 并发重复发货会双双通过校验、重复释放锁定库存；把状态放进 Where 后只有一方能命中。
-            var result = await UpdateAsync(w => w.OrderNo == model.OrderNo && w.OrderStatus == OrderStatusEnum.TobeShipped, it => new OMSOrder()
-            {
-                DeliveryCompany = model.DeliveryCompany,
-                DeliveryNo = model.DeliveryNo,
-                OrderStatus = OrderStatusEnum.Shipped, // 已发货
-                DeliveryStatus = DeliveryStatusEnum.Delivering, // 已发货
-                ShipTime = SqlFunc.GetDate()
-            });
-            // 发货成功 → 释放锁定库存 + 写日志 + 通知买家（短信）
-            if (result > 0)
-            {
-                try
-                {
-                    var items = await Context.Queryable<OMSOrderItem>()
-                        .Where(i => i.OrderId == model.Id).ToListAsync();
 
-                    // 按 SKU 合计释放锁定库存。同一 SKU 拆成多行时不能按「数量相同的行」做 IN：
-                    // IN 会把重复 SkuId 收成一行，只减一次数量，锁定库存少释放。
-                    foreach (var group in items.GroupBy(i => i.SkuId))
+            // 订单项只读、且发货不改订单项，故放在事务外查：缩短事务持锁时间。
+            // 批量发货由调用方一次查齐后传入（preloadedItems），避免每单重复查一次。
+            var items = preloadedItems
+                ?? Context.Queryable<OMSOrderItem>().Where(i => i.OrderId == model.Id).ToList();
+
+            // 操作人：发货是后台人工动作，必须留痕。原实现传 null，出纠纷时订单日志里查不到是谁发的货
+            // （sys_oper_log 里有，但 oms_order_log 里没有）。取不到登录用户时记 system，与退款一致。
+            var oper = string.IsNullOrWhiteSpace(App.UserName) ? "system" : App.UserName;
+
+            // ── 写阶段（事务内）：订单状态 + 释放锁定库存 + 订单日志，三者必须原子 ──
+            // 原实现先提交订单状态、再在 try 里释放库存，catch 只记日志不回滚：
+            // 一旦库存释放失败，订单显示已发货但 LockStock 永久锁死（且再点发货会被 -1 拒绝、无法补救）。
+            // 库存锁死不可逆，故这里必须与状态同生共死。
+            string failReason = null;
+            var tran = UseTran(() =>
+            {
+                // 条件更新：除订单号外再校验"待发货"（参照 PayOrderByOrderNo 的防并发写法）。
+                // 上面的 model.OrderStatus 校验读的是调用前快照，校验与写入之间存在窗口，
+                // 并发重复发货会双双通过校验、重复释放锁定库存；把状态放进 Where 后只有一方能命中。
+                var affected = Context.Updateable<OMSOrder>()
+                    .SetColumns(it => new OMSOrder()
                     {
-                        var skuId = group.Key;
-                        var qty = group.Sum(i => i.Quantity);
-                        await Context.Updateable<Skus>()
-                            .SetColumns(s => new Skus { LockStock = SqlFunc.IIF(s.LockStock - qty < 0, 0, s.LockStock - qty) })
-                            .Where(s => s.SkuId == skuId)
-                            .ExecuteCommandAsync();
-                    }
+                        DeliveryCompany = model.DeliveryCompany,
+                        DeliveryNo = model.DeliveryNo,
+                        OrderStatus = OrderStatusEnum.Shipped, // 已发货
+                        DeliveryStatus = DeliveryStatusEnum.Delivering, // 已发货
+                        ShipTime = SqlFunc.GetDate()
+                    })
+                    .Where(w => w.OrderNo == model.OrderNo && w.OrderStatus == OrderStatusEnum.TobeShipped)
+                    .ExecuteCommand();
 
-                    await _orderLogService.AddLogAsync(model.Id, model.OrderNo, (int)OrderStatusEnum.TobeShipped, (int)OrderStatusEnum.Shipped, "DELIVERY", null, $"{model.DeliveryCompany} {model.DeliveryNo}");
-                    NotifyBuyer(model, "订单已发货", $"您的订单({model.OrderNo})已发货，{model.DeliveryCompany} 运单号 {model.DeliveryNo}，请留意查收。");
-                    logger.Info($"订单发货成功：OrderNo={model.OrderNo} OrderId={model.Id} MemberId={model.MemberId} 快递={model.DeliveryCompany} 运单号={model.DeliveryNo} 订单项数={items.Count}");
-                }
-                catch (Exception ex)
+                if (affected <= 0)
                 {
-                    // 库存/通知异常仅记录，不影响发货结果（订单状态已置为已发货）
-                    logger.Error(ex, $"发货成功但后续处理失败（订单状态已更新为已发货，锁定库存/通知可能未完成）：OrderNo={model.OrderNo} OrderId={model.Id} 快递={model.DeliveryCompany} 运单号={model.DeliveryNo}");
+                    // 并发下已被另一请求发货、或订单被取消/关闭：此时既不能释放锁定库存，也不应写发货日志。
+                    // 用标志位而非抛异常传出去 —— 抛异常会被 UseTran 收敛成事务失败，
+                    // 用户看到的将是"发货失败，请重试"而不是"状态已变更，请刷新"。
+                    failReason = "发货条件更新未命中（并发发货或订单已被取消/关闭）";
+                    return;
                 }
-            }
-            else if (result == 0)
+
+                // 按 SKU 合计释放锁定库存。同一 SKU 拆成多行时不能按「数量相同的行」做 IN：
+                // IN 会把重复 SkuId 收成一行，只减一次数量，锁定库存少释放。
+                foreach (var group in items.GroupBy(i => i.SkuId))
+                {
+                    var skuId = group.Key;
+                    var qty = group.Sum(i => i.Quantity);
+                    Context.Updateable<Skus>()
+                        .SetColumns(s => new Skus { LockStock = SqlFunc.IIF(s.LockStock - qty < 0, 0, s.LockStock - qty) })
+                        .Where(s => s.SkuId == skuId)
+                        .ExecuteCommand();
+                }
+
+                // 走 Service 而非直接 Insert：AddLog 会自动填 CreateTime，且与取消/退款等
+                // 其他状态日志保持同一写法（详见 IOMSOrderLogService.AddLog）。
+                _orderLogService.AddLog(model.Id, model.OrderNo,
+                    (int)OrderStatusEnum.TobeShipped, (int)OrderStatusEnum.Shipped,
+                    "DELIVERY", oper, $"{model.DeliveryCompany} {model.DeliveryNo}");
+            });
+            if (tran == null || !tran.IsSuccess)
             {
-                // 条件更新未命中：状态在上面的校验之后被并发变更（另一请求已发货、或订单被取消/关闭）。
-                // 此时不能再释放锁定库存，也不应写第二条发货日志，按"不可发货"返回。
-                logger.Warn($"发货条件更新未命中（并发发货或被取消/关闭）：OrderNo={model.OrderNo} OrderId={model.Id}");
+                logger.Error($"发货事务失败：OrderNo={model.OrderNo} OrderId={model.Id} 快递={model.DeliveryCompany} 运单号={model.DeliveryNo} 原状态={(int)OrderStatusEnum.TobeShipped} 错误={tran?.ErrorMessage}");
+                throw new CustomException("发货失败，请重试" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
+            }
+            if (failReason != null)
+            {
+                logger.Warn($"发货条件更新未命中：OrderNo={model.OrderNo} OrderId={model.Id} 原因={failReason}");
                 return -3;
             }
-            return result;
+
+            // 通知买家挪到事务外：短信网关抖动不该回滚已完成的发货（NotifyBuyer 自身已吞异常，
+            // 放在事务内只会拉长事务、放大锁窗口，没有任何收益）。
+            // 批量发货传 notifyBuyer=false 跳过：逐单发短信是 100 次同步网络往返 + 100 条费用，
+            // 而批量发货场景买家本就靠订单状态查看进度（与 NotifyBuyer 只发发货/退款两类的策略一致）。
+            if (notifyBuyer)
+            {
+                NotifyBuyer(model, "订单已发货", $"您的订单({model.OrderNo})已发货，{model.DeliveryCompany} 运单号 {model.DeliveryNo}，请留意查收。");
+            }
+            logger.Info($"订单发货成功：OrderNo={model.OrderNo} OrderId={model.Id} MemberId={model.MemberId} 快递={model.DeliveryCompany} 运单号={model.DeliveryNo} 订单项数={items.Count} 操作人={oper}");
+            return 1;
         }
 
         /// <summary>

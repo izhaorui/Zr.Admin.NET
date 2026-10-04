@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
 using ZR.Common;
+using ZR.Mall.Common;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -188,6 +189,15 @@ namespace ZR.Mall.Controllers
         [Log(Title = "订单发货", BusinessType = BusinessType.UPDATE)]
         public async Task<IActionResult> Delivery([FromBody] OMSOrderDto parm)
         {
+            // 物流信息格式校验放在服务端：前端 ShipmentsForm 的 rules 只是提示性校验，
+            // 绕过页面直接调接口就能写进超长/非法内容（列宽 50/64，超长会在 SQL 层报错，
+            // 报错信息对运营毫无意义）。规则集中在 DeliveryValidator，与前端逐条对齐。
+            var invalid = DeliveryValidator.Validate(parm.DeliveryCompany, parm.DeliveryNo);
+            if (invalid != null)
+            {
+                return ToResponse(ResultCode.PARAM_ERROR, invalid);
+            }
+
             var orderInfo = await _OMSOrderService.GetByIdAsync(parm.Id);
             if (orderInfo == null)
             {
@@ -195,25 +205,26 @@ namespace ZR.Mall.Controllers
             }
             orderInfo.DeliveryCompany = parm.DeliveryCompany;
             orderInfo.DeliveryNo = parm.DeliveryNo;
-            var response = await _orderStateService.OrderDelivery(orderInfo);
+            var response = _orderStateService.OrderDelivery(orderInfo);
             if (response > 0)
             {
                 return ToResponse(ResultCode.SUCCESS, "发货成功");
             }
-            // 不再把内部结果码（-1/-2/-3）直接抛给用户，映射成可读原因
+            // 不再把内部结果码（-1/-2/-3/-4）直接抛给用户，映射成可读原因
             return ToResponse(ResultCode.CUSTOM_ERROR, DeliveryFailReason(response));
         }
 
         /// <summary>
         /// 发货结果码 → 用户可读提示。
         /// 取值来自 <see cref="IOMSOrderStateService.OrderDelivery"/>：&gt;0 成功；
-        /// -1 已发货；-2 缺收货地址；-3 非待发货状态（已取消/关闭或并发变更）。
+        /// -1 已发货；-2 收货信息不完整；-3 非待发货状态（已取消/关闭或并发变更）；-4 物流信息不合法。
         /// </summary>
         private static string DeliveryFailReason(int result) => result switch
         {
             -1 => "该订单已发货，请勿重复操作",
-            -2 => "该订单缺少收货信息，无法发货",
+            -2 => "该订单收货信息不完整（收件人/手机号/地区/详细地址有缺失），无法发货",
             -3 => "订单当前状态不可发货（可能已取消/关闭或已被处理），请刷新后重试",
+            -4 => "物流公司或物流单号不合法，请检查后重试",
             _ => "发货失败，请刷新后重试"
         };
 
@@ -254,13 +265,22 @@ namespace ZR.Mall.Controllers
             var rows = await stream.QueryAsync<DeliveryExpressDto>(startCell: "A1");
 
             var orderNos = rows.Select(x => x.OrderNo).Distinct().ToList();
-            var allOrders = await _OMSOrderService.Queryable().In(x => x.OrderNo, orderNos).ToListAsync();
+            // Includes 一次性把订单项带出来（拆成两条查询后内存关联，不是 N+1）：
+            // 原先每单发货都会再查一次订单项，100 单就是 100 次重复查询。
+            // 发货不新增/修改订单项，故预加载与逐单查询等价。
+            var allOrders = await _OMSOrderService.Queryable()
+                .Includes(x => x.Items)
+                .In(x => x.OrderNo, orderNos)
+                .ToListAsync();
 
             foreach (var item in rows)
             {
-                if (string.IsNullOrWhiteSpace(item.DeliveryCompany) || string.IsNullOrWhiteSpace(item.DeliveryNo))
+                // 物流信息格式与单个发货走同一套规则（DeliveryValidator）：批量入口绕过前端直接传文件，
+                // 不校验就会把超长/带空格的内容整批写进库（列宽 50/64，超长在 SQL 层报错）
+                var invalid = DeliveryValidator.Validate(item.DeliveryCompany, item.DeliveryNo);
+                if (invalid != null)
                 {
-                    item.Status = "缺少快递信息"; 
+                    item.Status = invalid;
                     resultList.Add(item);
                     continue;
                 }
@@ -277,9 +297,12 @@ namespace ZR.Mall.Controllers
                     resultList.Add(item);
                     continue;
                 }
-                if (orderInfo.AddressSnapshot == null)
+                // 地址完整性：判字段而非只判 == null —— 字段全为 null 的空对象会通过 == null 检查，
+                // 结果是"发货成功但买家收不到"。规则与单个发货共用 DeliveryValidator，
+                // 避免两处各写一遍、日后改一处漏一处。
+                if (!DeliveryValidator.IsAddressComplete(orderInfo.AddressSnapshot))
                 {
-                    item.Status = "缺少收货信息";
+                    item.Status = DeliveryValidator.AddressIncompleteMessage;
                     resultList.Add(item);
                     continue;
                 }
@@ -287,7 +310,10 @@ namespace ZR.Mall.Controllers
                 orderInfo.DeliveryCompany = item.DeliveryCompany;
                 orderInfo.DeliveryNo = item.DeliveryNo;
 
-                var result =  await _orderStateService.OrderDelivery(orderInfo);
+                // 订单项已随 allOrders 一次性带出（Includes），传入避免每单再查一次；
+                // notifyBuyer=false：批量发货不发短信 —— 逐单发是 100 次同步网络往返 + 100 条费用，
+                // 且批量场景买家本就靠订单状态看进度（与 NotifyBuyer 只发发货/退款两类的策略一致）。
+                var result = _orderStateService.OrderDelivery(orderInfo, orderInfo.Items, notifyBuyer: false);
                 item.Status = result > 0 ? "发货成功" : DeliveryFailReason(result);
                 resultList.Add(item);
             }
@@ -297,6 +323,8 @@ namespace ZR.Mall.Controllers
                 total = resultList.Count,
                 successCount = resultList.Count(x => x.Status == "发货成功"),
                 failCount = resultList.Count(x => x.Status != "发货成功"),
+                // 批量发货按行业惯例不发短信（见 OrderDelivery 的 notifyBuyer 参数），
+                // 提示文案放在前端导入弹窗上，避免依赖后端字段被组件透传
                 result = resultList
             });
         }

@@ -13,10 +13,10 @@ namespace ZR.Mall.Common
     /// 落进 Excel，敏感数据就跟着扩散了。
     ///
     /// 四档口径（全项目只在这里定，别处不要再判一遍）：
-    /// - 订单**列表**：不返回（<see cref="ClearItems"/>）——列表用不上，且是批量数据；
-    /// - 订单**详情**：按字段敏感标记脱敏（<see cref="ToDisplay"/> 的 reveal=false）；
+    /// - 订单**列表**：不返回（<see cref="ClearItems(IEnumerable{OMSOrderItem})"/>）——列表用不上，且是批量数据；
+    /// - 订单**详情**：按字段敏感标记脱敏（<see cref="ApplyDisplayPolicy"/>）；
     /// - **揭示完整值**：走独立接口 + 独立权限 + 操作日志（见 OrderController.formValuesRaw），
-    ///   脱敏规则与详情完全一致，只是把敏感字段换成明文，不做二次加工；
+    ///   脱敏规则与详情完全一致，只是把敏感字段换成明文，不做二次加工（<see cref="RevealSensitive"/>）；
     /// - 订单**导出**：全部脱敏（<see cref="ToText"/>）——Excel 落地后会被转发、传附件。
     ///
     /// 敏感判定 = 字段标记 + **值兜底**，两者取或：
