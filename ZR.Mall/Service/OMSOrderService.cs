@@ -127,7 +127,9 @@ namespace ZR.Mall.Service
                 throw new CustomException("订单不存在");
             }
 
-            return order.Items
+            // Items 判空：Includes 在订单没有任何明细时不保证回填空集合，
+            // 直接链式调用会 NRE —— 而这是个"只读接口居然 500"的典型来源。
+            return (order.Items ?? new List<OMSOrderItem>())
                 .SelectMany(x => OrderFormValueHelper.RevealSensitive(x.FormValues))
                 .ToList();
         }
@@ -316,11 +318,15 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 导出代发货订单
+        /// 导出待发货订单（打单用）
         /// </summary>
-        /// <param name="parm"></param>
-        /// <returns></returns>
-        public async Task<List<DeliveryExpressDto>> ExportWaitDeliveryList(OMSOrderQueryDto parm)
+        /// <remarks>
+        /// 与导入模板分开：导入仍用 <see cref="DeliveryExpressDto"/>（三列，运营既有 Excel 习惯不动），
+        /// 导出用 <see cref="DeliveryExportDto"/>（补齐收件人与商品明细，打单软件需要这些才能用）。
+        ///
+        /// 收件信息**明文不脱敏**（打单必需），只在本导出出口提供，不进日志、不进订单详情。
+        /// </remarks>
+        public async Task<List<DeliveryExportDto>> ExportWaitDeliveryList(OMSOrderQueryDto parm)
         {
             parm.PageNum = 1;
             parm.PageSize = 100000;
@@ -332,17 +338,51 @@ namespace ZR.Mall.Service
             predicate = predicate.AndIF(parm.BeginCreateTime != null, it => it.PayTime >= parm.BeginCreateTime);
             predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.PayTime <= parm.EndCreateTime);
 
-            var response = await Queryable()
+            // 取实体而非 Select 投影：AddressSnapshot 是 JSON 列，SqlSugar 在投影里按列名反序列化不稳
+            // （同 GetFrontFormFields 的处理方式），故整单取回后在内存里组装。
+            var orders = await Queryable()
                 .Where(predicate.ToExpression())
-                .Select((it) => new DeliveryExpressDto()
-                {
-                    DeliveryCompany = it.DeliveryCompany,
-                    DeliveryNo = it.DeliveryNo,
-                    OrderNo = it.OrderNo,
-                })
                 .ToListAsync();
 
-            return response;
+            var orderIds = orders.Select(x => x.Id).ToList();
+            var goodsByOrder = new Dictionary<long, string>();
+            if (orderIds.Count > 0)
+            {
+                // 商品明细一次查齐、内存聚合：导出动辄上万行，逐单查订单项就是 N+1 次往返
+                var allItems = await Context.Queryable<OMSOrderItem>()
+                    .Where(x => orderIds.Contains(x.OrderId))
+                    .Select(x => new { x.OrderId, x.ProductName, x.SkuSpec, x.Quantity })
+                    .ToListAsync();
+
+                goodsByOrder = allItems
+                    .GroupBy(x => x.OrderId)
+                    .ToDictionary(
+                        g => g.Key,
+                        // 形如「运动鞋（黑色;42）×2；袜子×1」，给打单软件一眼看清寄什么
+                        g => string.Join("；", g.Select(i =>
+                            string.IsNullOrWhiteSpace(i.SkuSpec)
+                                ? $"{i.ProductName}×{i.Quantity}"
+                                : $"{i.ProductName}（{i.SkuSpec}）×{i.Quantity}")));
+            }
+
+            return orders.Select(o =>
+            {
+                var addr = o.AddressSnapshot;
+                return new DeliveryExportDto
+                {
+                    OrderNo = o.OrderNo,
+                    ReceiverName = addr?.UserName,
+                    ReceiverPhone = addr?.Phone,
+                    ReceiverRegion = string.Join(" ", new[]
+                    {
+                        addr?.Province, addr?.City, addr?.District
+                    }.Where(x => !string.IsNullOrWhiteSpace(x))),
+                    DetailAddress = addr?.DetailAddress,
+                    GoodsSummary = goodsByOrder.TryGetValue(o.Id, out var summary) ? summary : string.Empty,
+                    DeliveryCompany = o.DeliveryCompany,
+                    DeliveryNo = o.DeliveryNo
+                };
+            }).ToList();
         }
 
         /// <summary>

@@ -363,4 +363,51 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Ignore = true)]
         public string Status { get; set; }
     }
+
+    /// <summary>
+    /// 待发货订单**导出**专用行（打单用）。
+    ///
+    /// 与 <see cref="DeliveryExpressDto"/>（导入模板）刻意分开：导入模板的列是运营既有习惯，
+    /// 加列会打乱他们保存的 Excel；而导出本来就该给足信息——原先只导出订单号/快递/单号三列，
+    /// 打单软件拿不到收件人与商品明细，等于导出了也没法用。
+    /// </summary>
+    /// <remarks>
+    /// 收货人/手机号**明文不脱敏**：这份文件的用途就是打单，真实号码是业务必需
+    /// （脱敏后打单软件直接不可用，只能人工对照手输）。
+    /// 风险由使用纪律承担：文件会落到本地磁盘/被转发，故仅在**导出**这一出口提供，不进日志、不进订单详情。
+    /// </remarks>
+    public class DeliveryExportDto
+    {
+        [ExcelColumn(Name = "订单号", Width = 30)]
+        [ExcelColumnName("订单号")]
+        public string OrderNo { get; set; }
+
+        [ExcelColumn(Name = "收件人", Width = 16)]
+        [ExcelColumnName("收件人")]
+        public string ReceiverName { get; set; }
+
+        [ExcelColumn(Name = "收件手机号", Width = 18)]
+        [ExcelColumnName("收件手机号")]
+        public string ReceiverPhone { get; set; }
+
+        [ExcelColumn(Name = "收货地区", Width = 24)]
+        [ExcelColumnName("收货地区")]
+        public string ReceiverRegion { get; set; }
+
+        [ExcelColumn(Name = "详细地址", Width = 40)]
+        [ExcelColumnName("详细地址")]
+        public string DetailAddress { get; set; }
+
+        [ExcelColumn(Name = "商品明细", Width = 50)]
+        [ExcelColumnName("商品明细")]
+        public string GoodsSummary { get; set; }
+
+        [ExcelColumn(Name = "物流公司", Width = 30)]
+        [ExcelColumnName("物流公司")]
+        public string DeliveryCompany { get; set; }
+
+        [ExcelColumn(Name = "物流单号", Width = 30)]
+        [ExcelColumnName("物流单号")]
+        public string DeliveryNo { get; set; }
+    }
 }

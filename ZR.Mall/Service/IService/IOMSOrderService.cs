@@ -55,9 +55,13 @@ namespace ZR.Mall.Service.IService
         PagedInfo<OMSOrderDto> ExportList(OMSOrderQueryDto parm);
 
         /// <summary>
-        /// 导出待发货订单（物流面单）
+        /// 导出待发货订单（打单用）：补齐收件人/手机号/收货地区/详细地址/商品明细。
         /// </summary>
-        Task<List<DeliveryExpressDto>> ExportWaitDeliveryList(OMSOrderQueryDto parm);
+        /// <remarks>
+        /// 收件信息明文不脱敏 —— 这份文件就是给打单软件用的，真实号码是业务必需。
+        /// 导入模板仍用 <see cref="DeliveryExpressDto"/>（三列），两者刻意分开，勿混用。
+        /// </remarks>
+        Task<List<DeliveryExportDto>> ExportWaitDeliveryList(OMSOrderQueryDto parm);
 
         /// <summary>
         /// 总销售额与订单数
