@@ -1,5 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Cache;
 using Newtonsoft.Json.Linq;
 using NLog;
 using System.Text;
@@ -17,6 +18,10 @@ namespace ZR.ServiceCore.AI.Charts
     public class AiChartToolProvider : IAiAssistantToolProvider
     {
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
+        /// <summary>图表聚合结果缓存分钟数：短 TTL，仅用于挡住同一轮对话内的重复查询</summary>
+        private const int ChartCacheMinutes = 1;
+
         private readonly IReadOnlyList<IAiChartDatasetProvider> _datasets;
         private readonly ISysPermissionService _permissionService;
 
@@ -158,17 +163,45 @@ namespace ZR.ServiceCore.AI.Charts
             var grain = NormalizeGrain(args["grain"]?.Value<string>(), provider);
             var (begin, end, rangeNote) = ResolveRange(args, grain, provider);
             var dimension = NormalizeDimension(args["dimension"]?.Value<string>(), provider);
-            var result = await provider.QueryAsync(userId, begin, end, grain, dimension);
+
+            // 相同（数据集/粒度/区间/维度/用户）短时间内命中缓存，避免重复落库聚合；
+            // userId 纳入 key 以尊重数据范围差异（如操作日志管理员/本人口径不同）。
+            var cache = CacheStore.For(CacheBackend.Cache);
+            var cacheKey = $"ai:chart:{App.GetCurrentTenantId() ?? "0"}:{provider.DatasetId}:{grain}:" +
+                $"{begin:yyyyMMdd}:{end:yyyyMMdd}:{dimension ?? "-"}:{userId}";
+            var result = cache.Get<AiChartQueryResult>(cacheKey);
+            // 内存缓存后端返回的是同一对象引用：命中后若再改写字段会污染缓存，故标记是否仍与缓存一致
+            var cacheConsistent = result != null;
+            if (result == null)
+            {
+                result = await provider.QueryAsync(userId, begin, end, grain, dimension);
+            }
+
             var chartType = args["chartType"]?.Value<string>()?.Trim()?.ToLowerInvariant();
+            if (result == null)
+            {
+                return AiToolExecResult.Success(
+                    $"数据集 {provider.DatasetId} 在 {begin:yyyy-MM-dd} 至 {end:yyyy-MM-dd}（{grain}）没有数据。{rangeNote}".Trim());
+            }
             if (!string.IsNullOrEmpty(chartType) && provider.AllowedTypes.Contains(chartType))
             {
                 result.SuggestedType = chartType;
+                cacheConsistent = false;
             }
 
             if (result.Rows == null || result.Rows.Count == 0)
             {
+                if (!cacheConsistent)
+                {
+                    cache.Set(cacheKey, result, ChartCacheMinutes);
+                }
                 return AiToolExecResult.Success(
                     $"数据集 {provider.DatasetId} 在 {result.TimeRange}（{grain}）没有数据。{rangeNote}".Trim());
+            }
+
+            if (!cacheConsistent)
+            {
+                cache.Set(cacheKey, result, ChartCacheMinutes);
             }
 
             var content = FormatQueryForModel(result, rangeNote);

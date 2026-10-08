@@ -1,6 +1,7 @@
 using Infrastructure;
 using Infrastructure.AI;
 using Infrastructure.Attribute;
+using Infrastructure.Cache;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -40,8 +41,12 @@ namespace ZR.ServiceCore.AI
         private const int MaxToolRounds = 5;
         private const string ToolRetryReminder =
             "上一轮工具全部失败。请根据错误与工具 schema 修正参数后再次调用；若确实无法调用，再向用户简要说明原因，不要复述内部错误原文。";
-        /// <summary>回灌历史消息最大条数</summary>
+        /// <summary>回灌历史消息最近窗口条数（窗口内保留原文，窗口外用摘要锚点压缩）</summary>
         private const int MaxHistoryMessages = 20;
+        /// <summary>历史摘要单次最多纳入的旧消息条数（防超长会话一次性摘要烧 token）</summary>
+        private const int SummaryMaxOlderMessages = 100;
+        /// <summary>历史摘要缓存分钟数（窗口边界每约 20 轮才移动，期间命中缓存）</summary>
+        private const int SummaryCacheMinutes = 30;
         /// <summary>单条工具结果回灌给模型的最大长度</summary>
         private const int ToolResultMaxLen = 8000;
         /// <summary>单条用户消息最大长度（与请求 DTO 校验一致，服务端兜底防超长文本烧 token）</summary>
@@ -309,9 +314,14 @@ namespace ZR.ServiceCore.AI
 
                 AppendAssistantToolCalls(context.Messages, turn);
                 var allFailed = true;
-                foreach (var call in turn.ToolCalls)
+                // 同一轮多个工具互不依赖：并行执行降低首字延迟，结果按 call.Id 关联、回灌顺序固定。
+                // 前提：现有工具均为只读查询、不开事务，且连接 IsAutoCloseConnection=true（每次操作独立开关连接）；
+                // 若新增工具写库/开事务，或关闭自动关闭连接，必须改回串行执行。
+                var execs = await Task.WhenAll(turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, context.Session.SessionId)));
+                for (var i = 0; i < turn.ToolCalls.Count; i++)
                 {
-                    var exec = await ExecuteToolSafelyAsync(call, userId, context.Session.SessionId);
+                    var call = turn.ToolCalls[i];
+                    var exec = execs[i];
                     toolTrace.Add(new AiChatToolCallDto { Name = call.Name, Ok = exec.Ok });
                     if (exec.Ok) allFailed = false;
                     AppendToolResult(context.Messages, call.Id, exec, chartQueries);
@@ -452,11 +462,17 @@ namespace ZR.ServiceCore.AI
 
                 AppendAssistantToolCalls(context.Messages, turn);
                 var allFailed = true;
+                // 先统一下发 start 事件，再并行执行，最后统一 done：事件顺序与前端契约不变，且降首字延迟
+                cancellationToken.ThrowIfCancellationRequested();
                 foreach (var call in turn.ToolCalls)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
                     yield return new SysAiChatStreamDto { Type = "tool", ToolName = call.Name, ToolStatus = "start" };
-                    var exec = await ExecuteToolSafelyAsync(call, userId, context.Session.SessionId);
+                }
+                var streamExecs = await Task.WhenAll(turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, context.Session.SessionId)));
+                for (var i = 0; i < turn.ToolCalls.Count; i++)
+                {
+                    var call = turn.ToolCalls[i];
+                    var exec = streamExecs[i];
                     yield return new SysAiChatStreamDto { Type = "tool", ToolName = call.Name, ToolStatus = "done", ToolOk = exec.Ok };
                     toolTrace.Add(new AiChatToolCallDto { Name = call.Name, Ok = exec.Ok });
                     if (exec.Ok) allFailed = false;
@@ -897,18 +913,19 @@ namespace ZR.ServiceCore.AI
                 .Replace("{{now}}", DateTime.Now.ToString("yyyy-MM-dd HH:mm"))
                 .Replace("{{userId}}", userId.ToString());
 
-            var history = await Context.Queryable<AiChatMessage>()
-                .Where(m => m.SessionId == sessionId && m.UserId == userId && m.Role != "tool")
-                .OrderBy(m => m.CreateTime, OrderByType.Desc)
-                .Take(MaxHistoryMessages)
-                .ToListAsync();
-            history.Reverse();
+            var (recent, summaryAnchor) = await ResolveHistoryAsync(sessionId, userId);
 
             var sb = new System.Text.StringBuilder();
-            if (history.Count > 0)
+            if (!string.IsNullOrWhiteSpace(summaryAnchor))
+            {
+                sb.AppendLine("【历史对话摘要】");
+                sb.AppendLine(summaryAnchor);
+                sb.AppendLine();
+            }
+            if (recent.Count > 0)
             {
                 sb.AppendLine("近期对话（仅文本，不含历史图片）：");
-                foreach (var h in history)
+                foreach (var h in recent)
                 {
                     sb.AppendLine($"{h.Role}: {AiHelper.ClipText(h.Content, 500)}");
                 }
@@ -918,7 +935,7 @@ namespace ZR.ServiceCore.AI
             sb.AppendLine(message);
             sb.AppendLine();
             sb.AppendLine($"用户附带了 {imageCount} 张图片，请结合图片作答。本轮无法调用系统工具。");
-            return (system, sb.ToString(), history.Count);
+            return (system, sb.ToString(), recent.Count);
         }
 
         /// <summary>
@@ -952,23 +969,100 @@ namespace ZR.ServiceCore.AI
         /// <returns></returns>
         private async Task<(List<object> Messages, int HistoryCount)> BuildConversationMessagesAsync(long sessionId, long userId, string message)
         {
-            var messages = new List<object>
-            {
-                new { role = "system", content = BuildSystemPrompt(userId) }
-            };
+            var messages = new List<object>();
 
-            var history = await Context.Queryable<AiChatMessage>()
-                .Where(m => m.SessionId == sessionId && m.UserId == userId && m.Role != "tool")
-                .OrderBy(m => m.CreateTime, OrderByType.Desc)
-                .Take(MaxHistoryMessages)
-                .ToListAsync();
-            history.Reverse();// 历史按时间正序回灌
-            foreach (var h in history)
+            var (recent, summaryAnchor) = await ResolveHistoryAsync(sessionId, userId);
+            var systemPrompt = BuildSystemPrompt(userId);
+            if (!string.IsNullOrWhiteSpace(summaryAnchor))
+            {
+                // 摘要并入主系统提示（而非追加第二条 system 消息），兼容只接受单条 system 的网关，
+                // 用于弥补被滑窗丢弃的早期上下文
+                systemPrompt = systemPrompt + "\n\n【历史对话摘要（更早的对话要点）】\n" + summaryAnchor;
+            }
+            messages.Add(new { role = "system", content = systemPrompt });
+
+            foreach (var h in recent)
             {
                 messages.Add(new { role = h.Role, content = AiHelper.ClipText(h.Content, 2000) });
             }
             messages.Add(new { role = "user", content = message });
-            return (messages, history.Count);
+            return (messages, recent.Count);
+        }
+
+        /// <summary>
+        /// 解析回灌历史：最近 <see cref="MaxHistoryMessages"/> 条保留原文，更早的消息用一次 LLM 调用
+        /// 聚合成「历史摘要」锚点（结果按窗口边界指纹缓存，避免每轮重算）。摘要失败自动降级为仅窗口，不阻断对话。
+        /// </summary>
+        /// <returns>(recent 正序消息列表, summaryAnchor 摘要文本，无摘要时为 null)</returns>
+        private async Task<(List<AiChatMessage> Recent, string SummaryAnchor)> ResolveHistoryAsync(long sessionId, long userId)
+        {
+            var history = await Context.Queryable<AiChatMessage>()
+                .Where(m => m.SessionId == sessionId && m.UserId == userId && m.Role != "tool")
+                .OrderBy(m => m.CreateTime, OrderByType.Desc)
+                .Take(MaxHistoryMessages + SummaryMaxOlderMessages)
+                .ToListAsync();
+            history.Reverse();// 正序
+
+            if (history.Count <= MaxHistoryMessages)
+            {
+                return (history, null);
+            }
+
+            var recent = history.TakeLast(MaxHistoryMessages).ToList();
+            var older = history.Take(history.Count - MaxHistoryMessages).ToList();
+            var summary = await BuildHistorySummaryAsync(sessionId, userId, older);
+            return (recent, summary);
+        }
+
+        /// <summary>
+        /// 生成（或复用缓存的）历史摘要。缓存指纹取窗口外旧消息的首尾 MessageId，
+        /// 窗口边界每约 <see cref="MaxHistoryMessages"/> 轮才移动，期间命中缓存不重复调用模型。
+        /// </summary>
+        private async Task<string> BuildHistorySummaryAsync(long sessionId, long userId, List<AiChatMessage> older)
+        {
+            if (older.Count == 0) return null;
+
+            var tenantId = App.GetCurrentTenantId() ?? "0";
+            var cacheKey = $"ai:history:summary:{tenantId}:{sessionId}:{older[0].MessageId}-{older[^1].MessageId}";
+            var cache = CacheStore.For(CacheBackend.Cache);
+            var cached = cache.Get<string>(cacheKey);
+            if (!string.IsNullOrWhiteSpace(cached))
+            {
+                return cached;
+            }
+
+            var summaryPrompt = AiHelper.LoadPrompt("system/ai-chat-history-summary.md");
+            if (string.IsNullOrWhiteSpace(summaryPrompt))
+            {
+                // 提示词缺失时静默降级为仅窗口，不影响本轮对话
+                _logger.Warn($"AI 历史摘要提示词缺失已跳过摘要：system/ai-chat-history-summary.md sessionId={sessionId}");
+                return null;
+            }
+
+            var sb = new System.Text.StringBuilder();
+            foreach (var m in older)
+            {
+                sb.AppendLine($"{m.Role}: {AiHelper.ClipText(m.Content, 800)}");
+            }
+
+            try
+            {
+                var options = AiHelper.EnsureAiEnabled();
+                var summary = await AiLlmClient.ChatAsync(options, summaryPrompt, sb.ToString(), AiSceneCatalog.AiChat);
+                summary = (summary ?? "").Trim();
+                if (!string.IsNullOrWhiteSpace(summary))
+                {
+                    cache.Set(cacheKey, summary, SummaryCacheMinutes);
+                    _logger.Info($"AI 历史摘要已生成 sessionId={sessionId} userId={userId} olderCount={older.Count} len={summary.Length}");
+                    return summary;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 摘要失败绝不阻断本轮对话，降级为仅窗口
+                _logger.Warn(ex, $"AI 历史摘要生成失败已降级为仅窗口 sessionId={sessionId} userId={userId} olderCount={older.Count}");
+            }
+            return null;
         }
 
         private static void AccumulateRoundUsage(AiLlmClient.ChatToolResult turn, int round, List<string> roundDiag,
