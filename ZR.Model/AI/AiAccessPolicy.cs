@@ -3,10 +3,15 @@ using ZR.Model.System;
 namespace ZR.Model.AI
 {
     /// <summary>
-    /// AI 访问与额度策略。集中存放于主库，ScopeType 支持 global/tenant/role/user。
-    /// TenantId、SubjectId 使用空值等价的规范值（""、0），便于建立唯一约束。
+    /// AI 访问与额度策略。平台治理统一配置，固定存放于系统库（ConfigId=0），跨租户共享。
+    /// ScopeType 支持 global/tenant/role/user；TenantId、SubjectId 使用空值等价的规范值（""、0），便于建立唯一约束。
+    /// <para>
+    /// 路由说明：多租户关闭时靠 [Tenant("0")] 固定系统库；多租户开启时由 IMainDbEntity 走主库。
+    /// 二者须同时存在，缺 [Tenant] 会导致多租户关闭时被路由到 MainDb 而找不到表。
+    /// </para>
     /// </summary>
     [SugarTable("ai_access_policy", "AI访问与额度策略")]
+    [Tenant("0")]
     [SugarIndex("uk_ai_policy_scope", nameof(ScopeType), OrderByType.Asc, true)]
     [SugarIndex("uk_ai_policy_scope", nameof(TenantId), OrderByType.Asc, true)]
     [SugarIndex("uk_ai_policy_scope", nameof(SubjectId), OrderByType.Asc, true)]
