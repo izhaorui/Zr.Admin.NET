@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SqlSugar.IOC;
 using ZR.Common;
 using ZR.Model.AI;
+using ZR.Model.Content;
 using ZR.Model.Models;
 using ZR.Model.System;
 using ZR.Repository;
@@ -233,6 +234,24 @@ namespace ZR.ServiceCore.SqlSugar
                                 p.OracleSequenceName = "SEQ_ID";
                             }
                         }
+                    }
+                    #endregion
+
+                    #region 文章正文：实体声明 nvarchar(max)，其它数据库按各自长文本类型适配
+                    // SQL Server 下只有 nvarchar 才能正确承载中文正文，也是正文全文索引（CONTAINS）的前提，
+                    // 故实体上直接写 nvarchar(max) 表达意图；MySQL / PgSql / Sqlite / Oracle 没有该类型，
+                    // 在这里按 DbType 换成各自的长文本类型（与上面 PostgreSQL / Sqlite / Oracle 的处理方式一致，
+                    // 也是 SqlSugar 官方推荐的多库类型差异处理方式：用实体 AOP）。
+                    if (p.EntityName == nameof(Article) && c.Name == nameof(Article.Content))
+                    {
+                        p.DataType = config.DbType switch
+                        {
+                            DbType.MySql => "longtext",
+                            DbType.PostgreSQL => "text",
+                            DbType.Sqlite => "text",
+                            DbType.Oracle => "clob",
+                            _ => "nvarchar(max)"
+                        };
                     }
                     #endregion
                 }

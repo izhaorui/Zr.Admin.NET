@@ -222,4 +222,72 @@ namespace ZR.Model.Content.Dto
         public string NickName { get; set; }
         public int Sex { get; set; }
     }
+
+    /// <summary>
+    /// 我的创作统计（前端"我的"页头部数据）
+    /// 统计当前用户在 article 表中的全部内容（含文章与动态），一次聚合查询完成。
+    /// </summary>
+    public class MyArticleStatsDto
+    {
+        /// <summary>内容总数</summary>
+        public int Total { get; set; }
+        /// <summary>已发布（status=1）</summary>
+        public int Published { get; set; }
+        /// <summary>草稿（status=2）</summary>
+        public int Draft { get; set; }
+        /// <summary>已下线（status=0）</summary>
+        public int Offline { get; set; }
+        /// <summary>不公开（isPublic=0）</summary>
+        public int Private { get; set; }
+        /// <summary>待审核</summary>
+        public int Pending { get; set; }
+        /// <summary>审核驳回</summary>
+        public int Rejected { get; set; }
+        /// <summary>总浏览量</summary>
+        public int Hits { get; set; }
+        /// <summary>总点赞数</summary>
+        public int PraiseNum { get; set; }
+        /// <summary>总评论数</summary>
+        public int CommentNum { get; set; }
+    }
+
+    /// <summary>
+    /// 单篇内容统计（只读，不会自增浏览量）
+    /// </summary>
+    public class ArticleStatsDto
+    {
+        public long Cid { get; set; }
+        public string Title { get; set; }
+        /// <summary>浏览量</summary>
+        public int Hits { get; set; }
+        /// <summary>点赞数</summary>
+        public int PraiseNum { get; set; }
+        /// <summary>评论数</summary>
+        public int CommentNum { get; set; }
+        /// <summary>是否公开 1公开 0不公开</summary>
+        public int IsPublic { get; set; }
+        /// <summary>内容状态 0下线 1发布 2草稿</summary>
+        public string Status { get; set; }
+        /// <summary>审核状态</summary>
+        public AuditStatusEnum AuditStatus { get; set; }
+        public DateTime? CreateTime { get; set; }
+        public DateTime? UpdateTime { get; set; }
+    }
+
+    /// <summary>
+    /// 站点内容统计（前台展示用，只统计已发布 + 公开 + 审核通过的文章）
+    /// </summary>
+    public class SiteArticleStatsDto
+    {
+        /// <summary>文章总数</summary>
+        public int ArticleCount { get; set; }
+        /// <summary>今日新增</summary>
+        public int TodayCount { get; set; }
+        /// <summary>总浏览量</summary>
+        public int Hits { get; set; }
+        /// <summary>总点赞数</summary>
+        public int PraiseNum { get; set; }
+        /// <summary>总评论数</summary>
+        public int CommentNum { get; set; }
+    }
 }

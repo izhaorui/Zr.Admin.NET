@@ -287,6 +287,78 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 编辑我的文章（仅作者本人，归属校验在 Service 内完成）
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("edit")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult Edit([FromBody] ArticleDto parm)
+        {
+            if (parm == null || parm.Cid <= 0) { return ToResponse(ResultCode.PARAM_ERROR, "缺少内容Id"); }
+
+            var userId = HttpContext.GetUId();
+            if (userId <= 0) { return ToResponse(ResultCode.DENY); }
+
+            var modal = parm.Adapt<Article>().ToUpdate(HttpContext);
+            // 与 publish 保持一致：话题名作为标签；未传话题时由 Service 保留原标签
+            modal.Tags = parm.TopicName;
+            return SUCCESS(_ArticleService.UpdateMyArticle(modal, userId));
+        }
+
+        /// <summary>
+        /// 我的创作统计（内容总数/已发布/草稿/私密/待审/驳回/浏览/点赞/评论）
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("myStats")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult MyStats()
+        {
+            var userId = HttpContext.GetUId();
+            if (userId <= 0) { return ToResponse(ResultCode.DENY); }
+
+            return SUCCESS(_ArticleService.GetMyStats(userId));
+        }
+
+        /// <summary>
+        /// 单篇内容统计（公开内容任何人可看，非公开内容仅作者本人可看；只读，不计浏览量）
+        /// </summary>
+        /// <param name="cid">内容id</param>
+        /// <returns></returns>
+        [HttpGet("stats/{cid}")]
+        [AllowAnonymous]
+        public IActionResult Stats(long cid)
+        {
+            var userId = HttpContext.GetUId();
+            return SUCCESS(_ArticleService.GetArticleStats(cid, userId));
+        }
+
+        /// <summary>
+        /// 站点内容统计（已发布文章数/今日新增/总浏览/总点赞/总评论，结果缓存 10 分钟）
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("siteStats")]
+        [AllowAnonymous]
+        public IActionResult SiteStats()
+        {
+            return SUCCESS(_ArticleService.GetSiteStats());
+        }
+
+        /// <summary>
+        /// 编辑前取数（仅作者本人，含正文；不会自增浏览量）
+        /// </summary>
+        /// <param name="cid">内容id</param>
+        /// <returns></returns>
+        [HttpGet("editInfo/{cid}")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult EditInfo(long cid)
+        {
+            var userId = HttpContext.GetUId();
+            if (userId <= 0) { return ToResponse(ResultCode.DENY); }
+
+            return SUCCESS(_ArticleService.GetMyArticleForEdit(cid, userId));
+        }
+
+        /// <summary>
         /// 获取我的成就信息
         /// </summary>
         /// <returns></returns>

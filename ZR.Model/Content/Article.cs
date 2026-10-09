@@ -31,8 +31,12 @@ namespace ZR.Model.Content
         public DateTime? UpdateTime { get; set; }
         /// <summary>
         /// 文章内容
+        /// 显式声明 nvarchar(max)（而非 StaticConfig.CodeFirst_BigString）：SQL Server 下只有 nvarchar
+        /// 才能正确承载中文正文，也是正文全文索引（CONTAINS）的前提。
+        /// MySQL / PostgreSQL / Sqlite / Oracle 没有 nvarchar(max)，由 SqlsugarSetup 的实体 AOP 按库适配。
+        /// 存量库需执行 document/doc/文章正文全文检索改造.md 中的 ALTER 脚本，CodeFirst 不会改动已存在的列。
         /// </summary>
-        [SugarColumn(ColumnDescription = "文章内容", ColumnDataType = StaticConfig.CodeFirst_BigString)]
+        [SugarColumn(ColumnDescription = "文章内容", ColumnDataType = "nvarchar(max)")]
         public string Content { get; set; }
         /// <summary>
         /// 作者名
