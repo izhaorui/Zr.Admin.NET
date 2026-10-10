@@ -1,4 +1,5 @@
 using SqlSugar.IOC;
+using ZR.Mall.Common;
 using ZR.Mall.Model;
 using ZR.ServiceCore.Services;
 using ZR.ServiceCore.SqlSugar;
@@ -70,6 +71,9 @@ namespace ZR.Mall
 		{
 			// 表不存在则建表，已存在则补齐缺失列（CodeFirst.InitTables 不会给已有表加列）。
 			DbMigrationService.EnsureEntitySchemas(db, MallEntityTypes);
+			// 商品名全文索引（幂等、失败不阻断；未建时搜索自动回落 LIKE）。
+			// 挂在建表之后：表还不存在时无法建全文索引。SaaS 下每个租户库各建一次。
+			ProductFullTextIndexEnsurer.Ensure(db);
 		}
 	}
 }

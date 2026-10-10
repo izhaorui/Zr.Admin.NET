@@ -29,10 +29,10 @@ namespace ZR.Mall.Service
         private const int MaxListPageSize = 100;
 
         /// <summary>
-        /// 商品名全文索引名（MySQL 就绪探测用；SQL Server 索引名由系统生成，探测只看该表有没有全文索引）。
-        /// 与 document/doc 里的建索引脚本保持一致。
+        /// 商品名全文索引名（MySQL 就绪探测用）。统一取 <see cref="Common.ProductFullTextIndexEnsurer"/> 的常量，
+        /// 保证"建索引"与"探测是否就绪"用的是同一个名字。
         /// </summary>
-        private const string ProductNameFtsIndex = "ft_product_name";
+        private const string ProductNameFtsIndex = Common.ProductFullTextIndexEnsurer.MySqlIndexName;
 
         /// <summary>
         /// 
