@@ -32,6 +32,13 @@ namespace ZR.ServiceCore.AI.IService
         Task<List<AiToolCatalogItemDto>> GetMyToolCatalogAsync(long userId);
 
         /// <summary>
+        /// 全量 AI 工具目录（管理端排查用）：内置工具 + 各 Provider 注册的扩展工具，<b>不做权限过滤</b>。
+        /// 返回 Name/Label/Provider/Source/Permission/Description，用于定位工具归属与实现模块；
+        /// 普通用户的"可见工具清单"仍走 <see cref="GetMyToolCatalogAsync"/>，两者不可混用。
+        /// </summary>
+        Task<List<AiToolCatalogDetailDto>> GetToolCatalogAsync();
+
+        /// <summary>
         /// 发送一条消息并获取回复。内部可能多次调用 LLM + 执行工具。
         /// SessionId&lt;=0 时自动新建；首轮会依据提问内容自动生成标题。
         /// </summary>

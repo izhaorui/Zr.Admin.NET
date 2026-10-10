@@ -62,6 +62,9 @@ namespace ZR.ServiceCore.AI
             ToolQueryMySchedules, ToolParseSchedule, ToolGenerateWeeklyReport
         };
 
+        /// <summary>内置工具在工具目录里的来源标识（无 Provider，标为 builtin 便于分组）。</summary>
+        private const string BuiltInToolProviderName = "builtin";
+
         /// <param name="sysAi">系统 AI 服务（日程解析/周报）</param>
         /// <param name="scheduleService">日程服务（日程查询工具）</param>
         /// <param name="llm">大模型调用网关（封装静态 AiLlmClient，便于测试替换）</param>
@@ -586,20 +589,24 @@ namespace ZR.ServiceCore.AI
         #region 工具定义与执行
 
         /// <summary>
-        /// 全部工具定义：内置办工工具 + 各模块 Provider 注册的扩展工具。
-        /// 模型 function calling 与前端工具清单（GET aichat/tools）共用此集合，避免两处各维护一份导致漂移。
+        /// 内置办工工具定义（不依赖实例状态，供静态清单与"按用户清单"共用）。
         /// 内置工具不声明 Permission：它们只访问“当前登录用户自己的数据”（日程/周报，按 userId 隔离），
         /// 不存在跨用户越权面；若声明权限码而菜单未授权，会把这些工具从所有人的清单里一并隐藏（功能回归）。
         /// 需要按人/按角色控制的内置能力，请改为 Provider 注册并声明 Permission。
         /// </summary>
-        private List<AiToolDef> BuildToolDefs()
+        private static List<AiToolDef> BuildBuiltInToolDefs()
         {
-            var defs = new List<AiToolDef>
+            return new List<AiToolDef>
             {
                 new AiToolDef
                 {
                     Name = ToolQueryMySchedules,
                     Label = "日程查询",
+                    Samples = new List<string>
+                    {
+                        "我今天有什么日程安排？",
+                        "帮我看看最近一周的日程"
+                    },
                     Description = "查询当前登录用户指定日期范围内的日程安排（按截止/完成/创建时间任一命中，含已完成）。不传参数默认查最近 7 天。用于“我今天有什么安排/本周日程/某天日程”。",
                     Parameters = new
                     {
@@ -616,6 +623,10 @@ namespace ZR.ServiceCore.AI
                 {
                     Name = ToolParseSchedule,
                     Label = "日程解析",
+                    Samples = new List<string>
+                    {
+                        "帮我记一下：明天上午10点和产品过需求"
+                    },
                     Description = "把用户口语化的日程描述解析成结构化日程草稿（标题/内容/优先级/截止/提醒）。只生成草稿不落库。用于“帮我记一个日程：...”等表达。",
                     Parameters = new
                     {
@@ -631,6 +642,10 @@ namespace ZR.ServiceCore.AI
                 {
                     Name = ToolGenerateWeeklyReport,
                     Label = "周报生成",
+                    Samples = new List<string>
+                    {
+                        "帮我写一下本周的工作周报"
+                    },
                     Description = "汇总当前用户本周日程自动生成工作周报草稿（Markdown）。用于“帮我写周报/本周总结”。",
                     Parameters = new
                     {
@@ -640,6 +655,15 @@ namespace ZR.ServiceCore.AI
                     }
                 }
             };
+        }
+
+        /// <summary>
+        /// 全部工具定义（静态）：内置办工工具 + 各模块 Provider 注册的扩展工具。
+        /// 模型 function calling 与前端工具清单（GET aichat/tools）共用此集合，避免两处各维护一份导致漂移。
+        /// </summary>
+        private List<AiToolDef> BuildToolDefs()
+        {
+            var defs = BuildBuiltInToolDefs();
             defs.AddRange(_providerToolDefs);
             return defs;
         }
@@ -666,9 +690,9 @@ namespace ZR.ServiceCore.AI
         /// 模型 function calling 与前端工具清单（GET aichat/tools）共用此集合，避免两处过滤口径漂移；
         /// 声明了 Permission 的工具仅对有权限用户返回，权限计算失败按无权限处理（不下发受限工具）。
         /// </summary>
-        private List<AiToolDef> GetAuthorizedToolDefs(long userId)
+        private List<AiToolDef> GetAuthorizedToolDefs(long userId, bool personalized = false)
         {
-            var defs = BuildToolDefs();
+            var defs = personalized ? BuildToolDefsForUser(userId) : BuildToolDefs();
             var items = new List<AiToolDef>(defs.Count);
             // 按需加载：只有存在受限工具时才查权限，普通用户不产生额外开销；
             // 权限计算失败（返回 null）只查一次，并按"不可用"处理（fail-closed），不下发受限工具
@@ -692,15 +716,68 @@ namespace ZR.ServiceCore.AI
         }
 
         /// <summary>
-        /// 当前用户可见的工具展示名清单（GET aichat/tools）。
-        /// 只返回 Name/Label 两个展示字段，不含 Description，避免把工具能力细节透给前端；
+        /// 按当前用户定制后的工具定义（内置 + 各 Provider 的 GetToolDefsForUser）。
+        /// 仅用于前端工具清单——需要按权限定制示例问句（如 chart 只给有权数据集的示例）；
+        /// 模型 function calling 仍走静态 BuildToolDefs()，避免每次请求重复按用户计算与权限查询。
+        /// 去重口径与构造时一致：内置优先、同名以首个为准。
+        /// </summary>
+        private List<AiToolDef> BuildToolDefsForUser(long userId)
+        {
+            var defs = BuildBuiltInToolDefs();
+            var seen = new HashSet<string>(BuiltInToolNames, StringComparer.OrdinalIgnoreCase);
+            foreach (var provider in _toolProviders)
+            {
+                var providerDefs = provider.GetToolDefsForUser(userId);
+                if (providerDefs == null) continue;
+                foreach (var def in providerDefs)
+                {
+                    if (def == null || string.IsNullOrWhiteSpace(def.Name)) continue;
+                    if (!seen.Add(def.Name)) continue;
+                    defs.Add(def);
+                }
+            }
+            return defs;
+        }
+
+        /// <summary>
+        /// 当前用户可见的工具清单（GET aichat/tools）：展示名 + 空态引导示例问句。
+        /// 不含 Description，避免把工具能力细节透给前端；Samples 按用户权限定制（如 chart 只给有权数据集的示例）；
         /// 与下发给模型的工具数组同源（GetAuthorizedToolDefs），保证前端所见即模型可用。
         /// </summary>
         public Task<List<AiToolCatalogItemDto>> GetMyToolCatalogAsync(long userId)
         {
-            var items = GetAuthorizedToolDefs(userId)
-                .Select(def => new AiToolCatalogItemDto { Name = def.Name, Label = def.Label })
+            var items = GetAuthorizedToolDefs(userId, personalized: true)
+                .Select(def => new AiToolCatalogItemDto { Name = def.Name, Label = def.Label, Samples = def.Samples })
                 .ToList();
+            return Task.FromResult(items);
+        }
+
+        /// <summary>
+        /// 全量 AI 工具目录（管理端排查用）：内置工具 + 各 Provider 扩展工具，<b>不做权限过滤</b>。
+        /// 与 GetMyToolCatalogAsync 同源于工具定义（"目录所见即系统已注册"），差异仅在过滤与字段：
+        /// 本方法返回全量并附带 Provider/Source/Permission/Description，便于定位工具归属与实现模块。
+        /// 走静态定义（非按用户定制），示例问句为各 Provider 的默认值。
+        /// </summary>
+        public Task<List<AiToolCatalogDetailDto>> GetToolCatalogAsync()
+        {
+            var items = new List<AiToolCatalogDetailDto>();
+            foreach (var def in BuildToolDefs())
+            {
+                if (def == null || string.IsNullOrWhiteSpace(def.Name)) continue;
+                var isBuiltIn = BuiltInToolNames.Contains(def.Name);
+                items.Add(new AiToolCatalogDetailDto
+                {
+                    Name = def.Name,
+                    Label = def.Label,
+                    Provider = isBuiltIn
+                        ? BuiltInToolProviderName
+                        : _toolProviderMap.TryGetValue(def.Name, out var owner) ? owner.ProviderName : "unknown",
+                    Source = isBuiltIn ? "builtin" : "provider",
+                    Permission = def.Permission,
+                    Description = def.Description,
+                    Samples = def.Samples
+                });
+            }
             return Task.FromResult(items);
         }
 

@@ -116,6 +116,33 @@ namespace ZR.ServiceCore.AI.Charts
             ];
         }
 
+        /// <summary>
+        /// 按当前用户生成 chart 工具定义：示例问句只取用户有权访问的数据集，
+        /// 无权数据集不出现在引导里，避免用户点开才发现没权限。
+        /// 权限计算失败时退回不含数据集示例的静态定义（不做过度承诺）。
+        /// </summary>
+        public List<AiToolDef> GetToolDefsForUser(long userId)
+        {
+            var defs = GetToolDefs();
+            var perms = AiPermissionHelper.TryLoadPerms(_permissionService, userId);
+            if (perms == null) return defs;
+
+            var samples = new List<string>();
+            foreach (var d in _datasets)
+            {
+                if (d == null || string.IsNullOrWhiteSpace(d.Title)) continue;
+                if (!HasDatasetPerm(perms, d.Permission)) continue;
+                samples.Add($"看一下最近 7 天的{d.Title}");
+            }
+
+            var target = defs.FirstOrDefault(d => d.Name == "query_chart_dataset");
+            if (target != null && samples.Count > 0)
+            {
+                target.Samples = samples;
+            }
+            return defs;
+        }
+
         public async Task<AiToolExecResult> ExecuteAsync(string toolName, string argsJson, long userId)
         {
             if (toolName != "query_chart_dataset")

@@ -123,13 +123,19 @@ namespace ZR.Model.AI.Dto
         /// </summary>
         public string Permission { get; set; }
 
+        /// <summary>
+        /// 示例问句（空态引导"猜你想问"，点击即填充/发送）。只随前端工具清单下发，不参与模型请求。
+        /// 各 Provider 可按用户权限定制（重写 <c>GetToolDefsForUser</c>），如 chart 只给有权数据集的示例。
+        /// </summary>
+        public List<string> Samples { get; set; }
+
         /// <summary>JSON Schema（object），例如 { type="object", properties=..., required=... }</summary>
         public object Parameters { get; set; }
     }
 
     /// <summary>
-    /// 下发给前端的工具展示名清单项（GET aichat/tools）。
-    /// 只含展示所需字段，不含 Description，避免把工具能力细节透给前端。
+    /// 下发给前端的工具清单项（GET aichat/tools）：工具展示名 + 空态引导示例问句。
+    /// 不含 Description，避免把工具能力细节透给前端；Samples 只出现在当前用户有权使用的能力上。
     /// </summary>
     public class AiToolCatalogItemDto
     {
@@ -138,6 +144,41 @@ namespace ZR.Model.AI.Dto
 
         /// <summary>中文展示名；后端未登记时为 null，前端应降级显示 Name</summary>
         public string Label { get; set; }
+
+        /// <summary>
+        /// 示例问句（空态"猜你想问"，点击即填充/发送）。由后端按当前用户权限定制——
+        /// 仅出现在用户有权使用的能力上（如图表只给有权数据集的示例）；为空时前端用兜底文案。
+        /// </summary>
+        public List<string> Samples { get; set; }
+    }
+
+    /// <summary>
+    /// 全量 AI 工具目录项（管理端排查用）。与 <see cref="AiToolCatalogItemDto"/> 的区别：
+    /// 不做用户权限过滤，且附带 Provider / 来源 / 权限 / 说明，用于定位"某个工具由谁提供、
+    /// 落在哪个模块、需要什么权限、能做什么"，解决工具增多后难以反查实现的问题。
+    /// </summary>
+    public class AiToolCatalogDetailDto
+    {
+        /// <summary>工具名（模型 function calling 使用的 name）</summary>
+        public string Name { get; set; }
+
+        /// <summary>中文展示名；未登记时为 null</summary>
+        public string Label { get; set; }
+
+        /// <summary>归属提供者：内置工具为 builtin，扩展工具为 ProviderName（如 chart / log-analysis / workflow）</summary>
+        public string Provider { get; set; }
+
+        /// <summary>来源类型：builtin（SysAiChatService 内置）| provider（IAiAssistantToolProvider 注册）</summary>
+        public string Source { get; set; }
+
+        /// <summary>权限码；为空表示不做清单过滤（工具内部仍按用户隔离数据）</summary>
+        public string Permission { get; set; }
+
+        /// <summary>工具能力说明，供排查定位（仅管理端返回，普通用户清单不含该字段）</summary>
+        public string Description { get; set; }
+
+        /// <summary>默认示例问句（静态定义，未按用户权限定制）</summary>
+        public List<string> Samples { get; set; }
     }
 
     /// <summary>

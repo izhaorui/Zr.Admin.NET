@@ -35,6 +35,11 @@ namespace ZR.Workflow.Service
                 {
                     Name = "query_my_todos",
                     Label = "待办查询",
+                    Samples = new List<string>
+                    {
+                        "我有多少待办？",
+                        "待我审批的任务有哪些？"
+                    },
                     Description = "查询当前登录用户待我审批的待办任务列表。适用于“我有多少待办”“待我审批的”“我的待办”等提问。",
                     Parameters = new
                     {

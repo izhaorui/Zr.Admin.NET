@@ -50,6 +50,18 @@ namespace ZR.Admin.WebApi.Controllers.AI
         }
 
         /// <summary>
+        /// 【管理】全量 AI 工具目录：列出内置工具与各模块 Provider 注册的扩展工具及其
+        /// Provider/来源/权限/说明，<b>不做用户权限过滤</b>，仅供排查"功能对应哪个工具、落在哪个模块"。
+        /// 复用 ai:governance:list 管理权限，不新增权限码。
+        /// </summary>
+        [HttpGet("tools/catalog")]
+        [ActionPermissionFilter(Permission = "ai:governance:list")]
+        public async Task<IActionResult> ToolCatalog()
+        {
+            return SUCCESS(await _aiChatService.GetToolCatalogAsync());
+        }
+
+        /// <summary>
         /// 会话列表（按当前用户，最近更新倒序，最多 50 条）
         /// </summary>
         [HttpGet("sessions")]

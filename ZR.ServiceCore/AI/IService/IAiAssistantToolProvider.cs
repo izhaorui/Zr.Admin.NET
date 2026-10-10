@@ -22,5 +22,12 @@ namespace ZR.ServiceCore.AI.IService
         /// 3) 可预期业务失败（权限不足/参数非法/无数据）应使用 AiToolExecResult.Error 返回。
         /// </summary>
         Task<AiToolExecResult> ExecuteAsync(string toolName, string argsJson, long userId);
+
+        /// <summary>
+        /// 可选：按当前用户返回定制后的工具定义（如按权限裁剪示例问句、只列出有权数据集）。
+        /// 默认返回 <see cref="GetToolDefs"/>，无需用户维度的 Provider 不必实现。
+        /// 仅用于前端工具清单/空态引导，<b>不参与</b>模型 function calling 请求（模型仍用静态定义）。
+        /// </summary>
+        List<AiToolDef> GetToolDefsForUser(long userId) => GetToolDefs();
     }
 }
