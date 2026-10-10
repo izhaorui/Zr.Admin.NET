@@ -34,18 +34,18 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 查询商品管理列表
+        /// 查询商品管理列表（后台，不缓存、不套 C 端排序规则）
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
         public PagedInfo<ProductDto> GetList(ShoppingProductQueryDto parm)
         {
-            return QueryList(parm, useCache: false);
+            return QueryList(parm, useCache: false, isFrontList: false);
         }
 
         /// <summary>
-        /// C 端商品列表。只让「首页默认列表」进查询缓存：无任何筛选条件 + 第 1 页。
-        /// 这类查询参数固定、重复率最高；带筛选/翻页的组合无限，缓存键会随之膨胀，故不缓存。
+        /// C 端商品列表。只让「首页默认列表」进查询缓存：无任何筛选条件 + 第 1 页 + 默认综合档。
+        /// 这类查询参数固定、重复率最高；带筛选/翻页/换档位的组合无限，缓存键会随之膨胀，故不缓存。
         ///
         /// 说明：SaleStatus 由 C 端 Controller 强制为「在售」，是常量，不参与「是否默认查询」的判定，
         /// 否则条件永远不成立、缓存形同虚设。
@@ -55,39 +55,104 @@ namespace ZR.Mall.Service
             var isDefaultList = parm.PageNum <= 1
                 && string.IsNullOrWhiteSpace(parm.ProductName)
                 && string.IsNullOrWhiteSpace(parm.ProductCode)
+                && string.IsNullOrWhiteSpace(parm.Keyword)
                 && parm.ProductId == null
                 && parm.CategoryId == null
                 && parm.BrandId == null
                 && parm.BeginAddTime == null
-                && parm.EndAddTime == null;
+                && parm.EndAddTime == null
+                // 仅默认「综合」档进缓存：其余档位排序键不同，虽缓存键天然不同，但仍只缓存默认列表，
+                // 避免任前端自由传 sortMode 时把缓存键撑爆。
+                && ProductSortModeResolver.Resolve(parm.SortMode) == ProductSortMode.Synthesize;
 
-            return QueryList(parm, useCache: isDefaultList);
+            return QueryList(parm, useCache: isDefaultList, isFrontList: true);
         }
 
         /// <summary>
-        /// 商品列表查询主体：后台走 GetList（不缓存），C 端走 GetFrontList（仅默认列表缓存）。
+        /// 商品列表查询主体：后台走 GetList（不缓存、不排序规则），C 端走 GetFrontList（默认列表缓存 + 前台排序）。
         ///
         /// 缓存注意：本查询 Includes(Skus) 会 JOIN mms_skus，下单扣库存与 SKU 维护都会触发
         /// IsAutoRemoveDataCache 自动清缓存 —— 好处是库存/销量不会被缓存拖旧（成交后即刷新），
         /// 代价是命中率受写入频率影响。TTL 60 秒仅作兜底。
         /// </summary>
-        private PagedInfo<ProductDto> QueryList(ShoppingProductQueryDto parm, bool useCache)
+        /// <param name="parm">查询参数（含分页与筛选）</param>
+        /// <param name="useCache">是否启用查询缓存（仅 C 端默认列表为 true）</param>
+        /// <param name="isFrontList">是否 C 端列表：为 true 时套用前台排序规则（见 ApplyFrontSorting）。</param>
+        private PagedInfo<ProductDto> QueryList(ShoppingProductQueryDto parm, bool useCache, bool isFrontList)
         {
             var predicate = QueryExp(parm);
 
-            var response = Queryable()
+            var query = Queryable()
                 .WithCacheIF(useCache, 60)
                 .Where(predicate.ToExpression())
                 .Includes(x => x.Skus.Where(f => f.IsDelete == 0).ToList())
                 .Includes(x => x.Category)
-                .Includes(x => x.Brand)
-                .ToPage<Product, ProductDto>(parm);
+                .Includes(x => x.Brand);
+
+            if (isFrontList)
+            {
+                // 档位自 SortMode 解析（空值/非法值回落综合）。
+                query = ApplyFrontSorting(query, parm, ProductSortModeResolver.Resolve(parm.SortMode));
+                // 清掉通用排序字段：ToPage 内还会按 parm.Sort 再排一次，叠加会造成主/次排序错位；
+                // 且 parm.Sort 是前端可控字符串，清空同时收敛其排序注入面。
+                parm.Sort = string.Empty;
+            }
+
+            var response = query.ToPage<Product, ProductDto>(parm);
             foreach (var item in response.Result)
             {
                 item.Stock = item.Skus.Sum(s => s.Stock);
                 item.TotalSalesVolume = item.Skus.Sum(s => s.SalesVolume);
             }
             return response;
+        }
+
+        /// <summary>
+        /// C 端排序规则（全部在库内完成，保证分页稳定）：
+        /// <list type="bullet">
+        /// <item>综合（默认）：携带搜索词时先按 命中商品名(3) &gt; 命中编码(2) &gt; 仅命中简介(1) 分级，
+        /// 再按 运营置顶 SortId DESC → 销量 DESC → 上新时间 DESC；不带搜索词则直接 置顶→销量→上新。</item>
+        /// <item>销量 / 价格升 / 价格降 / 上新：只按各自字段排序，不带置顶权重 ——
+        /// 用户明确选了硬排序，就不该被运营置顶插队。</item>
+        /// <item>所有档位统一以 ProductId DESC 兜底，保证同值时分页不跳页、不重复。</item>
+        /// </list>
+        ///
+        /// 关键：销量取按商品求和 <see cref="Skus.SalesVolume"/> 的相关子查询，而不是读 <c>Product.TotalSalesVolume</c> ——
+        /// 后者是历史冗余列，全链路从未写入（恒为 0），用它排序会退化成无效条件。
+        /// 相关性用 SqlFunc.IIF 在库内算等级，避免把结果集拉进内存再排。
+        /// </summary>
+        private static ISugarQueryable<Product> ApplyFrontSorting(ISugarQueryable<Product> query, ShoppingProductQueryDto parm, ProductSortMode mode)
+        {
+            var keyword = parm.Keyword?.Trim();
+
+            switch (mode)
+            {
+                case ProductSortMode.Sales:
+                    query = query.OrderBy(p => SqlFunc.Subqueryable<Skus>().Where(s => s.ProductId == p.ProductId && s.IsDelete == 0).Sum(s => s.SalesVolume), OrderByType.Desc);
+                    break;
+                case ProductSortMode.PriceAsc:
+                    query = query.OrderBy(p => p.Price, OrderByType.Asc);
+                    break;
+                case ProductSortMode.PriceDesc:
+                    query = query.OrderBy(p => p.Price, OrderByType.Desc);
+                    break;
+                case ProductSortMode.Newest:
+                    query = query.OrderBy(p => p.AddTime, OrderByType.Desc);
+                    break;
+                default:
+                    // 综合：搜索相关性（仅带搜索词时）→ 运营置顶 → 销量 → 上新
+                    if (!string.IsNullOrEmpty(keyword))
+                    {
+                        query = query.OrderBy(p => SqlFunc.IIF(p.ProductName.Contains(keyword), 3,
+                            SqlFunc.IIF(p.ProductCode.Contains(keyword), 2, 1)), OrderByType.Desc);
+                    }
+                    query = query.OrderBy(p => p.SortId, OrderByType.Desc)
+                                 .OrderBy(p => SqlFunc.Subqueryable<Skus>().Where(s => s.ProductId == p.ProductId && s.IsDelete == 0).Sum(s => s.SalesVolume), OrderByType.Desc)
+                                 .OrderBy(p => p.AddTime, OrderByType.Desc);
+                    break;
+            }
+
+            return query.OrderBy(p => p.ProductId, OrderByType.Desc);
         }
 
         /// <summary>
@@ -454,6 +519,11 @@ namespace ZR.Mall.Service
 
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.ProductName), it => it.ProductName.Contains(parm.ProductName));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.ProductCode), it => it.ProductCode == parm.ProductCode);
+            // C 端搜索：命中 商品名/编码/简介 任一即返回（相关性分级排序见 ApplyFrontSorting）。
+            // 与 ProductName 精确筛选并存：后台继续用 ProductName，前台搜索用 Keyword，互不干扰。
+            var keyword = parm.Keyword?.Trim();
+            predicate = predicate.AndIF(!string.IsNullOrWhiteSpace(keyword),
+                it => it.ProductName.Contains(keyword) || it.ProductCode.Contains(keyword) || it.Introduce.Contains(keyword));
             predicate = predicate.AndIF(parm.CategoryId != null, it => it.CategoryId == parm.CategoryId);
             predicate = predicate.AndIF(parm.BrandId != null, it => it.BrandId == parm.BrandId);
             predicate = predicate.AndIF(parm.ProductId != null, it => it.ProductId == parm.ProductId);

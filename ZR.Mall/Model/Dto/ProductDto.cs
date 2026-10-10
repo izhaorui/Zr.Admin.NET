@@ -16,6 +16,21 @@ namespace ZR.Mall.Model.Dto
         public int? BrandId { get; set; }
         public DateTime? BeginAddTime { get; set; }
         public DateTime? EndAddTime { get; set; }
+
+        /// <summary>
+        /// C 端排序档位（仅前台列表 FrontProductController.list 生效，后台列表忽略）。
+        /// 取值 token：comprehensive/synthesize(综合，默认)、sales(销量)、price_asc(价格升)、
+        /// price_desc(价格降)、newest(上新)；空值或非法值一律回落"综合"。
+        /// 解析见 <see cref="Common.ProductSortModeResolver"/>，各档排序键见 <see cref="Enum.ProductSortMode"/>。
+        /// </summary>
+        public string SortMode { get; set; }
+
+        /// <summary>
+        /// C 端搜索关键词（仅前台列表生效）：命中 商品名 / 商品编码 / 简介 任一即返回，
+        /// 且命中商品名的排在仅命中编码/简介的之前（相关性分级，见 ProductService.ApplyFrontSorting）。
+        /// 与 <see cref="ProductName"/> 的区别：ProductName 是后台按商品名的精确筛选，本字段是前台模糊搜索的入口。
+        /// </summary>
+        public string Keyword { get; set; }
     }
 
     /// <summary>

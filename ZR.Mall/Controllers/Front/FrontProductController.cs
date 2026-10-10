@@ -31,8 +31,21 @@ namespace ZR.Mall.Controllers.Front
         }
 
         /// <summary>
-        /// 匿名商品列表（仅上架商品）
+        /// 匿名商品列表（仅上架商品）。C 端首页推荐位、分类筛选、搜索共用本接口，排序规则也一致。
         /// </summary>
+        /// <remarks>
+        /// 排序参数：
+        /// <list type="bullet">
+        /// <item><c>sortMode</c>（可选，默认综合）：comprehensive/synthesize=综合、
+        /// sales=销量、price_asc=价格升、price_desc=价格降、newest=上新；
+        /// 空值或非法值一律回落"综合"。</item>
+        /// <item><c>keyword</c>（可选，搜索用）：命中 商品名/编码/简介 任一即返回，
+        /// 综合档下命中商品名的排在仅命中编码/简介的之前；搜索优先相关性，其次才是销量。</item>
+        /// </list>
+        /// 综合档 = 运营置顶权重（商品 SortId，越大越靠前）→ 销量 → 上新时间；
+        /// 其余档位只按各自字段排序，不带置顶。排序与分页全部在库内完成。
+        /// 规则实现见 <see cref="IProductService.GetFrontList"/> 与 ProductService.ApplyFrontSorting。
+        /// </remarks>
         [HttpGet("list")]
         public IActionResult QueryShoppingProduct([FromQuery] ShoppingProductQueryDto parm)
         {
