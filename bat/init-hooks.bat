@@ -1,31 +1,38 @@
 @echo off
 rem ============================================================================
-rem 启用仓库级 git hooks（提交信息校验）
-rem 每台机器 clone 后执行一次即可；重复执行无害。
-rem 用法：双击运行，或在仓库根目录执行 bat\init-hooks.bat
+rem Enable repository-level git hooks (commit message validation).
+rem Run once per machine after clone; running it again is harmless.
+rem Usage: double-click, or run bat\init-hooks.bat from the repository root.
+rem
+rem IMPORTANT: keep this file ASCII-only.
+rem    cmd.exe decodes .bat with the OEM/ANSI code page (936 on zh-CN Windows).
+rem    UTF-8 Chinese text gets mis-decoded into mojibake and a trailing
+rem    double-byte char swallows the CRLF: the next line is then joined to the
+rem    previous one, so "pause" inside an error block never runs and the window
+rem    closes before the message can be read.
 rem ============================================================================
 
 cd /d "%~dp0.."
 
 if not exist ".git" (
-    echo [错误] 未找到 .git 目录，请在仓库根目录运行本脚本。
+    echo [ERROR] .git not found. Run this script from the repository root.
     pause
     exit /b 1
 )
 
 if not exist ".githooks\commit-msg" (
-    echo [错误] 缺少 .githooks\commit-msg，请确认仓库完整。
+    echo [ERROR] .githooks\commit-msg is missing. Please check the repository.
     pause
     exit /b 1
 )
 
 git config core.hooksPath .githooks
 if errorlevel 1 (
-    echo [错误] 配置失败，请确认已安装 Git 并加入 PATH。
+    echo [ERROR] Failed to configure. Make sure Git is installed and on PATH.
     pause
     exit /b 1
 )
 
-echo 已启用提交信息校验：core.hooksPath = .githooks
-echo 提交时会自动校验格式，规则见 CONTRIBUTING.md
+echo Commit message validation enabled: core.hooksPath = .githooks
+echo Messages are checked on every commit, see CONTRIBUTING.md
 pause
