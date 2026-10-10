@@ -14,9 +14,12 @@
 6. 工具响应应控制长度，避免把超长原始数据回灌给模型。
 
 ### 工具命名与可维护性
-1. 工具名必须稳定且语义明确，避免频繁变更。
+1. 工具名必须稳定且语义明确，避免频繁变更；新增工具建议带模块前缀（如 `wf_`、`mall_`），便于按模块检索归属。
 2. 工具参数需有清晰 JSON Schema（type/properties/required）。
-3. 同名工具不应在多个提供者重复注册；如重复，以首个注册者为准。
+3. 同名工具不应在多个提供者重复注册；如重复，以首个注册者为准（`SysAiChatService` 启动时告警并忽略后者）。
+4. 所有工具（**含内置办工工具**）统一通过 `IAiAssistantToolProvider` 注册；内置工具见 `ZR.ServiceCore/AI/AiOfficeToolProvider.cs`，`SysAiChatService` 不持有任何工具定义或执行分支。
+5. 每个工具必须填写 `Label`（中文展示名）；建议填写 `Samples`（示例问句，用作前端空态「猜你想问」，见 `document/doc/AI助手空态引导与工具示例问句.md`）；声明权限的工具同时填写 `Permission`。
+6. 需要按用户权限定制示例问句/清单的工具，重写接口的 `GetToolDefsForUser(userId)`（默认回退 `GetToolDefs()`）；该结果仅用于前端清单，模型 function calling 仍用静态定义。
 
 ## 提交要求
 1. 变更 ISysAiChatService / SysAiChatService / IAiAssistantToolProvider 后，必须本地编译通过。

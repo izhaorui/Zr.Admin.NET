@@ -154,7 +154,7 @@ namespace ZR.Model.AI.Dto
 
     /// <summary>
     /// 全量 AI 工具目录项（管理端排查用）。与 <see cref="AiToolCatalogItemDto"/> 的区别：
-    /// 不做用户权限过滤，且附带 Provider / 来源 / 权限 / 说明，用于定位"某个工具由谁提供、
+    /// 不做用户权限过滤，且附带 Provider / 权限 / 说明，用于定位"某个工具由谁提供、
     /// 落在哪个模块、需要什么权限、能做什么"，解决工具增多后难以反查实现的问题。
     /// </summary>
     public class AiToolCatalogDetailDto
@@ -165,11 +165,8 @@ namespace ZR.Model.AI.Dto
         /// <summary>中文展示名；未登记时为 null</summary>
         public string Label { get; set; }
 
-        /// <summary>归属提供者：内置工具为 builtin，扩展工具为 ProviderName（如 chart / log-analysis / workflow）</summary>
+        /// <summary>归属提供者 ProviderName（内置办工工具为 office，其余如 chart / log-analysis / workflow）</summary>
         public string Provider { get; set; }
-
-        /// <summary>来源类型：builtin（SysAiChatService 内置）| provider（IAiAssistantToolProvider 注册）</summary>
-        public string Source { get; set; }
 
         /// <summary>权限码；为空表示不做清单过滤（工具内部仍按用户隔离数据）</summary>
         public string Permission { get; set; }

@@ -26,8 +26,6 @@ namespace ZR.ServiceCore.AI
     [AppService(ServiceType = typeof(ISysAiChatService), ServiceLifetime = LifeTime.Transient)]
     public class SysAiChatService : BaseService<AiChatSession>, ISysAiChatService
     {
-        private readonly ISysAiService _sysAi;
-        private readonly IDailyScheduleService _scheduleService;
         private readonly IAiChatLlmGateway _llm;
         private readonly ISysPermissionService _permissionService;
         private readonly IReadOnlyList<IAiAssistantToolProvider> _toolProviders;
@@ -52,31 +50,13 @@ namespace ZR.ServiceCore.AI
         /// <summary>单条用户消息最大长度（与请求 DTO 校验一致，服务端兜底防超长文本烧 token）</summary>
         private const int MaxUserMessageLength = 2000;
 
-        /// <summary>内置工具名（工具名全局唯一：与 Provider 注册的同名工具冲突时以内置为准）。</summary>
-        private const string ToolQueryMySchedules = "query_my_schedules";
-        private const string ToolParseSchedule = "parse_schedule";
-        private const string ToolGenerateWeeklyReport = "generate_weekly_report";
-
-        private static readonly HashSet<string> BuiltInToolNames = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ToolQueryMySchedules, ToolParseSchedule, ToolGenerateWeeklyReport
-        };
-
-        /// <summary>内置工具在工具目录里的来源标识（无 Provider，标为 builtin 便于分组）。</summary>
-        private const string BuiltInToolProviderName = "builtin";
-
-        /// <param name="sysAi">系统 AI 服务（日程解析/周报）</param>
-        /// <param name="scheduleService">日程服务（日程查询工具）</param>
         /// <param name="llm">大模型调用网关（封装静态 AiLlmClient，便于测试替换）</param>
-        /// <param name="toolProviders">各模块注册的扩展工具提供者</param>
+        /// <param name="toolProviders">各模块注册的工具提供者（内置办工工具也已实现该接口，见 AiOfficeToolProvider）</param>
         /// <param name="permissionService">权限服务（工具清单按用户权限过滤）</param>
         /// <param name="env">宿主环境（本机上传图片转 data URI 时定位 wwwroot）</param>
-        public SysAiChatService(ISysAiService sysAi, IDailyScheduleService scheduleService,
-            IAiChatLlmGateway llm, IEnumerable<IAiAssistantToolProvider> toolProviders,
+        public SysAiChatService(IAiChatLlmGateway llm, IEnumerable<IAiAssistantToolProvider> toolProviders,
             ISysPermissionService permissionService, IWebHostEnvironment env)
         {
-            _sysAi = sysAi;
-            _scheduleService = scheduleService;
             _llm = llm;
             _permissionService = permissionService;
             _env = env;
@@ -93,11 +73,6 @@ namespace ZR.ServiceCore.AI
                     if (def == null || string.IsNullOrWhiteSpace(def.Name)) continue;
                     // 工具名全局唯一（CONTRIBUTING 约定）。重复注册若静默保留，同一工具会在前端清单
                     // 与模型请求里各出现两次，且模型调用时归属不确定，因此丢弃并告警。
-                    if (BuiltInToolNames.Contains(def.Name))
-                    {
-                        _logger.Warn($"AI 扩展工具名与内置工具重复已忽略：{def.Name}（提供者 {provider.ProviderName}）");
-                        continue;
-                    }
                     if (_toolProviderMap.TryGetValue(def.Name, out var owner))
                     {
                         _logger.Warn($"AI 工具名重复已忽略：{def.Name}（已由 {owner.ProviderName} 注册，跳过 {provider.ProviderName} 的重复定义）");
@@ -589,83 +564,12 @@ namespace ZR.ServiceCore.AI
         #region 工具定义与执行
 
         /// <summary>
-        /// 内置办工工具定义（不依赖实例状态，供静态清单与"按用户清单"共用）。
-        /// 内置工具不声明 Permission：它们只访问“当前登录用户自己的数据”（日程/周报，按 userId 隔离），
-        /// 不存在跨用户越权面；若声明权限码而菜单未授权，会把这些工具从所有人的清单里一并隐藏（功能回归）。
-        /// 需要按人/按角色控制的内置能力，请改为 Provider 注册并声明 Permission。
-        /// </summary>
-        private static List<AiToolDef> BuildBuiltInToolDefs()
-        {
-            return new List<AiToolDef>
-            {
-                new AiToolDef
-                {
-                    Name = ToolQueryMySchedules,
-                    Label = "日程查询",
-                    Samples = new List<string>
-                    {
-                        "我今天有什么日程安排？",
-                        "帮我看看最近一周的日程"
-                    },
-                    Description = "查询当前登录用户指定日期范围内的日程安排（按截止/完成/创建时间任一命中，含已完成）。不传参数默认查最近 7 天。用于“我今天有什么安排/本周日程/某天日程”。",
-                    Parameters = new
-                    {
-                        type = "object",
-                        properties = new Dictionary<string, object>
-                        {
-                            ["startDate"] = new { type = "string", description = "开始日期，格式 yyyy-MM-dd，可省略" },
-                            ["endDate"] = new { type = "string", description = "结束日期（含当天），格式 yyyy-MM-dd，可省略" }
-                        },
-                        required = Array.Empty<string>()
-                    }
-                },
-                new AiToolDef
-                {
-                    Name = ToolParseSchedule,
-                    Label = "日程解析",
-                    Samples = new List<string>
-                    {
-                        "帮我记一下：明天上午10点和产品过需求"
-                    },
-                    Description = "把用户口语化的日程描述解析成结构化日程草稿（标题/内容/优先级/截止/提醒）。只生成草稿不落库。用于“帮我记一个日程：...”等表达。",
-                    Parameters = new
-                    {
-                        type = "object",
-                        properties = new Dictionary<string, object>
-                        {
-                            ["text"] = new { type = "string", description = "用户原始口语描述" }
-                        },
-                        required = new[] { "text" }
-                    }
-                },
-                new AiToolDef
-                {
-                    Name = ToolGenerateWeeklyReport,
-                    Label = "周报生成",
-                    Samples = new List<string>
-                    {
-                        "帮我写一下本周的工作周报"
-                    },
-                    Description = "汇总当前用户本周日程自动生成工作周报草稿（Markdown）。用于“帮我写周报/本周总结”。",
-                    Parameters = new
-                    {
-                        type = "object",
-                        properties = new Dictionary<string, object>(),
-                        required = Array.Empty<string>()
-                    }
-                }
-            };
-        }
-
-        /// <summary>
-        /// 全部工具定义（静态）：内置办工工具 + 各模块 Provider 注册的扩展工具。
+        /// 全部工具定义（静态）：各模块 Provider 注册的工具（内置办工工具已在 <c>AiOfficeToolProvider</c> 注册）。
         /// 模型 function calling 与前端工具清单（GET aichat/tools）共用此集合，避免两处各维护一份导致漂移。
         /// </summary>
         private List<AiToolDef> BuildToolDefs()
         {
-            var defs = BuildBuiltInToolDefs();
-            defs.AddRange(_providerToolDefs);
-            return defs;
+            return _providerToolDefs.ToList();
         }
 
         /// <summary>
@@ -716,15 +620,15 @@ namespace ZR.ServiceCore.AI
         }
 
         /// <summary>
-        /// 按当前用户定制后的工具定义（内置 + 各 Provider 的 GetToolDefsForUser）。
+        /// 按当前用户定制后的工具定义（各 Provider 的 GetToolDefsForUser）。
         /// 仅用于前端工具清单——需要按权限定制示例问句（如 chart 只给有权数据集的示例）；
         /// 模型 function calling 仍走静态 BuildToolDefs()，避免每次请求重复按用户计算与权限查询。
-        /// 去重口径与构造时一致：内置优先、同名以首个为准。
+        /// 去重口径与构造时一致：同名以首个为准。
         /// </summary>
         private List<AiToolDef> BuildToolDefsForUser(long userId)
         {
-            var defs = BuildBuiltInToolDefs();
-            var seen = new HashSet<string>(BuiltInToolNames, StringComparer.OrdinalIgnoreCase);
+            var defs = new List<AiToolDef>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var provider in _toolProviders)
             {
                 var providerDefs = provider.GetToolDefsForUser(userId);
@@ -753,9 +657,9 @@ namespace ZR.ServiceCore.AI
         }
 
         /// <summary>
-        /// 全量 AI 工具目录（管理端排查用）：内置工具 + 各 Provider 扩展工具，<b>不做权限过滤</b>。
+        /// 全量 AI 工具目录（管理端排查用）：各模块 Provider 注册的全部工具，<b>不做权限过滤</b>。
         /// 与 GetMyToolCatalogAsync 同源于工具定义（"目录所见即系统已注册"），差异仅在过滤与字段：
-        /// 本方法返回全量并附带 Provider/Source/Permission/Description，便于定位工具归属与实现模块。
+        /// 本方法返回全量并附带 Provider/Permission/Description，便于定位工具归属与实现模块。
         /// 走静态定义（非按用户定制），示例问句为各 Provider 的默认值。
         /// </summary>
         public Task<List<AiToolCatalogDetailDto>> GetToolCatalogAsync()
@@ -764,15 +668,11 @@ namespace ZR.ServiceCore.AI
             foreach (var def in BuildToolDefs())
             {
                 if (def == null || string.IsNullOrWhiteSpace(def.Name)) continue;
-                var isBuiltIn = BuiltInToolNames.Contains(def.Name);
                 items.Add(new AiToolCatalogDetailDto
                 {
                     Name = def.Name,
                     Label = def.Label,
-                    Provider = isBuiltIn
-                        ? BuiltInToolProviderName
-                        : _toolProviderMap.TryGetValue(def.Name, out var owner) ? owner.ProviderName : "unknown",
-                    Source = isBuiltIn ? "builtin" : "provider",
+                    Provider = _toolProviderMap.TryGetValue(def.Name, out var owner) ? owner.ProviderName : "unknown",
                     Permission = def.Permission,
                     Description = def.Description,
                     Samples = def.Samples
@@ -782,7 +682,7 @@ namespace ZR.ServiceCore.AI
         }
 
         /// <summary>
-        /// 执行指定工具
+        /// 执行指定工具：按工具名路由到对应的注册 Provider（含内置办工工具）。
         /// </summary>
         /// <param name="toolName">工具名称</param>
         /// <param name="arguments">工具参数</param>
@@ -791,17 +691,6 @@ namespace ZR.ServiceCore.AI
         /// <returns>工具执行结果</returns>
         private async Task<AiToolExecResult> ExecuteToolAsync(string toolName, string arguments, long userId, long sessionId)
         {
-            var args = string.IsNullOrWhiteSpace(arguments) ? new JObject() : JObject.Parse(arguments);
-            switch (toolName)
-            {
-                case "query_my_schedules":
-                    return await QueryMySchedulesAsync(args, userId);
-                case "parse_schedule":
-                    return await ParseScheduleAsync(args);
-                case "generate_weekly_report":
-                    return await GenerateWeeklyReportAsync(userId);
-            }
-
             if (_toolProviderMap.TryGetValue(toolName ?? string.Empty, out var provider))
             {
                 var exec = await provider.ExecuteAsync(toolName, arguments, userId);
@@ -811,79 +700,6 @@ namespace ZR.ServiceCore.AI
                 }
             }
             return AiToolExecResult.Error($"未知工具：{toolName}");
-        }
-
-        /// <summary>
-        /// 查询本人日程
-        /// </summary>
-        /// <param name="args">查询参数</param>
-        /// <param name="userId">用户ID</param>
-        /// <returns>工具执行结果</returns>
-        private async Task<AiToolExecResult> QueryMySchedulesAsync(JObject args, long userId)
-        {
-            var startDate = AiHelper.TryParseDate(args["startDate"]?.Value<string>()) ?? DateTime.Today;
-            var endDate = AiHelper.TryParseDate(args["endDate"]?.Value<string>()) ?? startDate.AddDays(6);
-            endDate = endDate.Date.AddDays(1).AddSeconds(-1);
-
-            var list = await _scheduleService.GetByDateRangeAsync(userId, startDate, endDate);
-            if (list == null || list.Count == 0)
-            {
-                return AiToolExecResult.Success(
-                    $"在 {startDate:yyyy-MM-dd} 至 {endDate:yyyy-MM-dd} 期间未查询到日程安排。");
-            }
-            var lines = list.Take(50).Select(s =>
-            {
-                var status = s.Status == "1" ? "已完成" : "未完成";
-                var pri = s.Priority switch { 1 => "低", 3 => "高", _ => "中" };
-                var due = s.DueTime?.ToString("MM-dd HH:mm") ?? "无截止";
-                var content = string.IsNullOrWhiteSpace(s.Content) ? "" : $" | {AiHelper.ClipText(s.Content, 120)}";
-                return $"- [{status}][优先级{pri}] {s.Title}（截止 {due}）{content}";
-            });
-            var tail = list.Count > 50 ? $"\n（共 {list.Count} 条，仅显示前 50 条）" : "";
-            return AiToolExecResult.Success(
-                $"查询到 {list.Count} 条日程：\n" + string.Join("\n", lines) + tail);
-        }
-
-        /// <summary>
-        /// 日程口语解析（草稿，不落库）
-        /// </summary>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        private async Task<AiToolExecResult> ParseScheduleAsync(JObject args)
-        {
-            var text = args["text"]?.Value<string>();
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return AiToolExecResult.Error("缺少待解析的日程描述 text");
-            }
-            var result = await _sysAi.ParseScheduleAsync(new SysAiScheduleParseInput { Text = text });
-            var pri = result.Priority switch { 1 => "低", 3 => "高", _ => "中" };
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"日程草稿解析完成（未保存，展示给用户确认即可）：");
-            sb.AppendLine($"- 标题：{result.Title}");
-            if (!string.IsNullOrWhiteSpace(result.Content)) sb.AppendLine($"- 内容：{result.Content}");
-            sb.AppendLine($"- 优先级：{result.Priority}({pri})");
-            if (!string.IsNullOrWhiteSpace(result.DueTime)) sb.AppendLine($"- 截止时间：{result.DueTime}");
-            if (!string.IsNullOrWhiteSpace(result.ReminderTime)) sb.AppendLine($"- 提醒时间：{result.ReminderTime}");
-            if (!string.IsNullOrWhiteSpace(result.Warnings)) sb.AppendLine($"- 说明：{result.Warnings}");
-            return AiToolExecResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        private async Task<AiToolExecResult> GenerateWeeklyReportAsync(long userId)
-        {
-            var result = await _sysAi.GenerateWeeklyReportAsync(new SysAiWeeklyReportInput(), userId);
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"本周周报已生成（统计周期 {result.PeriodStart} ~ {result.PeriodEnd}，共 {result.Total} 条日程）：");
-            if (!string.IsNullOrWhiteSpace(result.Summary)) sb.AppendLine($"\n【整体情况】\n{result.Summary}");
-            if (result.Completed.Count > 0) sb.AppendLine($"\n【已完成】\n" + string.Join("\n", result.Completed.Select(x => $"- {x}")));
-            if (result.Pending.Count > 0) sb.AppendLine($"\n【未完成/待办】\n" + string.Join("\n", result.Pending.Select(x => $"- {x}")));
-            if (result.Risks.Count > 0) sb.AppendLine($"\n【风险提示】\n" + string.Join("\n", result.Risks.Select(x => $"- {x}")));
-            return AiToolExecResult.Success(sb.ToString());
         }
 
         #endregion 工具定义与执行
