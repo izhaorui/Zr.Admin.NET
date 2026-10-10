@@ -100,10 +100,51 @@ namespace ZR.Mall.Model
         public int TotalSalesVolume { get; set; }
 
         /// <summary>
+        /// 总库存（所有未删 SKU 的 Stock 之和），由 <see cref="Common.ProductTotalsRefresher"/> 维护。
+        /// 用途：C 端"缺货沉底 / 仅看有货"直接读本列排序与过滤，避免在 ORDER BY 里用 SKU 相关子查询
+        /// （SqlSugar 在 Includes + 分页场景下无法正确绑定子查询里的外表别名，会报 could not be bound）。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int TotalStock { get; set; }
+
+        /// <summary>
         /// 排序ID (越大排序越靠前)
         /// </summary>
         [SugarColumn(DefaultValue = "0")]
         public int SortId { get; set; } = 0;
+
+        /// <summary>
+        /// 置顶生效开始时间（为空表示不限开始时间）。与 <see cref="TopEndTime"/> 共同实现"置顶时效"：
+        /// 只有当前时间落在 [开始, 结束] 窗口内，<see cref="SortId"/> 才参与 C 端综合排序。
+        /// </summary>
+        public DateTime? TopBeginTime { get; set; }
+
+        /// <summary>
+        /// 置顶生效结束时间（为空表示长期有效）。超出窗口后置顶自动失效，无需人工下架。
+        /// </summary>
+        public DateTime? TopEndTime { get; set; }
+
+        /// <summary>
+        /// 首页场景权重（越大越靠前）：C 端"首页/推荐位"（无分类、无关键词）综合排序时使用。
+        /// </summary>
+        /// <remarks>
+        /// 分场景权重用独立数值列，而不是 JSON 列：JSON 子属性无法可靠地用于 SQL 的 ORDER BY
+        /// （需按数据库方言写 JSON_EXTRACT/JSON_VALUE，跨库不稳），列则天然可排序、可加索引。
+        /// </remarks>
+        [SugarColumn(DefaultValue = "0")]
+        public int HomeWeight { get; set; } = 0;
+
+        /// <summary>
+        /// 分类场景权重（越大越靠前）：C 端按分类筛选且无关键词时使用。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int CategoryWeight { get; set; } = 0;
+
+        /// <summary>
+        /// 搜索场景权重（越大越靠前）：C 端带关键词搜索时使用（相关性分级仍优先于它）。
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int SearchWeight { get; set; } = 0;
 
         /// <summary>
         /// 显示状态 1.在售 0.下架

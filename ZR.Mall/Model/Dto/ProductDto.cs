@@ -31,6 +31,12 @@ namespace ZR.Mall.Model.Dto
         /// 与 <see cref="ProductName"/> 的区别：ProductName 是后台按商品名的精确筛选，本字段是前台模糊搜索的入口。
         /// </summary>
         public string Keyword { get; set; }
+
+        /// <summary>
+        /// 仅看有货（仅前台列表生效）：为 true 时过滤掉所有 SKU 均无可售库存的商品。
+        /// 默认 false —— 缺货商品不隐藏，只沉到列表末尾（见 ProductService.ApplyFrontSorting 的缺货沉底）。
+        /// </summary>
+        public bool OnlyInStock { get; set; }
     }
 
     /// <summary>
@@ -93,6 +99,26 @@ namespace ZR.Mall.Model.Dto
 
         [ExcelColumn(Name = "排序ID")]
         public int SortId { get; set; }
+
+        /// <summary>置顶生效开始时间（为空表示不限）</summary>
+        [ExcelColumn(Name = "置顶开始", Format = "yyyy-MM-dd HH:mm:ss")]
+        public DateTime? TopBeginTime { get; set; }
+
+        /// <summary>置顶生效结束时间（为空表示长期有效）</summary>
+        [ExcelColumn(Name = "置顶结束", Format = "yyyy-MM-dd HH:mm:ss")]
+        public DateTime? TopEndTime { get; set; }
+
+        /// <summary>首页场景权重（越大越靠前）</summary>
+        [ExcelColumn(Name = "首页权重")]
+        public int HomeWeight { get; set; }
+
+        /// <summary>分类场景权重（越大越靠前）</summary>
+        [ExcelColumn(Name = "分类权重")]
+        public int CategoryWeight { get; set; }
+
+        /// <summary>搜索场景权重（越大越靠前）</summary>
+        [ExcelColumn(Name = "搜索权重")]
+        public int SearchWeight { get; set; }
 
         [ExcelColumn(Name = "售卖状态", Ignore = true)]
         public SaleStatus SaleStatus { get; set; }

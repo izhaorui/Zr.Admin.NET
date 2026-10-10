@@ -196,6 +196,9 @@ namespace ZR.Mall.Service
                         .ExecuteCommand();
                 }
             }
+
+            // 顺带回写商品总销量/总库存：SKU 增删改都会改变汇总，统一在这里保持一致（见 ProductTotalsRefresher）
+            ProductTotalsRefresher.Refresh(Context, productIds);
         }
 
         /// <summary>

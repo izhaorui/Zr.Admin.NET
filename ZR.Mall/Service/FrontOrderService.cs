@@ -539,6 +539,9 @@ namespace ZR.Mall.Service
                         }
                     }
 
+                    // 回写商品总销量/总库存（C 端销量/热度排序、缺货沉底读的就是它们），与扣库存同一事务，保证一致
+                    ProductTotalsRefresher.Refresh(db, productIds);
+
                     order.Items = orderItems;
                 });
 

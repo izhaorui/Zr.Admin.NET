@@ -1,3 +1,4 @@
+using ZR.Common;
 using ZR.Mall.Common;
 using ZR.Mall.Enum;
 using ZR.Mall.Model;
@@ -22,6 +23,18 @@ namespace ZR.Mall.Service
         private const int MaxFormFieldSkuQuery = 50;
 
         /// <summary>
+        /// 列表分页的每页上限（后台与 C 端共用）。C 端匿名可访问，必须兜住超大 PageSize 的拖库风险。
+        /// 导出接口不受此上限约束（按需一次性取全量，见 ExportList）。
+        /// </summary>
+        private const int MaxListPageSize = 100;
+
+        /// <summary>
+        /// 商品名全文索引名（MySQL 就绪探测用；SQL Server 索引名由系统生成，探测只看该表有没有全文索引）。
+        /// 与 document/doc 里的建索引脚本保持一致。
+        /// </summary>
+        private const string ProductNameFtsIndex = "ft_product_name";
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="skusService"></param>
@@ -40,6 +53,7 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public PagedInfo<ProductDto> GetList(ShoppingProductQueryDto parm)
         {
+            ClampPaging(parm);
             return QueryList(parm, useCache: false, isFrontList: false);
         }
 
@@ -52,10 +66,13 @@ namespace ZR.Mall.Service
         /// </summary>
         public PagedInfo<ProductDto> GetFrontList(ShoppingProductQueryDto parm)
         {
+            ClampPaging(parm);
+
             var isDefaultList = parm.PageNum <= 1
                 && string.IsNullOrWhiteSpace(parm.ProductName)
                 && string.IsNullOrWhiteSpace(parm.ProductCode)
                 && string.IsNullOrWhiteSpace(parm.Keyword)
+                && !parm.OnlyInStock
                 && parm.ProductId == null
                 && parm.CategoryId == null
                 && parm.BrandId == null
@@ -66,6 +83,37 @@ namespace ZR.Mall.Service
                 && ProductSortModeResolver.Resolve(parm.SortMode) == ProductSortMode.Synthesize;
 
             return QueryList(parm, useCache: isDefaultList, isFrontList: true);
+        }
+
+        /// <summary>
+        /// 分页参数兜底：PageNum/PageSize 越界修正，PageSize 上限 <see cref="MaxListPageSize"/>。
+        /// 直接改传入对象（请求级对象，调用方在此之后不再使用旧值）。
+        /// </summary>
+        private static void ClampPaging(ShoppingProductQueryDto parm)
+        {
+            if (parm == null) return;
+            if (parm.PageNum < 1) parm.PageNum = 1;
+            if (parm.PageSize < 1) parm.PageSize = 20;              // 与 PagerInfo 默认一致
+            else if (parm.PageSize > MaxListPageSize) parm.PageSize = MaxListPageSize;
+        }
+
+        /// <summary>
+        /// 转义 LIKE 关键词中的通配符（%、_、[），使其按**字面**匹配而不是当通配符用。
+        /// SqlSugar 的 Contains 已参数化（无注入风险），这里只解决"用户输入 % 却匹配到全部"的通配语义。
+        /// 按库方言处理：SqlServer 用方括号转义；MySql/PgSql 默认转义符为反斜杠；
+        /// 其余库无默认转义符，退化为剔除通配符，至少不让其生效。
+        /// </summary>
+        private string EscapeLikeKeyword(string keyword)
+        {
+            if (string.IsNullOrWhiteSpace(keyword)) return null;
+            var kw = keyword.Trim();
+
+            return Context.CurrentConnectionConfig.DbType switch
+            {
+                SqlSugar.DbType.SqlServer => kw.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]"),
+                SqlSugar.DbType.MySql or SqlSugar.DbType.PostgreSQL => kw.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_"),
+                _ => kw.Replace("%", string.Empty).Replace("_", string.Empty).Replace("[", string.Empty),
+            };
         }
 
         /// <summary>
@@ -80,11 +128,16 @@ namespace ZR.Mall.Service
         /// <param name="isFrontList">是否 C 端列表：为 true 时套用前台排序规则（见 ApplyFrontSorting）。</param>
         private PagedInfo<ProductDto> QueryList(ShoppingProductQueryDto parm, bool useCache, bool isFrontList)
         {
+            // C 端关键词检索：走全文索引（未就绪自动回落 LIKE），只搜商品名，见 BuildProductSearchCondition
+            var (searchSql, searchParams) = BuildProductSearchCondition(parm.Keyword?.Trim());
             var predicate = QueryExp(parm);
 
             var query = Queryable()
                 .WithCacheIF(useCache, 60)
                 .Where(predicate.ToExpression())
+                // 关键词条件用参数化 raw SQL：全文谓词（CONTAINS / MATCH...AGAINST）表达式无法表达，
+                // 同时也避免关键词被 SqlSugar 内联成 SQL 字面量。
+                .WhereIF(!string.IsNullOrEmpty(searchSql), searchSql, searchParams)
                 .Includes(x => x.Skus.Where(f => f.IsDelete == 0).ToList())
                 .Includes(x => x.Category)
                 .Includes(x => x.Brand);
@@ -110,49 +163,86 @@ namespace ZR.Mall.Service
         /// <summary>
         /// C 端排序规则（全部在库内完成，保证分页稳定）：
         /// <list type="bullet">
-        /// <item>综合（默认）：携带搜索词时先按 命中商品名(3) &gt; 命中编码(2) &gt; 仅命中简介(1) 分级，
-        /// 再按 运营置顶 SortId DESC → 销量 DESC → 上新时间 DESC；不带搜索词则直接 置顶→销量→上新。</item>
-        /// <item>销量 / 价格升 / 价格降 / 上新：只按各自字段排序，不带置顶权重 ——
+        /// <item>缺货沉底（所有档位）：有货的排前面，全缺货的排末尾；缺货商品默认不隐藏
+        /// （要隐藏由 <see cref="ShoppingProductQueryDto.OnlyInStock"/> 在 WHERE 层过滤）。</item>
+        /// <item>综合（默认）：分场景权重 → 有效置顶 SortId → 时间衰减热度分 → 上新时间。
+        /// （关键词已收敛为"仅商品名"且由 WHERE 的全文谓词过滤，命中集内不再做字段相关性分级）</item>
+        /// <item>销量 / 价格升 / 价格降 / 上新：只按各自字段排序，不带置顶与场景权重 ——
         /// 用户明确选了硬排序，就不该被运营置顶插队。</item>
         /// <item>所有档位统一以 ProductId DESC 兜底，保证同值时分页不跳页、不重复。</item>
         /// </list>
         ///
-        /// 关键：销量取按商品求和 <see cref="Skus.SalesVolume"/> 的相关子查询，而不是读 <c>Product.TotalSalesVolume</c> ——
-        /// 后者是历史冗余列，全链路从未写入（恒为 0），用它排序会退化成无效条件。
-        /// 相关性用 SqlFunc.IIF 在库内算等级，避免把结果集拉进内存再排。
+        /// 销量与库存都读 <c>Product</c> 上由 <see cref="Common.ProductTotalsRefresher"/> 维护的冗余列
+        /// （TotalSalesVolume / TotalStock），排序全程不出现相关子查询 —— 否则 SqlSugar 在 Includes + 分页下
+        /// 无法绑定子查询里的外表别名（"could not be bound"）。
+        /// 置顶时效 / 热度分都用 SqlFunc 表达式在库内算，避免把结果集拉进内存再排。
         /// </summary>
+        /// <param name="query">待排序的查询</param>
+        /// <param name="parm">查询参数（用于场景推断与分类判定）</param>
+        /// <param name="mode">排序档位</param>
         private static ISugarQueryable<Product> ApplyFrontSorting(ISugarQueryable<Product> query, ShoppingProductQueryDto parm, ProductSortMode mode)
         {
-            var keyword = parm.Keyword?.Trim();
+            // 缺货沉底：有货(TotalStock>0)排前、全缺货排末尾。
+            // 读维护好的冗余列，而不是 SKU 相关子查询 —— SqlSugar 在 Includes + 分页场景下不会回写
+            // ORDER BY 子查询里的外表别名，用子查询会报 "multi-part identifier p.ProductId could not be bound"。
+            query = query.OrderBy(p => SqlFunc.IIF(p.TotalStock > 0, 1, 0), OrderByType.Desc);
 
-            switch (mode)
+            if (mode == ProductSortMode.Synthesize)
             {
-                case ProductSortMode.Sales:
-                    query = query.OrderBy(p => SqlFunc.Subqueryable<Skus>().Where(s => s.ProductId == p.ProductId && s.IsDelete == 0).Sum(s => s.SalesVolume), OrderByType.Desc);
-                    break;
-                case ProductSortMode.PriceAsc:
-                    query = query.OrderBy(p => p.Price, OrderByType.Asc);
-                    break;
-                case ProductSortMode.PriceDesc:
-                    query = query.OrderBy(p => p.Price, OrderByType.Desc);
-                    break;
-                case ProductSortMode.Newest:
-                    query = query.OrderBy(p => p.AddTime, OrderByType.Desc);
-                    break;
-                default:
-                    // 综合：搜索相关性（仅带搜索词时）→ 运营置顶 → 销量 → 上新
-                    if (!string.IsNullOrEmpty(keyword))
-                    {
-                        query = query.OrderBy(p => SqlFunc.IIF(p.ProductName.Contains(keyword), 3,
-                            SqlFunc.IIF(p.ProductCode.Contains(keyword), 2, 1)), OrderByType.Desc);
-                    }
-                    query = query.OrderBy(p => p.SortId, OrderByType.Desc)
-                                 .OrderBy(p => SqlFunc.Subqueryable<Skus>().Where(s => s.ProductId == p.ProductId && s.IsDelete == 0).Sum(s => s.SalesVolume), OrderByType.Desc)
-                                 .OrderBy(p => p.AddTime, OrderByType.Desc);
-                    break;
+                // 分场景权重：按请求推断的场景取对应列（首页/分类/搜索）
+                switch (ResolveScene(parm))
+                {
+                    case ProductScene.Category:
+                        query = query.OrderBy(p => p.CategoryWeight, OrderByType.Desc);
+                        break;
+                    case ProductScene.Search:
+                        query = query.OrderBy(p => p.SearchWeight, OrderByType.Desc);
+                        break;
+                    default:
+                        query = query.OrderBy(p => p.HomeWeight, OrderByType.Desc);
+                        break;
+                }
+
+                // 置顶时效：只有当前时间落在 [TopBeginTime, TopEndTime] 窗口内，SortId 才参与排序；
+                // 窗口外按 0（等于不置顶），实现"过期自动失效"。
+                var now = DateTime.Now;
+                query = query.OrderBy(p => SqlFunc.IIF(
+                    (p.TopBeginTime == null || p.TopBeginTime <= now) && (p.TopEndTime == null || p.TopEndTime >= now),
+                    p.SortId, 0), OrderByType.Desc);
+
+                // 时间衰减热度分：销量越高越热、上架越久衰减越多。用 (销量+1)/(上架天数+10) 平滑，避免除零与全新商品霸榜
+                query = query.OrderBy(p => (p.TotalSalesVolume + 1) * 1.0
+                        / (SqlFunc.DateDiff(DateType.Day, p.AddTime ?? now, now) + 10), OrderByType.Desc)
+                    .OrderBy(p => p.AddTime, OrderByType.Desc);
+            }
+            else if (mode == ProductSortMode.Sales)
+            {
+                query = query.OrderBy(p => p.TotalSalesVolume, OrderByType.Desc);
+            }
+            else if (mode == ProductSortMode.PriceAsc)
+            {
+                query = query.OrderBy(p => p.Price, OrderByType.Asc);
+            }
+            else if (mode == ProductSortMode.PriceDesc)
+            {
+                query = query.OrderBy(p => p.Price, OrderByType.Desc);
+            }
+            else
+            {
+                query = query.OrderBy(p => p.AddTime, OrderByType.Desc);
             }
 
             return query.OrderBy(p => p.ProductId, OrderByType.Desc);
+        }
+
+        /// <summary>
+        /// 推断 C 端展示场景：带关键词=搜索；带分类=分类；其余=首页/推荐位。决定综合档用哪一列场景权重。
+        /// </summary>
+        private static ProductScene ResolveScene(ShoppingProductQueryDto parm)
+        {
+            if (!string.IsNullOrWhiteSpace(parm.Keyword)) return ProductScene.Search;
+            if (parm.CategoryId != null) return ProductScene.Category;
+            return ProductScene.Home;
         }
 
         /// <summary>
@@ -257,6 +347,12 @@ namespace ZR.Mall.Service
                     .UpdateColumns(t => new
                     {
                         t.SortId,
+                        // 置顶时效 + 分场景权重：漏加会导致后台配了不生效（且极难察觉），必须一起更新
+                        t.TopBeginTime,
+                        t.TopEndTime,
+                        t.HomeWeight,
+                        t.CategoryWeight,
+                        t.SearchWeight,
                         t.ProductName,
                         t.ProductCode,
                         t.MainImage,
@@ -361,6 +457,12 @@ namespace ZR.Mall.Service
             var result = Update(model, t => new
             {
                 t.SortId,
+                // 置顶时效 + 分场景权重：与 UpdateShoppingProduct 保持一致，避免一处能改一处丢失
+                t.TopBeginTime,
+                t.TopEndTime,
+                t.HomeWeight,
+                t.CategoryWeight,
+                t.SearchWeight,
                 t.ProductName,
                 t.MainImage,
                 t.ImageUrls,
@@ -489,6 +591,7 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public PagedInfo<ProductDto> ExportList(ShoppingProductQueryDto parm)
         {
+            // 导出仅后台使用，无 C 端关键词检索
             var predicate = QueryExp(parm);
 
             var response = Queryable()
@@ -509,9 +612,10 @@ namespace ZR.Mall.Service
         }
 
         /// <summary>
-        /// 查询导出表达式
+        /// 查询条件表达式（后台与 C 端共用）。C 端关键词条件不在这里 —— 它需要全文谓词，
+        /// 统一由 <see cref="BuildProductSearchCondition"/> 生成参数化 raw SQL，在 QueryList 里拼。
         /// </summary>
-        /// <param name="parm"></param>
+        /// <param name="parm">查询参数</param>
         /// <returns></returns>
         private static Expressionable<Product> QueryExp(ShoppingProductQueryDto parm)
         {
@@ -519,11 +623,8 @@ namespace ZR.Mall.Service
 
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.ProductName), it => it.ProductName.Contains(parm.ProductName));
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.ProductCode), it => it.ProductCode == parm.ProductCode);
-            // C 端搜索：命中 商品名/编码/简介 任一即返回（相关性分级排序见 ApplyFrontSorting）。
-            // 与 ProductName 精确筛选并存：后台继续用 ProductName，前台搜索用 Keyword，互不干扰。
-            var keyword = parm.Keyword?.Trim();
-            predicate = predicate.AndIF(!string.IsNullOrWhiteSpace(keyword),
-                it => it.ProductName.Contains(keyword) || it.ProductCode.Contains(keyword) || it.Introduce.Contains(keyword));
+            // 仅看有货：读维护好的总库存列（依赖 ProductTotalsRefresher 回写，需先执行回填 SQL）
+            predicate = predicate.AndIF(parm.OnlyInStock, it => it.TotalStock > 0);
             predicate = predicate.AndIF(parm.CategoryId != null, it => it.CategoryId == parm.CategoryId);
             predicate = predicate.AndIF(parm.BrandId != null, it => it.BrandId == parm.BrandId);
             predicate = predicate.AndIF(parm.ProductId != null, it => it.ProductId == parm.ProductId);
@@ -533,6 +634,96 @@ namespace ZR.Mall.Service
             predicate = predicate.AndIF(parm.EndAddTime != null, it => it.AddTime <= parm.EndAddTime);
             predicate = predicate.And(it => it.IsDelete == 0);
             return predicate;
+        }
+
+        /// <summary>
+        /// 构造 C 端商品搜索条件（SQL 片段 + 参数），keyword 为空时返回 (null, null)。
+        ///
+        /// 只搜商品名（成本最低、中文分词效果最好）：
+        /// - 已建全文索引 + SqlServer：<c>CONTAINS(ProductName, @kw)</c>；
+        /// - 已建全文索引 + MySql：<c>MATCH(ProductName) AGAINST (@kw)</c>；
+        /// - 其余（未建索引 / 其他库 / 探测失败）：<c>ProductName LIKE @kwLike</c>（前导通配，数据量大时慢）。
+        ///
+        /// 关键：FTS 就绪时**不能**再 OR 一个 LIKE 兜底 —— OR 分支不可索引，会让全文索引白建、仍走全表扫，
+        /// 所以两条路径严格二选一（与文章检索 BuildArticleSearchCondition 同一口径）。
+        /// </summary>
+        private (string Sql, object Parameters) BuildProductSearchCondition(string keyword)
+        {
+            if (string.IsNullOrEmpty(keyword)) return (null, null);
+
+            if (IsProductNameFullTextReady() && IsFullTextKeywordSafe(keyword))
+            {
+                var dbType = Context.CurrentConnectionConfig.DbType;
+                if (dbType == SqlSugar.DbType.SqlServer)
+                {
+                    // 对应 CREATE FULLTEXT INDEX ON mms_product([ProductName])，见 document/doc 的建索引脚本
+                    return ("CONTAINS(ProductName, @kw)", new { kw = keyword });
+                }
+                if (dbType == SqlSugar.DbType.MySql)
+                {
+                    // 对应 ALTER TABLE mms_product ADD FULLTEXT INDEX ft_product_name (ProductName) WITH PARSER ngram
+                    return ("MATCH(ProductName) AGAINST (@kw)", new { kw = keyword });
+                }
+            }
+
+            // 回落 LIKE：先转义通配符，让用户输入的 % / _ 按字面匹配
+            return ("ProductName LIKE @kwLike", new { kwLike = $"%{EscapeLikeKeyword(keyword)}%" });
+        }
+
+        /// <summary>
+        /// 关键词是否可安全交给全文谓词：SQL Server 的 <c>CONTAINS</c> 会把 <c>" ( ) * ~</c> 当检索语法，
+        /// 直接透传用户输入可能触发语法错误（接口 500）。含这些字符时改为回落 LIKE，
+        /// 保证任意输入都不会报错；正常关键词（中文/字母/数字）不受影响，仍走全文索引。
+        /// </summary>
+        private static bool IsFullTextKeywordSafe(string keyword)
+        {
+            foreach (var ch in keyword)
+            {
+                if (ch is '"' or '(' or ')' or '*' or '~')
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 商品名全文索引是否就绪：SqlServer 查 sys.fulltext_indexes，MySql 查 information_schema.STATISTICS。
+        /// 结果按连接（租户库）缓存 10 分钟 —— 索引属部署动作，建好后最多 10 分钟自动生效，无需重启；
+        /// 探测失败一律按"未就绪"处理，让搜索退化为 LIKE，不能因为索引缺失让搜索不可用。
+        /// </summary>
+        private bool IsProductNameFullTextReady()
+        {
+            string configId = Context.CurrentConnectionConfig.ConfigId?.ToString();
+            string cacheKey = $"PRODUCT_NAME_FTS_READY_{configId}";
+            if (CacheHelper.Exists(cacheKey))
+            {
+                return CacheHelper.GetCache(cacheKey)?.ToString() == "1";
+            }
+
+            var ready = false;
+            try
+            {
+                var dbType = Context.CurrentConnectionConfig.DbType;
+                if (dbType == SqlSugar.DbType.SqlServer)
+                {
+                    ready = Context.Ado.GetInt(
+                        "SELECT COUNT(1) FROM sys.fulltext_indexes WHERE object_id = OBJECT_ID('mms_product')") > 0;
+                }
+                else if (dbType == SqlSugar.DbType.MySql)
+                {
+                    ready = Context.Ado.GetInt(
+                        "SELECT COUNT(1) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mms_product' AND INDEX_NAME = @indexName",
+                        new { indexName = ProductNameFtsIndex }) > 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Warn($"检测商品名全文索引失败，本次按 LIKE 检索：{ex.Message}");
+            }
+
+            CacheHelper.SetCache(cacheKey, ready ? "1" : "0", 10);
+            return ready;
         }
     }
 }

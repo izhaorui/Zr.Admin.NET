@@ -710,6 +710,9 @@ namespace ZR.Mall.Service
                         .ExecuteCommand();
                 }
             }
+
+            // 回写商品总销量/总库存（退款/取消会冲减销量、回补库存），与本方法同一事务连接
+            ProductTotalsRefresher.Refresh(Context, items.Select(i => i.ProductId));
         }
 
         /// <summary>
