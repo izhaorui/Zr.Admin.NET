@@ -227,13 +227,20 @@ namespace ZR.ServiceCore.Services
                 }
             }
         }
-        private async Task CompressImageAsync(IFormFile file, Stream outputStream, int quality)
+        /// <summary>
+        /// 按声明的扩展名压缩图片，成功写入 outputStream 返回 true
+        /// </summary>
+        /// <remarks>
+        /// 编码器只能由扩展名决定，禁止再用 image.Metadata.DecodedImageFormat 回写。
+        /// DecodedImageFormat 来自内容嗅探，而上游 IsImageExtension/扩展名校验只看文件名：
+        /// 把 TIFF 等改名成 .gif/.bmp 上传时，旧写法会让编码器落到 TIFF 上，
+        /// 命中 GHSA-j9gm-c75j-xc9q（CCITT T4）/ GHSA-jjfr-hcj7-qf5w（CCITT T6）编码器越界写。
+        /// </remarks>
+        private static async Task<bool> TryCompressImageAsync(IFormFile file, string fileExt, Stream outputStream, int quality)
         {
             using var image = await Image.LoadAsync(file.OpenReadStream());
 
-            var ext = Path.GetExtension(file.FileName).ToLower();
-
-            switch (ext)
+            switch (fileExt?.ToLowerInvariant())
             {
                 case ".jpg":
                 case ".jpeg":
@@ -242,7 +249,7 @@ namespace ZR.ServiceCore.Services
                         {
                             Quality = quality
                         });
-                    break;
+                    return true;
 
                 case ".png":
                     image.Metadata.ExifProfile = null;
@@ -263,12 +270,19 @@ namespace ZR.ServiceCore.Services
                             ColorType = PngColorType.Palette
                         });
 
-                    break;
+                    return true;
+
+                case ".gif":
+                    await image.SaveAsGifAsync(outputStream);
+                    return true;
+
+                case ".bmp":
+                    await image.SaveAsBmpAsync(outputStream);
+                    return true;
 
                 default:
-                    await image.SaveAsync(outputStream,
-                        image.Metadata.DecodedImageFormat);
-                    break;
+                    // 不在显式编码器白名单内一律不编码，由调用方原样上传
+                    return false;
             }
         }
 
@@ -290,9 +304,14 @@ namespace ZR.ServiceCore.Services
             if (quality > 0 && IsImageExtension(fileExt))
             {
                 var compressedStream = new MemoryStream();
-                await CompressImageAsync(formFile, compressedStream, Math.Clamp(quality, 1, 100));
-                compressedStream.Position = 0;
-                return compressedStream;
+                // 未命中显式编码器白名单时不压缩，原样上传，避免落到按内容嗅探选编码器的旧分支
+                if (await TryCompressImageAsync(formFile, fileExt, compressedStream, Math.Clamp(quality, 1, 100)))
+                {
+                    compressedStream.Position = 0;
+                    return compressedStream;
+                }
+
+                await compressedStream.DisposeAsync();
             }
 
             return formFile.OpenReadStream();

@@ -21,7 +21,7 @@
 	<ItemGroup>
 
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="10.0.1" />
 		<PackageReference Include="NLog.Web.AspNetCore" Version="6.0.4" />
 		<PackageReference Include="Mapster" Version="10.0.7" />

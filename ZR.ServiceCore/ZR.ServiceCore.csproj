@@ -17,7 +17,12 @@
 		     版本写死便于复现；升级时请注意 SDK v4 的破坏性变更（checksum / 签名默认行为）需要回归验证。 -->
 		<PackageReference Include="AWSSDK.S3" Version="4.0.103.4" />
 		<PackageReference Include="NETCore.Encrypt" Version="2.1.1" />
-		<PackageReference Include="NLog" Version="6.0.4" />
+		<PackageReference Include="NLog" Version="6.2.1" />
+		<!-- 刻意停留在 3.1.x 最后一版：
+		     4.x 起包内 SixLabors.ImageSharp.targets 会在编译期做许可证校验，Release 下直接 error 中断构建
+		     （Debug 仅警告），除非提供 $(SixLaborsLicenseKey) / $(SixLaborsLicenseFile) 或 sixlabors.lic。
+		     代价：3.1.12 仍有未修复的 GHSA 公告（TIFF CCITT T4/T6 编码器越界写、BigTIFF 死循环、ICC CLUT 内存放大等），
+		     3.x 线不会再出补丁版。升级 4.x 前请先确认许可与回归。 -->
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
 		<PackageReference Include="SKIT.FlurlHttpClient.Wechat.TenpayV3" Version="3.16.0" />
 	</ItemGroup>

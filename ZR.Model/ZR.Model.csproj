@@ -10,6 +10,6 @@
 		<PackageReference Include="FluentValidation" Version="11.11.0" />
 		<PackageReference Include="MiniExcel" Version="1.44.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.213" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.221" />
 	</ItemGroup>
 </Project>
