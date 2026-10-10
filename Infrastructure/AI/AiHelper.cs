@@ -1,6 +1,5 @@
 using Infrastructure.Model;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Infrastructure.AI
@@ -66,15 +65,11 @@ namespace Infrastructure.AI
             var options = EnsureAiEnabled();
             try
             {
-                return await AiLlmClient.ChatAsync(options, system, user, scene).ConfigureAwait(false);
+                return await AiLlmClientRetryWrapper.ChatAsyncWithRetry(options, system, user, scene).ConfigureAwait(false);
             }
-            catch (HttpRequestException ex)
+            catch (AiException ex)
             {
-                throw new Exception("调用 AI 服务失败：" + ex.Message);
-            }
-            catch (TaskCanceledException)
-            {
-                throw new Exception("调用 AI 服务超时，请稍后重试");
+                throw new Exception(ex.UserMessage);
             }
         }
 

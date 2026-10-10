@@ -1047,10 +1047,58 @@ namespace Infrastructure.AI
         private static string ClassifyError(Exception ex) => ex switch
         {
             AiGovernanceDeniedException denied => denied.Reason,
+            AiException ai => ai.ErrorCategory,
             JsonException => "parse_error",
             HttpRequestException => "http_request",
             _ => "unexpected"
         };
+
+        /// <summary>
+        /// 将网络异常或超时异常转换为统一的 AiException 子类。
+        /// 用于重试策略在判断是否可重试之前的异常标准化。
+        /// </summary>
+        private static AiException ConvertToAiException(Exception ex, long? elapsedMs = null, int? httpStatusCode = null)
+        {
+            return ex switch
+            {
+                AiException ai => ai, // 已是 AI 异常，直接返回
+
+                OperationCanceledException => new AiCancelledException("user_cancelled", elapsedMs),
+
+                JsonException => new AiResponseException("AI 响应格式错误，无法解析为 JSON",
+                    TruncateForLog(ex.Message, 200)),
+
+                HttpRequestException httpEx =>
+                    new AiHttpException(httpStatusCode, "http_error",
+                        httpEx.Message ?? "HTTP 请求失败", null),
+
+                _ => new AiGenericException("unexpected", ex.Message)
+            };
+        }
+
+        /// <summary>
+        /// 根据 HTTP 响应转换为 AiHttpException。
+        /// </summary>
+        private static AiHttpException BuildHttpException(
+            int? statusCode,
+            string errorCode,
+            string errDetail,
+            string requestId)
+        {
+            var isRetryable = statusCode != null &&
+                (statusCode >= 500 || statusCode == 408 || statusCode == 429 || statusCode == 503);
+
+            string userMessage = statusCode switch
+            {
+                401 or 403 => "AI 服务认证失败，请检查 API Key 配置",
+                404 => "AI 服务端点不存在，请检查服务地址配置",
+                429 => "调用 AI 服务过于频繁，请稍后再试",
+                >= 500 => "AI 服务暂时不可用，请稍后重试",
+                _ => "AI 服务调用失败，请稍后重试"
+            };
+
+            return new AiHttpException(statusCode, errorCode, errDetail, userMessage, requestId);
+        }
 
         private static string TruncateForLog(string text, int maxLen)
         {

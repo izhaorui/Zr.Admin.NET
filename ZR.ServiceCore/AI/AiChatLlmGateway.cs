@@ -20,16 +20,16 @@ namespace ZR.ServiceCore.AI
         public (string Provider, string BaseUrl, string ChatEndpoint, string Model, string ApiKey) ResolveVisionProvider(AiOptions options)
             => AiLlmClient.ResolveVisionProvider(options);
 
-        /// <summary>多模态看图（转发 AiLlmClient）</summary>
+        /// <summary>多模态看图（通过重试包装层转发）</summary>
         public Task<AiLlmClient.ChatToolResult> ChatWithImagesAsync(AiOptions options, string systemPrompt, string textPrompt, List<string> imageUrls, string scene = null)
-            => AiLlmClient.ChatWithImagesAsync(options, systemPrompt, textPrompt, imageUrls, scene);
+            => AiLlmClientRetryWrapper.ChatWithImagesAsyncWithRetry(options, systemPrompt, textPrompt, imageUrls, scene);
 
-        /// <summary>非流式 function calling 单轮调用（转发 AiLlmClient）</summary>
+        /// <summary>非流式 function calling 单轮调用（通过重试包装层转发）</summary>
         public Task<AiLlmClient.ChatToolResult> ChatWithToolsAsync(AiOptions options, object[] messages, object[] tools, string scene = null)
-            => AiLlmClient.ChatWithToolsAsync(options, messages, tools, scene);
+            => AiLlmClientRetryWrapper.ChatWithToolsAsyncWithRetry(options, messages, tools, scene);
 
-        /// <summary>流式 function calling 单轮调用（转发 AiLlmClient）</summary>
+        /// <summary>流式 function calling 单轮调用（转发 wrapper，当前保持无自动重试语义）</summary>
         public IAsyncEnumerable<AiLlmClient.AiStreamChunk> StreamChatWithToolsAsync(AiOptions options, object[] messages, object[] tools, string scene = null, CancellationToken cancellationToken = default)
-            => AiLlmClient.StreamChatWithToolsAsync(options, messages, tools, scene, cancellationToken);
+            => AiLlmClientRetryWrapper.StreamChatWithToolsAsyncWithRetry(options, messages, tools, scene, cancellationToken);
     }
 }

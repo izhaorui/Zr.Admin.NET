@@ -455,6 +455,26 @@ namespace Infrastructure.Model
         /// 按 ai_call_log(Scene='ai_chat') 记账累计。
         /// </summary>
         public long DefaultUserTotalTokens { get; set; } = 2000000;
+
+        /// <summary>
+        /// 是否启用自动重试。当 true 时，对网络抖动、限流等可恢复错误自动重试。默认 true
+        /// </summary>
+        public bool EnableRetry { get; set; } = true;
+
+        /// <summary>
+        /// 最大重试次数（不含首次请求）。默认 3 次。禁用重试时可设为 0
+        /// </summary>
+        public int MaxRetries { get; set; } = 3;
+
+        /// <summary>
+        /// 首次重试延迟（毫秒）。默认 500ms。指数退避会逐次翻倍，直至 MaxRetryDelayMs
+        /// </summary>
+        public int InitialRetryDelayMs { get; set; } = 500;
+
+        /// <summary>
+        /// 最大重试延迟（毫秒）。防止重试等待过长。默认 30000ms (30 秒)
+        /// </summary>
+        public int MaxRetryDelayMs { get; set; } = 30000;
     }
 
     public class AiProviderOptions
