@@ -127,6 +127,73 @@ namespace ZR.ServiceCore.SqlSugar
         };
 
         /// <summary>
+        /// 历史表名 → 当前实体表名 的重命名映射。
+        ///
+        /// 用途：实体 <c>[SugarTable]</c> 改名后，存量库不会自动改名 —— 迁移只会「新建空表」，
+        /// 旧表及其数据被留在库里。迁移前先按此映射把旧表改名，数据/主键/索引一并保留。
+        ///
+        /// 约定：key = 当前实体表名（新名），value = 历史表名（旧名）。
+        /// 新增改名时在这里加一行即可，建表、--initdb、后台一键同步、SaaS 启动补表都会自动生效。
+        /// </summary>
+        private static readonly Dictionary<string, string> LegacyTableRenames =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["sys_user_online_log"] = "userOnlineLog",
+                ["sys_sql_diff_log"] = "sqlDiffLog",
+                ["article_category"] = "articleCategory",
+            };
+
+        /// <summary>
+        /// 应用全部历史表名重命名（遍历映射，主库）。供 Web 启动的幂等迁移入口调用。
+        /// </summary>
+        public static void ApplyLegacyTableRenames()
+        {
+            ApplyLegacyTableRenames(DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId));
+        }
+
+        /// <summary>
+        /// 应用全部历史表名重命名（遍历映射，指定库）。幂等、失败不阻断。
+        /// </summary>
+        public static void ApplyLegacyTableRenames(ISqlSugarClient db)
+        {
+            if (db == null) return;
+
+            foreach (var newTableName in LegacyTableRenames.Keys)
+            {
+                TryRenameLegacyTable(db, newTableName);
+            }
+        }
+
+        /// <summary>
+        /// 单个实体的历史表名重命名：仅当「新表不存在 &amp;&amp; 旧表存在」时执行，天然幂等。
+        /// 用 SqlSugar 的 <c>DbMaintenance.RenameTable</c>，由它按当前 DbType 生成方言 DDL
+        /// （SQL Server sp_rename / MySQL RENAME TABLE / Oracle、PgSql、Sqlite 各自语法），无需手写 SQL。
+        /// 失败只告警，不阻断该实体的建表与补列。
+        /// </summary>
+        private static void TryRenameLegacyTable(ISqlSugarClient db, string newTableName)
+        {
+            if (string.IsNullOrEmpty(newTableName)) return;
+            if (!LegacyTableRenames.TryGetValue(newTableName, out var oldTableName)) return;
+            if (string.Equals(oldTableName, newTableName, StringComparison.OrdinalIgnoreCase)) return;
+
+            try
+            {
+                if (db.DbMaintenance.IsAnyTable(newTableName, false)) return;   // 已是新表名，无需处理
+                if (!db.DbMaintenance.IsAnyTable(oldTableName, false)) return;  // 旧表不存在（新装库或已迁移过）
+
+                var renamed = db.DbMaintenance.RenameTable(oldTableName, newTableName);
+                Log.WriteLine(renamed ? ConsoleColor.Cyan : ConsoleColor.Yellow,
+                    renamed
+                        ? $"[DbMigration] 表重命名完成：{oldTableName} → {newTableName}"
+                        : $"[DbMigration] 表重命名未生效：{oldTableName} → {newTableName}");
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ConsoleColor.Yellow, $"[DbMigration] 表重命名失败（{oldTableName} → {newTableName}）：{ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// 获取本次迁移实际使用的实体类型列表：
         /// 系统注册表 + 配置文件 AdditionalTypes - 被 [SkipMigration] 排除的实体。
         /// </summary>
@@ -321,6 +388,9 @@ namespace ZR.ServiceCore.SqlSugar
         {
             var entityInfo = db.EntityMaintenance.GetEntityInfo(entityType);
             var tableName = entityInfo.DbTableName;
+
+            // 历史表名重命名：改名后的实体在存量库需先把旧表改名，否则下面会按新名建出空表、旧表及数据残留
+            TryRenameLegacyTable(db, tableName);
 
             // 表不存在：直接建整套表（含所有列）
             if (!db.DbMaintenance.IsAnyTable(tableName, false))

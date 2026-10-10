@@ -4,7 +4,7 @@ namespace ZR.Model.Models
     /// <summary>
     /// 用户在线时长
     /// </summary>
-    [SugarTable("userOnlineLog", TableDescription = "用户在线时长")]
+    [SugarTable("sys_user_online_log", TableDescription = "用户在线时长")]
     [Tenant("0")]
     public class UserOnlineLog
     {

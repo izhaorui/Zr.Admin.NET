@@ -3,7 +3,7 @@
     /// <summary>
     /// 文章目录
     /// </summary>
-    [SugarTable("articleCategory", "文章目录")]
+    [SugarTable("article_category", "文章目录")]
     [Tenant("0")]
     public class ArticleCategory
     {

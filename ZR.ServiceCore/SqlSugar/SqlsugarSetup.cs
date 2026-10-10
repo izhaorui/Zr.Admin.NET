@@ -77,6 +77,10 @@ namespace ZR.ServiceCore.SqlSugar
 
             if (checkMigration)
             {
+                // 先应用历史表名重命名（主库、幂等）：实体 [SugarTable] 改名后，存量库要先改名，
+                // 否则下面的补列/补表会按新名建出空表、旧表残留。见 DbMigrationService.LegacyTableRenames。
+                DbMigrationService.ApplyLegacyTableRenames();
+
                 // 存量库迁移：补加多租户隔离列 TenantId（幂等，避免过滤器运行时报"未知列"）
                 // 实体来源与 DbMigrationService.Migrate 共用显式注册表；新装库由 CodeFirst 自动建列。
                 DbMigrationService.MigrateTenantColumns();
