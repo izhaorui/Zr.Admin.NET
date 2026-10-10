@@ -1,3 +1,4 @@
+using Infrastructure;
 using Infrastructure.AI;
 using Infrastructure.Attribute;
 using Infrastructure.Helper;
@@ -36,10 +37,6 @@ namespace ZR.ServiceCore.AI
         private const int MaxGenColumnItems = 80;
 
         /// <summary>
-        /// 代码生成允许的控件类型白名单。AI 只能从中取值，越界一律回落 input，
-        /// 否则未知类型会让代码模板渲染出无法编译的前端代码。
-        /// </summary>
-        /// <summary>
         /// AI 返回的单个列建议。用于在 JsonDocument 释放前把数据取出来，
         /// JsonElement 只是文档内游标，不能跨 using 持有。
         /// </summary>
@@ -54,6 +51,10 @@ namespace ZR.ServiceCore.AI
             public bool IsEdit { get; set; }
         }
 
+        /// <summary>
+        /// 代码生成允许的控件类型白名单。AI 只能从中取值，越界一律回落 input，
+        /// 否则未知类型会让代码模板渲染出无法编译的前端代码。
+        /// </summary>
         private static readonly HashSet<string> AllowedHtmlTypes = new(StringComparer.OrdinalIgnoreCase)
         {
             "input", "inputNumber", "textarea", "select", "selectMulti", "radio",
@@ -85,7 +86,7 @@ namespace ZR.ServiceCore.AI
         {
             if (input == null)
             {
-                throw new Exception("请求参数不能为空");
+                throw new CustomException("请求参数不能为空");
             }
 
             var sourceLang = NormalizeLangCode(input.SourceLang) ?? "zh-cn";
@@ -97,14 +98,14 @@ namespace ZR.ServiceCore.AI
 
             if (targetLangs.Count == 0)
             {
-                throw new Exception("请至少选择一个目标语言");
+                throw new CustomException("请至少选择一个目标语言");
             }
 
             // 目标语言与源语言相同时没有翻译意义，直接剔除，避免浪费 token
             targetLangs.RemoveAll(x => string.Equals(x, sourceLang, StringComparison.OrdinalIgnoreCase));
             if (targetLangs.Count == 0)
             {
-                throw new Exception("目标语言与源语言相同，无需翻译");
+                throw new CustomException("目标语言与源语言相同，无需翻译");
             }
 
             var items = (input.Items ?? new List<SysAiLangItem>())
@@ -112,11 +113,11 @@ namespace ZR.ServiceCore.AI
                 .ToList();
             if (items.Count == 0)
             {
-                throw new Exception("没有可翻译的文案，请先选择需要翻译的条目");
+                throw new CustomException("没有可翻译的文案，请先选择需要翻译的条目");
             }
             if (items.Count > MaxTranslateItems)
             {
-                throw new Exception($"单次最多翻译 {MaxTranslateItems} 条文案，当前 {items.Count} 条，请分批操作");
+                throw new CustomException($"单次最多翻译 {MaxTranslateItems} 条文案，当前 {items.Count} 条，请分批操作");
             }
 
             var user = BuildTranslatePrompt(sourceLang, targetLangs, items);
@@ -157,7 +158,7 @@ namespace ZR.ServiceCore.AI
 
             if (list.Count == 0)
             {
-                throw new Exception("没有可应用的译文，请检查译文内容是否为空");
+                throw new CustomException("没有可应用的译文，请检查译文内容是否为空");
             }
 
             if (input != null && !input.Cover)
@@ -165,7 +166,7 @@ namespace ZR.ServiceCore.AI
                 list = FilterExisting(list);
                 if (list.Count == 0)
                 {
-                    throw new Exception("所选文案的目标语言译文均已存在（未勾选覆盖），没有需要新增的内容");
+                    throw new CustomException("所选文案的目标语言译文均已存在（未勾选覆盖），没有需要新增的内容");
                 }
             }
 
@@ -177,11 +178,11 @@ namespace ZR.ServiceCore.AI
             var text = input?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(text))
             {
-                throw new Exception("请填写调度描述，例如「每天凌晨2点执行」");
+                throw new CustomException("请填写调度描述，例如「每天凌晨2点执行」");
             }
             if (text.Length > 200)
             {
-                throw new Exception("调度描述过长，请精简到 200 字以内");
+                throw new CustomException("调度描述过长，请精简到 200 字以内");
             }
 
             var reply = await AiHelper.ChatSafeAsync(AiHelper.GetPromptOrThrow("system/cron-parse.md", "Cron 表达式生成"), $"调度描述：{text}", AiSceneCatalog.CronParse).ConfigureAwait(false);
@@ -193,11 +194,11 @@ namespace ZR.ServiceCore.AI
             var text = input?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(text))
             {
-                throw new Exception("请先描述日程内容，例如「下周三下午三点前把季度报表发给张总，加急」");
+                throw new CustomException("请先描述日程内容，例如「下周三下午三点前把季度报表发给张总，加急」");
             }
             if (text.Length > 500)
             {
-                throw new Exception("描述过长，请精简到 500 字以内");
+                throw new CustomException("描述过长，请精简到 500 字以内");
             }
 
             // 相对时间（明天/下周三）只有服务端知道基准，必须注入，否则 AI 会按自己的日期认知乱算
@@ -211,24 +212,24 @@ namespace ZR.ServiceCore.AI
         public async Task<SysAiWeeklyReportResult> GenerateWeeklyReportAsync(SysAiWeeklyReportInput input, long userId)
         {
             var (begin, end) = ResolveReportRange(input);
-            var schedules = _dailyScheduleService.GetByDateRange(userId, begin, end)
-                .Take(MaxWeeklyReportItems + 1)
-                .ToList();
+            var periodStart = begin.ToString("yyyy-MM-dd");
+            var periodEnd = end.ToString("yyyy-MM-dd");
 
-            var result = new SysAiWeeklyReportResult
-            {
-                PeriodStart = begin.ToString("yyyy-MM-dd"),
-                PeriodEnd = end.ToString("yyyy-MM-dd"),
-                Total = schedules.Count
-            };
+            var schedules = await _dailyScheduleService.GetByDateRangeAsync(userId, begin, end).ConfigureAwait(false);
+            var total = schedules.Count;
 
-            if (schedules.Count == 0)
+            if (total == 0)
             {
-                result.Summary = "本期无日程记录，无需生成周报。";
-                return result;
+                return new SysAiWeeklyReportResult
+                {
+                    PeriodStart = periodStart,
+                    PeriodEnd = periodEnd,
+                    Total = 0,
+                    Summary = "本期无日程记录，无需生成周报。"
+                };
             }
 
-            var truncated = schedules.Count > MaxWeeklyReportItems;
+            var truncated = total > MaxWeeklyReportItems;
             if (truncated)
             {
                 schedules = schedules.Take(MaxWeeklyReportItems).ToList();
@@ -236,8 +237,8 @@ namespace ZR.ServiceCore.AI
 
             var payload = new
             {
-                periodStart = begin.ToString("yyyy-MM-dd"),
-                periodEnd = end.ToString("yyyy-MM-dd"),
+                periodStart,
+                periodEnd,
                 schedules = schedules.Select(x => new
                 {
                     title = AiHelper.Truncate(x.Title, 100),
@@ -256,9 +257,9 @@ namespace ZR.ServiceCore.AI
 
             var reply = await AiHelper.ChatSafeAsync(AiHelper.GetPromptOrThrow("system/schedule-weekly-report.md", "周报汇总"), user, AiSceneCatalog.WeeklyReport).ConfigureAwait(false);
             var parsed = ParseWeeklyReportResult(reply);
-            parsed.PeriodStart = result.PeriodStart;
-            parsed.PeriodEnd = result.PeriodEnd;
-            parsed.Total = result.Total;
+            parsed.PeriodStart = periodStart;
+            parsed.PeriodEnd = periodEnd;
+            parsed.Total = total;
             return parsed;
         }
 
@@ -266,7 +267,7 @@ namespace ZR.ServiceCore.AI
         {
             if (tableId <= 0)
             {
-                throw new Exception("参数错误：tableId 不能为空");
+                throw new CustomException("参数错误：tableId 不能为空");
             }
 
             var dbColumns = _genTableColumnService.GenTableColumns(tableId)
@@ -274,11 +275,11 @@ namespace ZR.ServiceCore.AI
                 .ToList();
             if (dbColumns.Count == 0)
             {
-                throw new Exception("没有可推断的列，请确认表结构已导入");
+                throw new CustomException("没有可推断的列，请确认表结构已导入");
             }
             if (dbColumns.Count > MaxGenColumnItems)
             {
-                throw new Exception($"单次最多推断 {MaxGenColumnItems} 列，当前 {dbColumns.Count} 列，请拆分表后重试");
+                throw new CustomException($"单次最多推断 {MaxGenColumnItems} 列，当前 {dbColumns.Count} 列，请拆分表后重试");
             }
 
             var payload = new
@@ -307,39 +308,35 @@ namespace ZR.ServiceCore.AI
         /// 解读登录日志聚合指标，生成 Markdown 安全分析报告（不落库）。
         /// 指标由服务端固定 SQL 聚合，模型只负责解读，不接触原始日志。
         /// </summary>
-        public async Task<SysAiLogReportResult> AnalyzeLoginSecurityAsync(LoginSecurityMetricsDto metrics)
+        public Task<SysAiLogReportResult> AnalyzeLoginSecurityAsync(LoginSecurityMetricsDto metrics)
         {
-            if (metrics == null)
-            {
-                throw new Exception("聚合指标不能为空");
-            }
-
-            var reply = await AiHelper.ChatSafeAsync(
-                AiHelper.GetPromptOrThrow("system/log-login-analysis.md", "登录日志 AI 安全分析"),
-                System.Text.Json.JsonSerializer.Serialize(metrics, MetricJsonOptions), AiSceneCatalog.LoginSecurity).ConfigureAwait(false);
-            if (string.IsNullOrWhiteSpace(reply))
-            {
-                throw new Exception("AI 未返回分析报告，请稍后重试");
-            }
-            return new SysAiLogReportResult { Report = reply.Trim() };
+            return AnalyzeMetricsAsync(metrics, "system/log-login-analysis.md", "登录日志 AI 安全分析", AiSceneCatalog.LoginSecurity);
         }
 
         /// <summary>
         /// 解读操作日志聚合指标（错误已聚类），生成 Markdown 健康分析报告（不落库）。
         /// </summary>
-        public async Task<SysAiLogReportResult> AnalyzeOperHealthAsync(OperHealthMetricsDto metrics)
+        public Task<SysAiLogReportResult> AnalyzeOperHealthAsync(OperHealthMetricsDto metrics)
+        {
+            return AnalyzeMetricsAsync(metrics, "system/log-oper-analysis.md", "操作日志 AI 健康分析", AiSceneCatalog.OperHealth);
+        }
+
+        /// <summary>
+        /// 通用指标解读：序列化指标后调 LLM，返回 Markdown 报告。
+        /// </summary>
+        private static async Task<SysAiLogReportResult> AnalyzeMetricsAsync<T>(T metrics, string promptPath, string promptName, string scene)
         {
             if (metrics == null)
             {
-                throw new Exception("聚合指标不能为空");
+                throw new CustomException("聚合指标不能为空");
             }
 
             var reply = await AiHelper.ChatSafeAsync(
-                AiHelper.GetPromptOrThrow("system/log-oper-analysis.md", "操作日志 AI 健康分析"),
-                System.Text.Json.JsonSerializer.Serialize(metrics, MetricJsonOptions), AiSceneCatalog.OperHealth).ConfigureAwait(false);
+                AiHelper.GetPromptOrThrow(promptPath, promptName),
+                System.Text.Json.JsonSerializer.Serialize(metrics, MetricJsonOptions), scene).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(reply))
             {
-                throw new Exception("AI 未返回分析报告，请稍后重试");
+                throw new CustomException("AI 未返回分析报告，请稍后重试");
             }
             return new SysAiLogReportResult { Report = reply.Trim() };
         }
