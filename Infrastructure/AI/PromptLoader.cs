@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 [assembly: InternalsVisibleTo("ZR.Workflow")]
 
@@ -23,6 +24,9 @@ namespace Infrastructure.AI
             LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<PromptLoader>();
 
         private static readonly TimeSpan CacheSliding = TimeSpan.FromMinutes(10);
+
+        /// <summary>具名占位符形态：{{key}}。用于渲染替换与"渲染后残留"检测。</summary>
+        private static readonly Regex PlaceholderPattern = new(@"\{\{([^{}]+)\}\}", RegexOptions.Compiled);
 
         /// <summary>
         /// 进程内记录的“读取失败（缺失或为空）”提示词文件名，供治理自检
@@ -90,6 +94,62 @@ namespace Infrastructure.AI
                 _cache[key] = (text, DateTime.Now.Add(CacheSliding));
             }
             return text;
+        }
+
+        /// <summary>
+        /// 渲染提示词里的具名占位符（<c>{{key}}</c>）：把调用方提供的变量替换进文本。
+        /// 渲染后仍残留未替换的占位符会记录告警——调用方漏传变量时模型会看到 <c>{{userId}}</c> 这类
+        /// 字面量，属静默降质（不像"文件缺失"那样有治理自检兜底），必须在日志里可见。
+        /// </summary>
+        /// <param name="text">提示词原文</param>
+        /// <param name="variables">变量名（不含花括号）→ 值；值中即使含 <c>$</c> 等字符也按字面替换</param>
+        /// <remarks>
+        /// 只做具名替换，不做条件/循环等模板语法：提示词里的业务数据（如节点名、指标）应由调用方
+        /// 先加工好再传入，模板不承担语义加工。仅对真正走替换的提示词调用本方法——把占位符写进正文
+        /// 作"格式说明"的文件（如 lang-translate.md 要求保留 <c>{{var}}</c>）若经过本方法会被误判为未替换。
+        /// </remarks>
+        public static string Render(string text, IReadOnlyDictionary<string, string> variables)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+
+            // 单遍替换：变量值里若恰好含 {{x}} 形态也不会被后续变量二次替换（避免模板注入）
+            var rendered = PlaceholderPattern.Replace(text, match =>
+            {
+                var name = match.Groups[1].Value.Trim();
+                return name.Length > 0 && variables != null && variables.TryGetValue(name, out var value)
+                    ? value ?? string.Empty
+                    : match.Value;
+            });
+
+            // 残留只针对"原文里有、但变量表没给"的占位符，不受替换进去的数据内容影响
+            var unresolved = FindUnresolvedPlaceholders(text)
+                .Where(name => variables == null || !variables.ContainsKey(name))
+                .ToList();
+            if (unresolved.Count > 0)
+            {
+                Logger.LogWarning("提示词存在未替换的占位符：{Placeholders}（调用方未提供对应变量，模型将看到占位符字面量）",
+                    string.Join("、", unresolved));
+            }
+
+            return rendered;
+        }
+
+        /// <summary>
+        /// 提取文本中仍是占位符形态（<c>{{key}}</c>）的名字：去重、保持出现顺序；无则返回空列表。
+        /// 供渲染后自检与单元测试使用。
+        /// </summary>
+        public static IReadOnlyList<string> FindUnresolvedPlaceholders(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return Array.Empty<string>();
+
+            var names = new List<string>();
+            foreach (Match match in PlaceholderPattern.Matches(text))
+            {
+                var name = match.Groups[1].Value.Trim();
+                if (name.Length == 0 || names.Contains(name)) continue;
+                names.Add(name);
+            }
+            return names;
         }
     }
 }

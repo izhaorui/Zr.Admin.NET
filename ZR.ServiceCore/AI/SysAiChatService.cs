@@ -802,9 +802,11 @@ namespace ZR.ServiceCore.AI
             {
                 throw new Exception("AI 助手提示词文件缺失：system/ai-chat-vision.md（请检查 Prompts 目录）");
             }
-            var system = text
-                .Replace("{{now}}", DateTime.Now.ToString("yyyy-MM-dd HH:mm"))
-                .Replace("{{userId}}", userId.ToString());
+            var system = PromptLoader.Render(text, new Dictionary<string, string>
+            {
+                ["now"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                ["userId"] = userId.ToString()
+            });
 
             var (recent, summaryAnchor) = await ResolveHistoryAsync(sessionId, userId);
 
@@ -1051,9 +1053,11 @@ namespace ZR.ServiceCore.AI
             {
                 throw new Exception("AI 助手提示词文件缺失：system/ai-chat-system.md（请检查 Prompts 目录）");
             }
-            return text
-                .Replace("{{now}}", DateTime.Now.ToString("yyyy-MM-dd HH:mm"))
-                .Replace("{{userId}}", userId.ToString());
+            return PromptLoader.Render(text, new Dictionary<string, string>
+            {
+                ["now"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                ["userId"] = userId.ToString()
+            });
         }
 
         #endregion helpers
