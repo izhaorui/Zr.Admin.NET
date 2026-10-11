@@ -79,7 +79,7 @@ namespace Infrastructure.AI
 
             if (string.IsNullOrWhiteSpace(baseUrl))
             {
-                baseUrl = GetDefaultBaseUrl(provider);
+                baseUrl = AiProviderProfiles.Resolve(provider).DefaultBaseUrl;
             }
 
             return new Uri(new Uri(baseUrl + "/"), endpoint.TrimStart('/'));
@@ -250,23 +250,24 @@ namespace Infrastructure.AI
                 if (string.IsNullOrWhiteSpace(apiKey)) apiKey = (matched.ApiKey ?? string.Empty).Trim();
             }
 
-            if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = GetDefaultBaseUrl(provider);
-            if (string.IsNullOrWhiteSpace(endpoint)) endpoint = GetDefaultEndpoint(provider);
-            if (string.IsNullOrWhiteSpace(model)) model = GetDefaultModel(provider);
+            var profile = AiProviderProfiles.Resolve(provider);
+            if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = profile.DefaultBaseUrl;
+            if (string.IsNullOrWhiteSpace(endpoint)) endpoint = profile.DefaultEndpoint;
+            if (string.IsNullOrWhiteSpace(model)) model = profile.DefaultModel;
             //Logger.LogInformation($"解析 AI provider：provider={provider}, baseUrl={baseUrl}, endpoint={endpoint}, model={model}");
             return (provider, baseUrl, endpoint, model, apiKey);
         }
 
         /// <summary>
-        /// 千问(DashScope)兼容 OpenAI 协议时 usage 字段名为 input_tokens/output_tokens，
-        /// 与 OpenAI 标准的 prompt_tokens/completion_tokens 不同；deepseek 等仍用标准字段。
+        /// 读取 usage token 计数。字段名按渠道能力表取：DashScope(qwen) 用 input_tokens/output_tokens，
+        /// 其余用 OpenAI 标准的 prompt_tokens/completion_tokens。
         /// 目标字段缺失时回退读取另一套字段名；仍缺失按 0。
         /// </summary>
         private static (int Prompt, int Completion, int Total) ReadUsageTokens(JsonElement root, string provider)
         {
-            var isQwen = string.Equals((provider ?? "").Trim(), "qwen", StringComparison.OrdinalIgnoreCase);
-            var inputKey = isQwen ? "input_tokens" : "prompt_tokens";
-            var outputKey = isQwen ? "output_tokens" : "completion_tokens";
+            var usesInputOutput = AiProviderProfiles.Resolve(provider).UsesInputOutputTokens;
+            var inputKey = usesInputOutput ? "input_tokens" : "prompt_tokens";
+            var outputKey = usesInputOutput ? "output_tokens" : "completion_tokens";
 
             var promptTokens = ReadUsage(root, inputKey);
             var completionTokens = ReadUsage(root, outputKey);
@@ -321,8 +322,9 @@ namespace Infrastructure.AI
                 if (string.IsNullOrWhiteSpace(apiKey)) apiKey = (matched.ApiKey ?? string.Empty).Trim();
             }
 
-            if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = GetDefaultBaseUrl(provider);
-            if (string.IsNullOrWhiteSpace(endpoint)) endpoint = GetDefaultEndpoint(provider);
+            var profile = AiProviderProfiles.Resolve(provider);
+            if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = profile.DefaultBaseUrl;
+            if (string.IsNullOrWhiteSpace(endpoint)) endpoint = profile.DefaultEndpoint;
             Logger.LogInformation($"解析 AI 视觉 provider：provider={provider}, baseUrl={baseUrl}, endpoint={endpoint}, model={model}");
             return (provider, baseUrl, endpoint, model, apiKey);
         }
@@ -1356,9 +1358,9 @@ namespace Infrastructure.AI
         }
 
         /// <summary>
-        /// 按 provider/model 判断是否写入 enable_thinking，并记录审计日志（思考模式是否生效、未生效的原因）。
-        /// 仅通义文本混合思考模型需要；看图请求或视觉模型（qwen-vl-* 等）带此字段常直接 400。
-        /// 返回是否实际写入了 enable_thinking。
+        /// 按渠道能力表判断是否写入 enable_thinking，并记录审计日志（思考模式是否生效、未生效的原因）。
+        /// 仅支持该扩展字段的渠道（通义文本混合思考模型）需要；看图请求或视觉模型（qwen-vl-* 等）
+        /// 带此字段常直接 400。返回是否实际写入了 enable_thinking。
         /// </summary>
         private static bool ApplyThinkingOptions(Dictionary<string, object> payload, string provider, string model, bool enableThinking, bool skipThinking = false)
         {
@@ -1367,11 +1369,12 @@ namespace Infrastructure.AI
                 Logger.LogDebug($"AI 思考模式未启用 provider={provider} model={model} 原因=看图/多模态请求不写 enable_thinking");
                 return false;
             }
-            if (!string.Equals((provider ?? "").Trim(), "qwen", StringComparison.OrdinalIgnoreCase))
+            var profile = AiProviderProfiles.Resolve(provider);
+            if (!profile.SupportsThinkingField)
             {
                 return false;
             }
-            if (IsVisionModel(model))
+            if (profile.IsVisionModel(model))
             {
                 Logger.LogDebug($"AI 思考模式未启用 provider={provider} model={model} 原因=视觉模型不支持 enable_thinking");
                 return false;
@@ -1379,13 +1382,6 @@ namespace Infrastructure.AI
             payload["enable_thinking"] = enableThinking;
             //Logger.LogInformation($"AI 思考模式设置 enable_thinking={enableThinking} provider={provider} model={model}");
             return true;
-        }
-
-        /// <summary>名称含 vl / vision 的视为视觉模型，不写 enable_thinking。</summary>
-        private static bool IsVisionModel(string model)
-        {
-            var m = (model ?? "").Trim().ToLowerInvariant();
-            return m.Contains("-vl") || m.Contains("vl-") || m.Contains("vision");
         }
 
         /// <summary>
@@ -1414,8 +1410,8 @@ namespace Infrastructure.AI
                 payload["tool_choice"] = "auto";
             }
 
-            // stream_options.include_usage 仅 OpenAI 系可靠；Ollama 常不认导致长时间无分片
-            if (stream && SupportsStreamUsageOptions(resolved.Provider))
+            // stream_options.include_usage 仅部分渠道可靠；Ollama 常不认导致长时间无分片（见渠道能力表）
+            if (stream && AiProviderProfiles.Resolve(resolved.Provider).SupportsStreamUsageOptions)
             {
                 payload["stream_options"] = new Dictionary<string, object> { ["include_usage"] = true };
             }
@@ -1423,50 +1419,9 @@ namespace Infrastructure.AI
             return payload;
         }
 
-        private static bool SupportsStreamUsageOptions(string provider)
-        {
-            var p = (provider ?? "").Trim().ToLowerInvariant();
-            return p is "openai" or "deepseek" or "qwen" or "bigmodel";
-        }
-
-        private static string GetDefaultBaseUrl(string provider)
-        {
-            return (provider ?? "openai").Trim().ToLowerInvariant() switch
-            {
-                "deepseek" => "https://api.deepseek.com",
-                "qwen" => "https://dashscope.aliyuncs.com/compatible-mode/v1",
-                "ollama" => "http://127.0.0.1:11434/v1",
-                _ => "https://api.openai.com"
-            };
-        }
-
-        private static string GetDefaultEndpoint(string provider)
-        {
-            return (provider ?? "openai").Trim().ToLowerInvariant() switch
-            {
-                "deepseek" => "/chat/completions",
-                "qwen" => "/chat/completions",
-                "ollama" => "/chat/completions",
-                _ => "/v1/chat/completions"
-            };
-        }
-
-        private static string GetDefaultModel(string provider)
-        {
-            return (provider ?? "openai").Trim().ToLowerInvariant() switch
-            {
-                "deepseek" => "deepseek-chat",
-                "qwen" => "qwen-turbo",
-                "ollama" => "qwen2.5:7b",
-                _ => "gpt-4o-mini"
-            };
-        }
-
-        /// <summary>Ollama 等本地服务不强制云厂商 ApiKey。</summary>
+        /// <summary>是否允许留空 ApiKey（Ollama 等本地服务）；能力取自渠道能力表。</summary>
         public static bool AllowsEmptyApiKey(string provider)
-        {
-            return string.Equals((provider ?? "").Trim(), "ollama", StringComparison.OrdinalIgnoreCase);
-        }
+            => !AiProviderProfiles.Resolve(provider).RequiresApiKey;
 
         /// <summary>
         /// 治理预估 token：含 data URI 时按文件体积估算，避免把 Base64 字符数当成 prompt tokens 撑爆额度。
