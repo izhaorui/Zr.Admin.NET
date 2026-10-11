@@ -3,7 +3,6 @@
   "AiOptions": {
     "Enable": true,
     "Provider": "qwen",
-    "SystemPrompt": "你是系统内置 AI 助手，请用简洁中文回答。",
     "Temperature": 0.7,
     "MaxTokens": 4096,
     "TimeoutSeconds": 60,

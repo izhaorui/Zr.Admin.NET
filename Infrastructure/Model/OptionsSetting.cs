@@ -371,11 +371,6 @@ namespace Infrastructure.Model
         public string ApiKey { get; set; }
 
         /// <summary>
-        /// 系统提示词
-        /// </summary>
-        public string SystemPrompt { get; set; }
-
-        /// <summary>
         /// 温度参数
         /// </summary>
         public double Temperature { get; set; } = 0.7;
@@ -503,8 +498,6 @@ namespace Infrastructure.Model
         public List<string> Models { get; set; }
 
         public string ApiKey { get; set; }
-
-        public string SystemPrompt { get; set; }
 
         public double? Temperature { get; set; }
 
