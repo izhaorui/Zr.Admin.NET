@@ -9,6 +9,11 @@ namespace ZR.Mall.Model
     [SugarTable("mms_product", "商品管理")]
     // 删除运费模板前的引用校验、列表页「已绑商品数」都按它查
     [SugarIndex("idx_mms_product_freight", nameof(FreightTemplateId), OrderByType.Asc, false)]
+    // C 端在售列表：固定 在售 + 未删除，分类页再叠加 CategoryId（见 ProductService.QueryExp）。
+    // 多列按同名特性声明，顺序即列序。
+    [SugarIndex(Common.MallIndexEnsurer.ProductFront, nameof(SaleStatus), OrderByType.Asc, false)]
+    [SugarIndex(Common.MallIndexEnsurer.ProductFront, nameof(IsDelete), OrderByType.Asc, false)]
+    [SugarIndex(Common.MallIndexEnsurer.ProductFront, nameof(CategoryId), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class Product : SysBase
     {

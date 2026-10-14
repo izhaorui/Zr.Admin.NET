@@ -6,6 +6,10 @@ namespace ZR.Mall.Model
     /// 订单状态变更日志（谁、何时、从什么状态到什么状态、什么操作触发）
     /// </summary>
     [SugarTable("oms_order_log", "订单状态变更日志")]
+    // 后台订单日志详情按 OrderId / OrderNo 两路查（见 OMSOrderLogController），
+    // 此前该表没有任何索引；日志随订单量无上限增长，必须有索引兜住。
+    [SugarIndex(Common.MallIndexEnsurer.OrderLogOrder, nameof(OrderId), OrderByType.Asc, false)]
+    [SugarIndex(Common.MallIndexEnsurer.OrderLogNo, nameof(OrderNo), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class OMSOrderLog
     {

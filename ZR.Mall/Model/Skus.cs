@@ -6,6 +6,9 @@ namespace ZR.Mall.Model
     /// 商品库存
     /// </summary>
     [SugarTable("mms_skus", "商品库存sku")]
+    // 商品详情/列表 Includes(Skus)、下单取 SKU、SKU 维护按商品回写汇总，全是 WHERE ProductId = ?，
+    // 此前该表没有索引（ProductId 是事实上的外键却无索引）。
+    [SugarIndex(Common.MallIndexEnsurer.SkusProduct, nameof(ProductId), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class Skus
     {

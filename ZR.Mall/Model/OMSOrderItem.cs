@@ -4,6 +4,9 @@
     /// 订单项
     /// </summary>
     [SugarTable("oms_order_item", "订单项")]
+    // 订单详情 Includes(Items)，以及取消/退款/关单按订单回补库存，都是 WHERE OrderId = ?；
+    // 此前该表没有任何索引，订单量上来后这些查询会全表扫。
+    [SugarIndex(Common.MallIndexEnsurer.OrderItemOrder, nameof(OrderId), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class OMSOrderItem
     {

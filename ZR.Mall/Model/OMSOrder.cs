@@ -8,6 +8,15 @@ namespace ZR.Mall.Model
     [SugarTable("oms_order", "订单表")]
     [SugarIndex("index_orderNo", nameof(OrderNo), OrderByType.Asc, true)]
     [SugarIndex("idx_oms_order_member", nameof(MemberId), OrderByType.Asc, false)]
+    // 状态 + 时间：Job_ClosePendingOrder（待付款超时）与 Job_AutoConfirmReceipt（已发货超时）每轮都按它扫，
+    // 订单概览统计（GROUP BY OrderStatus, DeliveryStatus）也走状态前缀。
+    // 多列索引按"同名特性多条"声明，声明顺序即列序（与 OMSPayment 的复合索引同一写法）。
+    [SugarIndex(Common.MallIndexEnsurer.OrderStatusCreate, nameof(OrderStatus), OrderByType.Asc, false)]
+    [SugarIndex(Common.MallIndexEnsurer.OrderStatusCreate, nameof(IsDelete), OrderByType.Asc, false)]
+    [SugarIndex(Common.MallIndexEnsurer.OrderStatusCreate, nameof(CreateTime), OrderByType.Asc, false)]
+    // 时间窗口：后台订单列表/导出在未选状态时默认只看最近 7 天（见 OMSOrderService.QueryExp）
+    [SugarIndex(Common.MallIndexEnsurer.OrderCreate, nameof(IsDelete), OrderByType.Asc, false)]
+    [SugarIndex(Common.MallIndexEnsurer.OrderCreate, nameof(CreateTime), OrderByType.Asc, false)]
     [Tenant("MallDb")]
     public class OMSOrder
     {

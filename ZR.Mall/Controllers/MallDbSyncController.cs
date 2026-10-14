@@ -57,6 +57,9 @@ namespace ZR.Mall.Controllers
                 var mallDiff = DbMigrationService.DiffEntities(mallDb, MallTenantInitializer.MallEntityTypes);
                 logs.Add($"商城库：同步完成，剩余缺失表 {mallDiff.NewTables.Count} 张，缺失列 {mallDiff.NewColumns.Sum(c => c.Columns.Count)} 个");
 
+                // 商城热查询索引（幂等、只加不删，失败只回显不阻断；大表建索引可能耗时，建议低峰执行）
+                logs.Add($"商城索引：{MallIndexEnsurer.Ensure(mallDb)}");
+
                 // 商品名全文索引（幂等、失败只回显不阻断；未建时搜索自动回落 LIKE）
                 logs.Add($"商品名全文索引：{ProductFullTextIndexEnsurer.Ensure(mallDb)}");
             }
