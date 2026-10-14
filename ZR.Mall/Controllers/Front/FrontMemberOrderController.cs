@@ -165,7 +165,14 @@ namespace ZR.Mall.Controllers.Front
 
             if (!_wechatPayGateway.Enabled)
             {
-                // 模拟支付通道（开发环境）
+                // 模拟支付是零成本标记已付的后门，必须显式开启（MallSettings:AllowMockPay，默认关闭）。
+                // 未开启时拒绝，避免生产环境漏配 WechatPay:Enabled 导致会员无需付款即可完成订单。
+                if (!MallSettingsReader.AllowMockPay())
+                {
+                    logger.Warn($"模拟支付已被拒绝（未开启 MallSettings:AllowMockPay）：OrderNo={dto.OrderNo} MemberId={member.MemberId}");
+                    return ToResponse(ResultCode.FAIL, "当前未开通支付通道，请联系管理员");
+                }
+                // 模拟支付通道（开发/联调）
                 var mockOrder = _orderService.PayOrder(dto.OrderNo, member.MemberId);
                 return SUCCESS(new { mockOrder.OrderNo, mockOrder.OrderStatus, mockOrder.PayType, mockOrder.PayTime, mockOrder.PayAmount });
             }

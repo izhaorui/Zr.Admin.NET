@@ -14,17 +14,14 @@ namespace ZR.Mall.Common
     /// </summary>
     public static class MallAfterSalePolicy
     {
-        /// <summary>未配置或配置非法时的默认天数</summary>
-        public const int DefaultDays = 15;
-
         /// <summary>
-        /// 售后申请期限（天）：读 MallSettings:AfterSaleDays，0 表示不限。
-        /// 配置缺失或非法一律退回默认值，不抛异常（售后是纠纷入口，宁可放行也不误拦）。
+        /// 售后申请期限（天）：读 MallSettings:AfterSaleDays，0 表示不限，默认 15。
+        /// 读取与默认值统一在 <see cref="MallSettingsReader.AfterSaleDays"/>；缺失或非法不抛异常
+        /// （售后是纠纷入口，宁可放行也不误拦）。
         /// </summary>
         public static int ResolveDays()
         {
-            var raw = App.Configuration?["MallSettings:AfterSaleDays"];
-            return int.TryParse(raw, out var days) && days >= 0 ? days : DefaultDays;
+            return MallSettingsReader.AfterSaleDays();
         }
 
         /// <summary>

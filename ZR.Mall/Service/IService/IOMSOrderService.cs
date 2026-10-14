@@ -66,7 +66,7 @@ namespace ZR.Mall.Service.IService
         /// <summary>
         /// 总销售额与订单数
         /// </summary>
-        Task<dynamic> GetTotalSales(OMSOrderQueryDto dto);
+        Task<SalesTotalDto> GetTotalSales(OMSOrderQueryDto dto);
 
         /// <summary>
         /// 销售趋势（按天）

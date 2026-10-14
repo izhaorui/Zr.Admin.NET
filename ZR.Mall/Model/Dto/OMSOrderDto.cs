@@ -229,6 +229,19 @@ namespace ZR.Mall.Model.Dto
     }
 
     /// <summary>
+    /// 销售总额与订单数（<c>OMSOrderService.GetTotalSales</c>）。
+    /// 口径：商品总额（不含运费），与 <see cref="Common.MallStatsScope"/> 一致。
+    /// </summary>
+    public class SalesTotalDto
+    {
+        /// <summary>销售总额（商品口径）</summary>
+        public decimal TotalSales { get; set; }
+
+        /// <summary>订单数</summary>
+        public int OrderCount { get; set; }
+    }
+
+    /// <summary>
     /// 订单概览统计（列表顶部概览卡）：各状态计数 + 待发货未发货数。
     /// 由 <c>OMSOrderService.GetOrderOverview</c> 一次 GROUP BY 查询得出。
     /// </summary>

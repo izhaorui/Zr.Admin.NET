@@ -207,6 +207,7 @@ namespace ZR.Mall.Service
             var skipped = 0;
             foreach (var id in requestIds)
             {
+                // 仅读一次：状态判断与后续软删共用同一份快照（是否待取消由它决定）
                 var order = Queryable().First(x => x.Id == id && x.IsDelete == 0);
                 if (order == null)
                 {
@@ -216,6 +217,7 @@ namespace ZR.Mall.Service
                 {
                     try
                     {
+                        // 取消内部自带条件更新与状态校验，并发抢先时会抛异常，由此处跳过
                         _orderStateService.CancelOrder(id);
                     }
                     catch (Exception ex)
@@ -340,9 +342,17 @@ namespace ZR.Mall.Service
 
             // 取实体而非 Select 投影：AddressSnapshot 是 JSON 列，SqlSugar 在投影里按列名反序列化不稳
             // （同 GetFrontFormFields 的处理方式），故整单取回后在内存里组装。
+            // 上限：PageSize 对 ToListAsync 不生效，必须显式 Take，否则整张待发货表（含 JSON 地址）全部进内存。
+            var exportLimit = MallSettingsReader.WaitDeliveryExportLimit();
             var orders = await Queryable()
                 .Where(predicate.ToExpression())
+                .OrderBy(it => it.Id, OrderByType.Asc)
+                .Take(exportLimit)
                 .ToListAsync();
+            if (orders.Count >= exportLimit)
+            {
+                logger.Warn($"待发货导出已达上限，结果被截断：上限={exportLimit} 请缩小时间范围后重新导出");
+            }
 
             var orderIds = orders.Select(x => x.Id).ToList();
             var goodsByOrder = new Dictionary<long, string>();
@@ -389,20 +399,21 @@ namespace ZR.Mall.Service
         /// 总销售额和订单数
         /// </summary>
         /// <returns></returns>
-        public async Task<dynamic> GetTotalSales(OMSOrderQueryDto dto)
+        public async Task<SalesTotalDto> GetTotalSales(OMSOrderQueryDto dto)
         {
             var result = await MallStatsScope.ValidOrders(Queryable())
                 .WhereIF(dto.BeginCreateTime != null, o => o.PayTime >= dto.BeginCreateTime)
                 .WhereIF(dto.EndCreateTime != null, o => o.PayTime <= dto.EndCreateTime)
-                .Select(o => new
+                .Select(o => new SalesTotalDto
                 {
                     // 商品口径：按 TotalAmount（商品总额）聚合，运费不计入 GMV。
                     // 若改用 PayAmount（含运费），运费模板上线后销售额会随每单运费跳变。
-                    TotalSales = SqlFunc.AggregateSum(o.TotalAmount),
+                    // IsNull 兜底：零行时 SUM 返回 NULL，映射到非空 decimal 会出错（与 ArticleService 同一写法）
+                    TotalSales = SqlFunc.IsNull(SqlFunc.AggregateSum(o.TotalAmount), 0),
                     OrderCount = SqlFunc.AggregateCount(o.Id)
                 })
                 .FirstAsync();
-            return result;
+            return result ?? new SalesTotalDto();
         }
 
         /// <summary>

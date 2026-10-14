@@ -683,6 +683,31 @@ namespace ZR.Mall.Service
         private void RestoreStock(long orderId, bool restoreSellable)
         {
             var items = Context.Queryable<OMSOrderItem>().Where(i => i.OrderId == orderId).ToList();
+            RestoreStockByItems(items, restoreSellable);
+        }
+
+        /// <summary>
+        /// 批量回冲：一次查齐多单的订单项，再按 SKU 合计逐个更新（超时关单等批量场景使用，避免逐单查询）。
+        /// 语义与 <see cref="RestoreStock(long, bool)"/> 一致；Refresh 只在最后做一次。
+        /// </summary>
+        private void RestoreStockForOrders(List<long> orderIds, bool restoreSellable)
+        {
+            if (orderIds == null || orderIds.Count == 0)
+            {
+                return;
+            }
+            var items = Context.Queryable<OMSOrderItem>()
+                .Where(i => orderIds.Contains(i.OrderId))
+                .ToList();
+            RestoreStockByItems(items, restoreSellable);
+        }
+
+        private void RestoreStockByItems(List<OMSOrderItem> items, bool restoreSellable)
+        {
+            if (items == null || items.Count == 0)
+            {
+                return;
+            }
             foreach (var group in items.GroupBy(i => i.SkuId))
             {
                 var qty = group.Sum(i => i.Quantity);
@@ -855,32 +880,70 @@ namespace ZR.Mall.Service
         /// <returns>实际关闭的订单数</returns>
         public int CloseExpiredPendingOrders(int expireMinutes = 30)
         {
-            var db = Context;
-            var expireTime = db.GetDate().AddMinutes(-expireMinutes);
+            if (expireMinutes <= 0)
+            {
+                expireMinutes = MallSettingsReader.ClosePendingMinutes();
+            }
+            var batchSize = MallSettingsReader.ClosePendingBatchSize();
+            var expireTime = Context.GetDate().AddMinutes(-expireMinutes);
+
+            // 分批：每批独立事务，单批最多 batchSize 单，避免一次长事务持锁。
+            // 候选只取 Id/订单号；本批内条件关单 → 批量回补库存 → 收口预支付 → 逐单写日志。
+            // 是否继续以"候选数是否满页"判断：满页说明可能还有剩余，继续取下一批；
+            // 本批全部未命中（并发抢走）则退出，避免空转。
             int closed = 0;
+            while (true)
+            {
+                var batchClosed = CloseExpiredPendingBatch(expireTime, batchSize, out var candidateCount);
+                closed += batchClosed.Count;
+                if (candidateCount < batchSize || batchClosed.Count == 0)
+                {
+                    break;
+                }
+            }
+
+            if (closed > 0)
+            {
+                logger.Info($"超时未支付订单自动关闭完成：超时阈值={expireMinutes}分钟 关闭数量={closed} 截止时间={expireTime}");
+            }
+            else
+            {
+                logger.Debug($"超时订单清理：本轮无待付款超时订单。超时阈值={expireMinutes}分钟");
+            }
+            return closed;
+        }
+
+        /// <summary>
+        /// 处理一批超时待付款订单（独立事务）。
+        /// </summary>
+        /// <param name="candidateCount">本批取到的候选订单数，供调用方判断是否还有剩余</param>
+        /// <returns>本批实际关闭的订单 Id</returns>
+        private List<long> CloseExpiredPendingBatch(DateTime expireTime, int batchSize, out int candidateCount)
+        {
+            var db = Context;
+            var closedIds = new List<long>();
+            var closedOrderNos = new List<string>();
+            var candidateTotal = 0;
+
             var tran = UseTran(() =>
             {
-                // 1) 先取本轮候选订单（仅"待付款且已超时"），只取 Id/订单号，避免整单实体入内存。
-                //    关单与回补都以这份候选列表为准 —— 原实现用「CancelTime 在最近 10 秒内」反推
-                //    "哪些是本次关的"，会把同一时段被用户/后台取消的老订单也算进来，
-                //    对同一笔取消重复回补库存（CancelOrder 已回补过一次）。
+                // 候选以本批为准：只取待付款且已超时的单，关单与回补都只针对"本次真正关掉的"订单。
                 var candidates = db.Queryable<OMSOrder>()
                     .Where(x => x.OrderStatus == Enum.OrderStatusEnum.None
                                 && x.IsDelete == 0
                                 && x.CreateTime < expireTime)
+                    .OrderBy(x => x.Id)
                     .Select(x => new { x.Id, x.OrderNo })
+                    .Take(batchSize)
                     .ToList();
+                candidateTotal = candidates.Count;
                 if (candidates.Count == 0)
                 {
-                    // 定时任务每轮都会跑，无单可关时不记 Info（避免刷屏）；保留 Debug 便于确认任务在正常执行
-                    logger.Debug($"超时订单清理：本轮无待付款超时订单。超时阈值={expireMinutes}分钟");
                     return;
                 }
 
                 var now = db.GetDate();
-                // 2) 逐单条件关单：仅当该单此刻仍是"待付款且超时"才置为取消。
-                //    条件更新天然防并发（并发支付/取消的那一单会命中 0 行被跳过）；
-                //    且只对"本次确实关掉的这一单"回补库存，不再依赖时间窗口去猜，杜绝重复回补。
+                // 逐单条件关单：并发支付/取消的那一单会命中 0 行被跳过，且不回补库存
                 foreach (var c in candidates)
                 {
                     var affected = db.Updateable<OMSOrder>()
@@ -894,31 +957,46 @@ namespace ZR.Mall.Service
                                     && x.IsDelete == 0
                                     && x.CreateTime < expireTime)
                         .ExecuteCommand();
-                    if (affected <= 0)
+                    if (affected > 0)
                     {
-                        // 校验与写入之间被并发改掉（已支付/已取消）：跳过，不回补库存
-                        continue;
+                        closedIds.Add(c.Id);
+                        closedOrderNos.Add(c.OrderNo);
                     }
+                }
 
-                    RestoreStock(c.Id, restoreSellable: true);
-                    // 收口预支付流水：用户在超时前点过"去支付"会留下 Prepay 记录，
-                    // 不关掉的话订单已取消、流水却永远停在"预支付"（与取消/退款路径口径不一致）。
-                    _paymentService.CloseUnpaid(c.OrderNo);
-                    _orderLogService.AddLog(c.Id, c.OrderNo, (int)Enum.OrderStatusEnum.None, (int)Enum.OrderStatusEnum.Cancel, "EXPIRE", "system", "超时未支付自动关闭并回补库存");
-                    logger.Debug($"超时订单已关闭并回补库存：OrderNo={c.OrderNo} OrderId={c.Id}");
-                    closed++;
+                if (closedIds.Count == 0)
+                {
+                    return;
+                }
+
+                // 批量回补库存：一次查齐本批订单项，按 SKU 合计更新，商品汇总只刷新一次
+                RestoreStockForOrders(closedIds, restoreSellable: true);
+
+                // 收口预支付流水（用户超时前点过"去支付"会留下 Prepay，需随订单关闭）
+                foreach (var orderNo in closedOrderNos)
+                {
+                    _paymentService.CloseUnpaid(orderNo);
                 }
             });
+
             if (tran == null || !tran.IsSuccess)
             {
-                logger.Error($"超时订单清理事务失败：超时阈值={expireMinutes}分钟 错误={tran?.ErrorMessage}");
+                logger.Error($"超时订单清理事务失败：本批候选数={candidateTotal} 错误={tran?.ErrorMessage}");
                 throw new CustomException("超时订单清理失败" + (tran?.ErrorMessage != null ? $"（{tran.ErrorMessage}）" : ""));
             }
-            if (closed > 0)
+
+            // 订单日志放事务外（AddLog 自身吞异常，放进去只会拉长事务，与取消/发货口径一致）
+            for (var i = 0; i < closedIds.Count; i++)
             {
-                logger.Info($"超时未支付订单自动关闭完成：超时阈值={expireMinutes}分钟 关闭数量={closed} 截止时间={expireTime}");
+                _orderLogService.AddLog(closedIds[i], closedOrderNos[i], (int)Enum.OrderStatusEnum.None,
+                    (int)Enum.OrderStatusEnum.Cancel, "EXPIRE", "system", "超时未支付自动关闭并回补库存");
             }
-            return closed;
+            if (closedIds.Count > 0)
+            {
+                logger.Debug($"超时订单本批关闭：数量={closedIds.Count} Ids={string.Join(",", closedIds.Take(20))}");
+            }
+            candidateCount = candidateTotal;
+            return closedIds;
         }
 
         /// <summary>

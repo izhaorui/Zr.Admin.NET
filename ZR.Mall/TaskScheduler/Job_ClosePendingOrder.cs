@@ -1,4 +1,5 @@
 using Quartz;
+using ZR.Mall.Common;
 using ZR.Mall.Service.IService;
 
 namespace ZR.Mall.TaskScheduler
@@ -9,21 +10,18 @@ namespace ZR.Mall.TaskScheduler
     /// SaaS 下经 Job_Dispatcher 按租户展开（TenantId="*"），在当前租户库关单；
     /// 非 SaaS 仍靠订单实体 [Tenant("MallDb")] 路由到商城库。
     /// </summary>
+    /// <remarks>
+    /// 超时分钟读 <see cref="MallSettingsReader.ClosePendingMinutes"/>（MallSettings:ClosePendingMinutes，默认 30）。
+    /// 运行结果由 CloseExpiredPendingOrders 记录（有关单 Info / 空跑 Debug），本 Job 不再重复打日志。
+    /// </remarks>
     public class Job_ClosePendingOrder : IJob
     {
-        /// <summary>
-        /// 技术日志（NLog → logs/all.log）。
-        /// 原先用 Console.WriteLine：容器化/服务化部署后控制台输出不落盘，任务跑了什么、跑了几单全查不到。
-        /// </summary>
-        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
         public Task Execute(IJobExecutionContext context)
         {
             try
             {
                 var svc = (IOMSOrderStateService)App.GetRequiredService(typeof(IOMSOrderStateService));
-                var closed = svc.CloseExpiredPendingOrders(30); // 30 分钟未支付自动取消
-                logger.Info($"定时任务：已自动取消 {closed} 笔超时待付款订单（30 分钟未支付）");
+                svc.CloseExpiredPendingOrders(MallSettingsReader.ClosePendingMinutes());
                 return Task.CompletedTask;
             }
             catch (Exception ex)
