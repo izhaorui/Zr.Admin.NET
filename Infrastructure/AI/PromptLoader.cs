@@ -20,8 +20,8 @@ namespace Infrastructure.AI
     /// </summary>
     public class PromptLoader
     {
-        private static readonly ILogger<PromptLoader> Logger =
-            LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<PromptLoader>();
+        /// <summary>日志出口：统一走 <see cref="AiLog"/>（宿主优先、控制台兜底），避免自建日志工厂不经 NLog。</summary>
+        private static ILogger<PromptLoader> Logger => AiLog.GetLogger<PromptLoader>();
 
         private static readonly TimeSpan CacheSliding = TimeSpan.FromMinutes(10);
 

@@ -19,43 +19,22 @@ namespace Infrastructure.AI
     /// </summary>
     public static class AiLlmClient
     {
-        /// <summary>控制台兜底日志出口：宿主未就绪（启动早期/非 Web 宿主工具）时使用。</summary>
-        private static readonly ILogger ConsoleLogger =
-            LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger("Infrastructure.AI.AiLlmClient");
-
-        private static ILogger _hostLogger;
-
         /// <summary>
-        /// 日志出口：优先用宿主 DI 的 ILoggerFactory —— Web 宿主已 <c>builder.Host.UseNLog()</c>，
-        /// 因此 ILogger 会经 NLog 落到 logs/all.log 与控制台，无需本工程直接引用 NLog；
-        /// 取不到工厂时回退控制台。解析成功即缓存，避免每次调用都查容器。
+        /// 日志出口：统一走 <see cref="AiLog"/>（宿主优先、控制台兜底，Web 宿主已 <c>builder.Host.UseNLog()</c>，
+        /// ILogger 会经 NLog 落到 logs/all.log 与控制台，无需本工程直接引用 NLog）。
         /// <para>写法用插值：本类日志一律不传 args，而无 args 时 ILogger 直接输出消息原文，
         /// 因此消息里 JSON 的花括号不会被当成模板占位符（已实测：<c>args={"a":1}</c> 原样输出）。</para>
         /// </summary>
-        private static ILogger Logger
+        private static ILogger Logger => AiLog.GetLogger("Infrastructure.AI.AiLlmClient");
+
+        /// <summary>
+        /// AI 请求/响应 JSON 序列化选项（camelCase）。静态复用而非每次 <c>new</c>：
+        /// 复用可保留 <see cref="JsonSerializerOptions"/> 内部的序列化元数据缓存，同时避免重复分配。
+        /// </summary>
+        private static readonly JsonSerializerOptions JsonOptions = new()
         {
-            get
-            {
-                if (_hostLogger != null) return _hostLogger;
-                try
-                {
-                    if (App.ServiceProvider != null)
-                    {
-                        var factory = App.GetService<ILoggerFactory>();
-                        if (factory != null)
-                        {
-                            _hostLogger = factory.CreateLogger("Infrastructure.AI.AiLlmClient");
-                            return _hostLogger;
-                        }
-                    }
-                }
-                catch
-                {
-                    // 宿主未就绪：回退控制台，不因日志影响调用
-                }
-                return ConsoleLogger;
-            }
-        }
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
         public static Uri BuildRequestUri(AiOptions options)
         {
@@ -132,10 +111,7 @@ namespace Infrastructure.AI
             };
             ApplyThinkingOptions(payload, resolved.Provider, resolved.Model, options.EnableThinking, skipThinking);
 
-            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var json = JsonSerializer.Serialize(payload, JsonOptions);
 
             var headers = new Dictionary<string, string>
             {
@@ -420,10 +396,7 @@ namespace Infrastructure.AI
             var payload = BuildChatPayload(options, resolved, messages, tools, stream: false);
             ApplyThinkingOptions(payload, resolved.Provider, resolved.Model, options.EnableThinking);
 
-            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var json = JsonSerializer.Serialize(payload, JsonOptions);
 
             var headers = new Dictionary<string, string>
             {
@@ -543,10 +516,7 @@ namespace Infrastructure.AI
             var payload = BuildChatPayload(options, resolved, messages, tools, stream: true);
             ApplyThinkingOptions(payload, resolved.Provider, resolved.Model, options.EnableThinking);
 
-            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var json = JsonSerializer.Serialize(payload, JsonOptions);
             var headers = new Dictionary<string, string>
             {
                 ["Authorization"] = "Bearer " + (resolved.ApiKey ?? string.Empty)

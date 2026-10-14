@@ -28,8 +28,8 @@ namespace ZR.ServiceCore.AI
         public Task<AiLlmClient.ChatToolResult> ChatWithToolsAsync(AiOptions options, object[] messages, object[] tools, string scene = null)
             => AiLlmClientRetryWrapper.ChatWithToolsAsyncWithRetry(options, messages, tools, scene);
 
-        /// <summary>流式 function calling 单轮调用（转发 wrapper，当前保持无自动重试语义）</summary>
+        /// <summary>流式 function calling 单轮调用（转发 wrapper：不做重试，仅把异常标准化为 AiException）</summary>
         public IAsyncEnumerable<AiLlmClient.AiStreamChunk> StreamChatWithToolsAsync(AiOptions options, object[] messages, object[] tools, string scene = null, CancellationToken cancellationToken = default)
-            => AiLlmClientRetryWrapper.StreamChatWithToolsAsyncWithRetry(options, messages, tools, scene, cancellationToken);
+            => AiLlmClientRetryWrapper.StreamChatWithToolsAsync(options, messages, tools, scene, cancellationToken);
     }
 }

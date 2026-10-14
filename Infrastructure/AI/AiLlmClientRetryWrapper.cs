@@ -1,5 +1,4 @@
 using Infrastructure.Model;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -26,9 +25,7 @@ namespace Infrastructure.AI
         {
             if (options == null || !options.EnableRetry || options.MaxRetries <= 0)
             {
-                return new NoRetryPolicy(
-                    LoggerFactory.Create(builder => builder.AddConsole())
-                        .CreateLogger<NoRetryPolicy>());
+                return new NoRetryPolicy(AiLog.GetLogger<NoRetryPolicy>());
             }
 
             var retryOptions = new ExponentialBackoffOptions
@@ -41,8 +38,7 @@ namespace Infrastructure.AI
             retryOptions.Validate();
 
             return new ExponentialBackoffRetryPolicy(
-                LoggerFactory.Create(builder => builder.AddConsole())
-                    .CreateLogger<ExponentialBackoffRetryPolicy>(),
+                AiLog.GetLogger<ExponentialBackoffRetryPolicy>(),
                 retryOptions);
         }
 
@@ -163,22 +159,53 @@ namespace Infrastructure.AI
         }
 
         /// <summary>
-        /// Function Calling（流式，自动重试）。
+        /// Function Calling（流式，异常标准化）。
+        /// <para>不复用非流式那套自动重试：流一旦开始下发 chunk，中途重试会造成消息重复/错乱，
+        /// 故本方法<strong>不做重试</strong>，只把底层异常标准化为 <see cref="AiException"/>（取消异常除外，见
+        /// <see cref="ConvertStreamException"/>）。方法名刻意不带 <c>WithRetry</c>，避免调用方误解为重试调用。</para>
         /// </summary>
-        public static IAsyncEnumerable<AiLlmClient.AiStreamChunk> StreamChatWithToolsAsyncWithRetry(
+        public static async IAsyncEnumerable<AiLlmClient.AiStreamChunk> StreamChatWithToolsAsync(
             AiOptions options,
             object[] messages,
             object[] tools,
             string scene = null,
-            CancellationToken cancellationToken = default)
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            // 流式请求不支持重来自 retry policy 的简单重试，
-            // 因为一旦开始流式发送，中途重试会导致消息重复。
-            // 这里仅返回原始流（不做异常转换，保持兼容性）。
-            return AiLlmClient.StreamChatWithToolsAsync(
-                options, messages, tools, scene, cancellationToken);
+            // 迭代段内不得被 try/catch 包裹（含 yield return），否则编译器报错；
+            // 这里手动驱动内部枚举器，仅在其 MoveNextAsync 外层捕获并转换异常。
+            await using var enumerator = AiLlmClient
+                .StreamChatWithToolsAsync(options, messages, tools, scene, cancellationToken)
+                .GetAsyncEnumerator(cancellationToken);
+
+            while (true)
+            {
+                AiLlmClient.AiStreamChunk chunk;
+                try
+                {
+                    if (!await enumerator.MoveNextAsync().ConfigureAwait(false)) break;
+                    chunk = enumerator.Current;
+                }
+                catch (Exception ex)
+                {
+                    throw ConvertStreamException(ex);
+                }
+
+                yield return chunk;
+            }
         }
 
+
+        /// <summary>
+        /// 流式场景异常标准化：与非流式一致把底层异常转成 <see cref="AiException"/>，
+        /// 但<strong>保留取消语义</strong>——上游 SSE 控制器依赖 <see cref="OperationCanceledException"/>
+        /// 区分“客户端断开/请求取消”（静默收尾）与真实错误（下发 error 事件），
+        /// 若转成 <see cref="AiCancelledException"/> 会破坏该判断并产生误报日志。
+        /// </summary>
+        private static Exception ConvertStreamException(Exception ex)
+        {
+            if (ex is OperationCanceledException || ex is AiException) return ex;
+            return ConvertException(ex);
+        }
 
         /// <summary>
         /// 将底层异常转换为 AiException 体系（用于包装的调用点）。
