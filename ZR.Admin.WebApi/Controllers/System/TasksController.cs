@@ -204,7 +204,7 @@ namespace ZR.Admin.WebApi.Controllers
         [HttpPost("update")]
         [ActionPermissionFilter(Permission = "monitor:job:edit")]
         [Log(Title = "修改任务", BusinessType = BusinessType.UPDATE)]
-        public async Task<IActionResult> Update([FromBody] TasksCreateDto parm)
+        public IActionResult Update([FromBody] TasksCreateDto parm)
         {
             var tenantExpression = ResolveTenantExpression(parm.TenantId);
 
@@ -235,11 +235,10 @@ namespace ZR.Admin.WebApi.Controllers
             model.TenantId = tenantExpression;
             model.Update_by = HttpContextExtension.GetName(HttpContext);
             int response = _tasksQzService.UpdateTasks(model);
-            if (response > 0)
-            {
-                var respon = await _schedulerServer.UpdateTaskScheduleAsync(tasksQz);
-            }
 
+            // 说明：更新仅允许在任务已停止（IsStart==0）时进行（见上方校验），
+            // 此时任务已从 Quartz 中删除，无需重建调度；若此处调用 UpdateTaskScheduleAsync，
+            // 反而会把已停止的任务重新注册并跑起来。任务启动统一由 start 接口负责。
             return SUCCESS(response);
         }
 

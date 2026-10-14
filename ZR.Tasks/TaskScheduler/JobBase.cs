@@ -105,8 +105,10 @@ namespace ZR.Tasks
 
                 throw new JobExecutionException(jobException)
                 {
-                    // 仅立即重试一次，避免持续失败导致无限重试
-                    RefireImmediately = context.RefireCount < 1
+                    // 仅非分发器模式启用「立即重试一次」，避免持续失败导致无限重试。
+                    // 分发器模式（Job_Dispatcher）下，本异常会被上层捕获并记为「该租户失败」，
+                    // 不会冒泡给 Quartz，RefireImmediately 无实际效果，故不设置。
+                    RefireImmediately = !dispatcherMode && context.RefireCount < 1
                 };
             }
 

@@ -1,5 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Cache;
 using Infrastructure.Extensions;
 using NLog;
 using Quartz;
@@ -10,6 +11,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using ZR.Infrastructure.Helper;
 using ZR.Model.System;
 using ZR.Model.System.Enums;
 using ZR.Model.System.Tenant;
@@ -24,6 +26,12 @@ namespace ZR.Tasks.TaskScheduler
     public class Job_Dispatcher : IJob
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
+        /// <summary>
+        /// 防重占位锁的存活时长（分钟）。键按「任务+触发时刻」生成，一次触发用完即不再复用，
+        /// 仅需覆盖单次执行耗时以避免多实例并发重复执行。
+        /// </summary>
+        private const int DispatchDedupMinutes = 30;
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -45,12 +53,23 @@ namespace ZR.Tasks.TaskScheduler
                 return;
             }
 
+            // 多实例防重：同一任务、同一次计划触发只允许一个实例执行。
+            // 依赖 ICache.TrySet —— 启用 Redis 时为跨节点原子占位，未启用时退化为单实例内存占位。
+            var fireTime = (context.ScheduledFireTimeUtc ?? context.FireTimeUtc).UtcDateTime;
+            var dedupKey = $"zr:task:dispatch:{taskId}:{fireTime:yyyyMMddHHmmss}";
+            if (!CacheStore.Default.TrySet(dedupKey, 1, DispatchDedupMinutes))
+            {
+                logger.Debug("JobDispatcher 检测到本次触发已被其他实例接管，跳过: task={TaskId}, fireTime={FireTime}", taskId, fireTime);
+                return;
+            }
+
             // 标记本次为调度器分发模式，供 JobBase 识别并跳过日志/统计
             context.JobDetail.JobDataMap["DispatcherMode"] = true;
 
             var overallStatus = "0";
             string overallMsg = null;
             var now = DateTime.Now;
+            var invokeTarget = ResolveInvokeTarget(template);
 
             foreach (var tenantId in tenants)
             {
@@ -86,8 +105,8 @@ namespace ZR.Tasks.TaskScheduler
                     TraceId = context.MergedJobDataMap.GetString("TraceId") ?? Activity.Current?.TraceId.ToString(),
                     IsManual = context.MergedJobDataMap.ContainsKey("IsManual") ? Convert.ToInt32(context.MergedJobDataMap["IsManual"]) : 0,
                     TriggerSource = context.MergedJobDataMap.GetString("TriggerSource"),
-                    InvokeTarget = $"{template.AssemblyName}.{template.ClassName}"
-                });
+                    InvokeTarget = invokeTarget
+                }, template);
             }
 
             // 所有租户执行完毕后，统一更新一次任务统计
@@ -100,6 +119,20 @@ namespace ZR.Tasks.TaskScheduler
                 LastFailTime = overallStatus == "1" ? now : f.LastFailTime,
                 LastSuccessTime = overallStatus == "0" ? now : f.LastSuccessTime
             }, f => f.ID == taskId);
+        }
+
+        /// <summary>
+        /// 计算日志展示用的执行目标。HTTP/SQL 任务由分发器内联执行，
+        /// 不再依赖数据库里可能为空或过期的 AssemblyName/ClassName。
+        /// </summary>
+        private static string ResolveInvokeTarget(SysTasks task)
+        {
+            return task.TaskType switch
+            {
+                2 => "HttpRequest",
+                3 => "SqlExecute",
+                _ => $"{task.AssemblyName}.{task.ClassName}"
+            };
         }
 
         private static List<string> ResolveTargetTenantIds(string tenantExpression)
