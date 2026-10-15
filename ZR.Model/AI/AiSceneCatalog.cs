@@ -53,6 +53,9 @@ namespace ZR.Model.AI
         /// <summary>工作流：审批记录摘要</summary>
         public const string WfApprovalSummary = "wf_approval_summary";
 
+        /// <summary>商城：商品营销文案生成（标题/卖点/详情描述/SEO 关键词）</summary>
+        public const string ShopProductCopy = "shop_product_copy";
+
         /// <summary>治理自检：Provider 连通性探测</summary>
         public const string HealthCheck = "health_check";
 
@@ -77,6 +80,7 @@ namespace ZR.Model.AI
             WfInstanceSummary,
             WfRiskCheck,
             WfApprovalSummary,
+            ShopProductCopy,
             HealthCheck
         };
     }

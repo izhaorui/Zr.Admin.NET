@@ -8,7 +8,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -212,6 +214,130 @@ namespace Infrastructure.Controllers
 
             await MiniExcel.SaveAsAsync(fullPath, list, sheetName: sheetName);
             return (sFileName, fullPath);
+        }
+
+        /// <summary>
+        /// 导出「列由运行时决定」的图表数据到 Excel（AI 聚合结果、销售趋势/排名等）。
+        ///
+        /// 与 <see cref="ExportExcelMini{T}"/> 的区别：这些数据的字段在编译期不确定
+        /// （字典行 + 运行时列定义），无法用带 <c>ExcelColumn</c> 的强类型承载，
+        /// 故用 <see cref="DataTable"/> 保留列顺序与中文表头。
+        /// </summary>
+        /// <param name="rows">数据行；每行的 key 为字段名</param>
+        /// <param name="columns">列定义：Field=取值字段名，Label=表头显示名；为空时按首行键推断（表头用字段名）</param>
+        /// <param name="sheetName">工作表名</param>
+        /// <param name="fileName">文件名（不含扩展名与时间戳）</param>
+        protected (string, string) ExportChartExcel(
+            IEnumerable<IDictionary<string, object>> rows,
+            IList<(string Field, string Label)> columns,
+            string sheetName,
+            string fileName)
+        {
+            var rowList = rows?.ToList() ?? new List<IDictionary<string, object>>();
+            var cols = columns?.Where(c => !string.IsNullOrWhiteSpace(c.Field)).ToList() ?? new List<(string Field, string Label)>();
+
+            // 无显式列定义时按首行键推断，至少能导出内容；空数据会得到一个只有表头的文件。
+            if (cols.Count == 0)
+            {
+                var first = rowList.FirstOrDefault();
+                if (first != null)
+                {
+                    cols = first.Keys.Select(k => (k, k)).ToList();
+                }
+            }
+
+            var table = new DataTable();
+            var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var columnNames = new List<string>(cols.Count);
+            for (var i = 0; i < cols.Count; i++)
+            {
+                // DataTable 列名必须唯一：优先用中文表头，重名时回退字段名并加序号。
+                var name = string.IsNullOrWhiteSpace(cols[i].Label) ? cols[i].Field : cols[i].Label.Trim();
+                if (!used.Add(name))
+                {
+                    name = cols[i].Field;
+                    var n = 1;
+                    while (!used.Add(name))
+                    {
+                        name = $"{cols[i].Field}_{n++}";
+                    }
+                }
+                table.Columns.Add(name, typeof(object));
+                columnNames.Add(name);
+            }
+
+            foreach (var row in rowList)
+            {
+                var dr = table.NewRow();
+                for (var i = 0; i < cols.Count; i++)
+                {
+                    dr[columnNames[i]] = row != null && row.TryGetValue(cols[i].Field, out var v)
+                        ? NormalizeCellValue(v)
+                        : string.Empty;
+                }
+                table.Rows.Add(dr);
+            }
+
+            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+            string sFileName = $"{fileName}_{DateTime.Now:MMdd_HHmmss}.xlsx";
+            string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+
+            MiniExcel.SaveAs(fullPath, table, sheetName: sheetName);
+            return (sFileName, fullPath);
+        }
+
+        /// <summary>
+        /// 把图表单元格值归一化为可写入 Excel 的基础类型。
+        ///
+        /// 请求体经 System.Text.Json 反序列化后，<c>Dictionary&lt;string, object&gt;</c> 的值是
+        /// <see cref="System.Text.Json.JsonElement"/>；直接写入单元格只会落成原始 JSON 文本
+        /// （字符串带引号、数字/布尔变字面量）。Newtonsoft 的 JToken 同理，一并处理。
+        /// </summary>
+        private static object NormalizeCellValue(object value)
+        {
+            switch (value)
+            {
+                case null:
+                    return string.Empty;
+                case System.Text.Json.JsonElement el:
+                    return JsonElementToCell(el);
+                case Newtonsoft.Json.Linq.JToken jt:
+                    return JTokenToCell(jt);
+                default:
+                    return value;
+            }
+        }
+
+        private static object JsonElementToCell(System.Text.Json.JsonElement el)
+        {
+            switch (el.ValueKind)
+            {
+                case System.Text.Json.JsonValueKind.String:
+                    return el.GetString();
+                case System.Text.Json.JsonValueKind.Number:
+                    if (el.TryGetInt64(out var l)) return l;
+                    if (el.TryGetDecimal(out var d)) return d;
+                    return el.GetDouble();
+                case System.Text.Json.JsonValueKind.True:
+                case System.Text.Json.JsonValueKind.False:
+                    return el.GetBoolean();
+                case System.Text.Json.JsonValueKind.Null:
+                case System.Text.Json.JsonValueKind.Undefined:
+                    return string.Empty;
+                default:
+                    // 对象/数组：保留紧凑 JSON 文本
+                    return el.GetRawText();
+            }
+        }
+
+        private static object JTokenToCell(Newtonsoft.Json.Linq.JToken jt)
+        {
+            if (jt is Newtonsoft.Json.Linq.JValue jv)
+            {
+                return jv.Value ?? string.Empty;
+            }
+            return jt.ToString(Formatting.None);
         }
         /// <summary>
         /// 导出多个工作表(Sheet)

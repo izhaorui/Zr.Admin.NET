@@ -399,5 +399,113 @@ namespace ZR.Mall.Controllers
 
             return SUCCESS(response);
         }
+
+        #region 销售统计图表导出 Excel
+
+        /// <summary>
+        /// 导出销售趋势（按天）为 Excel。口径与 getSalesTrade 一致（按支付时间的有效订单）。
+        /// </summary>
+        [HttpGet("exportSalesTrade")]
+        [ActionPermissionFilter(Permission = "oms:sale:export")]
+        [Log(Title = "销售趋势导出", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
+        public async Task<IActionResult> ExportSalesTrade([FromQuery] OMSOrderQueryDto dto)
+        {
+            var data = await _OMSOrderService.GetSaleTreandByDay(dto);
+            var rows = ToChartRows(data);
+            if (rows.Count == 0)
+            {
+                return ToResponse(ResultCode.FAIL, "没有要导出的数据");
+            }
+
+            var columns = new List<(string, string)>
+            {
+                ("Date", "日期"), ("TotalSales", "销售额"), ("OrderCount", "订单数")
+            };
+            var result = ExportChartExcel(rows, columns, "销售趋势", "销售趋势");
+            return ExportExcel(result.Item2, result.Item1);
+        }
+
+        /// <summary>
+        /// 导出销售排名前 10 商品为 Excel。口径与 getSaleTopProduct 一致。
+        /// </summary>
+        [HttpGet("exportSaleTopProduct")]
+        [ActionPermissionFilter(Permission = "oms:sale:export")]
+        [Log(Title = "销售排名导出", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
+        public async Task<IActionResult> ExportSaleTopProduct([FromQuery] OMSOrderQueryDto dto)
+        {
+            var data = await _OMSOrderService.GetSaleTopProduct(dto);
+            var rows = ToChartRows(data);
+            if (rows.Count == 0)
+            {
+                return ToResponse(ResultCode.FAIL, "没有要导出的数据");
+            }
+
+            var columns = new List<(string, string)>
+            {
+                ("ProductName", "商品名"), ("TotalSold", "销量"), ("TotalSales", "销售额")
+            };
+            var result = ExportChartExcel(rows, columns, "销售排名", "销售排名");
+            return ExportExcel(result.Item2, result.Item1);
+        }
+
+        /// <summary>
+        /// 导出退款 Top10 商品为 Excel。口径与 getRefundTopProduct 一致。
+        /// </summary>
+        [HttpGet("exportRefundTopProduct")]
+        [ActionPermissionFilter(Permission = "oms:sale:export")]
+        [Log(Title = "退款排名导出", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
+        public async Task<IActionResult> ExportRefundTopProduct([FromQuery] OMSOrderQueryDto dto)
+        {
+            var data = await _OMSOrderService.GetRefundTopProduct(dto);
+            var rows = ToChartRows(data);
+            if (rows.Count == 0)
+            {
+                return ToResponse(ResultCode.FAIL, "没有要导出的数据");
+            }
+            FormatPercentColumn(rows, "RefundRate");
+
+            var columns = new List<(string, string)>
+            {
+                ("ProductName", "商品名"), ("RefundOrderCount", "退款订单数"),
+                ("RefundSales", "退款销售额"), ("TotalSales", "总销售额"), ("RefundRate", "退款占比")
+            };
+            var result = ExportChartExcel(rows, columns, "退款排名", "退款排名");
+            return ExportExcel(result.Item2, result.Item1);
+        }
+
+        /// <summary>
+        /// 把 Service 返回的匿名类型/强类型图表数据转成「字段→值」字典行，交给 ExportChartExcel。
+        /// 走 JSON 中转而非反射：匿名类型属性名固定、序列化稳定，且能一并处理强类型 DTO。
+        /// </summary>
+        private static List<Dictionary<string, object>> ToChartRows(object data)
+        {
+            if (data == null)
+            {
+                return new List<Dictionary<string, object>>();
+            }
+            return JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(JsonConvert.SerializeObject(data))
+                ?? new List<Dictionary<string, object>>();
+        }
+
+        /// <summary>把小数比率列就地格式化为百分比字符串（0.1234 → 12.34%），失败则原样保留。</summary>
+        private static void FormatPercentColumn(List<Dictionary<string, object>> rows, string field)
+        {
+            foreach (var row in rows)
+            {
+                if (row.TryGetValue(field, out var value) && value != null)
+                {
+                    try
+                    {
+                        row[field] = Convert.ToDecimal(value).ToString("P2");
+                    }
+                    catch (FormatException) { }
+                    catch (InvalidCastException) { }
+                    catch (OverflowException) { }
+                }
+            }
+        }
+
+        #endregion
+
     }
 }

@@ -39,6 +39,8 @@
 | 操作健康分析 | 操作日志健康报告 | `monitor:operlog:ai` |
 | 待办查询 | 工作流待办 | 模块内校验 |
 | 图表数据查询 | 只查预注册数据集 | 按数据集权限 |
+| 商品库存查询 | 按关键词查商品上下架状态与各规格库存 | `shop:product:list` |
+| 近期订单概况 | 近期订单聚合（订单数/销售额/退款/售后），不含明细 | `oms:order:list` |
 
 ---
 
@@ -54,6 +56,7 @@
 | 登录日志 | 安全分析 | `login_security` |
 | 操作日志 | 健康分析 | `oper_health` |
 | 日程 | 解析草稿、周报草稿 | `schedule_parse` / `weekly_report` |
+| 商品管理 | 商品文案生成草稿（标题/卖点/详情/SEO 关键词） | `shop_product_copy` |
 
 ---
 
@@ -82,6 +85,8 @@
 | `login_daily` | 每日/周/月登录次数趋势 | `monitor:logininfor:ai` |
 | `login_region` | 登录省份分布 | `monitor:logininfor:ai` |
 | `oper` | 操作日志按模块/类型/人/风险切片 | `monitor:operlog:ai` |
+
+图表结果可导出 Excel：助手对话内图表走后端 `POST aichat/chart/export`（仅落已校验数据，不重新查数）；商城销售统计的销售趋势/销售排名/退款排名走 `shopping/Order/export*` 系列接口（权限 `oms:sale:export`）。
 
 ---
 

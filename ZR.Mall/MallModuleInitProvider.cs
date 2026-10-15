@@ -100,6 +100,7 @@ namespace ZR.Mall
                     {
                         new("查询", "shop:product:query"), new("新增", "shop:product:add"),
                         new("删除", "shop:product:delete"), new("导出", "shop:product:export"),
+                        new("AI文案", "shop:product:ai"),
                     }),
                 new(Name: "规格模板", Path: "spectemplate", Component: "shopping/SpecTemplate", Perms: "spectpl:list", OrderNum: 4, Icon: "zujian",
                     Buttons:
@@ -148,7 +149,7 @@ namespace ZR.Mall
                 new(Name: "订单详情", Path: "/orderDetails", Component: "order/Details", Perms: "oms:order:query", OrderNum: 8, Visible: "1",
                     Buttons: []),
                 new(Name: "销售统计", Path: "salesDashboard", Component: "order/SalesDashboard", Perms: "oms:sale:query", OrderNum: 11, Visible: "0", Icon: "chart",
-                    Buttons: []),
+                    Buttons: [new("导出图表", "oms:sale:export")]),
             };
 
             var inserted = 0;

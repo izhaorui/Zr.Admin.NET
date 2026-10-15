@@ -20,6 +20,9 @@ namespace ZR.Admin.WebApi.Controllers.AI
         private readonly IAiCallGovernance _callGovernance;
         private static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
+        /// <summary>图表导出单次行数上限，防止超大数据把内存与 Excel 生成拖垮</summary>
+        private const int MaxChartExportRows = 5000;
+
         public AiChatController(ISysAiChatService aiChatService, IAiCallGovernance callGovernance)
         {
             _aiChatService = aiChatService;
@@ -231,6 +234,36 @@ namespace ZR.Admin.WebApi.Controllers.AI
                 pingCts.Cancel();
                 try { await pingTask; } catch { /* pingTask 内部已兜底，正常不会抛出 */ }
             }
+        }
+
+        /// <summary>
+        /// 导出助手图表结果为 Excel。
+        ///
+        /// 数据来自本轮对话 <c>done.Charts</c>（后端已聚合、已按数据集权限校验），前端展开后回传，
+        /// 服务端只负责落 Excel，不重新查数 —— 避免前端凭参数绕过数据集权限。
+        /// </summary>
+        [HttpPost("chart/export")]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "AI图表导出", BusinessType = BusinessType.EXPORT, IsSaveRequestData = false, IsSaveResponseData = false)]
+        public IActionResult ExportChart([FromBody] AiChartExportInput parm)
+        {
+            if (parm?.Rows == null || parm.Rows.Count == 0)
+            {
+                return ToResponse(ResultCode.FAIL, "没有要导出的图表数据");
+            }
+            if (parm.Rows.Count > MaxChartExportRows)
+            {
+                return ToResponse(ResultCode.FAIL, $"单次最多导出 {MaxChartExportRows} 行图表数据");
+            }
+
+            var columns = (parm.Columns ?? new List<AiChartExportColumn>())
+                .Where(c => c != null && !string.IsNullOrWhiteSpace(c.Field))
+                .Select(c => (c.Field, c.Label))
+                .ToList();
+
+            var title = string.IsNullOrWhiteSpace(parm.Title) ? "图表数据" : parm.Title.Trim();
+            var result = ExportChartExcel(parm.Rows, columns, title, title);
+            return ExportExcel(result.Item2, result.Item1);
         }
 
         private static bool IsChatRequestValid(SysAiChatRequestDto parm)

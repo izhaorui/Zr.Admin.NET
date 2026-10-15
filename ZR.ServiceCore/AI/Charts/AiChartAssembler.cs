@@ -237,7 +237,9 @@ namespace ZR.ServiceCore.AI.Charts
                 Title = string.IsNullOrWhiteSpace(spec.Title) ? query.Title : spec.Title,
                 XField = xField,
                 Series = series,
-                Rows = query.Rows
+                Rows = query.Rows,
+                // 字段标签随图下发：前端导出 Excel 时据此生成中文表头，无需另维护映射
+                Fields = query.Fields
             };
         }
     }
