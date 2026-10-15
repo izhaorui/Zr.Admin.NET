@@ -219,9 +219,10 @@ namespace ZR.Workflow.Service
                 AssigneeNickName = a.NickName,
                 // 依次审批：仅首位激活为传入 status，其余置 Waiting 排队，前一人完成才轮到下一位
                 Status = (sequential && idx > 0) ? (int)WfTaskStatus.Waiting : status,
-                // 超时埋点：待办到达时间 + 截止时间（仅当节点配置了 TimeoutHours>0 时由调用方传入 deadlineTime）
+                // 超时埋点：待办到达时间 + 截止时间（仅当节点配置了 TimeoutHours>0 时由调用方传入 deadlineTime）。
+                // 排队中(Waiting)不起算超时：截止时间置 null，轮到激活（Waiting→Pending）时再按当时时间重算
                 ArriveTime = now,
-                DeadlineTime = deadlineTime,
+                DeadlineTime = (sequential && idx > 0) ? null : deadlineTime,
                 Create_time = now,
                 Create_by = createBy
             }).ToList();
@@ -230,7 +231,7 @@ namespace ZR.Workflow.Service
 
         /// <summary>
         /// 根据节点超时配置计算待办截止时间。TimeoutHours>0 时返回 ArriveTime + TimeoutHours（小时），
-        /// 否则返回 null（无超时约束）。供 ArriveNode 生成审批待办时传入 BatchCreateTasks。
+        /// 否则返回 null（无超时约束）。用于 ArriveNode 生成待办、依次审批轮转激活下一位（Waiting→Pending）两处。
         /// </summary>
         private static DateTime? ComputeDeadline(WfFlowNode node, DateTime arriveTime)
             => node.TimeoutHours > 0 ? arriveTime.AddHours(node.TimeoutHours) : (DateTime?)null;

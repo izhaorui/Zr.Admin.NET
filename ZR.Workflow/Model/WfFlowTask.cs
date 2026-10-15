@@ -92,13 +92,14 @@ namespace ZR.Workflow.Model
         public DateTime? HandleTime { get; set; }
 
         /// <summary>
-        /// 待办到达时间（引擎生成待办时写入），用于超时判定与展示。
+        /// 待办到达时间（引擎生成待办时写入；依次审批轮到激活时重算为激活时刻），用于超时判定与展示。
         /// </summary>
         [SugarColumn(IsNullable = true)]
         public DateTime? ArriveTime { get; set; }
 
         /// <summary>
         /// 超时截止时间。仅当所属节点 TimeoutHours>0 时由引擎计算 = ArriveTime + TimeoutHours；否则为 null。
+        /// 依次审批排队中(Waiting)恒为 null，轮到激活（Waiting→Pending）时按当时时间重算——排队等待不计入超时。
         /// 定时任务扫描 Status=Pending 且 DeadlineTime&lt;now 的待办进行超时自动处理。
         /// </summary>
         [SugarColumn(IsNullable = true)]

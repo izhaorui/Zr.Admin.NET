@@ -69,6 +69,18 @@ namespace ZR.Workflow.Service
             // 保留数据库中的 FlowCode / Version / IsDraft，避免编辑时版本号或草稿态被客户端覆盖
             var existing = GetActiveDef(dto.FlowId)
                 ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "流程定义不存在", null);
+            // 就地编辑保护：本方法按 FlowId 整体替换节点（硬删重建、NodeId 全换新），只要已产生实例即会破坏数据——
+            // 在途实例（审批中/挂起）的任务与活动集仍指向旧 NodeId，审批/超时流转会异常；历史实例的审批记录仅存 NodeId
+            // （WfFlowRecord 无节点名快照，展示靠 LeftJoin 节点表），旧节点删除后记录节点名全部丢失。
+            // 故与版本管理设计一致：编辑须走「另存为新版本」，旧版冻结承载既有实例。
+            var instanceCount = Context.Queryable<WfFlowInstance>()
+                .Where(i => i.FlowId == dto.FlowId)
+                .Count();
+            if (instanceCount > 0)
+            {
+                throw new CustomException(ResultCode.CUSTOM_ERROR,
+                    "该流程已产生审批实例，就地编辑会重建节点并破坏在途流程与历史记录，请使用「另存为新版本」", null);
+            }
             var def = dto.Adapt<WfFlowDefinition>().ToUpdate(App.HttpContext);
             def.FlowCode = existing.FlowCode;
             def.Version = existing.Version;

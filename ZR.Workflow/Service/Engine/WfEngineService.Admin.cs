@@ -111,6 +111,7 @@ namespace ZR.Workflow.Service
         /// <summary>
         /// 管理员改派：把指定节点的全部未完成任务（审批/抄送）重新分配给目标用户。
         /// 适用于审批人离职/失联，管理员需把卡住的待办改给其他人。节点不存在任务时抛异常。
+        /// 改派后 Pending 待办按当前时间重算超时窗口（Waiting 排队不计时，轮到激活时再计算）。
         /// </summary>
         /// <param name="instanceId">流程实例Id</param>
         /// <param name="nodeId">目标节点（实例当前所处或任意未完成任务所属节点）</param>
@@ -127,6 +128,9 @@ namespace ZR.Workflow.Service
             var op = LoadUser(operatorId);
             var target = LoadUser(targetUserId);
             var def = LoadActivatableDefinition(instance.FlowId);
+            // 节点超时配置：改派后按当前时间重算超时窗口（管理员改派通常为救活卡单，新受理人须获得完整 TimeoutHours）
+            var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == nodeId)
+                ?? throw new CustomException("流程节点不存在");
 
             // 业务校验放 RunInTx 之前，确保异常消息能透传给调用方（RunInTx 会用 errorLabel 覆盖内部异常）
             var tasks = Context.Queryable<WfFlowTask>()
@@ -138,6 +142,7 @@ namespace ZR.Workflow.Service
 
             RunInTx(() =>
             {
+                var now = DateTime.Now;
                 foreach (var t in tasks)
                 {
                     t.AssigneeId = target.UserId;
@@ -146,6 +151,12 @@ namespace ZR.Workflow.Service
                     t.DelegateId = null;
                     t.DelegateName = null;
                     t.IsRead = false;
+                    // 超时窗口跟随新受理人重算：仅对 Pending 生效（Waiting 排队不计时，轮到激活时按当时时间计算）
+                    if (t.Status == (int)WfTaskStatus.Pending)
+                    {
+                        t.ArriveTime = now;
+                        t.DeadlineTime = ComputeDeadline(node, now);
+                    }
                     Context.Updateable(t).ExecuteCommand();
                     AddRecord(instanceId, t.TaskId, nodeId, op, (int)WfAction.Reassign, $"改派给 {target.NickName}{(string.IsNullOrEmpty(opinion) ? "" : $"：{opinion}")}");
                 }

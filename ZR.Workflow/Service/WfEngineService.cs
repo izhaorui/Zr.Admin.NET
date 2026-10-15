@@ -146,8 +146,16 @@ namespace ZR.Workflow.Service
                         .First();
                     if (next != null)
                     {
+                        // 轮到才起算超时：Waiting 排队期间不计时，激活时按当前时间重算到达/截止时间
+                        var nextDeadline = ComputeDeadline(node, now);
                         Context.Updateable<WfFlowTask>()
-                            .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Pending, Opinion = "" })
+                            .SetColumns(t => new WfFlowTask
+                            {
+                                Status = (int)WfTaskStatus.Pending,
+                                Opinion = "",
+                                ArriveTime = now,
+                                DeadlineTime = nextDeadline
+                            })
                             .Where(t => t.TaskId == next.TaskId).ExecuteCommand();
                         Notify(next.AssigneeId.Value, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」轮到您审批。");
                         logger.Info($"依次审批轮转：InstanceId={instance.InstanceId} Node={node.NodeName}({node.NodeId}) 轮到下一审批人({next.AssigneeId})");
@@ -441,7 +449,8 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 转办：将当前待办转移给目标用户（节点不变，由目标用户接手）
+        /// 转办：将当前待办转移给目标用户（节点不变，由目标用户接手）。
+        /// 超时窗口按转办时刻重算：新受理人获得完整 TimeoutHours，避免其继承已过期截止时间被超时任务立刻自动处理。
         /// </summary>
         public void Transfer(long taskId, long targetUserId, string opinion, long operatorId)
         {
@@ -459,9 +468,13 @@ namespace ZR.Workflow.Service
                 ?? throw new CustomException("转办人不存在或已停用");
             var targetName = target.UserName;
             var targetNickName = target.NickName;
+            // 节点超时配置：转办后按当前时间重算到达/截止时间（与超时自动转交、依次审批轮转同一语义）
+            var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId)
+                ?? throw new CustomException("流程节点不存在");
             RunInTx(() =>
             {
                 var now = DateTime.Now;
+                var nextDeadline = ComputeDeadline(node, now);
                 // 并发防重：转办须命中待办态，命中 0 行说明任务已被并发处理（重复转办/或签他人已审），直接短路
                 var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
@@ -471,6 +484,8 @@ namespace ZR.Workflow.Service
                         AssigneeNickName = targetNickName,
                         Opinion = opinion,
                         Action = (int)WfAction.Transfer,
+                        ArriveTime = now,
+                        DeadlineTime = nextDeadline,
                         Update_time = now,
                         Update_by = op.UserName
                     })
@@ -486,7 +501,8 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 加签：在当前审批节点追加额外审批人，新增待办纳入节点完成判定
+        /// 加签：在当前审批节点追加额外审批人，新增待办纳入节点完成判定。
+        /// 加签待办与同节点其他待办一致计算超时（DeadlineTime 按加签时刻起算）。
         /// </summary>
         public void AddSign(long taskId, List<long> userIds, string opinion, long operatorId)
         {
@@ -511,6 +527,10 @@ namespace ZR.Workflow.Service
             var toAddApprovers = ResolveByUserIds(toAdd);
             if (toAddApprovers.Count == 0) throw new CustomException("加签人不存在");
 
+            // 节点超时配置：加签待办与同节点其他待办一致计算截止时间
+            var node = Context.Queryable<WfFlowNode>().First(n => n.NodeId == task.NodeId)
+                ?? throw new CustomException("流程节点不存在");
+
             RunInTx(() =>
             {
                 // 数据库级 CAS 抢占：能否加签由当前待办的原子条件更新命中行数决定。
@@ -529,7 +549,7 @@ namespace ZR.Workflow.Service
                 var freshToAdd = toAddApprovers.Where(a => !freshIds.Contains(a.UserId)).ToList();
                 if (freshToAdd.Count == 0) throw new CustomException("加签人已在该节点审批人中");
 
-                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, freshToAdd, (int)WfTaskStatus.Pending, op.UserName);
+                BatchCreateTasks(task.InstanceId, task.NodeId, task.NodeName, freshToAdd, (int)WfTaskStatus.Pending, op.UserName, deadlineTime: ComputeDeadline(node, DateTime.Now));
 
                 NotifyUsers(freshToAdd, $"【审批加签】{instance.Title} 由 {op.NickName} 邀请您加签审批。");
 
@@ -677,8 +697,16 @@ namespace ZR.Workflow.Service
                         .First();
                     if (next != null)
                     {
+                        // 轮到才起算超时：Waiting 排队期间不计时，激活时按当前时间重算到达/截止时间
+                        var nextDeadline = ComputeDeadline(node, now);
                         Context.Updateable<WfFlowTask>()
-                            .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Pending, Opinion = "" })
+                            .SetColumns(t => new WfFlowTask
+                            {
+                                Status = (int)WfTaskStatus.Pending,
+                                Opinion = "",
+                                ArriveTime = now,
+                                DeadlineTime = nextDeadline
+                            })
                             .Where(t => t.TaskId == next.TaskId).ExecuteCommand();
                         Notify(next.AssigneeId.Value, $"【审批待办】{instance.Title}（{instance.FlowName}），节点「{node.NodeName}」轮到您审批。");
                         return;
@@ -745,7 +773,8 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 超时自动转交：将待办转给节点配置的 TimeoutTransferUserId。
+        /// 超时自动转交：将待办转给节点配置的 TimeoutTransferUserId，并按转交时刻重算超时窗口
+        /// （新受理人获得完整 TimeoutHours，避免其继承已过期截止时间被下一轮扫描再次自动处理）。
         /// 目标无效（未配置/不存在/即申请人）则退化为自动通过，避免流程卡死。
         /// </summary>
         private void AutoTransferTask(WfFlowTask task, WfFlowInstance instance, WfFlowNode node)
@@ -768,7 +797,10 @@ namespace ZR.Workflow.Service
             RunInTx(() =>
             {
                 var now = DateTime.Now;
-                // 并发防重：超时自动转交须命中待办态，命中 0 行说明任务已被并发处理，直接短路
+                // 并发防重：超时自动转交须命中待办态，命中 0 行说明任务已被并发处理，直接短路。
+                // 超时窗口重算：受理人已变更，按当前时间重算到达/截止时间——否则任务仍带已过期 DeadlineTime，
+                // 下一轮扫描会立刻再次转交（固定目标 → 重复转交 + 重复写记录/通知）。
+                var nextDeadline = ComputeDeadline(node, now);
                 var rows = Context.Updateable<WfFlowTask>()
                     .SetColumns(t => new WfFlowTask
                     {
@@ -777,6 +809,8 @@ namespace ZR.Workflow.Service
                         AssigneeNickName = target.NickName,
                         Opinion = "超时自动转交",
                         Action = (int)WfAction.Transfer,
+                        ArriveTime = now,
+                        DeadlineTime = nextDeadline,
                         Update_time = now,
                         Update_by = op.UserName
                     })
@@ -928,9 +962,13 @@ namespace ZR.Workflow.Service
             if (node.SignType == (int)WfSignType.Sequential && pending.Count == 0 && waiting.Count > 0)
             {
                 var next = waiting.First();
+                var now = DateTime.Now;
                 next.Status = (int)WfTaskStatus.Pending;
                 next.Update_by = operatorUserName;
-                next.Update_time = DateTime.Now;
+                next.Update_time = now;
+                // 轮到才起算超时：Waiting 排队期间不计时，激活时按当前时间重算到达/截止时间
+                next.ArriveTime = now;
+                next.DeadlineTime = ComputeDeadline(node, now);
                 Context.Updateable(next).ExecuteCommand();
                 Notify(next.AssigneeId.Value, $"【待审批】{instance.Title}（{node.NodeName}）");
             }
