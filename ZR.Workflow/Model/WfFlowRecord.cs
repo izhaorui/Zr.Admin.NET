@@ -4,6 +4,7 @@ namespace ZR.Workflow.Model
     /// 审批记录（流水轨迹）
     /// </summary>
     [SugarTable("wf_flow_record", "审批记录")]
+    [SugarIndex("idx_wf_record_instance", nameof(InstanceId), OrderByType.Asc)]
     public class WfFlowRecord : SysBase
     {
         /// <summary>

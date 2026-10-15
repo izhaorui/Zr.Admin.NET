@@ -4,6 +4,7 @@ namespace ZR.Workflow.Model
     /// 流程实例（一次具体申请）
     /// </summary>
     [SugarTable("wf_flow_instance", "流程实例")]
+    [SugarIndex("idx_wf_instance_flow", nameof(FlowId), OrderByType.Asc)]
     public class WfFlowInstance : SysBase
     {
         /// <summary>

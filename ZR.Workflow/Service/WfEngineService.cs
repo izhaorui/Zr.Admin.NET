@@ -614,18 +614,38 @@ namespace ZR.Workflow.Service
         /// </summary>
         public void ProcessTimeoutTasks()
         {
+            const int batchSize = 200;
             var now = DateTime.Now;
-            var dueTasks = Context.Queryable<WfFlowTask>()
-                .Where(t => t.Status == (int)WfTaskStatus.Pending
-                            && t.DeadlineTime != null
-                            && t.DeadlineTime < now)
-                .ToList();
-            if (dueTasks.Count == 0) return;
+            long lastTaskId = 0;
+            var scanned = 0;
+            var handled = 0;
+            while (true)
+            {
+                // 以 TaskId 为游标分批，未处理（无超时动作/实例非审批中）的任务不会被重复读取
+                var dueTasks = Context.Queryable<WfFlowTask>()
+                    .Where(t => t.Status == (int)WfTaskStatus.Pending
+                                && t.DeadlineTime != null
+                                && t.DeadlineTime < now
+                                && t.TaskId > lastTaskId)
+                    .OrderBy(t => t.TaskId)
+                    .Take(batchSize)
+                    .ToList();
+                if (dueTasks.Count == 0) break;
+                lastTaskId = dueTasks[dueTasks.Count - 1].TaskId;
+                scanned += dueTasks.Count;
+                handled += ProcessTimeoutBatch(dueTasks);
+                if (dueTasks.Count < batchSize) break;
+            }
+            if (scanned > 0)
+                logger.Info($"超时自动处理完成：扫描 {scanned} 条超时待办，成功处理 {handled} 条");
+        }
 
+        private int ProcessTimeoutBatch(List<WfFlowTask> dueTasks)
+        {
             // 预加载节点配置（含 TimeoutAction / TimeoutTransferUserId），避免逐任务查库
             var nodeIds = dueTasks.Select(t => t.NodeId).Distinct().ToList();
-            var nodes = Context.Queryable<WfFlowNode>().Where(n => nodeIds.Contains(n.NodeId)).ToList();
-            var nodeMap = nodes.ToDictionary(n => n.NodeId);
+            var nodeMap = Context.Queryable<WfFlowNode>().Where(n => nodeIds.Contains(n.NodeId)).ToList()
+                .ToDictionary(n => n.NodeId);
 
             var handled = 0;
             foreach (var task in dueTasks)
@@ -634,6 +654,7 @@ namespace ZR.Workflow.Service
                 var action = (WfTimeoutAction)node.TimeoutAction;
                 if (action == WfTimeoutAction.None) continue; // 未配置超时动作 → 跳过
 
+                // 同批内先前任务可能已推进该实例，故逐条读取最新状态
                 var instance = Context.Queryable<WfFlowInstance>().First(i => i.InstanceId == task.InstanceId);
                 if (instance == null || instance.Status != (int)WfInstanceStatus.Approval) continue;
 
@@ -659,7 +680,7 @@ namespace ZR.Workflow.Service
                     logger.Error(ex, $"超时自动处理失败：InstanceId={task.InstanceId} TaskId={task.TaskId} Node={node.NodeName}({node.NodeId}) Action={action}");
                 }
             }
-            logger.Info($"超时自动处理完成：扫描 {dueTasks.Count} 条超时待办，成功处理 {handled} 条");
+            return handled;
         }
 
         /// <summary>
@@ -1719,7 +1740,12 @@ namespace ZR.Workflow.Service
         /// 单节点查库版（串行主路径用）。
         /// </summary>
         private bool IsNodeComplete(long instanceId, WfFlowNode node)
-            => IsNodeComplete(LoadNodeTasks(instanceId), node);
+        {
+            var tasks = Context.Queryable<WfFlowTask>()
+                .Where(t => t.InstanceId == instanceId && t.NodeId == node.NodeId)
+                .ToList();
+            return IsNodeComplete(new Dictionary<long, List<WfFlowTask>> { [node.NodeId] = tasks }, node);
+        }
 
         /// <summary>
         /// 判断节点是否完成（或签：任一已审；会签：全部已审）——内存版，接收已按节点分组的任务字典，

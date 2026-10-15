@@ -6,6 +6,9 @@ namespace ZR.Workflow.Model
     /// 审批任务（每个节点的待办）
     /// </summary>
     [SugarTable("wf_flow_task", "审批任务")]
+    [SugarIndex("idx_wf_task_status_deadline", nameof(Status), OrderByType.Asc, nameof(DeadlineTime), OrderByType.Asc)]
+    [SugarIndex("idx_wf_task_assignee_status", nameof(AssigneeId), OrderByType.Asc, nameof(Status), OrderByType.Asc)]
+    [SugarIndex("idx_wf_task_instance_node", nameof(InstanceId), OrderByType.Asc, nameof(NodeId), OrderByType.Asc)]
     public class WfFlowTask : SysBase
     {
         /// <summary>
