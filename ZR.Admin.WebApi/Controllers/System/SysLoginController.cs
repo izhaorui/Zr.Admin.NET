@@ -24,6 +24,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysTenantService sysTenantService;
         private readonly ISysDeptService deptService;
         private readonly ISysTwoFactorService twoFactorService;
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         public SysLoginController(
             ISysMenuService sysMenuService,
@@ -86,7 +87,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             string abnormalNotice = sysLoginService.GetAbnormalLoginNotice(user, loginBody.LoginIP);
-            return IssueToken(user, loginBody.TenantId, abnormalNotice);
+            return IssueToken(user, loginBody.TenantId, loginBody.ClientId, loginBody.LoginIP, abnormalNotice: abnormalNotice);
         }
 
         /// <summary>
@@ -170,12 +171,9 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw;
             }
 
-            if (dto.RememberDevice)
-            {
-                twoFactorService.TrustDevice(user.UserId,
-                    dto.ClientId.IsEmpty() ? payload.ClientId : dto.ClientId,
-                    clientInfo.ToString(), payload.LoginIP);
-            }
+            // 设备登记与"记住此设备"已合并为一个动作，在 IssueToken 里统一完成（三个登录入口共用），
+            // 这里只负责把"是否记住"与本次设备标识传下去。
+            var clientId = dto.ClientId.IsEmpty() ? payload.ClientId : dto.ClientId;
 
             // 与普通登录同一口径：先取异地提醒（用的是本次之前的登录 IP），再更新最后登录信息
             string abnormalNotice = sysLoginService.GetAbnormalLoginNotice(user, payload.LoginIP);
@@ -185,7 +183,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             sysLoginService.AddLoginInfo(logininfor, payload.TenantId);
             sysUserService.UpdateLoginInfo(payload.LoginIP, user.UserId);
 
-            return IssueToken(user, payload.TenantId, abnormalNotice);
+            return IssueToken(user, payload.TenantId, clientId, payload.LoginIP, dto.RememberDevice, abnormalNotice);
         }
 
         /// <summary>
@@ -224,9 +222,13 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// 签发 token 的统一出口。
         ///
         /// 账号密码登录、手机号登录、双因子第二步都从这里签发，
-        /// 保证权限装配、单设备会话、"本会话已通过双因子"标记三件事不会在某个入口漏掉。
+        /// 保证权限装配、单会话、"本会话已通过双因子"标记、**登录设备登记**四件事
+        /// 不会在某个入口漏掉。
         /// </summary>
-        private IActionResult IssueToken(SysUser user, string tenantId, string? abnormalNotice = null)
+        /// <param name="clientId">设备标识（前端指纹）；为空表示无法识别设备</param>
+        /// <param name="trustDevice">是否把该设备标记为受信任（用户勾选"记住此设备"）</param>
+        private IActionResult IssueToken(SysUser user, string tenantId, string clientId, string loginIp,
+            bool trustDevice = false, string? abnormalNotice = null)
         {
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list（按套餐菜单过滤）
@@ -239,6 +241,19 @@ namespace ZR.Admin.WebApi.Controllers.System
                 ScopeType = SysLoginService.ComputeScopeType(roles),
                 SessionId = Guid.NewGuid().ToString("N")// 单设备登录：每次登录生成新会话ID并缓存，旧会话将被中间件判定失效
             };
+
+            // 设备登记放在这个统一出口：三个登录入口都会经过这里，
+            // 避免"某个入口忘了登记"导致设备列表与新设备提醒出现盲区。
+            // 登记失败不影响登录 —— 它不是安全闸门，只承担审计与提醒职责。
+            try
+            {
+                twoFactorService.RecordLoginDevice(user.UserId, clientId,
+                    HttpContext.GetClientInfo().ToString(), loginIp, trustDevice);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, $"登录设备登记失败：UserId={user.UserId}");
+            }
 
             CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
             // 能走到签发说明身份校验已完整（未启用 2FA，或刚通过 2FA / 命中可信设备）。
@@ -618,7 +633,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                     loginBody.LoginIP, location, TwoFactorLoginSource.Phone));
             }
 
-            return IssueToken(info, loginBody.TenantId);
+            return IssueToken(info, loginBody.TenantId, loginBody.ClientId, loginBody.LoginIP);
         }
 
         /// <summary>

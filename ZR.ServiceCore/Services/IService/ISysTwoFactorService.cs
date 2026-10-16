@@ -46,7 +46,8 @@ namespace ZR.ServiceCore.Services
         void Disable(long userId, string password, string code);
 
         /// <summary>
-        /// 管理员重置：直接清空双因子配置并吊销全部可信设备（用户无需提供验证码）
+        /// 管理员重置：直接清空双因子配置并清空全部设备信任（用户无需提供验证码）。
+        /// 保留设备登记记录，避免重置后用户从常用设备登录被误报为"新设备"。
         /// </summary>
         void Reset(long userId);
 
@@ -56,24 +57,35 @@ namespace ZR.ServiceCore.Services
         TwoFactorStatusDto GetStatus(long userId);
 
         /// <summary>
-        /// 可信设备列表
+        /// 登录设备列表（**全部已登记设备**，不只是受信任的）。
+        /// 只列受信任设备会漏掉"攻击者用过但没勾选记住"的痕迹，用户无法据此判断异常。
         /// </summary>
         List<TwoFactorDeviceDto> GetDevices(long userId);
 
         /// <summary>
-        /// 吊销单个可信设备
+        /// 移除单个设备（同时失去信任）。移除后该设备再次登录会重新被判定为"新设备"并再次提醒
         /// </summary>
         bool RemoveDevice(long userId, long deviceId);
 
         /// <summary>
-        /// 吊销全部可信设备
+        /// 清空该账号全部设备的信任期（解绑 2FA / 管理员重置）。
+        /// 保留设备登记记录：重置后用户从常用设备登录不会被误报"新设备"，也仍能看到历史设备；
+        /// 安全上只需确保"没有任何设备再被信任"。
         /// </summary>
-        void ClearTrustedDevices(long userId);
+        void ClearDeviceTrust(long userId);
 
         /// <summary>
-        /// 记住此设备：写入信任记录并刷新存量记录
+        /// 登记本次登录设备，返回是否"新设备"（该设备标识首次出现）。
+        ///
+        /// 与"记住此设备"解耦：**每次登录都登记**，<paramref name="trust"/> 为 true 时才额外写入信任期。
+        /// 设备标识为空时既不登记也不告警 —— 指纹取不到时若当成新设备，会让每次登录都误报。
         /// </summary>
-        void TrustDevice(long userId, string clientId, string deviceName, string loginIp);
+        /// <param name="userId">用户ID</param>
+        /// <param name="clientId">设备标识（前端指纹 visitorId）</param>
+        /// <param name="deviceName">设备名称（浏览器/OS），展示给用户辨认</param>
+        /// <param name="loginIp">本次登录 IP</param>
+        /// <param name="trust">是否同时标记为受信任（免二次验证）</param>
+        bool RecordLoginDevice(long userId, string clientId, string deviceName, string loginIp, bool trust = false);
 
         /// <summary>
         /// 校验验证码（认证器 6 位码或一次性恢复码）。

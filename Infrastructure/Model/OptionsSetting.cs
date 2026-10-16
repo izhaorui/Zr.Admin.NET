@@ -340,6 +340,18 @@ namespace Infrastructure.Model
         /// 小于等于 0 时按 60 分钟。
         /// </summary>
         public int AlertIntervalMinutes { get; set; } = 60;
+
+        /// <summary>
+        /// 是否在"新设备登录"时发提醒（渠道随 <see cref="AlertBySiteMessage"/> / <see cref="AlertByEmail"/>）。
+        /// 首次出现某设备标识即视为新设备。
+        /// </summary>
+        public bool AlertOnNewDevice { get; set; } = true;
+
+        /// <summary>
+        /// 每个账号保留的登录设备记录上限，超出时按最后使用时间淘汰最旧的非信任设备。
+        /// 设备标识由客户端提供、可被伪造，必须有上限，否则存在刷表风险。小于等于 0 时按 20 条。
+        /// </summary>
+        public int MaxDeviceRecords { get; set; } = 20;
     }
 
     public class CodeGen

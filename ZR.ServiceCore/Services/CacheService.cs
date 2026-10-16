@@ -197,6 +197,7 @@ namespace ZR.ServiceCore.Services
         private static readonly string TwoFactorFailPrefix = "CACHE-2FA-FAIL_";
         private static readonly string TwoFactorLockPrefix = "CACHE-2FA-LOCK_";
         private static readonly string TwoFactorAlertPrefix = "CACHE-2FA-ALERT_";
+        private static readonly string TwoFactorNewDeviceAlertPrefix = "CACHE-2FA-NEWDEVICE_";
         private static readonly string TwoFactorSessionOkPrefix = "CACHE-2FA-SESSIONOK_";
 
         /// <summary>
@@ -254,6 +255,20 @@ namespace ZR.ServiceCore.Services
 
             return CacheStore.For(CacheBackend.Cache)
                 .TrySet(BuildTenantKey(TwoFactorAlertPrefix + userId), 1, intervalMinutes);
+        }
+
+        /// <summary>
+        /// 新设备登录提醒的限频：同一账号在 intervalMinutes 内只提醒一次。
+        ///
+        /// 与"连续失败告警"用**独立 key**（两类告警互不抑制，一个发生不会吞掉另一个）。
+        /// 新设备提醒尤其需要限频：无痕模式 / 清缓存会让设备指纹变化，正常用户也可能连续触发。
+        /// </summary>
+        public static bool TryMarkNewDeviceAlert(long userId, int intervalMinutes)
+        {
+            if (intervalMinutes <= 0) intervalMinutes = 60;
+
+            return CacheStore.For(CacheBackend.Cache)
+                .TrySet(BuildTenantKey(TwoFactorNewDeviceAlertPrefix + userId), 1, intervalMinutes);
         }
 
         /// <summary>2FA 校验失败次数 +1，返回累加后的次数</summary>

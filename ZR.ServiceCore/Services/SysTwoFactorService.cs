@@ -24,6 +24,16 @@ namespace ZR.ServiceCore.Services
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
+        /// <summary>
+        /// "未信任"的哨兵值。
+        ///
+        /// 刻意不把设备表的 TrustUntil 改成可空列：存量库若已建过该表，CodeFirst 补列逻辑不会帮我们
+        /// ALTER 列的可空性，插入 NULL 会直接失败；而且 SetColumns(x == null) 生成的 SQL 在不同
+        /// 数据库上表现也不一致。用一个明确落在 datetime 合法区间内、且恒早于当前时间的值最省事：
+        /// 判定统一为 TrustUntil &gt; now，无需区分 NULL 分支。
+        /// </summary>
+        private static readonly DateTime NoTrustUntil = new DateTime(1900, 1, 1);
+
         /// <summary>恢复码数量</summary>
         private const int RecoveryCodeCount = 10;
 
@@ -141,7 +151,7 @@ namespace ZR.ServiceCore.Services
             VerifyCodeOrThrow(user, code);
 
             UserService.ClearTwoFactor(userId);
-            ClearTrustedDevices(userId);
+            ClearDeviceTrust(userId);
 
             logger.Warn($"双因子认证已解绑：UserId={userId}, UserName={user.UserName}");
         }
@@ -152,7 +162,7 @@ namespace ZR.ServiceCore.Services
             if (user == null) throw new CustomException("用户不存在");
 
             UserService.ClearTwoFactor(userId);
-            ClearTrustedDevices(userId);
+            ClearDeviceTrust(userId);
             CacheService.ClearTwoFactorFail(userId);
 
             logger.Warn($"双因子认证被管理员重置：UserId={userId}, UserName={user.UserName}");
@@ -223,12 +233,16 @@ namespace ZR.ServiceCore.Services
             };
         }
 
+        /// <summary>
+        /// 登录设备列表（**全部已登记设备**，不只是受信任的）。
+        /// 用户判断"有没有异常登录"靠的就是"我登录过哪些设备"，只列受信任设备会漏掉痕迹。
+        /// </summary>
         public List<TwoFactorDeviceDto> GetDevices(long userId)
         {
             var now = DateTime.Now;
-            return Context.Queryable<SysUser2faDevice>()
-                .Where(it => it.UserId == userId && it.TrustUntil > now)
-                .OrderBy(it => it.Id, OrderByType.Desc)
+            var list = Context.Queryable<SysUser2faDevice>()
+                .Where(it => it.UserId == userId)
+                .OrderBy(it => it.LastUsedAt, OrderByType.Desc)
                 .Select(it => new TwoFactorDeviceDto
                 {
                     Id = it.Id,
@@ -240,27 +254,62 @@ namespace ZR.ServiceCore.Services
                     CreatedAt = it.CreatedAt
                 })
                 .ToList();
+
+            // 信任状态在内存里算：设备数受 MaxDeviceRecords 约束（默认 20），成本可忽略，
+            // 也比在 SQL 里拼 TrustUntil 比较表达式更不易踩各数据库的方言差异。
+            // 未信任在库里存的是哨兵值（见 NoTrustUntil），对外统一暴露 null，
+            // 免得前端显示 1900-01-01 这种内部约定。
+            foreach (var item in list)
+            {
+                if (item.TrustUntil.HasValue && item.TrustUntil.Value > now)
+                {
+                    item.Trusted = true;
+                }
+                else
+                {
+                    item.TrustUntil = null;
+                }
+            }
+
+            return list;
         }
 
         public bool RemoveDevice(long userId, long deviceId)
         {
-            // 条件里带 UserId：防止用他人设备 Id 越权吊销
+            // 条件里带 UserId：防止用他人设备 Id 越权移除
             return Context.Deleteable<SysUser2faDevice>()
                 .Where(it => it.Id == deviceId && it.UserId == userId)
                 .ExecuteCommand() > 0;
         }
 
-        public void ClearTrustedDevices(long userId)
+        /// <summary>
+        /// 清空全部设备的信任期（解绑 2FA / 管理员重置）。
+        /// 刻意保留设备登记记录：重置后用户从常用设备登录不会被误报"新设备"，也仍能看到历史设备；
+        /// 安全上只需确保"没有任何设备再被信任"。
+        /// </summary>
+        public void ClearDeviceTrust(long userId)
         {
-            Context.Deleteable<SysUser2faDevice>().Where(it => it.UserId == userId).ExecuteCommand();
+            // 必须先赋值给局部变量再进表达式：SqlSugar 的表达式解析器拒绝翻译私有字段
+            // （会抛 Field "NoTrustUntil" can't be private），而局部变量会被当成 SQL 参数。
+            var noTrust = NoTrustUntil;
+
+            Context.Updateable<SysUser2faDevice>()
+                .SetColumns(it => it.TrustUntil == noTrust)
+                .Where(it => it.UserId == userId)
+                .ExecuteCommand();
         }
 
-        public void TrustDevice(long userId, string clientId, string deviceName, string loginIp)
+        public bool RecordLoginDevice(long userId, string clientId, string deviceName, string loginIp, bool trust = false)
         {
-            if (string.IsNullOrEmpty(clientId)) return;
+            // 指纹取不到（无痕模式/被拦截）时无法识别设备：既不登记也不告警，
+            // 否则每次登录都会被判成"新设备"而狂发提醒。
+            if (string.IsNullOrWhiteSpace(clientId)) return false;
 
-            var days = Settings.TrustDeviceDays > 0 ? Settings.TrustDeviceDays : 7;
-            var trustUntil = DateTime.Now.AddDays(days);
+            clientId = Truncate(clientId, 64);
+            var now = DateTime.Now;
+            var trustUntil = trust
+                ? now.AddDays(Settings.TrustDeviceDays > 0 ? Settings.TrustDeviceDays : 7)
+                : NoTrustUntil;
 
             var exist = Context.Queryable<SysUser2faDevice>()
                 .Where(it => it.UserId == userId && it.DeviceId == clientId)
@@ -268,26 +317,107 @@ namespace ZR.ServiceCore.Services
 
             if (exist != null)
             {
-                Context.Updateable<SysUser2faDevice>()
-                    .SetColumns(it => it.TrustUntil == trustUntil)
-                    .SetColumns(it => it.LastUsedAt == DateTime.Now)
-                    .SetColumns(it => it.DeviceName == deviceName)
-                    .SetColumns(it => it.LoginIp == loginIp)
-                    .Where(it => it.Id == exist.Id)
-                    .ExecuteCommand();
-                return;
+                var update = Context.Updateable<SysUser2faDevice>()
+                    .SetColumns(it => it.LastUsedAt == now)
+                    .SetColumns(it => it.DeviceName == Truncate(deviceName, 200))
+                    .SetColumns(it => it.LoginIp == Truncate(loginIp, 64));
+
+                // 只有本次要求"记住"时才改写信任期：普通登录不能把已有的信任意外清掉
+                if (trust)
+                {
+                    update = update.SetColumns(it => it.TrustUntil == trustUntil);
+                }
+
+                update.Where(it => it.Id == exist.Id).ExecuteCommand();
+                return false;
             }
 
             Insert(new SysUser2faDevice
             {
                 UserId = userId,
-                DeviceId = Truncate(clientId, 64),
+                DeviceId = clientId,
                 DeviceName = Truncate(deviceName, 200),
                 LoginIp = Truncate(loginIp, 64),
                 TrustUntil = trustUntil,
-                LastUsedAt = DateTime.Now,
-                CreatedAt = DateTime.Now
+                LastUsedAt = now,
+                CreatedAt = now
             });
+
+            TrimDeviceRecords(userId);
+            AlertNewDevice(userId, deviceName, loginIp, trust);
+            return true;
+        }
+
+        /// <summary>
+        /// 设备记录上限：按最后使用时间淘汰最旧的非信任设备。
+        /// 设备标识来自客户端、可被伪造，没有上限就有刷表风险；受信任设备始终保留。
+        /// </summary>
+        private void TrimDeviceRecords(long userId)
+        {
+            var max = Settings.MaxDeviceRecords > 0 ? Settings.MaxDeviceRecords : 20;
+            var total = Context.Queryable<SysUser2faDevice>().Where(it => it.UserId == userId).Count();
+            if (total <= max) return;
+
+            var now = DateTime.Now;
+            var staleIds = Context.Queryable<SysUser2faDevice>()
+                .Where(it => it.UserId == userId && it.TrustUntil <= now)
+                .OrderBy(it => it.LastUsedAt)
+                .Take(total - max)
+                .Select(it => it.Id)
+                .ToList();
+
+            if (staleIds.Count == 0) return;
+
+            Context.Deleteable<SysUser2faDevice>().Where(it => staleIds.Contains(it.Id)).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 新设备登录提醒（站内信 + 邮件）。
+        ///
+        /// 限频：无痕/清缓存会让设备指纹变化，正常用户也可能连续触发；
+        /// 且与"连续失败告警"用**独立 cache key**，两类告警互不抑制。
+        /// 正文只给"是否本人 + 该做什么"的引导，不放动态码/恢复码/密钥。
+        /// </summary>
+        private void AlertNewDevice(long userId, string deviceName, string loginIp, bool trusted)
+        {
+            var settings = Settings;
+            if (!settings.AlertOnNewDevice) return;
+
+            var interval = settings.AlertIntervalMinutes > 0 ? settings.AlertIntervalMinutes : 60;
+            if (!CacheService.TryMarkNewDeviceAlert(userId, interval)) return;
+
+            var user = GetUser(userId);
+            if (user == null) return;
+
+            var content = "⚠️ 新设备登录提醒\n\n"
+                + "您的账号在一台此前未使用过的设备上登录成功：\n\n"
+                + $"账号：{user.UserName}\n"
+                + $"设备：{deviceName}\n"
+                + $"登录 IP：{loginIp}\n"
+                + $"时间：{DateTime.Now:yyyy-MM-dd HH:mm:ss}\n"
+                + (trusted ? "该设备已按您的勾选加入信任列表，信任期内登录免动态码。\n" : string.Empty)
+                + "\n如非本人操作，请立即修改密码，并在「个人中心 → 安全设置」中移除该设备、检查双因子绑定。";
+
+            if (settings.AlertBySiteMessage)
+            {
+                try
+                {
+                    UserMsgService.AddSysUserMsg(userId, content, UserMsgType.SYSTEM);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, $"新设备登录告警（站内信）发送失败：UserId={userId}");
+                }
+            }
+
+            if (settings.AlertByEmail && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                var toEmail = user.Email;
+                var fromName = settings.AlertMailFromName;
+                _ = Task.Run(() => SendAlertMail(toEmail, fromName, "【安全提醒】新设备登录", content));
+            }
+
+            logger.Warn($"已发送新设备登录告警：UserId={userId}, 信任={trusted}");
         }
 
         #region 内部方法

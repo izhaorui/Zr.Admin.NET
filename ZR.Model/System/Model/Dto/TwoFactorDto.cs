@@ -171,7 +171,9 @@ namespace ZR.Model.System.Dto
     }
 
     /// <summary>
-    /// 可信设备列表项
+    /// 登录设备列表项。
+    /// 注意：返回的是**全部已登记设备**，不只是受信任的 ——
+    /// 只看受信任设备会漏掉"攻击者用过但没勾选记住"的痕迹。
     /// </summary>
     public class TwoFactorDeviceDto
     {
@@ -183,7 +185,11 @@ namespace ZR.Model.System.Dto
 
         public string LoginIp { get; set; }
 
-        public DateTime TrustUntil { get; set; }
+        /// <summary>信任截止时间；为 null 表示仅登记、未信任（登录仍需动态码）</summary>
+        public DateTime? TrustUntil { get; set; }
+
+        /// <summary>当前是否处于信任期内（前端据此显示"免动态码"标签）</summary>
+        public bool Trusted { get; set; }
 
         public DateTime LastUsedAt { get; set; }
 
