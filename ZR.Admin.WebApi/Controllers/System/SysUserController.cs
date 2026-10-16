@@ -19,19 +19,22 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysPostService PostService;
         private readonly ISysUserPostService UserPostService;
         private readonly ISysTenantService TenantService;
+        private readonly ISysTwoFactorService TwoFactorService;
 
         public SysUserController(
             ISysUserService userService,
             ISysRoleService roleService,
             ISysPostService postService,
             ISysUserPostService userPostService,
-            ISysTenantService tenantService)
+            ISysTenantService tenantService,
+            ISysTwoFactorService twoFactorService)
         {
             UserService = userService;
             RoleService = roleService;
             PostService = postService;
             UserPostService = userPostService;
             TenantService = tenantService;
+            TwoFactorService = twoFactorService;
         }
 
         /// <summary>
@@ -183,6 +186,25 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             int result = UserService.ResetPwd(sysUser.UserId, sysUser.Password, "您的管理员已重置登录密码，请尽快登录并修改");
             return ToResponse(result);
+        }
+
+        /// <summary>
+        /// 重置用户双因子认证（认证器丢失/换机时的管理员兜底通道）。
+        /// 清空密钥、恢复码并吊销全部可信设备；用户下次登录不再要求验证码，可重新绑定。
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("resetTwoFactor")]
+        [Log(Title = "重置双因子", BusinessType = BusinessType.UPDATE)]
+        [ActionPermissionFilter(Permission = "system:user:reset2fa")]
+        public IActionResult ResetTwoFactor(long userId)
+        {
+            if (userId <= 0)
+            {
+                return ToResponse(ResultCode.PARAM_ERROR, "请选择用户");
+            }
+
+            TwoFactorService.Reset(userId);
+            return SUCCESS(1);
         }
 
         /// <summary>

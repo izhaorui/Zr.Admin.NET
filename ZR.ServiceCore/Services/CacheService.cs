@@ -190,5 +190,101 @@ namespace ZR.ServiceCore.Services
             CacheStore.For(CacheBackend.Cache).Remove(BuildTenantKey(MemberStatusPrefix + memberId));
         }
         #endregion
+
+        #region 双因子认证（TOTP）缓存
+        private static readonly string TwoFactorTicketPrefix = "CACHE-2FA-TICKET_";
+        private static readonly string TwoFactorStepPrefix = "CACHE-2FA-STEP_";
+        private static readonly string TwoFactorFailPrefix = "CACHE-2FA-FAIL_";
+        private static readonly string TwoFactorLockPrefix = "CACHE-2FA-LOCK_";
+        private static readonly string TwoFactorSessionOkPrefix = "CACHE-2FA-SESSIONOK_";
+
+        /// <summary>
+        /// 写入"密码已通过、等待 TOTP 校验"的一次性票据。
+        /// 走会话库（Session）：与单设备登录会话同生命周期语义，Redis 未启用时自动回退内存。
+        /// </summary>
+        public static void SetTwoFactorTicket(string ticket, object payload, int minutes)
+        {
+            CacheStore.For(CacheBackend.Session).Set(TwoFactorTicketPrefix + ticket, payload, minutes);
+        }
+
+        /// <summary>
+        /// 消费票据：原子地保证同一票据只被一个请求取到，避免并发重放。
+        /// 先以 TrySet 抢占"已消费"标记（Redis SETNX / 内存锁），抢占失败直接返回 null。
+        ///
+        /// 票据 key 刻意不加租户前缀：第二步请求到达时租户上下文尚未建立（不知道读哪个库），
+        /// 若 key 依赖租户就会永远读不到票据。租户信息由票据载荷携带，消费后再切上下文。
+        /// 票据为 32 位随机串 + 5 分钟 TTL + 一次性，无前缀不构成越权风险。
+        /// </summary>
+        public static T ConsumeTwoFactorTicket<T>(string ticket, int minutes) where T : class
+        {
+            if (string.IsNullOrEmpty(ticket)) return null;
+
+            var backend = CacheStore.For(CacheBackend.Session);
+            if (!backend.TrySet(TwoFactorTicketPrefix + ticket + "_used", 1, minutes))
+            {
+                return null;
+            }
+
+            var key = TwoFactorTicketPrefix + ticket;
+            var payload = backend.Get<T>(key);
+            backend.Remove(key);
+            return payload;
+        }
+
+        /// <summary>
+        /// 验证码重放防护：同一时间步（step）的验证码只允许通过一次。
+        /// 依赖原子"仅当不存在时写入"，并发下只有一个请求能标记成功。
+        /// </summary>
+        public static bool TryMarkTwoFactorStep(long userId, long step, int ttlMinutes)
+        {
+            return CacheStore.For(CacheBackend.Cache)
+                .TrySet(BuildTenantKey($"{TwoFactorStepPrefix}{userId}_{step}"), 1, ttlMinutes);
+        }
+
+        /// <summary>2FA 校验失败次数 +1，返回累加后的次数</summary>
+        public static long IncreaseTwoFactorFail(long userId, int ttlMinutes)
+        {
+            return CacheStore.For(CacheBackend.Cache).Increment(BuildTenantKey(TwoFactorFailPrefix + userId), ttlMinutes);
+        }
+
+        /// <summary>清除 2FA 失败计数（校验成功或锁定到期后）</summary>
+        public static void ClearTwoFactorFail(long userId)
+        {
+            CacheStore.For(CacheBackend.Cache).Remove(BuildTenantKey(TwoFactorFailPrefix + userId));
+        }
+
+        /// <summary>锁定某用户的 2FA 校验</summary>
+        public static void SetTwoFactorLock(long userId, int minutes)
+        {
+            CacheStore.For(CacheBackend.Cache).Set(BuildTenantKey(TwoFactorLockPrefix + userId), 1, minutes);
+        }
+
+        /// <summary>2FA 校验是否处于锁定期</summary>
+        public static bool IsTwoFactorLocked(long userId)
+        {
+            return CacheStore.For(CacheBackend.Cache).Exists(BuildTenantKey(TwoFactorLockPrefix + userId));
+        }
+
+        /// <summary>
+        /// 标记会话已通过双因子校验。扫码登录用它判断"移动端当前会话确实过了 2FA"，
+        /// 避免已启用 2FA 的用户用旧会话（启用前签发的 token）绕过扫码闸门。
+        /// TTL 与 JWT 过期一致。
+        /// </summary>
+        public static void SetTwoFactorSessionOk(long userId, string sessionId)
+        {
+            if (string.IsNullOrEmpty(sessionId)) return;
+
+            JwtSettings jwtSettings = new();
+            AppSettings.Bind("JwtSettings", jwtSettings);
+            CacheStore.For(CacheBackend.Session)
+                .Set(BuildTenantKey($"{TwoFactorSessionOkPrefix}{userId}_{sessionId}"), 1, jwtSettings.Expire);
+        }
+
+        public static bool IsTwoFactorSessionOk(long userId, string sessionId)
+        {
+            return !string.IsNullOrEmpty(sessionId)
+                && CacheStore.For(CacheBackend.Session).Exists(BuildTenantKey($"{TwoFactorSessionOkPrefix}{userId}_{sessionId}"));
+        }
+        #endregion
     }
 }

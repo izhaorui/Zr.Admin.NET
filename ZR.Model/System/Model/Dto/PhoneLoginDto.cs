@@ -27,5 +27,10 @@
         /// 租户id
         /// </summary>
         public string TenantId { get; set; }
+
+        /// <summary>
+        /// 设备标识（前端 fingerprintjs 的 visitorId），用于双因子"记住此设备"判定
+        /// </summary>
+        public string ClientId { get; set; }
     }
 }

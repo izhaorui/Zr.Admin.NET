@@ -51,6 +51,12 @@
         /// 密码最后更新时间
         /// </summary>
         public DateTime? PwdUpdateTime { get; set; }
+
+        /// <summary>
+        /// 是否启用双因子认证（TOTP）0未启用 1已启用。
+        /// 密钥/恢复码不在此 DTO 暴露。
+        /// </summary>
+        public int TwoFactorEnabled { get; set; }
         
         public DateTime? Create_time { get; set; }
         public string Create_by { get; set; }

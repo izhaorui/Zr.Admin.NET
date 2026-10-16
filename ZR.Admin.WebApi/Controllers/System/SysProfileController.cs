@@ -16,6 +16,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysUserPostService UserPostService;
         private readonly ISysDeptService DeptService;
         private readonly ISysFileService FileService;
+        private readonly ISysTwoFactorService TwoFactorService;
         private IWebHostEnvironment hostEnvironment;
 
         public SysProfileController(
@@ -24,7 +25,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysUserPostService postService,
             ISysDeptService deptService,
             ISysFileService sysFileService,
-            IWebHostEnvironment hostEnvironment)
+            IWebHostEnvironment hostEnvironment,
+            ISysTwoFactorService twoFactorService)
         {
             UserService = userService;
             RoleService = roleService;
@@ -32,6 +34,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             DeptService = deptService;
             FileService = sysFileService;
             this.hostEnvironment = hostEnvironment;
+            TwoFactorService = twoFactorService;
         }
 
         /// <summary>
@@ -102,6 +105,82 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             return ToResponse(ApiResult.Error("修改密码异常，请联系管理员"));
         }
+
+        #region 双因子认证（TOTP）
+
+        /// <summary>
+        /// 查询当前账号的双因子绑定状态
+        /// </summary>
+        [HttpGet("twoFactor")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult GetTwoFactorStatus()
+        {
+            return SUCCESS(TwoFactorService.GetStatus(HttpContext.GetUId()));
+        }
+
+        /// <summary>
+        /// 生成待绑定密钥与 otpauth 地址（前端据此本地渲染二维码）。
+        /// 此时尚未启用，需再调 enable 校验一次动态码。
+        /// </summary>
+        [HttpPost("twoFactor/init")]
+        [ActionPermissionFilter(Permission = "common")]
+        // 响应含明文 TOTP 密钥，绝不能落操作日志（含 NLog 文件）
+        [Log(Title = "双因子-获取密钥", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false, IsSaveResponseData = false)]
+        public IActionResult InitTwoFactor()
+        {
+            return SUCCESS(TwoFactorService.Init(HttpContext.GetUId(), HttpContext.GetName()));
+        }
+
+        /// <summary>
+        /// 启用双因子。需密码 + 认证器动态码双校验，返回一次性恢复码（仅此一次返回）
+        /// </summary>
+        [HttpPost("twoFactor/enable")]
+        [ActionPermissionFilter(Permission = "common")]
+        // 请求含密码与动态码；响应含 10 个一次性恢复码明文（未使用即有效），两者都不得落日志
+        [Log(Title = "双因子-启用", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false, IsSaveResponseData = false)]
+        public IActionResult EnableTwoFactor([FromBody] TwoFactorEnableDto dto)
+        {
+            if (dto == null) throw new CustomException("请求参数错误");
+
+            return SUCCESS(TwoFactorService.Enable(HttpContext.GetUId(), dto.Password, dto.Code));
+        }
+
+        /// <summary>
+        /// 解绑双因子。需密码 + 动态码（或一次性恢复码）；认证器已丢失时请改用管理员重置
+        /// </summary>
+        [HttpPost("twoFactor/disable")]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "双因子-解绑", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false)]
+        public IActionResult DisableTwoFactor([FromBody] TwoFactorDisableDto dto)
+        {
+            if (dto == null) throw new CustomException("请求参数错误");
+
+            TwoFactorService.Disable(HttpContext.GetUId(), dto.Password, dto.Code);
+            return SUCCESS(1);
+        }
+
+        /// <summary>
+        /// 可信设备（"记住此设备"）列表
+        /// </summary>
+        [HttpGet("twoFactor/devices")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult GetTwoFactorDevices()
+        {
+            return SUCCESS(TwoFactorService.GetDevices(HttpContext.GetUId()));
+        }
+
+        /// <summary>
+        /// 吊销一个可信设备
+        /// </summary>
+        [HttpDelete("twoFactor/devices/{deviceId}")]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "双因子-吊销设备", BusinessType = BusinessType.DELETE)]
+        public IActionResult RemoveTwoFactorDevice(long deviceId)
+        {
+            return ToResponse(TwoFactorService.RemoveDevice(HttpContext.GetUId(), deviceId) ? 1 : 0);
+        }
+
+        #endregion
 
         /// <summary>
         /// 修改头像

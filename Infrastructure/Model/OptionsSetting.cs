@@ -281,6 +281,44 @@ namespace Infrastructure.Model
         public string TokenType { get; set; } = "Bearer";
     }
 
+    /// <summary>
+    /// 双因子认证（TOTP）配置。对应 appsettings 的 TwoFactor 节点，全部可缺省。
+    /// </summary>
+    public class TwoFactorSettings
+    {
+        /// <summary>
+        /// 认证器 App 中显示的发行方名称
+        /// </summary>
+        public string Issuer { get; set; } = "ZRAdmin";
+
+        /// <summary>
+        /// TOTP 密钥的加密口令（AES-GCM 密钥派生源）。
+        /// 留空时回退用 JwtSettings:SecretKey 派生，保证开箱即用。
+        /// 注意：一旦有用户绑定 2FA 后不要修改该值，否则历史密钥无法解密（用户需重新绑定）。
+        /// </summary>
+        public string SecretKey { get; set; }
+
+        /// <summary>
+        /// "记住此设备"的信任天数；小于等于 0 时按 7 天处理
+        /// </summary>
+        public int TrustDeviceDays { get; set; } = 7;
+
+        /// <summary>
+        /// 验证码校验失败最大次数，超出后按 <see cref="LockMinutes"/> 锁定
+        /// </summary>
+        public int MaxFailCount { get; set; } = 5;
+
+        /// <summary>
+        /// 验证失败锁定时长（分钟）
+        /// </summary>
+        public int LockMinutes { get; set; } = 15;
+
+        /// <summary>
+        /// 一步登录后的一次性票据有效期（分钟），超时需重新输入密码
+        /// </summary>
+        public int TicketMinutes { get; set; } = 5;
+    }
+
     public class CodeGen
     {
         /// <summary>

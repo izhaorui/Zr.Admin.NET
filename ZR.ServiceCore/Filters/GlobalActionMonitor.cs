@@ -113,7 +113,11 @@ namespace ZR.ServiceCore.Middleware
                 }
                 LogEventInfo ei = new(NLog.LogLevel.Info, "GlobalActionMonitor", "");
 
-                ei.Properties["jsonResult"] = !HttpMethods.IsGet(method) ? jsonResult : "";
+                // 这里必须取已按 LogAttribute 处理过的 sysOperLog.JsonResult，而不是原始 jsonResult：
+                // 否则 IsSaveResponseData=false 只挡住了数据库，响应体仍会经 ${event-properties:jsonResult}
+                // 写进 logs/all.log（NLog.config 的 allfile 布局引用了该字段），只是换个地方泄露。
+                // 该行仅影响显式声明了该开关的接口：未声明时两者相等，行为不变。
+                ei.Properties["jsonResult"] = !HttpMethods.IsGet(method) ? sysOperLog.JsonResult : "";
                 ei.Properties["requestParam"] = sysOperLog.OperParam;
                 ei.Properties["user"] = userName;
                 logger.Log(ei);

@@ -103,5 +103,22 @@ namespace ZR.ServiceCore.Services
         SysUser Login(LoginBodyDto user);
 
         void UpdateLoginInfo(string userIP, long userId);
+
+        /// <summary>
+        /// 保存双因子认证状态（绑定/更新密钥与恢复码）。
+        /// 密钥须由调用方加密后传入，禁止明文落库。
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="enabled">0未启用 1已启用</param>
+        /// <param name="secret">加密后的 TOTP 密钥</param>
+        /// <param name="boundAt">绑定时间</param>
+        /// <param name="recoveryCodesJson">恢复码哈希 JSON 数组</param>
+        int SaveTwoFactor(long userId, int enabled, string secret, DateTime? boundAt, string recoveryCodesJson);
+
+        /// <summary>
+        /// 清空双因子认证配置（用户解绑 / 管理员重置）。
+        /// 密钥与恢复码一并清空，避免残留可解密的历史密钥。
+        /// </summary>
+        int ClearTwoFactor(long userId);
     }
 }

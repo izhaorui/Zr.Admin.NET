@@ -90,6 +90,32 @@
         /// </summary>
         public DateTime? PwdUpdateTime { get; set; }
 
+        /// <summary>
+        /// 是否启用双因子认证（TOTP）0未启用 1已启用
+        /// </summary>
+        [SugarColumn(DefaultValue = "0", ColumnDescription = "是否启用双因子认证")]
+        public int TwoFactorEnabled { get; set; }
+
+        /// <summary>
+        /// TOTP 密钥（AES-GCM 加密存储，禁止明文落库/返回前端）
+        /// </summary>
+        [JsonIgnore]
+        [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "TOTP密钥(加密)")]
+        public string TwoFactorSecret { get; set; }
+
+        /// <summary>
+        /// 双因子认证绑定时间
+        /// </summary>
+        [SugarColumn(IsNullable = true, ColumnDescription = "双因子绑定时间")]
+        public DateTime? TwoFactorBoundAt { get; set; }
+
+        /// <summary>
+        /// 恢复码（JSON 数组，元素为 SHA256 哈希，一次性使用）
+        /// </summary>
+        [JsonIgnore]
+        [SugarColumn(Length = 2000, IsNullable = true, ColumnDescription = "恢复码哈希(JSON)")]
+        public string TwoFactorRecoveryCodes { get; set; }
+
         [SugarColumn(IsIgnore = true)]
         public bool IsAdmin
         {

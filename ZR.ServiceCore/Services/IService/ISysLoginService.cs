@@ -8,12 +8,15 @@ namespace ZR.ServiceCore.Services
     public interface ISysLoginService : IBaseService<SysLogininfor>
     {
         /// <summary>
-        /// 登录
+        /// 登录（仅校验账号密码，不含双因子校验）
         /// </summary>
         /// <param name="loginBody"></param>
         /// <param name="logininfor"></param>
+        /// <param name="needTwoFactor">输出：该账号是否需要走双因子第二步。
+        /// 为 true 时本方法**不写登录日志、不更新最后登录信息**，交由第二步的最终结果落一条记录，
+        /// 避免"密码对了但没完成 2FA"被统计成一次成功登录。</param>
         /// <returns></returns>
-        public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor);
+        public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor, out bool needTwoFactor);
 
         /// <summary>
         /// 生成异地登录提醒
@@ -24,13 +27,14 @@ namespace ZR.ServiceCore.Services
         string GetAbnormalLoginNotice(SysUser user, string currentLoginIp);
 
         /// <summary>
-        /// 手机号登录
+        /// 手机号登录（仅校验短信验证码，不含双因子校验）
         /// </summary>
         /// <param name="loginBody"></param>
         /// <param name="logininfor"></param>
         /// <param name="user"></param>
+        /// <param name="needTwoFactor">输出：是否需要走双因子第二步（语义同 <see cref="Login"/>）</param>
         /// <returns></returns>
-        SysUserDto PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUserDto user);
+        SysUserDto PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUserDto user, out bool needTwoFactor);
         /// <summary>
         /// 查询操作日志
         /// </summary>

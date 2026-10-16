@@ -465,5 +465,36 @@ namespace ZR.ServiceCore.Services
         {
             Update(new SysUser() { LoginIP = userIP, LoginDate = DateTime.Now, UserId = userId }, it => new { it.LoginIP, it.LoginDate });
         }
+
+        /// <summary>
+        /// 保存双因子认证状态。
+        /// 用 SetColumns(prop == value) 逐列赋值而非 SetColumns(new T{...})：
+        /// 后者在部分 SqlSugar 版本对 null 成员会跳过，导致"解绑后密钥残留"。
+        /// </summary>
+        public int SaveTwoFactor(long userId, int enabled, string secret, DateTime? boundAt, string recoveryCodesJson)
+        {
+            return Context.Updateable<SysUser>()
+                .SetColumns(it => it.TwoFactorEnabled == enabled)
+                .SetColumns(it => it.TwoFactorSecret == secret)
+                .SetColumns(it => it.TwoFactorBoundAt == boundAt)
+                .SetColumns(it => it.TwoFactorRecoveryCodes == recoveryCodesJson)
+                .Where(it => it.UserId == userId)
+                .ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 清空双因子认证配置。统一写空串而不是 NULL：
+        /// 服务层把"空串"与"未绑定"视为等价，既避开 null 赋值歧义，也让存量列无需区分 NULL/''。
+        /// </summary>
+        public int ClearTwoFactor(long userId)
+        {
+            return Context.Updateable<SysUser>()
+                .SetColumns(it => it.TwoFactorEnabled == 0)
+                .SetColumns(it => it.TwoFactorSecret == string.Empty)
+                .SetColumns(it => it.TwoFactorBoundAt == null)
+                .SetColumns(it => it.TwoFactorRecoveryCodes == string.Empty)
+                .Where(it => it.UserId == userId)
+                .ExecuteCommand();
+        }
     }
 }

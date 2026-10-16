@@ -37,6 +37,9 @@ namespace Infrastructure
         [Description("请先绑定手机号")]
         PHONE_BIND = 202,
 
+        [Description("需要双因子验证")]
+        MFA_REQUIRED = 203,
+
         [Description("未授权")]
         DENY = 401,
 

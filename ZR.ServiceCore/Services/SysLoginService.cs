@@ -23,21 +23,26 @@ namespace ZR.ServiceCore.Services
     [AppService(ServiceType = typeof(ISysLoginService), ServiceLifetime = LifeTime.Transient)]
     public class SysLoginService : BaseService<SysLogininfor>, ISysLoginService
     {
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private readonly ISysUserService SysUserService;
         private readonly ISysUserMsgService sysUserMsgService;
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IStringLocalizer<SharedResource> _localizer;
+        private readonly ISysTwoFactorService TwoFactorService;
 
         public SysLoginService(
             ISysUserService sysUserService, 
             ISysUserMsgService sysUserMsgService,
             IHttpContextAccessor httpContextAccessor,
-            IStringLocalizer<SharedResource> localizer)
+            IStringLocalizer<SharedResource> localizer,
+            ISysTwoFactorService twoFactorService)
         {
             SysUserService = sysUserService;
             this.sysUserMsgService = sysUserMsgService;
             this.httpContextAccessor = httpContextAccessor;
             _localizer = localizer;
+            TwoFactorService = twoFactorService;
         }
 
         /// <summary>
@@ -45,9 +50,11 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="logininfor"></param>
         /// <param name="loginBody"></param>
+        /// <param name="needTwoFactor">输出：是否需要走双因子第二步（为 true 时本方法不写登录日志、不更新最后登录信息）</param>
         /// <returns></returns>
-        public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor)
+        public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor, out bool needTwoFactor)
         {
+            needTwoFactor = false;
             if (loginBody.Password.Length != 32)
             {
                 loginBody.Password = NETCore.Encrypt.EncryptProvider.Md5(loginBody.Password);
@@ -77,6 +84,15 @@ namespace ZR.ServiceCore.Services
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
 
+            // 双因子待验证：登录尚未完成，此处不写登录日志也不更新最后登录信息，
+            // 由第二步（/login/2fa/verify）按最终结果落一条记录，避免半程登录被统计成成功。
+            needTwoFactor = TwoFactorService.RequiresTwoFactor(user, loginBody.ClientId);
+            if (needTwoFactor)
+            {
+                logger.Warn($"账号密码校验通过、等待双因子验证：UserName={loginBody.Username}, UserId={user.UserId}");
+                return user;
+            }
+
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor, loginBody.TenantId);
@@ -91,12 +107,15 @@ namespace ZR.ServiceCore.Services
         /// <param name="loginBody"></param>
         /// <param name="user"></param>
         /// <returns></returns>
-        public SysUserDto PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUserDto user)
+        public SysUserDto PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUserDto user, out bool needTwoFactor)
         {
+            needTwoFactor = false;
             logininfor.UserName = user.UserName;
+            logininfor.UserId = user.UserId;
             logininfor.Status = "1";
             logininfor.LoginTime = DateTime.Now;
             logininfor.Ipaddr = loginBody.LoginIP;
+            logininfor.ClientId = loginBody.ClientId;
 
             ClientInfo clientInfo = httpContextAccessor.HttpContext.GetClientInfo();
             logininfor.Browser = clientInfo.ToString();
@@ -107,6 +126,15 @@ namespace ZR.ServiceCore.Services
                 logininfor.Msg = _localizer["login_user_disabled"].Value;
                 AddLoginInfo(logininfor, loginBody.TenantId);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
+            }
+
+            // SysUserDto 不含密钥，需回查实体才能判定双因子状态
+            var entity = Context.Queryable<SysUser>().Where(it => it.UserId == user.UserId).First();
+            needTwoFactor = TwoFactorService.RequiresTwoFactor(entity, loginBody.ClientId);
+            if (needTwoFactor)
+            {
+                logger.Warn($"手机号登录校验通过、等待双因子验证：UserName={user.UserName}, UserId={user.UserId}");
+                return user;
             }
 
             logininfor.Status = "0";
