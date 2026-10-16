@@ -2,6 +2,8 @@ using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Helper;
 using Infrastructure.Model;
+using ZR.Common;
+using ZR.Infrastructure.Helper;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
@@ -32,10 +34,12 @@ namespace ZR.ServiceCore.Services
         private const int FailCounterMinutes = 30;
 
         private readonly ISysUserService UserService;
+        private readonly ISysUserMsgService UserMsgService;
 
-        public SysTwoFactorService(ISysUserService userService)
+        public SysTwoFactorService(ISysUserService userService, ISysUserMsgService userMsgService)
         {
             UserService = userService;
+            UserMsgService = userMsgService;
         }
 
         private static TwoFactorSettings Settings => AppSettings.Bind("TwoFactor", new TwoFactorSettings());
@@ -185,7 +189,7 @@ namespace ZR.ServiceCore.Services
                         return;
                     }
 
-                    OnFail(user.UserId, "验证码已被使用（疑似重放）");
+                    OnFail(user, "验证码已被使用（疑似重放）");
                     throw new CustomException("该验证码已被使用，请等待认证器刷新后重试");
                 }
             }
@@ -197,7 +201,7 @@ namespace ZR.ServiceCore.Services
                 return;
             }
 
-            OnFail(user.UserId, "验证码错误");
+            OnFail(user, "验证码错误");
             throw new CustomException("验证码错误");
         }
 
@@ -364,22 +368,106 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 记一次失败，达到阈值即锁定。
+        /// 记一次失败，达到阈值即锁定并发送告警。
         /// 锁定而不是直接拒绝，是为了让暴力枚举在有限次数内终止。
         /// </summary>
-        private void OnFail(long userId, string reason)
+        private void OnFail(SysUser user, string reason)
         {
             var settings = Settings;
-            var count = CacheService.IncreaseTwoFactorFail(userId, FailCounterMinutes);
+            var count = CacheService.IncreaseTwoFactorFail(user.UserId, FailCounterMinutes);
             var maxFail = settings.MaxFailCount > 0 ? settings.MaxFailCount : 5;
             if (count >= maxFail)
             {
-                CacheService.SetTwoFactorLock(userId, settings.LockMinutes > 0 ? settings.LockMinutes : 15);
-                logger.Error($"双因子校验失败次数超限，账号已锁定：UserId={userId}, 失败次数={count}");
+                var lockMinutes = settings.LockMinutes > 0 ? settings.LockMinutes : 15;
+                CacheService.SetTwoFactorLock(user.UserId, lockMinutes);
+                logger.Error($"双因子校验失败次数超限，账号已锁定：UserId={user.UserId}, 失败次数={count}");
+                AlertRepeatedFailure(user, count, lockMinutes);
                 return;
             }
 
-            logger.Warn($"双因子校验失败：UserId={userId}, 累计失败={count}, 原因={reason}");
+            logger.Warn($"双因子校验失败：UserId={user.UserId}, 累计失败={count}, 原因={reason}");
+        }
+
+        /// <summary>
+        /// 2FA 连续失败告警：站内信（请求线程内同步落库）+ 邮件（后台线程，不阻塞登录响应）。
+        ///
+        /// 触发点只有"进入锁定"这一次，并叠加账号级限频（见 <see cref="TwoFactorSettings.AlertIntervalMinutes"/>），
+        /// 避免攻击者靠反复触发锁定把用户邮箱刷爆。
+        ///
+        /// 站内信刻意复用 UserMsgType.SYSTEM：与异地登录、账号锁定提醒保持一致 ——
+        /// 前端顶栏消息列表与未读红点都按 SYSTEM 过滤，换新类型会出现"有红点却看不到消息"。
+        /// 正文只给"是否本人操作 + 该做什么"的引导，不放动态码/恢复码/令牌等凭据。
+        /// </summary>
+        private void AlertRepeatedFailure(SysUser user, long failCount, int lockMinutes)
+        {
+            var settings = Settings;
+            var interval = settings.AlertIntervalMinutes > 0 ? settings.AlertIntervalMinutes : 60;
+            if (!CacheService.TryMarkTwoFactorFailAlert(user.UserId, interval))
+            {
+                return; // 间隔内已告警过，本次不再重复打扰
+            }
+
+            var ip = App.HttpContext == null ? "未知" : HttpContextExtension.GetClientUserIp(App.HttpContext);
+            var content = "⚠️ 双因子认证连续失败提醒\n\n"
+                + "有人已输入正确的账号密码，但未通过动态码校验：\n\n"
+                + $"账号：{user.UserName}\n"
+                + $"失败次数：{failCount}（已临时锁定 {lockMinutes} 分钟）\n"
+                + $"登录 IP：{ip}\n"
+                + $"时间：{DateTime.Now:yyyy-MM-dd HH:mm:ss}\n\n"
+                + "这说明您的密码可能已泄露，请立即修改密码；如非本人操作，建议同时检查双因子绑定与可信设备。";
+
+            if (settings.AlertBySiteMessage)
+            {
+                try
+                {
+                    UserMsgService.AddSysUserMsg(user.UserId, content, UserMsgType.SYSTEM);
+                }
+                catch (Exception ex)
+                {
+                    // 告警失败不能影响登录流程本身
+                    logger.Error(ex, $"双因子失败告警（站内信）发送失败：UserId={user.UserId}");
+                }
+            }
+
+            if (settings.AlertByEmail && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                // 邮件走后台线程：SMTP 可能耗时数秒，挂在这里会拖慢登录失败响应
+                var toEmail = user.Email;
+                var fromName = settings.AlertMailFromName;
+                _ = Task.Run(() => SendAlertMail(toEmail, fromName, "【安全提醒】双因子认证连续失败", content));
+            }
+
+            logger.Warn($"已发送双因子连续失败告警：UserId={user.UserId}, 失败次数={failCount}");
+        }
+
+        /// <summary>
+        /// 发送告警邮件（后台线程执行）。
+        /// MailOptions 未配置发件邮箱（FromEmail / Password 为空）时静默跳过、降级为仅站内信 ——
+        /// 与工作流通知同一口径，未配置不算错误。
+        /// </summary>
+        private static void SendAlertMail(string toEmail, string fromName, string subject, string content)
+        {
+            try
+            {
+                var mailList = App.OptionsSetting?.MailOptions;
+                if (mailList == null || mailList.Count == 0) return;
+
+                var mailOptions = mailList.FirstOrDefault(m => m.FromName == fromName) ?? mailList[0];
+                if (string.IsNullOrWhiteSpace(mailOptions.FromEmail) || string.IsNullOrWhiteSpace(mailOptions.Password))
+                {
+                    return;
+                }
+
+                var result = new MailHelper(mailOptions).SendMail(toEmail, subject, content);
+                if (result == "fail")
+                {
+                    logger.Warn($"双因子失败告警邮件发送失败 To={MaskUtil.MaskEmail(toEmail)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, "双因子失败告警邮件发送异常");
+            }
         }
 
         private SysUser GetUser(long userId)

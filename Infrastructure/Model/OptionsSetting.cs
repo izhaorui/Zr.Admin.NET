@@ -317,6 +317,29 @@ namespace Infrastructure.Model
         /// 一步登录后的一次性票据有效期（分钟），超时需重新输入密码
         /// </summary>
         public int TicketMinutes { get; set; } = 5;
+
+        /// <summary>
+        /// 2FA 连续失败（达到 <see cref="MaxFailCount"/> 触发锁定时）是否发站内信告警。
+        /// 复用既有"系统消息"类型，与异地登录、账号锁定提醒一致。
+        /// </summary>
+        public bool AlertBySiteMessage { get; set; } = true;
+
+        /// <summary>
+        /// 是否同时发邮件告警。需先在 MailOptions 配好发件邮箱（FromEmail + Password），
+        /// 未配置时静默跳过，只发站内信 —— 与工作流通知同一口径。
+        /// </summary>
+        public bool AlertByEmail { get; set; } = true;
+
+        /// <summary>
+        /// 告警邮件使用的发件人（对应 MailOptions 数组中的 FromName；为空或未匹配时取第一项）
+        /// </summary>
+        public string AlertMailFromName { get; set; } = "system";
+
+        /// <summary>
+        /// 同一账号的告警最小间隔（分钟），防止攻击者靠反复试错把用户邮箱刷爆。
+        /// 小于等于 0 时按 60 分钟。
+        /// </summary>
+        public int AlertIntervalMinutes { get; set; } = 60;
     }
 
     public class CodeGen

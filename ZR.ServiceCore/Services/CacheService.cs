@@ -196,6 +196,7 @@ namespace ZR.ServiceCore.Services
         private static readonly string TwoFactorStepPrefix = "CACHE-2FA-STEP_";
         private static readonly string TwoFactorFailPrefix = "CACHE-2FA-FAIL_";
         private static readonly string TwoFactorLockPrefix = "CACHE-2FA-LOCK_";
+        private static readonly string TwoFactorAlertPrefix = "CACHE-2FA-ALERT_";
         private static readonly string TwoFactorSessionOkPrefix = "CACHE-2FA-SESSIONOK_";
 
         /// <summary>
@@ -239,6 +240,20 @@ namespace ZR.ServiceCore.Services
         {
             return CacheStore.For(CacheBackend.Cache)
                 .TrySet(BuildTenantKey($"{TwoFactorStepPrefix}{userId}_{step}"), 1, ttlMinutes);
+        }
+
+        /// <summary>
+        /// 告警限频：同一账号在 intervalMinutes 内只允许发出一次"2FA 连续失败"告警。
+        ///
+        /// 用原子"仅当不存在时写入"实现，多实例部署下也只有一次能抢到 —— 攻击者反复触发锁定时
+        /// 不会把用户邮箱刷爆。返回 true 表示本次抢到（应当发告警），false 表示间隔内已发过。
+        /// </summary>
+        public static bool TryMarkTwoFactorFailAlert(long userId, int intervalMinutes)
+        {
+            if (intervalMinutes <= 0) intervalMinutes = 60;
+
+            return CacheStore.For(CacheBackend.Cache)
+                .TrySet(BuildTenantKey(TwoFactorAlertPrefix + userId), 1, intervalMinutes);
         }
 
         /// <summary>2FA 校验失败次数 +1，返回累加后的次数</summary>
