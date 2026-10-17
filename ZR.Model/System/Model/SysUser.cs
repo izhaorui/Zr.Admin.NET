@@ -116,6 +116,15 @@
         [SugarColumn(Length = 2000, IsNullable = true, ColumnDescription = "恢复码哈希(JSON)")]
         public string TwoFactorRecoveryCodes { get; set; }
 
+        /// <summary>
+        /// 第二因子首选方法（取值见 <see cref="TwoFactorMethod"/>）。
+        ///
+        /// 只决定登录第二步**默认**展示哪种方式，不表达"是否可用"——可用方法由服务端按当前凭据计算。
+        /// 预留字段：WebAuthn 落地前恒为 totp；存量行为空，按 totp 处理（列可空是为了避免给存量表加非空列）。
+        /// </summary>
+        [SugarColumn(Length = 16, IsNullable = true, ColumnDescription = "第二因子首选方法")]
+        public string TwoFactorPreferredMethod { get; set; }
+
         [SugarColumn(IsIgnore = true)]
         public bool IsAdmin
         {
@@ -134,5 +143,26 @@
         /// </summary>
         [SugarColumn(IsIgnore = true)]
         public int[] PostIds { get; set; }
+    }
+
+    /// <summary>
+    /// 第二因子方法（存稳定英文码，前端映射中文）。
+    ///
+    /// 与登录日志的 <see cref="LoginTwoFactorType"/> 取值保持一致，
+    /// 这样"可用方法列表"与"实际用了哪种方法"可以直接对照，排查时不需要再做一层翻译。
+    /// </summary>
+    public static class TwoFactorMethod
+    {
+        /// <summary>认证器动态码（TOTP）</summary>
+        public const string Totp = "totp";
+
+        /// <summary>
+        /// WebAuthn / Passkey（安全密钥、指纹、Face ID）。
+        /// **尚未实现**：常量与"按方法列表渲染入口"的前端结构已预留，落地时服务端把它加进可用列表即可。
+        /// </summary>
+        public const string WebAuthn = "webauthn";
+
+        /// <summary>默认方法（库中为空或值不可用时的回退）</summary>
+        public const string Default = Totp;
     }
 }

@@ -8,6 +8,17 @@
         public string UserName { get; set; }
         public DateTime? BeginTime { get; set; }
         public DateTime? EndTime { get; set; }
+
+        /// <summary>
+        /// 第一步凭据类型（<see cref="LoginAuthType"/>）：password / sms_code
+        /// </summary>
+        public string AuthType { get; set; }
+
+        /// <summary>
+        /// 第二因子结果（<see cref="LoginTwoFactorType"/>）：none / totp / recovery_code / trusted_device。
+        /// 审计时最常用的是 recovery_code —— 排查"恢复码到底被谁用了"
+        /// </summary>
+        public string TwoFactorType { get; set; }
     }
 
     public class SysLogininfoDto : SysBase

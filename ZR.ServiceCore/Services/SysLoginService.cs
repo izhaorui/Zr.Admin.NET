@@ -93,6 +93,12 @@ namespace ZR.ServiceCore.Services
                 return user;
             }
 
+            // 能走到签发说明本次不需要第二因子：要么未启用 2FA，要么命中可信设备。
+            // 后者意味着"本次并未校验动态码"，审计时必须能看出来，故单独标记。
+            logininfor.TwoFactorType = TwoFactorService.IsEnabled(user)
+                ? LoginTwoFactorType.TrustedDevice
+                : LoginTwoFactorType.None;
+
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor, loginBody.TenantId);
@@ -137,6 +143,11 @@ namespace ZR.ServiceCore.Services
                 return user;
             }
 
+            // 语义同 Login：手机号登录同样可能是"命中可信设备"而免掉动态码
+            logininfor.TwoFactorType = TwoFactorService.IsEnabled(entity)
+                ? LoginTwoFactorType.TrustedDevice
+                : LoginTwoFactorType.None;
+
             logininfor.Status = "0";
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor, loginBody.TenantId);
@@ -160,6 +171,8 @@ namespace ZR.ServiceCore.Services
             exp.AndIF(logininfoDto.Status.IfNotEmpty(), f => f.Status == logininfoDto.Status);
             exp.AndIF(logininfoDto.Ipaddr.IfNotEmpty(), f => f.Ipaddr == logininfoDto.Ipaddr);
             exp.AndIF(logininfoDto.UserName.IfNotEmpty(), f => f.UserName.Contains(logininfoDto.UserName));
+            exp.AndIF(logininfoDto.AuthType.IfNotEmpty(), f => f.AuthType == logininfoDto.AuthType);
+            exp.AndIF(logininfoDto.TwoFactorType.IfNotEmpty(), f => f.TwoFactorType == logininfoDto.TwoFactorType);
 
             var query = db.Queryable<SysLogininfor>().ApplyScope().Where(exp.ToExpression())
                 .OrderBy(it => it.InfoId, OrderByType.Desc);

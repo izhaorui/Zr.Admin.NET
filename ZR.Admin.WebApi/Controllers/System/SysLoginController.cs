@@ -77,7 +77,9 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             sysLoginService.CheckLockUser(loginBody.Username);
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
-            var user = sysLoginService.Login(loginBody, new SysLogininfor() { LoginLocation = location }, out bool needTwoFactor);
+            var user = sysLoginService.Login(loginBody,
+                new SysLogininfor() { LoginLocation = location, AuthType = LoginAuthType.Password },
+                out bool needTwoFactor);
 
             // 双因子闸门：只下发一次性票据，token 延迟到 /login/2fa/verify 校验通过后才签发
             if (needTwoFactor)
@@ -150,6 +152,10 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 UserName = user.UserName,
                 UserId = user.UserId,
+                // 第一步凭据来自票据：第二步是独立请求，靠票据里的来源区分密码/短信登录
+                AuthType = payload.LoginSource == (int)TwoFactorLoginSource.Phone
+                    ? LoginAuthType.SmsCode
+                    : LoginAuthType.Password,
                 Ipaddr = payload.LoginIP,
                 ClientId = payload.ClientId,
                 LoginTime = DateTime.Now,
@@ -160,9 +166,10 @@ namespace ZR.Admin.WebApi.Controllers.System
                 Msg = "双因子验证失败"
             };
 
+            TwoFactorCredential credential;
             try
             {
-                twoFactorService.VerifyCodeOrThrow(user, dto.Code);
+                credential = twoFactorService.VerifyCodeOrThrow(user, dto.Code);
             }
             catch (Exception)
             {
@@ -170,6 +177,12 @@ namespace ZR.Admin.WebApi.Controllers.System
                 sysLoginService.AddLoginInfo(logininfor, payload.TenantId);
                 throw;
             }
+
+            // 记下本次到底是用动态码还是恢复码通过的。
+            // 恢复码登录原本与普通登录在日志里完全一样，是审计上最需要能一眼看出来的事件。
+            logininfor.TwoFactorType = credential == TwoFactorCredential.RecoveryCode
+                ? LoginTwoFactorType.RecoveryCode
+                : LoginTwoFactorType.Totp;
 
             // 设备登记与"记住此设备"已合并为一个动作，在 IssueToken 里统一完成（三个登录入口共用），
             // 这里只负责把"是否记住"与本次设备标识传下去。
@@ -215,6 +228,10 @@ namespace ZR.Admin.WebApi.Controllers.System
             result.Put("mfaRequired", true);
             result.Put("ticket", ticket);
             result.Put("expireMinutes", minutes);
+            // 可用方法与首选方法由服务端下发，前端只按列表渲染入口：
+            // WebAuthn 落地时后端加一项即可，前端与接口契约都不用再改。
+            result.Put("methods", twoFactorService.GetAvailableMethods(user));
+            result.Put("preferredMethod", twoFactorService.GetPreferredMethod(user));
             return result;
         }
 
@@ -617,6 +634,22 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             if (!CacheService.CheckPhoneCode(loginBody.PhoneNum, loginBody.PhoneCode))
             {
+                // 短信验证码错误同样是登录失败，必须留痕 —— 此前这条路径完全不写登录日志，
+                // 导致"有人拿手机号在刷验证码"在审计里看不到。
+                var failClientInfo = HttpContext.GetClientInfo();
+                sysLoginService.AddLoginInfo(new SysLogininfor
+                {
+                    UserName = loginBody.PhoneNum,
+                    Ipaddr = loginBody.LoginIP,
+                    LoginLocation = HttpContextExtension.GetIpInfo(loginBody.LoginIP),
+                    LoginTime = DateTime.Now,
+                    AuthType = LoginAuthType.SmsCode,
+                    Browser = failClientInfo.ToString(),
+                    Os = failClientInfo.OS.ToString(),
+                    Status = "1",
+                    Msg = "短信验证码错误"
+                }, loginBody.TenantId);
+
                 return ToResponse(ResultCode.CUSTOM_ERROR, "短信验证码错误");
             }
             sysTenantService.CheckTenant(loginBody.TenantId);
@@ -624,7 +657,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             var infoModel = info.Adapt<SysUserDto>();
             sysLoginService.CheckLockUser(info.UserName);
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
-            sysLoginService.PhoneLogin(loginBody, new SysLogininfor() { LoginLocation = location }, infoModel, out bool needTwoFactor);
+            sysLoginService.PhoneLogin(loginBody,
+                new SysLogininfor() { LoginLocation = location, AuthType = LoginAuthType.SmsCode },
+                infoModel, out bool needTwoFactor);
 
             // 双因子闸门：与账号密码登录共用一个出口，避免手机号登录成为绕过 2FA 的旁路
             if (needTwoFactor)

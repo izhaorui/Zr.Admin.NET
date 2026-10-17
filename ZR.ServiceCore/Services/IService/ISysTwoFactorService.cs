@@ -30,6 +30,20 @@ namespace ZR.ServiceCore.Services
         bool RequiresTwoFactor(SysUser user, string clientId);
 
         /// <summary>
+        /// 该账号当前**可用**的第二因子方法列表（取值见 <see cref="TwoFactorMethod"/>）。
+        ///
+        /// 由服务端计算、前端只按列表渲染入口：WebAuthn 落地时后端把它加进来即可，前端无需改动。
+        /// 未启用双因子时返回空列表。
+        /// </summary>
+        List<string> GetAvailableMethods(SysUser user);
+
+        /// <summary>
+        /// 该账号的首选方法，用于登录第二步默认展示哪种方式。
+        /// 库中为空或该值已不可用时回退到 <see cref="TwoFactorMethod.Default"/>。
+        /// </summary>
+        string GetPreferredMethod(SysUser user);
+
+        /// <summary>
         /// 生成待绑定密钥与 otpauth 地址。
         /// 密钥先以"未启用"状态落库，校验通过才置为启用，避免用户中途放弃留下半绑定状态。
         /// </summary>
@@ -91,7 +105,20 @@ namespace ZR.ServiceCore.Services
         /// 校验验证码（认证器 6 位码或一次性恢复码）。
         /// 校验失败/锁定/重放均抛 <c>CustomException</c>，成功时消费掉对应的恢复码或时间步。
         /// </summary>
-        void VerifyCodeOrThrow(SysUser user, string code);
+        /// <returns>
+        /// 本次通过校验所用的凭据类型。调用方据此把鉴权方式写进登录日志；
+        /// 恢复码（<see cref="TwoFactorCredential.RecoveryCode"/>）还会在服务内触发一次告警。
+        /// </returns>
+        TwoFactorCredential VerifyCodeOrThrow(SysUser user, string code);
+
+        /// <summary>
+        /// 密码变更（自助改密 / 管理员重置）后的收敛动作：清空该账号全部设备的信任期，
+        /// 并在启用 2FA 时站内信告知用户。
+        ///
+        /// 改密码往往正是因为怀疑密码泄露，而"记住此设备"的信任期（默认 7 天）会让已记住的设备
+        /// 在信任期内继续免动态码 —— 不清掉等于改了个寂寞。设备登记记录保留，不会误报"新设备"。
+        /// </summary>
+        void HandlePasswordChanged(long userId);
 
         /// <summary>
         /// 按主键获取用户实体（含 2FA 字段，绕开数据权限过滤）。

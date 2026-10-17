@@ -185,6 +185,12 @@ namespace ZR.Admin.WebApi.Controllers.System
             sysUser.Password = NETCore.Encrypt.EncryptProvider.Md5(sysUser.Password);
 
             int result = UserService.ResetPwd(sysUser.UserId, sysUser.Password, "您的管理员已重置登录密码，请尽快登录并修改");
+            if (result > 0)
+            {
+                // 管理员重置密码通常意味着账号疑似泄露：与自助改密同一口径，同时清空设备信任
+                TwoFactorService.HandlePasswordChanged(sysUser.UserId);
+            }
+
             return ToResponse(result);
         }
 

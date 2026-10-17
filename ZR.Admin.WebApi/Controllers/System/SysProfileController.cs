@@ -98,7 +98,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
             if (UserService.ResetPwd(userId, newMd5, "您的登录密码修改成功") > 0)
             {
-                //TODO 更新缓存
+                // 改密往往正是因为怀疑密码泄露：必须同时清空设备信任，
+                // 否则"记住此设备"的信任期（默认 7 天）会让已记住的设备继续免动态码
+                TwoFactorService.HandlePasswordChanged(userId);
 
                 return SUCCESS(1);
             }

@@ -81,6 +81,31 @@ namespace ZR.ServiceCore.Services
             return GetUser(userId);
         }
 
+        /// <summary>
+        /// 可用方法列表。
+        ///
+        /// v1 只有 TOTP，且刻意**不按"密钥能否解密"过滤**：动态码与一次性恢复码共用同一个输入框，
+        /// 密钥损坏的账号仍必须能靠恢复码进来（fail-closed 由 VerifyCodeOrThrow 负责，
+        /// 不该在入口就把用户堵在一个没有输入框的弹框里）。
+        /// WebAuthn 落地后在此追加：该用户存在有效凭据时才加入 <see cref="TwoFactorMethod.WebAuthn"/>。
+        /// </summary>
+        public List<string> GetAvailableMethods(SysUser user)
+        {
+            if (!IsEnabled(user)) return new List<string>();
+
+            return new List<string> { TwoFactorMethod.Totp };
+        }
+
+        public string GetPreferredMethod(SysUser user)
+        {
+            var preferred = user?.TwoFactorPreferredMethod;
+            if (string.IsNullOrEmpty(preferred)) return TwoFactorMethod.Default;
+
+            // 值已不可用（例如手动改过库、或将来 WebAuthn 凭据被删光）时回退，
+            // 避免前端按一个不存在的方法去渲染入口、用户无路可走。
+            return GetAvailableMethods(user).Contains(preferred) ? preferred : TwoFactorMethod.Default;
+        }
+
         public TwoFactorInitDto Init(long userId, string userName)
         {
             var user = GetUser(userId);
@@ -168,7 +193,44 @@ namespace ZR.ServiceCore.Services
             logger.Warn($"双因子认证被管理员重置：UserId={userId}, UserName={user.UserName}");
         }
 
-        public void VerifyCodeOrThrow(SysUser user, string code)
+        /// <summary>
+        /// 密码变更后的收敛动作：清空该账号全部设备的信任期，启用 2FA 时再站内信告知。
+        ///
+        /// 为什么必须清信任：改密码往往正是因为怀疑密码泄露，而"记住此设备"的信任期（默认 7 天）
+        /// 会让已记住的设备在信任期内继续免动态码 —— 不清掉等于只改了密码、没切断会话路径。
+        /// 设备登记记录保留（见 ClearDeviceTrust），因此重置后不会误报"新设备"。
+        ///
+        /// 刻意不在此处注销现有会话：单设备登录默认关闭（appsettings 的 SingleLogin=false），
+        /// 且清空会话缓存会让 JwtAuthMiddleware 的会话校验 fail-open；
+        /// 真正实现"改密即全端下线"需要独立于 SingleLogin 的凭据版本机制，不在本次范围。
+        /// </summary>
+        public void HandlePasswordChanged(long userId)
+        {
+            var user = GetUser(userId);
+            if (user == null) return;
+
+            ClearDeviceTrust(userId);
+
+            // 未启用 2FA 时不存在"信任"概念，不必打扰用户
+            if (!IsEnabled(user)) return;
+
+            try
+            {
+                UserMsgService.AddSysUserMsg(userId,
+                    "您的登录密码已变更。为确保安全，此前记住的设备已全部失效，下次登录需重新输入动态码。"
+                    + "如非本人操作，请立即联系管理员。",
+                    UserMsgType.SYSTEM);
+            }
+            catch (Exception ex)
+            {
+                // 通知失败不能影响改密本身
+                logger.Error(ex, $"密码变更通知发送失败：UserId={userId}");
+            }
+
+            logger.Warn($"登录密码已变更，已清空该账号设备信任：UserId={userId}, UserName={user.UserName}");
+        }
+
+        public TwoFactorCredential VerifyCodeOrThrow(SysUser user, string code)
         {
             if (user == null) throw new CustomException("用户不存在");
             if (string.IsNullOrWhiteSpace(code)) throw new CustomException("请输入验证码");
@@ -196,7 +258,7 @@ namespace ZR.ServiceCore.Services
                     if (CacheService.TryMarkTwoFactorStep(user.UserId, step.Value, StepMarkMinutes))
                     {
                         CacheService.ClearTwoFactorFail(user.UserId);
-                        return;
+                        return TwoFactorCredential.Totp;
                     }
 
                     OnFail(user, "验证码已被使用（疑似重放）");
@@ -207,8 +269,11 @@ namespace ZR.ServiceCore.Services
             else if (ConsumeRecoveryCode(user, input))
             {
                 CacheService.ClearTwoFactorFail(user.UserId);
-                logger.Warn($"双因子恢复码已使用：UserId={user.UserId}, UserName={user.UserName}, 剩余={ParseRecoveryCodes(user.TwoFactorRecoveryCodes).Count}");
-                return;
+
+                var remain = ParseRecoveryCodes(user.TwoFactorRecoveryCodes).Count;
+                logger.Warn($"双因子恢复码已使用：UserId={user.UserId}, UserName={user.UserName}, 剩余={remain}");
+                AlertRecoveryCodeUsed(user, remain);
+                return TwoFactorCredential.RecoveryCode;
             }
 
             OnFail(user, "验证码错误");
@@ -229,7 +294,9 @@ namespace ZR.ServiceCore.Services
                 SecretUsable = !enabled || IsSecretUsable(user),
                 BoundAt = user.TwoFactorBoundAt,
                 RecoveryCodeRemain = ParseRecoveryCodes(user.TwoFactorRecoveryCodes).Count,
-                TrustedDeviceCount = CountTrustedDevices(userId)
+                TrustedDeviceCount = CountTrustedDevices(userId),
+                Methods = GetAvailableMethods(user),
+                PreferredMethod = GetPreferredMethod(user)
             };
         }
 
@@ -494,6 +561,48 @@ namespace ZR.ServiceCore.Services
             if (!string.Equals(user.Password, md5, StringComparison.OrdinalIgnoreCase))
             {
                 throw new CustomException("密码错误");
+            }
+        }
+
+        /// <summary>
+        /// 恢复码被使用时的告警（站内信 + 邮件，渠道同其它告警）。
+        ///
+        /// 恢复码只在"认证器不可用"时才该被用到：可能是用户换机（正常），
+        /// 也可能是攻击者拿到了恢复码（高危）。无论哪种都值得让用户知道——
+        /// 而且这是**唯一**能让用户发现"有人在用我的恢复码"的渠道。
+        /// 不做限频：每个恢复码一次性、用完即销，天然不会重复触发。
+        ///
+        /// 注意本方法在校验成功分支内调用，因此**不能让它抛异常**影响登录，
+        /// 各渠道都单独兜了异常。
+        /// </summary>
+        private void AlertRecoveryCodeUsed(SysUser user, int remain)
+        {
+            var settings = Settings;
+            var content = "⚠️ 双因子恢复码使用提醒\n\n"
+                + "您的账号刚刚使用了一个一次性恢复码完成身份验证：\n\n"
+                + $"账号：{user.UserName}\n"
+                + $"剩余恢复码：{remain} 个\n"
+                + $"时间：{DateTime.Now:yyyy-MM-dd HH:mm:ss}\n\n"
+                + "如果您本人正在换机，请忽略本条，并尽快在「个人中心 → 安全设置」重新绑定认证器；"
+                + "如果不是您本人操作，请立即修改密码并让管理员重置双因子认证。";
+
+            if (settings.AlertBySiteMessage)
+            {
+                try
+                {
+                    UserMsgService.AddSysUserMsg(user.UserId, content, UserMsgType.SYSTEM);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, $"恢复码使用告警（站内信）发送失败：UserId={user.UserId}");
+                }
+            }
+
+            if (settings.AlertByEmail && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                var toEmail = user.Email;
+                var fromName = settings.AlertMailFromName;
+                _ = Task.Run(() => SendAlertMail(toEmail, fromName, "【安全提醒】使用了双因子恢复码", content));
             }
         }
 

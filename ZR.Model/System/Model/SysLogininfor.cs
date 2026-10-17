@@ -60,6 +60,24 @@
         public string ClientId { get; set; }
         public long UserId { get; set; }
 
+        /// <summary>
+        /// 第一步凭据类型（英文码，前端映射中文）：<see cref="LoginAuthType"/>。
+        /// 回答"这次会话是用什么证明身份的"——审计时首先要看的就是它。
+        /// </summary>
+        [SugarColumn(Length = 32, IsNullable = true, ColumnDescription = "第一步凭据类型")]
+        public string AuthType { get; set; }
+
+        /// <summary>
+        /// 第二因子结果（英文码）：<see cref="LoginTwoFactorType"/>。
+        ///
+        /// 只有 Status=0（成功）时才有意义。为什么必须单独记：
+        /// 恢复码登录与可信设备登录在日志里**原本和普通登录一模一样**（Msg 都是"登录成功"），
+        /// 而这两者恰好是最该被审计的两类事件——恢复码使用常意味着认证器丢失/被窃，
+        /// 可信设备则说明本次**根本没有校验动态码**。
+        /// </summary>
+        [SugarColumn(Length = 32, IsNullable = true, ColumnDescription = "第二因子结果")]
+        public string TwoFactorType { get; set; }
+
         [SugarColumn(IsIgnore = true)]
         public string Position
         {
@@ -73,5 +91,45 @@
                 return temp_location;
             }
         }
+    }
+
+    /// <summary>
+    /// 登录日志的第一步凭据类型（存稳定英文码，前端映射为中文标签）。
+    ///
+    /// 用英文码而不是直接存中文：便于统计/筛选，也不受后续文案调整影响。
+    /// 不建字典表是刻意的取舍——这类"系统内部枚举"变更频率极低，
+    /// 走字典要多一段种子 SQL 且各租户库都要同步，收益不划算。
+    /// </summary>
+    public static class LoginAuthType
+    {
+        /// <summary>账号 + 密码</summary>
+        public const string Password = "password";
+
+        /// <summary>手机号 + 短信验证码</summary>
+        public const string SmsCode = "sms_code";
+    }
+
+    /// <summary>
+    /// 登录日志的第二因子结果（存稳定英文码，前端映射为中文标签）
+    /// </summary>
+    public static class LoginTwoFactorType
+    {
+        /// <summary>该账号未启用双因子，本次未要求第二因子</summary>
+        public const string None = "none";
+
+        /// <summary>认证器动态码（TOTP）</summary>
+        public const string Totp = "totp";
+
+        /// <summary>一次性恢复码：认证器丢失/换机的高危信号，需重点审计</summary>
+        public const string RecoveryCode = "recovery_code";
+
+        /// <summary>可信设备免动态码：本次**未**校验第二因子</summary>
+        public const string TrustedDevice = "trusted_device";
+
+        /// <summary>
+        /// WebAuthn / Passkey 通过（安全密钥、指纹、Face ID）。
+        /// **预留**：WebAuthn 尚未实现，落地后由第二步写入该值。取值与 <see cref="TwoFactorMethod.WebAuthn"/> 一致。
+        /// </summary>
+        public const string WebAuthn = "webauthn";
     }
 }

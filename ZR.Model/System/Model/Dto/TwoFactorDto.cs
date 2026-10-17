@@ -13,6 +13,20 @@ namespace ZR.Model.System.Dto
     }
 
     /// <summary>
+    /// 本次通过校验所用的凭据类型。
+    /// 由 <c>VerifyCodeOrThrow</c> 返回，调用方据此标记登录日志并区分处置：
+    /// 恢复码属高危信号（认证器丢失/被窃的典型迹象），需要单独告警。
+    /// </summary>
+    public enum TwoFactorCredential
+    {
+        /// <summary>认证器动态码（TOTP）</summary>
+        Totp = 1,
+
+        /// <summary>一次性恢复码</summary>
+        RecoveryCode = 2
+    }
+
+    /// <summary>
     /// 双因子登录第二步：校验一次性票据 + TOTP 验证码
     /// </summary>
     public class TwoFactorVerifyDto
@@ -168,6 +182,17 @@ namespace ZR.Model.System.Dto
         /// 可信设备数量
         /// </summary>
         public int TrustedDeviceCount { get; set; }
+
+        /// <summary>
+        /// 当前可用的第二因子方法（<see cref="TwoFactorMethod"/> 取值）。
+        /// 前端按此列表渲染入口，不硬编码方法。
+        /// </summary>
+        public List<string> Methods { get; set; } = new();
+
+        /// <summary>
+        /// 首选方法（登录第二步默认展示哪种方式）
+        /// </summary>
+        public string PreferredMethod { get; set; }
     }
 
     /// <summary>
