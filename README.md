@@ -1,5 +1,6 @@
-<h2 align="center"> ZR.Admin.NET企业级后台管理系统</h2>
-<h4 align="center">基于.Net8 + vue2.x/vue3.x/uniapp前后端分离的.net快速开发框架</h4>
+<h2 align="center">ZR.Admin.NET 企业级后台管理系统</h2>
+<h4 align="center">基于 .NET 8 + SqlSugar + Vue 3 的前后端分离、跨平台通用权限管理框架（RBAC）</h4>
+<h5 align="center">SaaS 多租户 · 可视化工作流 · 一键代码生成 · 任务调度 · 缓存与实时通知 · 限流与数据权限 · 动态国际化 · AI 助手</h5>
 
 <!-- <p align="center">
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
@@ -30,10 +31,11 @@
 
 ## 🍟 概述
 
-- 本项目适合有一定 .Net 和 vue 基础的开发人员
-- 基于.NET8 实现的通用权限管理平台（RBAC 模式）。整合最新技术高效快速开发，前后端分离模式，开箱即用。
-- 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让 web 开发更快速、简单高效（从此告别 996），解决 70%的重复工作，专注您的业务，轻松开发从现在开始！
-- 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
+- 本项目适合有一定 .NET 和 Vue 基础的开发人员
+- 基于 .NET 8 实现的通用权限管理平台（RBAC 模式）。整合最新技术高效快速开发，前后端分离模式，跨平台、开箱即用。
+- 内置 SaaS 多租户（一租户一库）、可视化工作流引擎、一键代码生成、任务调度与 AI 助手等企业级能力。
+- 代码量少、学习简单、通俗易懂、功能强大、易扩展、轻量级，让 web 开发更快速、更简单高效，专注您的业务。
+- 另提供社区适配的 [Ant Design Vue](https://gitee.com/billzh/mc-dull.git) 版前端
 - 七牛云通用云产品优惠券：[点我进入](https://s.qiniu.com/FzEfay)。
 - 腾讯云秒杀场：[☛☛ 点我进入 ☚☚](https://curl.qcloud.com/4yEoRquq)。
 - 腾讯云优惠券：[☛☛ 点我领取 ☚☚](https://curl.qcloud.com/5J4nag8D)。
@@ -95,7 +97,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 
 ## 🍀 后端技术
 
-- 核心框架：.Net8.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis + MiniExcel + AI
+- 核心框架：.NET 8.0 + Web API + SqlSugar + Swagger + SignalR + IpRateLimit + Quartz.NET + Redis + MiniExcel + AI
 - 定时计划任务：Quartz.Net 组件，支持执行程序集或者 http 网络请求
 - 安全支持：过滤器(数据权限过滤)、Sql 注入、请求伪造
 - 日志管理：NLog、登录日志、操作日志、定时任务日志
@@ -136,7 +138,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 23. 三方登录：提供三方登录实现逻辑
 24. 导入导出：支持中文表头导入、字典数据转换成文本导出
 25. 数据大屏：更直观的展示数据
-26. 商城管理：商城功能，包含订单管理、发货、分类、品牌管理、销售统计；（前端还在开发中）
+26. 商城管理：完整电商闭环后端（商品/SKU/规格模板/分类/品牌/运费模板/订单 OMS/售后/支付流水/地区字典），配套 C 端 H5 购物链路与销售统计，详见下方 [商城模块](#-商城模块)。
 27. saas多租户：内置完整的多租户 SaaS 体系，支持租户全生命周期管理、套餐授权、用户配额、到期提醒等。
 28. 工作流模块：内置轻量级可视化审批流引擎，支持动态表单、流程设计复制、通过/驳回/撤回/转办/加签等全场景流转、运行数据面板，并提供软删除与防呆校验保障数据安全。
 29. AI 助手：内置全局办公助手（对话/工具编排/发图）、业务页 AI、工作流 AI 与安全图表能力，并配套 AI 治理（多级限额、模型价格、用量统计、配置检查与探活）。
@@ -202,6 +204,57 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 | 图表管道 | 白名单数据集（禁止 NL2SQL）：每日登录数、登录地域、操作日志多维统计；对话内组装折线/柱状/饼图 |
 | 治理与成本 | 多级策略（user > role > tenant > global）、模型价格、用量统计/导出、配置检查（含 `VisionModel` 名）、Provider 探活；助手头栏展示 Token 与金额额度 |
 | 模型接入 | OpenAI 兼容协议：`openai` / `deepseek` / `qwen` / `ollama`；供应商分项可配文本 `Model` 与 `VisionModel` |
+
+## 🛒 商城模块
+
+`ZR.Mall` 是一套**开箱即用的电商闭环后端**，覆盖「商品上架 → C 端浏览下单 → 支付 → 发货 → 收货 → 售后」全链路，支持实物/虚拟商品、单/多规格 SKU、运费模板与偏远地区排除，并天然接入 SaaS 多租户（一租户一商城库）与 AI 能力。
+
+### 核心功能
+
+| 端 / 域 | 关键能力 |
+| ---- | ---- |
+| 后台 · 商品 | 商品 CRUD（软删除）、批量上下架、排序、导入导出、下单表单配置元数据（`formMeta`） |
+| 后台 · SKU/规格 | 多规格 SKU 与规格模板（颜色/尺寸/容量等组合）、规格摘要与价格区间自动回写、库存与销量冗余列自动重算 |
+| 后台 · 分类/品牌 | 树形多级分类（排序、导出）、品牌管理（删除前校验商品引用） |
+| 后台 · 运费 | 运费模板：按件/按重计费、首件续件与首重续重、包邮门槛、偏远地区不配送排除、默认模板回落 |
+| 后台 · 订单(OMS) | 列表（状态统计）、详情、通用状态更新、发货与 Excel 批量发货、取消、整单退款、销售统计与经营概览（客单价/退款率/售后率/复购率）、Top 商品与图表导出；敏感字段独立权限 + 操作留痕 |
+| 后台 · 售后 | 售后单列表/详情、审核、确认收货、登记退款、代客撤销；覆盖「仅退款」与「退货退款」两条流程 |
+| 后台 · 支付/会员/地区 | 支付流水对账（含预支付凭证与回调原文）、会员列表与启用禁用（会员由 C 端注册产生）、省市区地区字典（懒加载 tree） |
+| 后台 · AI | 商品营销文案草稿生成（标题/卖点/详情/SEO）；并为全局 AI 助手注册「商品库存查询」「近期订单概况」工具 |
+| C 端 | 首页轮播与搜索、分类树、商品列表（综合/销量/价格/上新 + 仅看有货）、商品详情与多规格选择、结算与运费试算、微信支付、我的订单（取消/去支付/确认收货）、我的售后（申请/填退货物流）、收货地址 |
+
+
+### 支付、库存与并发
+
+- **支付方式**：微信 H5 / 小程序 JSAPI / App 渠道，开发联调可选模拟支付（`MallSettings:AllowMockPay`）；支付宝为预留枚举。
+- **支付回调**：回调金额一致性校验 + 条件更新幂等 + 订单状态与支付流水同事务；预支付凭证按「订单 + 渠道」唯一。
+- **库存**：下单原子扣减（`Stock >= qty`，乐观锁 `Version`），取消/关单/未发货退款回补可售库存，发货释放锁定库存，已发货退款只冲销量。
+- **下单幂等**：Redis 原子占位幂等键，默认 15 分钟内复用同一订单，防重复提交。
+- **状态迁移**：全部使用带原状态的条件更新，并发下仅一方命中。
+
+
+### C 端演示
+
+<table>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/1.jpeg" alt="会员登录"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/7.jpeg" alt="商城首页"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/5.jpeg" alt="商品分类"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/4.jpeg" alt="商品详情"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/6.jpeg" alt="规格选择"/></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/2.jpeg" alt="我的订单"/></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/3.jpeg" alt="会员中心"/></td>
+        <td></td>
+    </tr>
+</table>
+
+> 说明：本仓库为商城**后端**（`ZR.Mall`）；上图为配套 C 端（移动端 H5）实际界面，前端位于独立的移动端仓库。
 
 ## 🍻 项目结构
 
@@ -313,7 +366,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
     </tr>
 		<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a10.png"/></td>
-				<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a11.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a11.png"/></td>
     </tr>
 		<tr>
         <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/a12.png"/></td>

@@ -1,5 +1,6 @@
-<h2 align="center"> ZR.Admin.NET Back-end management system</h2>
-<h4 align="center">base .Net8 + vue2.x/vue3.x/uniapp Front-end and back-end separation of .NET rapid development framework</h4>
+<h2 align="center"> ZR.Admin.NET Enterprise Admin System</h2>
+<h4 align="center">A cross-platform, RBAC-based, front-end/back-end separated admin framework built on .NET 8 + SqlSugar + Vue 3</h4>
+<h5 align="center">SaaS multi-tenancy · Visual workflow · One-click code generator · Task scheduling · Cache &amp; real-time notifications · Rate limiting &amp; data scope · Dynamic i18n · AI assistant</h5>
 
 <div style="text-align:center">
 
@@ -23,10 +24,11 @@
 
 ## 🍟 overview
 
-- This project is suitable for developers with some NetCore and vue foundation
-  -Based on. NET5/. A common rights management platform (RBAC model) implemented by NET7. Integrate the latest technology for efficient and rapid development, front-end and back-end separation mode, out of the box.
-- Less code, simple to learn, easy to understand, powerful, easy to extend, lightweight, make web development faster, simpler and more efficient (say goodbye to 996), solve 70% of repetitive work, focus on your business, easy development from now on!
-- 提供了技术栈(Ant Design Vue)版[Ant Design Vue](https://gitee.com/billzh/mc-dull.git)
+- This project is suitable for developers with some .NET and Vue foundation.
+- A general-purpose rights management platform (RBAC model) built on **.NET 8**: the latest technology stack, front-end/back-end separation, cross-platform and out of the box.
+- Ships enterprise-ready capabilities: **SaaS multi-tenancy, a visual workflow engine, a one-click code generator, task scheduling, caching, real-time notifications, rate limiting, data-scope filtering, dynamic i18n and an AI assistant**.
+- Less code, easier to learn and understand, powerful yet lightweight and easy to extend; make web development faster and simpler, and focus on your business.
+- A community-maintained [Ant Design Vue](https://gitee.com/billzh/mc-dull.git) front-end version is also available.
 
 ```
 If it helps you, you can click "Star" in the upper right corner to collect it, so that the author has the motivation to continue to go on for free, thank you! ~
@@ -81,7 +83,7 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 
 ## 🍀 Back-end technology
 
-- Core Framework: . Net7.0 + Web API + sqlsugar + swagger + signalR + IpRateLimit + Quartz.net + Redis
+- Core Framework: .NET 8.0 + Web API + SqlSugar + Swagger + SignalR + IpRateLimit + Quartz.NET + Redis + MiniExcel + AI
 - Scheduled tasks: Quartz.Net component that supports the execution of assemblies or HTTP network requests
 - Security support: filters (data permission filtering), SQL injection, request forgery
 - Log management: NLog, login log, operation log, scheduled task log
@@ -89,9 +91,11 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 - Interface throttling: Supports interface throttling to avoid excessive pressure on the service layer caused by malicious requests
 - Code generation: efficient development, the code generator can generate all front-end and back-end code with one click
 - Data dictionary: Support data dictionary, which can facilitate the management of some states
-- Sharding and sharding: Using ORM SQLSUGAR, you can easily achieve superior sharding and sharding performance
-- Multi-tenant: Support multi-tenancy function
+- Sharding: Using the SqlSugar ORM, you can easily achieve high-performance DB/table sharding
+- Multi-tenant: Built-in full SaaS multi-tenant solution (DB-per-tenant with independent databases + package-based menu authorization); see [SaaS multi-tenant](#-saas-multi-tenant)
 - Cache data: Built-in memory cache and Redis
+- SignalR: Uses SignalR to manage user online status and push real-time notifications
+- AI: Built-in AI assistant (chat / tool orchestration / image), business-page AI, workflow AI and a governed chart pipeline, plus AI governance (multi-level quotas, model pricing, usage stats, config checks and provider health probes)
 
 ## 🍖 Built-in features
 
@@ -115,7 +119,10 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 18. Notification management: The system notifies and announces information release and maintenance, and uses SignalR to realize real-time notification to users.
 19. Account Registration: You can register an account to log in to the system.
 20. Multi-language management: support static and back-end dynamic configuration internationalization. Currently only supports Chinese, English, and Traditional characters (only VUE3 is supported)
-21. Workflow module: a built-in lightweight approval workflow supporting dynamic forms (9 control types), process copy, approve/reject/withdraw/transfer/add-sign, dashboard, and soft-delete with guards. See [Workflow module documentation](document/工作流模块说明.md)
+21. Workflow module: a built-in lightweight approval workflow supporting dynamic forms, process copy, approve/reject/withdraw/transfer/add-sign, dashboard, and soft-delete with guards. See [Workflow module documentation](document/工作流模块说明.md)
+22. SaaS multi-tenant: a complete multi-tenant SaaS system with full tenant lifecycle management, package authorization, user quotas and expiry reminders.
+23. AI assistant: a global office assistant (chat / tool orchestration / image), business-page AI, workflow AI and a governed chart pipeline, plus AI governance (multi-level quotas, model pricing, usage stats, config checks and health probes).
+24. Mall management: a complete e-commerce back end (product / SKU / spec template / category / brand / freight template / order OMS / after-sales / payment transactions / area dictionary) with a companion H5 storefront flow and sales statistics. See [Mall module](#-mall-module).
 
 ## 🍻 Project structure
 
@@ -143,6 +150,102 @@ A built-in lightweight approval workflow module covering the full chain of "defi
 - **Mobile menu**: Standalone workflow App workbench menu, filtered by permission.
 
 See [Workflow module documentation](document/工作流模块说明.md).
+
+## 🏢 SaaS Multi-tenant
+
+The project ships a complete **SaaS multi-tenant solution** based on **DB-per-tenant** architecture, using SqlSugar's `SugarScope` multi-configuration capability for dynamic database routing. Each tenant owns an independent database with fully isolated business data, while shared data (tenants, packages, menus) stays in the **main database**. Out of the box, toggled by a single switch.
+
+| Capability | Description |
+| ---- | ---- |
+| Multi-tenant switch | Enabled/disabled via `TenantSettings:UseTenant`; behaviour in non-multi-tenant mode is unchanged |
+| Independent database | Each tenant maps to its own database instance, physically isolated and secure |
+| Tenant lifecycle | Provisioning, initialization, suspension, renewal and deregistration, with one-click provisioning (schema + tables + seed data + default package) |
+| Package system | Built-in Free/Pro packages plus custom package CRUD |
+| Package menu authorization | Tick available menus per package; tenant capability = role menus ∩ package menus |
+| User quota | Per-package user limits, validated on user creation/import |
+| Expiry management | Automatic expiry checks, reminders and batch queries for soon-to-expire tenants |
+| Platform menu isolation | Platform-only menus (tenant/menu management, etc.) visible only to the main tenant |
+
+## 🤖 AI
+
+Built-in, ready-to-use AI capabilities: the assistant, business pages and workflow share one LLM client and one "AI governance" layer, with unified quota, cost and audit control. Models follow the OpenAI-compatible protocol (`openai` / `deepseek` / `qwen` / `ollama`), and each provider can configure a separate text `Model` and `VisionModel`.
+
+| Domain | Key capabilities |
+| ---- | ---- |
+| Office assistant | Multi-turn chat, SSE streaming, stop generation, auto titles, isolated per logged-in user; vision when images are attached (max 4), tool orchestration otherwise |
+| Assistant tools | Schedule query/drafting, weekly report drafts, login-security and operation-health analysis, workflow todos, pre-registered chart queries |
+| Image in/out | Upload or paste images, compressed before sending to the model with token usage persisted; workflow approval advice / risk prediction can carry image attachments |
+| Business-page AI | Multi-language translation, Cron generation, code-generator column inference, login/operation log analysis |
+| Workflow AI | Natural-language process generation, approval advice, process health check, intent form filling, instance summary, risk prediction, approval record summary |
+| Chart pipeline | Whitelisted datasets only (no NL2SQL): daily logins, login regions, multi-dimensional operation-log stats; line/bar/pie charts assembled in chat |
+| Governance & cost | Multi-level policies (user > role > tenant > global), model pricing, usage stats/export, config checks and provider health probes |
+
+## 🛒 Mall module
+
+`ZR.Mall` is an **out-of-the-box e-commerce back end** covering the full chain of "product listing → storefront browsing & ordering → payment → delivery → receipt → after-sales", with physical/virtual products, single/multi-spec SKUs, freight templates with remote-area exclusion, and native support for SaaS multi-tenancy (one mall database per tenant) and AI.
+
+### Core capabilities
+
+| Side / Domain | Key capabilities |
+| ---- | ---- |
+| Admin · Product | Product CRUD (soft delete), batch on/off-shelf, sorting, import/export, order-form metadata (`formMeta`) |
+| Admin · SKU & Specs | Multi-spec SKUs and spec templates (color/size/capacity combinations), automatic spec summary and price-range write-back, auto recalculation of stock/sales helper columns |
+| Admin · Category & Brand | Multi-level category tree (sorting, export), brand management (reference check before delete) |
+| Admin · Freight | Freight templates: charge by piece or by weight, first/continued piece & weight pricing, free-shipping threshold, non-deliverable remote areas, default-template fallback |
+| Admin · Orders (OMS) | List with status stats, detail, generic status update, single & Excel batch delivery, cancel, full-order refund, sales statistics and business overview (AOV / refund rate / after-sales rate / repurchase rate), top products and chart export; sensitive fields behind a dedicated permission with audit trail |
+| Admin · After-sales | After-sale list/detail, audit, confirm receipt, register refund, cancel on behalf of buyer; both "refund only" and "return & refund" flows |
+| Admin · Payment/Member/Area | Payment transaction reconciliation (incl. prepay credentials and raw callbacks), member list with enable/disable (members are created from the storefront), province/city/district dictionary (lazy tree) |
+| Admin · AI | Product marketing copy drafts (title / selling points / description / SEO); registers "product stock query" and "recent order overview" tools for the global AI assistant |
+| Storefront | Home banners & search, category tree, product list (comprehensive/sales/price/newest + in-stock only), product detail with multi-spec selection, checkout with freight calculation, WeChat Pay, my orders (cancel / pay / confirm receipt), my after-sales (apply / return tracking), shipping addresses (max 20, first one becomes default) |
+| Operations | One-click mall database sync (tables / columns / hot-query indexes / product full-text index / menu and job seeds), auto-close of unpaid orders with stock rollback, auto-confirm receipt after delivery |
+
+### Order state machine
+
+```
+Pending payment(0) --pay--> To be shipped(1) --deliver--> Shipped(2) --confirm/auto receipt--> Completed(3)
+        |                        |                              |
+        +-- timeout/cancel --> Cancelled(4)   +-- refund/after-sales done --> Closed(5)
+```
+
+After-sales states: Pending audit → Waiting for buyer return → Waiting for merchant receipt → Waiting for refund → Completed ("refund only" skips the return steps), with reject and cancel supported; the after-sales window defaults to 15 days from receipt and is configurable.
+
+### Payment, stock & concurrency
+
+- **Payment methods**: WeChat H5 / Mini Program JSAPI / App channels, plus an optional mock payment for development (`MallSettings:AllowMockPay`); Alipay is a reserved enum.
+- **Payment callback**: callback amount consistency check + conditional-update idempotency + order status and payment transaction written in one transaction; prepay credentials are unique per order + channel.
+- **Stock**: atomic deduction on order creation (`Stock >= qty` with optimistic-lock `Version`), stock restored on cancel/timeout/refund-before-delivery, locked stock released on delivery, and only the sales volume is adjusted for refunds after delivery.
+- **Order idempotency**: Redis atomic idempotency key, reusing the same order within 15 minutes by default to prevent duplicate submissions.
+- **State transitions**: all conditional updates carrying the expected current status, so only one side wins under concurrency.
+
+### Scheduled jobs
+
+| Job | Frequency | Rule |
+| ---- | ---- | ---- |
+| Close unpaid orders | Every 5 minutes | Auto-close unpaid orders and roll back stock; timeout defaults to 30 minutes (configurable), processed in independent batches |
+| Auto-confirm receipt | Hourly | Auto-complete shipped orders after N days (default 7, configurable) |
+
+### Storefront screenshots
+
+<table>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/1.jpeg" alt="Member login"/><br/><sub>Mobile login with SMS code (members auto-created)</sub></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/7.jpeg" alt="Mall home"/><br/><sub>Home: search, sorting and free-shipping tags</sub></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/5.jpeg" alt="Categories"/><br/><sub>Categories: multi-level tree with sales/price/newest sorting and in-stock filter</sub></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/4.jpeg" alt="Product detail"/><br/><sub>Product detail: stock, sales and freight rules shown transparently</sub></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/6.jpeg" alt="Spec selection"/><br/><sub>Multi-spec selection: per-SKU stock and price range</sub></td>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/2.jpeg" alt="My orders"/><br/><sub>My orders: filtered by status, pay or view detail per order</sub></td>
+    </tr>
+    <tr>
+        <td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/app/mall/3.jpeg" alt="Member center"/><br/><sub>Member center: order status shortcuts, shipping addresses and after-sales, with home/category/cart/mine navigation</sub></td>
+        <td></td>
+    </tr>
+</table>
+
+> Note: this repository contains the mall **back end** (`ZR.Mall`). The screenshots above are from the companion mobile (H5) storefront, which lives in a separate mobile repository.
 
 ## 🍎 Storyplate
 
