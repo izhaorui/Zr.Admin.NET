@@ -241,20 +241,25 @@ namespace ZR.ServiceCore.SqlSugar
                     }
                     #endregion
 
-                    #region 文章正文：实体声明 nvarchar(max)，其它数据库按各自长文本类型适配
-                    // SQL Server 下只有 nvarchar 才能正确承载中文正文，也是正文全文索引（CONTAINS）的前提，
-                    // 故实体上直接写 nvarchar(max) 表达意图；MySQL / PgSql / Sqlite / Oracle 没有该类型，
-                    // 在这里按 DbType 换成各自的长文本类型（与上面 PostgreSQL / Sqlite / Oracle 的处理方式一致，
-                    // 也是 SqlSugar 官方推荐的多库类型差异处理方式：用实体 AOP）。
-                    if (p.EntityName == nameof(Article) && c.Name == nameof(Article.Content))
+                    #region Unicode 文本：实体声明 nvarchar(...)，其它数据库按类型适配
+                    // SQL Server 下只有 nvarchar 才能正确承载中文正文与 ⚠️ 等 emoji（varchar 会毁成问号），
+                    // 故实体上直接写 nvarchar 表达"需要 Unicode 文本"的意图；其它库的差异在这里按 DbType 适配
+                    // （SqlSugar 官方推荐的多库类型差异处理方式：用实体 AOP）：
+                    //   nvarchar(max) → MySQL longtext / PgSQL·SQLite text / Oracle clob；
+                    //   nvarchar(n)  → Oracle 换 nvarchar2(n)（Oracle 无 nvarchar），MySQL/PgSQL/SQLite 原生支持保留。
+                    // 泛化处理所有声明 nvarchar(...) 的列（原为 Article.Content 专用，现含 SysUserMsg.Content 等），
+                    // 新增此类列无需再改这里。
+                    var declaredType = p.DataType?.Trim();
+                    if (declaredType != null && declaredType.StartsWith("nvarchar(", StringComparison.OrdinalIgnoreCase))
                     {
+                        var isMax = declaredType.Equals("nvarchar(max)", StringComparison.OrdinalIgnoreCase);
                         p.DataType = config.DbType switch
                         {
-                            DbType.MySql => "longtext",
-                            DbType.PostgreSQL => "text",
-                            DbType.Sqlite => "text",
-                            DbType.Oracle => "clob",
-                            _ => "nvarchar(max)"
+                            DbType.MySql => isMax ? "longtext" : declaredType,
+                            DbType.PostgreSQL => isMax ? "text" : declaredType,
+                            DbType.Sqlite => isMax ? "text" : declaredType,
+                            DbType.Oracle => isMax ? "clob" : declaredType.Replace("nvarchar(", "nvarchar2("),
+                            _ => declaredType
                         };
                     }
                     #endregion

@@ -211,7 +211,8 @@ namespace ZR.ServiceCore.Services
 
         /// <summary>
         /// 消费票据：原子地保证同一票据只被一个请求取到，避免并发重放。
-        /// 先以 TrySet 抢占"已消费"标记（Redis SETNX / 内存锁），抢占失败直接返回 null。
+        /// 先读票据、存在才以 TrySet 抢占"已消费"标记（Redis SETNX / 内存锁），抢占失败直接返回 null ——
+        /// 不存在的票据不落任何缓存状态（防匿名端点灌垃圾键）。
         ///
         /// 票据 key 刻意不加租户前缀：第二步请求到达时租户上下文尚未建立（不知道读哪个库），
         /// 若 key 依赖租户就会永远读不到票据。租户信息由票据载荷携带，消费后再切上下文。
@@ -222,15 +223,41 @@ namespace ZR.ServiceCore.Services
             if (string.IsNullOrEmpty(ticket)) return null;
 
             var backend = CacheStore.For(CacheBackend.Session);
+            var key = TwoFactorTicketPrefix + ticket;
+
+            // 先读票据、再抢"已消费"标记：票据不存在（伪造/随机串/已过期）时不落任何缓存状态，
+            // 否则匿名端点可被灌入任意数量的 _used 垃圾键（各带 minutes TTL）。
+            // 抢占仍以 TrySet 原子完成，并发提交同一票据只有一个请求能取到（防重放）。
+            var payload = backend.Get<T>(key);
+            if (payload == null) return null;
+
             if (!backend.TrySet(TwoFactorTicketPrefix + ticket + "_used", 1, minutes))
             {
                 return null;
             }
 
-            var key = TwoFactorTicketPrefix + ticket;
-            var payload = backend.Get<T>(key);
             backend.Remove(key);
             return payload;
+        }
+
+        /// <summary>
+        /// 归还票据：验证码输错后允许在票据有效期内重试（前端弹框即按"输错可重试"设计）。
+        /// 撤销 <see cref="ConsumeTwoFactorTicket"/> 的一次性消费标记并还原载荷；
+        /// 成功路径不调用，票据的"一次性"只在验证通过后最终成立。
+        /// 按 <paramref name="expiresAt"/>（首次签发时的绝对过期时间）恢复剩余 TTL ——
+        /// 反复重试不刷新票据生命周期；已过期则直接不归还。
+        /// 暴力尝试仍受约束：连续失败达阈值按用户锁定，且票据 TTL 到期即失效。
+        /// </summary>
+        public static void RestoreTwoFactorTicket<T>(string ticket, T payload, DateTime expiresAt) where T : class
+        {
+            if (string.IsNullOrEmpty(ticket) || payload == null) return;
+
+            var remaining = (int)Math.Ceiling((expiresAt - DateTime.Now).TotalMinutes);
+            if (remaining <= 0) return;
+
+            var backend = CacheStore.For(CacheBackend.Session);
+            backend.Set(TwoFactorTicketPrefix + ticket, payload, remaining);
+            backend.Remove(TwoFactorTicketPrefix + ticket + "_used");
         }
 
         /// <summary>

@@ -23,11 +23,18 @@ namespace ZR.ServiceCore.Services
         bool IsEnabled(long userId);
 
         /// <summary>
-        /// 本次登录是否需要二次验证：已启用且当前设备不在信任期内
+        /// 本次登录是否需要二次验证：已启用且当前设备凭据不在信任期内。
+        /// 判定只认服务端签发的设备凭据（见 <see cref="RecordLoginDevice"/>），客户端指纹等标识一律无效。
         /// </summary>
         /// <param name="user">用户实体（须含 2FA 字段）</param>
-        /// <param name="clientId">设备标识</param>
-        bool RequiresTwoFactor(SysUser user, string clientId);
+        /// <param name="deviceToken">服务端签发的设备凭据明文（客户端在"记住此设备"后保存并带回）；为空表示新设备</param>
+        bool RequiresTwoFactor(SysUser user, string deviceToken);
+
+        /// <summary>
+        /// 计算设备凭据的 SHA256 十六进制哈希（空输入返回空串）。
+        /// 供登录第一步把"本次携带的凭据"以哈希形式绑定进双因子票据——票据只存哈希不存明文。
+        /// </summary>
+        string HashDeviceToken(string deviceToken);
 
         /// <summary>
         /// 该账号当前**可用**的第二因子方法列表（取值见 <see cref="TwoFactorMethod"/>）。
@@ -89,17 +96,21 @@ namespace ZR.ServiceCore.Services
         void ClearDeviceTrust(long userId);
 
         /// <summary>
-        /// 登记本次登录设备，返回是否"新设备"（该设备标识首次出现）。
+        /// 登记本次登录设备，返回是否"新设备"与本次签发的设备凭据（仅 trust=true 时有）。
         ///
-        /// 与"记住此设备"解耦：**每次登录都登记**，<paramref name="trust"/> 为 true 时才额外写入信任期。
-        /// 设备标识为空时既不登记也不告警 —— 指纹取不到时若当成新设备，会让每次登录都误报。
+        /// 与"记住此设备"解耦：**每次登录都登记**，<paramref name="trust"/> 为 true 时才写入信任期并签发新凭据。
+        /// 凭据只能由服务端随机生成：客户端带来的哈希只用于"认出这台设备"，绝不采信、绝不写库；
+        /// 勾选"记住"时也不按可伪造的 <paramref name="clientId"/> 归并他人记录。
+        /// 既无凭据又无指纹且未勾选"记住"时无法识别设备，既不登记也不告警 ——
+        /// 否则每次登录都会被当成"新设备"误报。
         /// </summary>
         /// <param name="userId">用户ID</param>
-        /// <param name="clientId">设备标识（前端指纹 visitorId）</param>
+        /// <param name="deviceTokenHash">本次登录携带的设备凭据哈希（见 <see cref="HashDeviceToken"/>）；为空表示未携带</param>
+        /// <param name="clientId">设备标识（前端指纹 visitorId），仅用于登记记录的展示与审计归并</param>
         /// <param name="deviceName">设备名称（浏览器/OS），展示给用户辨认</param>
         /// <param name="loginIp">本次登录 IP</param>
-        /// <param name="trust">是否同时标记为受信任（免二次验证）</param>
-        bool RecordLoginDevice(long userId, string clientId, string deviceName, string loginIp, bool trust = false);
+        /// <param name="trust">是否同时标记为受信任（免二次验证），true 时服务端签发新设备凭据</param>
+        DeviceRecordResult RecordLoginDevice(long userId, string deviceTokenHash, string clientId, string deviceName, string loginIp, bool trust = false);
 
         /// <summary>
         /// 校验验证码（认证器 6 位码或一次性恢复码）。

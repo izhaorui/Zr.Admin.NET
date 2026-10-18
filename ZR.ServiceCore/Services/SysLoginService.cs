@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Model;
+using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
 using UAParser;
@@ -30,31 +31,44 @@ namespace ZR.ServiceCore.Services
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IStringLocalizer<SharedResource> _localizer;
         private readonly ISysTwoFactorService TwoFactorService;
+        private readonly ISysRoleService roleService;
+        private readonly ISysPermissionService permissionService;
 
         public SysLoginService(
             ISysUserService sysUserService, 
             ISysUserMsgService sysUserMsgService,
             IHttpContextAccessor httpContextAccessor,
             IStringLocalizer<SharedResource> localizer,
-            ISysTwoFactorService twoFactorService)
+            ISysTwoFactorService twoFactorService,
+            ISysRoleService roleService,
+            ISysPermissionService permissionService)
         {
             SysUserService = sysUserService;
             this.sysUserMsgService = sysUserMsgService;
             this.httpContextAccessor = httpContextAccessor;
             _localizer = localizer;
             TwoFactorService = twoFactorService;
+            this.roleService = roleService;
+            this.permissionService = permissionService;
         }
 
+        /// <summary>双因子配置（与 <see cref="SysTwoFactorService"/> 同一节点，避免各处重复 Bind）</summary>
+        private static TwoFactorSettings TwoFactorOptions => AppSettings.Bind("TwoFactor", new TwoFactorSettings());
+
         /// <summary>
-        /// 登录验证
+        /// 账号密码登录的完整流程：校验账号密码 → 双因子闸门 → 签发 token。
         /// </summary>
-        /// <param name="logininfor"></param>
-        /// <param name="loginBody"></param>
-        /// <param name="needTwoFactor">输出：是否需要走双因子第二步（为 true 时本方法不写登录日志、不更新最后登录信息）</param>
-        /// <returns></returns>
-        public SysUser Login(LoginBodyDto loginBody, SysLogininfor logininfor, out bool needTwoFactor)
+        /// <param name="loginBody">登录请求</param>
+        /// <param name="location">登录地点（调用方按 IP 解析后传入）</param>
+        public LoginResultDto Login(LoginBodyDto loginBody, string location)
         {
-            needTwoFactor = false;
+            // 审计字段（地点/第一步凭据）在服务内固定，调用方不必再"记得"赋值
+            var logininfor = new SysLogininfor
+            {
+                LoginLocation = location,
+                AuthType = LoginAuthType.Password
+            };
+
             if (loginBody.Password.Length != 32)
             {
                 loginBody.Password = NETCore.Encrypt.EncryptProvider.Md5(loginBody.Password);
@@ -84,13 +98,17 @@ namespace ZR.ServiceCore.Services
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
 
+            // 设备凭据只以哈希形式进入票据/登记链路，全程不落明文
+            var deviceTokenHash = TwoFactorService.HashDeviceToken(loginBody.DeviceToken);
+
             // 双因子待验证：登录尚未完成，此处不写登录日志也不更新最后登录信息，
             // 由第二步（/login/2fa/verify）按最终结果落一条记录，避免半程登录被统计成成功。
-            needTwoFactor = TwoFactorService.RequiresTwoFactor(user, loginBody.ClientId);
-            if (needTwoFactor)
+            // 判定依据是服务端签发的设备凭据（DeviceToken），不是客户端指纹
+            if (TwoFactorService.RequiresTwoFactor(user, loginBody.DeviceToken))
             {
                 logger.Warn($"账号密码校验通过、等待双因子验证：UserName={loginBody.Username}, UserId={user.UserId}");
-                return user;
+                return BuildTwoFactorResult(user, loginBody.TenantId, loginBody.ClientId, deviceTokenHash,
+                    loginBody.LoginIP, location, TwoFactorLoginSource.Account);
             }
 
             // 能走到签发说明本次不需要第二因子：要么未启用 2FA，要么命中可信设备。
@@ -103,19 +121,24 @@ namespace ZR.ServiceCore.Services
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor, loginBody.TenantId);
             SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
-            return user;
+
+            // 与既有口径一致：异地提醒用本次登录**之前**的 IP 判断（取的是上面这份内存实体）
+            string abnormalNotice = GetAbnormalLoginNotice(user, loginBody.LoginIP);
+            return SignIn(user, loginBody.TenantId, loginBody.ClientId, deviceTokenHash, loginBody.LoginIP,
+                abnormalNotice: abnormalNotice);
         }
 
         /// <summary>
-        /// 登录验证
+        /// 手机号登录的完整流程：校验账号状态 → 双因子闸门 → 签发 token（语义同 <see cref="Login"/>）
         /// </summary>
-        /// <param name="logininfor"></param>
-        /// <param name="loginBody"></param>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public SysUserDto PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUserDto user, out bool needTwoFactor)
+        public LoginResultDto PhoneLogin(PhoneLoginDto loginBody, SysUser user, string location)
         {
-            needTwoFactor = false;
+            var logininfor = new SysLogininfor
+            {
+                LoginLocation = location,
+                AuthType = LoginAuthType.SmsCode
+            };
+
             logininfor.UserName = user.UserName;
             logininfor.UserId = user.UserId;
             logininfor.Status = "1";
@@ -134,13 +157,15 @@ namespace ZR.ServiceCore.Services
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
 
-            // SysUserDto 不含密钥，需回查实体才能判定双因子状态
+            // 回查实体：短信码校验与用户查询之间可能被改过状态，按库里最新值判定
             var entity = Context.Queryable<SysUser>().Where(it => it.UserId == user.UserId).First();
-            needTwoFactor = TwoFactorService.RequiresTwoFactor(entity, loginBody.ClientId);
-            if (needTwoFactor)
+            var deviceTokenHash = TwoFactorService.HashDeviceToken(loginBody.DeviceToken);
+
+            if (TwoFactorService.RequiresTwoFactor(entity, loginBody.DeviceToken))
             {
                 logger.Warn($"手机号登录校验通过、等待双因子验证：UserName={user.UserName}, UserId={user.UserId}");
-                return user;
+                return BuildTwoFactorResult(user, loginBody.TenantId, loginBody.ClientId, deviceTokenHash,
+                    loginBody.LoginIP, location, TwoFactorLoginSource.Phone);
             }
 
             // 语义同 Login：手机号登录同样可能是"命中可信设备"而免掉动态码
@@ -152,7 +177,176 @@ namespace ZR.ServiceCore.Services
             logininfor.Msg = "登录成功";
             AddLoginInfo(logininfor, loginBody.TenantId);
             SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
-            return user;
+
+            return SignIn(user, loginBody.TenantId, loginBody.ClientId, deviceTokenHash, loginBody.LoginIP);
+        }
+
+        /// <summary>
+        /// 双因子登录第二步：校验一次性票据 + 验证码（或一次性恢复码）后签发 token。
+        ///
+        /// 要点：
+        /// 1) 票据先**一次性消费**，杜绝并发重放；
+        /// 2) 验证失败时**归还票据**（未锁定才归还），让用户能在剩余有效期内重试输错的码；
+        /// 3) 已锁定即达到失败上限，不再归还，否则持续试探可把票据续命到锁定解除；
+        /// 4) 租户来自票据载荷 —— 第二步是独立请求，此时尚不知道该读哪个库。
+        /// </summary>
+        public LoginResultDto VerifyTwoFactor(TwoFactorVerifyDto dto)
+        {
+            var settings = TwoFactorOptions;
+            var ticketMinutes = settings.TicketMinutes > 0 ? settings.TicketMinutes : 5;
+
+            var payload = CacheService.ConsumeTwoFactorTicket<TwoFactorTicketPayload>(dto.Ticket, ticketMinutes);
+            if (payload == null)
+            {
+                return new LoginResultDto { Status = LoginResultStatus.TicketExpired };
+            }
+
+            using var tenantScope = TenantContext.Change(payload.TenantId);
+
+            var user = TwoFactorService.GetUserForAuth(payload.UserId);
+            if (user == null || user.Status == 1)
+            {
+                return new LoginResultDto { Status = LoginResultStatus.AccountUnavailable };
+            }
+
+            var clientInfo = httpContextAccessor.HttpContext.GetClientInfo();
+            SysLogininfor logininfor = new()
+            {
+                UserName = user.UserName,
+                UserId = user.UserId,
+                // 第一步凭据来自票据：第二步是独立请求，靠票据里的来源区分密码/短信登录
+                AuthType = payload.LoginSource == (int)TwoFactorLoginSource.Phone
+                    ? LoginAuthType.SmsCode
+                    : LoginAuthType.Password,
+                Ipaddr = payload.LoginIP,
+                ClientId = payload.ClientId,
+                LoginTime = DateTime.Now,
+                LoginLocation = payload.LoginLocation,
+                Browser = clientInfo.ToString(),
+                Os = clientInfo.OS.ToString(),
+                Status = "1",
+                Msg = "双因子验证失败"
+            };
+
+            TwoFactorCredential credential;
+            try
+            {
+                credential = TwoFactorService.VerifyCodeOrThrow(user, dto.Code);
+            }
+            catch (Exception)
+            {
+                // 2FA 环节的失败是重要安全信号，必须与普通登录失败一样落库留痕后再抛出
+                AddLoginInfo(logininfor, payload.TenantId);
+                // 票据生命周期："验证成功"或"达到失败上限"后失效，其余失败归还、可在剩余 TTL 内重试。
+                // 归还按绝对过期时间计剩余，重试不刷新生命周期。
+                if (!CacheService.IsTwoFactorLocked(payload.UserId))
+                {
+                    CacheService.RestoreTwoFactorTicket(dto.Ticket, payload, payload.ExpiresAt);
+                }
+                throw;
+            }
+
+            // 记下本次到底是用动态码还是恢复码通过的：恢复码登录是审计上最需要一眼看出来的事件
+            logininfor.TwoFactorType = credential == TwoFactorCredential.RecoveryCode
+                ? LoginTwoFactorType.RecoveryCode
+                : LoginTwoFactorType.Totp;
+
+            // 与普通登录同一口径：先取异地提醒（用的是本次之前的登录 IP），再更新最后登录信息
+            string abnormalNotice = GetAbnormalLoginNotice(user, payload.LoginIP);
+
+            logininfor.Status = "0";
+            logininfor.Msg = "登录成功";
+            AddLoginInfo(logininfor, payload.TenantId);
+            SysUserService.UpdateLoginInfo(payload.LoginIP, user.UserId);
+
+            // 本次登记哪台设备由第一步票据绑定的凭据哈希决定，第二步不允许替换设备：
+            // 否则拿到票据的攻击者可以把"记住此设备"写到任意设备标识上。
+            return SignIn(user, payload.TenantId, payload.ClientId, payload.DeviceTokenHash, payload.LoginIP,
+                dto.RememberDevice, abnormalNotice);
+        }
+
+        /// <summary>
+        /// 签发 token 的统一出口。
+        ///
+        /// 权限装配、单会话、"本会话已通过双因子"标记、登录设备登记四件事集中在这里，
+        /// 三条登录路径共用，避免某个入口漏掉其中一步（历史上漏过设备登记）。
+        /// </summary>
+        public LoginResultDto SignIn(SysUser user, string tenantId, string clientId, string deviceTokenHash,
+            string loginIp, bool trustDevice = false, string? abnormalNotice = null)
+        {
+            List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
+            //权限集合 eg *:*:*,system:user:list（按套餐菜单过滤）
+            List<string> permissions = permissionService.GetMenuPermission(new SysUserDto() { UserId = user.UserId });
+
+            LoginUser loginUser = new(user.Adapt<LoginUser>(), roles.Adapt<List<Roles>>())
+            {
+                TenantId = tenantId,
+                Permissions = permissions,
+                ScopeType = ComputeScopeType(roles),
+                SessionId = Guid.NewGuid().ToString("N")// 单设备登录：每次登录生成新会话ID并缓存，旧会话将被中间件判定失效
+            };
+
+            // 设备登记：登记失败不影响登录 —— 它不是安全闸门，只承担审计与提醒职责。
+            string deviceToken = null;
+            try
+            {
+                deviceToken = TwoFactorService.RecordLoginDevice(user.UserId, deviceTokenHash, clientId,
+                    httpContextAccessor.HttpContext.GetClientInfo().ToString(), loginIp, trustDevice)?.DeviceToken;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, $"登录设备登记失败：UserId={user.UserId}");
+            }
+
+            CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
+            // 能走到签发说明身份校验已完整（未启用 2FA，或刚通过 2FA / 命中可信设备）。
+            // 标记该会话供扫码登录判定"移动端当前会话确实过了 2FA"。
+            CacheService.SetTwoFactorSessionOk(loginUser.UserId, loginUser.SessionId);
+
+            var token = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
+            return new LoginResultDto
+            {
+                Status = LoginResultStatus.Success,
+                Token = token,
+                DeviceToken = deviceToken,
+                Notice = abnormalNotice
+            };
+        }
+
+        /// <summary>
+        /// 组装"需要双因子验证"的结果：写入一次性票据，返回票据与可用方法列表（**不含 token**）。
+        /// 票据里带租户与本次设备凭据哈希：第二步据此查用户、登记设备，且只能用票据绑定的那台设备。
+        /// </summary>
+        public LoginResultDto BuildTwoFactorResult(SysUser user, string tenantId, string clientId, string deviceTokenHash,
+            string loginIp, string location, TwoFactorLoginSource source)
+        {
+            var settings = TwoFactorOptions;
+            var minutes = settings.TicketMinutes > 0 ? settings.TicketMinutes : 5;
+            var ticket = Guid.NewGuid().ToString("N");
+
+            CacheService.SetTwoFactorTicket(ticket, new TwoFactorTicketPayload
+            {
+                UserId = user.UserId,
+                UserName = user.UserName,
+                NickName = user.NickName,
+                TenantId = tenantId,
+                ClientId = clientId,
+                DeviceTokenHash = deviceTokenHash,
+                LoginIP = loginIp,
+                LoginLocation = location,
+                LoginSource = (int)source,
+                ExpiresAt = DateTime.Now.AddMinutes(minutes)
+            }, minutes);
+
+            return new LoginResultDto
+            {
+                Status = LoginResultStatus.TwoFactorRequired,
+                Ticket = ticket,
+                ExpireMinutes = minutes,
+                // 方法列表由服务端算、前端只按列表渲染：WebAuthn 落地时这里加一项即可
+                Methods = TwoFactorService.GetAvailableMethods(user),
+                PreferredMethod = TwoFactorService.GetPreferredMethod(user)
+            };
         }
 
         /// <summary>
@@ -181,6 +375,9 @@ namespace ZR.ServiceCore.Services
             list.Result.MaskField(
                 HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealIP),
                 it => it.Ipaddr, (it, v) => it.Ipaddr = v, MaskUtil.MaskIp);
+            // 设备指纹是可复用的设备标识，日志输出一律脱敏：登录日志对管理员/导出渠道可见，
+            // 明文外泄等于把"已登记设备标识"拱手送人
+            list.Result.MaskField(false, it => it.ClientId, (it, v) => it.ClientId = v, MaskUtil.MaskDeviceId);
             return list;
         }
 

@@ -84,6 +84,17 @@
         }
 
         /// <summary>
+        /// 设备指纹脱敏（登录日志里的 ClientId/visitorId）：保留前 6 位供同设备比对，其余打码。
+        /// 完整指纹是可复用的设备标识，日志明文外泄会让"已登记设备标识"被拿去撞信任设备。
+        /// </summary>
+        public static string MaskDeviceId(string deviceId)
+        {
+            if (string.IsNullOrEmpty(deviceId)) return deviceId;
+            if (deviceId.Length <= 8) return "***";
+            return deviceId[..6] + "****";
+        }
+
+        /// <summary>
         /// 对一整段自由文本做批量脱敏：自动识别其中的手机号、身份证、邮箱、银行卡、金额，
         /// 统一打码后返回。用于 AI 场景（表单填报内容 / 用户自然语言描述）发送给第三方模型前，
         /// 避免个人隐私与企业敏感数据明文出网。无法识别的普通文本原样保留。

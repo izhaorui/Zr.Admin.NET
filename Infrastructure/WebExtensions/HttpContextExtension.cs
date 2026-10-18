@@ -249,7 +249,10 @@ namespace Infrastructure.Extensions
             if (HttpMethods.IsPost(reqMethod) || HttpMethods.IsPut(reqMethod) || HttpMethods.IsDelete(reqMethod))
             {
                 param = context.GetBody();
-                string regex = "(?<=\"password\":\")[^\",]*";
+                // 凭据类字段统一遮蔽：password、设备凭据 deviceToken、双因子票据 ticket、短信验证码 phoneCode。
+                // 其余字段（用户名/租户/uuid 等）保留，供登录等场景排障；
+                // 异常日志路径不受 [Log] 开关控制，凭据遮蔽只能在这里兜底。
+                string regex = "(?<=\"(?:password|deviceToken|ticket|phoneCode)\":\")[^\",]*";
                 param = Regex.Replace(param, regex, "***");
             }
             if (param.IsEmpty())

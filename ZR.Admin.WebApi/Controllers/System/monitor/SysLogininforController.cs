@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
+using ZR.Infrastructure.Helper;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.ServiceCore.AI.IService;
@@ -100,6 +101,9 @@ namespace ZR.Admin.WebApi.Controllers.monitor
 
             var list = sysLoginService.Queryable().Where(exp.ToExpression())
                 .ToList();
+
+            // 与列表接口同口径：导出件常被转发/归档，设备指纹必须脱敏后再落 Excel
+            list.MaskField(false, it => it.ClientId, (it, v) => it.ClientId = v, MaskUtil.MaskDeviceId);
 
             string sFileName = ExportExcel(list, "loginlog", "登录日志");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });

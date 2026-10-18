@@ -20,8 +20,12 @@ namespace ZR.Model
         public long? UserId { get; set; }
 
         /// <summary>
-        /// 消息内容 
+        /// 消息内容
         /// </summary>
+        // 显式声明 nvarchar(2000)：内容含 ⚠️ 等 emoji，SQL Server 下 varchar 会把它们毁成问号，
+        // 只有 nvarchar 能完整承载；2000 字对系统通知（告警/工作流通知等）余量充足，避免 max 的存储与索引代价。
+        // MySQL/PgSQL/SQLite 原生支持 nvarchar(n)，Oracle 无 nvarchar，由 SqlsugarSetup 实体 AOP 适配为 nvarchar2(n)
+        [SugarColumn(ColumnDescription = "消息内容", ColumnDataType = "nvarchar(2000)")]
         public string Content { get; set; }
 
         /// <summary>

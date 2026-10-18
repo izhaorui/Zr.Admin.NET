@@ -2,6 +2,8 @@ using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Helper;
 using Infrastructure.Model;
+using System.Security.Cryptography;
+using System.Text;
 using ZR.Common;
 using ZR.Infrastructure.Helper;
 using ZR.Model.System;
@@ -17,7 +19,8 @@ namespace ZR.ServiceCore.Services
     /// 2) 同一时间步的验证码只允许成功一次（重放防护）；
     /// 3) 连续失败达到阈值按用户锁定，避免 6 位码被暴力枚举；
     /// 4) 恢复码只存 SHA256 哈希、一次性消费；
-    /// 5) "记住此设备"独立记录，用户可逐台吊销，管理员重置时全部作废。
+    /// 5) "记住此设备"独立记录：信任只认服务端随机签发的高熵设备凭据（库中仅存 SHA256 哈希），
+    ///    客户端指纹仅作展示/审计，用户可逐台吊销，管理员重置时全部作废。
     /// </summary>
     [AppService(ServiceType = typeof(ISysTwoFactorService), ServiceLifetime = LifeTime.Transient)]
     public class SysTwoFactorService : BaseService<SysUser2faDevice>, ISysTwoFactorService
@@ -71,9 +74,19 @@ namespace ZR.ServiceCore.Services
             return IsEnabled(GetUser(userId));
         }
 
-        public bool RequiresTwoFactor(SysUser user, string clientId)
+        public bool RequiresTwoFactor(SysUser user, string deviceToken)
         {
-            return IsEnabled(user) && !IsTrustedDevice(user.UserId, clientId);
+            // 信任判定只认服务端签发的设备凭据：指纹等客户端标识是"名字"不是"钥匙"，当钥匙用等于摘掉 2FA
+            return IsEnabled(user) && !IsTrustedDevice(user.UserId, HashDeviceToken(deviceToken));
+        }
+
+        /// <summary>
+        /// 设备凭据哈希（SHA256 十六进制）。库中与双因子票据里只存哈希，明文仅在签发时返回一次。
+        /// </summary>
+        public string HashDeviceToken(string deviceToken)
+        {
+            if (string.IsNullOrWhiteSpace(deviceToken)) return string.Empty;
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(deviceToken)));
         }
 
         public SysUser GetUserForAuth(long userId)
@@ -149,9 +162,15 @@ namespace ZR.ServiceCore.Services
                 throw new CustomException("请先获取双因子密钥");
             }
 
-            if (TotpHelper.ValidateCode(secret, code) == null)
+            var step = TotpHelper.ValidateCode(secret, code);
+            if (step == null)
             {
                 throw new CustomException("验证码错误，请确认认证器时间是否准确");
+            }
+            // 绑定成功同样消费该时间步：否则同一串码在 30 秒窗口内还能再用于登录（与登录校验同口径防重放）
+            if (!CacheService.TryMarkTwoFactorStep(userId, step.Value, StepMarkMinutes))
+            {
+                throw new CustomException("该验证码已被使用，请等待认证器刷新后重试");
             }
 
             var plainCodes = Enumerable.Range(0, RecoveryCodeCount)
@@ -366,21 +385,35 @@ namespace ZR.ServiceCore.Services
                 .ExecuteCommand();
         }
 
-        public bool RecordLoginDevice(long userId, string clientId, string deviceName, string loginIp, bool trust = false)
+        public DeviceRecordResult RecordLoginDevice(long userId, string deviceTokenHash, string clientId, string deviceName, string loginIp, bool trust = false)
         {
-            // 指纹取不到（无痕模式/被拦截）时无法识别设备：既不登记也不告警，
-            // 否则每次登录都会被判成"新设备"而狂发提醒。
-            if (string.IsNullOrWhiteSpace(clientId)) return false;
-
             clientId = Truncate(clientId, 64);
             var now = DateTime.Now;
             var trustUntil = trust
                 ? now.AddDays(Settings.TrustDeviceDays > 0 ? Settings.TrustDeviceDays : 7)
                 : NoTrustUntil;
 
-            var exist = Context.Queryable<SysUser2faDevice>()
-                .Where(it => it.UserId == userId && it.DeviceId == clientId)
-                .First();
+            // 凭据只能由服务端签发：客户端带来的哈希只用于"认出这台设备"，绝不采信、绝不写库。
+            // 勾选"记住"时一律签发新凭据并替换旧值（轮换），旧凭据当场作废。
+            var newToken = trust ? GenerateDeviceToken() : null;
+            var newHash = trust ? HashDeviceToken(newToken) : null;
+
+            SysUser2faDevice exist = null;
+            if (!string.IsNullOrEmpty(deviceTokenHash))
+            {
+                exist = Context.Queryable<SysUser2faDevice>()
+                    .Where(it => it.UserId == userId && it.DeviceTokenHash == deviceTokenHash)
+                    .First();
+            }
+
+            // 未携带凭据（首次登录/清了本地存储）时按指纹归并登记记录，同一台设备不重复建记录、不重复提醒。
+            // 但勾选"记住"时绝不按指纹归并：指纹是客户端可控的展示字段，按它归并会让伪造者顶替他人设备记录。
+            if (exist == null && !trust && !string.IsNullOrWhiteSpace(clientId))
+            {
+                exist = Context.Queryable<SysUser2faDevice>()
+                    .Where(it => it.UserId == userId && it.DeviceId == clientId)
+                    .First();
+            }
 
             if (exist != null)
             {
@@ -389,20 +422,28 @@ namespace ZR.ServiceCore.Services
                     .SetColumns(it => it.DeviceName == Truncate(deviceName, 200))
                     .SetColumns(it => it.LoginIp == Truncate(loginIp, 64));
 
-                // 只有本次要求"记住"时才改写信任期：普通登录不能把已有的信任意外清掉
+                // 只有本次要求"记住"时才改写信任期与凭据：普通登录不能把已有的信任意外清掉
                 if (trust)
                 {
-                    update = update.SetColumns(it => it.TrustUntil == trustUntil);
+                    update = update.SetColumns(it => it.DeviceTokenHash == newHash)
+                        .SetColumns(it => it.TrustUntil == trustUntil);
                 }
 
                 update.Where(it => it.Id == exist.Id).ExecuteCommand();
-                return false;
+                return new DeviceRecordResult { DeviceToken = newToken };
+            }
+
+            // 既无凭据可认、指纹也没有，且未要求"记住"：无法识别设备，不登记也不提醒
+            if (!trust && string.IsNullOrWhiteSpace(clientId))
+            {
+                return new DeviceRecordResult();
             }
 
             Insert(new SysUser2faDevice
             {
                 UserId = userId,
-                DeviceId = clientId,
+                DeviceId = clientId ?? string.Empty,
+                DeviceTokenHash = newHash,
                 DeviceName = Truncate(deviceName, 200),
                 LoginIp = Truncate(loginIp, 64),
                 TrustUntil = trustUntil,
@@ -412,7 +453,7 @@ namespace ZR.ServiceCore.Services
 
             TrimDeviceRecords(userId);
             AlertNewDevice(userId, deviceName, loginIp, trust);
-            return true;
+            return new DeviceRecordResult { IsNewDevice = true, DeviceToken = newToken };
         }
 
         /// <summary>
@@ -500,13 +541,23 @@ namespace ZR.ServiceCore.Services
                 && TotpHelper.UnprotectSecret(user.TwoFactorSecret) != null;
         }
 
-        private bool IsTrustedDevice(long userId, string clientId)
+        /// <summary>
+        /// 生成设备凭据明文：256 bit 随机 + base64url。不可猜测、不可枚举，泄露也无法反推其它凭据。
+        /// </summary>
+        private static string GenerateDeviceToken()
         {
-            if (string.IsNullOrEmpty(clientId)) return false;
+            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+                .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        }
+
+        private bool IsTrustedDevice(long userId, string deviceTokenHash)
+        {
+            if (string.IsNullOrEmpty(deviceTokenHash)) return false;
 
             var now = DateTime.Now;
+            // 只按凭据哈希匹配：指纹等客户端标识可伪造，不能作为"这台设备"的证明
             var device = Context.Queryable<SysUser2faDevice>()
-                .Where(it => it.UserId == userId && it.DeviceId == clientId && it.TrustUntil > now)
+                .Where(it => it.UserId == userId && it.DeviceTokenHash == deviceTokenHash && it.TrustUntil > now)
                 .First();
             if (device == null) return false;
 
@@ -528,13 +579,20 @@ namespace ZR.ServiceCore.Services
 
         private bool ConsumeRecoveryCode(SysUser user, string code)
         {
-            var hashes = ParseRecoveryCodes(user.TwoFactorRecoveryCodes);
+            var oldJson = user.TwoFactorRecoveryCodes;
+            var hashes = ParseRecoveryCodes(oldJson);
             if (hashes.Count == 0) return false;
             if (!hashes.Remove(TotpHelper.HashRecoveryCode(code))) return false;
 
-            UserService.SaveTwoFactor(user.UserId, 1, user.TwoFactorSecret, user.TwoFactorBoundAt,
-                JsonConvert.SerializeObject(hashes));
-            return true;
+            // CAS 条件更新：只有"库中恢复码仍等于读取时的列表"的更新才生效。
+            // 并发提交同一恢复码时只有一方更新成功 —— 读-改-写整列覆盖会让两个请求都判定成功，
+            // 一次性恢复码就被用两次；更新行数必须显式检查。
+            var newJson = JsonConvert.SerializeObject(hashes);
+            var affected = Context.Updateable<SysUser>()
+                .SetColumns(it => it.TwoFactorRecoveryCodes == newJson)
+                .Where(it => it.UserId == user.UserId && it.TwoFactorRecoveryCodes == oldJson)
+                .ExecuteCommand();
+            return affected == 1;
         }
 
         private static List<string> ParseRecoveryCodes(string json)

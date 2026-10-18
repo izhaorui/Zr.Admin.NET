@@ -59,7 +59,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Route("login")]
         [HttpPost]
-        [Log(Title = "登录")]
+        [Log(Title = "登录", IsSaveResponseData = false)]
         [AllowAnonymous]
         public IActionResult Login([FromBody] LoginBodyDto loginBody)
         {
@@ -77,19 +77,8 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             sysLoginService.CheckLockUser(loginBody.Username);
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
-            var user = sysLoginService.Login(loginBody,
-                new SysLogininfor() { LoginLocation = location, AuthType = LoginAuthType.Password },
-                out bool needTwoFactor);
 
-            // 双因子闸门：只下发一次性票据，token 延迟到 /login/2fa/verify 校验通过后才签发
-            if (needTwoFactor)
-            {
-                return ToResponse(BuildTwoFactorTicket(user, loginBody.TenantId, loginBody.ClientId,
-                    loginBody.LoginIP, location, TwoFactorLoginSource.Account));
-            }
-
-            string abnormalNotice = sysLoginService.GetAbnormalLoginNotice(user, loginBody.LoginIP);
-            return IssueToken(user, loginBody.TenantId, loginBody.ClientId, loginBody.LoginIP, abnormalNotice: abnormalNotice);
+            return ToLoginResponse(sysLoginService.Login(loginBody, location));
         }
 
         /// <summary>
@@ -129,162 +118,57 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException("请求参数错误");
             }
 
-            var settings = AppSettings.Bind("TwoFactor", new TwoFactorSettings());
-            var ticketMinutes = settings.TicketMinutes > 0 ? settings.TicketMinutes : 5;
-
-            // 租户由票据载荷携带：先消费票据再切租户上下文，因此不依赖前端重复提交 tenantId
-            var payload = CacheService.ConsumeTwoFactorTicket<TwoFactorTicketPayload>(dto.Ticket, ticketMinutes);
-            if (payload == null)
-            {
-                return ToResponse(ResultCode.LOGIN_ERROR, "双因子验证已超时，请重新登录");
-            }
-
-            using var tenantScope = TenantContext.Change(payload.TenantId);
-
-            var user = twoFactorService.GetUserForAuth(payload.UserId);
-            if (user == null || user.Status == 1)
-            {
-                return ToResponse(ResultCode.LOGIN_ERROR, "账号不可用");
-            }
-
-            var clientInfo = HttpContext.GetClientInfo();
-            SysLogininfor logininfor = new()
-            {
-                UserName = user.UserName,
-                UserId = user.UserId,
-                // 第一步凭据来自票据：第二步是独立请求，靠票据里的来源区分密码/短信登录
-                AuthType = payload.LoginSource == (int)TwoFactorLoginSource.Phone
-                    ? LoginAuthType.SmsCode
-                    : LoginAuthType.Password,
-                Ipaddr = payload.LoginIP,
-                ClientId = payload.ClientId,
-                LoginTime = DateTime.Now,
-                LoginLocation = payload.LoginLocation,
-                Browser = clientInfo.ToString(),
-                Os = clientInfo.OS.ToString(),
-                Status = "1",
-                Msg = "双因子验证失败"
-            };
-
-            TwoFactorCredential credential;
-            try
-            {
-                credential = twoFactorService.VerifyCodeOrThrow(user, dto.Code);
-            }
-            catch (Exception)
-            {
-                // 2FA 环节的失败是重要安全信号，必须与普通登录失败一样落库留痕后再抛出
-                sysLoginService.AddLoginInfo(logininfor, payload.TenantId);
-                throw;
-            }
-
-            // 记下本次到底是用动态码还是恢复码通过的。
-            // 恢复码登录原本与普通登录在日志里完全一样，是审计上最需要能一眼看出来的事件。
-            logininfor.TwoFactorType = credential == TwoFactorCredential.RecoveryCode
-                ? LoginTwoFactorType.RecoveryCode
-                : LoginTwoFactorType.Totp;
-
-            // 设备登记与"记住此设备"已合并为一个动作，在 IssueToken 里统一完成（三个登录入口共用），
-            // 这里只负责把"是否记住"与本次设备标识传下去。
-            var clientId = dto.ClientId.IsEmpty() ? payload.ClientId : dto.ClientId;
-
-            // 与普通登录同一口径：先取异地提醒（用的是本次之前的登录 IP），再更新最后登录信息
-            string abnormalNotice = sysLoginService.GetAbnormalLoginNotice(user, payload.LoginIP);
-
-            logininfor.Status = "0";
-            logininfor.Msg = "登录成功";
-            sysLoginService.AddLoginInfo(logininfor, payload.TenantId);
-            sysUserService.UpdateLoginInfo(payload.LoginIP, user.UserId);
-
-            return IssueToken(user, payload.TenantId, clientId, payload.LoginIP, dto.RememberDevice, abnormalNotice);
+            // 票据消费、租户切换（租户取自票据载荷）、校验、失败归还、审计、设备登记与签发
+            return ToLoginResponse(sysLoginService.VerifyTwoFactor(dto));
         }
 
         /// <summary>
-        /// 组装"需要双因子验证"的响应：不含 token，只给一次性票据。
-        /// 票据里带租户与设备标识，第二步据此查用户、判断是否信任设备。
-        /// </summary>
-        private ApiResult BuildTwoFactorTicket(SysUser user, string tenantId, string clientId, string loginIp,
-            string location, TwoFactorLoginSource source)
-        {
-            var settings = AppSettings.Bind("TwoFactor", new TwoFactorSettings());
-            var minutes = settings.TicketMinutes > 0 ? settings.TicketMinutes : 5;
-            var ticket = Guid.NewGuid().ToString("N");
-
-            CacheService.SetTwoFactorTicket(ticket, new TwoFactorTicketPayload
-            {
-                UserId = user.UserId,
-                UserName = user.UserName,
-                NickName = user.NickName,
-                TenantId = tenantId,
-                ClientId = clientId,
-                LoginIP = loginIp,
-                LoginLocation = location,
-                LoginSource = (int)source
-            }, minutes);
-
-            // 刻意不用 200：此时登录尚未完成（未签发 token），
-            // 若返回 200，前端/移动端会把它当成登录成功去写 token，最终拿到 undefined 再请求接口报 401。
-            var result = new ApiResult((int)ResultCode.MFA_REQUIRED, "需要双因子验证");
-            result.Put("mfaRequired", true);
-            result.Put("ticket", ticket);
-            result.Put("expireMinutes", minutes);
-            // 可用方法与首选方法由服务端下发，前端只按列表渲染入口：
-            // WebAuthn 落地时后端加一项即可，前端与接口契约都不用再改。
-            result.Put("methods", twoFactorService.GetAvailableMethods(user));
-            result.Put("preferredMethod", twoFactorService.GetPreferredMethod(user));
-            return result;
-        }
-
-        /// <summary>
-        /// 签发 token 的统一出口。
+        /// 把登录结果映射成响应体。
         ///
-        /// 账号密码登录、手机号登录、双因子第二步都从这里签发，
-        /// 保证权限装配、单会话、"本会话已通过双因子"标记、**登录设备登记**四件事
-        /// 不会在某个入口漏掉。
+        /// 刻意保持与迁移前**完全一致**的响应形状（业务码、字段名、Put 顺序）：
+        /// 1) 2FA 待验证是 203 而不是 200 —— 此时未签发 token，若返回 200，
+        ///    只判断 code==200 的客户端（含移动端）会把它当登录成功去写 token；
+        /// 2) 票据超时/账号不可用走**返回值**而不是抛 CustomException ——
+        ///    抛异常会额外写一条 SysOperLog 异常日志，凭空制造审计噪声。
         /// </summary>
-        /// <param name="clientId">设备标识（前端指纹）；为空表示无法识别设备</param>
-        /// <param name="trustDevice">是否把该设备标记为受信任（用户勾选"记住此设备"）</param>
-        private IActionResult IssueToken(SysUser user, string tenantId, string clientId, string loginIp,
-            bool trustDevice = false, string? abnormalNotice = null)
+        private IActionResult ToLoginResponse(LoginResultDto result)
         {
-            List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
-            //权限集合 eg *:*:*,system:user:list（按套餐菜单过滤）
-            List<string> permissions = permissionService.GetMenuPermission(new SysUserDto() { UserId = user.UserId });
-
-            LoginUser loginUser = new(user.Adapt<LoginUser>(), roles.Adapt<List<Roles>>())
+            switch (result.Status)
             {
-                TenantId = tenantId,
-                Permissions = permissions,
-                ScopeType = SysLoginService.ComputeScopeType(roles),
-                SessionId = Guid.NewGuid().ToString("N")// 单设备登录：每次登录生成新会话ID并缓存，旧会话将被中间件判定失效
-            };
+                case LoginResultStatus.TwoFactorRequired:
+                {
+                    var apiResult = new ApiResult((int)ResultCode.MFA_REQUIRED, "需要双因子验证");
+                    apiResult.Put("mfaRequired", true);
+                    apiResult.Put("ticket", result.Ticket);
+                    apiResult.Put("expireMinutes", result.ExpireMinutes);
+                    // 可用方法与首选方法由服务端下发，前端只按列表渲染入口：
+                    // WebAuthn 落地时后端加一项即可，前端与接口契约都不用再改。
+                    apiResult.Put("methods", result.Methods);
+                    apiResult.Put("preferredMethod", result.PreferredMethod);
+                    return ToResponse(apiResult);
+                }
+                case LoginResultStatus.TicketExpired:
+                    return ToResponse(ResultCode.LOGIN_ERROR, "双因子验证已超时，请重新登录");
 
-            // 设备登记放在这个统一出口：三个登录入口都会经过这里，
-            // 避免"某个入口忘了登记"导致设备列表与新设备提醒出现盲区。
-            // 登记失败不影响登录 —— 它不是安全闸门，只承担审计与提醒职责。
-            try
-            {
-                twoFactorService.RecordLoginDevice(user.UserId, clientId,
-                    HttpContext.GetClientInfo().ToString(), loginIp, trustDevice);
+                case LoginResultStatus.AccountUnavailable:
+                    return ToResponse(ResultCode.LOGIN_ERROR, "账号不可用");
+
+                default:
+                {
+                    ApiResult apiResult = new((int)ResultCode.SUCCESS, "success", result.Token);
+                    if (!string.IsNullOrEmpty(result.Notice))
+                    {
+                        apiResult.Put("notice", result.Notice);
+                    }
+                    // "记住此设备"签发的设备凭据只在此返回一次（服务端只存哈希），客户端保存后下次登录带回
+                    if (!string.IsNullOrEmpty(result.DeviceToken))
+                    {
+                        apiResult.Put("deviceToken", result.DeviceToken);
+                    }
+
+                    return ToResponse(apiResult);
+                }
             }
-            catch (Exception ex)
-            {
-                logger.Error(ex, $"登录设备登记失败：UserId={user.UserId}");
-            }
-
-            CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
-            // 能走到签发说明身份校验已完整（未启用 2FA，或刚通过 2FA / 命中可信设备）。
-            // 标记该会话供扫码登录判定"移动端当前会话确实过了 2FA"。
-            CacheService.SetTwoFactorSessionOk(loginUser.UserId, loginUser.SessionId);
-
-            var token = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
-            ApiResult apiResult = new((int)ResultCode.SUCCESS, "success", token);
-            if (!string.IsNullOrEmpty(abnormalNotice))
-            {
-                apiResult.Put("notice", abnormalNotice);
-            }
-
-            return ToResponse(apiResult);
         }
         #endregion
 
@@ -625,7 +509,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <returns></returns>
         [Route("PhoneLogin")]
         [HttpPost]
-        [Log(Title = "手机号登录")]
+        // 同 /login：请求脱敏后保留便于排障（短信码 phoneCode 会打码），响应含 JWT 与设备凭据不落日志
+        [Log(Title = "手机号登录", IsSaveResponseData = false)]
         [AllowAnonymous]
         public IActionResult PhoneLogin([FromBody] PhoneLoginDto loginBody)
         {
@@ -654,21 +539,11 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
             sysTenantService.CheckTenant(loginBody.TenantId);
             var info = sysUserService.GetFirst(f => f.Phonenumber == loginBody.PhoneNum) ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "该手机号不存在", false);
-            var infoModel = info.Adapt<SysUserDto>();
             sysLoginService.CheckLockUser(info.UserName);
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
-            sysLoginService.PhoneLogin(loginBody,
-                new SysLogininfor() { LoginLocation = location, AuthType = LoginAuthType.SmsCode },
-                infoModel, out bool needTwoFactor);
 
-            // 双因子闸门：与账号密码登录共用一个出口，避免手机号登录成为绕过 2FA 的旁路
-            if (needTwoFactor)
-            {
-                return ToResponse(BuildTwoFactorTicket(info, loginBody.TenantId, loginBody.ClientId,
-                    loginBody.LoginIP, location, TwoFactorLoginSource.Phone));
-            }
-
-            return IssueToken(info, loginBody.TenantId, loginBody.ClientId, loginBody.LoginIP);
+            // 与账号密码登录共用一个出口，避免手机号登录成为绕过 2FA 的旁路
+            return ToLoginResponse(sysLoginService.PhoneLogin(loginBody, info, location));
         }
 
         /// <summary>

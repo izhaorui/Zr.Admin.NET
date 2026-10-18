@@ -49,7 +49,8 @@ namespace ZR.Model.System.Dto
         public bool RememberDevice { get; set; }
 
         /// <summary>
-        /// 设备标识（前端 fingerprintjs 的 visitorId）
+        /// **已废弃，服务端忽略**：设备凭据由第一步票据载荷绑定（<see cref="TwoFactorTicketPayload.DeviceTokenHash"/>），
+        /// 第二步不允许替换。保留字段仅为兼容仍在发送它的旧客户端。
         /// </summary>
         public string ClientId { get; set; }
 
@@ -73,6 +74,18 @@ namespace ZR.Model.System.Dto
         public string TenantId { get; set; }
 
         public string ClientId { get; set; }
+
+        /// <summary>
+        /// 第一步请求携带的设备凭据哈希（可为空＝新设备/未记住的设备）。
+        /// 绑定进票据后第二步只能用它登记/续信任，不允许在第二步替换设备。
+        /// </summary>
+        public string DeviceTokenHash { get; set; }
+
+        /// <summary>
+        /// 票据绝对过期时间。归还票据（输错重试）按此计算剩余 TTL，
+        /// 反复重试不得延长票据生命周期。
+        /// </summary>
+        public DateTime ExpiresAt { get; set; }
 
         public string LoginIP { get; set; }
 
@@ -193,6 +206,21 @@ namespace ZR.Model.System.Dto
         /// 首选方法（登录第二步默认展示哪种方式）
         /// </summary>
         public string PreferredMethod { get; set; }
+    }
+
+    /// <summary>
+    /// 登录设备登记结果。
+    /// </summary>
+    public class DeviceRecordResult
+    {
+        /// <summary>该设备标识首次出现（决定是否触发新设备提醒）</summary>
+        public bool IsNewDevice { get; set; }
+
+        /// <summary>
+        /// 本次服务端签发的设备凭据明文，仅在勾选"记住此设备"时非空。
+        /// 明文只返回这一次，服务端只存哈希；客户端须保存并在下次登录时带回。
+        /// </summary>
+        public string DeviceToken { get; set; }
     }
 
     /// <summary>

@@ -29,8 +29,14 @@
         public string TenantId { get; set; }
 
         /// <summary>
-        /// 设备标识（前端 fingerprintjs 的 visitorId），用于双因子"记住此设备"判定
+        /// 设备标识（前端 fingerprintjs 的 visitorId）。仅用于设备列表展示与审计，不参与"记住此设备"信任判定
         /// </summary>
         public string ClientId { get; set; }
+
+        /// <summary>
+        /// 设备凭据（勾选"记住此设备"后服务端签发、客户端保存并在下次登录带回）。
+        /// 命中信任设备时可跳过双因子第二步
+        /// </summary>
+        public string DeviceToken { get; set; }
     }
 }
