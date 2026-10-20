@@ -260,6 +260,9 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
 
             // 状态复核缓存立即失效：否则停用后仍有最长 60 秒的旧状态被放行
             CacheService.RemoveTenantActive(model.TenantId);
+            // 域名映射只收录 Status=0 的租户，状态切换后必须重载：
+            // 否则停用后域名最长 10 分钟仍解析到该租户，启用后域名最长 10 分钟解析不到该租户
+            _sysTenantService.RemoveDomainMapCache();
 
             // 停用租户后立即通知其在线用户下线，避免已发放的 token 在自然过期前仍可继续操作
             if (status == 1)

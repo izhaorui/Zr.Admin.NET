@@ -353,6 +353,9 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
             dto.UserIP = HttpContext.GetClientUserIp();
             sysTenantService.CheckTenant(dto.TenantId);
+            // 自助注册同样占用套餐用户配额：与后台新增(SysUserController.Add)/导入的校验保持一致，
+            // 否则匿名注册接口可绕开租户套餐的用户数上限。未启用多租户时该方法内部直接放行。
+            sysTenantService.EnsureTenantUserQuotaForAdd(dto.TenantId);
             using var tenantScope = TenantContext.Change(dto.TenantId);
             SysUser user = sysUserService.Register(dto);
             if (user.UserId > 0)
