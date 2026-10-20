@@ -122,6 +122,11 @@ namespace ZR.ServiceCore.Middleware
                         {
                             CacheService.SetUserSession(loginUser.UserId, loginUser.SessionId);
                         }
+
+                        // 同步续期"本会话已通过双因子"标记。
+                        // 它与单设备登录无关（扫码登录的 2FA 闸门用它判定移动端会话），但 TTL 与 token 同长：
+                        // 不在这里续期，就会出现"token 已续期仍有效、扫码却被告知请重新登录"的错判。
+                        CacheService.SetTwoFactorSessionOk(loginUser.UserId, loginUser.SessionId);
                     }
                     catch (Exception ex)
                     {
