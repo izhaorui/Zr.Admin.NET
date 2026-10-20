@@ -28,6 +28,8 @@ namespace ZR.ServiceCore.SqlSugar
         /// </param>
         public static void AddDb(this IServiceCollection services, IWebHostEnvironment environment, bool checkMigration = true)
         {
+            WarnLegacyDbConfig();
+
             var options = App.OptionsSetting;
             List<DbConfigs> dbConfigs = options.DbConfigs;
 
@@ -91,6 +93,32 @@ namespace ZR.ServiceCore.SqlSugar
             // （见 Program.cs 的 --initdb 分支），避免每次启动被阻塞/拖慢。此处仅保留幂等补列。
         }
 
+        /// <summary>
+        /// 遗留库配置项兼容提示（不阻断启动）。
+        /// 单库部署不需要配置 SystemDb / BizMainDb / MallDb，未配置时分别回退 "0" / "0" / "0"。
+        /// </summary>
+        private static void WarnLegacyDbConfig()
+        {
+            var configuration = App.Configuration;
+
+            var legacySystemDb = configuration?["SystemDb"];
+            if (!string.IsNullOrWhiteSpace(legacySystemDb)
+                && !string.Equals(legacySystemDb.Trim(), App.SystemDbConfigId, StringComparison.OrdinalIgnoreCase))
+            {
+                Log.WriteLine(ConsoleColor.Yellow,
+                    $"[多租户] 配置项 SystemDb={legacySystemDb} 已废弃并被忽略：系统库 ConfigId 固定为 \"{App.SystemDbConfigId}\"。"
+                    + $"请删除该项，并把原系统库连接的 ConfigId 调整为 \"{App.SystemDbConfigId}\"。");
+            }
+
+            var legacyMainDb = configuration?["MainDb"];
+            if (!string.IsNullOrWhiteSpace(legacyMainDb)
+                && !string.Equals(legacyMainDb.Trim(), App.SystemDbConfigId, StringComparison.OrdinalIgnoreCase))
+            {
+                Log.WriteLine(ConsoleColor.Yellow,
+                    $"[多租户] 配置项 MainDb={legacyMainDb} 已更名为 BizMainDb（旧键继续兼容）。"
+                    + "单库部署请直接删除该项，未配置时回退 \"0\"。");
+            }
+        }
 
         /// <summary>
         /// 数据库Aop设置

@@ -19,15 +19,24 @@ namespace ZR.Repository
     /// <typeparam name="T"></typeparam>
     public class BaseRepository<T> : SimpleClient<T> where T : class, new()
     {
+        /// <summary>
+        /// [Tenant] 特性中标记业务主库的 key（解析为 App.BizMainDbConfigId）
+        /// </summary>
+        public const string BizMainDbKey = "MainDb";
+
         public ITenant itenant = null;//多租户事务
         public BaseRepository(ISqlSugarClient context = null) : base(context)
         {
-            // 如果实现了公共数据库接口，则访问主库（ConfigId = "0"）
+            // 多租户：IMainDbEntity 走系统库；[Tenant("MainDb")] 走业务主库；其余走当前租户库
             if (App.IsTenantEnabled())
             {
                 if (typeof(IMainDbEntity).IsAssignableFrom(typeof(T)))
                 {
-                    Context = DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId); // 主库
+                    Context = DbScoped.SugarScope.GetConnectionScope(App.SystemDbConfigId); // 系统库
+                }
+                else if (IsBizMainDbKey(typeof(T).GetCustomAttribute<TenantAttribute>()?.configId))
+                {
+                    Context = DbScoped.SugarScope.GetConnectionScope(App.BizMainDbConfigId); // 业务主库
                 }
                 else
                 {
@@ -51,16 +60,24 @@ namespace ZR.Repository
                 var tenantAttr = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
                 if (tenantAttr != null)
                 {
-                    var resolved = App.Configuration[tenantAttr.ParseToString()] ?? tenantAttr;
+                    // [Tenant("MainDb")] → 业务主库；其他 [Tenant("X")] → App.Configuration["X"] ?? "X"（支持配置 key 引用）
+                    var resolved = IsBizMainDbKey(tenantAttr)
+                        ? App.BizMainDbConfigId
+                        : (App.Configuration[tenantAttr.ParseToString()] ?? tenantAttr);
                     Context = DbScoped.SugarScope.GetConnectionScope(resolved);
                 }
                 else
                 {
-                    Context = context ?? DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);//没有默认db0
+                    Context = context ?? DbScoped.SugarScope.GetConnectionScope(App.SystemDbConfigId);//无标记默认系统库
                 }
             }
             //Context = DbScoped.SugarScope.GetConnectionScopeWithAttr<T>();
             itenant = DbScoped.SugarScope;//设置租户接口
+        }
+
+        private static bool IsBizMainDbKey(object configId)
+        {
+            return string.Equals(configId?.ToString(), BizMainDbKey, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -96,11 +113,11 @@ namespace ZR.Repository
         }
 
         /// <summary>
-        /// 解析主库连接（MainDb配置不存在时默认0）。
+        /// 解析系统库连接（SystemDb 未配置时默认 "0"）。
         /// </summary>
         protected ISqlSugarClient ResolveMainDb()
         {
-            return DbScoped.SugarScope.GetConnectionScope(App.MainDbConfigId);
+            return DbScoped.SugarScope.GetConnectionScope(App.SystemDbConfigId);
         }
 
         #region add

@@ -163,19 +163,37 @@ namespace Infrastructure
                 return claimId;
             }
 
-            return MainDbConfigId;
+            return SystemDbConfigId;
         }
 
         /// <summary>
-        /// 主库 ConfigId（多租户架构中存放租户、套餐等共享数据），默认 "0"。
+        /// 系统库 ConfigId，固定为 "0"（存放租户、套餐、菜单、字典、任务等系统级数据，也是默认租户）。
         /// </summary>
-        public static string MainDbConfigId => Configuration["MainDb"] ?? "0";
+        /// <remarks>
+        /// 该值不再从配置读取：<c>--initdb</c> / CodeFirst 建表、<c>SqlSugarScope</c> 直查、
+        /// 系统实体上的 <c>[Tenant("0")]</c> 均硬编码 0，配成其他值只会让"建表库"与"运行时读库"不一致。
+        /// 配置项 <c>SystemDb</c> 已废弃，配置后被忽略并在启动时输出告警（见 <c>SqlsugarSetup.AddDb</c>）。
+        /// </remarks>
+        public const string SystemDbConfigId = "0";
 
         /// <summary>
-        /// 商城库 ConfigId（非SaaS模式下商城实体使用此 ConfigId），默认 "1"。
-        /// 在 appsettings.json 中通过 "MallDb" 配置项指定。
+        /// 主租户（主库）标识，等同于 <see cref="SystemDbConfigId"/>（"0"）。
+        /// 租户侧大量使用 <c>GetCurrentTenantId() == MainDbConfigId</c> 判断"是否主租户"。
+        /// 注意：它<b>不</b>对应配置项 "MainDb"（业务主库请用 <see cref="BizMainDbConfigId"/>）。
         /// </summary>
-        public static string MallDbConfigId => Configuration["MallDb"] ?? "0";
+        public static string MainDbConfigId => SystemDbConfigId;
+
+        /// <summary>
+        /// 业务主库 ConfigId（标记 <c>[Tenant("MainDb")]</c> 的实体落在此库），未配置时回退系统库。
+        /// 配置项优先 <c>BizMainDb</c>，兼容旧键 <c>MainDb</c>；单库部署无需配置。
+        /// </summary>
+        public static string BizMainDbConfigId => Configuration["BizMainDb"] ?? Configuration["MainDb"] ?? SystemDbConfigId;
+
+        /// <summary>
+        /// 商城库 ConfigId（仅非 SaaS 模式下商城实体使用），未配置时回退系统库。
+        /// 单库部署无需配置；SaaS 下商城实体按租户库路由，本项不生效。
+        /// </summary>
+        public static string MallDbConfigId => Configuration["MallDb"] ?? SystemDbConfigId;
 
         /// <summary>
         /// 是否启用多租户。
