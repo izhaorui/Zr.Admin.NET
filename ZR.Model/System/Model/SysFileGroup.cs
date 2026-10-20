@@ -4,6 +4,7 @@ namespace ZR.Model.System.Model
     /// 文件分组
     /// </summary>
     [SugarTable("sys_file_group")]
+    [Tenant("0")]
     public class SysFileGroup : IMainDbEntity
     {
         /// <summary>

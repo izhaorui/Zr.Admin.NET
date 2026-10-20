@@ -1,6 +1,7 @@
 ﻿namespace ZR.Model.System
 {
     [SugarTable("sys_file", "文件存储表")]
+    [Tenant("0")]
     public class SysFile : IMainDbEntity
     {
         /// <summary>

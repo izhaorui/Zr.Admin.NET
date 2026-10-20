@@ -6,6 +6,7 @@ namespace ZR.Model
     /// 用户系统消息（多租户：统一存主库，按 TenantId 隔离）
     /// </summary>
     [SugarTable("sys_user_msg")]
+    [Tenant("0")]
     public class SysUserMsg : IMainDbEntity
     {
         /// <summary>
