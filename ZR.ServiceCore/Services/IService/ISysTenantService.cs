@@ -27,6 +27,13 @@ namespace ZR.ServiceCore.Services
 		void CheckTenant(string tenantId);
 
 		/// <summary>
+		/// 租户当前是否可用（未停用、未过期、未删除）。供 JwtAuthMiddleware 做状态复核，
+		/// 弥补停服后存量 token 在有效期内仍可访问并自动续期的缺口。状态走 60 秒缓存。
+		/// </summary>
+		/// <param name="tenantId">租户标识</param>
+		bool IsTenantActive(string tenantId);
+
+		/// <summary>
 		/// 通过租户标识查询租户信息。
 		/// </summary>
 		/// <param name="tenantId"></param>

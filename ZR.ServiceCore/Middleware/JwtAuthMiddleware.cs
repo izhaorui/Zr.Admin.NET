@@ -31,16 +31,15 @@ namespace ZR.ServiceCore.Middleware
             TOKEN_REFRESH_THRESHOLD_MINUTES = _options.JwtSettings.RefreshTokenTime;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, ISysUserService sysUserService, ISysTenantService sysTenantService)
         {
             var path = context.Request.Path.Value ?? string.Empty;
 
-            // 如果请求是带扩展名的（即静态资源）
-            if (path.Contains('.'))
-            {
-                await _next(context);
-                return;
-            }
+            // 注意：不得以"路径含点即静态资源"作为放行依据。
+            // 静态文件由 Program.cs 中位于 UseRouting 之前的 UseStaticFiles 处理，不会进入本中间件；
+            // 而路由参数完全可能含点（如 system/CommonLang/key/a.b），一旦放行，
+            // 下游 ActionPermissionFilter 在未登录（info == null）时不会做任何权限校验，
+            // 等于任何带 string 路由参数的接口都可在未登录状态下访问。
             //_logger.LogInformation($"处理请求: {path}");
             // 白名单路径检查
             if (_whitelistPaths.Any(p => !string.IsNullOrEmpty(p) && path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
@@ -91,6 +90,27 @@ namespace ZR.ServiceCore.Middleware
                     await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.FORCE_LOGOUT, msg));
                     return;
                 }
+            }
+
+            // 状态复核：JWT 无状态，禁用用户 / 停服（过期）租户后，存量 token 在有效期内仍能通过验签，
+            // 且下方会自动续期，等于永久有效。必须放在续期之前判定 —— 先续期再拒绝毫无意义。
+            // 状态走 60 秒缓存（禁用/停服时主动清除、未命中回查库）；查询异常时放行，避免 DB 抖动踢掉全体在线用户。
+            if (!sysUserService.IsUserActive(loginUser.UserId))
+            {
+                string msg = $"账号[{loginUser.UserName}]已被禁用或删除，请联系管理员";
+                _logger.LogWarning($"请求访问[{url}]失败：{msg}, ip={ip}");
+                CacheService.RemoveUserSession(loginUser.UserId);
+                await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, msg));
+                return;
+            }
+
+            // 租户状态复核：停服/到期后存量 token 立即失效。主租户与未启用多租户时 IsTenantActive 直接返回 true。
+            if (!string.IsNullOrWhiteSpace(loginUser.TenantId) && !sysTenantService.IsTenantActive(loginUser.TenantId))
+            {
+                string msg = "当前租户已停用或已到期，请联系平台管理员";
+                _logger.LogWarning($"请求访问[{url}]失败：{msg}, tenant={loginUser.TenantId}, ip={ip}");
+                await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, msg));
+                return;
             }
 
             var now = DateTime.UtcNow;

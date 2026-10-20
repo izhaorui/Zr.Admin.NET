@@ -45,7 +45,13 @@ namespace ZR.ServiceCore.Middleware
                 return;
             }
 
-            if (context.IsAdmin())
+            // 主租户（平台）不受套餐限制：套餐约束的是租户订阅能力，平台自身没有套餐。
+            // 注意不能用"用户名是 admin"来豁免：用户名可被租户自行创建（新增用户只校验唯一性），
+            // 那等于给租户留了一个自建 admin 账号绕过套餐的后门。这里与 ActionPermissionFilter 同口径，
+            // 只认"当前租户是否为主库"。租户内的管理员角色不豁免，必须落在套餐权限内。
+            var tenantId = App.GetCurrentTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId)
+                || string.Equals(tenantId, App.MainDbConfigId, StringComparison.OrdinalIgnoreCase))
             {
                 await _next(context);
                 return;
@@ -62,13 +68,6 @@ namespace ZR.ServiceCore.Middleware
             // “common” 是“登录用户即可访问”的语义标记（见 ActionPermissionFilter），不参与租户套餐权限校验。
             // 否则会被当成真实权限去套餐列表里匹配，而套餐权限中只有具体功能权限、不含 “common”，导致所有 common 接口被误拒。
             if (string.Equals(permission, "common", StringComparison.OrdinalIgnoreCase))
-            {
-                await _next(context);
-                return;
-            }
-
-            var tenantId = App.GetCurrentTenantId();
-            if (string.IsNullOrWhiteSpace(tenantId))
             {
                 await _next(context);
                 return;

@@ -227,6 +227,8 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
             });
 
             _sysTenantService.RemoveDomainMapCache();
+            // 编辑接口可直接改 Status / ExpireTime，状态复核缓存必须同步失效
+            CacheService.RemoveTenantActive(model.TenantId);
             return SUCCESS(response);
         }
 
@@ -255,6 +257,9 @@ namespace ZR.Admin.WebApi.Controllers.System.tenant
             model.Status = status;
             model = model.ToUpdate(HttpContext);
             var response = _sysTenantService.Update(model, it => new { it.Status, it.Update_by, it.Update_time });
+
+            // 状态复核缓存立即失效：否则停用后仍有最长 60 秒的旧状态被放行
+            CacheService.RemoveTenantActive(model.TenantId);
 
             // 停用租户后立即通知其在线用户下线，避免已发放的 token 在自然过期前仍可继续操作
             if (status == 1)

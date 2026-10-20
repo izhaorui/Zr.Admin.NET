@@ -1,5 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Cache;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.SignalR;
 using MiniExcelLibs;
@@ -131,7 +132,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public Dictionary<string, string> GetDomainTenantMap()
         {
-            var map = CacheHelper.GetCache<Dictionary<string, string>>(TenantDomainMapCacheKey);
+            var map = CacheStore.Get<Dictionary<string, string>>(TenantDomainMapCacheKey);
             if (map != null)
             {
                 return map;
@@ -142,7 +143,7 @@ namespace ZR.ServiceCore.Services
                 .Where(x => !string.IsNullOrWhiteSpace(x.Domain))
                 .ToDictionary(x => x.Domain.Trim().ToLowerInvariant(), x => x.TenantId, StringComparer.OrdinalIgnoreCase);
 
-            CacheHelper.SetCache(TenantDomainMapCacheKey, map, 10);
+            CacheStore.Set(TenantDomainMapCacheKey, map, 10);
             return map;
         }
 
@@ -151,7 +152,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public void RemoveDomainMapCache()
         {
-            CacheHelper.Remove(TenantDomainMapCacheKey);
+            CacheStore.Remove(TenantDomainMapCacheKey);
         }
 
         /// <summary>
@@ -199,6 +200,54 @@ namespace ZR.ServiceCore.Services
             if (tenant.ExpireTime.HasValue && tenant.ExpireTime.Value < DateTime.Now)
             {
                 throw new CustomException(ResultCode.LOGIN_ERROR, "租户已过期", false);
+            }
+        }
+
+        /// <summary>
+        /// 租户当前是否可用（未停用、未过期、未删除）。供 JwtAuthMiddleware 做状态复核：
+        /// 停服只拦登录挡不住存量 token，令牌有效期内仍可继续访问且会被中间件自动续期。
+        /// 状态走 60 秒缓存（停服/续费时主动清除），未命中时回查一次主库。
+        /// </summary>
+        public bool IsTenantActive(string tenantId)
+        {
+            if (!App.IsTenantEnabled())
+            {
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return false;
+            }
+
+            var key = tenantId.Trim();
+            // 主租户即平台自身，不受"租户订阅状态"约束
+            if (string.Equals(key, App.MainDbConfigId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            try
+            {
+                var cached = CacheService.GetTenantActive(key);
+                if (cached.HasValue)
+                {
+                    return cached.Value == 1;
+                }
+
+                var tenant = GetByTenantId(key);
+                var active = tenant != null
+                    && tenant.DelFlag == DelFlagEnum.Normal
+                    && tenant.Status != 1
+                    && (!tenant.ExpireTime.HasValue || tenant.ExpireTime.Value >= DateTime.Now);
+                CacheService.SetTenantActive(key, active ? 1 : 0);
+                return active;
+            }
+            catch (Exception ex)
+            {
+                // 与用户状态复核同口径：DB 异常时放行，避免数据库抖动把全部租户踢下线
+                Log.WriteLine(ConsoleColor.Yellow, $"[SysTenantService] 租户状态复核失败，本次放行：TenantId={key}, 原因={ex.Message}");
+                return true;
             }
         }
 
@@ -416,6 +465,8 @@ namespace ZR.ServiceCore.Services
             tenant.Update_time = DateTime.Now;
             Update(tenant, it => new { it.Status, it.Remark, it.Update_by, it.Update_time });
             RemoveDomainMapCache();
+            // 状态复核缓存立即失效：SignalR 强退只管在线连接，存量 token 要靠复核拒绝
+            CacheService.RemoveTenantActive(normalizedTenantId);
 
             var suspendReason = string.IsNullOrEmpty(remark) ? "" : $"，原因：{remark}";
             SendTenantAdminMessage(normalizedTenantId, $"您的租户已暂停服务{suspendReason}，如有疑问请联系平台管理员。");
@@ -478,6 +529,9 @@ namespace ZR.ServiceCore.Services
             tenant.Update_by = operatorName;
             tenant.Update_time = DateTime.Now;
             Update(tenant, it => new { it.ExpireTime, it.Status, it.Remark, it.Update_by, it.Update_time });
+            // 续费恢复服务：清掉停用状态缓存与域名映射（映射只含启用租户，续费后需重新加载）
+            CacheService.RemoveTenantActive(tenantId);
+            RemoveDomainMapCache();
 
             // 同步当前生效的套餐绑定有效期：绑定EndTime原随开通时的ExpireTime写入，
             // 若不联动会在旧时间点失配，导致 ResolveActiveTenantPlanBinding 匹配失败静默回落默认套餐。
@@ -565,6 +619,8 @@ namespace ZR.ServiceCore.Services
             });
 
             RemoveDomainMapCache();
+            // 注销同样要让存量 token 立即失效
+            CacheService.RemoveTenantActive(tenantId);
             result.Success = true;
             result.Message = "租户删除完成";
             return result;
@@ -792,7 +848,7 @@ namespace ZR.ServiceCore.Services
                 Create_time = DateTime.Now
             }).ExecuteCommand();
 
-            CacheHelper.Remove($"tenant:plan:perms:{tenantId}");
+            CacheStore.Remove($"tenant:plan:perms:{tenantId}");
             SendTenantAdminMessage(tenantId, "您的租户套餐已变更，相关功能权限已同步更新。");
 
             InsertTenantOrder(tenantId, "plan-assign", planCode,
@@ -1264,7 +1320,7 @@ namespace ZR.ServiceCore.Services
 
             foreach (var tid in tenantIds)
             {
-                CacheHelper.Remove($"tenant:plan:perms:{tid}");
+                CacheStore.Remove($"tenant:plan:perms:{tid}");
             }
         }
 
@@ -1504,4 +1560,3 @@ namespace ZR.ServiceCore.Services
         }
     }
 }
-

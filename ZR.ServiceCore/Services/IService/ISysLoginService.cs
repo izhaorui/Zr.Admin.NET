@@ -81,7 +81,23 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public int DeleteLogininforByIds(long[] ids);
 
+        /// <summary>
+        /// 校验账号是否处于登录锁定期，锁定中直接抛出登录异常。
+        /// </summary>
+        /// <param name="userName">账号标识（密码登录为用户名，短信登录为手机号）</param>
         void CheckLockUser(string userName);
+
+        /// <summary>
+        /// 记录一次登录失败：失败次数达到 sys.account.maxRetryCount 时按 sys.account.lockTime 锁定账号。
+        /// </summary>
+        /// <param name="key">账号标识（密码登录为用户名，短信登录为手机号）</param>
+        void RecordLoginFailure(string key);
+
+        /// <summary>
+        /// 清除登录失败次数（登录成功或凭据校验通过后调用）
+        /// </summary>
+        /// <param name="key">账号标识（密码登录为用户名，短信登录为手机号）</param>
+        void ClearLoginFailure(string key);
         /// <summary>
         /// 查询登录日志统计
         /// </summary>

@@ -101,23 +101,58 @@ namespace ZR.ServiceCore.Services
             CacheHelper.Remove(ck);
         }
 
+        #region 登录失败计数与账号锁定
+        private static readonly string LoginFailPrefix = "CACHE-LOGIN-FAIL_";
+        private static readonly string LoginLockAlertPrefix = "CACHE-LOGIN-LOCK-ALERT_";
+
+        /// <summary>
+        /// 记录账号锁定时间点（Unix 秒，到该时间点自动解锁）。
+        /// 走 CacheStore：Redis 启用时多实例共享锁定状态，未启用时回退本地内存；
+        /// 不能直接用 CacheHelper（进程内缓存），否则多实例部署下每个实例各锁一半、重启即解锁。
+        /// </summary>
         public static void SetLockUser(string key, long val, int time)
         {
             var CK = BuildTenantKey("lock_user_" + key);
 
-            CacheHelper.SetCache(CK, val, time);
+            CacheStore.For(CacheBackend.Cache).Set(CK, val, time);
         }
 
+        /// <summary>
+        /// 读取账号锁定时间点，0 表示未锁定
+        /// </summary>
         public static long GetLockUser(string key)
         {
             var CK = BuildTenantKey("lock_user_" + key);
 
-            if (CacheHelper.Get(CK) is long t)
-            {
-                return t;
-            }
-            return 0;
+            return CacheStore.For(CacheBackend.Cache).Get<long?>(CK) ?? 0;
         }
+
+        /// <summary>
+        /// 登录失败次数 +1，返回累加后的次数。首次写入时设置过期时间，避免失败次数永久累积。
+        /// </summary>
+        public static long IncreaseLoginFail(string key, int ttlMinutes)
+        {
+            return CacheStore.For(CacheBackend.Cache).Increment(BuildTenantKey(LoginFailPrefix + key), ttlMinutes);
+        }
+
+        /// <summary>
+        /// 清除登录失败次数（登录成功后调用）
+        /// </summary>
+        public static void RemoveLoginFail(string key)
+        {
+            CacheStore.For(CacheBackend.Cache).Remove(BuildTenantKey(LoginFailPrefix + key));
+        }
+
+        /// <summary>
+        /// 锁定提醒限频：同一账号一轮锁定期内只提醒一次，防止被反复尝试刷爆系统消息。
+        /// </summary>
+        public static bool TryMarkLoginLockAlert(string key, int ttlMinutes)
+        {
+            if (ttlMinutes <= 0) ttlMinutes = 1;
+
+            return CacheStore.For(CacheBackend.Cache).TrySet(BuildTenantKey(LoginLockAlertPrefix + key), 1, ttlMinutes);
+        }
+        #endregion
 
         /// <summary>
         /// 缓存手机验证码
@@ -188,6 +223,67 @@ namespace ZR.ServiceCore.Services
         public static void RemoveMemberStatus(long memberId)
         {
             CacheStore.For(CacheBackend.Cache).Remove(BuildTenantKey(MemberStatusPrefix + memberId));
+        }
+        #endregion
+
+        #region 后台用户状态缓存（鉴权状态复核，TTL 60 秒）
+        private static readonly string UserStatusPrefix = "CACHE-USER-STATUS_";
+
+        /// <summary>
+        /// 缓存后台用户可用状态（1=不可用/已禁用或已删除，0=正常）。
+        /// 供 <see cref="Middleware.JwtAuthMiddleware"/> 做状态复核：JWT 无状态，
+        /// 仅靠登录时校验 Status 挡不住"先登录后被禁用，存量令牌在有效期内仍可调用"。
+        /// 禁用时主动清除并由复核重新回填，多实例下最迟 60 秒全端生效。
+        /// </summary>
+        public static void SetUserStatus(long userId, int status)
+        {
+            CacheStore.For(CacheBackend.Cache).Set(BuildTenantKey(UserStatusPrefix + userId), status, 1);
+        }
+
+        /// <summary>
+        /// 读取缓存的后台用户状态；未命中返回 null（调用方回查库）
+        /// </summary>
+        public static int? GetUserStatus(long userId)
+        {
+            return CacheStore.For(CacheBackend.Cache).Get<int?>(BuildTenantKey(UserStatusPrefix + userId));
+        }
+
+        /// <summary>
+        /// 清除后台用户状态缓存（启用/禁用/删除后调用）
+        /// </summary>
+        public static void RemoveUserStatus(long userId)
+        {
+            CacheStore.For(CacheBackend.Cache).Remove(BuildTenantKey(UserStatusPrefix + userId));
+        }
+        #endregion
+
+        #region 租户可用状态缓存（鉴权状态复核，TTL 60 秒）
+        private static readonly string TenantActivePrefix = "CACHE-TENANT-ACTIVE_";
+
+        /// <summary>
+        /// 缓存租户可用状态（1=可用，0=已停用/已过期/已删除）。
+        /// key 刻意不加当前租户前缀：租户状态是平台级数据，同一租户在任意上下文下只应有一份缓存，
+        /// 否则停服清除时只能清掉当前上下文那一份。
+        /// </summary>
+        public static void SetTenantActive(string tenantId, int active)
+        {
+            CacheStore.For(CacheBackend.Cache).Set(TenantActivePrefix + tenantId, active, 1);
+        }
+
+        /// <summary>
+        /// 读取缓存的租户可用状态；未命中返回 null（调用方回查库）
+        /// </summary>
+        public static int? GetTenantActive(string tenantId)
+        {
+            return CacheStore.For(CacheBackend.Cache).Get<int?>(TenantActivePrefix + tenantId);
+        }
+
+        /// <summary>
+        /// 清除租户可用状态缓存（停服/续费/注销后调用）
+        /// </summary>
+        public static void RemoveTenantActive(string tenantId)
+        {
+            CacheStore.For(CacheBackend.Cache).Remove(TenantActivePrefix + tenantId);
         }
         #endregion
 

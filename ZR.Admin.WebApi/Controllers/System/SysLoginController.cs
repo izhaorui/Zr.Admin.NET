@@ -517,8 +517,14 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (loginBody == null) { throw new CustomException("请求参数错误"); }
             loginBody.LoginIP = HttpContextExtension.GetClientUserIp(HttpContext);
 
+            // 手机号维度同样受登录锁定约束：锁定期间直接拒绝，不再消耗验证码校验
+            sysLoginService.CheckLockUser(loginBody.PhoneNum);
+
             if (!CacheService.CheckPhoneCode(loginBody.PhoneNum, loginBody.PhoneCode))
             {
+                // 验证码错误计入失败次数，与密码错误共用同一阈值；放在写日志之前，日志落库异常不影响锁定
+                sysLoginService.RecordLoginFailure(loginBody.PhoneNum);
+
                 // 短信验证码错误同样是登录失败，必须留痕 —— 此前这条路径完全不写登录日志，
                 // 导致"有人拿手机号在刷验证码"在审计里看不到。
                 var failClientInfo = HttpContext.GetClientInfo();

@@ -33,6 +33,8 @@ namespace ZR.ServiceCore.Services
         private readonly ISysTwoFactorService TwoFactorService;
         private readonly ISysRoleService roleService;
         private readonly ISysPermissionService permissionService;
+        // 登录失败锁定策略（sys.account.*）在主库 sys_config，必须经 ISysConfigService 读取
+        private readonly ISysConfigService sysConfigService;
 
         public SysLoginService(
             ISysUserService sysUserService, 
@@ -41,7 +43,8 @@ namespace ZR.ServiceCore.Services
             IStringLocalizer<SharedResource> localizer,
             ISysTwoFactorService twoFactorService,
             ISysRoleService roleService,
-            ISysPermissionService permissionService)
+            ISysPermissionService permissionService,
+            ISysConfigService sysConfigService)
         {
             SysUserService = sysUserService;
             this.sysUserMsgService = sysUserMsgService;
@@ -50,6 +53,7 @@ namespace ZR.ServiceCore.Services
             TwoFactorService = twoFactorService;
             this.roleService = roleService;
             this.permissionService = permissionService;
+            this.sysConfigService = sysConfigService;
         }
 
         /// <summary>双因子配置（与 <see cref="SysTwoFactorService"/> 同一节点，避免各处重复 Bind）</summary>
@@ -87,9 +91,14 @@ namespace ZR.ServiceCore.Services
             if (user == null || user.UserId <= 0)
             {
                 logininfor.Msg = _localizer["login_pwd_error"].Value;
+                // 凭据错误计入失败次数，达到阈值即锁定（此前只读不写，锁定永远不会生效）。
+                // 放在写日志之前：日志落库异常不应导致锁定失效。
+                RecordLoginFailure(loginBody.Username);
                 AddLoginInfo(logininfor, loginBody.TenantId);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
+            // 密码已校验通过：清空历史失败次数，避免"错几次后成功登录"仍被后续误锁
+            ClearLoginFailure(user.UserName);
             logininfor.UserId = user.UserId;
             if (user.Status == 1)
             {
@@ -156,6 +165,9 @@ namespace ZR.ServiceCore.Services
                 AddLoginInfo(logininfor, loginBody.TenantId);
                 throw new CustomException(ResultCode.LOGIN_ERROR, logininfor.Msg, false);
             }
+
+            // 短信验证码已校验通过，清空该账号的历史失败次数
+            ClearLoginFailure(user.UserName);
 
             // 回查实体：短信码校验与用户查询之间可能被改过状态，按库里最新值判定
             var entity = Context.Queryable<SysUser>().Where(it => it.UserId == user.UserId).First();
@@ -413,20 +425,165 @@ namespace ZR.ServiceCore.Services
 
         public void CheckLockUser(string userName)
         {
-            var lockTimeStamp = CacheService.GetLockUser(userName);
+            var key = NormalizeLoginKey(userName);
+            if (key.Length == 0) return;
+
+            long lockTimeStamp;
+            try
+            {
+                lockTimeStamp = CacheService.GetLockUser(key);
+            }
+            catch (Exception ex)
+            {
+                // 锁定是辅助安全措施，缓存不可用时不能反过来阻断全部登录
+                logger.Warn(ex, $"读取账号锁定状态失败，本次跳过锁定校验：Key={key}");
+                return;
+            }
+
+            if (lockTimeStamp <= 0) return;
+
             var lockTime = DateTimeHelper.ToLocalTimeDateBySeconds(lockTimeStamp);
             var ts = lockTime - DateTime.Now;
+            if (ts.TotalSeconds <= 0) return;
 
-            if (lockTimeStamp > 0 && ts.TotalSeconds > 0)
+            var minutes = (int)Math.Round(ts.TotalMinutes, 0);
+            // 锁定提醒限频：同一账号 60 分钟内只发一次，否则攻击者持续尝试会把系统消息刷爆
+            try
             {
-                // 账号锁定提醒：登录态尚未建立，使用 ClearFilter 跨数据权限解析用户后发送系统消息
-                var userId = Context.Queryable<SysUser>().ClearFilter().Where(u => u.UserName == userName).Select(u => u.UserId).First();
+                if (minutes > 0 && CacheService.TryMarkLoginLockAlert(key, Math.Max(minutes, 60)))
+                {
+                    NotifyUserLocked(key, minutes);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, $"账号锁定提醒发送失败：Key={key}");
+            }
+            throw new CustomException(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{minutes}分钟");
+        }
+
+        /// <summary>
+        /// 记录一次登录失败：失败次数达到阈值即锁定账号。
+        ///
+        /// 只由"凭据错误"触发（密码错、短信验证码错）；已禁用、租户停用等业务拒绝不计入，
+        /// 避免正常被禁用的账号反复累加锁定。按传入标识计数，用户不存在时同样计数 ——
+        /// 既不泄露账号是否存在，也不会因枚举不存在的用户名而锁住真实用户。
+        /// </summary>
+        public void RecordLoginFailure(string key)
+        {
+            key = NormalizeLoginKey(key);
+            if (key.Length == 0) return;
+
+            try
+            {
+                var (maxRetryCount, lockMinutes) = GetLoginLockOptions();
+                // 未配置或配置为 0 表示不启用锁定
+                if (maxRetryCount <= 0 || lockMinutes <= 0) return;
+
+                // 计数窗口不小于 30 分钟：太短会让攻击者"每次隔一会儿试一下"永远凑不满，
+                // 太长则正常用户偶发输错也会被累计到锁定。
+                var window = Math.Max(lockMinutes, 30);
+                var failCount = CacheService.IncreaseLoginFail(key, window);
+                if (failCount < maxRetryCount) return;
+
+                // 已在锁定期内不再写锁定，避免攻击者持续尝试把解锁时间无限推后
+                if (CacheService.GetLockUser(key) > 0) return;
+
+                var lockUntil = DateTimeOffset.Now.ToUnixTimeSeconds() + lockMinutes * 60L;
+                CacheService.SetLockUser(key, lockUntil, lockMinutes);
+                CacheService.RemoveLoginFail(key);
+                logger.Warn($"登录失败次数达到阈值，账号已锁定：Key={key}, 失败次数={failCount}, 锁定时长={lockMinutes}分钟");
+
+                if (CacheService.TryMarkLoginLockAlert(key, Math.Max(lockMinutes, 60)))
+                {
+                    NotifyUserLocked(key, lockMinutes);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 记录失败次数不能影响登录接口本身的返回结果
+                logger.Warn(ex, $"记录登录失败次数失败：Key={key}");
+            }
+        }
+
+        /// <summary>
+        /// 清除登录失败次数（登录成功或凭据校验通过后调用）
+        /// </summary>
+        public void ClearLoginFailure(string key)
+        {
+            key = NormalizeLoginKey(key);
+            if (key.Length == 0) return;
+
+            try
+            {
+                CacheService.RemoveLoginFail(key);
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, $"清除登录失败次数失败：Key={key}");
+            }
+        }
+
+        /// <summary>
+        /// 账号标识归一化：去空格并转小写。
+        /// 登录查询对用户名大小写不敏感（数据库排序规则），锁定键若区分大小写，
+        /// 攻击者换大小写即可绕过锁定。
+        /// </summary>
+        private static string NormalizeLoginKey(string key)
+        {
+            return string.IsNullOrWhiteSpace(key) ? string.Empty : key.Trim().ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// 读取登录失败锁定策略：sys.account.maxRetryCount（默认 5 次）、sys.account.lockTime（默认 10 分钟）
+        /// </summary>
+        private (int maxRetryCount, int lockMinutes) GetLoginLockOptions()
+        {
+            int maxRetryCount = 5;
+            int lockMinutes = 10;
+
+            try
+            {
+                var retryConfig = sysConfigService.GetSysConfigByKey("sys.account.maxRetryCount");
+                if (retryConfig != null && int.TryParse(retryConfig.ConfigValue, out var retry)) maxRetryCount = retry;
+
+                var lockConfig = sysConfigService.GetSysConfigByKey("sys.account.lockTime");
+                if (lockConfig != null && int.TryParse(lockConfig.ConfigValue, out var lockTime)) lockMinutes = lockTime;
+            }
+            catch (Exception ex)
+            {
+                // 配置读不到按默认策略走：锁定是安全兜底，不能因配置库抖动而失效
+                logger.Warn(ex, "读取登录失败锁定配置失败，使用默认策略");
+            }
+
+            return (maxRetryCount, lockMinutes);
+        }
+
+        /// <summary>
+        /// 锁定提醒：登录态尚未建立，使用 ClearFilter 跨数据权限解析用户后发送系统消息。
+        /// 按用户名查不到时（短信登录传的是手机号）再按手机号查一次。
+        /// </summary>
+        private void NotifyUserLocked(string key, int minutes)
+        {
+            try
+            {
+                var userId = Context.Queryable<SysUser>().ClearFilter()
+                    .Where(u => u.UserName == key)
+                    .Select(u => u.UserId).First();
+                if (userId <= 0)
+                {
+                    userId = Context.Queryable<SysUser>().ClearFilter()
+                        .Where(u => u.Phonenumber == key)
+                        .Select(u => u.UserId).First();
+                }
                 if (userId > 0)
                 {
-                    var minutes = Math.Round(ts.TotalMinutes, 0);
                     sysUserMsgService.AddSysUserMsg(userId, $"您的账号因多次登录失败已被锁定，剩余{minutes}分钟，解锁后请重试", UserMsgType.SYSTEM);
                 }
-                throw new CustomException(ResultCode.LOGIN_ERROR, $"你的账号已被锁,剩余{Math.Round(ts.TotalMinutes, 0)}分钟");
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, $"账号锁定提醒发送失败：Key={key}");
             }
         }
 

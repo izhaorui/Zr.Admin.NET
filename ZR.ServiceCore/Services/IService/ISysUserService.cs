@@ -71,6 +71,13 @@ namespace ZR.ServiceCore.Services
         public int ChangeUserStatus(SysUser user);
 
         /// <summary>
+        /// 后台用户是否可用（未禁用且未删除）。供 JwtAuthMiddleware 在令牌验签后做状态复核，
+        /// 弥补 JWT 无状态导致"禁用后存量令牌在有效期内仍可调用"的缺口。状态走 60 秒缓存。
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        bool IsUserActive(long userId);
+
+        /// <summary>
         /// 删除用户
         /// </summary>
         /// <param name="userid"></param>

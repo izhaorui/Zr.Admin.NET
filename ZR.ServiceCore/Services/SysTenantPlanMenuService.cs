@@ -1,6 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
-using ZR.Common;
+using Infrastructure.Cache;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Enums;
@@ -64,7 +64,7 @@ namespace ZR.ServiceCore.Services
                 return new List<string>();
 
             var cacheKey = $"tenant:plan:perms:{tenantId}";
-            var cached = CacheHelper.GetCache(cacheKey) as List<string>;
+            var cached = CacheStore.Get<List<string>>(cacheKey);
             if (cached != null)
                 return cached;
 
@@ -91,7 +91,7 @@ namespace ZR.ServiceCore.Services
                     .ToList();
             }
 
-            CacheHelper.SetCache(cacheKey, perms, 60 * 10);
+            CacheStore.Set(cacheKey, perms, 60 * 10);
             return perms;
         }
 
@@ -271,7 +271,7 @@ namespace ZR.ServiceCore.Services
 
             foreach (var tenantId in bindings)
             {
-                CacheHelper.Remove($"tenant:plan:perms:{tenantId}");
+                CacheStore.Remove($"tenant:plan:perms:{tenantId}");
             }
         }
 

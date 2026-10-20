@@ -20,6 +20,8 @@ namespace ZR.ServiceCore.Services
     [AppService(ServiceType = typeof(ISysUserService), ServiceLifetime = LifeTime.Transient)]
     public class SysUserService : BaseService<SysUser>, ISysUserService
     {
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private readonly ISysRoleService RoleService;
         private readonly ISysUserRoleService UserRoleService;
         private readonly ISysUserPostService UserPostService;
@@ -218,7 +220,7 @@ namespace ZR.ServiceCore.Services
         public int ChangeUser(SysUser user)
         {
             user.Update_time = DateTime.Now;
-            return Update(user, t => new
+            var result = Update(user, t => new
             {
                 t.NickName,
                 t.Email,
@@ -232,6 +234,23 @@ namespace ZR.ServiceCore.Services
                 t.Update_by,
                 t.Update_time
             }, true);
+
+            // 编辑用户接口同样会写 Status：与 changeStatus 保持一致，让状态复核缓存立即生效，
+            // 否则"编辑里勾选停用"要等缓存自然过期才踢得掉人。
+            if (result > 0 && user.UserId > 0)
+            {
+                if (user.Status == 1)
+                {
+                    CacheService.RemoveUserSession(user.UserId);
+                    CacheService.SetUserStatus(user.UserId, 1);
+                    CacheService.RemoveUserPerms(GlobalConstant.UserPermKEY + user.UserId);
+                }
+                else
+                {
+                    CacheService.RemoveUserStatus(user.UserId);
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -298,14 +317,62 @@ namespace ZR.ServiceCore.Services
             {
                 if (user.Status == 1)
                 {
+                    // 禁用即时生效：清会话只是"挤下线"（单设备登录开启时才拦得住），
+                    // 真正的兜底是写入不可用状态，由 JwtAuthMiddleware 在每次请求复核后拒绝存量 token。
+                    CacheService.RemoveUserSession(user.UserId);
+                    CacheService.SetUserStatus(user.UserId, 1);
+                    CacheService.RemoveUserPerms(GlobalConstant.UserPermKEY + user.UserId);
                     UserMsgService.AddSysUserMsg(user.UserId, "您的账号已被管理员禁用", UserMsgType.SYSTEM);
                 }
                 else if (user.Status == 0)
                 {
+                    // 清除缓存后由下一次请求复核重新回填，避免"启用后仍被缓存判为禁用"
+                    CacheService.RemoveUserStatus(user.UserId);
                     UserMsgService.AddSysUserMsg(user.UserId, "您的账号已恢复启用", UserMsgType.SYSTEM);
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// 后台用户是否可用（未禁用且未删除）。
+        ///
+        /// JWT 无状态：仅靠登录时校验 Status 挡不住"先登录后被禁用，存量令牌在有效期内仍可调用"，
+        /// 且中间件会自动续期，等于永久有效。本方法供中间件做状态复核。
+        /// 状态走 60 秒缓存（Redis/内存由 CacheStore 按配置自动切换），禁用时主动清除，
+        /// 多实例下最迟 60 秒全端生效；缓存未命中时回查一次库。
+        /// </summary>
+        public bool IsUserActive(long userId)
+        {
+            if (userId <= 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                var cached = CacheService.GetUserStatus(userId);
+                if (cached.HasValue)
+                {
+                    return cached.Value == 0;
+                }
+
+                // ClearFilter：状态复核只关心"这人还能不能登录"，不应受数据权限/租户过滤影响而查不到
+                var user = Context.Queryable<SysUser>().ClearFilter()
+                    .Where(it => it.UserId == userId)
+                    .Select(it => new { it.Status, it.DelFlag })
+                    .First();
+                var status = user == null || user.Status == 1 || user.DelFlag == DelFlagEnum.Deleted ? 1 : 0;
+                CacheService.SetUserStatus(userId, status);
+                return status == 0;
+            }
+            catch (Exception ex)
+            {
+                // 查询/缓存异常时放行：业务层查询同样依赖 DB 与缓存，它们不可用时不构成额外安全增量，
+                // 但若这里直接拒绝，DB/Redis 抖动会导致全部在线用户被踢出。
+                logger.Warn(ex, $"用户状态复核失败，本次放行：UserId={userId}");
+                return true;
+            }
         }
 
         /// <summary>
@@ -324,6 +391,13 @@ namespace ZR.ServiceCore.Services
                 UserPostService.Delete(userid);
                 Update(new SysUser() { UserId = userid, DelFlag = DelFlagEnum.Deleted }, it => new { it.DelFlag }, f => f.UserId == userid);
             });
+            if (result.IsSuccess)
+            {
+                // 删除同样要让存量 token 立即失效，否则被删用户仍可在令牌有效期内调用接口
+                CacheService.RemoveUserSession(userid);
+                CacheService.SetUserStatus(userid, 1);
+                CacheService.RemoveUserPerms(GlobalConstant.UserPermKEY + userid);
+            }
             return result.IsSuccess ? 1 : 0;
         }
 
