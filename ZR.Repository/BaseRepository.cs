@@ -55,16 +55,12 @@ namespace ZR.Repository
             else
             {
                 //通过 [Tenant] 特性拿到 ConfigId，支持配置 key 引用
-                // [Tenant("MallDb")] → App.Configuration["MallDb"] ?? "MallDb" → "1"
+                // [Tenant("MallDb")] → App.MallDbConfigId（未配置 MallDb 时回退系统库 "0"，单库部署免配置）
                 // [Tenant("1")]      → App.Configuration["1"] ?? "1"          → "1"（向后兼容）
                 var tenantAttr = typeof(T).GetCustomAttribute<TenantAttribute>()?.configId;
                 if (tenantAttr != null)
                 {
-                    // [Tenant("MainDb")] → 业务主库；其他 [Tenant("X")] → App.Configuration["X"] ?? "X"（支持配置 key 引用）
-                    var resolved = IsBizMainDbKey(tenantAttr)
-                        ? App.BizMainDbConfigId
-                        : (App.Configuration[tenantAttr.ParseToString()] ?? tenantAttr);
-                    Context = DbScoped.SugarScope.GetConnectionScope(resolved);
+                    Context = DbScoped.SugarScope.GetConnectionScope(ResolveDbConfigId(tenantAttr));
                 }
                 else
                 {
@@ -78,6 +74,27 @@ namespace ZR.Repository
         private static bool IsBizMainDbKey(object configId)
         {
             return string.Equals(configId?.ToString(), BizMainDbKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 解析 [Tenant] 特性标记的 ConfigId：
+        /// MainDb → 业务主库；MallDb → 商城库（未配置时回退系统库 "0"）；
+        /// 其他值按配置 key 引用解析，找不到时保持原值，便于暴露明确的配置错误。
+        /// </summary>
+        private static string ResolveDbConfigId(object configId)
+        {
+            var key = configId?.ToString();
+            if (IsBizMainDbKey(key))
+            {
+                return App.BizMainDbConfigId;
+            }
+
+            if (string.Equals(key, "MallDb", StringComparison.OrdinalIgnoreCase))
+            {
+                return App.MallDbConfigId;
+            }
+
+            return App.Configuration[key] ?? key;
         }
 
         /// <summary>

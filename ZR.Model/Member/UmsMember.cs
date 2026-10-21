@@ -2,7 +2,7 @@ namespace ZR.Model.Member
 {
     /// <summary>
     /// 通用会员表（C 端统一身份，与后台账号 sys_user 完全隔离）。
-    /// 库归属：使用 [Tenant("MallDb")]。非 SaaS 解析为 App.Configuration["MallDb"]（商城库）；
+    /// 库归属：使用 [Tenant("MallDb")]。非 SaaS 解析为 App.MallDbConfigId（未配置 MallDb 时回退系统库 "0"）；
     /// SaaS 由 BaseRepository 直接路由到当前租户库，天然满足"与商城同库"，便于同库模块复用。
     /// </summary>
     [SugarTable("ums_member", "通用会员表")]
