@@ -17,6 +17,7 @@ namespace ZR.Tasks
         /// </summary>
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         private const int MaxJobMessageLength = 2000;
+        private const int MaxExceptionLength = 5000;
         private const string SuccessMessage = "success";
 
         /// <summary>
@@ -48,24 +49,27 @@ namespace ZR.Tasks
             Func<Task<string>> job,
             bool preserveQuartzException)
         {
-            var dispatcherMode = context.MergedJobDataMap.ContainsKey("DispatcherMode") &&
-                Convert.ToBoolean(context.MergedJobDataMap["DispatcherMode"]);
             var stopwatch = Stopwatch.StartNew();
             int status = 0;
-            string logMsg;
-            string tenantId = context.MergedJobDataMap.GetString("TenantId");
-            if (string.IsNullOrWhiteSpace(tenantId))
-            {
-                logger.Warn("任务执行时未携带 TenantId，任务可能在默认/空租户上下文中运行");
-            }
+            string logMsg = SuccessMessage;
+            string tenantId = null;
+            bool dispatcherMode = false;
             Exception jobException = null;
             IDisposable tenantScope = null;
-            if (!dispatcherMode)
-            {
-                tenantScope = TenantContext.Change(tenantId);
-            }
+
             try
             {
+                dispatcherMode = GetDataBool(context, "DispatcherMode");
+                tenantId = GetDataString(context, "TenantId") ?? TenantContext.CurrentTenantId;
+                if (string.IsNullOrWhiteSpace(tenantId))
+                {
+                    logger.Warn("任务执行时未携带 TenantId，任务可能在默认/空租户上下文中运行");
+                }
+                if (!dispatcherMode)
+                {
+                    tenantScope = TenantContext.Change(tenantId);
+                }
+
                 var result = await job();
                 logMsg = TruncateMessage(result);
             }
@@ -88,6 +92,7 @@ namespace ZR.Tasks
                 Elapsed = stopwatch.Elapsed.TotalMilliseconds,
                 Status = status.ToString(),
                 JobMessage = logMsg,
+                Exception = FormatException(jobException),
                 TenantId = tenantId
             };
 
@@ -124,6 +129,32 @@ namespace ZR.Tasks
             return message.Length <= MaxJobMessageLength ? message : message[..MaxJobMessageLength];
         }
 
+        private static string FormatException(Exception exception)
+        {
+            if (exception == null)
+            {
+                return null;
+            }
+
+            var text = exception.ToString();
+            return text.Length <= MaxExceptionLength ? text : text[..MaxExceptionLength];
+        }
+
+        /// <summary>
+        /// 安全读取 JobDataMap 字符串：Quartz 的 GetString 在键不存在时会抛 KeyNotFoundException。
+        /// </summary>
+        private static string GetDataString(IJobExecutionContext context, string key)
+        {
+            var data = context.MergedJobDataMap;
+            return data.ContainsKey(key) ? data.GetString(key) : null;
+        }
+
+        private static bool GetDataBool(IJobExecutionContext context, string key)
+        {
+            var data = context.MergedJobDataMap;
+            return data.ContainsKey(key) && Convert.ToBoolean(data[key]);
+        }
+
         /// <summary>
         /// 记录到日志
         /// </summary>
@@ -140,8 +171,8 @@ namespace ZR.Tasks
 
             logModel.InvokeTarget = job.JobType.FullName;
             var mergedData = context.MergedJobDataMap;
-            logModel.TraceId = mergedData.GetString("TraceId") ?? Activity.Current?.TraceId.ToString();
-            logModel.Operator = mergedData.GetString("UserName");
+            logModel.TraceId = GetDataString(context, "TraceId") ?? Activity.Current?.TraceId.ToString();
+            logModel.Operator = GetDataString(context, "UserName");
             try
             {
                 var isManualObj = mergedData.ContainsKey("IsManual") ? mergedData["IsManual"] : null;
@@ -154,7 +185,7 @@ namespace ZR.Tasks
             {
             }
 
-            logModel.TriggerSource = mergedData.GetString("TriggerSource");
+            logModel.TriggerSource = GetDataString(context, "TriggerSource");
             logModel = await tasksLogService.AddTaskLog(job.Key.Name, logModel);
 
             await taskQzService.UpdateAsync(f => new SysTasks()

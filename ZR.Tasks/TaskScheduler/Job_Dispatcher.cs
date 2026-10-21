@@ -32,10 +32,11 @@ namespace ZR.Tasks.TaskScheduler
         /// 仅需覆盖单次执行耗时以避免多实例并发重复执行。
         /// </summary>
         private const int DispatchDedupMinutes = 30;
+        private const int MaxExceptionLength = 5000;
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var taskId = context.MergedJobDataMap.GetString("TaskId") ?? context.JobDetail.Key.Name;
+            var taskId = GetDataString(context, "TaskId") ?? context.JobDetail.Key.Name;
             var taskService = (ISysTasksQzService)App.GetRequiredService(typeof(ISysTasksQzService));
             var logService = (ISysTasksLogService)App.GetRequiredService(typeof(ISysTasksLogService));
 
@@ -63,7 +64,9 @@ namespace ZR.Tasks.TaskScheduler
                 return;
             }
 
-            // 标记本次为调度器分发模式，供 JobBase 识别并跳过日志/统计
+            // 标记本次为调度器分发模式，供 JobBase 识别并跳过日志/统计。
+            // Quartz 的 MergedJobDataMap 是触发时生成的快照，只改 JobDetail.JobDataMap 任务内部读不到，需同时写入。
+            context.MergedJobDataMap["DispatcherMode"] = true;
             context.JobDetail.JobDataMap["DispatcherMode"] = true;
 
             var overallStatus = "0";
@@ -77,6 +80,7 @@ namespace ZR.Tasks.TaskScheduler
                 var sw = Stopwatch.StartNew();
                 var status = "0";
                 var msg = "success";
+                Exception jobException = null;
 
                 try
                 {
@@ -86,6 +90,7 @@ namespace ZR.Tasks.TaskScheduler
                 {
                     status = "1";
                     msg = ex.Message;
+                    jobException = ex;
                     overallStatus = "1";
                     overallMsg = msg;
                     logger.Error(ex, "任务分发执行失败: task={TaskId}, tenant={TenantId}", taskId, tenantId);
@@ -99,12 +104,13 @@ namespace ZR.Tasks.TaskScheduler
                 {
                     Status = status,
                     JobMessage = msg,
+                    Exception = FormatException(jobException),
                     Elapsed = sw.Elapsed.TotalMilliseconds,
                     TenantId = tenantId,
-                    Operator = context.MergedJobDataMap.GetString("UserName"),
-                    TraceId = context.MergedJobDataMap.GetString("TraceId") ?? Activity.Current?.TraceId.ToString(),
+                    Operator = GetDataString(context, "UserName"),
+                    TraceId = GetDataString(context, "TraceId") ?? Activity.Current?.TraceId.ToString(),
                     IsManual = context.MergedJobDataMap.ContainsKey("IsManual") ? Convert.ToInt32(context.MergedJobDataMap["IsManual"]) : 0,
-                    TriggerSource = context.MergedJobDataMap.GetString("TriggerSource"),
+                    TriggerSource = GetDataString(context, "TriggerSource"),
                     InvokeTarget = invokeTarget
                 }, template);
             }
@@ -133,6 +139,26 @@ namespace ZR.Tasks.TaskScheduler
                 3 => "SqlExecute",
                 _ => $"{task.AssemblyName}.{task.ClassName}"
             };
+        }
+
+        private static string FormatException(Exception exception)
+        {
+            if (exception == null)
+            {
+                return null;
+            }
+
+            var text = exception.ToString();
+            return text.Length <= MaxExceptionLength ? text : text[..MaxExceptionLength];
+        }
+
+        /// <summary>
+        /// 安全读取 JobDataMap 字符串：Quartz 的 GetString 在键不存在时会抛 KeyNotFoundException。
+        /// </summary>
+        private static string GetDataString(IJobExecutionContext context, string key)
+        {
+            var data = context.MergedJobDataMap;
+            return data.ContainsKey(key) ? data.GetString(key) : null;
         }
 
         private static List<string> ResolveTargetTenantIds(string tenantExpression)
@@ -228,7 +254,10 @@ namespace ZR.Tasks.TaskScheduler
             var jobObj = App.GetService(jobType) ?? Activator.CreateInstance(jobType)
                 ?? throw new CustomException($"无法实例化任务类型: {jobType.FullName}");
 
-            // 兼容现有 JobBase 逻辑：把本次租户写入上下文 Map。
+            // 兼容现有 JobBase/自定义 Job 逻辑：把本次租户写入上下文 Map。
+            // Quartz 的 MergedJobDataMap 是触发时快照，仅写 JobDetail.JobDataMap 时任务内部读取会抛
+            // KeyNotFoundException: Key TenantId not found，因此必须直接写入 MergedJobDataMap。
+            context.MergedJobDataMap["TenantId"] = tenantId;
             context.JobDetail.JobDataMap["TenantId"] = tenantId;
 
             if (jobObj is IJob quartzJob)
