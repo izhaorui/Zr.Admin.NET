@@ -216,6 +216,9 @@ namespace ZR.Admin.WebApi.Controllers.System
                 permissions,
                 isDefaultModifyPwd = sysUserService.IsInitPassword(user.PwdUpdateTime),
                 isPasswordExpired = sysUserService.IsPasswordExpired(user.PwdUpdateTime),
+                // 多租户是否开启：tenant 品牌对象在主租户无 sys_tenant 记录时也为 null，
+                // 不能凭它反推开关，客户端（如 App 我的页/我的租户入口）据此决定能否调用租户自助接口
+                useTenant = App.IsTenantEnabled(),
                 tenant
             });
         }
