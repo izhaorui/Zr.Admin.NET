@@ -1,7 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Cache;
 using SqlSugar.IOC;
-using ZR.Common;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -25,9 +25,38 @@ namespace ZR.ServiceCore.Services
         private const int CACHE_EXPIRE_MINUTES = 10;
 
         /// <summary>
+        /// 字典缓存版本号过期时间（分钟）。远大于数据缓存 TTL，避免版本号回绕后命中旧 key。
+        /// </summary>
+        private const int CACHE_VERSION_EXPIRE_MINUTES = 60 * 24 * 30;
+
+        /// <summary>
         /// 缓存 Key 前缀，按当前租户隔离
         /// </summary>
         private static string TCacheKey(string suffix) => $"{App.GetCurrentTenantId()}:{suffix}";
+
+        /// <summary>
+        /// 字典缓存版本号 key。任何字典写操作自增版本号，旧版本 key 立即失效；
+        /// 版本号存放在 CacheStore，启用 Redis 时可跨实例生效。
+        /// </summary>
+        private static string DictCacheVersionKey => TCacheKey("dict:cacheVersion");
+
+        private static long GetDictCacheVersion()
+        {
+            return CacheStore.Default.Get<long?>(DictCacheVersionKey) ?? 0;
+        }
+
+        /// <summary>
+        /// 推进字典缓存版本，使单条/批量/按类型缓存全部失效。
+        /// </summary>
+        private static void InvalidateDictCache()
+        {
+            CacheStore.Default.Increment(DictCacheVersionKey, CACHE_VERSION_EXPIRE_MINUTES);
+        }
+
+        private static string DictCacheKey(string suffix)
+        {
+            return TCacheKey($"dict:v{GetDictCacheVersion()}:{suffix}");
+        }
 
         /// <summary>
         /// 主库+字典值组合 Key，用于合并时快速查找
@@ -158,9 +187,10 @@ namespace ZR.ServiceCore.Services
         /// <returns>合并后的字典数据列表</returns>
         public List<SysDictData> SelectDictDataByType(string dictType)
         {
-            string cacheKey = TCacheKey($"SelectDictDataByType_{dictType}");
+            string cacheKey = DictCacheKey($"type:{dictType}");
 
-            if (CacheHelper.GetCache(cacheKey) is List<SysDictData> cached)
+            var cached = CacheStore.Default.Get<List<SysDictData>>(cacheKey);
+            if (cached != null)
             {
                 return cached;
             }
@@ -178,7 +208,7 @@ namespace ZR.ServiceCore.Services
                 list = Merge(list, extensionList).Where(x => x.Status != "1").ToList();
             }
 
-            CacheHelper.SetCache(cacheKey, list, CACHE_EXPIRE_MINUTES);
+            CacheStore.Default.Set(cacheKey, list, CACHE_EXPIRE_MINUTES);
             return list;
         }
 
@@ -190,9 +220,10 @@ namespace ZR.ServiceCore.Services
             if (dictTypes == null || dictTypes.Length == 0) return new List<SysDictDataDto>();
 
             var sortedTypes = dictTypes.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray();
-            string cacheKey = TCacheKey($"SelectDictDataByTypes_{string.Join(",", sortedTypes)}");
+            string cacheKey = DictCacheKey($"types:{string.Join(",", sortedTypes)}");
 
-            if (CacheHelper.GetCache(cacheKey) is List<SysDictDataDto> cached)
+            var cached = CacheStore.Default.Get<List<SysDictDataDto>>(cacheKey);
+            if (cached != null)
             {
                 return cached;
             }
@@ -215,7 +246,7 @@ namespace ZR.ServiceCore.Services
                 mainList = MergeTenantDictDataForTypes(sortedTypes.ToList(), mainList);
             }
 
-            CacheHelper.SetCache(cacheKey, mainList, CACHE_EXPIRE_MINUTES);
+            CacheStore.Default.Set(cacheKey, mainList, CACHE_EXPIRE_MINUTES);
             return mainList;
         }
 
@@ -249,8 +280,9 @@ namespace ZR.ServiceCore.Services
                 };
             }
 
-            string CK = TCacheKey($"SelectDictDataByCode_{dictCode}");
-            if (CacheHelper.GetCache(CK) is SysDictData cached)
+            string CK = DictCacheKey($"code:{dictCode}");
+            var cached = CacheStore.Default.Get<SysDictData>(CK);
+            if (cached != null)
             {
                 return cached;
             }
@@ -263,7 +295,10 @@ namespace ZR.ServiceCore.Services
                 mainItem = ApplySingleOverride(mainItem, ext);
             }
 
-            CacheHelper.SetCache(CK, mainItem, 5);
+            if (mainItem != null)
+            {
+                CacheStore.Default.Set(CK, mainItem, 5);
+            }
             return mainItem;
         }
 
@@ -412,33 +447,11 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 清除指定字典类型的合并缓存
+        /// 字典数据变更后推进缓存版本，单条/批量/按类型缓存统一失效。
         /// </summary>
-        private void ClearDictTypeCache(string dictType)
-        {
-            CacheHelper.Remove(TCacheKey($"SelectDictDataByType_{dictType}"));
-            // 批量缓存 key 无法精准定位，使用前缀移除
-            RemoveCacheByPrefix(TCacheKey("SelectDictDataByTypes_"));
-        }
+        private static void ClearDictTypeCache(string dictType) => InvalidateDictCache();
 
-        /// <summary>
-        /// 清除单条字典数据缓存
-        /// </summary>
-        private void ClearDictCodeCache(long dictCode)
-        {
-            CacheHelper.Remove(TCacheKey($"SelectDictDataByCode_{dictCode}"));
-        }
-
-        /// <summary>
-        /// 按前缀移除缓存（CacheHelper 内部维护的 _keys 列表）
-        /// </summary>
-        private void RemoveCacheByPrefix(string prefix)
-        {
-            foreach (var key in CacheHelper.GetCacheKeys().Where(k => k != null && k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList())
-            {
-                CacheHelper.Remove(key);
-            }
-        }
+        private static void ClearDictCodeCache(long dictCode) => InvalidateDictCache();
 
         #endregion
 
@@ -619,7 +632,21 @@ namespace ZR.ServiceCore.Services
                 return 1;
             }
 
-            return Update(data, it => new { it.Status }, f => f.DictCode == data.DictCode);
+            var result = Update(data, it => new { it.Status }, f => f.DictCode == data.DictCode);
+            if (result > 0)
+            {
+                var dictType = data.DictType;
+                if (string.IsNullOrWhiteSpace(dictType))
+                {
+                    dictType = GetFirst(f => f.DictCode == data.DictCode)?.DictType;
+                }
+                if (!string.IsNullOrWhiteSpace(dictType))
+                {
+                    ClearDictTypeCache(dictType);
+                }
+                ClearDictCodeCache(data.DictCode);
+            }
+            return result;
         }
 
         /// <summary>
@@ -699,7 +726,21 @@ namespace ZR.ServiceCore.Services
                 return dictCodes.Length;
             }
 
-            return Delete(dictCodes);
+            // 非 SaaS / 主租户：删除主库数据后同步清理字典缓存
+            var deleteItems = Queryable()
+                .Where(x => dictCodes.Contains(x.DictCode))
+                .Select(x => new { x.DictCode, x.DictType })
+                .ToList();
+            var result = Delete(dictCodes);
+            if (result > 0)
+            {
+                foreach (var item in deleteItems)
+                {
+                    ClearDictTypeCache(item.DictType);
+                    ClearDictCodeCache(item.DictCode);
+                }
+            }
+            return result;
         }
 
         /// <summary>

@@ -63,6 +63,8 @@ namespace ZR.Common
 
         /// <summary>
         /// 设置缓存
+        /// 注意：本方法不登记 key，GetCacheKeys/按前缀删除无法感知；
+        /// 需要按前缀清理缓存时请使用 <see cref="SetCaches"/>（秒）。
         /// </summary>
         /// <param name="CacheKey">key</param>
         /// <param name="objObject">值</param>
