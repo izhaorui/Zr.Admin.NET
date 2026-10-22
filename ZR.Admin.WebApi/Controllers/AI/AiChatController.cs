@@ -117,10 +117,10 @@ namespace ZR.Admin.WebApi.Controllers.AI
         /// </summary>
         [HttpGet("session/{sessionId}/messages")]
         [ActionPermissionFilter(Permission = "common")]
-        public async Task<IActionResult> Messages(long sessionId)
+        public async Task<IActionResult> Messages(long sessionId, int limit = 0)
         {
             var userId = HttpContext.GetUId();
-            return SUCCESS(await _aiChatService.GetMessagesAsync(sessionId, userId));
+            return SUCCESS(await _aiChatService.GetMessagesAsync(sessionId, userId, limit));
         }
 
         /// <summary>
@@ -219,9 +219,14 @@ namespace ZR.Admin.WebApi.Controllers.AI
             catch (Exception ex)
             {
                 _logger.Error($"AI 流式对话异常 sessionId={parm.SessionId} userId={userId} msg={AiHelper.ClipText(parm.Message, 200)} err={ex}");
+                // 前端只展示通用提示；完整原因在 _logger.Error（含状态码/URI/model/返回体），
+                // ai_call_log 的 ErrorMsg/HttpStatusCode/ErrorType/ProviderRequestId 也会留存，可在「AI 用量」日志详情里查询。
+                var errorText = ex is AiException aiEx
+                    ? aiEx.UserMessage
+                    : "AI 服务调用失败，请稍后重试";
                 try
                 {
-                    await WriteEventAsync(new SysAiChatStreamDto { Type = "error", Error = ex.Message }, aborted);
+                    await WriteEventAsync(new SysAiChatStreamDto { Type = "error", Error = errorText }, aborted);
                 }
                 catch
                 {

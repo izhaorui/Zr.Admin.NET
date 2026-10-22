@@ -10,19 +10,21 @@ using ZR.Model.AI;
 namespace ZR.ServiceCore.AI.Governance
 {
     /// <summary>
-    /// AI 统一治理入口：主库策略解析、额度检查、单实例并发控制及调用流水结算。
+    /// AI 统一治理入口：主库策略解析、额度检查、并发控制及调用流水结算。
     /// 角色策略表示“具有该角色的每用户额度”，不作为角色成员共享池。
+    /// 并发计数与在途额度经 CacheStore 原子加减：配置 Redis 时跨实例共享，否则回落进程内内存（单实例语义）。
     /// </summary>
     [AppService(ServiceType = typeof(IAiCallGovernance), ServiceLifetime = LifeTime.Transient)]
     public class AiCallGovernanceService : BaseService<AiAccessPolicy>, IAiCallGovernance
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private static readonly object ReservationLock = new();
-        // ⚠️ 单实例假设：并发计数与在途预留是进程内状态，多实例部署时各进程独立计数，
-        // 实际并发上限 = 实例数 × 配置值（限流被放大）。需要严格全局并发时，应改用 Redis 等
-        // 分布式计数（项目已有 Infrastructure/Cache/CacheStore、RedisServer 可复用）。
-        private static readonly Dictionary<string, int> ConcurrentCounts = new(StringComparer.OrdinalIgnoreCase);
-        private static readonly Dictionary<string, ActiveReservation> ActiveReservations = new(StringComparer.OrdinalIgnoreCase);
+        /// <summary>在途计数的过期时间（分钟）：正常结算会即时回滚；异常遗留的计数在空闲后自动回收。</summary>
+        private const int ReservationExpireMinutes = 30;
+        private const string ConcurrencyKeyPrefix = "ai:conc:";
+        private const string InflightTokenKeyPrefix = "ai:inflight:tok:";
+        private const string InflightAmountKeyPrefix = "ai:inflight:amt:";
+        /// <summary>金额以百万分之一的整数计数，使在途金额可用原子 INCRBY 累加（向上取整，保守计入）。</summary>
+        private const decimal AmountMicroScale = 1_000_000m;
         /// <summary>分钟限流键过期时间（分钟）：需覆盖一个分钟桶并留裕量，防止跨分钟边界丢计数。</summary>
         private const int ChatRateWindowExpireMinutes = 2;
         // ⚠️ 单实例/单库假设：计量断路器是进程内全局开关，任一 DB 读写失败即对所有租户/用户关闭普通 AI
@@ -140,7 +142,7 @@ namespace ZR.ServiceCore.AI.Governance
                 await RejectAsync(lease, "minute_calls", rateMessage);
             }
 
-            // 额度用量预读：DB 查询放在锁区之外，避免把并发调用串行化（原先这些查询都在全局闸门内）。
+            // 额度用量预读：DB 查询先于预留完成，预留本身为跨实例原子加减，故预读不需要放进任何全局闸门。
             var probes = new List<QuotaProbe>();
             CollectProbes(probes, globalLimits, "global");
             CollectProbes(probes, tenantLimits, $"tenant:{tenantId}");
@@ -169,83 +171,12 @@ namespace ZR.ServiceCore.AI.Governance
                 .Select(x => (x.Key, x.Min(y => y.Limit)))
                 .ToList();
 
-            // 锁区内只做纯内存的复核与预留：在途预留（active）在锁内实时读取，判定口径与原先一致。
-            string rejectReason = null, rejectMessage = null;
-            lock (ReservationLock)
+            // 预留：跨实例原子加减后复核上限，超限则整体回滚；DB 用量预读已在此之前完成，无需进程内锁。
+            var rejection = TryReserve(lease, probes, concurrencyKeys);
+            if (rejection is { } denied)
             {
-                foreach (var probe in probes)
-                {
-                    var active = GetActiveUsage(probe.ReservationKey);
-                    var limit = probe.Limit;
-                    if (limit.DailyTokenLimit.HasValue
-                        && probe.Day.Tokens + active.Tokens + lease.ReservedTokens > limit.DailyTokenLimit.Value)
-                    {
-                        rejectReason = "daily_token";
-                        rejectMessage = "今日 AI Token 额度已用尽";
-                        break;
-                    }
-                    if (limit.MonthlyTokenLimit.HasValue
-                        && probe.Month.Tokens + active.Tokens + lease.ReservedTokens > limit.MonthlyTokenLimit.Value)
-                    {
-                        rejectReason = "monthly_token";
-                        rejectMessage = "本月 AI Token 额度已用尽";
-                        break;
-                    }
-                    if (limit.DailyAmountLimit.HasValue
-                        && probe.Day.Amount + active.Amount + lease.ReservedAmount > limit.DailyAmountLimit.Value)
-                    {
-                        rejectReason = "daily_amount";
-                        rejectMessage = "今日 AI 金额额度已用尽";
-                        break;
-                    }
-                    if (limit.MonthlyAmountLimit.HasValue
-                        && probe.Month.Amount + active.Amount + lease.ReservedAmount > limit.MonthlyAmountLimit.Value)
-                    {
-                        rejectReason = "monthly_amount";
-                        rejectMessage = "本月 AI 金额额度已用尽";
-                        break;
-                    }
-                }
-
-                if (rejectReason == null)
-                {
-                    var concurrencyDenied = false;
-                    foreach (var item in concurrencyKeys)
-                    {
-                        ConcurrentCounts.TryGetValue(item.Key, out var current);
-                        if (current >= item.Limit)
-                        {
-                            concurrencyDenied = true;
-                            break;
-                        }
-                    }
-
-                    if (concurrencyDenied)
-                    {
-                        rejectReason = "concurrency";
-                        rejectMessage = "AI 并发请求数已达上限，请稍后重试";
-                    }
-                    else
-                    {
-                        foreach (var item in concurrencyKeys)
-                        {
-                            ConcurrentCounts[item.Key] = ConcurrentCounts.GetValueOrDefault(item.Key) + 1;
-                        }
-                        lease.ConcurrencyKeys = concurrencyKeys.Select(x => x.Key).ToArray();
-                        ActiveReservations[lease.RequestId] = new ActiveReservation
-                        {
-                            ScopeKeys = BuildQuotaScopeKeys(tenantId, userId, scene),
-                            Tokens = reservedTokens,
-                            Amount = reservedAmount
-                        };
-                    }
-                }
-            }
-
-            // 拒答落库（DB 写入）移出锁区，避免拒答洪峰把全局串行时间拉长
-            if (rejectReason != null)
-            {
-                await RejectAsync(lease, rejectReason, rejectMessage);
+                // 拒答落库（DB 写入）：租约未占用任何预留，结算时不会重复释放
+                await RejectAsync(lease, denied.Reason, denied.Message);
             }
             return lease;
         }
@@ -333,18 +264,18 @@ namespace ZR.ServiceCore.AI.Governance
                 catch (Exception probeEx)
                 {
                     // 复查自身失败（DB 不可用等）不得空 catch 吞掉：记录后走不健康分支
-                    Logger.Warn(probeEx, "AI 调用流水唯一键冲突复查失败 requestId={RequestId}", lease.RequestId);
+                    Logger.Warn(probeEx, $"AI 调用流水唯一键冲突复查失败 requestId={lease.RequestId}");
                 }
 
                 if (persisted)
                 {
                     AccountingHealthy = true;
-                    Logger.Info("AI 调用流水已由并发方写入，按幂等命中处理 requestId={RequestId}", lease.RequestId);
+                    Logger.Info($"AI 调用流水已由并发方写入，按幂等命中处理 requestId={lease.RequestId}");
                 }
                 else
                 {
                     AccountingHealthy = false;
-                    Logger.Warn(ex, "写入 AI 调用治理流水失败 requestId={RequestId}", lease.RequestId);
+                    Logger.Warn(ex, $"写入 AI 调用治理流水失败 requestId={lease.RequestId}");
                 }
             }
             finally
@@ -449,7 +380,7 @@ namespace ZR.ServiceCore.AI.Governance
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "读取 AI 治理策略失败，已关闭普通 AI 调用 tenantId={TenantId}", tenantId);
+                Logger.Warn(ex, $"读取 AI 治理策略失败，已关闭普通 AI 调用 tenantId={tenantId}");
                 AccountingHealthy = false;
                 throw new AiGovernanceDeniedException("governance_unavailable", "AI 治理策略暂不可用，请稍后重试");
             }
@@ -506,24 +437,126 @@ namespace ZR.ServiceCore.AI.Governance
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "读取 AI 累计额度失败 scope={Scope}", scopeKey);
+                Logger.Warn(ex, $"读取 AI 累计额度失败 scope={scopeKey}");
                 AccountingHealthy = false;
                 throw new AiGovernanceDeniedException("governance_unavailable", "AI 额度计量暂不可用，请稍后重试");
             }
         }
 
-        private static UsageValue GetActiveUsage(string scopeKey)
+        /// <summary>
+        /// 跨实例原子预留：对全部配额范围键的 Token/金额在途计数与并发键做原子加减，再逐条复核上限。
+        /// 返回 null 表示预留成功（并把占用的键记入租约，结算时释放）；否则返回拒绝原因并回滚本次已加项。
+        /// 缓存异常时同样回滚并以 governance_unavailable 拒绝（fail-closed）。
+        /// </summary>
+        private static (string Reason, string Message)? TryReserve(AiCallLease lease,
+            IReadOnlyList<QuotaProbe> probes, IReadOnlyList<(string Key, int Limit)> concurrencyKeys)
         {
-            lock (ReservationLock)
+            var scopeKeys = BuildQuotaScopeKeys(lease.TenantId, lease.UserId, lease.Scene)
+                .Concat(probes.Select(x => x.ReservationKey))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var cache = CacheStore.Default;
+            var applied = new List<(string Key, long Delta)>();
+            var amountMicro = ToAmountMicro(lease.ReservedAmount);
+            try
             {
-                var matching = ActiveReservations.Values.Where(x => x.ScopeKeys.Contains(scopeKey));
-                return new UsageValue
+                var tokenAfter = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+                var amountAfter = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+                foreach (var scopeKey in scopeKeys)
                 {
-                    Tokens = matching.Sum(x => x.Tokens),
-                    Amount = matching.Sum(x => x.Amount)
-                };
+                    tokenAfter[scopeKey] = Apply(cache, applied, InflightTokenKeyPrefix + scopeKey, lease.ReservedTokens);
+                    amountAfter[scopeKey] = Apply(cache, applied, InflightAmountKeyPrefix + scopeKey, amountMicro);
+                }
+
+                var concurrencyAfter = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+                foreach (var item in concurrencyKeys)
+                {
+                    concurrencyAfter[item.Key] = Apply(cache, applied, ConcurrencyKeyPrefix + item.Key, 1);
+                }
+
+                var denied = CheckReservation(probes, tokenAfter, amountAfter, concurrencyKeys, concurrencyAfter);
+                if (denied != null)
+                {
+                    Rollback(cache, applied);
+                    return denied;
+                }
+
+                lease.ReservationScopeKeys = scopeKeys;
+                lease.ConcurrencyKeys = concurrencyKeys.Select(x => x.Key).ToArray();
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, $"AI 额度与并发预留失败，已回滚并拒绝调用 requestId={lease.RequestId}");
+                Rollback(cache, applied);
+                return ("governance_unavailable", "AI 额度与并发服务暂不可用，请稍后重试");
             }
         }
+
+        /// <summary>复核预留后的用量：探针顺序与拒绝原因保持原有口径（先额度后并发）。</summary>
+        private static (string Reason, string Message)? CheckReservation(IReadOnlyList<QuotaProbe> probes,
+            IReadOnlyDictionary<string, long> tokenAfter, IReadOnlyDictionary<string, long> amountAfter,
+            IReadOnlyList<(string Key, int Limit)> concurrencyKeys, IReadOnlyDictionary<string, long> concurrencyAfter)
+        {
+            foreach (var probe in probes)
+            {
+                var limit = probe.Limit;
+                var tokens = tokenAfter[probe.ReservationKey];
+                var amount = amountAfter[probe.ReservationKey] / AmountMicroScale;
+                if (limit.DailyTokenLimit.HasValue && probe.Day.Tokens + tokens > limit.DailyTokenLimit.Value)
+                {
+                    return ("daily_token", "今日 AI Token 额度已用尽");
+                }
+                if (limit.MonthlyTokenLimit.HasValue && probe.Month.Tokens + tokens > limit.MonthlyTokenLimit.Value)
+                {
+                    return ("monthly_token", "本月 AI Token 额度已用尽");
+                }
+                if (limit.DailyAmountLimit.HasValue && probe.Day.Amount + amount > limit.DailyAmountLimit.Value)
+                {
+                    return ("daily_amount", "今日 AI 金额额度已用尽");
+                }
+                if (limit.MonthlyAmountLimit.HasValue && probe.Month.Amount + amount > limit.MonthlyAmountLimit.Value)
+                {
+                    return ("monthly_amount", "本月 AI 金额额度已用尽");
+                }
+            }
+
+            foreach (var item in concurrencyKeys)
+            {
+                if (concurrencyAfter[item.Key] > item.Limit)
+                {
+                    return ("concurrency", "AI 并发请求数已达上限，请稍后重试");
+                }
+            }
+            return null;
+        }
+
+        private static long Apply(ICache cache, List<(string Key, long Delta)> applied, string key, long delta)
+        {
+            var after = cache.IncrementBy(key, delta, ReservationExpireMinutes);
+            applied.Add((key, delta));
+            return after;
+        }
+
+        /// <summary>回滚本次已成功加上的计数；回滚失败只记日志，由过期回收兜底。</summary>
+        private static void Rollback(ICache cache, List<(string Key, long Delta)> applied)
+        {
+            foreach (var (key, delta) in applied)
+            {
+                try
+                {
+                    cache.IncrementBy(key, -delta, ReservationExpireMinutes);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, $"AI 在途计数回滚失败，依赖过期回收 key={key}");
+                }
+            }
+            applied.Clear();
+        }
+
+        private static long ToAmountMicro(decimal amount) =>
+            (long)Math.Ceiling(Math.Max(0m, amount) * AmountMicroScale);
 
         /// <summary>分钟限流计数键：按「租户 + 用户 + 分钟桶」隔离，分钟切换即自然开新窗口。</summary>
         private static string ChatRateKey(string tenantId, long userId, DateTime now) =>
@@ -546,7 +579,7 @@ namespace ZR.ServiceCore.AI.Governance
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "AI 分钟限流计数失败，本次放行 tenantId={TenantId} userId={UserId}", tenantId, userId);
+                Logger.Warn(ex, $"AI 分钟限流计数失败，本次放行 tenantId={tenantId} userId={userId}");
                 return true;
             }
             if (count <= limit) return true;
@@ -566,18 +599,34 @@ namespace ZR.ServiceCore.AI.Governance
             if (limit > 0) items.Add((key, limit.Value));
         }
 
+        /// <summary>
+        /// 结算时释放在途预留与并发占用。释放后清空租约上的键列表，重复调用无副作用（幂等）。
+        /// </summary>
         private static void Release(AiCallLease lease)
         {
-            lock (ReservationLock)
+            if (lease.ReservationScopeKeys.Count == 0 && lease.ConcurrencyKeys.Count == 0) return;
+            var cache = CacheStore.Default;
+            var amountMicro = ToAmountMicro(lease.ReservedAmount);
+            try
             {
-                var hadReservation = ActiveReservations.Remove(lease.RequestId);
-                if (!hadReservation) return;
-                foreach (var key in lease.ConcurrencyKeys ?? Array.Empty<string>())
+                foreach (var scopeKey in lease.ReservationScopeKeys)
                 {
-                    if (!ConcurrentCounts.TryGetValue(key, out var count)) continue;
-                    if (count <= 1) ConcurrentCounts.Remove(key);
-                    else ConcurrentCounts[key] = count - 1;
+                    cache.IncrementBy(InflightTokenKeyPrefix + scopeKey, -lease.ReservedTokens, ReservationExpireMinutes);
+                    cache.IncrementBy(InflightAmountKeyPrefix + scopeKey, -amountMicro, ReservationExpireMinutes);
                 }
+                foreach (var key in lease.ConcurrencyKeys)
+                {
+                    cache.IncrementBy(ConcurrencyKeyPrefix + key, -1, ReservationExpireMinutes);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, $"释放 AI 在途预留失败，依赖过期回收 requestId={lease.RequestId}");
+            }
+            finally
+            {
+                lease.ReservationScopeKeys = Array.Empty<string>();
+                lease.ConcurrencyKeys = Array.Empty<string>();
             }
         }
 
@@ -656,13 +705,6 @@ namespace ZR.ServiceCore.AI.Governance
             public bool HasAmountLimit => DailyAmountLimit.HasValue || MonthlyAmountLimit.HasValue;
         }
 
-        private sealed class ActiveReservation
-        {
-            public IReadOnlyList<string> ScopeKeys { get; set; }
-            public long Tokens { get; set; }
-            public decimal Amount { get; set; }
-        }
-
         private sealed class UsageValue
         {
             public long Tokens { get; set; }
@@ -670,7 +712,7 @@ namespace ZR.ServiceCore.AI.Governance
         }
 
         /// <summary>
-        /// 额度校验探针：锁区外预读「当天/当月」用量，锁区内再结合在途预留做复核，
+        /// 额度校验探针：预读「当天/当月」已完成用量，预留后再结合在途计数做复核，
         /// 使 DB 查询不落在全局串行区内；只预读真正配了额度的周期。
         /// </summary>
         private sealed class QuotaProbe

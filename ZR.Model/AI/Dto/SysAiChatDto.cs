@@ -49,6 +49,9 @@ namespace ZR.Model.AI.Dto
         public string Title { get; set; }
         public string Model { get; set; }
         public List<SysAiChatMessageDto> Messages { get; set; } = new();
+
+        /// <summary>仅在指定 limit 分页时有效：是否还有更早的消息未返回</summary>
+        public bool HasMore { get; set; }
     }
 
     /// <summary>

@@ -175,7 +175,10 @@ namespace ZR.ServiceCore.AI
         /// <param name="userId">用户ID</param>
         /// <returns>会话详情</returns>
         /// <exception cref="Exception"></exception>
-        public async Task<SysAiChatDetailDto> GetMessagesAsync(long sessionId, long userId)
+        /// <summary>
+        /// 会话历史消息（升序）。limit&gt;0 时只返回最近 limit 条（仍为升序），并用 HasMore 标识更早消息；limit≤0 返回全部。
+        /// </summary>
+        public async Task<SysAiChatDetailDto> GetMessagesAsync(long sessionId, long userId, int limit = 0)
         {
             var session = await Queryable()
                 .Where(m => m.SessionId == sessionId && m.UserId == userId)
@@ -184,10 +187,32 @@ namespace ZR.ServiceCore.AI
             {
                 throw new Exception("会话不存在或无权查看");
             }
-            var msgs = await Context.Queryable<AiChatMessage>()
-                .Where(m => m.SessionId == sessionId && m.UserId == userId)
-                .OrderBy(m => m.CreateTime, OrderByType.Asc)
-                .ToListAsync();
+            List<AiChatMessage> msgs;
+            var hasMore = false;
+            if (limit > 0)
+            {
+                var latest = await Context.Queryable<AiChatMessage>()
+                    .Where(m => m.SessionId == sessionId && m.UserId == userId)
+                    .OrderBy(m => m.CreateTime, OrderByType.Desc)
+                    .OrderBy(m => m.MessageId, OrderByType.Desc)
+                    .Take(limit + 1)
+                    .ToListAsync();
+                hasMore = latest.Count > limit;
+                if (hasMore)
+                {
+                    latest.RemoveRange(limit, latest.Count - limit);
+                }
+                latest.Reverse();
+                msgs = latest;
+            }
+            else
+            {
+                msgs = await Context.Queryable<AiChatMessage>()
+                    .Where(m => m.SessionId == sessionId && m.UserId == userId)
+                    .OrderBy(m => m.CreateTime, OrderByType.Asc)
+                    .OrderBy(m => m.MessageId, OrderByType.Asc)
+                    .ToListAsync();
+            }
             var list = msgs.Select(m => new SysAiChatMessageDto
             {
                 MessageId = m.MessageId,
@@ -207,7 +232,8 @@ namespace ZR.ServiceCore.AI
                 SessionId = session.SessionId,
                 Title = session.Title,
                 Model = session.Model,
-                Messages = list
+                Messages = list,
+                HasMore = hasMore
             };
         }
 
@@ -252,14 +278,8 @@ namespace ZR.ServiceCore.AI
             }
 
             // 3. 工具调用编排
+            var st = new ChatRoundState();
             string reply = "";
-            var chartQueries = new List<AiChartQueryResult>();
-            var toolTrace = new List<AiChatToolCallDto>();
-            var roundDiag = new List<string>();
-            var hasUsage = false;
-            int totalPromptTokens = 0, totalCompletionTokens = 0, totalTokens = 0;
-            var lastRoundAllFailed = false;
-            var forceRetryUsed = false;
             for (var round = 0; round < MaxToolRounds; round++)
             {
                 AiLlmClient.ChatToolResult turn;
@@ -274,53 +294,36 @@ namespace ZR.ServiceCore.AI
                     throw;
                 }
 
-                AccumulateRoundUsage(turn, round, roundDiag,
-                    ref hasUsage, ref totalPromptTokens, ref totalCompletionTokens, ref totalTokens);
+                RecordRoundUsage(st, turn, round);
 
                 var hasToolCalls = turn.ToolCalls != null && turn.ToolCalls.Count > 0;
                 if (!hasToolCalls)
                 {
-                    if (ShouldForceToolRetry(lastRoundAllFailed, forceRetryUsed, round))
+                    if (TryConsumeForceRetry(st, round, context.Messages))
                     {
-                        forceRetryUsed = true;
-                        AppendToolRetryReminder(context.Messages);
                         continue;
                     }
                     reply = turn.Content ?? "";
                     break;
                 }
 
-                AppendAssistantToolCalls(context.Messages, turn);
-                var allFailed = true;
-                // 同一轮多个工具互不依赖：并行执行降低首字延迟，结果按 call.Id 关联、回灌顺序固定。
-                // 前提：现有工具均为只读查询、不开事务，且连接 IsAutoCloseConnection=true（每次操作独立开关连接）；
-                // 若新增工具写库/开事务，或关闭自动关闭连接，必须改回串行执行。
-                var execs = await Task.WhenAll(turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, context.Session.SessionId)));
-                for (var i = 0; i < turn.ToolCalls.Count; i++)
-                {
-                    var call = turn.ToolCalls[i];
-                    var exec = execs[i];
-                    toolTrace.Add(new AiChatToolCallDto { Name = call.Name, Ok = exec.Ok });
-                    if (exec.Ok) allFailed = false;
-                    AppendToolResult(context.Messages, call.Id, exec, chartQueries);
-                }
-                lastRoundAllFailed = allFailed;
+                await ExecuteRoundToolsAsync(st, turn, context.Messages, userId, context.Session.SessionId);
             }
 
             if (string.IsNullOrWhiteSpace(reply))
             {
                 _logger.Error($"AI 回复为空(触发兜底文案) userId={userId} sessionId={context.Session.SessionId} model={context.Model} " +
-                    $"msg={AiHelper.ClipText(context.Message, 200)} history={context.HistoryCount} rounds={string.Join(" | ", roundDiag)}");
+                    $"msg={AiHelper.ClipText(context.Message, 200)} history={context.HistoryCount} rounds={string.Join(" | ", st.RoundDiag)}");
                 reply = "抱歉，我这边没有正常生成回答，请重新描述一下你的问题。";
             }
 
-            var assembled = AiChartAssembler.Assemble(reply, chartQueries);
+            var assembled = AiChartAssembler.Assemble(reply, st.ChartQueries);
             reply = assembled.Reply;
             var charts = assembled.Charts;
 
             // 4. 落库 + 会话元信息维护
             return await FinishTurnAsync(context.Session, context.IsNewSession, userId, context.Message, reply, context.Model,
-                hasUsage, totalPromptTokens, totalCompletionTokens, totalTokens, charts, tools: toolTrace);
+                st.HasUsage, st.TotalPromptTokens, st.TotalCompletionTokens, st.TotalTokens, charts, tools: st.ToolTrace);
         }
 
         /// <summary>
@@ -364,19 +367,13 @@ namespace ZR.ServiceCore.AI
             }
 
             // 3. 工具调用编排（流式）
+            var st = new ChatRoundState();
             string reply = "";
-            var chartQueries = new List<AiChartQueryResult>();
-            var toolTrace = new List<AiChatToolCallDto>();
-            var roundDiag = new List<string>();
-            var hasUsage = false;
-            int totalPromptTokens = 0, totalCompletionTokens = 0, totalTokens = 0;
-            var lastRoundAllFailed = false;
-            var forceRetryUsed = false;
             for (var round = 0; round < MaxToolRounds; round++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 AiLlmClient.ChatToolResult turn = null;
-                var bufferDeltas = lastRoundAllFailed;
+                var bufferDeltas = st.LastRoundAllFailed;
                 var buffered = bufferDeltas ? new List<string>() : null;
                 // 模型流式调用：逐块转发增量文本，结束时聚合出本轮完整结果。
                 // 注意：迭代段内不得被 try/catch 包裹（含 yield return），异常向上冒出由调用方转 error 事件。
@@ -404,19 +401,16 @@ namespace ZR.ServiceCore.AI
                 }
                 if (turn == null)
                 {
-                    throw new HttpRequestException("AI 服务未返回有效响应，请重试");
+                    throw new HttpRequestException($"AI 服务未返回有效响应（model={context.Model}），请重试");
                 }
 
-                AccumulateRoundUsage(turn, round, roundDiag,
-                    ref hasUsage, ref totalPromptTokens, ref totalCompletionTokens, ref totalTokens);
+                RecordRoundUsage(st, turn, round);
 
                 var hasToolCalls = turn.ToolCalls != null && turn.ToolCalls.Count > 0;
                 if (!hasToolCalls)
                 {
-                    if (ShouldForceToolRetry(lastRoundAllFailed, forceRetryUsed, round))
+                    if (TryConsumeForceRetry(st, round, context.Messages))
                     {
-                        forceRetryUsed = true;
-                        AppendToolRetryReminder(context.Messages);
                         continue;
                     }
                     if (buffered != null)
@@ -438,41 +432,34 @@ namespace ZR.ServiceCore.AI
                     }
                 }
 
-                AppendAssistantToolCalls(context.Messages, turn);
-                var allFailed = true;
                 // 先统一下发 start 事件，再并行执行，最后统一 done：事件顺序与前端契约不变，且降首字延迟
                 cancellationToken.ThrowIfCancellationRequested();
                 foreach (var call in turn.ToolCalls)
                 {
                     yield return new SysAiChatStreamDto { Type = "tool", ToolName = call.Name, ToolStatus = "start" };
                 }
-                var streamExecs = await Task.WhenAll(turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, context.Session.SessionId)));
+                var streamExecs = await ExecuteRoundToolsAsync(st, turn, context.Messages, userId, context.Session.SessionId);
                 for (var i = 0; i < turn.ToolCalls.Count; i++)
                 {
                     var call = turn.ToolCalls[i];
-                    var exec = streamExecs[i];
-                    yield return new SysAiChatStreamDto { Type = "tool", ToolName = call.Name, ToolStatus = "done", ToolOk = exec.Ok };
-                    toolTrace.Add(new AiChatToolCallDto { Name = call.Name, Ok = exec.Ok });
-                    if (exec.Ok) allFailed = false;
-                    AppendToolResult(context.Messages, call.Id, exec, chartQueries);
+                    yield return new SysAiChatStreamDto { Type = "tool", ToolName = call.Name, ToolStatus = "done", ToolOk = streamExecs[i].Ok };
                 }
-                lastRoundAllFailed = allFailed;
             }
 
             if (string.IsNullOrWhiteSpace(reply))
             {
                 _logger.Error($"AI 回复为空(触发兜底文案) userId={userId} sessionId={context.Session.SessionId} model={context.Model} " +
-                    $"msg={AiHelper.ClipText(message, 200)} history={context.HistoryCount} rounds={string.Join(" | ", roundDiag)}");
+                    $"msg={AiHelper.ClipText(message, 200)} history={context.HistoryCount} rounds={string.Join(" | ", st.RoundDiag)}");
                 reply = "抱歉，我这边没有正常生成回答，请重新描述一下你的问题。";
             }
 
-            var assembledStream = AiChartAssembler.Assemble(reply, chartQueries);
+            var assembledStream = AiChartAssembler.Assemble(reply, st.ChartQueries);
             reply = assembledStream.Reply;
             var chartsStream = assembledStream.Charts;
 
             // 4. 落库 + 会话元信息维护
             var result = await FinishTurnAsync(context.Session, context.IsNewSession, userId, context.Message, reply, context.Model,
-                hasUsage, totalPromptTokens, totalCompletionTokens, totalTokens, chartsStream, tools: toolTrace);
+                st.HasUsage, st.TotalPromptTokens, st.TotalCompletionTokens, st.TotalTokens, chartsStream, tools: st.ToolTrace);
             yield return ToDoneEvent(result);
         }
 
@@ -527,9 +514,7 @@ namespace ZR.ServiceCore.AI
             List<AiChartViewDto> charts = null, IReadOnlyList<string> storeImageUrls = null, List<AiChatToolCallDto> tools = null)
         {
             var userJson = AiChatImageHelper.ToImagesDataJson(storeImageUrls);
-            await SaveMessageAsync(session.SessionId, userId, "user", userMessage, model, dataJson: userJson);
             var dataJson = AiChartAssembler.ToDataJson(charts, tools);
-            await SaveMessageAsync(session.SessionId, userId, "assistant", reply, model, totalPromptTokens, totalCompletionTokens, totalTokens, dataJson);
 
             var needAutoTitle = session.Title.IsNullOrEmpty() || session.Title == "新对话";
             var newTitle = session.Title;
@@ -541,8 +526,23 @@ namespace ZR.ServiceCore.AI
                     : userMessage;
                 newTitle = AiHelper.AutoTitle(titleSrc);
             }
-            await UpdateAsync(s => s.SessionId == session.SessionId,
-                s => new AiChatSession { Title = newTitle, UpdateTime = DateTime.Now });
+
+            // 用户/助手消息与标题更新必须同成败，否则会留下没有回复的孤立用户消息
+            await Context.Ado.BeginTranAsync();
+            try
+            {
+                await SaveMessageAsync(session.SessionId, userId, "user", userMessage, model, dataJson: userJson);
+                await SaveMessageAsync(session.SessionId, userId, "assistant", reply, model, totalPromptTokens, totalCompletionTokens, totalTokens, dataJson);
+                await UpdateAsync(s => s.SessionId == session.SessionId,
+                    s => new AiChatSession { Title = newTitle, UpdateTime = DateTime.Now });
+                await Context.Ado.CommitTranAsync();
+            }
+            catch (Exception ex)
+            {
+                await Context.Ado.RollbackTranAsync();
+                _logger.Error(ex, $"AI 对话落库失败已回滚 sessionId={session.SessionId} userId={userId}");
+                throw;
+            }
 
             return new SysAiChatResultDto
             {
@@ -974,6 +974,61 @@ namespace ZR.ServiceCore.AI
         }
 
         /// <summary>
+        /// 单次对话的编排状态（ChatAsync / StreamChatAsync 共用）：用量、工具轨迹、图表与失败态。
+        /// </summary>
+        private sealed class ChatRoundState
+        {
+            public readonly List<AiChartQueryResult> ChartQueries = new();
+            public readonly List<AiChatToolCallDto> ToolTrace = new();
+            public readonly List<string> RoundDiag = new();
+            public bool HasUsage;
+            public int TotalPromptTokens;
+            public int TotalCompletionTokens;
+            public int TotalTokens;
+            public bool LastRoundAllFailed;
+            public bool ForceRetryUsed;
+        }
+
+        private static void RecordRoundUsage(ChatRoundState st, AiLlmClient.ChatToolResult turn, int round)
+        {
+            AccumulateRoundUsage(turn, round, st.RoundDiag,
+                ref st.HasUsage, ref st.TotalPromptTokens, ref st.TotalCompletionTokens, ref st.TotalTokens);
+        }
+
+        /// <summary>本轮无工具调用时：上一轮工具全失败且尚未强制重试过，则追加提醒并返回 true（调用方应 continue）</summary>
+        private static bool TryConsumeForceRetry(ChatRoundState st, int round, List<object> messages)
+        {
+            if (!ShouldForceToolRetry(st.LastRoundAllFailed, st.ForceRetryUsed, round)) return false;
+            st.ForceRetryUsed = true;
+            AppendToolRetryReminder(messages);
+            return true;
+        }
+
+        /// <summary>
+        /// 执行本轮全部工具调用：回灌 assistant 工具请求与各工具结果，记录轨迹与失败态，返回按调用顺序的执行结果。
+        /// 同一轮多个工具互不依赖：并行执行降低首字延迟，结果按 call.Id 关联、回灌顺序固定。
+        /// 前提：现有工具均为只读查询、不开事务，且连接 IsAutoCloseConnection=true（每次操作独立开关连接）；
+        /// 若新增工具写库/开事务，或关闭自动关闭连接，必须改回串行执行。
+        /// </summary>
+        private async Task<AiToolExecResult[]> ExecuteRoundToolsAsync(ChatRoundState st, AiLlmClient.ChatToolResult turn,
+            List<object> messages, long userId, long sessionId)
+        {
+            AppendAssistantToolCalls(messages, turn);
+            var execs = await Task.WhenAll(turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, sessionId)));
+            var allFailed = true;
+            for (var i = 0; i < turn.ToolCalls.Count; i++)
+            {
+                var call = turn.ToolCalls[i];
+                var exec = execs[i];
+                st.ToolTrace.Add(new AiChatToolCallDto { Name = call.Name, Ok = exec.Ok });
+                if (exec.Ok) allFailed = false;
+                AppendToolResult(messages, call.Id, exec, st.ChartQueries);
+            }
+            st.LastRoundAllFailed = allFailed;
+            return execs;
+        }
+
+        /// <summary>
         /// 把模型返回的助手消息和工具调用信息追加到消息列表中，供下一轮模型调用使用。
         /// </summary>
         /// <param name="messages">消息列表</param>
@@ -1007,11 +1062,26 @@ namespace ZR.ServiceCore.AI
             {
                 content = $"[错误] {content}\n请按该工具 schema 修正参数后再次调用，不要把本错误原文当作最终答复。";
             }
-            else if (exec.ChartQuery != null)
+            else
             {
-                chartQueries.Add(exec.ChartQuery);
+                // 成功结果含日程标题、日志内容等用户可控文本：包裹为数据区并转义同名标签，防止伪造闭合标签逃逸
+                content = WrapUntrustedToolData(content);
+                if (exec.ChartQuery != null)
+                {
+                    chartQueries.Add(exec.ChartQuery);
+                }
             }
             messages.Add(new { role = "tool", tool_call_id = toolCallId, content = AiHelper.ClipText(content, ToolResultMaxLen) });
+        }
+
+        private const string ToolDataTag = "tool_result";
+
+        private static string WrapUntrustedToolData(string content)
+        {
+            var escaped = content
+                .Replace("<" + ToolDataTag, "&lt;" + ToolDataTag, StringComparison.OrdinalIgnoreCase)
+                .Replace("</" + ToolDataTag, "&lt;/" + ToolDataTag, StringComparison.OrdinalIgnoreCase);
+            return $"<{ToolDataTag}>\n{escaped}\n</{ToolDataTag}>";
         }
 
         /// <summary>

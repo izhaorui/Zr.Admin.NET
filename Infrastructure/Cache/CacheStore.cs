@@ -40,6 +40,11 @@ namespace Infrastructure.Cache
         long Increment(string key, int expireMinutes);
 
         /// <summary>
+        /// 原子按 delta 增减（可为负）并返回结果，键不存在时按 0 起算。每次调用都会刷新过期时间，
+        /// 使异常遗留的计数在空闲一段时间后自动回收。供并发与在途额度等需要跨实例原子加减的场景使用。
+        /// </summary>
+        long IncrementBy(string key, long delta, int expireMinutes);
+        /// <summary>
         /// 原子「仅当键不存在时写入」（Redis 后端 = SET key value NX EX seconds；内存后端以进程内锁保证）。
         /// 返回 true 表示本次写入成功（抢占成功），false 表示键已存在。
         /// 供幂等占位、防并发重复提交等「只允许第一个」的场景使用。
@@ -67,6 +72,17 @@ namespace Infrastructure.Cache
             {
                 var current = CacheHelper.GetCache(key);
                 var next = (current is long value ? value : 0L) + 1;
+                CacheHelper.SetCache(key, next, expireMinutes);
+                return next;
+            }
+        }
+
+        public long IncrementBy(string key, long delta, int expireMinutes)
+        {
+            lock (IncrementLock)
+            {
+                var current = CacheHelper.GetCache(key);
+                var next = (current is long value ? value : 0L) + delta;
                 CacheHelper.SetCache(key, next, expireMinutes);
                 return next;
             }
@@ -108,6 +124,13 @@ namespace Infrastructure.Cache
                 // 仅在首次自增时设过期，避免每次续期导致键永不过期
                 _redis.Expire(key, (int)TimeSpan.FromMinutes(expireMinutes).TotalSeconds);
             }
+            return value;
+        }
+
+        public long IncrementBy(string key, long delta, int expireMinutes)
+        {
+            var value = _redis.IncrBy(key, delta);
+            _redis.Expire(key, (int)TimeSpan.FromMinutes(expireMinutes).TotalSeconds);
             return value;
         }
 

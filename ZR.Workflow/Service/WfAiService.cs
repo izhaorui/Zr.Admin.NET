@@ -164,15 +164,15 @@ namespace ZR.Workflow.Service
                 AiLlmClient.ChatToolResult turn;
                 try
                 {
-                    turn = await AiLlmClient.ChatWithToolsAsync(options, messages.ToArray(), tools, AiSceneCatalog.WfGenerate).ConfigureAwait(false);
+                    turn = await AiLlmClientRetryWrapper.ChatWithToolsAsyncWithRetry(options, messages.ToArray(), tools, AiSceneCatalog.WfGenerate).ConfigureAwait(false);
                 }
-                catch (HttpRequestException ex)
-                {
-                    throw new Exception("调用 AI 服务失败：" + ex.Message);
-                }
-                catch (TaskCanceledException)
+                catch (AiTimeoutException)
                 {
                     throw new Exception("调用 AI 服务超时，请稍后重试");
+                }
+                catch (AiException ex)
+                {
+                    throw new Exception("调用 AI 服务失败：" + ex.UserMessage);
                 }
 
                 // 模型请求调用 validateWorkflow：执行本地校验并回灌结果，进入下一轮修正
@@ -807,7 +807,7 @@ namespace ZR.Workflow.Service
             if (imgUrls.Count > 0)
             {
                 // 含图片附件：走视觉模型多模态理解（VisionModel 未配置时此方法内部抛友好提示）
-                text = (await AiLlmClient.ChatWithImagesAsync(
+                text = (await AiLlmClientRetryWrapper.ChatWithImagesAsyncWithRetry(
                     options, AiHelper.GetPromptOrThrow("approval-suggest.md", "审批意见建议"), user, imgUrls, AiSceneCatalog.WfApprovalSuggest).ConfigureAwait(false))?.Content;
             }
             else
@@ -1079,15 +1079,15 @@ namespace ZR.Workflow.Service
                 AiLlmClient.ChatToolResult turn;
                 try
                 {
-                    turn = await AiLlmClient.ChatWithToolsAsync(options, messages.ToArray(), tools, AiSceneCatalog.WfInstanceSummary).ConfigureAwait(false);
+                    turn = await AiLlmClientRetryWrapper.ChatWithToolsAsyncWithRetry(options, messages.ToArray(), tools, AiSceneCatalog.WfInstanceSummary).ConfigureAwait(false);
                 }
-                catch (HttpRequestException ex)
-                {
-                    throw new Exception("调用 AI 服务失败：" + ex.Message);
-                }
-                catch (TaskCanceledException)
+                catch (AiTimeoutException)
                 {
                     throw new Exception("调用 AI 服务超时，请稍后重试");
+                }
+                catch (AiException ex)
+                {
+                    throw new Exception("调用 AI 服务失败：" + ex.UserMessage);
                 }
 
                 if (turn.ToolCalls.Count > 0)
@@ -1262,7 +1262,7 @@ namespace ZR.Workflow.Service
             if (imgUrls.Count > 0)
             {
                 var options = AiHelper.EnsureAiEnabled();
-                text = (await AiLlmClient.ChatWithImagesAsync(
+                text = (await AiLlmClientRetryWrapper.ChatWithImagesAsyncWithRetry(
                     options, AiHelper.GetPromptOrThrow("risk-check.md", "审批风险预判"), userContext, imgUrls, AiSceneCatalog.WfRiskCheck).ConfigureAwait(false))?.Content;
             }
             else

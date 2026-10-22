@@ -23,7 +23,7 @@ namespace ZR.ServiceCore.AI.IService
         Task<int> DeleteSessionAsync(long sessionId, long userId);
 
         /// <summary>会话详情：标题 + 消息（升序）</summary>
-        Task<SysAiChatDetailDto> GetMessagesAsync(long sessionId, long userId);
+        Task<SysAiChatDetailDto> GetMessagesAsync(long sessionId, long userId, int limit = 0);
 
         /// <summary>
         /// 当前用户可见的工具展示名清单（供前端渲染"正在调用 XX"，避免前端硬编码工具中文名）。

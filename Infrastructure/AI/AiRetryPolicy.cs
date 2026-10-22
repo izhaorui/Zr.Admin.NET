@@ -46,7 +46,6 @@ namespace Infrastructure.AI
     {
         private readonly ILogger<ExponentialBackoffRetryPolicy> _logger;
         private readonly ExponentialBackoffOptions _options;
-        private static readonly Random Random = new(Environment.TickCount);
 
         public ExponentialBackoffRetryPolicy(
             ILogger<ExponentialBackoffRetryPolicy> logger,
@@ -164,12 +163,12 @@ namespace Infrastructure.AI
                 return Math.Min(delayMs, _options.MaxDelayMs);
             }
 
-            // 指数退避 + 抖动
-            var exponentialDelayMs = _options.InitialDelayMs * (int)Math.Pow(2, attemptNumber - 1);
-            var cappedDelayMs = Math.Min(exponentialDelayMs, _options.MaxDelayMs);
+            // 指数退避 + 抖动（先在 double 中封顶，避免大 attemptNumber 时 int 溢出）
+            var exponentialDelayMs = _options.InitialDelayMs * Math.Pow(2, attemptNumber - 1);
+            var cappedDelayMs = (int)Math.Min(exponentialDelayMs, _options.MaxDelayMs);
 
             // 添加随机抖动 ±25% 以避免雷鸣羊群现象
-            var jitter = (int)(cappedDelayMs * (Random.NextDouble() - 0.5) * 0.5);
+            var jitter = (int)(cappedDelayMs * (Random.Shared.NextDouble() - 0.5) * 0.5);
             return Math.Max(_options.InitialDelayMs, cappedDelayMs + jitter);
         }
     }
@@ -179,7 +178,7 @@ namespace Infrastructure.AI
     /// </summary>
     public class ExponentialBackoffOptions
     {
-        /// <summary>最大重试次数（包括首次请求后的重试次数）。默认 3 次</summary>
+        /// <summary>最大尝试次数（含首次请求），须 &gt;= 1。默认 3，即首次请求加 2 次重试</summary>
         public int MaxRetries { get; set; } = 3;
 
         /// <summary>初始重试延迟（毫秒）。默认 500ms</summary>

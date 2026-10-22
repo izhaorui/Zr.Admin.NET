@@ -49,7 +49,8 @@ namespace Infrastructure.AI
             AiOptions options,
             string systemPrompt,
             string userPrompt,
-            string scene = null)
+            string scene = null,
+            CancellationToken cancellationToken = default)
         {
             var retryPolicy = BuildRetryPolicy(options);
             var result = await retryPolicy.ExecuteAsync(
@@ -57,7 +58,7 @@ namespace Infrastructure.AI
                 {
                     try
                     {
-                        return await AiLlmClient.ChatAsync(options, systemPrompt, userPrompt, scene)
+                        return await AiLlmClient.ChatAsync(options, systemPrompt, userPrompt, scene, cancellationToken)
                             .ConfigureAwait(false);
                     }
                     catch (Exception ex)
@@ -65,7 +66,8 @@ namespace Infrastructure.AI
                         throw ConvertException(ex);
                     }
                 },
-                operationName: $"Chat (scene={scene}, model={options?.Model})")
+                operationName: $"Chat (scene={scene}, model={options?.Model})",
+                cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return result;
@@ -77,7 +79,8 @@ namespace Infrastructure.AI
         public static async Task<string> ChatWithMessagesAsyncWithRetry(
             AiOptions options,
             object[] messages,
-            string scene = null)
+            string scene = null,
+            CancellationToken cancellationToken = default)
         {
             var retryPolicy = BuildRetryPolicy(options);
             var result = await retryPolicy.ExecuteAsync(
@@ -85,7 +88,7 @@ namespace Infrastructure.AI
                 {
                     try
                     {
-                        return await AiLlmClient.ChatWithMessagesAsync(options, messages, scene)
+                        return await AiLlmClient.ChatWithMessagesAsync(options, messages, scene, cancellationToken)
                             .ConfigureAwait(false);
                     }
                     catch (Exception ex)
@@ -93,7 +96,8 @@ namespace Infrastructure.AI
                         throw ConvertException(ex);
                     }
                 },
-                operationName: $"ChatWithMessages (scene={scene}, model={options?.Model})")
+                operationName: $"ChatWithMessages (scene={scene}, model={options?.Model})",
+                cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return result;
@@ -107,7 +111,8 @@ namespace Infrastructure.AI
             string systemPrompt,
             string textPrompt,
             List<string> imageUrls,
-            string scene = null)
+            string scene = null,
+            CancellationToken cancellationToken = default)
         {
             var retryPolicy = BuildRetryPolicy(options);
             var result = await retryPolicy.ExecuteAsync(
@@ -115,7 +120,7 @@ namespace Infrastructure.AI
                 {
                     try
                     {
-                        return await AiLlmClient.ChatWithImagesAsync(options, systemPrompt, textPrompt, imageUrls, scene)
+                        return await AiLlmClient.ChatWithImagesAsync(options, systemPrompt, textPrompt, imageUrls, scene, cancellationToken)
                             .ConfigureAwait(false);
                     }
                     catch (Exception ex)
@@ -123,7 +128,8 @@ namespace Infrastructure.AI
                         throw ConvertException(ex);
                     }
                 },
-                operationName: $"ChatWithImages (scene={scene}, model={options?.Model}, images={imageUrls?.Count ?? 0})")
+                operationName: $"ChatWithImages (scene={scene}, model={options?.Model}, images={imageUrls?.Count ?? 0})",
+                cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return result;
@@ -136,7 +142,8 @@ namespace Infrastructure.AI
             AiOptions options,
             object[] messages,
             object[] tools,
-            string scene = null)
+            string scene = null,
+            CancellationToken cancellationToken = default)
         {
             var retryPolicy = BuildRetryPolicy(options);
             var result = await retryPolicy.ExecuteAsync(
@@ -144,7 +151,7 @@ namespace Infrastructure.AI
                 {
                     try
                     {
-                        return await AiLlmClient.ChatWithToolsAsync(options, messages, tools, scene)
+                        return await AiLlmClient.ChatWithToolsAsync(options, messages, tools, scene, cancellationToken)
                             .ConfigureAwait(false);
                     }
                     catch (Exception ex)
@@ -152,7 +159,8 @@ namespace Infrastructure.AI
                         throw ConvertException(ex);
                     }
                 },
-                operationName: $"ChatWithTools (scene={scene}, model={options?.Model}, tools={tools?.Length ?? 0})")
+                operationName: $"ChatWithTools (scene={scene}, model={options?.Model}, tools={tools?.Length ?? 0})",
+                cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return result;
@@ -238,11 +246,27 @@ namespace Infrastructure.AI
                     "请求超时，请稍后重试");
             }
 
-            // 通用 HTTP 错误
+            var statusCode = ex.StatusCode.HasValue ? (int)ex.StatusCode.Value : (int?)null;
             return new AiHttpException(
-                null, "http_error",
+                statusCode,
+                "http_error",
                 ex.Message ?? "HTTP 请求失败",
-                "AI 服务调用失败，请稍后重试");
+                BuildUserMessage(statusCode));
+        }
+
+        /// <summary>
+        /// 根据 HTTP 状态码生成可展示给用户的处理建议（不含敏感信息）。
+        /// </summary>
+        private static string BuildUserMessage(int? statusCode)
+        {
+            return statusCode switch
+            {
+                401 or 403 => $"AI 服务鉴权失败（HTTP {statusCode}），请检查 API Key 配置",
+                404 => $"AI 接口地址或模型不存在（HTTP {statusCode}），请检查 BaseUrl/ChatEndpoint/Model",
+                429 => "AI 服务请求过于频繁（HTTP 429），请稍后重试",
+                >= 500 => $"AI 服务暂不可用（HTTP {statusCode}），请稍后重试",
+                _ => "AI 服务调用失败，请稍后重试"
+            };
         }
     }
 }

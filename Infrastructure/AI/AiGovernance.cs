@@ -38,6 +38,8 @@ namespace Infrastructure.AI
         public decimal OutputPricePerMillion { get; set; }
         public string Currency { get; set; }
         public IReadOnlyList<string> ConcurrencyKeys { get; set; } = Array.Empty<string>();
+        /// <summary>本次在途预留占用的额度范围键（跨实例计数，释放时按此回滚）。</summary>
+        public IReadOnlyList<string> ReservationScopeKeys { get; set; } = Array.Empty<string>();
         public long ReservedTokens { get; set; }
         public decimal ReservedAmount { get; set; }
     }
