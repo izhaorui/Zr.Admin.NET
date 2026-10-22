@@ -19,25 +19,6 @@
     "PromptDir": "",
     "Providers": [
       {
-        "Provider": "openai",
-        "Label": "OpenAI",
-        "BaseUrl": "https://api.openai.com",
-        "ChatEndpoint": "/v1/chat/completions",
-        "ApiKey": "",
-        "Model": "gpt-4o-mini",
-        "VisionModel": "gpt-4o-mini",
-        "Models": [ "gpt-4o-mini", "gpt-4o" ]
-      },
-      {
-        "Provider": "deepseek",
-        "Label": "DeepSeek",
-        "BaseUrl": "https://api.deepseek.com",
-        "ChatEndpoint": "/chat/completions",
-        "ApiKey": "",
-        "Model": "deepseek-chat",
-        "Models": [ "deepseek-chat", "deepseek-reasoner" ]
-      },
-      {
         "Provider": "qwen",
         "Label": "通义千问",
         "BaseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -45,18 +26,16 @@
         "ApiKey": "",
         "Model": "qwen3.7-plus",
         "VisionModel": "qwen3.7-flash",
-        "Models": [ "qwen-turbo", "qwen-plus", "qwen-max", "qwen3.7-plus", "qwen3.7-flash", "qwen3-vl-flash", "qwen3-vl-plus", "qwen-vl-plus" ]
-      },
-      {
-        "Provider": "ollama",
-        "Label": "Ollama",
-        "BaseUrl": "http://127.0.0.1:11434/v1",
-        "ChatEndpoint": "/chat/completions",
-        "ApiKey": "ollama",
-        "Model": "qwen2.5:7b",
-        "VisionModel": "llava",
-        "Models": [ "qwen2.5:7b", "llama3.2", "deepseek-r1", "llava" ],
-        "TimeoutSeconds": 120
+        "Models": [
+          "qwen-turbo",
+          "qwen-plus",
+          "qwen-max",
+          "qwen3.7-plus",
+          "qwen3.7-flash",
+          "qwen3-vl-flash",
+          "qwen3-vl-plus",
+          "qwen-vl-plus"
+        ]
       }
     ],
     "AttachmentDownloadAllowedHosts": []

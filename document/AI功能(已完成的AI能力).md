@@ -96,7 +96,7 @@
 - **价格**：按 Provider + 模型维护百万 token 单价，调用时算金额并落账。
 - **用量**：全站 / 本租户 / 仅本人；按天、场景、用户汇总，可导出。看图轮次同样把 usage 写入助手消息。
 - **健康**：配置检查（开关、地址、Key、**VisionModel 名称**）；探活场景 `health_check`。
-- **接入**：`ai.json` 公共默认，`ai.Development.json` 本地覆盖（已 gitignore）；已预置 OpenAI、DeepSeek、通义、Ollama。Ollama 不强制云厂商 Key，跳过不兼容的 `stream_options`。
+- **接入**：`ai.json` 公共默认，`ai.Development.json` 本地覆盖（已 gitignore）；`Providers` 只保留在用供应商（默认通义千问），OpenAI、DeepSeek、Ollama、智谱等参考配置见 [AI供应商配置参考.md](AI供应商配置参考.md)。Ollama 不强制云厂商 Key，跳过不兼容的 `stream_options`。
 
 ---
 
