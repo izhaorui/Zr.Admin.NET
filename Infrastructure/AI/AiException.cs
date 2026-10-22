@@ -126,10 +126,10 @@ namespace Infrastructure.AI
         /// <summary>缺失或无效的配置字段名</summary>
         public string ConfigField { get; set; }
 
-        public AiConfigurationException(string configField, string message)
+        public AiConfigurationException(string configField, string message, string userMessage = null)
             : base("config", "config_invalid",
                 message ?? $"AI 配置异常：{configField}",
-                $"AI 服务配置不完整，请联系管理员")
+                userMessage ?? "AI 服务配置不完整，请联系管理员")
         {
             ConfigField = configField;
         }

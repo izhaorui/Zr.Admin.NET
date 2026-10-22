@@ -454,9 +454,20 @@ namespace Infrastructure.Model
         public int MaxTokens { get; set; } = 1024;
 
         /// <summary>
-        /// 请求超时秒
+        /// 请求超时秒。语义按调用形态区分：
+        /// <para>非流式：整个请求的总时长上限。</para>
+        /// <para>流式(SSE)：<b>空闲超时</b>——连续这么久没收到任何数据才判定超时，
+        /// 只要模型还在持续返回就不会被中断（长回答不会被误杀）。整段流式输出另受
+        /// <see cref="MaxStreamDurationSeconds"/> 的硬上限兜底。</para>
         /// </summary>
         public int TimeoutSeconds { get; set; } = 60;
+
+        /// <summary>
+        /// 流式(SSE)响应的总时长硬上限（秒）。与 <see cref="TimeoutSeconds"/> 的空闲超时配合：
+        /// 空闲超时管"多久没数据就失败"，本项管"整段输出最长跑多久"，防止服务端以"慢速滴流"
+        /// 方式长期占用连接与治理在途额度。默认 600 秒（10 分钟）；0 = 不限制。
+        /// </summary>
+        public int MaxStreamDurationSeconds { get; set; } = 600;
 
         /// <summary>
         /// 是否开启思考模式（reasoning）。仅对支持 enable_thinking 的混合思考模型

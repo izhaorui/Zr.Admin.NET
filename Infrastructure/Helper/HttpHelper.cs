@@ -92,6 +92,11 @@ namespace Infrastructure
             public int StatusCode { get; set; }
             public string RequestId { get; set; }
             public bool IsSuccessStatusCode { get; set; }
+
+            /// <summary>
+            /// 服务端要求的重试等待秒数（Retry-After，429 限流时常见）。取不到为 null。
+            /// </summary>
+            public int? RetryAfterSeconds { get; set; }
         }
 
         /// <summary>
@@ -127,7 +132,8 @@ namespace Infrastructure
                 Content = body,
                 StatusCode = (int)response.StatusCode,
                 IsSuccessStatusCode = response.IsSuccessStatusCode,
-                RequestId = ReadRequestId(response)
+                RequestId = ReadRequestId(response),
+                RetryAfterSeconds = ReadRetryAfterSeconds(response)
             };
         }
 
@@ -141,6 +147,30 @@ namespace Infrastructure
                     return values.FirstOrDefault();
                 }
             }
+            return null;
+        }
+
+        /// <summary>
+        /// 读取 Retry-After 响应头的等待秒数，支持"秒数"与"HTTP-date"两种规范写法；
+        /// 缺失、格式非法或已过期时返回 null（表示服务端未给出建议值）。
+        /// </summary>
+        public static int? ReadRetryAfterSeconds(HttpResponseMessage response)
+        {
+            var retryAfter = response?.Headers?.RetryAfter;
+            if (retryAfter == null) return null;
+
+            if (retryAfter.Delta.HasValue)
+            {
+                var seconds = (int)Math.Ceiling(retryAfter.Delta.Value.TotalSeconds);
+                return seconds > 0 ? seconds : null;
+            }
+
+            if (retryAfter.Date.HasValue)
+            {
+                var seconds = (int)Math.Ceiling((retryAfter.Date.Value - DateTimeOffset.UtcNow).TotalSeconds);
+                return seconds > 0 ? seconds : null;
+            }
+
             return null;
         }
 
@@ -224,37 +254,48 @@ namespace Infrastructure
         }
 
         /// <summary>
-        /// 流式 HTTP 响应。读取响应流时必须使用 Token（timeOut 内未读完会被取消），
-        /// 用完务必 Dispose 以同时释放底层响应与取消令牌。
+        /// 流式 HTTP 响应。用完务必 Dispose 以释放底层响应与生命周期令牌。
+        /// <para>注意：本类<b>不再承担超时职责</b>。超时由调用方按读取节奏自行控制
+        /// （AI 场景为"空闲超时 + 总时长硬上限"，见 <c>AiLlmClient.StreamChatWithToolsAsync</c>），
+        /// 否则长回答会被"从发请求开始算的总时长"误杀。</para>
         /// </summary>
         public sealed class HttpStreamResponse : IDisposable
         {
-            private readonly CancellationTokenSource _cts;
+            private readonly CancellationTokenSource _lifetimeCts = new();
 
             /// <summary>完整响应（含状态码、Headers，Content 通过 ReadAsStreamAsync 读）</summary>
             public HttpResponseMessage Response { get; }
 
-            /// <summary>整体超时令牌：发送与流式读取阶段共用，超时即取消</summary>
-            public CancellationToken Token => _cts.Token;
+            /// <summary>生命周期令牌：仅随 Dispose 取消，不参与超时判定。</summary>
+            public CancellationToken Token => _lifetimeCts.Token;
 
-            public HttpStreamResponse(HttpResponseMessage response, CancellationTokenSource cts)
+            public HttpStreamResponse(HttpResponseMessage response)
             {
                 Response = response;
-                _cts = cts;
             }
 
             public void Dispose()
             {
+                try
+                {
+                    _lifetimeCts.Cancel();
+                }
+                catch
+                {
+                    // 已释放或取消已在进行中：忽略
+                }
                 Response?.Dispose();
-                _cts?.Dispose();
+                _lifetimeCts.Dispose();
             }
         }
 
         /// <summary>
         /// 发起流式读取 POST（SSE / 下载等）。以 ResponseHeadersRead 模式返回，
-        /// 响应体不预先整体读入内存；由调用方通过 HttpStreamResponse.Token 逐块读取。
+        /// 响应体不预先整体读入内存。
+        /// <para><paramref name="timeOut"/> 只约束"建立连接 + 等到响应头"这一段；拿到响应头后计时器即释放，
+        /// 响应体读取阶段的超时由调用方按业务节奏控制（如 SSE 的空闲超时）。</para>
         /// </summary>
-        public static async Task<HttpStreamResponse> HttpPostReadStreamAsync(string url, string postData = null, string contentType = null, int timeOut = 30, Dictionary<string, string> headers = null)
+        public static async Task<HttpStreamResponse> HttpPostReadStreamAsync(string url, string postData = null, string contentType = null, int timeOut = 30, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default)
         {
             postData ??= "";
             using var httpContent = new StringContent(postData, Encoding.UTF8);
@@ -273,17 +314,11 @@ namespace Infrastructure
                 }
             }
 
-            var cts = new CancellationTokenSource(timeOut * 1000);
-            try
-            {
-                var response = await SharedClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
-                return new HttpStreamResponse(response, cts);
-            }
-            catch
-            {
-                cts.Dispose();
-                throw;
-            }
+            // 仅约束发送与响应头阶段；using 保证拿到头（或失败）后立即停表，不会延续到读取阶段。
+            using var sendCts = new CancellationTokenSource(Math.Max(1, timeOut) * 1000);
+            using var linkedSendCts = CancellationTokenSource.CreateLinkedTokenSource(sendCts.Token, cancellationToken);
+            var response = await SharedClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, linkedSendCts.Token);
+            return new HttpStreamResponse(response);
         }
 
         /// <summary>

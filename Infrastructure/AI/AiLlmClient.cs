@@ -129,9 +129,7 @@ namespace Infrastructure.AI
                         var errDetail = BuildAiErrorMessage(response.StatusCode, response.Content);
                         scope.Outcome = Failed("http", "http_error", errDetail, response.StatusCode, response.RequestId);
                         Logger.LogError($"AI 请求失败 scene={SceneName(scene)} status={response.StatusCode} uri={uri} provider={resolved.Provider} model={resolved.Model} elapsedMs={stopwatch.ElapsedMilliseconds} body={TruncateForLog(response.Content, 800)}");
-                        throw new HttpRequestException(
-                            $"AI 服务调用失败（HTTP {response.StatusCode}，model={resolved.Model}）：{TruncateForLog(errDetail, 240)}",
-                            null, (HttpStatusCode)response.StatusCode);
+                        throw BuildHttpStatusException(response.StatusCode, errDetail, resolved.Model, response.RetryAfterSeconds);
                     }
                     if (string.IsNullOrWhiteSpace(response.Content))
                     {
@@ -292,7 +290,11 @@ namespace Infrastructure.AI
             var resolved = ResolveVisionProvider(options);
             if (string.IsNullOrWhiteSpace(resolved.Model))
             {
-                throw new InvalidOperationException("未配置视觉模型。请在当前 Provider 的 VisionModel（或顶层 AiOptions:VisionModel）中指定支持多模态的模型，如 qwen-vl-plus / gpt-4o-mini。");
+                // 用配置异常而非 InvalidOperationException：包装器的异常标准化会把后者的 UserMessage
+                // 覆盖成"AI 服务异常，请稍后重试或联系管理员"，把可操作的信息丢掉。
+                throw new AiConfigurationException("VisionModel",
+                    "未配置视觉模型。请在当前 Provider 的 VisionModel（或顶层 AiOptions:VisionModel）中指定支持多模态的模型，如 qwen-vl-plus / gpt-4o-mini。",
+                    "AI 视觉功能未开通，请联系管理员配置 VisionModel 后再试。");
             }
 
             var content = new List<object>
@@ -391,9 +393,7 @@ namespace Infrastructure.AI
                         var errDetail = BuildAiErrorMessage(response.StatusCode, response.Content);
                         scope.Outcome = Failed("http", "http_error", errDetail, response.StatusCode, response.RequestId);
                         Logger.LogError($"AI 请求失败 scene={SceneName(scene)} status={response.StatusCode} uri={uri} provider={resolved.Provider} model={resolved.Model} elapsedMs={stopwatch.ElapsedMilliseconds} body={TruncateForLog(response.Content, 800)}");
-                        throw new HttpRequestException(
-                            $"AI 服务调用失败（HTTP {response.StatusCode}，model={resolved.Model}）：{TruncateForLog(errDetail, 240)}",
-                            null, (HttpStatusCode)response.StatusCode);
+                        throw BuildHttpStatusException(response.StatusCode, errDetail, resolved.Model, response.RetryAfterSeconds);
                     }
                     if (string.IsNullOrWhiteSpace(response.Content))
                     {
@@ -478,6 +478,7 @@ namespace Infrastructure.AI
             };
 
             LogCallStart(scene, resolved.Provider, resolved.Model, true, uri.ToString(), tools?.Length ?? 0, json.Length);
+            var timeoutSeconds = ResolveTimeoutSeconds(options, resolved.Provider);
             var lease = await BeginGovernedCallAsync(scene, resolved.Provider, resolved.Model, json, options.MaxTokens, true);
             AiCallOutcome outcome = null;
             try
@@ -485,7 +486,7 @@ namespace Infrastructure.AI
                 HttpHelper.HttpStreamResponse streamResp;
                 try
                 {
-                    streamResp = await PostStreamAsync(uri, json, headers, ResolveTimeoutSeconds(options, resolved.Provider),
+                    streamResp = await PostStreamAsync(uri, json, headers, timeoutSeconds,
                         scene, resolved.Provider, resolved.Model, cancellationToken);
                 }
                 catch (Exception ex)
@@ -494,7 +495,8 @@ namespace Infrastructure.AI
                     var httpStatus = ex is HttpRequestException httpEx && httpEx.StatusCode.HasValue
                         ? (int)httpEx.StatusCode.Value
                         : (int?)null;
-                    var isTimeout = ex is HttpRequestException && ex.InnerException is OperationCanceledException;
+                    var isTimeout = ex is AiTimeoutException
+                        || (ex is HttpRequestException && ex.InnerException is OperationCanceledException);
                     outcome = cancellationToken.IsCancellationRequested
                         ? Failed("cancelled", "client_cancelled", "客户端取消了 AI 流式请求", httpStatus)
                         : Failed(isTimeout ? "timeout" : "failed", isTimeout ? "timeout" : ClassifyError(ex), ex.Message, httpStatus);
@@ -502,8 +504,12 @@ namespace Infrastructure.AI
                 }
 
                 using var streamRespScope = streamResp;
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(streamResp.Token, cancellationToken);
-                var token = linkedCts.Token;
+                // 读取阶段只受三件事约束：调用方取消、空闲超时（TimeoutSeconds）、总时长硬上限（MaxStreamDurationSeconds）。
+                // 不再用"从发请求开始算的总时长"——那会把还在正常吐字的长回答误杀。
+                using var readCts = CancellationTokenSource.CreateLinkedTokenSource(streamResp.Token, cancellationToken);
+                var token = readCts.Token;
+                var idleTimeoutSeconds = Math.Max(1, timeoutSeconds);
+                var maxDurationSeconds = options.MaxStreamDurationSeconds;
 
                 var response = streamResp.Response;
                 var providerRequestId = HttpHelper.ReadRequestId(response);
@@ -512,13 +518,33 @@ namespace Infrastructure.AI
                     // 先落一个带状态码的兜底结果，避免读取响应体失败时 finally 只能记「未正常完成」
                     outcome = Failed("http", "http_error", $"AI 服务返回 HTTP {(int)response.StatusCode}",
                         (int)response.StatusCode, providerRequestId);
-                    var errBody = await response.Content.ReadAsStringAsync(token);
+                    string errBody;
+                    try
+                    {
+                        // 错误响应体同样要有上限，避免服务端发了头却不发体时一直挂着。
+                        readCts.CancelAfter(TimeSpan.FromSeconds(idleTimeoutSeconds));
+                        errBody = await response.Content.ReadAsStringAsync(token);
+                        readCts.CancelAfter(Timeout.InfiniteTimeSpan);
+                    }
+                    catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                    {
+                        // 读错误体超时：沿用已知状态码兜底，不改变"主因是 HTTP 状态"的归因。
+                        errBody = string.Empty;
+                    }
                     var errDetail = TryReadProviderErrorMessage(errBody);
                     var detailForMessage = TruncateForLog(
                         SanitizeForMessage(string.IsNullOrWhiteSpace(errDetail) ? "(empty response body)" : errDetail, resolved.ApiKey), 400);
                     outcome = Failed("http", "http_error", errDetail,
                         (int)response.StatusCode, providerRequestId);
                     Logger.LogError($"AI 流式请求失败 scene={SceneName(scene)} status={(int)response.StatusCode} uri={uri} provider={resolved.Provider} model={resolved.Model} requestId={providerRequestId} elapsedMs={stopwatch.ElapsedMilliseconds} body={TruncateForLog(SanitizeForMessage(errBody, resolved.ApiKey), 400)}");
+                    if ((int)response.StatusCode == 429)
+                    {
+                        // 429 必须带 Retry-After 语义上抛，重试策略才能按服务端要求退避（否则会立刻再打）。
+                        throw new AiRateLimitException(
+                            $"AI 服务请求过于频繁（HTTP 429，provider={resolved.Provider}，model={resolved.Model}）：{detailForMessage}",
+                            HttpHelper.ReadRetryAfterSeconds(response),
+                            "http_429");
+                    }
                     throw new HttpRequestException(
                         $"AI 服务调用失败（HTTP {(int)response.StatusCode}，provider={resolved.Provider}，model={resolved.Model}"
                         + (string.IsNullOrWhiteSpace(providerRequestId) ? string.Empty : $"，requestId={providerRequestId}")
@@ -561,10 +587,24 @@ namespace Infrastructure.AI
 
                 while (!sseDone)
                 {
+                    // 总时长硬上限：在读之前判定，避免被下方读取异常分支改写归因。
+                    if (maxDurationSeconds > 0 && stopwatch.Elapsed.TotalSeconds >= maxDurationSeconds)
+                    {
+                        var capMessage = $"AI 流式响应超过总时长上限（{maxDurationSeconds}s，model={resolved.Model}）";
+                        outcome = Failed("timeout", "timeout", capMessage,
+                            (int)response.StatusCode, providerRequestId);
+                        LogCallIncomplete(scene, resolved.Provider, resolved.Model, "duration_cap", capMessage, stopwatch.ElapsedMilliseconds);
+                        throw new AiTimeoutException(maxDurationSeconds, stopwatch.ElapsedMilliseconds,
+                            $"{capMessage}，已中断，请重试");
+                    }
+
                     int read;
                     try
                     {
+                        // 空闲超时：每轮读之前重置计时；读到数据后立刻停表，避免把解析耗时算进空闲。
+                        readCts.CancelAfter(TimeSpan.FromSeconds(idleTimeoutSeconds));
                         read = await stream.ReadAsync(buffer, 0, buffer.Length, token);
+                        readCts.CancelAfter(Timeout.InfiniteTimeSpan);
                     }
                     catch (OperationCanceledException)
                     {
@@ -575,11 +615,18 @@ namespace Infrastructure.AI
                                 (int)response.StatusCode, providerRequestId);
                             throw;
                         }
-                        LogCallIncomplete(scene, resolved.Provider, resolved.Model, "timeout", "AI 流式响应超时", stopwatch.ElapsedMilliseconds);
-                        var timeoutMessage = $"AI 流式响应超时（model={resolved.Model}）";
+                        // 计时器触发可能是"空闲超时"，也可能是"总时长上限"；按实际耗时归因，便于排查。
+                        var capExceeded = maxDurationSeconds > 0
+                            && stopwatch.Elapsed.TotalSeconds >= maxDurationSeconds - 1;
+                        var timeoutMessage = capExceeded
+                            ? $"AI 流式响应超过总时长上限（{maxDurationSeconds}s，model={resolved.Model}）"
+                            : $"AI 流式响应空闲超时（{idleTimeoutSeconds}s 未收到数据，model={resolved.Model}）";
+                        LogCallIncomplete(scene, resolved.Provider, resolved.Model,
+                            capExceeded ? "duration_cap" : "idle_timeout", timeoutMessage, stopwatch.ElapsedMilliseconds);
                         outcome = Failed("timeout", "timeout", timeoutMessage,
                             (int)response.StatusCode, providerRequestId);
-                        throw new HttpRequestException($"{timeoutMessage}，连接已中断，请重试");
+                        throw new AiTimeoutException(capExceeded ? maxDurationSeconds : idleTimeoutSeconds,
+                            stopwatch.ElapsedMilliseconds, $"{timeoutMessage}，连接已中断，请重试");
                     }
                     catch (Exception ex)
                     {
@@ -1010,7 +1057,10 @@ namespace Infrastructure.AI
                     Logger.LogWarning($"AI 调用超时 scene={SceneName(scene)} provider={provider} model={model} elapsedMs={stopwatch.ElapsedMilliseconds} reason={ex.Message}");
                 }
                 scope.Outcome ??= Failed("timeout", "timeout", ex.Message);
-                throw new HttpRequestException("AI 服务响应超时，请稍后重试", ex);
+                // 抛具体超时类型：上层（如工作流）对 AiTimeoutException 有专门提示，
+                // 统一成 HttpRequestException 会让那些分支永远不可达。
+                throw new AiTimeoutException(timeoutSeconds, stopwatch.ElapsedMilliseconds,
+                    $"AI 服务响应超时（model={model}，timeout={timeoutSeconds}s）");
             }
             catch (Exception ex)
             {
@@ -1083,6 +1133,27 @@ namespace Infrastructure.AI
         };
 
         /// <summary>
+        /// 非 2xx 响应的统一异常构造：429 抛 <see cref="AiRateLimitException"/> 并带上 Retry-After
+        /// （重试策略据此按服务端要求等待，而不是用默认指数退避立刻重打）；其余仍抛
+        /// <see cref="HttpRequestException"/>，保留状态码供上层分类与提示。
+        /// </summary>
+        private static Exception BuildHttpStatusException(int statusCode, string errDetail, string model, int? retryAfterSeconds)
+        {
+            if (statusCode == 429)
+            {
+                Logger.LogWarning($"AI 服务限流 status=429 model={model} retryAfter={retryAfterSeconds?.ToString() ?? "-"}s detail={TruncateForLog(errDetail, 400)}");
+                return new AiRateLimitException(
+                    $"AI 服务请求过于频繁（HTTP 429，model={model}）：{TruncateForLog(errDetail, 240)}",
+                    retryAfterSeconds,
+                    "http_429");
+            }
+
+            return new HttpRequestException(
+                $"AI 服务调用失败（HTTP {statusCode}，model={model}）：{TruncateForLog(errDetail, 240)}",
+                null, (HttpStatusCode)statusCode);
+        }
+
+        /// <summary>
         /// 将网络异常或超时异常转换为统一的 AiException 子类。
         /// 用于重试策略在判断是否可重试之前的异常标准化。
         /// </summary>
@@ -1133,14 +1204,17 @@ namespace Infrastructure.AI
             Uri uri, string json, Dictionary<string, string> headers, int timeoutSeconds,
             string scene, string provider, string model, CancellationToken cancellationToken)
         {
+            var stopwatch = Stopwatch.StartNew();
             try
             {
-                return await HttpHelper.HttpPostReadStreamAsync(uri.ToString(), json, "application/json", timeoutSeconds, headers);
+                return await HttpHelper.HttpPostReadStreamAsync(uri.ToString(), json, "application/json", timeoutSeconds, headers, cancellationToken);
             }
             catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
             {
                 Logger.LogError(ex, $"AI 流式请求发送超时 scene={SceneName(scene)} provider={provider} model={model} uri={uri} timeout={timeoutSeconds}s");
-                throw new HttpRequestException($"AI 服务请求超时（provider={provider}，model={model}，timeout={timeoutSeconds}s）", ex);
+                // 同上：保留 AiTimeoutException 类型，让上层能按"超时"而不是"通用失败"处理。
+                throw new AiTimeoutException(timeoutSeconds, stopwatch.ElapsedMilliseconds,
+                    $"AI 服务请求超时（provider={provider}，model={model}，timeout={timeoutSeconds}s）");
             }
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {

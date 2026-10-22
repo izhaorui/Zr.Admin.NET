@@ -224,6 +224,12 @@ namespace Infrastructure.AI
             {
                 AiException ai => ai, // 已是标准异常
 
+                // 治理拒绝（额度不足/功能停用/未配单价等）自带面向用户的中文原因，必须原样透出。
+                // 若落到下面的兜底分支，UserMessage 会被替换成"AI 服务异常，请稍后重试或联系管理员"，
+                // 前端只能看到通用文案，用户无法得知是被额度或开关拦下的。
+                AiGovernanceDeniedException denied
+                    => new AiGenericException(denied.Reason, denied.Message, denied.Message),
+
                 OperationCanceledException => new AiCancelledException("operation_cancelled", null),
 
                 HttpRequestException httpEx => TryParseHttpException(httpEx),

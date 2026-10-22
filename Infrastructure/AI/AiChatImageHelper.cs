@@ -35,7 +35,10 @@ namespace Infrastructure.AI
         };
 
         /// <summary>去空白、去重、上限截断；非法项抛友好异常。</summary>
-        public static List<string> NormalizeClientUrls(IEnumerable<string> urls)
+        /// <param name="urls">待规范化的图片地址</param>
+        /// <param name="maxCount">数量上限，默认 <see cref="MaxCount"/>（聊天一次性发图的产品限制）；
+        /// 工作流等批量输入场景可放宽，避免因附件张数直接把整个 AI 能力判失败。</param>
+        public static List<string> NormalizeClientUrls(IEnumerable<string> urls, int maxCount = MaxCount)
         {
             var list = new List<string>();
             if (urls == null) return list;
@@ -55,9 +58,9 @@ namespace Infrastructure.AI
                 {
                     list.Add(u);
                 }
-                if (list.Count > MaxCount)
+                if (list.Count > maxCount)
                 {
-                    throw new Exception($"一次最多发送 {MaxCount} 张图片");
+                    throw new Exception($"一次最多发送 {maxCount} 张图片");
                 }
             }
             return list;

@@ -746,6 +746,23 @@ namespace ZR.Workflow.Service
 
         #region AI 扩展能力（审批意见 / 流程体检 / 自然语言填单）
 
+        /// <summary>
+        /// 把表单里的图片附件转成"可安全发给视觉模型"的地址：站内相对路径读本地文件转 data URI，
+        /// 公网 http(s) 校验主机后原样下发；内网/回环地址、白名单外域名、非法扩展名、超体积图片一律拒绝。
+        /// <para>工作流图片来自申请人提交的表单，属于不可信输入。直接透传会把内网地址或未授权资源
+        /// 交给第三方视觉模型（SSRF / 内网信息泄露），因此必须与聊天链路共用同一套校验规则：
+        /// 白名单见 <see cref="AiOptions.AttachmentDownloadAllowedHosts"/>。</para>
+        /// </summary>
+        private static List<string> ResolveModelImageUrls(IReadOnlyList<string> urls, AiOptions options)
+        {
+            if (urls == null || urls.Count == 0) return new List<string>();
+
+            // 不套用聊天的 4 张限制：审批附件的张数由申请人决定，限制数量会让 AI 建议整体失败；
+            // 这里只做去重与非法值拦截，真正的安全校验（私网/白名单/扩展名/体积）在 ToModelImageUrls。
+            var normalized = AiChatImageHelper.NormalizeClientUrls(urls, int.MaxValue);
+            return AiChatImageHelper.ToModelImageUrls(normalized, App.WebHostEnvironment?.WebRootPath, options);
+        }
+
         // ===== 提交前审批意见话术建议（提示词见 Prompts/approval-suggest.md） =====
 
         public async Task<WfAiApprovalSuggestResult> SuggestApprovalAsync(WfAiApprovalSuggestInput input)
@@ -806,9 +823,11 @@ namespace ZR.Workflow.Service
             string text;
             if (imgUrls.Count > 0)
             {
-                // 含图片附件：走视觉模型多模态理解（VisionModel 未配置时此方法内部抛友好提示）
+                // 含图片附件：先做安全校验与地址转换（相对路径→data URI、内网地址拦截、域名白名单），
+                // 再走视觉模型多模态理解（VisionModel 未配置时此方法内部抛友好提示）
+                var modelImageUrls = ResolveModelImageUrls(imgUrls, options);
                 text = (await AiLlmClientRetryWrapper.ChatWithImagesAsyncWithRetry(
-                    options, AiHelper.GetPromptOrThrow("approval-suggest.md", "审批意见建议"), user, imgUrls, AiSceneCatalog.WfApprovalSuggest).ConfigureAwait(false))?.Content;
+                    options, AiHelper.GetPromptOrThrow("approval-suggest.md", "审批意见建议"), user, modelImageUrls, AiSceneCatalog.WfApprovalSuggest).ConfigureAwait(false))?.Content;
             }
             else
             {
@@ -1262,8 +1281,10 @@ namespace ZR.Workflow.Service
             if (imgUrls.Count > 0)
             {
                 var options = AiHelper.EnsureAiEnabled();
+                // 同上：表单图片先过安全校验，避免把内网地址直接交给第三方视觉模型
+                var modelImageUrls = ResolveModelImageUrls(imgUrls, options);
                 text = (await AiLlmClientRetryWrapper.ChatWithImagesAsyncWithRetry(
-                    options, AiHelper.GetPromptOrThrow("risk-check.md", "审批风险预判"), userContext, imgUrls, AiSceneCatalog.WfRiskCheck).ConfigureAwait(false))?.Content;
+                    options, AiHelper.GetPromptOrThrow("risk-check.md", "审批风险预判"), userContext, modelImageUrls, AiSceneCatalog.WfRiskCheck).ConfigureAwait(false))?.Content;
             }
             else
             {

@@ -1,11 +1,14 @@
 {
   // AI 公共默认。密钥写在各 Provider 的 ApiKey；本地用同结构的 ai.Development.json 覆盖。
+  // TimeoutSeconds：非流式=整请求总时长；流式=空闲超时（连续多久没收到数据才失败）。
+  // MaxStreamDurationSeconds：流式整段输出的硬上限，防慢速滴流长期占用连接与在途额度；0=不限制。
   "AiOptions": {
     "Enable": true,
     "Provider": "qwen",
     "Temperature": 0.7,
     "MaxTokens": 4096,
     "TimeoutSeconds": 60,
+    "MaxStreamDurationSeconds": 600,
     "EnableThinking": false,
     "EnableRetry": true,
     "MaxRetries": 3,
