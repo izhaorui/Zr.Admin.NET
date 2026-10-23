@@ -9,7 +9,10 @@ namespace ZR.Model.System.Dto
         Account = 1,
 
         /// <summary>手机号（短信验证码）登录</summary>
-        Phone = 2
+        Phone = 2,
+
+        /// <summary>第三方授权登录（微信/企业微信/钉钉等）</summary>
+        ThirdAccount = 3
     }
 
     /// <summary>
@@ -93,6 +96,14 @@ namespace ZR.Model.System.Dto
 
         /// <summary>是否来自手机号登录（决定第二步走哪套签发逻辑）</summary>
         public int LoginSource { get; set; }
+
+        /// <summary>
+        /// 第一步凭据类型（取值见 LoginAuthType）。第一步写、第二步原样落日志。
+        ///
+        /// 为什么不按 LoginSource 在第二步现推：三方登录要精确到渠道（oauth:wechat_enterprise），
+        /// 现推只能得到"password/短信"这种粗粒度，会把"用微信登录"记成"用密码登录"。
+        /// </summary>
+        public string AuthType { get; set; }
     }
 
     /// <summary>

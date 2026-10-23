@@ -77,6 +77,9 @@ namespace ZR.ServiceCore.SqlSugar
             // 注册进主库迁移链路后，后台「数据库同步」页也能看到并手工补建这张表。
             // 数据由 MainDbReferenceSeed.EnsureAreas 灌入（种子内嵌在 ZR.ServiceCore）。
             typeof(Area),
+            // 第三方账号绑定。数据无 IMainDbEntity，SaaS 下由 BaseRepository 路由到租户库，
+            // 因此这里（系统库/单库）与 TenantBusinessEntityTypes（租户库）都要注册。
+            typeof(SysThirdAccount),
         };
 
         /// <summary>
@@ -113,7 +116,8 @@ namespace ZR.ServiceCore.SqlSugar
             typeof(DailySchedule),
             typeof(ArticleBrowsingLog),
             typeof(AiChatSession),
-            typeof(AiChatMessage)
+            typeof(AiChatMessage),
+            typeof(SysThirdAccount)
         };
 
         /// <summary>

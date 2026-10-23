@@ -51,6 +51,23 @@
         "Endpoint": "*:/workflow/ai/match-fill",
         "Period": "20s",
         "Limit": 5
+      },
+      // 第三方授权入口：GET 也会写一条 state 缓存（有效期 10 分钟），
+      // 不限流等于给匿名请求一个放大缓存写的入口
+      {
+        "Endpoint": "*:/oauth/authorize",
+        "Period": "60s",
+        "Limit": 10
+      },
+      {
+        "Endpoint": "*:/oauth/bind/authorize",
+        "Period": "60s",
+        "Limit": 10
+      },
+      {
+        "Endpoint": "*:/oauth/callback",
+        "Period": "60s",
+        "Limit": 20
       }
     ]
   }

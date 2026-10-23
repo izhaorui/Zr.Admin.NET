@@ -226,10 +226,8 @@ namespace ZR.ServiceCore.Services
             {
                 UserName = user.UserName,
                 UserId = user.UserId,
-                // 第一步凭据来自票据：第二步是独立请求，靠票据里的来源区分密码/短信登录
-                AuthType = payload.LoginSource == (int)TwoFactorLoginSource.Phone
-                    ? LoginAuthType.SmsCode
-                    : LoginAuthType.Password,
+                // 第一步凭据来自票据：第二步是独立请求，靠票据里记录的字段还原（三方登录能精确到渠道）
+                AuthType = payload.AuthType ?? DefaultAuthTypeOf((TwoFactorLoginSource)payload.LoginSource),
                 Ipaddr = payload.LoginIP,
                 ClientId = payload.ClientId,
                 LoginTime = DateTime.Now,
@@ -330,7 +328,7 @@ namespace ZR.ServiceCore.Services
         /// 票据里带租户与本次设备凭据哈希：第二步据此查用户、登记设备，且只能用票据绑定的那台设备。
         /// </summary>
         public LoginResultDto BuildTwoFactorResult(SysUser user, string tenantId, string clientId, string deviceTokenHash,
-            string loginIp, string location, TwoFactorLoginSource source)
+            string loginIp, string location, TwoFactorLoginSource source, string authType = null)
         {
             var settings = TwoFactorOptions;
             var minutes = settings.TicketMinutes > 0 ? settings.TicketMinutes : 5;
@@ -347,6 +345,8 @@ namespace ZR.ServiceCore.Services
                 LoginIP = loginIp,
                 LoginLocation = location,
                 LoginSource = (int)source,
+                // 凭据类型随票据走：第二步是独立请求，无法再问"用户刚才是怎么登录的"
+                AuthType = authType ?? DefaultAuthTypeOf(source),
                 ExpiresAt = DateTime.Now.AddMinutes(minutes)
             }, minutes);
 
@@ -358,6 +358,20 @@ namespace ZR.ServiceCore.Services
                 // 方法列表由服务端算、前端只按列表渲染：WebAuthn 落地时这里加一项即可
                 Methods = TwoFactorService.GetAvailableMethods(user),
                 PreferredMethod = TwoFactorService.GetPreferredMethod(user)
+            };
+        }
+
+        /// <summary>
+        /// 按第一步来源推导凭据类型（调用方未显式传入时的回退）。
+        /// 第三方登录通常显式传入带渠道的码，这里只兜底到粗粒度的 oauth。
+        /// </summary>
+        private static string DefaultAuthTypeOf(TwoFactorLoginSource source)
+        {
+            return source switch
+            {
+                TwoFactorLoginSource.Phone => LoginAuthType.SmsCode,
+                TwoFactorLoginSource.ThirdAccount => LoginAuthType.OAuth,
+                _ => LoginAuthType.Password
             };
         }
 
@@ -377,7 +391,11 @@ namespace ZR.ServiceCore.Services
             exp.AndIF(logininfoDto.Status.IfNotEmpty(), f => f.Status == logininfoDto.Status);
             exp.AndIF(logininfoDto.Ipaddr.IfNotEmpty(), f => f.Ipaddr == logininfoDto.Ipaddr);
             exp.AndIF(logininfoDto.UserName.IfNotEmpty(), f => f.UserName.Contains(logininfoDto.UserName));
-            exp.AndIF(logininfoDto.AuthType.IfNotEmpty(), f => f.AuthType == logininfoDto.AuthType);
+            // 第三方登录落库为 "oauth:渠道"，前端筛选项只传大类 oauth，故走前缀匹配；
+            // 其余凭据是固定码，仍按等值查
+            exp.AndIF(logininfoDto.AuthType == LoginAuthType.OAuth, f => f.AuthType.StartsWith(LoginAuthType.OAuth));
+            exp.AndIF(logininfoDto.AuthType.IfNotEmpty() && logininfoDto.AuthType != LoginAuthType.OAuth,
+                f => f.AuthType == logininfoDto.AuthType);
             exp.AndIF(logininfoDto.TwoFactorType.IfNotEmpty(), f => f.TwoFactorType == logininfoDto.TwoFactorType);
 
             var query = db.Queryable<SysLogininfor>().ApplyScope().Where(exp.ToExpression())

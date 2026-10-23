@@ -10,7 +10,8 @@
         public DateTime? EndTime { get; set; }
 
         /// <summary>
-        /// 第一步凭据类型（<see cref="LoginAuthType"/>）：password / sms_code
+        /// 第一步凭据类型（<see cref="LoginAuthType"/>）：password / sms_code / oauth。
+        /// 传 oauth 时按前缀匹配，可一次查出所有 oauth:渠道 的记录
         /// </summary>
         public string AuthType { get; set; }
 

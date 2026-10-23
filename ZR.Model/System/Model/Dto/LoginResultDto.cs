@@ -19,7 +19,13 @@ namespace ZR.Model.System.Dto
         TicketExpired = 2,
 
         /// <summary>用户不存在或已禁用</summary>
-        AccountUnavailable = 3
+        AccountUnavailable = 3,
+
+        /// <summary>
+        /// 第三方身份尚未绑定本系统账号，且未开启自动建号。
+        /// 与 AccountUnavailable 区分：这是"需要用户先登录再绑定"，不是失败。
+        /// </summary>
+        BindRequired = 4
     }
 
     /// <summary>

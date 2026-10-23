@@ -2,6 +2,7 @@ using Infrastructure.Captcha;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Model.Models;
 using ZR.Model.System;
+using ZR.Admin.WebApi.Extensions;
 using ZR.Model.System.Dto;
 using ZR.ServiceCore.Model.Dto;
 
@@ -133,42 +134,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         private IActionResult ToLoginResponse(LoginResultDto result)
         {
-            switch (result.Status)
-            {
-                case LoginResultStatus.TwoFactorRequired:
-                {
-                    var apiResult = new ApiResult((int)ResultCode.MFA_REQUIRED, "需要双因子验证");
-                    apiResult.Put("mfaRequired", true);
-                    apiResult.Put("ticket", result.Ticket);
-                    apiResult.Put("expireMinutes", result.ExpireMinutes);
-                    // 可用方法与首选方法由服务端下发，前端只按列表渲染入口：
-                    // WebAuthn 落地时后端加一项即可，前端与接口契约都不用再改。
-                    apiResult.Put("methods", result.Methods);
-                    apiResult.Put("preferredMethod", result.PreferredMethod);
-                    return ToResponse(apiResult);
-                }
-                case LoginResultStatus.TicketExpired:
-                    return ToResponse(ResultCode.LOGIN_ERROR, "双因子验证已超时，请重新登录");
-
-                case LoginResultStatus.AccountUnavailable:
-                    return ToResponse(ResultCode.LOGIN_ERROR, "账号不可用");
-
-                default:
-                {
-                    ApiResult apiResult = new((int)ResultCode.SUCCESS, "success", result.Token);
-                    if (!string.IsNullOrEmpty(result.Notice))
-                    {
-                        apiResult.Put("notice", result.Notice);
-                    }
-                    // "记住此设备"签发的设备凭据只在此返回一次（服务端只存哈希），客户端保存后下次登录带回
-                    if (!string.IsNullOrEmpty(result.DeviceToken))
-                    {
-                        apiResult.Put("deviceToken", result.DeviceToken);
-                    }
-
-                    return ToResponse(apiResult);
-                }
-            }
+            // 映射规则收在 LoginResponseMapper：手机号登录、三方登录共用同一份，
+            // 避免某个入口漏掉 2FA 分支后前端得逐个接口判断
+            return ToResponse(LoginResponseMapper.Map(result));
         }
         #endregion
 

@@ -55,8 +55,13 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 组装"需要双因子验证"的结果：写入一次性票据，返回票据与可用方法列表（**不含 token**）
         /// </summary>
+        /// <param name="authType">
+        /// 第一步凭据类型（见 <see cref="LoginAuthType"/>）原样写进票据，供第二步落日志。
+        /// 为空时按 <paramref name="source"/> 推导；第三方登录应显式传入带渠道的码（oauth:xxx），
+        /// 否则第二步会把"用微信登录"记成"用密码登录"。
+        /// </param>
         LoginResultDto BuildTwoFactorResult(SysUser user, string tenantId, string clientId, string deviceTokenHash,
-            string loginIp, string location, TwoFactorLoginSource source);
+            string loginIp, string location, TwoFactorLoginSource source, string authType = null);
         /// <summary>
         /// 查询操作日志
         /// </summary>

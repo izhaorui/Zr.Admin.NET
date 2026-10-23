@@ -107,6 +107,18 @@
 
         /// <summary>手机号 + 短信验证码</summary>
         public const string SmsCode = "sms_code";
+
+        /// <summary>
+        /// 第三方授权登录。实际落库为 "oauth:渠道"，如 oauth:wechat_enterprise。
+        /// 带渠道是因为"用微信进"和"用钉钉进"在安全审计上是两件事，只看 oauth 无法追责。
+        /// </summary>
+        public const string OAuth = "oauth";
+
+        /// <summary>拼接第三方登录的凭据类型码（列长 32，渠道名需控制长度）</summary>
+        public static string ForOAuth(string authSource)
+        {
+            return $"{OAuth}:{authSource?.ToLowerInvariant()}";
+        }
     }
 
     /// <summary>

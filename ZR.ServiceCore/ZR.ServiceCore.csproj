@@ -28,6 +28,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- 第三方授权聚合库（团队自行维护并发布，命名空间 Come.CollectiveOAuth）。
+		     只承接标准 OAuth2 网页授权；钉钉（上游为已废弃的旧协议且整段注释）与微信小程序（code2session）
+		     由本项目自行实现，见 OAuth/Providers。
+		     注意：包内 AlipaySDKNet.Standard 标了 PrivateAssets=all，启用支付宝登录时需在此显式再引一次。 -->
+		<PackageReference Include="CollectiveOAuthCore" Version="1.1.0" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<!--
 		  主库公共参考数据种子（省市区三级字典，约 3400 条 / 432KB）。
 		  由 MainDbReferenceSeed.EnsureAreas 在 initdb 初始化时灌入主库 sys_area。
