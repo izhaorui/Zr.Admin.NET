@@ -94,6 +94,16 @@ namespace ZR.Admin.WebApi.Controllers.System
             var userid = HttpContext.GetUId();
             var name = HttpContext.GetName();
 
+            // 注销即吊销：把当前 token 的会话号写入黑名单，剩余有效期内不再通过鉴权。
+            // 本接口允许匿名访问，中间件不解析 token，这里由 GetCurrentUser 回退解析（token 无效时返回 null，无需吊销）。
+            var loginUser = HttpContext.GetCurrentUser();
+            if (loginUser != null)
+            {
+                var remainMinutes = (int)Math.Ceiling((loginUser.ExpireTime - DateTime.UtcNow).TotalMinutes);
+                CacheService.SetSessionRevoked(loginUser.SessionId, remainMinutes);
+            }
+            logger.Info($"用户注销：UserId={userid}");
+
             CacheService.RemoveUserPerms(GlobalConstant.UserPermKEY + userid);
             CacheService.RemoveDataScopeDeptIds(userid);
             CacheService.RemoveUserSession(userid);

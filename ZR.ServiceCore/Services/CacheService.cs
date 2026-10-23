@@ -82,6 +82,33 @@ namespace ZR.ServiceCore.Services
         }
         #endregion
 
+        #region 注销吊销（会话黑名单）
+        private static readonly string RevokedSessionPrefix = "CACHE-REVOKED-SESSION_";
+
+        /// <summary>
+        /// 吊销指定会话：注销后该 token 在剩余有效期内不再通过鉴权。
+        /// TTL 取 token 剩余有效期，token 自然过期后键随之回收。
+        ///
+        /// 键刻意不加租户前缀：sessionId 是随机 GUID，全局唯一；而租户上下文在中间件与控制器两侧不一定一致，
+        /// 加前缀可能出现"写入端与校验端 key 不同"导致吊销静默失效（宁可多吊销，不能漏吊销）。
+        /// </summary>
+        public static void SetSessionRevoked(string sessionId, int expireMinutes)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId) || expireMinutes <= 0) return;
+            CacheStore.For(CacheBackend.Session).Set(RevokedSessionPrefix + sessionId, 1, expireMinutes);
+        }
+
+        /// <summary>
+        /// 判断会话是否已被注销吊销。
+        /// 缓存丢失/后端重启时返回 false（fail-open），退化为"不校验"，避免误踢全体在线用户。
+        /// </summary>
+        public static bool IsSessionRevoked(string sessionId)
+        {
+            return !string.IsNullOrWhiteSpace(sessionId)
+                && CacheStore.For(CacheBackend.Session).Exists(RevokedSessionPrefix + sessionId);
+        }
+        #endregion
+
 
 
         public static object SetScanLogin(string key, Dictionary<string, object> val)

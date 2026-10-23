@@ -79,6 +79,17 @@ namespace ZR.ServiceCore.Middleware
                 return;
             }
 
+            // 注销吊销：logout 已把该会话号写入黑名单，命中即拒绝。
+            // 必须放在自动续期之前 —— 否则"已注销但仍在有效期"的 token 会被续成新的，等于退出后还能一直用。
+            // 与 SingleLogin 无关（单设备登录默认关闭）；缓存丢失时黑名单为空，退化为现状，不会误踢在线用户。
+            if (CacheService.IsSessionRevoked(loginUser.SessionId))
+            {
+                string msg = "登录状态已失效，请重新登录";
+                _logger.LogWarning($"请求访问[{url}]失败：{msg}, UserId={loginUser.UserId}, ip={ip}");
+                await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, msg));
+                return;
+            }
+
             // 单设备登录：校验当前 token 携带的会话ID是否仍为服务端有效会话，否则视为被新设备挤下线
             if (_options.SingleLogin)
             {
