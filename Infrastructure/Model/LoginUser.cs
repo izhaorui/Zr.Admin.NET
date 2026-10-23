@@ -40,6 +40,11 @@ namespace Infrastructure.Model
         /// </summary>
         public DateTime ExpireTime { get; set; }
         /// <summary>
+        /// 会话首次签发时间（UTC）。续期时原样继承，用于计算绝对最长存活时间，
+        /// 防止 token 通过无限续期永久有效。为空表示升级前签发的旧 token。
+        /// </summary>
+        public DateTime? FirstLoginTime { get; set; }
+        /// <summary>
         /// 租户ID
         /// </summary>
         public string TenantId { get; set; }

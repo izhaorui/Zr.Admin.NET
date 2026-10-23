@@ -293,7 +293,8 @@ namespace ZR.ServiceCore.Services
                 TenantId = tenantId,
                 Permissions = permissions,
                 ScopeType = ComputeScopeType(roles),
-                SessionId = Guid.NewGuid().ToString("N")// 单设备登录：每次登录生成新会话ID并缓存，旧会话将被中间件判定失效
+                SessionId = Guid.NewGuid().ToString("N"),// 单设备登录：每次登录生成新会话ID并缓存，旧会话将被中间件判定失效
+                FirstLoginTime = DateTime.UtcNow// 绝对有效期起点：续期只改 ExpireTime，不改这个值
             };
 
             // 设备登记：登记失败不影响登录 —— 它不是安全闸门，只承担审计与提醒职责。

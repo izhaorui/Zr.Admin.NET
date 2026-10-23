@@ -276,6 +276,11 @@ namespace Infrastructure.Model
         /// </summary>
         public int RefreshTokenTime { get; set; }
         /// <summary>
+        /// 会话绝对最长存活时间（分）：无论续期多少次，超过该时长一律强制重新登录。
+        /// 0 或负数表示不限制（不建议）；应大于等于 <see cref="Expire"/>。默认 7 天。
+        /// </summary>
+        public int MaxLifetime { get; set; } = 10080;
+        /// <summary>
         /// token类型
         /// </summary>
         public string TokenType { get; set; } = "Bearer";

@@ -114,6 +114,33 @@ namespace ZR.ServiceCore.Middleware
             }
 
             var now = DateTime.UtcNow;
+
+            // 绝对最长存活时间：下面的"临期自动续期"没有次数上限，活跃会话每次都能再续一整个 Expire，
+            // 等于 token 可永久有效（被盗 token 只要持续使用就不会失效，改密码也无法吊销）。
+            // 这里给会话一个硬上限：超过后不再续期，直接要求重新登录。
+            var maxLifetime = _options.JwtSettings.MaxLifetime;
+            if (maxLifetime > 0)
+            {
+                // 升级前签发的旧 token 没有 FirstLoginTime：按"过期时间 - 有效期"反推本次签发时间。
+                // 回填后本次续期出的新 token 会带上该值，后续按真实起点计时，不会永久豁免。
+                var firstLoginTime = loginUser.FirstLoginTime
+                    ?? loginUser.ExpireTime.AddMinutes(-_options.JwtSettings.Expire);
+                loginUser.FirstLoginTime = firstLoginTime;
+
+                if (now - firstLoginTime >= TimeSpan.FromMinutes(maxLifetime))
+                {
+                    var lifetimeText = maxLifetime >= 1440 && maxLifetime % 1440 == 0
+                        ? $"{maxLifetime / 1440} 天"
+                        : $"{maxLifetime} 分钟";
+                    var msg = $"登录状态已超过最长有效期（{lifetimeText}），请重新登录";
+                    _logger.LogWarning($"{msg}，UserId={loginUser.UserId}, ip={ip}");
+                    CacheService.RemoveUserSession(loginUser.UserId);
+                    // 用 401 而非 480：前端仅对 401 触发"重新登录"流程（480 只弹一条提示，用户会卡在页面上）
+                    await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, msg));
+                    return;
+                }
+            }
+
             var ts = loginUser.ExpireTime - now;
             if (ts.TotalMinutes <= TOKEN_REFRESH_THRESHOLD_MINUTES)
             {

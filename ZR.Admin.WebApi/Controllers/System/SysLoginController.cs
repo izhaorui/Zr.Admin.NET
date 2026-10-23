@@ -416,6 +416,9 @@ namespace ZR.Admin.WebApi.Controllers.System
 
                 // 单设备登录：扫码登录视为一次新登录，生成新会话ID踢掉旧设备
                 tokenModel.SessionId = Guid.NewGuid().ToString("N");
+                // 绝对有效期沿用原会话，避免"扫一次码就重置起点"绕过上限；
+                // 旧 token 无该值时按"过期时间 - 有效期"反推
+                tokenModel.FirstLoginTime ??= tokenModel.ExpireTime.AddMinutes(-AppSettings.Bind("JwtSettings", new JwtSettings()).Expire);
                 CacheService.SetUserSession(tokenModel.UserId, tokenModel.SessionId);
                 CacheService.SetTwoFactorSessionOk(tokenModel.UserId, tokenModel.SessionId);
                 Dictionary<string, object> dict = new()
