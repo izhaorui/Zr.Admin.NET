@@ -458,7 +458,7 @@ namespace ZR.Common.Email
                 foreach (var value in EmailTextUtil.SplitList(raw))
                 {
                     if (MailboxAddress.TryParse(value, out var mailbox)
-                        && !string.IsNullOrWhiteSpace(mailbox.Address))
+                        && IsValidMailbox(mailbox))
                     {
                         result.Add(mailbox.Address);
                     }
@@ -470,6 +470,19 @@ namespace ZR.Common.Email
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// MimeKit 的 TryParse 对 "not-an-email" 这类本地地址也会返回 true，
+        /// 这里额外要求有且仅有一个 @，且不在首尾，避免把明显非法的地址交给 SMTP。
+        /// </summary>
+        private static bool IsValidMailbox(MailboxAddress mailbox)
+        {
+            var address = mailbox?.Address;
+            if (string.IsNullOrWhiteSpace(address)) return false;
+
+            var at = address.IndexOf('@');
+            return at > 0 && at == address.LastIndexOf('@') && at < address.Length - 1;
         }
 
         private static int ResolveTimeoutMs(MailOptions options)
