@@ -13,6 +13,7 @@ using System.Text.Json;
 using ZR.Admin.WebApi.Extensions;
 using Infrastructure.Cache;
 using ZR.Common.DynamicApiSimple.Extens;
+using ZR.ServiceCore.Email;
 using ZR.ServiceCore.Oss;
 using ZR.Infrastructure.IPTools;
 using ZR.Infrastructure.WebExtensions;
@@ -89,6 +90,8 @@ builder.Services.AddJwt();
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 //app服务注册
 builder.Services.AddAppService();
+// 邮件后台派发：队列消费 + 失败退避重试 + 启动恢复（HostedService 不在 [AppService] 扫描范围）
+builder.Services.AddEmailDispatch();
 // 对象存储(OSS)提供程序：注册工厂 + 默认实现
 //   上传接口按调用方传入的 StoreType 取实现（2=阿里云 / 6=S3 兼容），统一由 IOssProviderFactory 路由 ——
 //   存储类型是"文件存到哪里"的选择，必须与实现一致，不能由全局配置单方面决定。

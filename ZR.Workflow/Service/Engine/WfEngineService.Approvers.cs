@@ -1,3 +1,4 @@
+using ZR.Common.Email;
 using ZR.Workflow.Service.Engine;
 
 namespace ZR.Workflow.Service
@@ -492,8 +493,9 @@ namespace ZR.Workflow.Service
                 .First();
             if (contact == null) return;
 
+            // 邮件入队在服务内部用独立连接异步执行（不复用请求连接）；这里只做轻量参数准备
             if (notify.EmailEnabled && !string.IsNullOrWhiteSpace(contact.Email))
-                Task.Run(() => SendNotifyMail(notify, contact.Email, content));
+                SendNotifyMail(notify, contact.Email, content);
             if (notify.SmsEnabled && !string.IsNullOrWhiteSpace(contact.Phonenumber))
                 Task.Run(() => SendNotifySms(userId, contact.Phonenumber, content));
         }
@@ -508,9 +510,16 @@ namespace ZR.Workflow.Service
                 if (string.IsNullOrWhiteSpace(mailOptions.FromEmail)) return;
 
                 var subject = content.Length > 60 ? content[..60] : content;
-                var result = new MailHelper(mailOptions).SendMail(toEmail, subject, content);
-                if (result == "fail") logger.Warn($"工作流邮件通知发送失败 To={ZR.Infrastructure.Helper.MaskUtil.MaskEmail(toEmail)} Content={content}");
-                else logger.Info($"工作流邮件通知已发送 To={ZR.Infrastructure.Helper.MaskUtil.MaskEmail(toEmail)} Content={content}");
+                // 落库+入队由服务在后台独立连接上完成，真实投递由 EmailDispatchService 负责（失败自动退避重试）
+                _emailSendService.EnqueueDetached(new EmailMessage
+                {
+                    FromName = mailOptions.FromName,
+                    To = new List<string> { toEmail },
+                    Subject = subject,
+                    TextBody = content,
+                }, "workflow");
+
+                logger.Info($"工作流邮件通知已提交后台入队 To={ZR.Infrastructure.Helper.MaskUtil.MaskEmail(toEmail)} Content={content}");
             }
             catch (Exception ex)
             {

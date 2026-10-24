@@ -150,6 +150,33 @@ namespace Infrastructure.Model
         public int Port { get; set; }
         public bool UseSsl { get; set; }
         public string Signature { get; set; }
+
+        /// <summary>
+        /// 是否启用真实发送。false 时为模拟发送（只记录日志/发送记录，不连 SMTP），
+        /// 用于开发环境避免误发；默认 true，保持历史行为。
+        /// </summary>
+        public bool Enabled { get; set; } = true;
+
+        /// <summary>
+        /// 安全连接方式：Auto / StartTls / StartTlsWhenAvailable / SslOnConnect / None。
+        /// 留空时按 UseSsl 自动映射（true→Auto，false→None）：465 端口自动 SSL 直连，587 端口自动 STARTTLS。
+        /// </summary>
+        public string Security { get; set; }
+
+        /// <summary>连接/读写超时（秒），默认 30，最大 600。</summary>
+        public int TimeoutSeconds { get; set; } = 30;
+
+        /// <summary>
+        /// 是否跳过 SMTP 服务器证书校验。仅内网自签证书场景开启；
+        /// 默认 false（走系统证书校验，避免中间人风险）。
+        /// </summary>
+        public bool IgnoreCertificateErrors { get; set; }
+
+        /// <summary>单封邮件附件总大小上限（MB），默认 20；&lt;=0 表示不限制。</summary>
+        public int MaxAttachmentMB { get; set; } = 20;
+
+        /// <summary>发送失败后的自动重试次数（不含首次发送），默认 3。</summary>
+        public int MaxRetryCount { get; set; } = 3;
     }
     /// <summary>
     /// 短信服务配置

@@ -49,13 +49,15 @@ namespace ZR.ServiceCore.Services
         private readonly ISysUserService UserService;
         private readonly ISysUserMsgService UserMsgService;
         private readonly ISysWebAuthnService WebAuthnService;
+        private readonly ZR.ServiceCore.Email.IEmailSendService EmailSendService;
 
         public SysTwoFactorService(ISysUserService userService, ISysUserMsgService userMsgService,
-            ISysWebAuthnService webAuthnService)
+            ISysWebAuthnService webAuthnService, ZR.ServiceCore.Email.IEmailSendService emailSendService)
         {
             UserService = userService;
             UserMsgService = userMsgService;
             WebAuthnService = webAuthnService;
+            EmailSendService = emailSendService;
         }
 
         private static TwoFactorSettings Settings => AppSettings.Bind("TwoFactor", new TwoFactorSettings());
@@ -554,7 +556,8 @@ namespace ZR.ServiceCore.Services
             {
                 var toEmail = user.Email;
                 var fromName = settings.AlertMailFromName;
-                _ = Task.Run(() => SendAlertMail(toEmail, fromName, "【安全提醒】新设备登录", content));
+                // 入队由 SendAlertMail 内部用独立连接异步执行，这里只做轻量参数准备
+                SendAlertMail(toEmail, fromName, "【安全提醒】新设备登录", content);
             }
 
             logger.Warn($"已发送新设备登录告警：UserId={userId}, 信任={trusted}");
@@ -710,7 +713,7 @@ namespace ZR.ServiceCore.Services
             {
                 var toEmail = user.Email;
                 var fromName = settings.AlertMailFromName;
-                _ = Task.Run(() => SendAlertMail(toEmail, fromName, "【安全提醒】使用了双因子恢复码", content));
+                SendAlertMail(toEmail, fromName, "【安全提醒】使用了双因子恢复码", content);
             }
         }
 
@@ -778,21 +781,23 @@ namespace ZR.ServiceCore.Services
 
             if (settings.AlertByEmail && !string.IsNullOrWhiteSpace(user.Email))
             {
-                // 邮件走后台线程：SMTP 可能耗时数秒，挂在这里会拖慢登录失败响应
+                // 入队由 SendAlertMail 内部异步执行（独立连接），SMTP 投递由后台队列完成
                 var toEmail = user.Email;
                 var fromName = settings.AlertMailFromName;
-                _ = Task.Run(() => SendAlertMail(toEmail, fromName, "【安全提醒】双因子认证连续失败", content));
+                SendAlertMail(toEmail, fromName, "【安全提醒】双因子认证连续失败", content);
             }
 
             logger.Warn($"已发送双因子连续失败告警：UserId={user.UserId}, 失败次数={failCount}");
         }
 
         /// <summary>
-        /// 发送告警邮件（后台线程执行）。
+        /// 发送告警邮件。
         /// MailOptions 未配置发件邮箱（FromEmail / Password 为空）时静默跳过、降级为仅站内信 ——
         /// 与工作流通知同一口径，未配置不算错误。
+        /// 落库/入队由 IEmailSendService 在独立连接的后台任务里完成（不复用请求连接），
+        /// SMTP 投递由后台队列执行并在失败时退避重试。
         /// </summary>
-        private static void SendAlertMail(string toEmail, string fromName, string subject, string content)
+        private void SendAlertMail(string toEmail, string fromName, string subject, string content)
         {
             try
             {
@@ -805,11 +810,15 @@ namespace ZR.ServiceCore.Services
                     return;
                 }
 
-                var result = new MailHelper(mailOptions).SendMail(toEmail, subject, content);
-                if (result == "fail")
-                {
-                    logger.Warn($"双因子失败告警邮件发送失败 To={MaskUtil.MaskEmail(toEmail)}");
-                }
+                EmailSendService.EnqueueTemplateDetached(ZR.Common.Email.EmailTemplateDefaults.SecurityAlert,
+                    new[] { toEmail },
+                    new Dictionary<string, object>
+                    {
+                        ["subject"] = subject,
+                        ["content"] = content,
+                    },
+                    "security",
+                    mailOptions.FromName);
             }
             catch (Exception ex)
             {

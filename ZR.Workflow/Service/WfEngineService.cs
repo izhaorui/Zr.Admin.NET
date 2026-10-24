@@ -34,6 +34,7 @@ namespace ZR.Workflow.Service
         private readonly IWfWebhookService _webhookService;
         private readonly IWfAiService _aiService;
         private readonly ISmsSender _smsSender;
+        private readonly ZR.ServiceCore.Email.IEmailSendService _emailSendService;
 
         /// <summary>
         /// 审批人解析策略注册表：WfApproverType → IApproverResolver。
@@ -41,12 +42,14 @@ namespace ZR.Workflow.Service
         /// </summary>
         private readonly Dictionary<WfApproverType, IApproverResolver> _approverResolvers;
 
-        public WfEngineService(ISysUserMsgService msgService, IWfWebhookService webhookService, IWfAiService aiService, ISmsSender smsSender)
+        public WfEngineService(ISysUserMsgService msgService, IWfWebhookService webhookService, IWfAiService aiService,
+            ISmsSender smsSender, ZR.ServiceCore.Email.IEmailSendService emailSendService)
         {
             _msgService = msgService;
             _webhookService = webhookService;
             _aiService = aiService;
             _smsSender = smsSender;
+            _emailSendService = emailSendService;
 
             _approverResolvers = new Dictionary<WfApproverType, IApproverResolver>
             {

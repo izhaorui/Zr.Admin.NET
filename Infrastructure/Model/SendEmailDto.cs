@@ -16,6 +16,14 @@ namespace Infrastructure.Model
         public string Subject { get; set; }
         [Required(ErrorMessage = "发送人不能为空")]
         public string ToUser { get; set; }
+        /// <summary>
+        /// 抄送（多个用逗号分隔，可空）
+        /// </summary>
+        public string CcUser { get; set; }
+        /// <summary>
+        /// 密送（多个用逗号分隔，可空）
+        /// </summary>
+        public string BccUser { get; set; }
         public string Content { get; set; } = "";
         public string HtmlContent { get; set; }
         /// <summary>
