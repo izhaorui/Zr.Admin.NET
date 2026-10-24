@@ -134,6 +134,44 @@ namespace ZR.Admin.WebApi.Controllers.System
         }
 
         /// <summary>
+        /// 双因子登录第二步（WebAuthn）：下发认证 options。
+        ///
+        /// 与 TOTP 的 verify 分开：WebAuthn 必须"取挑战 → 浏览器签名 → 提交断言"两次往返。
+        /// 本接口**不消费票据**，用户取消后仍可在有效期内改用 TOTP。
+        /// </summary>
+        [HttpPost("login/2fa/webauthn/options")]
+        [AllowAnonymous]
+        // 请求含票据、响应含 challenge，均属凭据，不落操作日志
+        [Log(Title = "双因子-Passkey选项", IsSaveRequestData = false, IsSaveResponseData = false)]
+        public IActionResult WebAuthnOptions([FromBody] TwoFactorWebAuthnOptionsRequestDto dto)
+        {
+            if (dto == null || dto.Ticket.IsEmpty())
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            return SUCCESS(sysLoginService.MakeWebAuthnOptions(dto));
+        }
+
+        /// <summary>
+        /// 双因子登录第二步（WebAuthn）：校验断言并签发 token。
+        ///
+        /// challenge 一次性消费、票据在断言通过后才消费 —— 详细顺序见服务层注释。
+        /// </summary>
+        [HttpPost("login/2fa/webauthn/verify")]
+        [AllowAnonymous]
+        [Log(Title = "双因子-Passkey验证", IsSaveRequestData = false, IsSaveResponseData = false)]
+        public async Task<IActionResult> WebAuthnVerify([FromBody] TwoFactorWebAuthnVerifyDto dto)
+        {
+            if (dto == null || dto.Ticket.IsEmpty() || dto.Challenge.IsEmpty())
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            return ToLoginResponse(await sysLoginService.VerifyTwoFactorWebAuthn(dto));
+        }
+
+        /// <summary>
         /// 把登录结果映射成响应体。
         ///
         /// 刻意保持与迁移前**完全一致**的响应形状（业务码、字段名、Put 顺序）：

@@ -466,5 +466,64 @@ namespace ZR.ServiceCore.Services
                 && CacheStore.For(CacheBackend.Session).Exists(BuildTenantKey($"{TwoFactorSessionOkPrefix}{userId}_{sessionId}"));
         }
         #endregion
+
+        #region WebAuthn / Passkey 缓存
+        private static readonly string WebAuthnChallengePrefix = "CACHE-WEBAUTHN-CHALLENGE_";
+
+        /// <summary>
+        /// 读取票据但**不消费**。
+        ///
+        /// WebAuthn 需要"取 challenge → 浏览器签名 → 提交断言"两步，options 阶段若消费票据，
+        /// 用户取消弹窗或中途失败后票据即失效，被迫重新登录 —— 与 TOTP"输错可重试"的语义不一致。
+        /// 因此 options 阶段只读，真正的消费发生在断言校验通过前的那一次 <see cref="ConsumeTwoFactorTicket"/>。
+        ///
+        /// 只读带来的"反复读取"不构成重放风险：challenge 一次性且绑定用途，最终仍要消费票据。
+        /// </summary>
+        public static T PeekTwoFactorTicket<T>(string ticket) where T : class
+        {
+            if (string.IsNullOrEmpty(ticket)) return null;
+
+            return CacheStore.For(CacheBackend.Session).Get<T>(TwoFactorTicketPrefix + ticket);
+        }
+
+        /// <summary>
+        /// 保存 WebAuthn challenge。
+        ///
+        /// key 用 challenge 自身（base64url 随机串，全局唯一），不加租户前缀：
+        /// 与票据同理 —— 第二步请求到达时租户上下文尚未建立，加前缀会永远读不到。
+        /// 载荷里带 UserId / 用途 / 票据，才能保证 challenge 不被跨用户、跨流程复用。
+        /// </summary>
+        public static void SetWebAuthnChallenge(string challenge, object payload, int minutes)
+        {
+            if (string.IsNullOrEmpty(challenge) || minutes <= 0) return;
+
+            CacheStore.For(CacheBackend.Session).Set(WebAuthnChallengePrefix + challenge, payload, minutes);
+        }
+
+        /// <summary>
+        /// 消费 challenge：原子地保证同一 challenge 只被一个请求取到（防重放）。
+        /// 不存在的 challenge 不落任何缓存状态，避免匿名端点被灌垃圾键。
+        /// </summary>
+        public static T ConsumeWebAuthnChallenge<T>(string challenge, int minutes) where T : class
+        {
+            if (string.IsNullOrEmpty(challenge)) return null;
+            if (minutes <= 0) minutes = 5;
+
+            var backend = CacheStore.For(CacheBackend.Session);
+            var key = WebAuthnChallengePrefix + challenge;
+
+            var payload = backend.Get<T>(key);
+            if (payload == null) return null;
+
+            // 抢占"已使用"标记：并发提交同一 challenge 只有一个请求能继续
+            if (!backend.TrySet(WebAuthnChallengePrefix + challenge + "_used", 1, minutes))
+            {
+                return null;
+            }
+
+            backend.Remove(key);
+            return payload;
+        }
+        #endregion
     }
 }

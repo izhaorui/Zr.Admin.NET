@@ -16,6 +16,10 @@
 		<!-- S3 兼容对象存储（RustFS / MinIO / Ceph 等）：用 AWSSDK 的 S3 客户端，见 Oss/S3CompatibleOssProvider.cs。
 		     版本写死便于复现；升级时请注意 SDK v4 的破坏性变更（checksum / 签名默认行为）需要回归验证。 -->
 		<PackageReference Include="AWSSDK.S3" Version="4.0.103.4" />
+		<!-- WebAuthn / Passkey 校验。选 fido2-net-lib 而非 ASP.NET Identity 内置能力：
+		     本项目是自研认证（不走 Identity），且需要按现有 2FA 流程接入，Identity 的 passkey 用不上。
+		     版本写死便于复现；升级前请回归注册/认证两条主链路（4.x 起核心方法改为 *Params 参数对象）。 -->
+		<PackageReference Include="Fido2" Version="4.3.1" />
 		<PackageReference Include="NETCore.Encrypt" Version="2.1.1" />
 		<PackageReference Include="NLog" Version="6.2.1" />
 		<!-- 刻意停留在 3.1.x 最后一版：

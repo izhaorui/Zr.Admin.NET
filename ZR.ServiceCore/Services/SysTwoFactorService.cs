@@ -48,11 +48,14 @@ namespace ZR.ServiceCore.Services
 
         private readonly ISysUserService UserService;
         private readonly ISysUserMsgService UserMsgService;
+        private readonly ISysWebAuthnService WebAuthnService;
 
-        public SysTwoFactorService(ISysUserService userService, ISysUserMsgService userMsgService)
+        public SysTwoFactorService(ISysUserService userService, ISysUserMsgService userMsgService,
+            ISysWebAuthnService webAuthnService)
         {
             UserService = userService;
             UserMsgService = userMsgService;
+            WebAuthnService = webAuthnService;
         }
 
         private static TwoFactorSettings Settings => AppSettings.Bind("TwoFactor", new TwoFactorSettings());
@@ -97,16 +100,33 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 可用方法列表。
         ///
-        /// v1 只有 TOTP，且刻意**不按"密钥能否解密"过滤**：动态码与一次性恢复码共用同一个输入框，
+        /// TOTP 刻意**不按"密钥能否解密"过滤**：动态码与一次性恢复码共用同一个输入框，
         /// 密钥损坏的账号仍必须能靠恢复码进来（fail-closed 由 VerifyCodeOrThrow 负责，
         /// 不该在入口就把用户堵在一个没有输入框的弹框里）。
-        /// WebAuthn 落地后在此追加：该用户存在有效凭据时才加入 <see cref="TwoFactorMethod.WebAuthn"/>。
+        ///
+        /// WebAuthn 相反：只有该账号**确实绑定了凭据**才加入列表，避免前端渲染一个点了必然失败的入口。
         /// </summary>
         public List<string> GetAvailableMethods(SysUser user)
         {
             if (!IsEnabled(user)) return new List<string>();
 
-            return new List<string> { TwoFactorMethod.Totp };
+            var methods = new List<string> { TwoFactorMethod.Totp };
+
+            try
+            {
+                if (WebAuthnService.IsAvailable && WebAuthnService.HasCredential(user.UserId))
+                {
+                    methods.Add(TwoFactorMethod.WebAuthn);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 方法列表只影响"入口展示"：查凭据失败时降级为仅 TOTP，
+                // 绝不能因此让已启用 2FA 的用户无法登录
+                logger.Error(ex, $"查询 Passkey 凭据失败，本次仅提供 TOTP：UserId={user.UserId}");
+            }
+
+            return methods;
         }
 
         public string GetPreferredMethod(SysUser user)
@@ -196,6 +216,8 @@ namespace ZR.ServiceCore.Services
 
             UserService.ClearTwoFactor(userId);
             ClearDeviceTrust(userId);
+            // 凭据在独立表里，只清 sys_user 字段会留下"仍能用 Passkey 登录"的静默旁路
+            WebAuthnService.RemoveAllCredentials(userId);
 
             logger.Warn($"双因子认证已解绑：UserId={userId}, UserName={user.UserName}");
         }
@@ -207,6 +229,9 @@ namespace ZR.ServiceCore.Services
 
             UserService.ClearTwoFactor(userId);
             ClearDeviceTrust(userId);
+            // 管理员重置必须连凭据一起删：否则用户仍能凭 Passkey 登录，
+            // "已重置"只是表面状态，属于最危险的那种静默失效
+            WebAuthnService.RemoveAllCredentials(userId);
             CacheService.ClearTwoFactorFail(userId);
 
             logger.Warn($"双因子认证被管理员重置：UserId={userId}, UserName={user.UserName}");
@@ -262,6 +287,13 @@ namespace ZR.ServiceCore.Services
             var secret = TotpHelper.UnprotectSecret(user.TwoFactorSecret);
             if (string.IsNullOrEmpty(secret))
             {
+                // 密钥损坏（加密口令变更 / 密文损坏）时若已绑定 Passkey，账号并非无路可走：
+                // 引导切换到 Passkey，而不是把用户彻底堵死在这一步
+                if (HasPasskey(user))
+                {
+                    throw new CustomException("认证器密钥不可用，请改用 Passkey 验证");
+                }
+
                 throw new CustomException("双因子密钥不可用，请联系管理员重置");
             }
 
@@ -529,6 +561,24 @@ namespace ZR.ServiceCore.Services
         }
 
         #region 内部方法
+
+        /// <summary>
+        /// 该账号是否存在可用的 Passkey 凭据。
+        /// 查询失败按"没有"处理：它只用于决定提示文案与密钥损坏时的豁免，
+        /// 不能让它反过来影响 TOTP 主链路的可用性。
+        /// </summary>
+        private bool HasPasskey(SysUser user)
+        {
+            try
+            {
+                return user != null && WebAuthnService.IsAvailable && WebAuthnService.HasCredential(user.UserId);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, $"查询 Passkey 凭据失败：UserId={user?.UserId}");
+                return false;
+            }
+        }
 
         /// <summary>
         /// 密钥是否可用（可解密）。与"是否已启用"分开判定：

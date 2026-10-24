@@ -158,7 +158,7 @@
 
         /// <summary>
         /// WebAuthn / Passkey（安全密钥、指纹、Face ID）。
-        /// **尚未实现**：常量与"按方法列表渲染入口"的前端结构已预留，落地时服务端把它加进可用列表即可。
+        /// 该账号存在有效凭据且系统已配置 Origins 时，由 GetAvailableMethods 加入可用列表。
         /// </summary>
         public const string WebAuthn = "webauthn";
 

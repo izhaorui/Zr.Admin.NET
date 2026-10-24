@@ -43,6 +43,23 @@ namespace ZR.ServiceCore.Services
         LoginResultDto VerifyTwoFactor(TwoFactorVerifyDto dto);
 
         /// <summary>
+        /// WebAuthn 登录第二步（第一段）：按票据下发认证 options。
+        ///
+        /// 票据**只读不消费**：用户取消弹窗、或认证器临时不可用时，仍可在有效期内改用 TOTP，
+        /// 与"输错验证码可重试"保持同一体验。真正的一次性消费发生在断言校验通过之后。
+        /// </summary>
+        TwoFactorWebAuthnOptionsDto MakeWebAuthnOptions(TwoFactorWebAuthnOptionsRequestDto dto);
+
+        /// <summary>
+        /// WebAuthn 登录第二步（第二段）：校验断言并签发 token。
+        ///
+        /// 顺序刻意是"先消费 challenge、再校验断言、最后消费票据"：
+        /// challenge 是本次断言的一次性凭据，无论校验成败都不能复用；
+        /// 票据要等到确认成功才消费，否则一次误触就把用户的登录机会用掉了。
+        /// </summary>
+        Task<LoginResultDto> VerifyTwoFactorWebAuthn(TwoFactorWebAuthnVerifyDto dto);
+
+        /// <summary>
         /// 签发 token 的统一出口：权限装配、单会话、"本会话已通过双因子"标记、登录设备登记都在这里。
         /// 三条登录路径（账号密码 / 手机号 / 双因子第二步）共用，避免某个入口漏掉其中一步。
         /// </summary>

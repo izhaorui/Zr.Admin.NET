@@ -357,6 +357,49 @@ namespace Infrastructure.Model
         /// 设备标识由客户端提供、可被伪造，必须有上限，否则存在刷表风险。小于等于 0 时按 20 条。
         /// </summary>
         public int MaxDeviceRecords { get; set; } = 20;
+
+        #region WebAuthn / Passkey
+
+        /// <summary>
+        /// 是否启用 WebAuthn / Passkey 作为第二因子。
+        /// 必须同时配置 <see cref="WebAuthnOrigins"/> 才真正生效：未配置时整体禁用（fail-closed），
+        /// 避免"以为开了、实际校验不了 Origin"的半开状态。
+        /// </summary>
+        public bool WebAuthnEnabled { get; set; } = true;
+
+        /// <summary>
+        /// 允许的 Origin 列表（含协议，如 https://admin.example.com）。
+        ///
+        /// **必须显式配置**：Origin 是 WebAuthn 的核心安全边界，绝不能从请求头推导 ——
+        /// 否则攻击者伪造 Host 与 Origin 一致即可绕过校验，防钓鱼的意义归零。
+        /// 未配置时 WebAuthn 功能整体关闭。
+        /// </summary>
+        public List<string> WebAuthnOrigins { get; set; } = new();
+
+        /// <summary>
+        /// 依赖方 ID（RP ID），必须是 <see cref="WebAuthnOrigins"/> 中域名的可注册域后缀。
+        /// 留空时从 Origins 第一项推导（去掉协议与端口）；子域名共用同一 RP 时配根域名即可。
+        /// </summary>
+        public string WebAuthnRpId { get; set; }
+
+        /// <summary>
+        /// 依赖方名称（认证器弹窗中显示），留空时取 <see cref="Issuer"/>
+        /// </summary>
+        public string WebAuthnRpName { get; set; }
+
+        /// <summary>
+        /// 注册/认证 challenge 有效期（分钟）。应不短于用户完成一次生物识别所需时间，
+        /// 但也不宜过长：challenge 一次性，过期后需重新取。
+        /// </summary>
+        public int WebAuthnChallengeMinutes { get; set; } = 5;
+
+        /// <summary>
+        /// 每个账号最多可绑定的凭据数量。凭据由已登录用户自助添加，必须有上限防刷表。
+        /// 小于等于 0 时按 10 条。
+        /// </summary>
+        public int WebAuthnMaxCredentials { get; set; } = 10;
+
+        #endregion
     }
 
     public class CodeGen

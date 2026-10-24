@@ -140,7 +140,7 @@
 
         /// <summary>
         /// WebAuthn / Passkey 通过（安全密钥、指纹、Face ID）。
-        /// **预留**：WebAuthn 尚未实现，落地后由第二步写入该值。取值与 <see cref="TwoFactorMethod.WebAuthn"/> 一致。
+        /// 由登录第二步的 WebAuthn 分支写入，取值与 <see cref="TwoFactorMethod.WebAuthn"/> 一致。
         /// </summary>
         public const string WebAuthn = "webauthn";
     }

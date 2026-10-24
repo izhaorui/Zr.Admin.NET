@@ -516,7 +516,9 @@ namespace ZR.ServiceCore.AI
             var userJson = AiChatImageHelper.ToImagesDataJson(storeImageUrls);
             var dataJson = AiChartAssembler.ToDataJson(charts, tools);
 
-            var needAutoTitle = session.Title.IsNullOrEmpty() || session.Title == "新对话";
+            // 用静态调用而非 Title.IsNullOrEmpty() 扩展：该扩展由 Microsoft.IdentityModel.Tokens 提供，
+            // 引入 Fido2（要求 IdentityModel >= 8.2.0）后不再对外公开，升级后这里会编译失败
+            var needAutoTitle = string.IsNullOrEmpty(session.Title) || session.Title == "新对话";
             var newTitle = session.Title;
             if (needAutoTitle)
             {

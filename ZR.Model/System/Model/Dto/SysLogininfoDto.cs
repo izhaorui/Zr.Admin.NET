@@ -16,7 +16,7 @@
         public string AuthType { get; set; }
 
         /// <summary>
-        /// 第二因子结果（<see cref="LoginTwoFactorType"/>）：none / totp / recovery_code / trusted_device。
+        /// 第二因子结果（<see cref="LoginTwoFactorType"/>）：none / totp / webauthn / recovery_code / trusted_device。
         /// 审计时最常用的是 recovery_code —— 排查"恢复码到底被谁用了"
         /// </summary>
         public string TwoFactorType { get; set; }

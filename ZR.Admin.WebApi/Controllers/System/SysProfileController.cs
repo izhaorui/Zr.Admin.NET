@@ -17,6 +17,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysDeptService DeptService;
         private readonly ISysFileService FileService;
         private readonly ISysTwoFactorService TwoFactorService;
+        private readonly ISysWebAuthnService WebAuthnService;
         private IWebHostEnvironment hostEnvironment;
 
         public SysProfileController(
@@ -26,7 +27,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysDeptService deptService,
             ISysFileService sysFileService,
             IWebHostEnvironment hostEnvironment,
-            ISysTwoFactorService twoFactorService)
+            ISysTwoFactorService twoFactorService,
+            ISysWebAuthnService webAuthnService)
         {
             UserService = userService;
             RoleService = roleService;
@@ -35,6 +37,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             FileService = sysFileService;
             this.hostEnvironment = hostEnvironment;
             TwoFactorService = twoFactorService;
+            WebAuthnService = webAuthnService;
         }
 
         /// <summary>
@@ -181,6 +184,73 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             return ToResponse(TwoFactorService.RemoveDevice(HttpContext.GetUId(), deviceId) ? 1 : 0);
         }
+
+        #region WebAuthn / Passkey
+
+        /// <summary>
+        /// 当前账号已绑定的 Passkey 凭据列表（不返回公钥与凭据 ID）
+        /// </summary>
+        [HttpGet("twoFactor/webauthn/credentials")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult GetWebAuthnCredentials()
+        {
+            return SUCCESS(WebAuthnService.GetCredentials(HttpContext.GetUId()));
+        }
+
+        /// <summary>
+        /// 取注册（绑定）options。需密码二次校验，防止会话被劫持后直接接管第二因子。
+        /// 响应含 challenge，不落日志。
+        /// </summary>
+        [HttpPost("twoFactor/webauthn/register/options")]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "Passkey-获取绑定选项", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false, IsSaveResponseData = false)]
+        public IActionResult WebAuthnRegisterOptions([FromBody] TwoFactorWebAuthnRegisterDto dto)
+        {
+            if (dto == null) throw new CustomException("请求参数错误");
+
+            return SUCCESS(WebAuthnService.MakeRegisterOptions(
+                HttpContext.GetUId(), HttpContext.GetName(), null, dto.Password));
+        }
+
+        /// <summary>
+        /// 校验 attestation 并完成绑定（响应含服务端生成的记录，不含公钥）
+        /// </summary>
+        [HttpPost("twoFactor/webauthn/register/verify")]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "Passkey-完成绑定", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false, IsSaveResponseData = false)]
+        public async Task<IActionResult> WebAuthnRegisterVerify([FromBody] TwoFactorWebAuthnRegisterVerifyDto dto)
+        {
+            if (dto == null) throw new CustomException("请求参数错误");
+
+            return SUCCESS(await WebAuthnService.CompleteRegistrationAsync(
+                HttpContext.GetUId(), dto.Challenge, dto.Attestation, dto.DeviceName));
+        }
+
+        /// <summary>
+        /// 重命名凭据（仅展示用）
+        /// </summary>
+        [HttpPut("twoFactor/webauthn/credentials/{credentialId}")]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "Passkey-重命名", BusinessType = BusinessType.UPDATE)]
+        public IActionResult RenameWebAuthnCredential(long credentialId, [FromBody] TwoFactorWebAuthnRenameDto dto)
+        {
+            if (dto == null) throw new CustomException("请求参数错误");
+
+            return ToResponse(WebAuthnService.RenameCredential(HttpContext.GetUId(), credentialId, dto.DeviceName) ? 1 : 0);
+        }
+
+        /// <summary>
+        /// 吊销单个 Passkey 凭据。认证器丢失时用它止损（TOTP/恢复码仍可登录）
+        /// </summary>
+        [HttpDelete("twoFactor/webauthn/credentials/{credentialId}")]
+        [ActionPermissionFilter(Permission = "common")]
+        [Log(Title = "Passkey-解绑", BusinessType = BusinessType.DELETE)]
+        public IActionResult RemoveWebAuthnCredential(long credentialId)
+        {
+            return ToResponse(WebAuthnService.RemoveCredential(HttpContext.GetUId(), credentialId) ? 1 : 0);
+        }
+
+        #endregion
 
         #endregion
 

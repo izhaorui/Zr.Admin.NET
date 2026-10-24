@@ -31,6 +31,7 @@ namespace ZR.ServiceCore.Services
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IStringLocalizer<SharedResource> _localizer;
         private readonly ISysTwoFactorService TwoFactorService;
+        private readonly ISysWebAuthnService WebAuthnService;
         private readonly ISysRoleService roleService;
         private readonly ISysPermissionService permissionService;
         // 登录失败锁定策略（sys.account.*）在主库 sys_config，必须经 ISysConfigService 读取
@@ -42,6 +43,7 @@ namespace ZR.ServiceCore.Services
             IHttpContextAccessor httpContextAccessor,
             IStringLocalizer<SharedResource> localizer,
             ISysTwoFactorService twoFactorService,
+            ISysWebAuthnService webAuthnService,
             ISysRoleService roleService,
             ISysPermissionService permissionService,
             ISysConfigService sysConfigService)
@@ -51,6 +53,7 @@ namespace ZR.ServiceCore.Services
             this.httpContextAccessor = httpContextAccessor;
             _localizer = localizer;
             TwoFactorService = twoFactorService;
+            WebAuthnService = webAuthnService;
             this.roleService = roleService;
             this.permissionService = permissionService;
             this.sysConfigService = sysConfigService;
@@ -221,22 +224,7 @@ namespace ZR.ServiceCore.Services
                 return new LoginResultDto { Status = LoginResultStatus.AccountUnavailable };
             }
 
-            var clientInfo = httpContextAccessor.HttpContext.GetClientInfo();
-            SysLogininfor logininfor = new()
-            {
-                UserName = user.UserName,
-                UserId = user.UserId,
-                // 第一步凭据来自票据：第二步是独立请求，靠票据里记录的字段还原（三方登录能精确到渠道）
-                AuthType = payload.AuthType ?? DefaultAuthTypeOf((TwoFactorLoginSource)payload.LoginSource),
-                Ipaddr = payload.LoginIP,
-                ClientId = payload.ClientId,
-                LoginTime = DateTime.Now,
-                LoginLocation = payload.LoginLocation,
-                Browser = clientInfo.ToString(),
-                Os = clientInfo.OS.ToString(),
-                Status = "1",
-                Msg = "双因子验证失败"
-            };
+            var logininfor = BuildTwoFactorLogininfor(user, payload);
 
             TwoFactorCredential credential;
             try
@@ -257,9 +245,154 @@ namespace ZR.ServiceCore.Services
             }
 
             // 记下本次到底是用动态码还是恢复码通过的：恢复码登录是审计上最需要一眼看出来的事件
-            logininfor.TwoFactorType = credential == TwoFactorCredential.RecoveryCode
+            var twoFactorType = credential == TwoFactorCredential.RecoveryCode
                 ? LoginTwoFactorType.RecoveryCode
                 : LoginTwoFactorType.Totp;
+
+            return CompleteTwoFactorSignIn(user, payload, logininfor, twoFactorType, dto.RememberDevice);
+        }
+
+        /// <summary>
+        /// WebAuthn 登录第二步（第一段）：按票据下发认证 options。
+        ///
+        /// 票据在这条路径上**只读不消费**：options 与断言是两个独立请求，
+        /// 若在这里消费，用户取消弹窗或指纹识别失败后票据就废了，被迫重新输密码 ——
+        /// 与 TOTP"输错可重试"的现有体验不一致。
+        /// </summary>
+        public TwoFactorWebAuthnOptionsDto MakeWebAuthnOptions(TwoFactorWebAuthnOptionsRequestDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Ticket))
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            var payload = CacheService.PeekTwoFactorTicket<TwoFactorTicketPayload>(dto.Ticket);
+            if (payload == null)
+            {
+                throw new CustomException(ResultCode.LOGIN_ERROR, "双因子验证已超时，请重新登录", false);
+            }
+
+            using var tenantScope = TenantContext.Change(payload.TenantId);
+
+            var user = TwoFactorService.GetUserForAuth(payload.UserId);
+            if (user == null || user.Status == 1)
+            {
+                throw new CustomException(ResultCode.LOGIN_ERROR, "账号不可用", false);
+            }
+
+            // 只给确实有可用凭据的账号下发 options：否则 AllowedCredentials 为空，
+            // 浏览器会弹一个没有任何可用凭据的窗口，用户完全不知道发生了什么
+            if (!TwoFactorService.GetAvailableMethods(user).Contains(TwoFactorMethod.WebAuthn))
+            {
+                throw new CustomException(ResultCode.LOGIN_ERROR, "当前账号未绑定 Passkey", false);
+            }
+
+            return WebAuthnService.MakeAssertionOptions(user.UserId, dto.Ticket);
+        }
+
+        /// <summary>
+        /// WebAuthn 登录第二步（第二段）：校验断言并签发 token。
+        ///
+        /// 三步顺序不能换：
+        /// 1) 先消费 challenge —— 它是本次断言的一次性凭据，校验失败也必须作废，否则可被反复重放；
+        /// 2) 再校验断言（同时校验 challenge 归属：用户、用途、票据三者必须一致）；
+        /// 3) 最后消费票据 —— 只有确认成功才消耗用户的登录机会。
+        /// </summary>
+        public async Task<LoginResultDto> VerifyTwoFactorWebAuthn(TwoFactorWebAuthnVerifyDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Ticket) || string.IsNullOrWhiteSpace(dto.Challenge))
+            {
+                throw new CustomException("请求参数错误");
+            }
+
+            var settings = TwoFactorOptions;
+            var challengeMinutes = settings.WebAuthnChallengeMinutes > 0 ? settings.WebAuthnChallengeMinutes : 5;
+
+            var challengePayload = CacheService.ConsumeWebAuthnChallenge<WebAuthnChallengePayload>(dto.Challenge, challengeMinutes);
+            if (challengePayload == null)
+            {
+                throw new CustomException(ResultCode.LOGIN_ERROR, "验证已超时，请重新验证", false);
+            }
+
+            var payload = CacheService.PeekTwoFactorTicket<TwoFactorTicketPayload>(dto.Ticket);
+            if (payload == null)
+            {
+                throw new CustomException(ResultCode.LOGIN_ERROR, "双因子验证已超时，请重新登录", false);
+            }
+
+            // 三者必须同时匹配：用途防跨流程（注册的 challenge 拿来登录）、
+            // 票据防跨会话、用户防跨账号
+            if (challengePayload.Type != WebAuthnChallengeType.Authenticate
+                || challengePayload.Ticket != dto.Ticket
+                || challengePayload.UserId != payload.UserId)
+            {
+                logger.Warn($"WebAuthn challenge 归属校验失败：票据={dto.Ticket}, 挑战用户={challengePayload.UserId}, 票据用户={payload.UserId}");
+                throw new CustomException(ResultCode.LOGIN_ERROR, "验证信息不匹配，请重新登录", false);
+            }
+
+            using var tenantScope = TenantContext.Change(payload.TenantId);
+
+            var user = TwoFactorService.GetUserForAuth(payload.UserId);
+            if (user == null || user.Status == 1)
+            {
+                return new LoginResultDto { Status = LoginResultStatus.AccountUnavailable };
+            }
+
+            var logininfor = BuildTwoFactorLogininfor(user, payload);
+
+            try
+            {
+                await WebAuthnService.VerifyAssertionAsync(challengePayload, dto.Assertion);
+            }
+            catch (Exception)
+            {
+                // 与 TOTP 同口径：2FA 环节失败是重要安全信号，必须落库留痕后再抛出
+                AddLoginInfo(logininfor, payload.TenantId);
+                throw;
+            }
+
+            // 断言已通过，此时才消费票据。并发下若另一请求先消费成功，本次不再签发，防止一票两用
+            var ticketMinutes = settings.TicketMinutes > 0 ? settings.TicketMinutes : 5;
+            if (CacheService.ConsumeTwoFactorTicket<TwoFactorTicketPayload>(dto.Ticket, ticketMinutes) == null)
+            {
+                logger.Warn($"WebAuthn 票据已被并发消费，拒绝重复签发：UserId={payload.UserId}");
+                throw new CustomException(ResultCode.LOGIN_ERROR, "双因子验证已提交，请重新登录", false);
+            }
+
+            return CompleteTwoFactorSignIn(user, payload, logininfor, LoginTwoFactorType.WebAuthn, dto.RememberDevice);
+        }
+
+        /// <summary>
+        /// 构造第二步登录日志。字段全部来自票据 —— 第二步是独立请求，
+        /// 无法再问"用户刚才是怎么登录的"（三方登录尤其需要精确到渠道）。
+        /// </summary>
+        private SysLogininfor BuildTwoFactorLogininfor(SysUser user, TwoFactorTicketPayload payload)
+        {
+            var clientInfo = httpContextAccessor.HttpContext.GetClientInfo();
+            return new SysLogininfor
+            {
+                UserName = user.UserName,
+                UserId = user.UserId,
+                AuthType = payload.AuthType ?? DefaultAuthTypeOf((TwoFactorLoginSource)payload.LoginSource),
+                Ipaddr = payload.LoginIP,
+                ClientId = payload.ClientId,
+                LoginTime = DateTime.Now,
+                LoginLocation = payload.LoginLocation,
+                Browser = clientInfo.ToString(),
+                Os = clientInfo.OS.ToString(),
+                Status = "1",
+                Msg = "双因子验证失败"
+            };
+        }
+
+        /// <summary>
+        /// 第二因子通过后的统一收尾：写成功日志、刷新最后登录信息、签发 token。
+        /// TOTP 与 WebAuthn 共用，避免新增路径漏掉设备登记或异地提醒（历史上漏过设备登记）。
+        /// </summary>
+        private LoginResultDto CompleteTwoFactorSignIn(SysUser user, TwoFactorTicketPayload payload,
+            SysLogininfor logininfor, string twoFactorType, bool rememberDevice)
+        {
+            logininfor.TwoFactorType = twoFactorType;
 
             // 与普通登录同一口径：先取异地提醒（用的是本次之前的登录 IP），再更新最后登录信息
             string abnormalNotice = GetAbnormalLoginNotice(user, payload.LoginIP);
@@ -272,7 +405,7 @@ namespace ZR.ServiceCore.Services
             // 本次登记哪台设备由第一步票据绑定的凭据哈希决定，第二步不允许替换设备：
             // 否则拿到票据的攻击者可以把"记住此设备"写到任意设备标识上。
             return SignIn(user, payload.TenantId, payload.ClientId, payload.DeviceTokenHash, payload.LoginIP,
-                dto.RememberDevice, abnormalNotice);
+                rememberDevice, abnormalNotice);
         }
 
         /// <summary>

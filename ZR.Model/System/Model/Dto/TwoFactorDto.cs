@@ -259,4 +259,163 @@ namespace ZR.Model.System.Dto
 
         public DateTime CreatedAt { get; set; }
     }
+
+    #region WebAuthn / Passkey
+
+    /// <summary>
+    /// WebAuthn 注册（绑定）前置：需密码二次校验。
+    /// 与 TOTP 的 Init 同口径 —— 仅凭有效会话就能新增因子，等于把"会话劫持"升级成"持久接管"。
+    /// </summary>
+    public class TwoFactorWebAuthnRegisterDto
+    {
+        [Required(ErrorMessage = "密码不能为空")]
+        public string Password { get; set; }
+
+        /// <summary>
+        /// 设备名称（可选；留空时由服务端按客户端信息生成）
+        /// </summary>
+        public string DeviceName { get; set; }
+    }
+
+    /// <summary>
+    /// WebAuthn 注册/认证 options 下发结果。
+    /// OptionsJson 是标准 WebAuthn JSON（base64url 编码），前端 JSON.parse 后直接交给 navigator.credentials；
+    /// 刻意不在服务端反序列化成对象再序列化 —— 二次序列化会把 base64url 变成普通 base64，浏览器直接拒绝。
+    /// </summary>
+    public class TwoFactorWebAuthnOptionsDto
+    {
+        /// <summary>
+        /// 挑战标识（base64url）。第二步校验时原样带回，服务端据此定位保存的 challenge。
+        /// </summary>
+        public string Challenge { get; set; }
+
+        /// <summary>
+        /// PublicKeyCredentialCreationOptions / PublicKeyCredentialRequestOptions 的 JSON 字符串
+        /// </summary>
+        public string OptionsJson { get; set; }
+    }
+
+    /// <summary>
+    /// WebAuthn 注册校验
+    /// </summary>
+    public class TwoFactorWebAuthnRegisterVerifyDto
+    {
+        [Required(ErrorMessage = "挑战标识不能为空")]
+        public string Challenge { get; set; }
+
+        /// <summary>
+        /// PublicKeyCredential 的 JSON（前端 JSON.stringify(credential) 的结果）
+        /// </summary>
+        [Required(ErrorMessage = "凭据不能为空")]
+        public string Attestation { get; set; }
+
+        public string DeviceName { get; set; }
+    }
+
+    /// <summary>
+    /// WebAuthn 认证 options 请求（登录第二步，第一步取挑战）
+    /// </summary>
+    public class TwoFactorWebAuthnOptionsRequestDto
+    {
+        [Required(ErrorMessage = "票据不能为空")]
+        public string Ticket { get; set; }
+    }
+
+    /// <summary>
+    /// WebAuthn 登录验证（第二步）。
+    /// 与 TOTP 的 TwoFactorVerifyDto 分开：断言是结构化 JSON，与 6 位码/恢复码不是同一种输入。
+    /// </summary>
+    public class TwoFactorWebAuthnVerifyDto
+    {
+        [Required(ErrorMessage = "票据不能为空")]
+        public string Ticket { get; set; }
+
+        [Required(ErrorMessage = "挑战标识不能为空")]
+        public string Challenge { get; set; }
+
+        /// <summary>
+        /// PublicKeyCredential 的 JSON（前端 JSON.stringify(credential) 的结果）
+        /// </summary>
+        [Required(ErrorMessage = "凭据不能为空")]
+        public string Assertion { get; set; }
+
+        /// <summary>
+        /// 是否记住此设备（免二次验证）
+        /// </summary>
+        public bool RememberDevice { get; set; }
+
+        /// <summary>
+        /// 租户ID。第二步为独立请求，需按同一租户库校验用户。
+        /// 实际以票据载荷中的租户为准，此字段仅用于与 /login 保持一致的接口形状。
+        /// </summary>
+        public string TenantId { get; set; }
+    }
+
+    /// <summary>
+    /// WebAuthn 凭据列表项
+    /// </summary>
+    public class TwoFactorWebAuthnCredentialDto
+    {
+        public long Id { get; set; }
+
+        public string DeviceName { get; set; }
+
+        public string AaGuid { get; set; }
+
+        /// <summary>是否可同步备份（同步型 Passkey 换机后无需重新绑定）</summary>
+        public bool IsBackupEligible { get; set; }
+
+        /// <summary>是否已同步备份（区分"能同步"与"确实同步了"）</summary>
+        public bool IsBackedUp { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        public DateTime LastUsedAt { get; set; }
+    }
+
+    /// <summary>
+    /// 重命名凭据
+    /// </summary>
+    public class TwoFactorWebAuthnRenameDto
+    {
+        [Required(ErrorMessage = "设备名称不能为空")]
+        public string DeviceName { get; set; }
+    }
+
+    /// <summary>
+    /// challenge 缓存载荷（服务端内部用，不返回前端）。
+    /// 绑定用途与用户：注册 challenge 不能用于认证，反之亦然，否则同一 challenge 可被跨流程重放。
+    /// </summary>
+    public class WebAuthnChallengePayload
+    {
+        public long UserId { get; set; }
+
+        public string TenantId { get; set; }
+
+        /// <summary>用途：register / authenticate（取值见 <see cref="WebAuthnChallengeType"/>>）</summary>
+        public string Type { get; set; }
+
+        /// <summary>认证流程专用：绑定的二步票据，防止拿 A 登录的 challenge 去完成 B 登录</summary>
+        public string Ticket { get; set; }
+
+        /// <summary>
+        /// 服务端保存的原始 options JSON（ToJson 结果）。
+        /// 校验必须用这份服务端原始数据，绝不能由前端回传的 options 反推 —— 否则 challenge 校验形同虚设。
+        /// </summary>
+        public string OptionsJson { get; set; }
+    }
+
+    /// <summary>
+    /// challenge 用途
+    /// </summary>
+    public static class WebAuthnChallengeType
+    {
+        /// <summary>注册（绑定新凭据）</summary>
+        public const string Register = "register";
+
+        /// <summary>认证（登录第二步）</summary>
+        public const string Authenticate = "authenticate";
+    }
+
+    #endregion
 }
