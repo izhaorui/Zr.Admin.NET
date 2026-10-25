@@ -22,6 +22,14 @@ namespace ZR.Tasks.TaskScheduler
     /// <summary>
     /// 统一任务分发器：Quartz 只调度本任务，运行时按租户展开执行。
     /// </summary>
+    /// <remarks>
+    /// [DisallowConcurrentExecution]：同一 JobKey（即同一任务）在上一次执行未结束时，
+    /// 新的触发不会并发进入，而是被 Quartz 阻塞、待当前执行完成后按 Misfire 策略处理。
+    /// 与下方按「任务+触发时刻」的去重键配合：
+    /// 去重键负责多实例（多节点）同一触发时刻只跑一次，本特性负责单实例内「上次没跑完不再叠加」。
+    /// 注意：跨节点仍各由自己的调度器执行，本特性不跨节点生效。
+    /// </remarks>
+    [DisallowConcurrentExecution]
     [AppService(ServiceType = typeof(Job_Dispatcher), ServiceLifetime = LifeTime.Scoped)]
     public class Job_Dispatcher : IJob
     {

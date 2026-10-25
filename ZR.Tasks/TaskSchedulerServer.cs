@@ -3,7 +3,6 @@ using Infrastructure.Model;
 using NLog;
 using Quartz;
 using Quartz.Impl;
-using Quartz.Impl.Triggers;
 using Quartz.Spi;
 using System;
 using System.Collections.Specialized;
@@ -154,19 +153,17 @@ namespace ZR.Tasks
                 job.JobDataMap.Add("IsManual", 0);
                 job.JobDataMap.Add("TriggerSource", "cron");
 
-                ITrigger trigger;
-
                 //4、创建一个触发器
+                //Misfire 策略一律在对应 Builder 内显式指定：Cron 与 Simple 的指令数值语义不同，
+                //不能共用一个常量（例如数值 2 对 Cron 是 DoNothing，对 Simple 却是「立即补执行」）。
+                ITrigger trigger;
                 if (tasksQz.Cron != null && CronExpression.IsValidExpression(tasksQz.Cron))
                 {
                     trigger = CreateCronTrigger(tasksQz);
-                    //解决Quartz启动后第一次会立即执行问题解决办法
-                    ((CronTriggerImpl)trigger).MisfireInstruction = MisfireInstruction.CronTrigger.DoNothing;
                 }
                 else
                 {
                     trigger = CreateSimpleTrigger(tasksQz);
-                    ((SimpleTriggerImpl)trigger).MisfireInstruction = MisfireInstruction.CronTrigger.DoNothing;
                 }
 
                 // 5、将触发器和任务器绑定到调度器中
@@ -374,6 +371,9 @@ namespace ZR.Tasks
         /// <returns></returns>
         private ITrigger CreateSimpleTrigger(SysTasks tasksQz)
         {
+            // SimpleTrigger 没有 DoNothing 指令，这里显式选用 NextWithRemainingCount：
+            // 错过的触发点直接跳到「现在之后的下一个计划点」，不立即补执行，
+            // 错过次数计入已执行（等价于 Cron 的 DoNothing：错过即丢失，不会追补）。
             if (tasksQz.RunTimes > 0)
             {
                 ITrigger trigger = TriggerBuilder.Create()
@@ -381,7 +381,8 @@ namespace ZR.Tasks
                 .StartAt(tasksQz.BeginTime.Value)
                 .EndAt(tasksQz.EndTime.Value)
                 .WithSimpleSchedule(x => x.WithIntervalInSeconds(tasksQz.IntervalSecond)
-                .WithRepeatCount(tasksQz.RunTimes)).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
+                .WithRepeatCount(tasksQz.RunTimes)
+                .WithMisfireHandlingInstructionNextWithRemainingCount()).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
                 return trigger;
             }
             else
@@ -391,7 +392,8 @@ namespace ZR.Tasks
                 .StartAt(tasksQz.BeginTime.Value)
                 .EndAt(tasksQz.EndTime.Value)
                 .WithSimpleSchedule(x => x.WithIntervalInSeconds(tasksQz.IntervalSecond)
-                .RepeatForever()).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
+                .RepeatForever()
+                .WithMisfireHandlingInstructionNextWithRemainingCount()).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
                 return trigger;
             }
             // 触发作业立即运行，然后每10秒重复一次，无限循环
@@ -405,11 +407,12 @@ namespace ZR.Tasks
         private ITrigger CreateCronTrigger(SysTasks tasksQz)
         {
             // 作业触发器
+            // DoNothing：错过触发点不做补执行，等下一个 Cron 时刻，避免调度器启动后立刻跑一次。
             return TriggerBuilder.Create()
                    .WithIdentity(tasksQz.ID, tasksQz.JobGroup)
                    .StartAt(tasksQz.BeginTime.Value)//开始时间
                    .EndAt(tasksQz.EndTime.Value)//结束数据
-                   .WithCronSchedule(tasksQz.Cron)//指定cron表达式
+                   .WithCronSchedule(tasksQz.Cron, x => x.WithMisfireHandlingInstructionDoNothing())//指定cron表达式
                    .ForJob(tasksQz.ID, tasksQz.JobGroup)//作业名称
                    .Build();
         }
