@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Cache;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -31,7 +32,7 @@ namespace ZR.ServiceCore.Middleware
             TOKEN_REFRESH_THRESHOLD_MINUTES = _options.JwtSettings.RefreshTokenTime;
         }
 
-        public async Task InvokeAsync(HttpContext context, ISysUserService sysUserService, ISysTenantService sysTenantService)
+        public async Task InvokeAsync(HttpContext context, ISysUserService sysUserService, ISysTenantService sysTenantService, ISysConfigService sysConfigService)
         {
             var path = context.Request.Path.Value ?? string.Empty;
 
@@ -87,6 +88,14 @@ namespace ZR.ServiceCore.Middleware
                 string msg = "登录状态已失效，请重新登录";
                 _logger.LogWarning($"请求访问[{url}]失败：{msg}, UserId={loginUser.UserId}, ip={ip}");
                 await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, msg));
+                return;
+            }
+
+            // 会话空闲超时（等保：登录连接超时自动退出）。
+            // 必须放在吊销检查之后、自动续期之前 —— 超时的会话不应再被续出一个新 token。
+            if (!CheckIdleTimeout(context, loginUser, sysConfigService))
+            {
+                await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, "会话已超时，请重新登录"));
                 return;
             }
 
@@ -202,5 +211,82 @@ namespace ZR.ServiceCore.Middleware
 
             await _next(context);
         }
+
+        #region 会话空闲超时
+
+        private const string IdleTimeoutConfigKey = "sys.account.session.idleTimeoutMinutes";
+        private const string IdleActivePrefix = "CACHE-USER-ACTIVE_";
+        private const string MsgHubPath = "/msgHub";
+
+        // 空闲超时配置的进程内缓存：鉴权是每条请求的热路径，不能每次都查主库。
+        // 多实例部署时各实例最多滞后 60 秒，对"分钟级"策略无实质影响。
+        private static readonly object IdleConfigLock = new();
+        private static int _idleTimeoutMinutes;
+        private static DateTime _idleConfigExpireAt = DateTime.MinValue;
+
+        private int GetIdleTimeoutMinutes(ISysConfigService configService)
+        {
+            lock (IdleConfigLock)
+            {
+                if (DateTime.Now < _idleConfigExpireAt) return _idleTimeoutMinutes;
+
+                try
+                {
+                    var value = configService.GetSysConfigByKey(IdleTimeoutConfigKey)?.ConfigValue;
+                    _idleTimeoutMinutes = int.TryParse(value, out var minutes) && minutes > 0 ? minutes : 0;
+                }
+                catch (Exception ex)
+                {
+                    // 配置库抖动按"不启用"处理：鉴权链路不能因读不到策略而阻断所有请求
+                    _logger.LogWarning(ex, "读取会话空闲超时配置失败，本次按不启用处理");
+                    _idleTimeoutMinutes = 0;
+                }
+
+                _idleConfigExpireAt = DateTime.Now.AddSeconds(60);
+                return _idleTimeoutMinutes;
+            }
+        }
+
+        /// <summary>
+        /// 会话空闲超时校验。缓存丢失时 fail-open，与 <see cref="CacheService.IsSessionRevoked"/> 口径一致 ——
+        /// 宁可少踢一次，也不能因缓存故障把所有在线用户踢光。
+        /// </summary>
+        private bool CheckIdleTimeout(HttpContext context, LoginUser loginUser, ISysConfigService configService)
+        {
+            var idleMinutes = GetIdleTimeoutMinutes(configService);
+            if (idleMinutes <= 0) return true;
+
+            // SignalR 长连接的活跃体现为 WebSocket 帧，不走 HTTP 管道；
+            // 按 HTTP 请求计活跃会把"挂着但无操作"的在线用户误踢，故跳过 Hub 路径
+            if (context.Request.Path.StartsWithSegments(MsgHubPath)) return true;
+
+            var cache = CacheStore.For(CacheBackend.Session);
+            // 升级前签发的旧 token 可能没有 SessionId：用 UserId 兜底，
+            // 否则所有这类账号会共用 "CACHE-USER-ACTIVE_" 同一个键，互相刷新活跃时间
+            var identity = string.IsNullOrWhiteSpace(loginUser.SessionId)
+                ? $"u{loginUser.UserId}"
+                : loginUser.SessionId;
+            var key = IdleActivePrefix + identity;
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var lastText = cache.Get<string>(key);
+
+            if (!string.IsNullOrEmpty(lastText) && long.TryParse(lastText, out var lastActive))
+            {
+                if (now - lastActive > idleMinutes * 60L)
+                {
+                    _logger.LogWarning($"会话空闲超时，已拒绝访问：UserName={loginUser.UserName}, UserId={loginUser.UserId}, 空闲分钟={(now - lastActive) / 60}, 阈值分钟={idleMinutes}");
+                    return false;
+                }
+
+                // 节流：60 秒内不重复写缓存，避免每条请求都打一次 Redis
+                if (now - lastActive < 60) return true;
+            }
+
+            // TTL 略大于空闲阈值：键自然过期即代表"足够久没活跃"，与超时判定等价
+            cache.Set(key, now.ToString(), idleMinutes + 5);
+            return true;
+        }
+
+        #endregion
     }
 }
