@@ -346,7 +346,11 @@ export default {
         userName: [{ required: true, message: '用户名称不能为空', trigger: 'blur' }],
         nickName: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
         deptId: [{ required: true, message: '归属部门不能为空', trigger: 'change' }],
-        password: [{ required: true, message: '用户密码不能为空', trigger: 'blur' }],
+        // 与后端密码策略（sys.account.pwd.*，默认 8-32 位）保持一致
+        password: [
+          { required: true, message: '用户密码不能为空', trigger: 'blur' },
+          { min: 8, max: 32, message: '密码长度必须介于 8 和 32 之间，且需包含数字和字母', trigger: 'blur' },
+        ],
         email: [
           { required: false, message: '邮箱地址不能为空', trigger: 'blur' },
           {

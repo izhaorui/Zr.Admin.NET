@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.ServiceCore.Security;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -18,6 +19,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysFileService FileService;
         private readonly ISysTwoFactorService TwoFactorService;
         private readonly ISysWebAuthnService WebAuthnService;
+        private readonly IPasswordPolicyService PasswordPolicyService;
         private IWebHostEnvironment hostEnvironment;
 
         public SysProfileController(
@@ -28,7 +30,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysFileService sysFileService,
             IWebHostEnvironment hostEnvironment,
             ISysTwoFactorService twoFactorService,
-            ISysWebAuthnService webAuthnService)
+            ISysWebAuthnService webAuthnService,
+            IPasswordPolicyService passwordPolicyService)
         {
             UserService = userService;
             RoleService = roleService;
@@ -38,6 +41,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             this.hostEnvironment = hostEnvironment;
             TwoFactorService = twoFactorService;
             WebAuthnService = webAuthnService;
+            PasswordPolicyService = passwordPolicyService;
         }
 
         /// <summary>
@@ -88,6 +92,11 @@ namespace ZR.Admin.WebApi.Controllers.System
         {
             long userId = HttpContext.GetUId();
             SysUser user = UserService.GetFirst(f => f.UserId == userId);
+
+            // 等保：自助改密必须校验新密码复杂度。此前这里只判断了"新旧不能相同"，
+            // 用户可以把密码改成 123456 这类弱口令。
+            PasswordPolicyService.ValidatePassword(newPassword, user?.UserName);
+
             string oldMd5 = NETCore.Encrypt.EncryptProvider.Md5(oldPassword);
             string newMd5 = NETCore.Encrypt.EncryptProvider.Md5(newPassword);
 
@@ -253,6 +262,16 @@ namespace ZR.Admin.WebApi.Controllers.System
         #endregion
 
         #endregion
+
+        /// <summary>
+        /// 当前生效的密码复杂度规则（供改密页在提交前提示，避免用户改完才知道不合规）
+        /// </summary>
+        [HttpGet("passwordPolicy")]
+        [ActionPermissionFilter(Permission = "common")]
+        public IActionResult GetPasswordPolicy()
+        {
+            return SUCCESS(new { description = PasswordPolicyService.GetPolicyDescription() });
+        }
 
         /// <summary>
         /// 修改头像

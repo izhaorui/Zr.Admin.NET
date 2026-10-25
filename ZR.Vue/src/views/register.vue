@@ -78,9 +78,10 @@ export default {
         password: [
           { required: true, trigger: 'blur', message: '请输入您的密码' },
           {
-            min: 5,
-            max: 20,
-            message: '用户密码长度必须介于 6 和 20 之间',
+            // 与后端密码策略（sys.account.pwd.*，默认 8-32 位）保持一致
+            min: 8,
+            max: 32,
+            message: '密码长度必须介于 8 和 32 之间，且需包含数字和字母',
             trigger: 'blur'
           }
         ],

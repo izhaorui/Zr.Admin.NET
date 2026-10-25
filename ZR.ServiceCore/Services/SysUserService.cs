@@ -11,6 +11,7 @@ using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Enums;
 using ZR.Repository;
+using ZR.ServiceCore.Security;
 
 namespace ZR.ServiceCore.Services
 {
@@ -29,6 +30,8 @@ namespace ZR.ServiceCore.Services
         // 密码策略配置（sys.account.*）在主库 sys_config，必须经 ISysConfigService 读取，
         // 不能用 Queryable<SysConfig>()（会按 SysUser 的租户连接查错库）
         private readonly ISysConfigService SysConfigService;
+        // 密码复杂度校验：注册/管理员重置/个人改密的规则必须同源，避免只在一处校验
+        private readonly IPasswordPolicyService PasswordPolicyService;
 
         public SysUserService(
             ISysRoleService sysRoleService,
@@ -36,13 +39,15 @@ namespace ZR.ServiceCore.Services
             ISysUserPostService userPostService,
             ISysUserMsgService userMsgService,
             ISysConfigService sysConfigService,
-            ISysDeptService deptService)
+            ISysDeptService deptService,
+            IPasswordPolicyService passwordPolicyService)
         {
             RoleService = sysRoleService;
             UserRoleService = userRoleService;
             UserPostService = userPostService;
             UserMsgService = userMsgService;
             SysConfigService = sysConfigService;
+            PasswordPolicyService = passwordPolicyService;
         }
 
         /// <summary>
@@ -418,10 +423,9 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public SysUser Register(RegisterDto dto)
         {
-            if (!Tools.PasswordStrength(dto.Password))
-            {
-                throw new CustomException("密码强度不符合要求");
-            }
+            // 密码复杂度统一由策略服务判定（等保：鉴别信息具备复杂度要求）。
+            // 旧实现 Tools.PasswordStrength 只挡纯数字/纯符号/纯字母，任何 6 位混合口令都能通过。
+            PasswordPolicyService.ValidatePassword(dto.Password, dto.Username);
             if (!Tools.CheckUserName(dto.Username))
             {
                 throw new CustomException("用户名不符合要求");

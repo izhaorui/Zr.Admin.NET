@@ -4,6 +4,7 @@ using SqlSugar;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.ServiceCore.Security;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -20,6 +21,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         private readonly ISysUserPostService UserPostService;
         private readonly ISysTenantService TenantService;
         private readonly ISysTwoFactorService TwoFactorService;
+        private readonly IPasswordPolicyService PasswordPolicyService;
 
         public SysUserController(
             ISysUserService userService,
@@ -27,7 +29,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             ISysPostService postService,
             ISysUserPostService userPostService,
             ISysTenantService tenantService,
-            ISysTwoFactorService twoFactorService)
+            ISysTwoFactorService twoFactorService,
+            IPasswordPolicyService passwordPolicyService)
         {
             UserService = userService;
             RoleService = roleService;
@@ -35,6 +38,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             UserPostService = userPostService;
             TenantService = tenantService;
             TwoFactorService = twoFactorService;
+            PasswordPolicyService = passwordPolicyService;
         }
 
         /// <summary>
@@ -113,6 +117,10 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             TenantService.EnsureTenantUserQuotaForAdd(App.GetCurrentTenantId());
 
+            // 等保：后台新增用户与注册/重置/改密同一套复杂度规则。
+            // 此前这个入口直接 MD5 落库，管理员可以创建 123456 这类弱口令账号。
+            PasswordPolicyService.ValidatePassword(user.Password, user.UserName);
+
             user.Password = NETCore.Encrypt.EncryptProvider.Md5(user.Password);
 
             return SUCCESS(UserService.InsertUser(user));
@@ -181,6 +189,15 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:resetPwd")]
         public IActionResult ResetPwd([FromBody] SysUserDto sysUser)
         {
+            if (sysUser == null || string.IsNullOrWhiteSpace(sysUser.Password))
+            {
+                return ToResponse(ResultCode.PARAM_ERROR, "密码不能为空");
+            }
+
+            // 等保：管理员重置与自助改密必须同一套复杂度规则；明文校验必须在 MD5 之前
+            // （MD5 之后的 32 位串无法再判定强度）
+            PasswordPolicyService.ValidatePassword(sysUser.Password);
+
             //密码md5
             sysUser.Password = NETCore.Encrypt.EncryptProvider.Md5(sysUser.Password);
 
