@@ -558,10 +558,21 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 清空登录日志
+        /// 清空登录日志。
+        /// <para>
+        /// 清空前先按日期备份为 <c>sys_logininfor_yyyyMMdd</c>，与操作日志 <c>CleanOperLog</c> 同一口径。
+        /// 等保 2.0 安全审计要求"审计记录应受到保护、定期备份，避免受到未预期的删除、修改或覆盖"，
+        /// 直接 TRUNCATE 会让日志永久消失，测评时属于不符合项。
+        /// </para>
         /// </summary>
         public void TruncateLogininfo()
         {
+            var newTableName = $"sys_logininfor_{DateTime.Now:yyyyMMdd}";
+            if (Queryable().Any() && !Context.DbMaintenance.IsAnyTable(newTableName))
+            {
+                Context.DbMaintenance.BackupTable("sys_logininfor", newTableName);
+            }
+
             Truncate();
         }
 
