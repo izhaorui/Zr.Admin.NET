@@ -29,7 +29,7 @@ namespace ZR.Tests
             _db.Ensure();
             _db.Clean();
             _db.EnsureUsers("applier", "boss");
-            _engine = new WfEngineService(Mock.Of<ISysUserMsgService>(), Mock.Of<IWfWebhookService>(), Mock.Of<IWfAiService>(), Mock.Of<ISmsSender>());
+            _engine = new WfEngineService(Mock.Of<ISysUserMsgService>(), Mock.Of<IWfWebhookService>(), Mock.Of<IWfAiService>(), Mock.Of<ISmsSender>(), Mock.Of<ZR.ServiceCore.Email.IEmailSendService>());
         }
 
         /// <summary>
