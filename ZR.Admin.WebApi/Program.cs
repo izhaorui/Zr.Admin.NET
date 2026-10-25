@@ -163,14 +163,15 @@ if (app.Environment.IsDevelopment())
 }
 SnowFlakeSingle.WorkId = workId;
 
-// 启动自检：SecretKey 在仓库里默认为空，需由环境配置文件或环境变量注入。
-// 只告警不阻断 —— 缺失时 JwtUtil.ValidParameters() 会在运行期抛 "JwtSettings获取失败"，
-// 启动期给出明确提示可避免事后排查困难。日志中不含密钥本身。
-if (string.IsNullOrWhiteSpace(builder.Configuration["JwtSettings:SecretKey"]))
+// 启动自检：SecretKey 需由环境配置文件/环境变量注入，且 HS256 要求不少于 32 字节（256 位），
+// 否则令牌签发/校验失败（缺失时 JwtUtil 抛 "JwtSettings获取失败"，过短时 IdentityModel 抛 IDX10720）。
+// 只告警不阻断，日志中不含密钥本身。JwtUtil 用 ASCII 取字节，字符数即字节数。
+var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? string.Empty;
+if (jwtSecretKey.Length < 32)
 {
-    var msg = "JwtSettings:SecretKey 未配置，令牌签发与校验将失败（长度需大于 16 位）。" +
-        "请通过 appsettings.Development.json / appsettings.Production.json（均已被 gitignore）或环境变量 JwtSettings__SecretKey 注入。";
-    app.Logger.LogWarning(msg);
+    app.Logger.LogWarning(
+        $"JwtSettings:SecretKey 未配置或长度不足（当前 {jwtSecretKey.Length} 字节），HS256 要求不少于 32 字节。" +
+        "请通过 appsettings.Development.json / appsettings.Production.json（均已被 gitignore）或环境变量 JwtSettings__SecretKey 注入长度 ≥32 的随机字符串。");
 }
 
 // 配置中间件以支持本地化

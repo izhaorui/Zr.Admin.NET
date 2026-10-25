@@ -15,6 +15,7 @@ using NLog.Web;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using SqlSugar;
 using System.Globalization;
+using System.Text;
 using ZR.Front.WebApi;
 using ZR.Infrastructure.IPTools;
 using ZR.Infrastructure.WebExtensions;
@@ -168,12 +169,14 @@ if (app.Environment.IsDevelopment())
 }
 SnowFlakeSingle.WorkId = workId;
 
-// 启动自检：MemberJwt:SecretKey 在仓库里默认为空，需由环境配置文件或环境变量注入。
+// 启动自检：MemberJwt:SecretKey 需由环境配置文件/环境变量注入，且 HS256 要求不少于 32 字节（256 位），
+// 否则会员令牌签发/识别失败（MemberJwt 用 UTF-8 取字节，此处按字节数判定）。
 // 只告警不阻断，日志中不含密钥本身。未配置时为 fail-closed：拒绝签发会员令牌、拒绝识别会员身份。
-if (string.IsNullOrWhiteSpace(builder.Configuration["MemberJwt:SecretKey"]))
+var memberJwtKeyBytes = Encoding.UTF8.GetByteCount(builder.Configuration["MemberJwt:SecretKey"] ?? string.Empty);
+if (memberJwtKeyBytes < 32)
 {
     app.Logger.LogWarning(
-        "MemberJwt:SecretKey 未配置，会员令牌将拒绝签发且无法识别会员身份（长度需大于 16 位）。" +
+        $"MemberJwt:SecretKey 未配置或长度不足（当前 {memberJwtKeyBytes} 字节），HS256 要求不少于 32 字节。" +
         "请通过 appsettings.Development.json / appsettings.Production.json（均已被 gitignore）或环境变量 MemberJwt__SecretKey 注入。");
 }
 
