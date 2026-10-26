@@ -1,12 +1,12 @@
 # 公网 C 端宿主（ZR.Front.WebApi）镜像：只暴露 [PublicApi] 标记的 C 端接口
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8888
 ENV TZ=Asia/Shanghai
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8888
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 

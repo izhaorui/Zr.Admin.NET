@@ -1,6 +1,6 @@
 #See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8888
 ENV TZ=Asia/Shanghai
@@ -8,7 +8,7 @@ ENV TZ=Asia/Shanghai
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8888
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
@@ -23,6 +23,7 @@ COPY ["ZR.Model/ZR.Model.csproj", "ZR.Model/"]
 COPY ["ZR.Service/ZR.Service.csproj", "ZR.Service/"]
 COPY ["ZR.Tasks/ZR.Tasks.csproj", "ZR.Tasks/"]
 COPY ["ZR.Mall/ZR.Mall.csproj", "ZR.Mall/"]
+COPY ["ZR.Workflow/ZR.Workflow.csproj", "ZR.Workflow/"]
 
 # ª÷∏¥“¿¿µ£®¥À≤„ø…±ªª∫¥Ê£©
 RUN dotnet restore "./ZR.Admin.WebApi/ZR.Admin.WebApi.csproj"
