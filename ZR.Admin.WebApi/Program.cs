@@ -228,9 +228,12 @@ app.UseAuthorization();
 
 //开启缓存
 app.UseResponseCaching();
-if (builder.Environment.IsProduction())
+// 定时任务开关：默认关闭，按部署环境显式开启（QuartzTask:Enabled 或环境变量 QuartzTask__Enabled=true）。
+// 不用 Environment 判断：Staging 等非 Production 环境会漏跑；本地想调试任务又得改环境变量，
+// 而 ASPNETCORE_ENVIRONMENT=Production 会连带关掉下面的 Swagger。
+if (app.Configuration.GetValue("QuartzTask:Enabled", false))
 {
-    //恢复/启动任务
+    //恢复/启动任务（异常在扩展方法内收口：查库失败或单任务损坏只记日志，不阻断站点启动）
     await app.UseAddTaskSchedulers();
 }
 //初始化字典数据

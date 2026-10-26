@@ -1,4 +1,6 @@
-﻿using Quartz.Spi;
+﻿using Infrastructure.Model;
+using NLog;
+using Quartz.Spi;
 using SqlSugar;
 using SqlSugar.IOC;
 using ZR.Model.System;
@@ -11,6 +13,8 @@ namespace ZR.Admin.WebApi.Extensions
     /// </summary>
     public static class TasksExtension
     {
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
         /// <summary>
         /// 注册任务
         /// </summary>
@@ -26,24 +30,54 @@ namespace ZR.Admin.WebApi.Extensions
         }
 
         /// <summary>
-        /// 程序启动后添加任务计划
+        /// 程序启动后添加任务计划。
         /// </summary>
+        /// <remarks>
+        /// 失败不抛出：注册任务只是宿主启动的附加动作，库不可用或某个任务配置损坏时
+        /// 不能让整个站点点不起来，异常在此处收口并落日志。
+        /// </remarks>
         /// <param name="app"></param>
         /// <returns></returns>
         public static async Task<IApplicationBuilder> UseAddTaskSchedulers(this IApplicationBuilder app)
         {
-            ITaskSchedulerServer _schedulerServer = app.ApplicationServices.GetRequiredService<ITaskSchedulerServer>();
+            if (app == null) throw new ArgumentNullException(nameof(app));
 
-            var tasks = await DbScoped.SugarScope.Queryable<SysTasks>()
-                .Where(m => m.IsStart == 1).ToListAsync();
+            ITaskSchedulerServer schedulerServer = app.ApplicationServices.GetRequiredService<ITaskSchedulerServer>();
+
+            List<SysTasks> tasks;
+            try
+            {
+                tasks = await DbScoped.SugarScope.Queryable<SysTasks>()
+                    .Where(m => m.IsStart == 1).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                // 库不可用 / 连接串错误：本次一个任务都不注册，站点继续启动
+                logger.Error(ex, "加载定时任务列表失败，本次跳过全部任务注册");
+                return app;
+            }
 
             //程序启动后注册所有定时任务
             foreach (var task in tasks)
             {
-                var result = await _schedulerServer.AddTaskScheduleAsync(task);
-                if (result.IsSuccess())
+                try
                 {
-                    Console.WriteLine($"注册任务[{task.Name}]ID：{task.ID}成功");
+                    var result = await schedulerServer.AddTaskScheduleAsync(task);
+                    if (result.IsSuccess())
+                    {
+                        logger.Info("注册任务[{0}]ID：{1}成功", task.Name, task.ID);
+                    }
+                    else
+                    {
+                        // 失败必须留痕：cron 非法、结束时间已过、JobKey 冲突都会走到这里。
+                        // 原实现只在成功时输出，失败时现场没有任何记录。
+                        logger.Warn("注册任务[{0}]ID：{1}失败：{2}", task.Name, task.ID, result[ApiResult.MSG_TAG]);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 单个任务异常不影响其余任务注册
+                    logger.Error(ex, "注册任务[{0}]ID：{1}异常", task.Name, task.ID);
                 }
             }
 
