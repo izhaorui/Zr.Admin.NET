@@ -19,66 +19,51 @@ namespace ZR.Admin.WebApi.Controllers
         private ITaskSchedulerServer _schedulerServer;
         private readonly ISysTenantService _sysTenantService;
         private readonly ISysAiService _sysAiService;
+        private readonly ISysTasksLogService _tasksLogService;
 
         public TasksController(
             ISysTasksQzService sysTasksQzService,
             ITaskSchedulerServer taskScheduler,
             ISysTenantService sysTenantService,
-            ISysAiService sysAiService)
+            ISysAiService sysAiService,
+            ISysTasksLogService tasksLogService)
         {
             _tasksQzService = sysTasksQzService;
             _schedulerServer = taskScheduler;
             _sysTenantService = sysTenantService;
             _sysAiService = sysAiService;
+            _tasksLogService = tasksLogService;
         }
 
-        private string CurrentTenantId => App.GetCurrentTenantId();
-
-        private bool IsMainTenant()
+        /// <summary>
+        /// 当前登录者是否可访问该任务（管理员放行；否则按租户精确匹配 / 通配 * / 逗号列表判断）。
+        /// 属于 Web 层鉴权（依赖 HttpContext），因此保留在 Controller，不下沉到服务层。
+        /// </summary>
+        private bool CanAccess(SysTasks task)
         {
-            var mainDb = App.MainDbConfigId;
-            return string.Equals(CurrentTenantId, mainDb, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private string ResolveTenantExpression(string tenantExpression)
-        {
-            if (!App.IsTenantEnabled())
+            if (HttpContext.IsAdmin())
             {
-                return string.IsNullOrWhiteSpace(tenantExpression) ? CurrentTenantId : tenantExpression.Trim();
+                return true;
             }
 
-            if (!IsMainTenant())
+            var currentTenantId = App.GetCurrentTenantId();
+
+            if (string.Equals(task.TenantId, currentTenantId, StringComparison.OrdinalIgnoreCase)
+                || task.TenantId == "*")
             {
-                return CurrentTenantId;
+                return true;
             }
 
-            if (string.IsNullOrWhiteSpace(tenantExpression))
+            if (task.TenantId != null)
             {
-                return CurrentTenantId;
+                var parts = task.TenantId.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (parts.Contains(currentTenantId, StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
 
-            var expr = tenantExpression.Trim();
-            if (expr == "*")
-            {
-                return expr;
-            }
-
-            var parts = expr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (parts.Count == 0)
-            {
-                return CurrentTenantId;
-            }
-
-            foreach (var tenantId in parts)
-            {
-                _sysTenantService.CheckTenant(tenantId);
-            }
-
-            return string.Join(",", parts);
+            return false;
         }
 
         private void EnsureTaskAccess(SysTasks task)
@@ -88,28 +73,10 @@ namespace ZR.Admin.WebApi.Controllers
                 throw new CustomException("任务不存在");
             }
 
-            if (HttpContext.IsAdmin())
+            if (!CanAccess(task))
             {
-                return;
+                throw new CustomException("无权访问当前租户任务");
             }
-
-            // 允许通配 *（全部租户任务）、精确匹配、或逗号列表包含当前租户
-            if (string.Equals(task.TenantId, CurrentTenantId, StringComparison.OrdinalIgnoreCase)
-                || task.TenantId == "*")
-            {
-                return;
-            }
-
-            if (task.TenantId != null)
-            {
-                var parts = task.TenantId.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                if (parts.Contains(CurrentTenantId, StringComparer.OrdinalIgnoreCase))
-                {
-                    return;
-                }
-            }
-
-            throw new CustomException("无权访问当前租户任务");
         }
 
         private SysTasks GetTaskById(string id)
@@ -142,6 +109,62 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 任务运行监控：正在执行、下次/上次触发时间、累计耗时。
+        /// 运行时状态取自 Quartz 内存，执行次数与累计耗时来自数据库，按任务ID合并；
+        /// 只返回当前仍在调度器中的任务（已停止的任务不在其中）。
+        /// </summary>
+        /// <param name="ids">可选，逗号分隔的任务ID；为空表示全部</param>
+        [HttpGet("runtime")]
+        [ActionPermissionFilter(Permission = "monitor:job:list")]
+        public async Task<IActionResult> Runtime([FromQuery] string ids = null)
+        {
+            var idList = string.IsNullOrWhiteSpace(ids)
+                ? null
+                : ids.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+            var snapshot = await _schedulerServer.GetRuntimeSnapshotAsync(idList);
+
+            var taskIds = snapshot.Tasks.Select(t => t.TaskId).ToList();
+            var taskMap = taskIds.Count == 0
+                ? new Dictionary<string, SysTasks>()
+                : _tasksQzService.GetList(m => taskIds.Contains(m.ID))
+                    .Where(CanAccess)
+                    .ToDictionary(m => m.ID);
+
+            var elapsed = await _tasksLogService.GetElapsedSummaryAsync(taskMap.Keys);
+
+            var tasks = snapshot.Tasks
+                .Where(t => taskMap.ContainsKey(t.TaskId))
+                .Select(t =>
+                {
+                    var task = taskMap[t.TaskId];
+                    return new
+                    {
+                        taskId = t.TaskId,
+                        jobGroup = t.JobGroup,
+                        name = task.Name,
+                        taskType = task.TaskType,
+                        isRunning = t.IsRunning,
+                        paused = t.Paused,
+                        nextFireTime = t.NextFireTime,
+                        prevFireTime = t.PrevFireTime,
+                        triggerCount = t.TriggerCount,
+                        runTimes = task.RunTimes,
+                        lastRunStatus = task.LastRunStatus,
+                        lastRunTime = task.LastRunTime,
+                        totalElapsedMs = elapsed.TryGetValue(t.TaskId, out var e) ? Math.Round(e, 0) : 0
+                    };
+                })
+                .ToList();
+
+            return SUCCESS(new
+            {
+                schedulerStarted = snapshot.SchedulerStarted,
+                tasks
+            });
+        }
+
+        /// <summary>
         /// 查询单个计划任务
         /// </summary>
         /// <param name="id">编码</param>
@@ -165,7 +188,7 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "添加任务", BusinessType = BusinessType.INSERT)]
         public IActionResult Create([FromBody] TasksCreateDto parm)
         {
-            var tenantExpression = ResolveTenantExpression(parm.TenantId);
+            var tenantExpression = _tasksQzService.NormalizeTenantExpression(parm.TenantId, _sysTenantService);
 
             //判断是否已经存在
             if (_tasksQzService.Any(m => m.TenantId == tenantExpression && m.Name == parm.Name))
@@ -206,7 +229,7 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(Title = "修改任务", BusinessType = BusinessType.UPDATE)]
         public IActionResult Update([FromBody] TasksCreateDto parm)
         {
-            var tenantExpression = ResolveTenantExpression(parm.TenantId);
+            var tenantExpression = _tasksQzService.NormalizeTenantExpression(parm.TenantId, _sysTenantService);
 
             //判断是否已经存在
             if (_tasksQzService.Any(m => m.TenantId == tenantExpression && m.Name == parm.Name && m.ID != parm.ID))

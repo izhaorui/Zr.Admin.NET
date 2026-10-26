@@ -72,7 +72,59 @@ namespace ZR.ServiceCore.Services
                 SqlText = parm.SqlText,
                 RequestMethod = parm.RequestMethod,
                 TenantId = parm.TenantId,
+                // 白名单更新：漏加这一项会导致前端改了「错过执行策略」但保存不生效
+                MisfirePolicy = parm.MisfirePolicy,
             });
+        }
+
+        /// <summary>
+        /// 规范化任务的租户表达式（新建/修改任务时使用）。
+        /// 规则集中在服务层，避免新增入口（批量启停、复制任务等）时复制一份。
+        /// </summary>
+        /// <param name="tenantExpression">前端提交的租户表达式</param>
+        public string NormalizeTenantExpression(string tenantExpression, ISysTenantService tenantService)
+        {
+            var currentTenantId = App.GetCurrentTenantId();
+
+            // 非多租户：没有租户隔离，沿用提交值（为空则用当前租户）
+            if (!App.IsTenantEnabled())
+            {
+                return string.IsNullOrWhiteSpace(tenantExpression) ? currentTenantId : tenantExpression.Trim();
+            }
+
+            // 非主租户：只能操作自身，提交值一律忽略
+            if (!App.IsMainTenant())
+            {
+                return currentTenantId;
+            }
+
+            if (string.IsNullOrWhiteSpace(tenantExpression))
+            {
+                return currentTenantId;
+            }
+
+            var expr = tenantExpression.Trim();
+            if (expr == "*")
+            {
+                return expr;
+            }
+
+            var parts = expr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (parts.Count == 0)
+            {
+                return currentTenantId;
+            }
+
+            foreach (var tenantId in parts)
+            {
+                tenantService.CheckTenant(tenantId);
+            }
+
+            return string.Join(",", parts);
         }
     }
 }

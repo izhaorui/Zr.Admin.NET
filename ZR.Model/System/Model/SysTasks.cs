@@ -82,6 +82,17 @@
         public int TriggerType { get; set; }
 
         /// <summary>
+        /// 错过执行（Misfire）策略：
+        /// 0=默认（Cron 不补执行 / Simple 跳到下一个计划点）
+        /// 1=立即补执行一次
+        /// 2=忽略错过，按原计划全部补执行
+        /// 注意：Cron 与 Simple 的 Quartz 指令数值语义不同，存储统一用本业务枚举，由触发器创建时分别映射。
+        /// </summary>
+        [Display(Name = "错过执行策略")]
+        [SugarColumn(DefaultValue = "0")]
+        public int MisfirePolicy { get; set; }
+
+        /// <summary>
         /// 执行间隔时间(单位:秒) 
         /// 默认 : 0
         /// </summary>

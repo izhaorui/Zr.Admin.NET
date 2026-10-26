@@ -32,5 +32,29 @@ namespace ZR.ServiceCore.Services
             return logModel;
         }
 
+        /// <summary>
+        /// 按任务聚合累计执行耗时（毫秒）。数据库侧 SUM，避免把大量日志明细拉到内存。
+        /// </summary>
+        public async Task<Dictionary<string, double>> GetElapsedSummaryAsync(IEnumerable<string> jobIds)
+        {
+            var ids = jobIds?.Where(i => !string.IsNullOrWhiteSpace(i)).Distinct().ToList();
+            if (ids == null || ids.Count == 0)
+            {
+                return new Dictionary<string, double>();
+            }
+
+            var rows = await Queryable()
+                .Where(l => ids.Contains(l.JobId))
+                .GroupBy(l => l.JobId)
+                .Select(l => new
+                {
+                    JobId = l.JobId,
+                    Total = SqlFunc.AggregateSum(l.Elapsed)
+                })
+                .ToListAsync();
+
+            return rows.ToDictionary(r => r.JobId, r => r.Total);
+        }
+
     }
 }

@@ -3,9 +3,12 @@ using Infrastructure.Model;
 using NLog;
 using Quartz;
 using Quartz.Impl;
+using Quartz.Impl.Matchers;
 using Quartz.Spi;
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Threading.Tasks;
 using ZR.Model.System;
 using ZR.Tasks.TaskScheduler;
@@ -367,32 +370,36 @@ namespace ZR.Tasks
         /// <returns></returns>
         private ITrigger CreateSimpleTrigger(SysTasks tasksQz)
         {
-            // SimpleTrigger 没有 DoNothing 指令，这里显式选用 NextWithRemainingCount：
-            // 错过的触发点直接跳到「现在之后的下一个计划点」，不立即补执行，
-            // 错过次数计入已执行（等价于 Cron 的 DoNothing：错过即丢失，不会追补）。
-            if (tasksQz.RunTimes > 0)
-            {
-                ITrigger trigger = TriggerBuilder.Create()
+            // SimpleTrigger 的 Misfire 策略同样由 MisfirePolicy 决定：
+            // 0=NextWithRemainingCount（默认：错过的触发点直接跳到「现在之后的下一个计划点」，不立即补执行，
+            //   错过次数计入已执行，等价于 Cron 的 DoNothing：错过即丢失、不追补）
+            // 1=FireNow（立即补执行一次）
+            // 2=IgnoreMisfires（把错过的全部补上）
+            return TriggerBuilder.Create()
                 .WithIdentity(tasksQz.ID, tasksQz.JobGroup)
                 .StartAt(tasksQz.BeginTime.Value)
                 .EndAt(tasksQz.EndTime.Value)
-                .WithSimpleSchedule(x => x.WithIntervalInSeconds(tasksQz.IntervalSecond)
-                .WithRepeatCount(tasksQz.RunTimes)
-                .WithMisfireHandlingInstructionNextWithRemainingCount()).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
-                return trigger;
-            }
-            else
-            {
-                ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity(tasksQz.ID, tasksQz.JobGroup)
-                .StartAt(tasksQz.BeginTime.Value)
-                .EndAt(tasksQz.EndTime.Value)
-                .WithSimpleSchedule(x => x.WithIntervalInSeconds(tasksQz.IntervalSecond)
-                .RepeatForever()
-                .WithMisfireHandlingInstructionNextWithRemainingCount()).ForJob(tasksQz.ID, tasksQz.JobGroup).Build();
-                return trigger;
-            }
-            // 触发作业立即运行，然后每10秒重复一次，无限循环
+                .WithSimpleSchedule(x =>
+                {
+                    x.WithIntervalInSeconds(tasksQz.IntervalSecond);
+                    if (tasksQz.RunTimes > 0)
+                    {
+                        x.WithRepeatCount(tasksQz.RunTimes);
+                    }
+                    else
+                    {
+                        x.RepeatForever();
+                    }
+
+                    switch (tasksQz.MisfirePolicy)
+                    {
+                        case 1: x.WithMisfireHandlingInstructionFireNow(); break;
+                        case 2: x.WithMisfireHandlingInstructionIgnoreMisfires(); break;
+                        default: x.WithMisfireHandlingInstructionNextWithRemainingCount(); break;
+                    }
+                })
+                .ForJob(tasksQz.ID, tasksQz.JobGroup)
+                .Build();
         }
 
         /// <summary>
@@ -403,17 +410,103 @@ namespace ZR.Tasks
         private ITrigger CreateCronTrigger(SysTasks tasksQz)
         {
             // 作业触发器
-            // DoNothing：错过触发点不做补执行，等下一个 Cron 时刻，避免调度器启动后立刻跑一次。
+            // 错过触发点如何处理由任务的 MisfirePolicy 决定：
+            // 0=DoNothing（默认：等下一个 Cron 时刻，避免调度器启动后立刻跑一次）
+            // 1=FireAndProceed（立即补执行一次，之后按计划继续）
+            // 2=IgnoreMisfires（把错过的全部补上）
+            // 注意：Cron 与 Simple 的 Quartz 指令数值语义不同，这里按策略名映射，不透传数字。
             return TriggerBuilder.Create()
                    .WithIdentity(tasksQz.ID, tasksQz.JobGroup)
                    .StartAt(tasksQz.BeginTime.Value)//开始时间
                    .EndAt(tasksQz.EndTime.Value)//结束数据
-                   .WithCronSchedule(tasksQz.Cron, x => x.WithMisfireHandlingInstructionDoNothing())//指定cron表达式
+                   .WithCronSchedule(tasksQz.Cron, x =>
+                   {
+                       switch (tasksQz.MisfirePolicy)
+                       {
+                           case 1: x.WithMisfireHandlingInstructionFireAndProceed(); break;
+                           case 2: x.WithMisfireHandlingInstructionIgnoreMisfires(); break;
+                           default: x.WithMisfireHandlingInstructionDoNothing(); break;
+                       }
+                   })//指定cron表达式
                    .ForJob(tasksQz.ID, tasksQz.JobGroup)//作业名称
                    .Build();
         }
 
         #endregion
 
+        /// <summary>
+        /// 获取任务运行时快照：正在执行、下次/上次触发时间、暂停状态。
+        /// 只读取 Quartz 内存状态，不查数据库；调度器未启动时直接返回空快照。
+        /// </summary>
+        public async Task<TaskRuntimeSnapshot> GetRuntimeSnapshotAsync(IEnumerable<string> taskIds = null)
+        {
+            var snapshot = new TaskRuntimeSnapshot();
+            var scheduler = await GetTaskSchedulerAsync();
+            if (!scheduler.IsStarted)
+            {
+                return snapshot;
+            }
+
+            snapshot.SchedulerStarted = true;
+
+            var filter = taskIds?.Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // 正在执行的 JobKey；业务 Job 统一以分发器身份运行，Key.Name 即任务ID
+            var running = (await scheduler.GetCurrentlyExecutingJobs())
+                .Select(j => j.JobDetail.Key)
+                .ToHashSet();
+
+            foreach (var groupName in await scheduler.GetJobGroupNames())
+            {
+                var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(groupName));
+                foreach (var jobKey in jobKeys)
+                {
+                    if (filter != null && filter.Count > 0 && !filter.Contains(jobKey.Name))
+                    {
+                        continue;
+                    }
+
+                    var triggers = await scheduler.GetTriggersOfJob(jobKey);
+
+                    DateTime? nextFire = null;
+                    DateTime? prevFire = null;
+                    var paused = false;
+
+                    if (triggers.Count > 0)
+                    {
+                        var nexts = triggers.Select(t => t.GetNextFireTimeUtc())
+                            .Where(t => t.HasValue).Select(t => t.Value).ToList();
+                        if (nexts.Count > 0)
+                        {
+                            nextFire = nexts.Min().LocalDateTime;
+                        }
+
+                        var prevs = triggers.Select(t => t.GetPreviousFireTimeUtc())
+                            .Where(t => t.HasValue).Select(t => t.Value).ToList();
+                        if (prevs.Count > 0)
+                        {
+                            prevFire = prevs.Max().LocalDateTime;
+                        }
+
+                        var states = await Task.WhenAll(triggers.Select(t => scheduler.GetTriggerState(t.Key)));
+                        paused = states.All(s => s == TriggerState.Paused);
+                    }
+
+                    snapshot.Tasks.Add(new TaskRuntimeInfo
+                    {
+                        TaskId = jobKey.Name,
+                        JobGroup = jobKey.Group,
+                        IsRunning = running.Contains(jobKey),
+                        Paused = paused,
+                        NextFireTime = nextFire,
+                        PrevFireTime = prevFire,
+                        TriggerCount = triggers.Count
+                    });
+                }
+            }
+
+            return snapshot;
+        }
     }
 }

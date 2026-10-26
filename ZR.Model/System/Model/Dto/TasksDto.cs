@@ -81,6 +81,12 @@
         public int TriggerType { get; set; }
 
         /// <summary>
+        /// 错过执行（Misfire）策略：0=默认（不补执行）1=立即补一次 2=忽略错过、按计划补全
+        /// </summary>
+        [Display(Name = "错过执行策略")]
+        public int MisfirePolicy { get; set; }
+
+        /// <summary>
         /// 执行间隔时间(单位:秒)
         /// </summary>
         [Display(Name = "执行间隔时间(单位:秒)")]
