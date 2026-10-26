@@ -18,7 +18,12 @@ namespace ZR.Tasks
     //[AppService]
     public class TaskSchedulerServer : ITaskSchedulerServer
     {
-        private Task<IScheduler> _scheduler;
+        /// <summary>
+        /// 调度器延迟初始化：构造阶段只登记创建方法，首次真正使用时才异步创建。
+        /// Lazy 保证并发下只创建一次；不直接存 Task 是为了避免在 .Result 上同步阻塞，
+        /// 并把初始化异常以原始异常而非 AggregateException 抛给调用方。
+        /// </summary>
+        private readonly Lazy<Task<IScheduler>> _scheduler;
         private readonly IJobFactory _jobFactory;
         /// <summary>
         /// 日志接口
@@ -27,8 +32,8 @@ namespace ZR.Tasks
 
         public TaskSchedulerServer(IJobFactory jobFactory)
         {
-            _scheduler = GetTaskSchedulerAsync();
             _jobFactory = jobFactory;
+            _scheduler = new Lazy<Task<IScheduler>>(CreateSchedulerAsync);
         }
 
         private static NameValueCollection GetQuartzConfig()
@@ -54,41 +59,37 @@ namespace ZR.Tasks
         }
 
         /// <summary>
+        /// 按 Quartz 配置创建调度器（由 Lazy 保证只执行一次）。
+        /// </summary>
+        private static Task<IScheduler> CreateSchedulerAsync()
+        {
+            NameValueCollection collection = GetQuartzConfig();
+            StdSchedulerFactory factory = new StdSchedulerFactory(collection);
+            return factory.GetScheduler();
+        }
+
+        /// <summary>
+        /// 获取调度器：首次调用时创建并缓存。
+        /// </summary>
+        private Task<IScheduler> GetTaskSchedulerAsync() => _scheduler.Value;
+
+        /// <summary>
         /// 开启计划任务
         /// 参考文章：https://www.quartz-scheduler.net/documentation/quartz-3.x/configuration/reference.html#datasources-ado-net-jobstores
         /// </summary>
         /// <returns></returns>
-        private Task<IScheduler> GetTaskSchedulerAsync()
-        {
-            if (_scheduler != null)
-            {
-                return _scheduler;
-            }
-
-            NameValueCollection collection = GetQuartzConfig();
-            StdSchedulerFactory factory = new StdSchedulerFactory(collection);
-
-            return _scheduler = factory.GetScheduler();
-        }
-
         public async Task<ApiResult> StartTaskScheduleAsync()
         {
-            try
+            var scheduler = await GetTaskSchedulerAsync();
+            scheduler.JobFactory = _jobFactory;
+            if (scheduler.IsStarted)
             {
-                _scheduler.Result.JobFactory = _jobFactory;
-                if (_scheduler.Result.IsStarted)
-                {
-                    return ApiResult.Error(500, $"计划任务已经开启");
-                }
+                return ApiResult.Error(500, $"计划任务已经开启");
+            }
 
-                //等待任务运行完成
-                await _scheduler.Result.Start();
-                return ApiResult.Success("计划任务开启成功");
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            //等待任务运行完成
+            await scheduler.Start();
+            return ApiResult.Success("计划任务开启成功");
         }
 
         /// <summary>
@@ -97,20 +98,14 @@ namespace ZR.Tasks
         /// <returns></returns>
         public async Task<ApiResult> StopTaskScheduleAsync()
         {
-            try
+            var scheduler = await GetTaskSchedulerAsync();
+            if (scheduler.IsShutdown)
             {
-                if (_scheduler.Result.IsShutdown)
-                {
-                    return ApiResult.Error(500, $"计划任务已经停止");
-                }
+                return ApiResult.Error(500, $"计划任务已经停止");
+            }
 
-                await _scheduler.Result.Shutdown();
-                return ApiResult.Success("计划任务已经停止");
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            await scheduler.Shutdown();
+            return ApiResult.Success("计划任务已经停止");
         }
 
         /// <summary>
@@ -122,8 +117,9 @@ namespace ZR.Tasks
         {
             try
             {
+                var scheduler = await GetTaskSchedulerAsync();
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
-                if (await _scheduler.Result.CheckExists(jobKey))
+                if (await scheduler.CheckExists(jobKey))
                 {
                     return ApiResult.Error(500, $"该计划任务已经在执行:【{tasksQz.Name}】,请勿重复添加！");
                 }
@@ -136,13 +132,12 @@ namespace ZR.Tasks
                 tasksQz.BeginTime = tasksQz.BeginTime == null ? DateTime.Now : tasksQz.BeginTime;
                 tasksQz.EndTime = tasksQz.EndTime == null ? DateTime.MaxValue.AddDays(-1) : tasksQz.EndTime;
 
-                DateTimeOffset starRunTime = DateBuilder.NextGivenSecondDate(tasksQz.BeginTime, 1);//设置开始时间
-                DateTimeOffset endRunTime = DateBuilder.NextGivenSecondDate(tasksQz.EndTime, 1);//设置暂停时间
-
+                // 起止时间由 CreateCronTrigger/CreateSimpleTrigger 直接取 BeginTime/EndTime，
+                // 原先在此计算的 starRunTime/endRunTime 从未被引用（变量名也拼错），已移除。
                 #endregion
 
                 //2、开启调度器。判断任务调度是否开启
-                if (!_scheduler.Result.IsStarted)
+                if (!scheduler.IsStarted)
                 {
                     await StartTaskScheduleAsync();
                 }
@@ -169,8 +164,8 @@ namespace ZR.Tasks
                 }
 
                 // 5、将触发器和任务器绑定到调度器中
-                await _scheduler.Result.ScheduleJob(job, trigger);
-                await _scheduler.Result.ResumeTrigger(trigger.Key);
+                await scheduler.ScheduleJob(job, trigger);
+                await scheduler.ResumeTrigger(trigger.Key);
 
                 return ApiResult.Success($"启动计划任务:【{tasksQz.Name}】成功");
             }
@@ -190,11 +185,12 @@ namespace ZR.Tasks
         {
             try
             {
+                var scheduler = await GetTaskSchedulerAsync();
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
-                if (await _scheduler.Result.CheckExists(jobKey))
+                if (await scheduler.CheckExists(jobKey))
                 {
                     // 防止创建时存在数据问题 先移除，然后在执行创建操作
-                    await _scheduler.Result.PauseJob(jobKey);
+                    await scheduler.PauseJob(jobKey);
                 }
                 return ApiResult.Success($"暂停计划任务:【{tasksQz.Name}】成功");
             }
@@ -212,20 +208,14 @@ namespace ZR.Tasks
         /// <returns></returns>
         public async Task<ApiResult> ResumeTaskScheduleAsync(SysTasks tasksQz)
         {
-            try
+            var scheduler = await GetTaskSchedulerAsync();
+            JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
+            if (!await scheduler.CheckExists(jobKey))
             {
-                JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
-                if (!await _scheduler.Result.CheckExists(jobKey))
-                {
-                    return ApiResult.Error(500, $"未找到计划任务:【{tasksQz.Name}】");
-                }
-                await _scheduler.Result.ResumeJob(jobKey);
-                return ApiResult.Success($"恢复计划任务:【{tasksQz.Name}】成功");
+                return ApiResult.Error(500, $"未找到计划任务:【{tasksQz.Name}】");
             }
-            catch (Exception)
-            {
-                throw;
-            }
+            await scheduler.ResumeJob(jobKey);
+            return ApiResult.Success($"恢复计划任务:【{tasksQz.Name}】成功");
         }
 
         /// <summary>
@@ -237,8 +227,9 @@ namespace ZR.Tasks
         {
             try
             {
+                var scheduler = await GetTaskSchedulerAsync();
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
-                await _scheduler.Result.DeleteJob(jobKey);
+                await scheduler.DeleteJob(jobKey);
                 return ApiResult.Success($"删除计划任务:【{tasksQz.Name}】成功");
             }
             catch (Exception ex)
@@ -258,8 +249,9 @@ namespace ZR.Tasks
         {
             try
             {
+                var scheduler = await GetTaskSchedulerAsync();
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
-                bool exists = await _scheduler.Result.CheckExists(jobKey);
+                bool exists = await scheduler.CheckExists(jobKey);
 
                 // Run 只负责立即执行一次，不启动/恢复正式调度；
                 // 如需启动任务，请调用 StartTaskScheduleAsync/AddTaskScheduleAsync。
@@ -268,7 +260,7 @@ namespace ZR.Tasks
                     return await RunTaskOnceAsync(tasksQz, operatorName);
                 }
 
-                var triggers = await _scheduler.Result.GetTriggersOfJob(jobKey);
+                var triggers = await scheduler.GetTriggersOfJob(jobKey);
                 if (triggers.Count <= 0)
                 {
                     return new ApiResult(110, $"未找到触发器[{jobKey.Name}]");
@@ -283,7 +275,7 @@ namespace ZR.Tasks
                     { "IsManual", 1 },
                     { "TriggerSource", "manual" }
                 };
-                await _scheduler.Result.TriggerJob(jobKey, manualData);
+                await scheduler.TriggerJob(jobKey, manualData);
 
                 return ApiResult.Success($"运行计划任务:【{tasksQz.Name}】成功");
             }
@@ -303,7 +295,8 @@ namespace ZR.Tasks
         {
             try
             {
-                if (!_scheduler.Result.IsStarted)
+                var scheduler = await GetTaskSchedulerAsync();
+                if (!scheduler.IsStarted)
                 {
                     await StartTaskScheduleAsync();
                 }
@@ -330,7 +323,7 @@ namespace ZR.Tasks
                     .WithSimpleSchedule(x => x.WithRepeatCount(0).WithMisfireHandlingInstructionFireNow())
                     .Build();
 
-                await _scheduler.Result.ScheduleJob(job, trigger);
+                await scheduler.ScheduleJob(job, trigger);
                 return ApiResult.Success($"运行计划任务:【{tasksQz.Name}】成功");
             }
             catch (Exception ex)
@@ -349,11 +342,12 @@ namespace ZR.Tasks
         {
             try
             {
+                var scheduler = await GetTaskSchedulerAsync();
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
-                if (await _scheduler.Result.CheckExists(jobKey))
+                if (await scheduler.CheckExists(jobKey))
                 {
                     //防止创建时存在数据问题 先移除，然后在执行创建操作
-                    await _scheduler.Result.DeleteJob(jobKey);
+                    await scheduler.DeleteJob(jobKey);
                 }
                 return await AddTaskScheduleAsync(tasksQz);
             }

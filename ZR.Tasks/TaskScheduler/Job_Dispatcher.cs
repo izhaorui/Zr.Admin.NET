@@ -239,6 +239,8 @@ namespace ZR.Tasks.TaskScheduler
 
         private static async Task ExecuteHttpTask(SysTasks info)
         {
+            ValidateHttpTarget(info.ApiUrl);
+
             string result;
             if (info.RequestMethod != null && info.RequestMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
             {
@@ -259,6 +261,29 @@ namespace ZR.Tasks.TaskScheduler
             }
 
             logger.Info("任务【{TaskName}】网络请求执行结果={Result}", info.Name, result);
+        }
+
+        /// <summary>
+        /// 校验 HTTP 任务目标地址：只允许 http/https，阻止 file://、gopher:// 等协议
+        /// 被用来读取服务器本地文件或发起非预期请求。
+        /// </summary>
+        /// <remarks>
+        /// 内网/回环地址不做拦截 —— 定时任务调用内网接口是常见用法，硬编码拦截会直接打断存量任务。
+        /// 若部署环境需要防 SSRF（如任务配置可能被低权限用户篡改），应在网络层限制出站目标，
+        /// 而不是在应用内按地址段猜测。
+        /// </remarks>
+        private static void ValidateHttpTarget(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                throw new CustomException("HTTP 任务未配置请求地址");
+            }
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                throw new CustomException($"HTTP 任务地址仅支持 http/https 协议：{url}");
+            }
         }
 
         private static void ExecuteSqlTask(SysTasks info, string tenantId)
