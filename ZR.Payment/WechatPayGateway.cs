@@ -1,11 +1,12 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Payment;
 using SKIT.FlurlHttpClient.Wechat.TenpayV3;
 using SKIT.FlurlHttpClient.Wechat.TenpayV3.Events;
 using SKIT.FlurlHttpClient.Wechat.TenpayV3.Models;
 using SKIT.FlurlHttpClient.Wechat.TenpayV3.Settings;
 
-namespace ZR.ServiceCore.Payment
+namespace ZR.Payment
 {
     /// <summary>
     /// 微信支付 V3 渠道网关（平台统一商户号模式）。只负责支付渠道对接，不含任何业务订单逻辑：

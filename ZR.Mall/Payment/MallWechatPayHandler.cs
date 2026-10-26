@@ -1,6 +1,6 @@
 using ZR.Mall.Enum;
 using ZR.Mall.Service.IService;
-using ZR.ServiceCore.Payment;
+using Infrastructure.Payment;
 
 namespace ZR.Mall.Payment
 {

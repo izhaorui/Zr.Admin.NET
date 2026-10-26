@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ZR.ServiceCore.Payment;
+using ZR.Payment;
 
 //创建时间：2026-07-25
 namespace ZR.Mall.Controllers.Front

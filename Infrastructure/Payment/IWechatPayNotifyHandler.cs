@@ -1,9 +1,14 @@
-namespace ZR.ServiceCore.Payment
+namespace Infrastructure.Payment
 {
     /// <summary>
     /// 微信支付回调业务分发接口。WechatPayGateway 完成验签解密后，按商户单号遍历已注册的
     /// handler 分发成功交易；各业务模块（商城订单/租户续费等）各自实现，互不依赖。
     /// </summary>
+    /// <remarks>
+    /// 抽象放在 Infrastructure 而不是 ZR.Payment：handler 的实现分散在各业务项目
+    /// （ZR.Mall 的商城订单、ZR.ServiceCore 的租户续费）。若接口留在 ZR.Payment，
+    /// ZR.ServiceCore 就必须反向引用 ZR.Payment，微信 SDK 会顺着引用链回到所有宿主，拆分失去意义。
+    /// </remarks>
     public interface IWechatPayNotifyHandler
     {
         /// <summary>

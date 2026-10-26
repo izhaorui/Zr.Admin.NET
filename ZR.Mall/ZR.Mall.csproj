@@ -12,6 +12,8 @@
     <PackageReference Include="Quartz" Version="3.18.1" />
     <ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
     <ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
+    <!-- 微信支付网关（含 BouncyCastle）。商城下单与回调需要。 -->
+    <ProjectReference Include="..\ZR.Payment\ZR.Payment.csproj" />
   </ItemGroup>
 
 </Project>

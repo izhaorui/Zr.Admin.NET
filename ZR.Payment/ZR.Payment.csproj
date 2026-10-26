@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>1701;1702;1591;1570</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- 微信支付 V3 渠道网关。依赖链：SKIT.FlurlHttpClient.Wechat.TenpayV3
+		     → SKIT.FlurlHttpClient.Common → BouncyCastle.Cryptography（单个 DLL 就 5-8MB）。
+
+		     独立成 ZR.Payment 而不是留在 ZR.ServiceCore：
+		     只有 Admin（租户续费）和 Mall（商城订单，Front 经 Mall 间接依赖）需要支付，
+		     ZR.Tasks、ZR.CodeGenerator 用不到。回调接口留在 Infrastructure.Payment，
+		     业务侧各自实现 handler，因此本项目不会被其他模块反向引用。 -->
+		<PackageReference Include="SKIT.FlurlHttpClient.Wechat.TenpayV3" Version="3.16.0" />
+		<PackageReference Include="NLog" Version="6.2.1" />
+	</ItemGroup>
+
+</Project>

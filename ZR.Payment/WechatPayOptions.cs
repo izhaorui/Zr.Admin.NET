@@ -1,4 +1,4 @@
-namespace ZR.ServiceCore.Payment
+namespace ZR.Payment
 {
     /// <summary>
     /// 微信支付 V3 配置（平台统一商户号，非多租户商户配置）。

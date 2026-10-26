@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Model.System.Enums;
-using ZR.ServiceCore.Payment;
+using ZR.Payment;
 
 // 创建时间：2026-08-28
 namespace ZR.Admin.WebApi.Controllers.System.tenant

@@ -1,5 +1,6 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Infrastructure.Payment;
 using ZR.Model.System.Dto;
 using ZR.ServiceCore.Services;
 
