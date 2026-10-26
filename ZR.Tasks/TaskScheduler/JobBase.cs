@@ -4,9 +4,9 @@ using Quartz;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using ZR.Common;
 using ZR.Model.System;
 using ZR.ServiceCore.Services;
+using ZR.Tasks.TaskScheduler;
 
 namespace ZR.Tasks
 {
@@ -79,7 +79,13 @@ namespace ZR.Tasks
                 jobException = ex;
                 logMsg = TruncateMessage($"Job Run Fail，Exception：{ex.Message}");
                 logger.Error(ex, "任务执行出错");
-                WxNoticeHelper.SendMsg("任务执行出错", logMsg);
+
+                // 分发器模式下由 Job_Dispatcher 统一通知（它持有任务名称与租户上下文），
+                // 这里再发一次会造成同一次失败产生重复告警。
+                if (!dispatcherMode)
+                {
+                    JobFailureNotifier.Notify(context.JobDetail.Key.Name, null, tenantId, logMsg, ex);
+                }
             }
             finally
             {

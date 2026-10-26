@@ -2,6 +2,7 @@ using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Cache;
 using Infrastructure.Extensions;
+using Microsoft.Extensions.Configuration;
 using NLog;
 using Quartz;
 using SqlSugar.IOC;
@@ -84,6 +85,12 @@ namespace ZR.Tasks.TaskScheduler
                 return;
             }
 
+            // 全局执行策略（QuartzTask 节点）。默认 0/0/false，与改造前行为一致。
+            var taskOptions = App.Configuration.GetSection("QuartzTask");
+            var timeoutSeconds = Math.Max(0, taskOptions.GetValue("TimeoutSeconds", 0));
+            var maxRetryCount = Math.Max(0, taskOptions.GetValue("MaxRetryCount", 0));
+            var retryIntervalSeconds = Math.Max(0, taskOptions.GetValue("RetryIntervalSeconds", 10));
+
             var tenants = ResolveTargetTenantIds(template.TenantId);
             if (tenants.Count == 0)
             {
@@ -118,24 +125,43 @@ namespace ZR.Tasks.TaskScheduler
                 var status = "0";
                 var msg = "success";
                 Exception jobException = null;
+                var retried = 0;
 
-                try
+                for (var attempt = 0; ; attempt++)
                 {
-                    await ExecuteSingleTenant(template, context, tenantId);
+                    try
+                    {
+                        await ExecuteTenantWithTimeout(template, context, tenantId, timeoutSeconds);
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (attempt < maxRetryCount)
+                        {
+                            retried++;
+                            logger.Warn("任务分发执行失败，准备重试: task={TaskId}, tenant={TenantId}, attempt={Attempt}/{Max}, error={Error}",
+                                taskId, tenantId, attempt + 1, maxRetryCount, ex.Message);
+
+                            if (retryIntervalSeconds > 0)
+                            {
+                                await Task.Delay(TimeSpan.FromSeconds(retryIntervalSeconds));
+                            }
+                            continue;
+                        }
+
+                        status = "1";
+                        // 重试过程中每次的异常都记录在 Warn，这里只保留最终失败原因与重试次数
+                        msg = retried > 0 ? $"{ex.Message}（已重试 {retried} 次）" : ex.Message;
+                        jobException = ex;
+                        overallStatus = "1";
+                        overallMsg = msg;
+                        logger.Error(ex, "任务分发执行失败: task={TaskId}, tenant={TenantId}, retried={Retried}",
+                            taskId, tenantId, retried);
+                        break;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    status = "1";
-                    msg = ex.Message;
-                    jobException = ex;
-                    overallStatus = "1";
-                    overallMsg = msg;
-                    logger.Error(ex, "任务分发执行失败: task={TaskId}, tenant={TenantId}", taskId, tenantId);
-                }
-                finally
-                {
-                    sw.Stop();
-                }
+
+                sw.Stop();
 
                 await logService.AddTaskLog(taskId, new SysTasksLog
                 {
@@ -150,6 +176,17 @@ namespace ZR.Tasks.TaskScheduler
                     TriggerSource = GetDataString(context, "TriggerSource"),
                     InvokeTarget = invokeTarget
                 }, template);
+
+                // 通知放在日志之后：先保证失败结果可查，再对外发消息
+                if (jobException != null)
+                {
+                    JobFailureNotifier.Notify(taskId, template.Name, tenantId, msg, jobException);
+                }
+                else
+                {
+                    // 恢复后清除冷却，避免下一次新故障被上一次的冷却窗口吞掉
+                    JobFailureNotifier.ResetCooldown(taskId, tenantId);
+                }
             }
 
             // 所有租户执行完毕后，统一更新一次任务统计
@@ -220,11 +257,40 @@ namespace ZR.Tasks.TaskScheduler
                 .ToList();
         }
 
-        private static async Task ExecuteSingleTenant(SysTasks task, IJobExecutionContext context, string tenantId)
+        /// <summary>
+        /// 执行单个租户的任务，超过全局超时则抛异常。
+        ///
+        /// 注意这是「软超时」：HTTP 请求会因传给 HttpHelper 的 timeOut 真正中断，
+        /// 但 SQL / 程序集任务无法强制终止（ADO.NET 的执行不接受 CancellationToken），
+        /// 超时后只是不再等待并记为失败，被放弃的调用仍可能在后台跑完。
+        /// </summary>
+        private static async Task ExecuteTenantWithTimeout(SysTasks task, IJobExecutionContext context, string tenantId, int timeoutSeconds)
+        {
+            var execTask = ExecuteSingleTenant(task, context, tenantId, timeoutSeconds);
+
+            if (timeoutSeconds <= 0)
+            {
+                await execTask;
+                return;
+            }
+
+            try
+            {
+                // 外层比内层 HTTP 超时多留 5 秒：让 HTTP 请求先按自己的超时取消并给出明确错误，
+                // 外层只兜底 SQL / 程序集这类无法中断的执行（软超时）。
+                await execTask.WaitAsync(TimeSpan.FromSeconds(timeoutSeconds + 5));
+            }
+            catch (TimeoutException)
+            {
+                throw new CustomException($"任务执行超时（>{timeoutSeconds}s）");
+            }
+        }
+
+        private static async Task ExecuteSingleTenant(SysTasks task, IJobExecutionContext context, string tenantId, int timeoutSeconds)
         {
             if (task.TaskType == 2)
             {
-                await ExecuteHttpTask(task);
+                await ExecuteHttpTask(task, timeoutSeconds);
                 return;
             }
 
@@ -237,27 +303,39 @@ namespace ZR.Tasks.TaskScheduler
             await ExecuteAssemblyTask(task, context, tenantId);
         }
 
-        private static async Task ExecuteHttpTask(SysTasks info)
+        private static async Task ExecuteHttpTask(SysTasks info, int timeoutSeconds)
         {
             ValidateHttpTarget(info.ApiUrl);
 
+            // 请求级超时：未配置全局超时时沿用 HttpHelper 默认的 30 秒
+            var requestTimeout = timeoutSeconds > 0 ? timeoutSeconds : 30;
+
             string result;
-            if (info.RequestMethod != null && info.RequestMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                result = await HttpHelper.HttpPostAsync(info.ApiUrl, info.JobParams);
-            }
-            else
-            {
-                var url = info.ApiUrl;
-                if (url.IndexOf("?") > -1)
+                if (info.RequestMethod != null && info.RequestMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
-                    url += "&" + info.JobParams;
+                    result = await HttpHelper.HttpPostAsync(info.ApiUrl, info.JobParams, timeOut: requestTimeout);
                 }
                 else
                 {
-                    url += "?" + info.JobParams;
+                    var url = info.ApiUrl;
+                    if (url.IndexOf("?") > -1)
+                    {
+                        url += "&" + info.JobParams;
+                    }
+                    else
+                    {
+                        url += "?" + info.JobParams;
+                    }
+                    result = await HttpHelper.HttpGetAsync(url, timeOut: requestTimeout);
                 }
-                result = await HttpHelper.HttpGetAsync(url);
+            }
+            catch (TaskCanceledException)
+            {
+                // HttpHelper 用 CancellationTokenSource 控制超时，超时表现为 TaskCanceledException，
+                // 这里转成明确文案，避免日志里只看到 "A task was canceled."
+                throw new CustomException($"HTTP 请求超时（>{requestTimeout}s）：{info.ApiUrl}");
             }
 
             logger.Info("任务【{TaskName}】网络请求执行结果={Result}", info.Name, result);

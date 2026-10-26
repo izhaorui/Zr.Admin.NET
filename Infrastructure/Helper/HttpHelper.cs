@@ -211,10 +211,10 @@ namespace Infrastructure
         /// <param name="url"></param>
         /// <param name="headers"></param>
         /// <returns></returns>
-        public static async Task<string> HttpGetAsync(string url, Dictionary<string, string> headers = null)
+        public static async Task<string> HttpGetAsync(string url, Dictionary<string, string> headers = null, int timeOut = 30)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            return await SendAsync(request, 30, headers);
+            return await SendAsync(request, timeOut, headers);
         }
 
         /// <summary>
