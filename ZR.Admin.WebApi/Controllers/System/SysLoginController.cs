@@ -252,10 +252,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             if (App.IsTenantEnabled())
             {
                 var tenantId = App.GetCurrentTenantId();
-                var mainDb = App.MainDbConfigId;
-                var isMainTenant = string.Equals(tenantId, mainDb, StringComparison.OrdinalIgnoreCase);
 
-                if (isMainTenant)
+                if (App.IsMainTenant())
                 {
                     // 主租户：直接查主库菜单
                     menus = sysMenuService.SelectMenuTreeByUserId(uid);
@@ -293,8 +291,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             // 与 PC 端 /getRouters 保持一致，避免子租户拿到入口但点击/请求被 403「当前租户不允许访问平台级能力」。
             if (App.IsTenantEnabled())
             {
-                var isMainTenant = string.Equals(App.GetCurrentTenantId(), App.MainDbConfigId, StringComparison.OrdinalIgnoreCase);
-                menus = TenantFeaturePolicy.FilterPlatformMenusForNonMainTenant(menus, isMainTenant);
+                menus = TenantFeaturePolicy.FilterPlatformMenusForNonMainTenant(menus, App.IsMainTenant());
             }
 
             return SUCCESS(menus);

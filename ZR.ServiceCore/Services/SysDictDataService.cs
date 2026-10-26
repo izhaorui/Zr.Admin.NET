@@ -112,20 +112,11 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 当前是否为主租户（可以直读主库，不需要合并）
-        /// </summary>
-        private bool IsMainTenant()
-        {
-            if (!App.IsTenantEnabled()) return true;
-            return string.Equals(App.GetCurrentTenantId(), App.MainDbConfigId, StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
         /// 是否需要租户扩展合并（多租户 + 非主租户）
         /// </summary>
         private bool NeedTenantMerge()
         {
-            return App.IsTenantEnabled() && !IsMainTenant();
+            return App.IsTenantEnabled() && !App.IsMainTenant();
         }
 
         #endregion

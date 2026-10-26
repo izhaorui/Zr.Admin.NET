@@ -79,9 +79,15 @@ namespace Infrastructure
         }
 
         /// <summary>
-        /// 当前可用的服务提供器：请求期间使用 HttpContext.RequestServices，非请求场景回退到根容器
+        /// 当前可用的服务提供器，优先级：
+        /// 1) 请求期间 HttpContext.RequestServices；
+        /// 2) 后台任务显式设置的作用域容器（见 <see cref="InternalApp.ScopedServiceProvider"/>，由 Job_Dispatcher 设置）；
+        /// 3) 根容器（只能解析无 scoped 传递依赖的服务）。
         /// </summary>
-        private static IServiceProvider CurrentServiceProvider => HttpContext?.RequestServices ?? ServiceProvider;
+        private static IServiceProvider CurrentServiceProvider =>
+            HttpContext?.RequestServices
+            ?? InternalApp.ScopedServiceProvider.Value
+            ?? ServiceProvider;
 
         /// <summary>
         /// 获取请求生命周期的服务
@@ -221,6 +227,20 @@ namespace Infrastructure
             return string.Equals(useTenant, "on", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(useTenant, "yes", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(useTenant, "enabled", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 当前请求是否为主租户（平台方）。未启用多租户时恒为 true。
+        /// 主租户可跨租户读写；非主租户只能操作自身数据。
+        /// </summary>
+        public static bool IsMainTenant()
+        {
+            if (!IsTenantEnabled())
+            {
+                return true;
+            }
+
+            return string.Equals(GetCurrentTenantId(), MainDbConfigId, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
