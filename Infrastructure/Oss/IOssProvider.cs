@@ -1,10 +1,17 @@
+using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 
-namespace ZR.ServiceCore.Oss
+namespace Infrastructure.Oss
 {
     /// <summary>
-    /// 对象存储(OSS)提供程序抽象，便于对接阿里云 / 腾讯云 / 七牛等不同厂商
+    /// 对象存储(OSS)提供程序抽象，便于对接阿里云 / 腾讯云 / 七牛等不同厂商。
     /// </summary>
+    /// <remarks>
+    /// 抽象放在 Infrastructure 而不是具体实现所在项目：ZR.ServiceCore 的 SysFileService 只依赖本接口，
+    /// 实现（含 AWSSDK）由 ZR.Oss 提供、仅被需要上传功能的宿主引用，
+    /// 避免 AWSSDK 顺着"业务项目 → ServiceCore"的引用链进入 ZR.Tasks 等无关宿主。
+    /// </remarks>
     public interface IOssProvider
     {
         /// <summary>

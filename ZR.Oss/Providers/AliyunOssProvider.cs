@@ -1,8 +1,9 @@
 using Infrastructure.Model;
+using Infrastructure.Oss;
 using Microsoft.Extensions.Options;
 using System.Net;
 
-namespace ZR.ServiceCore.Oss
+namespace ZR.Oss
 {
     /// <summary>
     /// 阿里云 OSS 实现

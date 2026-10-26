@@ -1,6 +1,6 @@
 using Infrastructure.Enums;
 
-namespace ZR.ServiceCore.Oss
+namespace Infrastructure.Oss
 {
     /// <summary>
     /// 按存储类型获取对象存储实现。

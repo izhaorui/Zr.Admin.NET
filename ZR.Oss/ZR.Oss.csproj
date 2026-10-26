@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>1701;1702;1591;1570</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- S3 兼容对象存储（RustFS / MinIO / Ceph 等）：用 AWSSDK 的 S3 客户端，见 S3CompatibleOssProvider.cs。
+		     版本写死便于复现；升级时请注意 SDK v4 的破坏性变更（checksum / 签名默认行为）需要回归验证。
+
+		     独立成 ZR.Oss 而不是留在 ZR.ServiceCore 的原因：
+		     只有 Admin / Front 两个宿主需要对象存储，ZR.Tasks、ZR.CodeGenerator 用不到。
+		     接口留在 Infrastructure.Oss，本项目的实现只被需要上传能力的宿主引用，
+		     这些宿主的发布目录因此不再携带 AWSSDK（约 5-8MB）。 -->
+		<PackageReference Include="AWSSDK.S3" Version="4.0.103.4" />
+		<PackageReference Include="NLog" Version="6.2.1" />
+	</ItemGroup>
+
+</Project>

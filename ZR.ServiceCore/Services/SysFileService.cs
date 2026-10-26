@@ -8,7 +8,7 @@ using SkiaSharp;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using ZR.ServiceCore.Oss;
+using Infrastructure.Oss;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.System;

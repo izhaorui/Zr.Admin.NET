@@ -3,11 +3,12 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Infrastructure.Model;
+using Infrastructure.Oss;
 using Microsoft.Extensions.Options;
 using NLog;
 using System.Net;
 
-namespace ZR.ServiceCore.Oss
+namespace ZR.Oss
 {
     /// <summary>
     /// S3 兼容对象存储实现（RustFS / MinIO / Ceph RGW / SeaweedFS / Cloudflare R2 / Backblaze B2 / AWS S3 等）。

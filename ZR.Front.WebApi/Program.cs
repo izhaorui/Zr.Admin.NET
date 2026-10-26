@@ -21,7 +21,8 @@ using ZR.Infrastructure.IPTools;
 using ZR.Infrastructure.WebExtensions;
 using ZR.Model;
 using ZR.ServiceCore.Middleware;
-using ZR.ServiceCore.Oss;
+using Infrastructure.Oss;
+using ZR.Oss;
 using ZR.ServiceCore.Serialization;
 using ZR.ServiceCore.SqlSugar;
 

@@ -11,6 +11,8 @@
 	<ItemGroup>
 		<!-- 只引用商城模块；Infrastructure/ZR.Common/ZR.Model/ZR.Repository/ZR.ServiceCore 由它传递 -->
 		<ProjectReference Include="..\ZR.Mall\ZR.Mall.csproj" />
+		<!-- 对象存储实现（含 AWSSDK）。C 端上传需要，故本宿主显式引用。 -->
+		<ProjectReference Include="..\ZR.Oss\ZR.Oss.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

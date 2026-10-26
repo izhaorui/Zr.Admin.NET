@@ -5,7 +5,7 @@ using MiniExcelLibs;
 using ZR.Infrastructure.IPTools;
 using ZR.Model.Dto;
 using ZR.Model.System;
-using ZR.ServiceCore.Oss;
+using Infrastructure.Oss;
 using ZR.ServiceCore.Resources;
 
 namespace ZR.Admin.WebApi.Controllers

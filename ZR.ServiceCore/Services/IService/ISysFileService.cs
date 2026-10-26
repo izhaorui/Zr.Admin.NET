@@ -1,6 +1,6 @@
 ﻿using Infrastructure.Enums;
 using Microsoft.AspNetCore.Http;
-using ZR.ServiceCore.Oss;
+using Infrastructure.Oss;
 using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.System;

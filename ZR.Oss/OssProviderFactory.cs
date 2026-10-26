@@ -1,8 +1,9 @@
 using Infrastructure.Enums;
 using Infrastructure.Model;
+using Infrastructure.Oss;
 using Microsoft.Extensions.Options;
 
-namespace ZR.ServiceCore.Oss
+namespace ZR.Oss
 {
     /// <summary>
     /// <see cref="IOssProviderFactory"/> 默认实现。

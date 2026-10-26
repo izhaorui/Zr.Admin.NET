@@ -17,6 +17,10 @@
 		<ProjectReference Include="..\ZR.Workflow\ZR.Workflow.csproj" />
 		<ProjectReference Include="..\ZR.Service\ZR.Service.csproj" />
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
+		<!-- 对象存储实现（含 AWSSDK）。只有需要上传能力的宿主才引用，避免传导给 ZR.Tasks 等无关项目。 -->
+		<ProjectReference Include="..\ZR.Oss\ZR.Oss.csproj" />
+		<!-- 微信支付网关（含 BouncyCastle）。租户续费（TenantPayController）需要。 -->
+		<ProjectReference Include="..\ZR.Payment\ZR.Payment.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 
