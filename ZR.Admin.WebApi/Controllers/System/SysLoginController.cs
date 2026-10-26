@@ -614,7 +614,7 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             if (dto.Password.Length != 32)
             {
-                dto.Password = NETCore.Encrypt.EncryptProvider.Md5(dto.Password);
+                dto.Password = SecurityHelper.Md5(dto.Password);
             }
             SysUser user = sysUserService.Login(dto);
             if (user == null)

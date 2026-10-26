@@ -431,7 +431,7 @@ namespace ZR.ServiceCore.Services
                 throw new CustomException("用户名不符合要求");
             }
             //密码md5
-            string password = NETCore.Encrypt.EncryptProvider.Md5(dto.Password);
+            string password = SecurityHelper.Md5(dto.Password);
             var ip_info = IpTool.Search(dto.UserIP);
             SysUser user = new()
             {

@@ -20,7 +20,6 @@
 		     本项目是自研认证（不走 Identity），且需要按现有 2FA 流程接入，Identity 的 passkey 用不上。
 		     版本写死便于复现；升级前请回归注册/认证两条主链路（4.x 起核心方法改为 *Params 参数对象）。 -->
 		<PackageReference Include="Fido2" Version="4.3.1" />
-		<PackageReference Include="NETCore.Encrypt" Version="2.1.1" />
 		<PackageReference Include="NLog" Version="6.2.1" />
 		<PackageReference Include="SkiaSharp" Version="4.153.1" />
 		<!-- Linux 容器运行必需：SkiaSharp 主包只带 Win32 / macOS 的 native 资产，

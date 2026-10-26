@@ -5,6 +5,7 @@ using Infrastructure;
 using Infrastructure.Attribute;
 using Infrastructure.Model;
 using Newtonsoft.Json.Linq;
+using ZR.Common;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 
@@ -600,7 +601,7 @@ namespace ZR.ServiceCore.Services
         {
             if (string.IsNullOrEmpty(password)) throw new CustomException("密码不能为空");
 
-            var md5 = password.Length == 32 ? password : NETCore.Encrypt.EncryptProvider.Md5(password);
+            var md5 = password.Length == 32 ? password : SecurityHelper.Md5(password);
             if (!string.Equals(user.Password, md5, StringComparison.OrdinalIgnoreCase))
             {
                 throw new CustomException("密码错误");

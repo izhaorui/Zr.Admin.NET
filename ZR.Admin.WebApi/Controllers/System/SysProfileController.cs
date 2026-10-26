@@ -97,8 +97,8 @@ namespace ZR.Admin.WebApi.Controllers.System
             // 用户可以把密码改成 123456 这类弱口令。
             PasswordPolicyService.ValidatePassword(newPassword, user?.UserName);
 
-            string oldMd5 = NETCore.Encrypt.EncryptProvider.Md5(oldPassword);
-            string newMd5 = NETCore.Encrypt.EncryptProvider.Md5(newPassword);
+            string oldMd5 = SecurityHelper.Md5(oldPassword);
+            string newMd5 = SecurityHelper.Md5(newPassword);
 
             if (!user.Password.Equals(oldMd5, StringComparison.OrdinalIgnoreCase))
             {

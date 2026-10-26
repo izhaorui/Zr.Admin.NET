@@ -121,7 +121,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             // 此前这个入口直接 MD5 落库，管理员可以创建 123456 这类弱口令账号。
             PasswordPolicyService.ValidatePassword(user.Password, user.UserName);
 
-            user.Password = NETCore.Encrypt.EncryptProvider.Md5(user.Password);
+            user.Password = SecurityHelper.Md5(user.Password);
 
             return SUCCESS(UserService.InsertUser(user));
         }
@@ -199,7 +199,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             PasswordPolicyService.ValidatePassword(sysUser.Password);
 
             //密码md5
-            sysUser.Password = NETCore.Encrypt.EncryptProvider.Md5(sysUser.Password);
+            sysUser.Password = SecurityHelper.Md5(sysUser.Password);
 
             int result = UserService.ResetPwd(sysUser.UserId, sysUser.Password, "您的管理员已重置登录密码，请尽快登录并修改");
             if (result > 0)
