@@ -1,6 +1,7 @@
 using Infrastructure;
 using Infrastructure.Cache;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using System;
 using System.Collections.Generic;
@@ -173,7 +174,18 @@ namespace ZR.Tasks.TaskScheduler
             {
                 try
                 {
-                    var service = (IEmailSendService)App.GetRequiredService(typeof(IEmailSendService));
+                    // 必须新建 scope：IEmailSendService 的依赖链含 scoped 服务，
+                    // 从根容器直接解析会抛 "Cannot resolve ... from root provider"。
+                    // 定时任务运行在 Quartz 线程池，没有请求作用域，只能自建。
+                    var provider = InternalApp.ServiceProvider;
+                    if (provider == null)
+                    {
+                        logger.Warn("计划任务邮件通知跳过：DI 容器未初始化");
+                        return;
+                    }
+
+                    using var scope = provider.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<IEmailSendService>();
                     service.EnqueueDetached(new EmailMessage
                     {
                         To = recipients,

@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using Infrastructure.Cache;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using Quartz;
 using SqlSugar.IOC;
@@ -121,71 +122,89 @@ namespace ZR.Tasks.TaskScheduler
             foreach (var tenantId in tenants)
             {
                 using var tenantScope = TenantContext.Change(tenantId);
-                var sw = Stopwatch.StartNew();
-                var status = "0";
-                var msg = "success";
-                Exception jobException = null;
-                var retried = 0;
 
-                for (var attempt = 0; ; attempt++)
+                // 每个租户建一个作用域：任务类内部通过 App.GetRequiredService 解析的服务，
+                // 依赖链可能含 scoped（如 IEmailSendService / IHubContext），根容器无法解析。
+                // AsyncLocal 保证并发任务各自独立，且不影响请求线程（请求优先走 HttpContext.RequestServices）。
+                using var serviceScope = InternalApp.ServiceProvider?.CreateScope();
+                var previousProvider = InternalApp.ScopedServiceProvider.Value;
+                if (serviceScope != null)
                 {
-                    try
+                    InternalApp.ScopedServiceProvider.Value = serviceScope.ServiceProvider;
+                }
+
+                try
+                {
+                    var sw = Stopwatch.StartNew();
+                    var status = "0";
+                    var msg = "success";
+                    Exception jobException = null;
+                    var retried = 0;
+
+                    for (var attempt = 0; ; attempt++)
                     {
-                        await ExecuteTenantWithTimeout(template, context, tenantId, timeoutSeconds);
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        if (attempt < maxRetryCount)
+                        try
                         {
-                            retried++;
-                            logger.Warn("任务分发执行失败，准备重试: task={TaskId}, tenant={TenantId}, attempt={Attempt}/{Max}, error={Error}",
-                                taskId, tenantId, attempt + 1, maxRetryCount, ex.Message);
-
-                            if (retryIntervalSeconds > 0)
-                            {
-                                await Task.Delay(TimeSpan.FromSeconds(retryIntervalSeconds));
-                            }
-                            continue;
+                            await ExecuteTenantWithTimeout(template, context, tenantId, timeoutSeconds);
+                            break;
                         }
+                        catch (Exception ex)
+                        {
+                            if (attempt < maxRetryCount)
+                            {
+                                retried++;
+                                logger.Warn("任务分发执行失败，准备重试: task={TaskId}, tenant={TenantId}, attempt={Attempt}/{Max}, error={Error}",
+                                    taskId, tenantId, attempt + 1, maxRetryCount, ex.Message);
 
-                        status = "1";
-                        // 重试过程中每次的异常都记录在 Warn，这里只保留最终失败原因与重试次数
-                        msg = retried > 0 ? $"{ex.Message}（已重试 {retried} 次）" : ex.Message;
-                        jobException = ex;
-                        overallStatus = "1";
-                        overallMsg = msg;
-                        logger.Error(ex, "任务分发执行失败: task={TaskId}, tenant={TenantId}, retried={Retried}",
-                            taskId, tenantId, retried);
-                        break;
+                                if (retryIntervalSeconds > 0)
+                                {
+                                    await Task.Delay(TimeSpan.FromSeconds(retryIntervalSeconds));
+                                }
+                                continue;
+                            }
+
+                            status = "1";
+                            // 重试过程中每次的异常都记录在 Warn，这里只保留最终失败原因与重试次数
+                            msg = retried > 0 ? $"{ex.Message}（已重试 {retried} 次）" : ex.Message;
+                            jobException = ex;
+                            overallStatus = "1";
+                            overallMsg = msg;
+                            logger.Error(ex, "任务分发执行失败: task={TaskId}, tenant={TenantId}, retried={Retried}",
+                                taskId, tenantId, retried);
+                            break;
+                        }
+                    }
+
+                    sw.Stop();
+
+                    await logService.AddTaskLog(taskId, new SysTasksLog
+                    {
+                        Status = status,
+                        JobMessage = msg,
+                        Exception = FormatException(jobException),
+                        Elapsed = sw.Elapsed.TotalMilliseconds,
+                        TenantId = tenantId,
+                        Operator = GetDataString(context, "UserName"),
+                        TraceId = GetDataString(context, "TraceId") ?? Activity.Current?.TraceId.ToString(),
+                        IsManual = context.MergedJobDataMap.ContainsKey("IsManual") ? Convert.ToInt32(context.MergedJobDataMap["IsManual"]) : 0,
+                        TriggerSource = GetDataString(context, "TriggerSource"),
+                        InvokeTarget = invokeTarget
+                    }, template);
+
+                    // 通知放在日志之后：先保证失败结果可查，再对外发消息
+                    if (jobException != null)
+                    {
+                        JobFailureNotifier.Notify(taskId, template.Name, tenantId, msg, jobException);
+                    }
+                    else
+                    {
+                        // 恢复后清除冷却，避免下一次新故障被上一次的冷却窗口吞掉
+                        JobFailureNotifier.ResetCooldown(taskId, tenantId);
                     }
                 }
-
-                sw.Stop();
-
-                await logService.AddTaskLog(taskId, new SysTasksLog
+                finally
                 {
-                    Status = status,
-                    JobMessage = msg,
-                    Exception = FormatException(jobException),
-                    Elapsed = sw.Elapsed.TotalMilliseconds,
-                    TenantId = tenantId,
-                    Operator = GetDataString(context, "UserName"),
-                    TraceId = GetDataString(context, "TraceId") ?? Activity.Current?.TraceId.ToString(),
-                    IsManual = context.MergedJobDataMap.ContainsKey("IsManual") ? Convert.ToInt32(context.MergedJobDataMap["IsManual"]) : 0,
-                    TriggerSource = GetDataString(context, "TriggerSource"),
-                    InvokeTarget = invokeTarget
-                }, template);
-
-                // 通知放在日志之后：先保证失败结果可查，再对外发消息
-                if (jobException != null)
-                {
-                    JobFailureNotifier.Notify(taskId, template.Name, tenantId, msg, jobException);
-                }
-                else
-                {
-                    // 恢复后清除冷却，避免下一次新故障被上一次的冷却窗口吞掉
-                    JobFailureNotifier.ResetCooldown(taskId, tenantId);
+                    InternalApp.ScopedServiceProvider.Value = previousProvider;
                 }
             }
 
@@ -385,10 +404,64 @@ namespace ZR.Tasks.TaskScheduler
             logger.Info("任务【{TaskName}】SQL执行结果={Result}, tenant={TenantId}", info.Name, result, tenantId);
         }
 
+        /// <summary>
+        /// 解析任务类型，兼容三种配置写法：
+        /// 1) ClassName 已含完整命名空间（如 ZR.Mall.TaskScheduler.Job_X）；
+        /// 2) 程序集名 + 类名（如 ZR.Mall.Job_X）；
+        /// 3) 简类名 —— 内置任务统一放在 &lt;程序集&gt;.TaskScheduler 下，
+        ///    而 MallModuleInitProvider / WorkflowModuleInitProvider 播种的 sys_tasks 只存了简类名，
+        ///    只按「程序集名.类名」拼接会找不到类型，导致内置任务全部执行失败。
+        /// </summary>
+        private static Type ResolveJobType(Assembly assembly, SysTasks info)
+        {
+            var className = info.ClassName?.Trim();
+            if (string.IsNullOrEmpty(className))
+            {
+                throw new CustomException($"任务{info.ID}未配置任务类名");
+            }
+
+            var type = assembly.GetType(className);
+            if (type != null)
+            {
+                return type;
+            }
+
+            type = assembly.GetType($"{info.AssemblyName}.{className}");
+            if (type != null)
+            {
+                return type;
+            }
+
+            type = assembly.GetType($"{info.AssemblyName}.TaskScheduler.{className}");
+            if (type != null)
+            {
+                return type;
+            }
+
+            // 4) 兜底：按类名在程序集内查找。
+            // 内置任务分散在不同命名空间（ZR.ServiceCore.Job、ZR.Mall.TaskScheduler 等），
+            // 且部分任务类不实现 IJob、只提供 Run() 方法供反射调用，无法用接口过滤。
+            try
+            {
+                var candidates = assembly.GetExportedTypes()
+                    .Where(t => t.Name == className)
+                    .ToList();
+
+                // 同名时优先 IJob 实现（分发器能直接 Execute）
+                return candidates.FirstOrDefault(t => typeof(IJob).IsAssignableFrom(t))
+                    ?? candidates.FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, "按类名扫描任务类型失败: {Assembly}.{ClassName}", info.AssemblyName, className);
+                return null;
+            }
+        }
+
         private static async Task ExecuteAssemblyTask(SysTasks info, IJobExecutionContext context, string tenantId)
         {
             Assembly assembly = Assembly.Load(new AssemblyName(info.AssemblyName));
-            Type jobType = assembly.GetType(info.AssemblyName + "." + info.ClassName)
+            Type jobType = ResolveJobType(assembly, info)
                 ?? throw new CustomException($"未找到任务类型: {info.AssemblyName}.{info.ClassName}");
 
             var jobObj = App.GetService(jobType) ?? Activator.CreateInstance(jobType)
