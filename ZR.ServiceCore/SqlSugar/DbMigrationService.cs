@@ -132,6 +132,11 @@ namespace ZR.ServiceCore.SqlSugar
         {
             typeof(AiCallLog),
             typeof(AiAccessPolicy),
+            // SaaS 平台级表：TenantId 是业务主字段（租户标识 / 被绑定的租户），不是"租户隔离列"，
+            // 不需要每次启动做补列检查。结构由 --initdb / SaaS 模块初始化维护。
+            typeof(SysTenant),
+            typeof(SysTenantPlanBinding),
+            typeof(SysTenantOrder),
         };
 
         /// <summary>
