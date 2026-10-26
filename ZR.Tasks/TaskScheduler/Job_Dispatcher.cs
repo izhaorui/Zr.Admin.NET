@@ -51,7 +51,36 @@ namespace ZR.Tasks.TaskScheduler
             var template = await taskService.GetByIdAsync(taskId);
             if (template == null)
             {
-                logger.Warn("JobDispatcher 未找到任务模板: {TaskId}", taskId);
+                // 模板被删除后，Quartz 中的 Job 与 Trigger 成为孤儿：每次触发都空转，
+                // 既不写日志也不会自行消失。此处清理调度项并落一条失败日志，避免长期占用调度资源。
+                logger.Warn("JobDispatcher 未找到任务模板，清理孤儿调度: {TaskId}", taskId);
+
+                try
+                {
+                    await context.Scheduler.DeleteJob(context.JobDetail.Key);
+                }
+                catch (Exception ex)
+                {
+                    // 删除失败不影响本次收尾：下一轮触发会再次进入本分支重试
+                    logger.Error(ex, "JobDispatcher 清理孤儿调度失败: {TaskId}", taskId);
+                }
+
+                // 模板已不存在，无法回填 JobName/JobGroup（表中为 NOT NULL），
+                // 用触发时的 JobKey 兜底，保留可排查信息。
+                await logService.AddTaskLog(taskId, new SysTasksLog
+                {
+                    Status = "1",
+                    JobName = context.JobDetail.Key.Name,
+                    JobGroup = context.JobDetail.Key.Group,
+                    JobMessage = "任务模板不存在，已从调度器移除",
+                    Elapsed = 0,
+                    Operator = GetDataString(context, "UserName") ?? "system",
+                    TraceId = GetDataString(context, "TraceId") ?? Activity.Current?.TraceId.ToString(),
+                    IsManual = context.MergedJobDataMap.ContainsKey("IsManual") ? Convert.ToInt32(context.MergedJobDataMap["IsManual"]) : 0,
+                    TriggerSource = GetDataString(context, "TriggerSource"),
+                    InvokeTarget = context.JobDetail.JobType.FullName
+                });
+
                 return;
             }
 

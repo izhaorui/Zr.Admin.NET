@@ -43,9 +43,11 @@ namespace ZR.Tasks
                 }
             }
 
+            // Quartz 3.x 推荐 json；binary 依赖的 BinaryFormatter 已从 .NET 9+ 运行时移除，
+            // net10 下启用持久化 JobStore 会直接抛 PlatformNotSupportedException。
             if (string.IsNullOrWhiteSpace(collection["quartz.serializer.type"]))
             {
-                collection["quartz.serializer.type"] = "binary";
+                collection["quartz.serializer.type"] = "json";
             }
 
             return collection;
