@@ -4,11 +4,7 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Processors.Quantization;
+using SkiaSharp;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -209,23 +205,11 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public static async Task SaveCompressedImageAsync(IFormFile formFile, string finalFilePath, int quality = 75)
         {
-            using (var image = await Image.LoadAsync(formFile.OpenReadStream()))
-            {
-                // 进行压缩和调整大小（可选）
-                //image.Mutate(x => x.Resize(new ResizeOptions
-                //{
-                //    Mode = ResizeMode.Max,
-                //    Size = new Size(1920, 1080) // 限制最大尺寸，避免超大图片
-                //}));
-
-                // 保存为压缩的 JPEG
-                var encoder = new JpegEncoder { Quality = quality }; // 质量参数控制压缩程度
-
-                await using (var stream = new FileStream(finalFilePath, FileMode.Create))
-                {
-                    await image.SaveAsync(stream, encoder);
-                }
-            }
+            using var bitmap = SKBitmap.Decode(formFile.OpenReadStream()) ?? throw new InvalidDataException("无法解码图片");
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Jpeg, quality);
+            await using var stream = new FileStream(finalFilePath, FileMode.Create);
+            data.SaveTo(stream);
         }
         /// <summary>
         /// 按声明的扩展名压缩图片，成功写入 outputStream 返回 true
@@ -238,46 +222,31 @@ namespace ZR.ServiceCore.Services
         /// </remarks>
         private static async Task<bool> TryCompressImageAsync(IFormFile file, string fileExt, Stream outputStream, int quality)
         {
-            using var image = await Image.LoadAsync(file.OpenReadStream());
+            using var source = new MemoryStream();
+            await file.OpenReadStream().CopyToAsync(source);
+            var sourceBytes = source.ToArray();
+            using var bitmap = SKBitmap.Decode(sourceBytes) ?? throw new InvalidDataException("无法解码图片");
+            using var image = SKImage.FromBitmap(bitmap);
 
             switch (fileExt?.ToLowerInvariant())
             {
                 case ".jpg":
                 case ".jpeg":
-                    await image.SaveAsJpegAsync(outputStream,
-                        new JpegEncoder
-                        {
-                            Quality = quality
-                        });
+                    using (var jpeg = image.Encode(SKEncodedImageFormat.Jpeg, quality))
+                    {
+                        jpeg.SaveTo(outputStream);
+                    }
                     return true;
 
                 case ".png":
-                    image.Metadata.ExifProfile = null;
-
-                    image.Mutate(x =>
+                    using (var png = image.Encode(SKEncodedImageFormat.Png, 100))
                     {
-                        x.Quantize(new WuQuantizer(new QuantizerOptions
+                        if (png.Size >= sourceBytes.Length)
                         {
-                            MaxColors = 128//画质最好 体积稍大, 256/ 64/ 32/ 16/ 8/ 4/ 2
-                        }));
-                    });
-
-                    await image.SaveAsPngAsync(
-                        outputStream,
-                        new PngEncoder
-                        {
-                            CompressionLevel = PngCompressionLevel.BestCompression,
-                            ColorType = PngColorType.Palette
-                        });
-
-                    return true;
-
-                case ".gif":
-                    await image.SaveAsGifAsync(outputStream);
-                    return true;
-
-                case ".bmp":
-                    await image.SaveAsBmpAsync(outputStream);
+                            return false;
+                        }
+                        png.SaveTo(outputStream);
+                    }
                     return true;
 
                 default:

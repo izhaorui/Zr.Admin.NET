@@ -1,6 +1,4 @@
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace ZR.ServiceCore.AI
 {
@@ -44,23 +42,33 @@ namespace ZR.ServiceCore.AI
 
             try
             {
-                using var image = Image.Load(bytes);
-                var oversized = image.Width > MaxEdge || image.Height > MaxEdge;
+                using var bitmap = SKBitmap.Decode(bytes);
+                if (bitmap == null) return url;
+                var oversized = bitmap.Width > MaxEdge || bitmap.Height > MaxEdge;
                 if (!oversized && bytes.Length <= 400 * 1024)
                 {
                     return url;
                 }
+                var target = bitmap;
+                SKBitmap resized = null;
                 if (oversized)
                 {
-                    image.Mutate(x => x.Resize(new ResizeOptions
-                    {
-                        Mode = ResizeMode.Max,
-                        Size = new Size(MaxEdge, MaxEdge)
-                    }));
+                    var scale = Math.Min((float)MaxEdge / bitmap.Width, (float)MaxEdge / bitmap.Height);
+                    resized = bitmap.Resize(new SKImageInfo(
+                        Math.Max(1, (int)Math.Round(bitmap.Width * scale)),
+                        Math.Max(1, (int)Math.Round(bitmap.Height * scale))), new SKSamplingOptions(SKFilterMode.Linear));
+                    target = resized;
                 }
-                using var ms = new MemoryStream();
-                image.SaveAsJpeg(ms, new JpegEncoder { Quality = JpegQuality });
-                return "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
+                try
+                {
+                    using var image = SKImage.FromBitmap(target);
+                    using var data = image.Encode(SKEncodedImageFormat.Jpeg, JpegQuality);
+                    return "data:image/jpeg;base64," + Convert.ToBase64String(data.ToArray());
+                }
+                finally
+                {
+                    resized?.Dispose();
+                }
             }
             catch
             {
