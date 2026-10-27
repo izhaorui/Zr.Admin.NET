@@ -760,8 +760,8 @@ namespace ZR.ServiceCore.AI
                 {
                     throw new Exception("未配置视觉模型。请在当前 Provider 的 VisionModel 中指定支持多模态的模型，或联系管理员配置。");
                 }
-                var modelImages = AiChatVisionImageCompressor.CompressForModel(
-                    AiChatImageHelper.ToModelImageUrls(storeImages, _env?.WebRootPath, options));
+                // 图片压缩能力已移除（SkiaSharp native 依赖体积过大）：直接把原图转成模型可用的 URL/data URI
+                var modelImages = AiChatImageHelper.ToModelImageUrls(storeImages, _env?.WebRootPath, options);
                 var (visionSystem, visionUser, historyCount) = await BuildVisionPromptsAsync(session.SessionId, userId, message, storeImages.Count);
                 return new ChatContext
                 {

@@ -4,7 +4,6 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using SkiaSharp;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -31,11 +30,6 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         private readonly IOssProviderFactory _ossProviderFactory;
         private OptionsSetting OptionsSetting;
-
-        private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ".jpg", ".jpeg", ".png", ".gif", ".bmp"
-        };
 
         public SysFileService(ISysConfigService sysConfigService, IOssProviderFactory ossProviderFactory, IOptions<OptionsSetting> options)
         {
@@ -196,65 +190,6 @@ namespace ZR.ServiceCore.Services
             return Update(model, t => new { t.ClassifyType, t.RealName, t.CategoryId }, true);
         }
 
-        /// <summary>
-        /// 压缩图片
-        /// </summary>
-        /// <param name="formFile"></param>
-        /// <param name="finalFilePath"></param>
-        /// <param name="quality"></param>
-        /// <returns></returns>
-        public static async Task SaveCompressedImageAsync(IFormFile formFile, string finalFilePath, int quality = 75)
-        {
-            using var bitmap = SKBitmap.Decode(formFile.OpenReadStream()) ?? throw new InvalidDataException("无法解码图片");
-            using var image = SKImage.FromBitmap(bitmap);
-            using var data = image.Encode(SKEncodedImageFormat.Jpeg, quality);
-            await using var stream = new FileStream(finalFilePath, FileMode.Create);
-            data.SaveTo(stream);
-        }
-        /// <summary>
-        /// 按声明的扩展名压缩图片，成功写入 outputStream 返回 true
-        /// </summary>
-        /// <remarks>
-        /// 编码器只能由扩展名决定，禁止再用 image.Metadata.DecodedImageFormat 回写。
-        /// DecodedImageFormat 来自内容嗅探，而上游 IsImageExtension/扩展名校验只看文件名：
-        /// 把 TIFF 等改名成 .gif/.bmp 上传时，旧写法会让编码器落到 TIFF 上，
-        /// 命中 GHSA-j9gm-c75j-xc9q（CCITT T4）/ GHSA-jjfr-hcj7-qf5w（CCITT T6）编码器越界写。
-        /// </remarks>
-        private static async Task<bool> TryCompressImageAsync(IFormFile file, string fileExt, Stream outputStream, int quality)
-        {
-            using var source = new MemoryStream();
-            await file.OpenReadStream().CopyToAsync(source);
-            var sourceBytes = source.ToArray();
-            using var bitmap = SKBitmap.Decode(sourceBytes) ?? throw new InvalidDataException("无法解码图片");
-            using var image = SKImage.FromBitmap(bitmap);
-
-            switch (fileExt?.ToLowerInvariant())
-            {
-                case ".jpg":
-                case ".jpeg":
-                    using (var jpeg = image.Encode(SKEncodedImageFormat.Jpeg, quality))
-                    {
-                        jpeg.SaveTo(outputStream);
-                    }
-                    return true;
-
-                case ".png":
-                    using (var png = image.Encode(SKEncodedImageFormat.Png, 100))
-                    {
-                        if (png.Size >= sourceBytes.Length)
-                        {
-                            return false;
-                        }
-                        png.SaveTo(outputStream);
-                    }
-                    return true;
-
-                default:
-                    // 不在显式编码器白名单内一律不编码，由调用方原样上传
-                    return false;
-            }
-        }
-
         private string BuildFileName(string sourceName, string fileExt)
         {
             var finalName = sourceName.IsEmpty() ? HashFileName() : sourceName;
@@ -268,27 +203,17 @@ namespace ZR.ServiceCore.Services
             return string.Concat(finalName, fileExt);
         }
 
-        private async Task<Stream> CreateUploadStreamAsync(IFormFile formFile, int quality, string fileExt)
+        /// <summary>
+        /// 上传流：直接返回原始文件流。
+        /// </summary>
+        /// <remarks>
+        /// 图片压缩能力已移除（SkiaSharp 的 native 依赖在发布包里占比过大，与收益不成正比）。
+        /// quality / fileExt 参数保留是为了不改动两条上传链路的调用签名：
+        /// 前端仍可传 Quality，但服务端不再据此转码，文件按原始字节落盘/上云。
+        /// </remarks>
+        private Task<Stream> CreateUploadStreamAsync(IFormFile formFile, int quality, string fileExt)
         {
-            if (quality > 0 && IsImageExtension(fileExt))
-            {
-                var compressedStream = new MemoryStream();
-                // 未命中显式编码器白名单时不压缩，原样上传，避免落到按内容嗅探选编码器的旧分支
-                if (await TryCompressImageAsync(formFile, fileExt, compressedStream, Math.Clamp(quality, 1, 100)))
-                {
-                    compressedStream.Position = 0;
-                    return compressedStream;
-                }
-
-                await compressedStream.DisposeAsync();
-            }
-
-            return formFile.OpenReadStream();
-        }
-
-        private static bool IsImageExtension(string fileExt)
-        {
-            return !string.IsNullOrWhiteSpace(fileExt) && ImageExtensions.Contains(fileExt);
+            return Task.FromResult(formFile.OpenReadStream());
         }
 
         private static string CombineOssPath(params string[] segments)

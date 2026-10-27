@@ -18,13 +18,6 @@
 		     版本写死便于复现；升级前请回归注册/认证两条主链路（4.x 起核心方法改为 *Params 参数对象）。 -->
 		<PackageReference Include="Fido2" Version="4.3.1" />
 		<PackageReference Include="NLog" Version="6.2.1" />
-		<PackageReference Include="SkiaSharp" Version="4.153.1" />
-		<!-- Linux 容器运行必需：SkiaSharp 主包只带 Win32 / macOS 的 native 资产，
-		     缺这个包时 Docker 镜像里会抛 DllNotFoundException: libSkiaSharp。
-		     选 NoDependencies 变体：本项目只用解码与缩放、不做文字绘制，
-		     因此不需要在镜像中额外安装 libfontconfig1。 -->
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
-
 	</ItemGroup>
 
 	<ItemGroup>
