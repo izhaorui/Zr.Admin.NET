@@ -11,6 +11,7 @@ ZR.Tests.AI
 ai.Development.json
 document/doc
 ZRAdmin-test.sln
+publish-check
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
