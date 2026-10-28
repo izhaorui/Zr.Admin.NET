@@ -26,15 +26,30 @@ namespace Infrastructure.Extensions
         }
 
         /// <summary>
-        /// SQL条件拼接
+        /// 截取指定长度，超长部分直接截断，不做 Trim
         /// </summary>
-        /// <param name="str"></param>
-        /// <param name="condition"></param>
-        /// <returns></returns>
-        public static string If(this string str, bool condition)
+        /// <param name="value">原始字符串</param>
+        /// <param name="maxLength">最大长度</param>
+        /// <returns>截断后的字符串</returns>
+        public static string Truncate(this string value, int maxLength)
         {
-            return condition ? str : string.Empty;
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength) return value;
+            return value[..maxLength];
         }
+
+        /// <summary>
+        /// 去除首尾空白后截取，空白返回 null
+        /// </summary>
+        /// <param name="value">原始字符串</param>
+        /// <param name="maxLength">最大长度</param>
+        /// <returns>处理后的字符串，空白返回 null</returns>
+        public static string TruncateTrimmed(this string value, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return null;
+            value = value.Trim();
+            return value.Length <= maxLength ? value : value[..maxLength];
+        }
+
         /// <summary>
         /// 判断是否为空
         /// </summary>

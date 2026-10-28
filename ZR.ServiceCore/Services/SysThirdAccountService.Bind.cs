@@ -226,11 +226,11 @@ namespace ZR.ServiceCore.Services
 
         private static void FillFromIdentity(SysThirdAccount entity, ExternalUserInfo identity)
         {
-            entity.OpenId = Truncate(identity.OpenId, 128);
-            entity.UnionId = Truncate(identity.UnionId, 128);
-            entity.NickName = Truncate(identity.NickName, 64);
-            entity.Avatar = Truncate(identity.Avatar, 512);
-            entity.Email = Truncate(identity.Email, 128);
+            entity.OpenId = identity.OpenId.TruncateTrimmed(128);
+            entity.UnionId = identity.UnionId.TruncateTrimmed(128);
+            entity.NickName = identity.NickName.TruncateTrimmed(64);
+            entity.Avatar = identity.Avatar.TruncateTrimmed(512);
+            entity.Email = identity.Email.TruncateTrimmed(128);
             entity.LastLoginTime = DateTime.Now;
         }
 
@@ -247,9 +247,9 @@ namespace ZR.ServiceCore.Services
             var user = new SysUser
             {
                 UserName = userName,
-                NickName = Truncate(identity.NickName, 30) ?? userName,
-                Avatar = Truncate(identity.Avatar, 200),
-                Email = Truncate(identity.Email, 50),
+                NickName = identity.NickName.TruncateTrimmed(30) ?? userName,
+                Avatar = identity.Avatar.TruncateTrimmed(200),
+                Email = identity.Email.TruncateTrimmed(50),
                 UserType = "00",
                 Status = 0,
                 DelFlag = DelFlagEnum.Normal,
@@ -318,16 +318,6 @@ namespace ZR.ServiceCore.Services
             return value.Length > 0 ? value : "oauth";
         }
 
-        private static string Truncate(string value, int maxLength)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return null;
-            }
-
-            value = value.Trim();
-            return value.Length <= maxLength ? value : value[..maxLength];
-        }
 
         #endregion
     }

@@ -29,7 +29,11 @@ namespace Infrastructure
         /// <summary>
         /// 构建并发送请求：超时通过 CancellationToken 控制，请求级 header 仅作用于本次请求。
         /// </summary>
-        private static async Task<string> SendAsync(HttpRequestMessage request, int timeOut, Dictionary<string, string> headers)
+        private static async Task<string> SendAsync(
+            HttpRequestMessage request,
+            int timeOut,
+            Dictionary<string, string> headers,
+            CancellationToken cancellationToken = default)
         {
             if (headers != null)
             {
@@ -43,9 +47,10 @@ namespace Infrastructure
                 }
             }
 
-            using var cts = new CancellationTokenSource(timeOut * 1000);
-            HttpResponseMessage response = await SharedClient.SendAsync(request, cts.Token);
-            return await response.Content.ReadAsStringAsync();
+            using var timeoutCts = new CancellationTokenSource(timeOut * 1000);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
+            using var response = await SharedClient.SendAsync(request, linkedCts.Token);
+            return await response.Content.ReadAsStringAsync(linkedCts.Token);
         }
 
         /// <summary>
@@ -77,13 +82,24 @@ namespace Infrastructure
         /// <returns></returns>
         public static async Task<string> HttpPostAsync(string url, string postData = null, string contentType = null, int timeOut = 30, Dictionary<string, string> headers = null)
         {
+            return await HttpPostAsync(url, postData, contentType, timeOut, headers, CancellationToken.None);
+        }
+
+        public static async Task<string> HttpPostAsync(
+            string url,
+            string postData,
+            string contentType,
+            int timeOut,
+            Dictionary<string, string> headers,
+            CancellationToken cancellationToken)
+        {
             postData ??= "";
             using var httpContent = new StringContent(postData, Encoding.UTF8);
             if (contentType != null)
                 httpContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
 
             using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = httpContent };
-            return await SendAsync(request, timeOut, headers);
+            return await SendAsync(request, timeOut, headers, cancellationToken);
         }
 
         public sealed class HttpTextResponse
@@ -213,8 +229,17 @@ namespace Infrastructure
         /// <returns></returns>
         public static async Task<string> HttpGetAsync(string url, Dictionary<string, string> headers = null, int timeOut = 30)
         {
+            return await HttpGetAsync(url, headers, timeOut, CancellationToken.None);
+        }
+
+        public static async Task<string> HttpGetAsync(
+            string url,
+            Dictionary<string, string> headers,
+            int timeOut,
+            CancellationToken cancellationToken)
+        {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            return await SendAsync(request, timeOut, headers);
+            return await SendAsync(request, timeOut, headers, cancellationToken);
         }
 
         /// <summary>
