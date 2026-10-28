@@ -60,8 +60,9 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // 跨域配置
 builder.Services.AddCors(builder.Configuration);
 //消除Error unprotecting the session cookie警告
+var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "DataProtection");
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 //普通验证码
 builder.Services.AddCaptchaProvider();
 // 读取额外配置文件（iprate.json 要在注册限流服务之前加载）
