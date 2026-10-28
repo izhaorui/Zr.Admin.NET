@@ -101,7 +101,7 @@
     <value>hello</value>
   </data>
   <data name="login_success" xml:space="preserve">
-    <value>success</value>
+    <value>login successful</value>
   </data>
   <data name="login_pwd_error" xml:space="preserve">
     <value>username or password error</value>

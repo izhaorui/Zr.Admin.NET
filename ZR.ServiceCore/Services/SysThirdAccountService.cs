@@ -1,6 +1,7 @@
 using Infrastructure;
 using Infrastructure.Attribute;
 using Microsoft.AspNetCore.Http;
+using ZR.Model.Enum;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Enums;
@@ -300,7 +301,7 @@ namespace ZR.ServiceCore.Services
             logininfor.TwoFactorType = twoFactorService.IsEnabled(user)
                 ? LoginTwoFactorType.TrustedDevice
                 : LoginTwoFactorType.None;
-            logininfor.Status = "0";
+            logininfor.Status = LoginAuditStatusEnum.Success.ToDbValue();
             logininfor.Msg = "登录成功";
             sysLoginService.AddLoginInfo(logininfor, ctx.TenantId);
             sysUserService.UpdateLoginInfo(dto.LoginIP, user.UserId);

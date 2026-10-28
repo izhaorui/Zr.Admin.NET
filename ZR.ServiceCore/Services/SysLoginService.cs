@@ -11,6 +11,7 @@ using ZR.Infrastructure.Constant;
 using ZR.Infrastructure.Helper;
 using ZR.Infrastructure.IPTools;
 using ZR.Model;
+using ZR.Model.Enum;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Repository;
@@ -63,6 +64,9 @@ namespace ZR.ServiceCore.Services
         /// <summary>双因子配置（与 <see cref="SysTwoFactorService"/> 同一节点，避免各处重复 Bind）</summary>
         private static TwoFactorSettings TwoFactorOptions => AppSettings.Bind("TwoFactor", new TwoFactorSettings());
 
+        private static readonly string LoginAuditSuccess = LoginAuditStatusEnum.Success.ToDbValue();
+        private static readonly string LoginAuditFailed = LoginAuditStatusEnum.Failed.ToDbValue();
+
         /// <summary>
         /// 账号密码登录的完整流程：校验账号密码 → 双因子闸门 → 签发 token。
         /// </summary>
@@ -83,7 +87,7 @@ namespace ZR.ServiceCore.Services
             }
             SysUser user = SysUserService.Login(loginBody);
             logininfor.UserName = loginBody.Username;
-            logininfor.Status = "1";
+            logininfor.Status = LoginAuditFailed;
             logininfor.LoginTime = DateTime.Now;
             logininfor.Ipaddr = loginBody.LoginIP;
             logininfor.ClientId = loginBody.ClientId;
@@ -134,8 +138,8 @@ namespace ZR.ServiceCore.Services
                 ? LoginTwoFactorType.TrustedDevice
                 : LoginTwoFactorType.None;
 
-            logininfor.Status = "0";
-            logininfor.Msg = "登录成功";
+            logininfor.Status = LoginAuditSuccess;
+            logininfor.Msg = _localizer["login_success"].Value;
             AddLoginInfo(logininfor, loginBody.TenantId);
             SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
 
@@ -158,7 +162,7 @@ namespace ZR.ServiceCore.Services
 
             logininfor.UserName = user.UserName;
             logininfor.UserId = user.UserId;
-            logininfor.Status = "1";
+            logininfor.Status = LoginAuditFailed;
             logininfor.LoginTime = DateTime.Now;
             logininfor.Ipaddr = loginBody.LoginIP;
             logininfor.ClientId = loginBody.ClientId;
@@ -193,8 +197,8 @@ namespace ZR.ServiceCore.Services
                 ? LoginTwoFactorType.TrustedDevice
                 : LoginTwoFactorType.None;
 
-            logininfor.Status = "0";
-            logininfor.Msg = "登录成功";
+            logininfor.Status = LoginAuditSuccess;
+            logininfor.Msg = _localizer["login_success"].Value;
             AddLoginInfo(logininfor, loginBody.TenantId);
             SysUserService.UpdateLoginInfo(loginBody.LoginIP, user.UserId);
 
@@ -385,7 +389,7 @@ namespace ZR.ServiceCore.Services
                 LoginLocation = payload.LoginLocation,
                 Browser = clientInfo.ToString(),
                 Os = clientInfo.OS.ToString(),
-                Status = "1",
+                Status = LoginAuditFailed,
                 Msg = "双因子验证失败"
             };
         }
@@ -402,8 +406,8 @@ namespace ZR.ServiceCore.Services
             // 与普通登录同一口径：先取异地提醒（用的是本次之前的登录 IP），再更新最后登录信息
             string abnormalNotice = GetAbnormalLoginNotice(user, payload.LoginIP);
 
-            logininfor.Status = "0";
-            logininfor.Msg = "登录成功";
+            logininfor.Status = LoginAuditSuccess;
+            logininfor.Msg = _localizer["login_success"].Value;
             AddLoginInfo(logininfor, payload.TenantId);
             SysUserService.UpdateLoginInfo(payload.LoginIP, user.UserId);
 
@@ -804,11 +808,11 @@ namespace ZR.ServiceCore.Services
                 .Select(it => new { Status = it.Status, Num = SqlFunc.AggregateCount(it.InfoId) })
                 .ToList())
             {
-                if (row.Status == "0")
+                if (row.Status == LoginAuditSuccess)
                 {
                     metrics.SuccessCount = row.Num;
                 }
-                else if (row.Status == "1")
+                else if (row.Status == LoginAuditFailed)
                 {
                     metrics.FailCount = row.Num;
                 }
@@ -820,8 +824,8 @@ namespace ZR.ServiceCore.Services
                 .Select(it => new
                 {
                     Date = it.LoginTime.ToString("yyyy-MM-dd"),
-                    Success = SqlFunc.AggregateSum(SqlFunc.IIF(it.Status == "0", 1, 0)),
-                    Fail = SqlFunc.AggregateSum(SqlFunc.IIF(it.Status == "1", 1, 0))
+                    Success = SqlFunc.AggregateSum(SqlFunc.IIF(it.Status == LoginAuditSuccess, 1, 0)),
+                    Fail = SqlFunc.AggregateSum(SqlFunc.IIF(it.Status == LoginAuditFailed, 1, 0))
                 })
                 .ToList()
                 .OrderBy(x => x.Date)
@@ -830,10 +834,10 @@ namespace ZR.ServiceCore.Services
 
             // 凌晨 0-6 点活跃（异常时段信号）
             metrics.NightCount = BuildRangeQuery(db, begin, end).Where(it => it.LoginTime.Hour < 6).Count();
-            metrics.NightFailCount = BuildRangeQuery(db, begin, end).Where(it => it.LoginTime.Hour < 6 && it.Status == "1").Count();
+            metrics.NightFailCount = BuildRangeQuery(db, begin, end).Where(it => it.LoginTime.Hour < 6 && it.Status == LoginAuditFailed).Count();
 
             // 失败账号 Top：按账号+地点分组后在内存归并，才能拿到地点去重数（异地/共享账号信号）
-            var failRows = BuildRangeQuery(db, begin, end).Where(it => it.Status == "1")
+            var failRows = BuildRangeQuery(db, begin, end).Where(it => it.Status == LoginAuditFailed)
                 .GroupBy(it => new { it.UserName, it.LoginLocation })
                 .Select(it => new
                 {
@@ -858,7 +862,7 @@ namespace ZR.ServiceCore.Services
                 .ToList();
 
             // 失败 IP Top
-            metrics.FailedIps = BuildRangeQuery(db, begin, end).Where(it => it.Status == "1")
+            metrics.FailedIps = BuildRangeQuery(db, begin, end).Where(it => it.Status == LoginAuditFailed)
                 .GroupBy(it => new { it.Ipaddr, it.LoginLocation })
                 .Select(it => new
                 {
@@ -935,7 +939,7 @@ namespace ZR.ServiceCore.Services
 
             // 区间内成功登录（sys_logininfor.status：0成功），按 账号+地点 聚合
             var rows = db.Queryable<SysLogininfor>().ApplyScope()
-                .Where(it => it.Status == "0" && it.LoginTime >= begin && it.LoginTime <= end
+                .Where(it => it.Status == LoginAuditSuccess && it.LoginTime >= begin && it.LoginTime <= end
                     && it.UserName != null && it.UserName != "" && it.LoginLocation != null && it.LoginLocation != "")
                 .GroupBy(it => new { it.UserName, it.LoginLocation })
                 .Select(it => new
@@ -949,7 +953,7 @@ namespace ZR.ServiceCore.Services
 
             // 近 30 天成功历史地点集合（账号"新地点"判定基准，不含本次区间）
             var histRows = db.Queryable<SysLogininfor>().ApplyScope()
-                .Where(it => it.Status == "0" && it.LoginTime >= begin.AddDays(-30) && it.LoginTime < begin
+                .Where(it => it.Status == LoginAuditSuccess && it.LoginTime >= begin.AddDays(-30) && it.LoginTime < begin
                     && it.UserName != null && it.UserName != "")
                 .GroupBy(it => new { it.UserName, it.LoginLocation })
                 .Select(it => new { it.UserName, it.LoginLocation })
@@ -1006,7 +1010,7 @@ namespace ZR.ServiceCore.Services
                 .ToList();
             var names = top.Select(x => x.UserName).ToList();
             var details = db.Queryable<SysLogininfor>().ApplyScope()
-                .Where(it => it.Status == "0" && it.LoginTime >= begin && it.LoginTime <= end
+                .Where(it => it.Status == LoginAuditSuccess && it.LoginTime >= begin && it.LoginTime <= end
                     && names.Contains(it.UserName) && it.LoginLocation != null && it.LoginLocation != "")
                 .OrderBy(it => it.UserName).OrderBy(it => it.LoginTime)
                 .Select(it => new { it.UserName, it.LoginTime, it.LoginLocation })
