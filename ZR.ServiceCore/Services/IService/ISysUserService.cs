@@ -109,6 +109,11 @@ namespace ZR.ServiceCore.Services
 
         SysUser Login(LoginBodyDto user);
 
+        /// <summary>
+        /// 将旧 MD5 密码升级为 PBKDF2 哈希
+        /// </summary>
+        void UpgradePasswordHash(long userId, string credential);
+
         void UpdateLoginInfo(string userIP, long userId);
 
         /// <summary>

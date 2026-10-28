@@ -3,6 +3,7 @@ using Infrastructure.Attribute;
 using Mapster;
 using System.Collections;
 using ZR.Common;
+using ZR.Common.Security;
 using ZR.Infrastructure.Constant;
 using ZR.Infrastructure.Helper;
 using ZR.Infrastructure.IPTools;
@@ -430,8 +431,7 @@ namespace ZR.ServiceCore.Services
             {
                 throw new CustomException("用户名不符合要求");
             }
-            //密码md5
-            string password = SecurityHelper.Md5(dto.Password);
+            string password = PasswordHasher.Hash(SecurityHelper.Md5(dto.Password));
             var ip_info = IpTool.Search(dto.UserIP);
             SysUser user = new()
             {
@@ -481,12 +481,13 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public (string, object, object) ImportUsers(List<SysUser> users)
         {
+            string defaultPassword = PasswordHasher.Hash(SecurityHelper.Md5("123456"));
             users.ForEach(x =>
             {
                 x.Create_time = DateTime.Now;
                 x.Status = 0;
                 x.DelFlag = DelFlagEnum.Normal;
-                x.Password = "E10ADC3949BA59ABBE56E057F20F883E";
+                x.Password = defaultPassword;
                 x.Remark = x.Remark.IsEmpty() ? "数据导入" : x.Remark;
             });
             var x = Context.Storageable(users)
@@ -528,9 +529,15 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public SysUser Login(LoginBodyDto user)
         {
-            return Context.Queryable<SysUser>()
-                .Where(it => it.UserName == user.Username && it.Password.ToLower() == user.Password.ToLower() && it.DelFlag == DelFlagEnum.Normal)
+            var sysUser = Context.Queryable<SysUser>()
+                .Where(it => it.UserName == user.Username && it.DelFlag == DelFlagEnum.Normal)
                 .First();
+            return sysUser != null && PasswordHasher.Verify(user.Password, sysUser.Password) ? sysUser : null;
+        }
+
+        public void UpgradePasswordHash(long userId, string credential)
+        {
+            Update(new SysUser() { UserId = userId, Password = PasswordHasher.Hash(credential) }, it => new { it.Password });
         }
 
         /// <summary>

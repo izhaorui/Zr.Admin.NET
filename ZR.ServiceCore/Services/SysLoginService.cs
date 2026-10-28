@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
 using UAParser;
 using ZR.Common;
+using ZR.Common.Security;
 using ZR.Infrastructure.Constant;
 using ZR.Infrastructure.Helper;
 using ZR.Infrastructure.IPTools;
@@ -102,6 +103,10 @@ namespace ZR.ServiceCore.Services
             }
             // 密码已校验通过：清空历史失败次数，避免"错几次后成功登录"仍被后续误锁
             ClearLoginFailure(user.UserName);
+            if (PasswordHasher.NeedsUpgrade(user.Password))
+            {
+                SysUserService.UpgradePasswordHash(user.UserId, loginBody.Password);
+            }
             logininfor.UserId = user.UserId;
             if (user.Status == 1)
             {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ZR.Common.Security;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.ServiceCore.Security;
@@ -100,15 +101,15 @@ namespace ZR.Admin.WebApi.Controllers.System
             string oldMd5 = SecurityHelper.Md5(oldPassword);
             string newMd5 = SecurityHelper.Md5(newPassword);
 
-            if (!user.Password.Equals(oldMd5, StringComparison.OrdinalIgnoreCase))
+            if (!PasswordHasher.Verify(oldMd5, user.Password))
             {
                 return ToResponse(ApiResult.Error("修改密码失败，旧密码错误"));
             }
-            if (user.Password.Equals(newMd5, StringComparison.OrdinalIgnoreCase))
+            if (PasswordHasher.Verify(newMd5, user.Password))
             {
                 return ToResponse(ApiResult.Error("新密码不能和旧密码相同"));
             }
-            if (UserService.ResetPwd(userId, newMd5, "您的登录密码修改成功") > 0)
+            if (UserService.ResetPwd(userId, PasswordHasher.Hash(newMd5), "您的登录密码修改成功") > 0)
             {
                 // 改密往往正是因为怀疑密码泄露：必须同时清空设备信任，
                 // 否则"记住此设备"的信任期（默认 7 天）会让已记住的设备继续免动态码

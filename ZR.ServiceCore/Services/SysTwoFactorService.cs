@@ -5,6 +5,7 @@ using Infrastructure.Model;
 using System.Security.Cryptography;
 using System.Text;
 using ZR.Common;
+using ZR.Common.Security;
 using ZR.Infrastructure.Helper;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -669,7 +670,7 @@ namespace ZR.ServiceCore.Services
 
             // 个人中心传明文、登录链路传 MD5，两种都接受（与 SysLoginService.Login 的处理一致）
             var md5 = password.Length == 32 ? password : SecurityHelper.Md5(password);
-            if (!string.Equals(user.Password, md5, StringComparison.OrdinalIgnoreCase))
+            if (!PasswordHasher.Verify(md5, user.Password))
             {
                 throw new CustomException("密码错误");
             }

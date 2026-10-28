@@ -1,6 +1,7 @@
 using Infrastructure;
 using System.Text;
 using ZR.Common;
+using ZR.Common.Security;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Enums;
@@ -255,7 +256,7 @@ namespace ZR.ServiceCore.Services
                 DeptId = settings.AutoCreateDeptId,
                 // 密码列非空（NOT NULL），填一个没人知道的随机值：
                 // 该账号只能用第三方入口登录，用这个密码永远登不进来
-                Password = SecurityHelper.Md5(Guid.NewGuid().ToString()),
+                Password = PasswordHasher.Hash(SecurityHelper.Md5(Guid.NewGuid().ToString())),
                 Create_by = "oauth",
                 Remark = $"第三方登录自动创建（{identity.AuthSource}）"
             };
