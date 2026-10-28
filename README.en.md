@@ -1,12 +1,12 @@
 <h2 align="center"> ZR.Admin.NET Enterprise Admin System</h2>
-<h4 align="center">A cross-platform, RBAC-based, front-end/back-end separated admin framework built on .NET 8 + SqlSugar + Vue 3</h4>
+<h4 align="center">A cross-platform, RBAC-based, front-end/back-end separated admin framework built on .NET 10 + SqlSugar + Vue 3</h4>
 <h5 align="center">SaaS multi-tenancy · Two-factor &amp; login security · Visual workflow · One-click code generator · Task scheduling · Cache &amp; real-time notifications · Rate limiting &amp; data scope · Dynamic i18n · AI assistant</h5>
 
 <div style="text-align:center">
 
 [![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
 [![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
-[![Change log](https://img.shields.io/badge/ChangeLog-20260418-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+[![Change log](https://img.shields.io/badge/ChangeLog-20260723-yellow)](http://www.izhaorui.cn/doc/changelog.html)
 
 [![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)
@@ -25,7 +25,7 @@
 ## 🍟 overview
 
 - This project is suitable for developers with some .NET and Vue foundation.
-- A general-purpose rights management platform (RBAC model) built on **.NET 8**: the latest technology stack, front-end/back-end separation, cross-platform and out of the box.
+- A general-purpose rights management platform (RBAC model) built on **.NET 10**: the latest technology stack, front-end/back-end separation, cross-platform and out of the box.
 - Ships enterprise-ready capabilities: **SaaS multi-tenancy, TOTP two-factor and login security, a visual workflow engine, a one-click code generator, task scheduling, caching, real-time notifications, rate limiting, data-scope filtering, dynamic i18n and an AI assistant**.
 - Less code, easier to learn and understand, powerful yet lightweight and easy to extend; make web development faster and simpler, and focus on your business.
 - A community-maintained [Ant Design Vue](https://gitee.com/billzh/mc-dull.git) front-end version is also available.
@@ -59,8 +59,10 @@ dotnet run --project ZR.Admin.WebApi -- -i
 
 - Official documentation：http://www.izhaorui.cn/doc
 - Join a group chat：[立即加入](http://www.izhaorui.cn/doc/contact.html)
-- Vue3.x experience：[http://www.izhaorui.cn/vue3](http://www.izhaorui.cn/vue3)
-- Uniapp experience：[http://www.izhaorui.cn/h5](http://www.izhaorui.cn/h5)
+- Vue3 experience：[http://www.izhaorui.cn/vue3](http://www.izhaorui.cn/vue3)
+- UniApp (Vue2) experience：[http://www.izhaorui.cn/h5](http://www.izhaorui.cn/h5)
+- UniApp (Vue3) experience：[http://www.izhaorui.cn/uplus](http://www.izhaorui.cn/uplus)
+- Workflow mobile (Vue3 + TS) experience：[http://www.izhaorui.cn/wf](http://www.izhaorui.cn/wf)
 - account/password：admin/123456
 
 | H5                                                                                     | WeChat mini program                                                                  |
@@ -75,17 +77,18 @@ Since it is a personal project, the funds are limited, and the experience server
 
 | repository | Github                                                               | Gitee                                                    |
 | ---------- | -------------------------------------------------------------------- | -------------------------------------------------------- |
-| net8       | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET) | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
+| net10      | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET) | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
 | Vue3(Hot)  | [Clone/Download](https://github.com/izhaorui/ZR.Admin.Vue3)          | [Clone/Download](https://gitee.com/izory/ZRAdmin-vue)    |
 | mobile     | [contact author](http://www.izhaorui.cn/vip/)                        | [contact author](http://www.izhaorui.cn/vip/)            |
+| workflow   | [contact author](http://www.izhaorui.cn/enterprise/)                 | [contact author](http://www.izhaorui.cn/enterprise/)     |
 
 ## 🍁 Front-end technology
 
-Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, Vue-CLI, AXIOS, Element-UI, Echats, i18N Internationalization, etc., the front-end adopts VSCODE tool development
+Vue Front-end technology stack: Vue 3 with Vite + Pinia + Element Plus, Vue 2 with Vue-CLI + Vuex + Element UI, plus vue-router, axios, ECharts and i18n; the mobile side is built with uni-app. Developed with VSCODE.
 
 ## 🍀 Back-end technology
 
-- Core Framework: .NET 8.0 + Web API + SqlSugar + Swagger + SignalR + IpRateLimit + Quartz.NET + Redis + MiniExcel + AI
+- Core Framework: .NET 10 + Web API + SqlSugar + Swagger + SignalR + IpRateLimit + Quartz.NET + Redis + MiniExcel + AI
 - Scheduled tasks: Quartz.Net component that supports the execution of assemblies or HTTP network requests
 - Security support: filters (data permission filtering), SQL injection, request forgery, TOTP two-factor auth, login-device registry with anomaly alerts, login-failure lockout, and post-signature user/tenant status re-checks for existing tokens
 - Log management: NLog, login log, operation log, scheduled task log
@@ -99,6 +102,7 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 - SignalR: Uses SignalR to manage user online status and push real-time notifications
 - Workflow: built-in approval workflow covering "definition → initiation → node approval → record tracking"; see [Workflow module](#-workflow-module)
 - Object storage: local upload / Alibaba Cloud OSS / S3-compatible storage (RustFS, MinIO, Ceph RGW, Cloudflare R2, Backblaze B2, AWS S3), with a configurable default store type
+- Payment: a standalone `ZR.Payment` module wrapping WeChat Pay V3 (H5 / Mini Program JSAPI / App), with mock payment for development and Alipay reserved as an enum
 - Full-text search: article body and mall product name use full-text indexes, falling back to `LIKE` automatically when the index is not ready
 - Public storefront host: `ZR.Front.WebApi` only registers `[PublicApi]` endpoints, so admin APIs always return 404 on the public host
 - AI: Built-in AI assistant (chat / tool orchestration / image), business-page AI, workflow AI and a governed chart pipeline, plus AI governance (multi-level quotas, model pricing, usage stats, config checks and provider health probes)
@@ -125,14 +129,19 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 18. Notification management: The system notifies and announces information release and maintenance, and uses SignalR to realize real-time notification to users.
 19. Account Registration: You can register an account to log in to the system.
 20. Multi-language management: support static and back-end dynamic configuration internationalization. Currently only supports Chinese, English, and Traditional characters (only VUE3 is supported)
-21. Workflow module: a built-in visual approval workflow supporting dynamic forms, version management with pre-publish simulation, process copy, approve/reject/withdraw/transfer/add-sign & remove-sign, configurable reject strategies and countersign models, Webhook integration and efficiency statistics, plus soft-delete with guards. See [Workflow module documentation](document/工作流模块说明.md)
-22. SaaS multi-tenant: a complete multi-tenant SaaS system with full tenant lifecycle management, package authorization, user quotas and expiry reminders.
-23. AI assistant: a global office assistant (chat / tool orchestration / image), business-page AI, workflow AI and a governed chart pipeline, plus AI governance (multi-level quotas, model pricing, usage stats, config checks and health probes).
-24. Mall management: a complete e-commerce back end (product / SKU / spec template / category / brand / freight template / order OMS / after-sales / payment transactions / area dictionary) with a companion H5 storefront flow and sales statistics. See [Mall module](#-mall-module).
-25. Two-factor auth: TOTP authenticator + one-time recovery codes + "remember this device", covering password, SMS-code and QR-code sign-in; self-service binding/unbinding and admin reset, with the used authentication method recorded in the login log.
-26. Login security: login-device registry with per-device revocation, new-device alerts (site message + email), repeated 2FA failure alerts, login-failure lockout with unlock notice, and device trust cleared whenever the password changes.
-27. Object storage: S3-compatible storage on top of local and Alibaba Cloud OSS, uploads routed by `storeType`, default store type configurable via `Upload:defaultStoreType`.
-28. Full-text search: article body and mall product name support full-text search, probing index readiness automatically and falling back when unavailable.
+21. Online users: list currently signed-in users, with force-logout and notification actions.
+22. DB audit log: database audit capability.
+23. Third-party login: provides the implementation logic for third-party sign-in.
+24. Import/export: Chinese-header import and dictionary-value-to-text export.
+25. Data screen: a more intuitive data presentation.
+26. Mall management: a complete e-commerce back end (product / SKU / spec template / category / brand / freight template / order OMS / after-sales / payment transactions / area dictionary) with a companion H5 storefront flow and sales statistics. See [Mall module](#-mall-module).
+27. SaaS multi-tenant: a complete multi-tenant SaaS system with full tenant lifecycle management, package authorization, user quotas and expiry reminders.
+28. Workflow module: a built-in visual approval workflow supporting dynamic forms, version management with pre-publish simulation, process copy, approve/reject/withdraw/transfer/add-sign & remove-sign, configurable reject strategies and countersign models, Webhook integration and efficiency statistics, plus soft-delete with guards. See [workflow documentation](http://www.izhaorui.cn/doc)
+29. AI assistant: a global office assistant (chat / tool orchestration / image), business-page AI, workflow AI and a governed chart pipeline, plus AI governance (multi-level quotas, model pricing, usage stats, config checks and health probes).
+30. Two-factor auth: TOTP authenticator + one-time recovery codes + "remember this device", covering password, SMS-code and QR-code sign-in; self-service binding/unbinding and admin reset, with the used authentication method recorded in the login log.
+31. Login security: login-device registry with per-device revocation, new-device alerts (site message + email), repeated 2FA failure alerts, login-failure lockout with unlock notice, and device trust cleared whenever the password changes.
+32. Object storage: S3-compatible storage on top of local and Alibaba Cloud OSS, uploads routed by `storeType`, default store type configurable via `Upload:defaultStoreType`.
+33. Full-text search: article body and mall product name support full-text search, probing index readiness automatically and falling back when unavailable.
 
 ## 🍻 Project structure
 
@@ -149,8 +158,10 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 ├─ZR.CodeGenerator               	->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
 ├─ZR.Mall                    ->[mall back end]: backend code for the mall module.
 ├─ZR.Workflow                ->[workflow back end]: backend code for the workflow module.
+├─ZR.Oss                     ->[object storage back end]: Alibaba Cloud OSS and S3-compatible provider implementations (abstractions live in Infrastructure).
+├─ZR.Payment                 ->[payment back end]: WeChat Pay V3 gateway and options (callback abstractions live in Infrastructure).
 ├─ZR.Vue               			->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。
-├─document               		->[文档]：数据库脚本
+├─document               		->[docs]: database scripts (deprecated)
 ```
 
 ## ⚡ Workflow module
@@ -173,7 +184,7 @@ A built-in lightweight approval workflow module covering the full chain of "defi
 - **Soft delete & guard**: Deleting a process definition keeps historical data (nodes/instances/tasks/records); deletion is rejected if approval-pending or withdrawn instances exist.
 - **Mobile menu**: Standalone workflow App workbench menu, filtered by permission.
 
-See [Workflow module documentation](document/工作流模块说明.md).
+See [workflow documentation](http://www.izhaorui.cn/doc).
 
 ## 🏢 SaaS Multi-tenant
 
@@ -291,7 +302,7 @@ After-sales states: Pending audit → Waiting for buyer return → Waiting for m
 
 > Note: this repository contains the mall **back end** (`ZR.Mall`). The screenshots above are from the companion mobile (H5) storefront, which lives in a separate mobile repository.
 
-## 🍎 Storyplate
+## 🍎 Screenshots
 
 <table>
     <tr>
@@ -347,7 +358,7 @@ After-sales states: Pending audit → Waiting for buyer return → Waiting for m
 	</tr>
 </table>
 
-## 📱 Mobile Storyplate(vue2)
+## 📱 Mobile screenshots (vue2)
 
 <table>
     <tr>
@@ -375,7 +386,7 @@ After-sales states: Pending audit → Waiting for buyer return → Waiting for m
     </tr>
 </table>
 
-## 📱 Mobile Storyplate(vue3)
+## 📱 Mobile screenshots (vue3)
 
 <table>
 		<tr>
