@@ -99,11 +99,11 @@
         public string JobParams { get; set; }
         public string ApiUrl { get; set; }
         /// <summary>
-        /// 1、程序集任务 2、apiUrl任务 3、SQL语句
+        /// 1、程序集任务 2、apiUrl任务 3、存储过程
         /// </summary>
         public int TaskType { get; set; }
         /// <summary>
-        /// SQL文本
+        /// 存储过程名称（schema.ProcedureName）；为兼容历史 API 沿用 SqlText 字段名
         /// </summary>
         public string SqlText { get; set; }
 

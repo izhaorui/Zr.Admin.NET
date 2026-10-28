@@ -2,9 +2,11 @@
 using Quartz;
 using SqlSugar;
 using ZR.Model.System;
+using ZR.Infrastructure.Helper;
 using ZR.Model.System.Dto;
 using ZR.ServiceCore.AI.IService;
 using ZR.Tasks;
+using ZR.Tasks.TaskScheduler;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -203,9 +205,16 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException($"地址不能为空");
             }
-            if (string.IsNullOrEmpty(parm.SqlText) && parm.TaskType == 3)
+            if (parm.TaskType == 3)
             {
-                throw new CustomException($"sql语句不能为空");
+                if (StoredProcedureTaskExecutor.IsProcedureCall(parm.SqlText))
+                {
+                    StoredProcedureTaskExecutor.ValidateConfiguration(parm.SqlText, parm.JobParams);
+                }
+                else if (!SqlTaskGuard.IsSafe(parm.SqlText, out var unsafeReason))
+                {
+                    throw new CustomException($"SQL 语句未通过安全校验：{unsafeReason}");
+                }
             }
             if (parm.TaskType == 1 && (parm.AssemblyName.IsEmpty() || parm.ClassName.IsEmpty()))
             {
@@ -248,6 +257,17 @@ namespace ZR.Admin.WebApi.Controllers
             if (string.IsNullOrEmpty(parm.ApiUrl) && parm.TaskType == 2)
             {
                 throw new CustomException($"api地址不能为空");
+            }
+            if (parm.TaskType == 3)
+            {
+                if (StoredProcedureTaskExecutor.IsProcedureCall(parm.SqlText))
+                {
+                    StoredProcedureTaskExecutor.ValidateConfiguration(parm.SqlText, parm.JobParams);
+                }
+                else if (!SqlTaskGuard.IsSafe(parm.SqlText, out var unsafeReason))
+                {
+                    throw new CustomException($"SQL 语句未通过安全校验：{unsafeReason}");
+                }
             }
 
             if (tasksQz.IsStart == 1)

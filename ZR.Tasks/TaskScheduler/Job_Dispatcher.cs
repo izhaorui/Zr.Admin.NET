@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using ZR.Infrastructure.Helper;
 using ZR.Model.System;
@@ -43,6 +44,17 @@ namespace ZR.Tasks.TaskScheduler
         /// </summary>
         private const int DispatchDedupMinutes = 30;
         private const int MaxExceptionLength = 5000;
+
+        private sealed class TaskExecutionTimeoutException : TimeoutException
+        {
+            public Task ExecutionTask { get; }
+
+            public TaskExecutionTimeoutException(string message, Exception innerException = null, Task executionTask = null)
+                : base(message, innerException)
+            {
+                ExecutionTask = executionTask;
+            }
+        }
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -110,9 +122,7 @@ namespace ZR.Tasks.TaskScheduler
             }
 
             // 标记本次为调度器分发模式，供 JobBase 识别并跳过日志/统计。
-            // Quartz 的 MergedJobDataMap 是触发时生成的快照，只改 JobDetail.JobDataMap 任务内部读不到，需同时写入。
             context.MergedJobDataMap["DispatcherMode"] = true;
-            context.JobDetail.JobDataMap["DispatcherMode"] = true;
 
             var overallStatus = "0";
             string overallMsg = null;
@@ -126,13 +136,15 @@ namespace ZR.Tasks.TaskScheduler
                 // 每个租户建一个作用域：任务类内部通过 App.GetRequiredService 解析的服务，
                 // 依赖链可能含 scoped（如 IEmailSendService / IHubContext），根容器无法解析。
                 // AsyncLocal 保证并发任务各自独立，且不影响请求线程（请求优先走 HttpContext.RequestServices）。
-                using var serviceScope = InternalApp.ServiceProvider?.CreateScope();
+                var serviceScope = InternalApp.ServiceProvider?.CreateScope();
                 var previousProvider = InternalApp.ScopedServiceProvider.Value;
                 if (serviceScope != null)
                 {
                     InternalApp.ScopedServiceProvider.Value = serviceScope.ServiceProvider;
                 }
 
+                var deferScopeDisposal = false;
+                var stopAfterTenant = false;
                 try
                 {
                     var sw = Stopwatch.StartNew();
@@ -150,7 +162,8 @@ namespace ZR.Tasks.TaskScheduler
                         }
                         catch (Exception ex)
                         {
-                            if (attempt < maxRetryCount)
+                            var retryable = ex is not TimeoutException && ex is not OperationCanceledException;
+                            if (retryable && attempt < maxRetryCount)
                             {
                                 retried++;
                                 logger.Warn("任务分发执行失败，准备重试: task={TaskId}, tenant={TenantId}, attempt={Attempt}/{Max}, error={Error}",
@@ -165,10 +178,30 @@ namespace ZR.Tasks.TaskScheduler
 
                             status = "1";
                             // 重试过程中每次的异常都记录在 Warn，这里只保留最终失败原因与重试次数
-                            msg = retried > 0 ? $"{ex.Message}（已重试 {retried} 次）" : ex.Message;
+                            var failureMessage = ex is OperationCanceledException
+                                ? $"任务执行已取消：{ex.Message}"
+                                : ex.Message;
+                            msg = retried > 0 ? $"{failureMessage}（已重试 {retried} 次）" : failureMessage;
                             jobException = ex;
                             overallStatus = "1";
                             overallMsg = msg;
+
+                            if (ex is TaskExecutionTimeoutException { ExecutionTask: not null } timeoutException)
+                            {
+                                var executionStillRunning = !timeoutException.ExecutionTask.IsCompleted;
+                                stopAfterTenant = executionStillRunning;
+                                deferScopeDisposal = executionStillRunning;
+                                ObserveTimedOutExecution(
+                                    timeoutException.ExecutionTask,
+                                    taskId,
+                                    tenantId,
+                                    deferScopeDisposal ? serviceScope : null);
+                                if (executionStillRunning)
+                                {
+                                    logger.Warn($"任务超时后执行结果未知，已发送取消信号；停止后续租户执行: task={taskId}, tenant={tenantId}");
+                                }
+                            }
+
                             logger.Error(ex, "任务分发执行失败: task={TaskId}, tenant={TenantId}, retried={Retried}",
                                 taskId, tenantId, retried);
                             break;
@@ -205,6 +238,15 @@ namespace ZR.Tasks.TaskScheduler
                 finally
                 {
                     InternalApp.ScopedServiceProvider.Value = previousProvider;
+                    if (!deferScopeDisposal)
+                    {
+                        serviceScope?.Dispose();
+                    }
+                }
+
+                if (stopAfterTenant)
+                {
+                    break;
                 }
             }
 
@@ -229,7 +271,7 @@ namespace ZR.Tasks.TaskScheduler
             return task.TaskType switch
             {
                 2 => "HttpRequest",
-                3 => "SqlExecute",
+                3 => $"StoredProcedure:{task.SqlText}",
                 _ => $"{task.AssemblyName}.{task.ClassName}"
             };
         }
@@ -277,15 +319,15 @@ namespace ZR.Tasks.TaskScheduler
         }
 
         /// <summary>
-        /// 执行单个租户的任务，超过全局超时则抛异常。
-        ///
-        /// 注意这是「软超时」：HTTP 请求会因传给 HttpHelper 的 timeOut 真正中断，
-        /// 但 SQL / 程序集任务无法强制终止（ADO.NET 的执行不接受 CancellationToken），
-        /// 超时后只是不再等待并记为失败，被放弃的调用仍可能在后台跑完。
+        /// 执行单个租户的任务，超时后向任务发送取消信号。
+        /// SQL/未实现协作取消的程序集任务仍可能继续运行，因此超时结果视为未知且不可自动重试。
         /// </summary>
         private static async Task ExecuteTenantWithTimeout(SysTasks task, IJobExecutionContext context, string tenantId, int timeoutSeconds)
         {
-            var execTask = ExecuteSingleTenant(task, context, tenantId, timeoutSeconds);
+            using var executionCts = new CancellationTokenSource();
+            var execTask = timeoutSeconds > 0
+                ? Task.Run(() => ExecuteSingleTenant(task, context, tenantId, timeoutSeconds, executionCts.Token))
+                : ExecuteSingleTenant(task, context, tenantId, timeoutSeconds, executionCts.Token);
 
             if (timeoutSeconds <= 0)
             {
@@ -293,23 +335,61 @@ namespace ZR.Tasks.TaskScheduler
                 return;
             }
 
+            var completedTask = await Task.WhenAny(execTask, Task.Delay(TimeSpan.FromSeconds(timeoutSeconds + 5)));
+            if (completedTask == execTask)
+            {
+                await execTask;
+                return;
+            }
+
             try
             {
-                // 外层比内层 HTTP 超时多留 5 秒：让 HTTP 请求先按自己的超时取消并给出明确错误，
-                // 外层只兜底 SQL / 程序集这类无法中断的执行（软超时）。
-                await execTask.WaitAsync(TimeSpan.FromSeconds(timeoutSeconds + 5));
+                executionCts.Cancel();
             }
-            catch (TimeoutException)
+            catch (AggregateException ex)
             {
-                throw new CustomException($"任务执行超时（>{timeoutSeconds}s）");
+                logger.Error(ex, $"任务超时后取消回调异常: task={task.ID}, tenant={tenantId}");
             }
+
+            throw new TaskExecutionTimeoutException(
+                $"任务执行超时（外层等待>{timeoutSeconds + 5}s；配置值={timeoutSeconds}s），已发送取消信号，执行结果未知",
+                executionTask: execTask);
         }
 
-        private static async Task ExecuteSingleTenant(SysTasks task, IJobExecutionContext context, string tenantId, int timeoutSeconds)
+        private static void ObserveTimedOutExecution(Task executionTask, string taskId, string tenantId, IServiceScope serviceScope)
         {
+            _ = executionTask.ContinueWith(completedTask =>
+            {
+                try
+                {
+                    if (completedTask.IsFaulted)
+                    {
+                        logger.Error(completedTask.Exception, $"超时任务在取消信号后仍以异常结束: task={taskId}, tenant={tenantId}");
+                    }
+                    else
+                    {
+                        logger.Warn($"超时任务已结束，但原执行结果仍按未知处理: task={taskId}, tenant={tenantId}, canceled={completedTask.IsCanceled}");
+                    }
+                }
+                finally
+                {
+                    serviceScope?.Dispose();
+                }
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, System.Threading.Tasks.TaskScheduler.Default);
+        }
+
+        private static async Task ExecuteSingleTenant(
+            SysTasks task,
+            IJobExecutionContext context,
+            string tenantId,
+            int timeoutSeconds,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (task.TaskType == 2)
             {
-                await ExecuteHttpTask(task, timeoutSeconds);
+                await ExecuteHttpTask(task, timeoutSeconds, cancellationToken);
                 return;
             }
 
@@ -319,10 +399,10 @@ namespace ZR.Tasks.TaskScheduler
                 return;
             }
 
-            await ExecuteAssemblyTask(task, context, tenantId);
+            await ExecuteAssemblyTask(task, context, tenantId, cancellationToken);
         }
 
-        private static async Task ExecuteHttpTask(SysTasks info, int timeoutSeconds)
+        private static async Task ExecuteHttpTask(SysTasks info, int timeoutSeconds, CancellationToken cancellationToken)
         {
             ValidateHttpTarget(info.ApiUrl);
 
@@ -334,7 +414,8 @@ namespace ZR.Tasks.TaskScheduler
             {
                 if (info.RequestMethod != null && info.RequestMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
                 {
-                    result = await HttpHelper.HttpPostAsync(info.ApiUrl, info.JobParams, timeOut: requestTimeout);
+                    result = await HttpHelper.HttpPostAsync(
+                        info.ApiUrl, info.JobParams, null, requestTimeout, null, cancellationToken);
                 }
                 else
                 {
@@ -347,14 +428,18 @@ namespace ZR.Tasks.TaskScheduler
                     {
                         url += "?" + info.JobParams;
                     }
-                    result = await HttpHelper.HttpGetAsync(url, timeOut: requestTimeout);
+                    result = await HttpHelper.HttpGetAsync(url, null, requestTimeout, cancellationToken);
                 }
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                // HttpHelper 用 CancellationTokenSource 控制超时，超时表现为 TaskCanceledException，
-                // 这里转成明确文案，避免日志里只看到 "A task was canceled."
-                throw new CustomException($"HTTP 请求超时（>{requestTimeout}s）：{info.ApiUrl}");
+                throw;
+            }
+            catch (OperationCanceledException ex)
+            {
+                throw new TaskExecutionTimeoutException(
+                    $"HTTP 请求超时（>{requestTimeout}s），执行结果未知：{info.ApiUrl}",
+                    ex);
             }
 
             logger.Info("任务【{TaskName}】网络请求执行结果={Result}", info.Name, result);
@@ -385,14 +470,22 @@ namespace ZR.Tasks.TaskScheduler
 
         private static void ExecuteSqlTask(SysTasks info, string tenantId)
         {
+            if (StoredProcedureTaskExecutor.IsProcedureCall(info.SqlText))
+            {
+                var affectedRows = StoredProcedureTaskExecutor.Execute(info, tenantId);
+                logger.Info("任务【{TaskName}】存储过程执行完成，过程={ProcedureName}, 影响行数={AffectedRows}, tenant={TenantId}",
+                    info.Name, info.SqlText, affectedRows, tenantId);
+                return;
+            }
+
             if (info.SqlText.IsEmpty())
             {
-                throw new CustomException($"任务{info.ID}执行失败，SQL为空");
+                throw new CustomException($"任务{info.ID}执行失败，SQL语句为空");
             }
 
             if (!SqlTaskGuard.IsSafe(info.SqlText, out var unsafeReason))
             {
-                throw new CustomException($"任务{info.ID} SQL 未通过安全校验，已拒绝执行：{unsafeReason}");
+                throw new CustomException($"任务{info.ID} SQL 语句未通过安全校验：{unsafeReason}");
             }
 
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -458,7 +551,11 @@ namespace ZR.Tasks.TaskScheduler
             }
         }
 
-        private static async Task ExecuteAssemblyTask(SysTasks info, IJobExecutionContext context, string tenantId)
+        private static async Task ExecuteAssemblyTask(
+            SysTasks info,
+            IJobExecutionContext context,
+            string tenantId,
+            CancellationToken cancellationToken)
         {
             Assembly assembly = Assembly.Load(new AssemblyName(info.AssemblyName));
             Type jobType = ResolveJobType(assembly, info)
@@ -467,11 +564,10 @@ namespace ZR.Tasks.TaskScheduler
             var jobObj = App.GetService(jobType) ?? Activator.CreateInstance(jobType)
                 ?? throw new CustomException($"无法实例化任务类型: {jobType.FullName}");
 
-            // 兼容现有 JobBase/自定义 Job 逻辑：把本次租户写入上下文 Map。
+            // 兼容现有 JobBase/自定义 Job 逻辑：把本次租户与协作取消令牌写入上下文 Map。
             // Quartz 的 MergedJobDataMap 是触发时快照，仅写 JobDetail.JobDataMap 时任务内部读取会抛
             // KeyNotFoundException: Key TenantId not found，因此必须直接写入 MergedJobDataMap。
             context.MergedJobDataMap["TenantId"] = tenantId;
-            context.JobDetail.JobDataMap["TenantId"] = tenantId;
 
             if (jobObj is IJob quartzJob)
             {
@@ -479,10 +575,17 @@ namespace ZR.Tasks.TaskScheduler
                 return;
             }
 
-            var runMethod = jobType.GetMethod("Run", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+            var runWithCancellation = jobType.GetMethod(
+                "Run", BindingFlags.Instance | BindingFlags.Public,
+                null, new[] { typeof(CancellationToken) }, null);
+            var runMethod = runWithCancellation ?? jobType.GetMethod(
+                "Run", BindingFlags.Instance | BindingFlags.Public,
+                null, Type.EmptyTypes, null);
             if (runMethod != null)
             {
-                var invokeResult = runMethod.Invoke(jobObj, null);
+                var invokeResult = runWithCancellation != null
+                    ? runMethod.Invoke(jobObj, new object[] { cancellationToken })
+                    : runMethod.Invoke(jobObj, null);
                 if (invokeResult is Task t)
                 {
                     await t;

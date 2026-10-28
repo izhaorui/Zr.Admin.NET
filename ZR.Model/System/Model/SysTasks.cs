@@ -152,13 +152,13 @@
         /// </summary>
         public string ApiUrl { get; set; }
         /// <summary>
-        /// 任务类型 1、程序集 2、网络请求 3、SQL语句
+        /// 任务类型 1、程序集 2、网络请求 3、存储过程
         /// </summary>
         [SugarColumn(DefaultValue = "1")]
         public int TaskType { get; set; }
 
         /// <summary>
-        /// SQL语句
+        /// 存储过程名称（schema.ProcedureName）；为兼容历史数据沿用 SqlText 字段
         /// </summary>
         public string SqlText { get; set; }
         /// <summary>

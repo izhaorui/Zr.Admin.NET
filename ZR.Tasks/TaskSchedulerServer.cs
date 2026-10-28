@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
+using ZR.Infrastructure.Helper;
 using ZR.Model.System;
 using ZR.Tasks.TaskScheduler;
 
@@ -129,6 +130,17 @@ namespace ZR.Tasks
                 if (tasksQz?.EndTime <= DateTime.Now)
                 {
                     return ApiResult.Error(500, $"结束时间小于当前时间计划将不会被执行");
+                }
+                if (tasksQz?.TaskType == 3)
+                {
+                    if (StoredProcedureTaskExecutor.IsProcedureCall(tasksQz.SqlText))
+                    {
+                        StoredProcedureTaskExecutor.ValidateConfiguration(tasksQz.SqlText, tasksQz.JobParams);
+                    }
+                    else if (!SqlTaskGuard.IsSafe(tasksQz.SqlText, out var unsafeReason))
+                    {
+                        throw new CustomException($"SQL 语句未通过安全校验：{unsafeReason}");
+                    }
                 }
                 #region 设置开始时间和结束时间
 
