@@ -7,7 +7,6 @@ using Infrastructure.Helper;
 using Infrastructure.Model;
 using IP2Region.Net.Abstractions;
 using IP2Region.Net.XDB;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
@@ -106,8 +105,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddCors(builder.Configuration);
 
 // DataProtection（与内网宿主一致，避免 cookie 密钥未持久化告警）
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
+// 密钥环加密方式见 DataProtectionExtension，证书配置项与内网宿主相同（DataProtection:CertificatePath）。
+builder.Services.AddZRDataProtection(builder.Configuration, "ZRAdmin.FrontApi",
+    Path.Combine(Directory.GetCurrentDirectory(), "DataProtection"));
 
 // 配置对象与静态配置
 builder.Services.Configure<OptionsSetting>(builder.Configuration);

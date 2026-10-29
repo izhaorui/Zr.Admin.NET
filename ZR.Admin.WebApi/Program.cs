@@ -4,7 +4,6 @@ using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Infrastructure.Converter;
 using IP2Region.Net.Abstractions;
 using IP2Region.Net.XDB;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using NLog.Web;
 using SqlSugar;
@@ -59,10 +58,6 @@ builder.Services.AddIP2RegionService(ip2RegionDbPath, cachePolicy: CachePolicy.C
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // 跨域配置
 builder.Services.AddCors(builder.Configuration);
-//消除Error unprotecting the session cookie警告
-var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "DataProtection");
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 //普通验证码
 builder.Services.AddCaptchaProvider();
 // 读取额外配置文件（iprate.json 要在注册限流服务之前加载）
@@ -80,6 +75,13 @@ if (builder.Environment.IsDevelopment())
 }
 builder.Configuration.AddEnvironmentVariables();
 builder.Configuration.AddCommandLine(args);
+//消除Error unprotecting the session cookie警告
+// DataProtection 密钥环：持久化 + 加密保存（必须在上面所有配置源加载完之后注册，
+// 否则 DataProtection:CertificatePath/Password 来自 UserSecrets、环境变量时读不到）。
+// 加密方式见 DataProtectionExtension：配了证书用证书加密，Windows 未配置回退 DPAPI，
+// Linux/Docker 未配置则保持明文落盘并告警（拿到密钥文件即可解密/伪造受保护数据）。
+var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "DataProtection");
+builder.Services.AddZRDataProtection(builder.Configuration, "ZRAdmin.AdminApi", dataProtectionPath);
 //接口限流（客户端模式：登录用户优先，匿名回退按 IP，规则见 iprate.json）
 builder.Services.AddUserRateLimiting(builder.Configuration);
 //builder.Services.AddSession();
