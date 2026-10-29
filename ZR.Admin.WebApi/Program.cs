@@ -201,9 +201,20 @@ app.Use((context, next) =>
 {
     //设置可以多次获取body内容
     context.Request.EnableBuffering();
-    if (context.Request.Query.TryGetValue("access_token", out var token))
+
+    // 仅对 SignalR（/msgHub）把 query 里的 access_token 转成 Authorization 头。
+    // 为什么需要：WebSocket/SSE 传输无法自定义请求头，signalr JS 客户端的 accessTokenFactory
+    //            只能把令牌放在 ?access_token=，而 JwtAuthMiddleware 只读 Authorization 头。
+    // 为什么必须限定路径：query 里的令牌会落进访问日志、反向代理日志、浏览器历史，
+    //            还可能通过 Referer 泄给第三方站点。其余接口一律不接受 query 传令牌。
+    if (context.Request.Path.StartsWithSegments("/msgHub", StringComparison.OrdinalIgnoreCase))
     {
-        context.Request.Headers.Append("Authorization", $"Bearer {token}");
+        var accessToken = context.Request.Query["access_token"].ToString();
+        // 已有 Authorization 头时以它为准，避免 query 里的值覆盖/拼接出非法头
+        if (!string.IsNullOrEmpty(accessToken) && string.IsNullOrEmpty(context.Request.Headers.Authorization))
+        {
+            context.Request.Headers.Authorization = $"Bearer {accessToken}";
+        }
     }
     return next();
 });

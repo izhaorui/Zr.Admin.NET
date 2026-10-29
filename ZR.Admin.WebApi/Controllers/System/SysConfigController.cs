@@ -63,9 +63,14 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="configKey"></param>
         /// <returns></returns>
         [HttpGet("configKey/{configKey}")]
-        [AllowAnonymous]
+        [ActionPermissionFilter(Permission = "common")]
         public IActionResult GetConfigKey(string configKey)
         {
+            if (string.IsNullOrWhiteSpace(configKey) || configKey.Length > 100)
+            {
+                return ToResponse(ResultCode.PARAM_ERROR, "参数键名不合法");
+            }
+
             var response = _SysConfigService.Queryable().First(f => f.ConfigKey == configKey);
 
             return SUCCESS(response?.ConfigValue);
