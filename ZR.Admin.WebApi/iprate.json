@@ -59,6 +59,13 @@
         "Period": "60s",
         "Limit": 10
       },
+      // App/小程序预发 state：匿名可调，每次要写 state 与上下文两条缓存（10 分钟），
+      // 端上正常一次登录只调 1 次，与网页授权入口同额度
+      {
+        "Endpoint": "*:/oauth/state",
+        "Period": "60s",
+        "Limit": 10
+      },
       {
         "Endpoint": "*:/oauth/bind/authorize",
         "Period": "60s",
