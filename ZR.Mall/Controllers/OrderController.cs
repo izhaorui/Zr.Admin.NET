@@ -249,19 +249,20 @@ namespace ZR.Mall.Controllers
         /// <summary>
         /// 批量发货
         /// </summary>
-        /// <param name="formFile"></param>
+        /// <param name="file">表单字段名必须是 file（前端 el-upload name="file"），靠参数名绑定</param>
         /// <returns></returns>
         [HttpPost("importData")]
+        [Consumes("multipart/form-data")]
         [Log(Title = "批量发货", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false, IsSaveResponseData = true)]
         [ActionPermissionFilter(Permission = "oms:order:ship")]
-        public async Task<IActionResult> ImportData([FromForm(Name = "file")] IFormFile formFile)
+        public async Task<IActionResult> ImportData(IFormFile file)
         {
-            if (formFile == null || formFile.Length <= 0)
+            if (file == null || file.Length <= 0)
             {
                 return ToResponse(ResultCode.FAIL, "请选择要导入的文件");
             }
             var resultList = new List<DeliveryExpressDto>();
-            using var stream = formFile.OpenReadStream();
+            using var stream = file.OpenReadStream();
             var rows = await stream.QueryAsync<DeliveryExpressDto>(startCell: "A1");
 
             var orderNos = rows.Select(x => x.OrderNo).Distinct().ToList();
