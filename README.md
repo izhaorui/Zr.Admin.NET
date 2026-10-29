@@ -1,6 +1,6 @@
 <h2 align="center">ZR.Admin.NET 企业级后台管理系统</h2>
 <h4 align="center">基于 .NET 10 + SqlSugar + Vue 3 的前后端分离、跨平台通用权限管理框架（RBAC）</h4>
-<h5 align="center">SaaS 多租户 · 双因子与登录安全 · 可视化工作流 · 一键代码生成 · 任务调度 · 缓存与实时通知 · 限流与数据权限 · 动态国际化 · AI 助手</h5>
+<h5 align="center">SaaS 多租户 · 双因子与登录安全 · 第三方授权登录 · 可视化工作流 · 一键代码生成 · 任务调度 · 缓存与实时通知 · 限流与数据权限 · 动态国际化 · AI 助手</h5>
 
 <!-- <p align="center">
 	<a href="https://gitee.com/izory/ZrAdminNetCore"><img src="https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark"></a>
@@ -13,7 +13,7 @@
 
 [![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
 [![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
-[![更新日志](https://img.shields.io/badge/更新日志-20260723-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+[![更新日志](https://img.shields.io/badge/更新日志-20261022-yellow)](http://www.izhaorui.cn/doc/changelog.html)
 
 [![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)
@@ -100,6 +100,7 @@ Vue 版前端技术栈 ：vue3 采用 Vite + Pinia + Element Plus，vue2 采用 
 - 核心框架：.NET 10 + Web API + SqlSugar + Swagger + SignalR + IpRateLimit + Quartz.NET + Redis + MiniExcel + AI
 - 定时计划任务：Quartz.Net 组件，支持执行程序集或者 http 网络请求
 - 安全支持：过滤器(数据权限过滤)、Sql 注入、请求伪造、TOTP 双因子、登录设备登记与异常提醒、登录失败锁定、存量令牌的用户/租户状态复核
+- 三方登录：独立 `ZR.OAuth` 适配层，标准 OAuth2 渠道（GitHub/Gitee/GitLab/微信开放平台/公众号/企业微信/QQ/微博/抖音/微软/谷歌/领英/百度/华为）走 CollectiveOAuth，微信小程序走 code2session；PC 跳转与 App/小程序 code 登录、账号绑定，默认只绑定不建号；state 一次性消费、登录与绑定场景隔离、租户取自 state，匿名入口有端点级限流
 - 日志管理：NLog、登录日志、操作日志、定时任务日志
 - 工具类：验证码、丰富公共功能
 - 接口限流：支持接口限流，避免恶意请求导致服务层压力过大
@@ -139,7 +140,7 @@ Vue 版前端技术栈 ：vue3 采用 Vite + Pinia + Element Plus，vue2 采用 
 20. 多语言管理：支持静态、后端动态配置国际化。目前只支持中、英、繁体(仅支持 vue3)
 21. 在线用户：可以查看正在登录使用的用户，可以对其踢出、通知操作
 22. db 审计日志：数据库审计功能
-23. 三方登录：提供三方登录实现逻辑
+23. 三方登录：独立 `ZR.OAuth` 适配层，支持 GitHub/Gitee/GitLab/微信开放平台/公众号/企业微信/QQ/微博/抖音/微软/谷歌/领英/百度/华为与微信小程序；登录与绑定双入口，默认只绑定不建号（可配自动建号与角色），state 一次性消费与场景隔离，回调页按租户域名解析。
 24. 导入导出：支持中文表头导入、字典数据转换成文本导出
 25. 数据大屏：更直观的展示数据
 26. 商城管理：完整电商闭环后端（商品/SKU/规格模板/分类/品牌/运费模板/订单 OMS/售后/支付流水/地区字典），配套 C 端 H5 购物链路与销售统计，详见下方 [商城模块](#-商城模块)。
@@ -311,6 +312,7 @@ Vue 版前端技术栈 ：vue3 采用 Vite + Pinia + Element Plus，vue2 采用 
 ├─ZR.CodeGenerator          ->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
 ├─ZR.Mall                   ->[商城后端]：商城相关的后端代码。
 ├─ZR.Workflow               ->[工作流后端]：工作流相关的后端代码。
+├─ZR.OAuth                  ->[第三方授权适配层]：统一 Provider 抽象与渠道适配（标准 OAuth2 走 CollectiveOAuth、微信小程序走 code2session），只负责拿到可信第三方身份，建号与签发 token 仍在 ServiceCore。
 ├─ZR.Oss                    ->[对象存储后端]：阿里云 OSS 与 S3 兼容存储的具体实现（接口留在 Infrastructure）。
 ├─ZR.Payment                ->[支付后端]：微信支付 V3 网关与配置（回调接口留在 Infrastructure）。
 ├─ZR.Vue               		->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。

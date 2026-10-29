@@ -1,6 +1,6 @@
 <h2 align="center"> ZR.Admin.NET Enterprise Admin System</h2>
 <h4 align="center">A cross-platform, RBAC-based, front-end/back-end separated admin framework built on .NET 10 + SqlSugar + Vue 3</h4>
-<h5 align="center">SaaS multi-tenancy · Two-factor &amp; login security · Visual workflow · One-click code generator · Task scheduling · Cache &amp; real-time notifications · Rate limiting &amp; data scope · Dynamic i18n · AI assistant</h5>
+<h5 align="center">SaaS multi-tenancy · Two-factor &amp; login security · Third-party sign-in · Visual workflow · One-click code generator · Task scheduling · Cache &amp; real-time notifications · Rate limiting &amp; data scope · Dynamic i18n · AI assistant</h5>
 
 <div style="text-align:center">
 
@@ -91,6 +91,7 @@ Vue Front-end technology stack: Vue 3 with Vite + Pinia + Element Plus, Vue 2 wi
 - Core Framework: .NET 10 + Web API + SqlSugar + Swagger + SignalR + IpRateLimit + Quartz.NET + Redis + MiniExcel + AI
 - Scheduled tasks: Quartz.Net component that supports the execution of assemblies or HTTP network requests
 - Security support: filters (data permission filtering), SQL injection, request forgery, TOTP two-factor auth, login-device registry with anomaly alerts, login-failure lockout, and post-signature user/tenant status re-checks for existing tokens
+- Third-party sign-in: a standalone `ZR.OAuth` provider layer — standard OAuth2 channels (GitHub/Gitee/GitLab/WeChat Open/MP/Enterprise/QQ/Weibo/Douyin/Microsoft/Google/LinkedIn/Baidu/Huawei) via CollectiveOAuth, WeChat Mini Program via code2session; browser redirect and app/mini-program code login, account binding, bind-only by default (optional auto-create with roles); one-time state with login/bind isolation, tenant resolved from state, and endpoint rate limiting on anonymous entries
 - Log management: NLog, login log, operation log, scheduled task log
 - Tools: Captcha, rich public functions
 - Interface throttling: Supports interface throttling to avoid excessive pressure on the service layer caused by malicious requests
@@ -131,7 +132,7 @@ Vue Front-end technology stack: Vue 3 with Vite + Pinia + Element Plus, Vue 2 wi
 20. Multi-language management: support static and back-end dynamic configuration internationalization. Currently only supports Chinese, English, and Traditional characters (only VUE3 is supported)
 21. Online users: list currently signed-in users, with force-logout and notification actions.
 22. DB audit log: database audit capability.
-23. Third-party login: provides the implementation logic for third-party sign-in.
+23. Third-party login: a standalone `ZR.OAuth` provider layer covering GitHub/Gitee/GitLab/WeChat Open/MP/Enterprise/QQ/Weibo/Douyin/Microsoft/Google/LinkedIn/Baidu/Huawei and WeChat Mini Program; login and bind flows, bind-only by default (auto-create with roles optional), one-time state with login/bind isolation, and frontend callback URLs resolved per tenant.
 24. Import/export: Chinese-header import and dictionary-value-to-text export.
 25. Data screen: a more intuitive data presentation.
 26. Mall management: a complete e-commerce back end (product / SKU / spec template / category / brand / freight template / order OMS / after-sales / payment transactions / area dictionary) with a companion H5 storefront flow and sales statistics. See [Mall module](#-mall-module).
@@ -158,6 +159,7 @@ Vue Front-end technology stack: Vue 3 with Vite + Pinia + Element Plus, Vue 2 wi
 ├─ZR.CodeGenerator               	->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
 ├─ZR.Mall                    ->[mall back end]: backend code for the mall module.
 ├─ZR.Workflow                ->[workflow back end]: backend code for the workflow module.
+├─ZR.OAuth                   ->[third-party auth provider layer]: provider abstraction and channel adapters (standard OAuth2 via CollectiveOAuth, WeChat Mini Program via code2session); resolves trusted third-party identity only — account creation and token issuing stay in ServiceCore.
 ├─ZR.Oss                     ->[object storage back end]: Alibaba Cloud OSS and S3-compatible provider implementations (abstractions live in Infrastructure).
 ├─ZR.Payment                 ->[payment back end]: WeChat Pay V3 gateway and options (callback abstractions live in Infrastructure).
 ├─ZR.Vue               			->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。
