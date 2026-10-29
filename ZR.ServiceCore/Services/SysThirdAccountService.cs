@@ -5,7 +5,7 @@ using ZR.Model.Enum;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Enums;
-using ZR.ServiceCore.OAuth;
+using ZR.OAuth;
 
 namespace ZR.ServiceCore.Services
 {
@@ -94,6 +94,16 @@ namespace ZR.ServiceCore.Services
         /// 3) OAuth:FrontendCallbackUrl              —— 单租户/统一入口兜底
         /// 三个来源都是配置或主库数据，不接受请求参数，因此不构成开放重定向。
         /// </summary>
+        public OAuthStateContext GetStateContext(string state)
+        {
+            return new OAuthStateCache(OAuthSettings.Current.StateMinutes).GetContext(state);
+        }
+
+        public int GetStateExpireMinutes()
+        {
+            return OAuthSettings.Current.StateMinutes;
+        }
+
         public string ResolveFrontendCallbackUrl(string tenantId)
         {
             var settings = OAuthSettings.Current;

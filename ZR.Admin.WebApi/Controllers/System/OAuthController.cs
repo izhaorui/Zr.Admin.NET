@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Model.System.Dto;
-using ZR.ServiceCore.OAuth;
+using ZR.OAuth;
 
 namespace ZR.Admin.WebApi.Controllers.System
 {
@@ -84,10 +84,9 @@ namespace ZR.Admin.WebApi.Controllers.System
                 throw new CustomException("回调缺少 code");
             }
 
-            var settings = OAuthSettings.Current;
             // 场景/渠道/租户只能来自 state 载荷（服务端签发、不可篡改）。
             // SaaS 下后端若共用域名，中间件按 Host 定位不到租户，state 是唯一可靠来源。
-            var ctx = new OAuthStateCache(settings.StateMinutes).GetContext(state);
+            var ctx = thirdAccountService.GetStateContext(state);
 
             var query = new List<string>();
             if (!code.IsEmpty())
@@ -156,7 +155,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             }
 
             string state = thirdAccountService.IssueAppState(dto);
-            return SUCCESS(new { state, expireMinutes = OAuthSettings.Current.StateMinutes });
+            return SUCCESS(new { state, expireMinutes = thirdAccountService.GetStateExpireMinutes() });
         }
 
         /// <summary>

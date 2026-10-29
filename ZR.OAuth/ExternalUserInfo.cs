@@ -1,4 +1,4 @@
-namespace ZR.ServiceCore.OAuth
+namespace ZR.OAuth
 {
     /// <summary>
     /// 第三方身份的统一模型。

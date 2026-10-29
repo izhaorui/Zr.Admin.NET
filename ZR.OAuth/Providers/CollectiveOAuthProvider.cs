@@ -4,7 +4,7 @@ using Come.CollectiveOAuth.Models;
 using Come.CollectiveOAuth.Request;
 using Infrastructure;
 
-namespace ZR.ServiceCore.OAuth.Providers
+namespace ZR.OAuth.Providers
 {
     /// <summary>
     /// 把 CollectiveOAuthCore（Come.CollectiveOAuth）适配成本项目的 IOAuthProvider。

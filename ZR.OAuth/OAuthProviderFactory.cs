@@ -1,7 +1,7 @@
 using Infrastructure;
-using ZR.ServiceCore.OAuth.Providers;
+using ZR.OAuth.Providers;
 
-namespace ZR.ServiceCore.OAuth
+namespace ZR.OAuth
 {
     /// <summary>
     /// Provider 工厂：按 authSource 构造实现，并按租户取应用配置。

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace ZR.ServiceCore.OAuth
+namespace ZR.OAuth
 {
     /// <summary>
     /// 第三方授权渠道的统一抽象。

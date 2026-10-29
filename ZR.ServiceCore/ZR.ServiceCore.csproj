@@ -10,6 +10,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\ZR.Common\ZR.Common.csproj" />
 		<ProjectReference Include="..\ZR.Repository\ZR.Repository.csproj" />
+		<ProjectReference Include="..\ZR.OAuth\ZR.OAuth.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -21,11 +22,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- 第三方授权聚合库（团队自行维护并发布，命名空间 Come.CollectiveOAuth）。
-		     只承接标准 OAuth2 网页授权；钉钉（上游为已废弃的旧协议且整段注释）与微信小程序（code2session）
-		     由本项目自行实现，见 OAuth/Providers。
-		     注意：包内 AlipaySDKNet.Standard 标了 PrivateAssets=all，启用支付宝登录时需在此显式再引一次。 -->
-		<PackageReference Include="CollectiveOAuthCore" Version="1.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>

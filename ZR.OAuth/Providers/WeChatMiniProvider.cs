@@ -2,7 +2,7 @@ using Infrastructure;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
-namespace ZR.ServiceCore.OAuth.Providers
+namespace ZR.OAuth.Providers
 {
     /// <summary>
     /// 微信小程序登录（code2session）。

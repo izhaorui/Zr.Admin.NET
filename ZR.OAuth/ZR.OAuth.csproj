@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>1701;1702;1591;1570</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
+		<ProjectReference Include="..\ZR.Model\ZR.Model.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CollectiveOAuthCore" Version="1.1.0" />
+		<PackageReference Include="NLog" Version="6.2.1" />
+	</ItemGroup>
+
+</Project>

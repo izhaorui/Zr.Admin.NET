@@ -5,7 +5,7 @@ using ZR.Common.Security;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
 using ZR.Model.System.Enums;
-using ZR.ServiceCore.OAuth;
+using ZR.OAuth;
 
 namespace ZR.ServiceCore.Services
 {

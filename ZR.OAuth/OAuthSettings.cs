@@ -1,7 +1,7 @@
 using Infrastructure;
 using ZR.Model.System;
 
-namespace ZR.ServiceCore.OAuth
+namespace ZR.OAuth
 {
     /// <summary>
     /// 第三方登录配置，对应 appsettings 的 OAuth 节点。

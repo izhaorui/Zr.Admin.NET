@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.OAuth;
 
 namespace ZR.ServiceCore.Services
 {
@@ -53,5 +54,13 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="tenantId">state 载荷里的租户，不能来自回调请求参数</param>
         string ResolveFrontendCallbackUrl(string tenantId);
+
+        /// <summary>
+        /// 读取 state 绑定的服务端上下文（渠道、租户、场景），state 不存在时返回 null。
+        /// </summary>
+        OAuthStateContext GetStateContext(string state);
+
+        /// <summary>state 有效期（分钟）</summary>
+        int GetStateExpireMinutes();
     }
 }

@@ -1,4 +1,4 @@
-namespace ZR.ServiceCore.OAuth
+namespace ZR.OAuth
 {
     /// <summary>
     /// 支持的第三方渠道标识。

@@ -1,7 +1,7 @@
 using Come.CollectiveOAuth.Cache;
 using Infrastructure.Cache;
 
-namespace ZR.ServiceCore.OAuth
+namespace ZR.OAuth
 {
     /// <summary>
     /// state 缓存：把授权库的 IAuthStateCache 套到项目现有 ICache 上。
