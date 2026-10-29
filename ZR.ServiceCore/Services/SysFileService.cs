@@ -49,12 +49,20 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public async Task<SysFile> SaveFileToLocal(string rootPath, UploadDto dto, string userName, string clasifyType, IFormFile formFile)
         {
-            var fileDir = dto.FileDir;
+            // FileDir / FileName 都由客户端传入，必须先清洗再拼路径：
+            // 否则 fileDir=../../ 或 fileName=..\..\web.config 就能把文件写到 wwwroot 之外，覆盖配置或 DLL。
+            var fileDir = FileUtil.SanitizeRelativePath(dto.FileDir);
             string fileExt = Path.GetExtension(formFile.FileName);
+            ValidateFileExt(fileExt);
             string fileName = BuildFileName(dto.FileName, fileExt);
 
             string filePath = GetdirPath(fileDir);
-            string finalFilePath = Path.Combine(rootPath, filePath, fileName);
+            string finalFilePath = Path.GetFullPath(Path.Combine(rootPath, filePath, fileName));
+            // 兜底：清洗后仍要求最终路径落在存储根目录内（防异常字符组合或符号链接绕过）
+            if (!FileUtil.IsPathUnder(rootPath, finalFilePath))
+            {
+                throw new CustomException(ResultCode.PARAM_ERROR, "文件存储路径不合法");
+            }
             double fileSize = Math.Round(formFile.Length / 1024.0, 2);
 
             var targetDir = Path.GetDirectoryName(finalFilePath);
@@ -112,6 +120,7 @@ namespace ZR.ServiceCore.Services
 
             string fileExt = string.IsNullOrWhiteSpace(file.FileExt) ? Path.GetExtension(formFile.FileName) : file.FileExt;
             file.FileExt = fileExt;
+            ValidateFileExt(fileExt);
             file.FileName = BuildFileName(file.FileName, fileExt);
             file.StorePath = GetdirPath(file.StorePath);
 
@@ -142,6 +151,9 @@ namespace ZR.ServiceCore.Services
         {
             string timeDir = byTimeStore ? DateTime.Now.ToString("yyyy/MMdd") : string.Empty;
 
+            // storePath 可能来自客户端（上传 fileDir / sysfile.StorePath），先清洗掉 ../ 与盘符，
+            // 保证本地落盘目录和 OSS 对象 key 都只在预期目录下
+            storePath = FileUtil.SanitizeRelativePath(storePath);
             if (!string.IsNullOrEmpty(storePath))
             {
                 timeDir = string.IsNullOrEmpty(timeDir) ? storePath : Path.Combine(storePath, timeDir);
@@ -192,15 +204,70 @@ namespace ZR.ServiceCore.Services
 
         private string BuildFileName(string sourceName, string fileExt)
         {
-            var finalName = sourceName.IsEmpty() ? HashFileName() : sourceName;
+            // 自定义文件名同样来自客户端：清洗掉路径分隔符与非法字符，避免 ..\..\web.config 这类写法
+            var safeSourceName = FileUtil.SanitizeFileName(sourceName);
+            var safeFileExt = SanitizeFileExt(fileExt);
+            var finalName = safeSourceName.IsEmpty() ? HashFileName() : safeSourceName;
 
-            if (!string.IsNullOrWhiteSpace(fileExt) &&
-                finalName.EndsWith(fileExt, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(safeFileExt) &&
+                finalName.EndsWith(safeFileExt, StringComparison.OrdinalIgnoreCase))
             {
                 return finalName;
             }
 
-            return string.Concat(finalName, fileExt);
+            return string.Concat(finalName, safeFileExt);
+        }
+
+        /// <summary>
+        /// 规范化扩展名：只保留字母、数字与点并以点开头（如 .png），最长 11 位。
+        /// 扩展名同样来自客户端，不能让 ".png/../../x" 这类值参与拼路径。
+        /// </summary>
+        private static string SanitizeFileExt(string fileExt)
+        {
+            if (string.IsNullOrWhiteSpace(fileExt))
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            foreach (var ch in fileExt.Trim())
+            {
+                if (char.IsAsciiLetterOrDigit(ch) || ch == '.')
+                {
+                    builder.Append(ch);
+                }
+            }
+
+            var safe = builder.ToString().Trim('.');
+            if (safe.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            safe = "." + safe;
+            return safe.Length > 11 ? safe.Substring(0, 11) : safe;
+        }
+
+        /// <summary>
+        /// 扩展名黑名单校验：不区分大小写（原先 ".php" 拦不住 ".PHP"）。
+        /// 放在服务层，让本地 / OSS 两条链路以及所有调用方都受同一规则约束。
+        /// </summary>
+        private void ValidateFileExt(string fileExt)
+        {
+            var notAllowedExt = OptionsSetting?.Upload?.NotAllowedExt;
+            if (notAllowedExt == null || notAllowedExt.Length == 0 || string.IsNullOrWhiteSpace(fileExt))
+            {
+                return;
+            }
+
+            var ext = fileExt.Trim();
+            foreach (var item in notAllowedExt)
+            {
+                if (string.Equals(item?.Trim(), ext, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new CustomException(ResultCode.PARAM_ERROR, $"上传失败，未经允许上传类型：{ext}");
+                }
+            }
         }
 
         /// <summary>

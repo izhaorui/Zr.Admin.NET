@@ -120,7 +120,8 @@ namespace ZR.Admin.WebApi.Controllers
             string fileExt = Path.GetExtension(formFile.FileName);//文件后缀
             double fileSize = Math.Round(formFile.Length / 1024.0, 2);//文件大小KB
 
-            if (OptionsSetting.Upload.NotAllowedExt.Contains(fileExt))
+            // 黑名单必须不区分大小写：原先 ".PHP" / ".Js" 能绕过 [".php" / ".js"] 名单（服务层还有一次同类校验兜底）
+            if (OptionsSetting.Upload.NotAllowedExt?.Contains(fileExt, StringComparer.OrdinalIgnoreCase) == true)
             {
                 return ToResponse(ResultCode.CUSTOM_ERROR, "上传失败，未经允许上传类型");
             }
@@ -231,11 +232,40 @@ namespace ZR.Admin.WebApi.Controllers
                     tempPath = fileInfo.FileUrl;
                 }
             }
-            string fullPath = tempPath;
-            if (tempPath.StartsWith("/") && WebHostEnvironment.IsDevelopment())
+            if (string.IsNullOrWhiteSpace(tempPath))
             {
-                fullPath = Path.Combine(WebHostEnvironment.WebRootPath, tempPath.ReplaceFirst("/", ""));
+                return ToResponse(ResultCode.PARAM_ERROR, "缺少文件路径");
             }
+
+            // path / fileId 对应的路径可控，必须限制在站点 web 根目录（wwwroot）内：
+            // 否则任意登录用户（common 权限即可）用绝对路径或 ../ 就能读走 appsettings.json 里的
+            // JWT 密钥、数据库口令，再拿它伪造管理员 token。
+            var webRoot = WebHostEnvironment.WebRootPath;
+            if (string.IsNullOrWhiteSpace(webRoot))
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "文件不存在或路径不合法");
+            }
+            webRoot = Path.GetFullPath(webRoot);
+
+            var candidate = tempPath.Trim();
+            // 以 / 或 \ 开头的按站点相对路径处理（原实现只在开发环境拼接，其余环境会当绝对路径去读）
+            if (candidate.StartsWith('/') || candidate.StartsWith('\\'))
+            {
+                candidate = candidate.TrimStart('/', '\\');
+            }
+            var fullPath = Path.GetFullPath(Path.IsPathRooted(candidate)
+                ? candidate
+                : Path.Combine(webRoot, candidate));
+
+            // 注意：控制器内 File 是 ControllerBase.File(...) 方法；且本命名空间下有 Controllers.System，
+            // 所以判断文件存在必须用 global:: 写全，否则会被解析成 Controllers.System
+            if (!FileUtil.IsPathUnder(webRoot, fullPath) || !global::System.IO.File.Exists(fullPath))
+            {
+                // 越界与不存在共用同一提示，避免回显服务器真实路径结构
+                logger.Warn($"文件下载被拒绝：path={tempPath}，user={HttpContext.GetName()}，resolved={fullPath}");
+                return ToResponse(ResultCode.CUSTOM_ERROR, "文件不存在或路径不合法");
+            }
+
             string fileName = Path.GetFileName(fullPath);
             return DownFile(fullPath, fileName);
         }

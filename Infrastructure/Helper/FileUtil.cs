@@ -43,6 +43,102 @@ namespace Infrastructure
         }
 
         /// <summary>
+        /// 判断 targetPath 是否位于 rootPath 目录之内（含 rootPath 自身）。
+        /// 用于阻断 ../ 与绝对路径造成的越界读写（上传落盘、文件下载等入口都要过一遍）。
+        /// </summary>
+        public static bool IsPathUnder(string rootPath, string targetPath)
+        {
+            if (string.IsNullOrWhiteSpace(rootPath) || string.IsNullOrWhiteSpace(targetPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                var root = Path.GetFullPath(rootPath);
+                var target = Path.GetFullPath(targetPath);
+                var relative = Path.GetRelativePath(root, target);
+
+                return !Path.IsPathRooted(relative)
+                    && relative != ".."
+                    && !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                    && !relative.StartsWith(".." + Path.AltDirectorySeparatorChar, StringComparison.Ordinal);
+            }
+            catch (Exception)
+            {
+                // 含非法字符等无法解析的路径，一律按越界处理
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 清洗用户可控的相对目录（如上传接口的 fileDir）：统一成 / 分隔、去掉盘符与根、
+        /// 丢弃 . 与 .. 段、剔除非法字符，只返回相对路径。
+        /// 调用方解析成绝对路径后仍需用 <see cref="IsPathUnder"/> 兜底校验。
+        /// </summary>
+        public static string SanitizeRelativePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return string.Empty;
+            }
+
+            var segments = path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var safeSegments = new List<string>();
+            foreach (var segment in segments)
+            {
+                var safe = SanitizeFileName(segment);
+                if (!string.IsNullOrEmpty(safe))
+                {
+                    safeSegments.Add(safe);
+                }
+            }
+
+            return string.Join("/", safeSegments);
+        }
+
+        /// <summary>
+        /// 清洗用户可控的文件名/单个目录名：只取最后一段，去掉分隔符、非法字符以及首尾的点与空白。
+        /// 返回空串表示该名字不可用（调用方应回退成随机名）。
+        /// </summary>
+        public static string SanitizeFileName(string name, int maxLength = 100)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return string.Empty;
+            }
+
+            // Windows 下 \ 和 / 都是分隔符，Linux 下 \ 只是普通字符，这里两种都按分隔符切、只保留最后一段，
+            // 阻断 ..\..\appsettings、/etc/passwd 这类跨目录写法。
+            var segments = name.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var lastSegment = segments[segments.Length - 1];
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var builder = new StringBuilder(lastSegment.Length);
+            foreach (var ch in lastSegment)
+            {
+                if (char.IsControl(ch) || Array.IndexOf(invalidChars, ch) >= 0)
+                {
+                    continue;
+                }
+                builder.Append(ch);
+            }
+
+            // 首尾的点与空格在 Windows 上会被系统截断，也可能拼出 . / .. 这类特殊名
+            var safe = builder.ToString().Trim().Trim('.').Trim();
+            if (safe.Length > maxLength)
+            {
+                safe = safe.Substring(0, maxLength);
+            }
+
+            return safe;
+        }
+
+        /// <summary>
         /// 删除指定目录下的所有文件及文件夹(保留目录)
         /// </summary>
         /// <param name="file">文件目录</param>
