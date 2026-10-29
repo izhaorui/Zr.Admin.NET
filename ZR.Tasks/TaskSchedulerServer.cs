@@ -52,11 +52,12 @@ namespace ZR.Tasks
                 }
             }
 
-            // Quartz 3.x 推荐 json；binary 依赖的 BinaryFormatter 已从 .NET 9+ 运行时移除，
-            // net10 下启用持久化 JobStore 会直接抛 PlatformNotSupportedException。
+            // 必须写 newtonsoft（Quartz.Serialization.Json）：Quartz 3.18 内核同时内置了
+            // System.Text.Json 实现，配置成 "json" 会告警"该值将来会有歧义"。
+            // binary 依赖的 BinaryFormatter 已从 .NET 9+ 运行时移除，net10 下启用持久化 JobStore 会抛 PlatformNotSupportedException。
             if (string.IsNullOrWhiteSpace(collection["quartz.serializer.type"]))
             {
-                collection["quartz.serializer.type"] = "json";
+                collection["quartz.serializer.type"] = "newtonsoft";
             }
 
             return collection;
