@@ -110,7 +110,8 @@ namespace Infrastructure.Model
         public bool Workflow { get; set; }
 
         /// <summary>
-        /// 初始化专业版(AI)菜单与按钮权限。AI 功能本身由 AiOptions.Enable 控制，两者独立。
+        /// 初始化专业版菜单与按钮权限：AI 能力按钮/菜单 +「系统管理-应用接入」(SSO)。
+        /// AI 功能本身由 AiOptions.Enable 控制，两者独立。
         /// </summary>
         public bool Pro { get; set; }
     }

@@ -6,7 +6,9 @@ namespace ZR.ServiceCore.Services
     /// <summary>
     /// 系统菜单种子：为 data.xlsx 之外的系统级菜单/按钮权限补种（与具体业务模块无关）。
     /// 注意：EnsureAiPermSeedData 只补挂在 data.xlsx 系统页下的 F 按钮；
-    /// EnsureAiUsageMenuSeedData 维护「用量管理」(管理员) +「我的用量」(个人) +「AI 办公助手」(独立页) 三页。
+    /// EnsureAiUsageMenuSeedData 维护「用量管理」(管理员) +「我的用量」(个人) +「AI 办公助手」(独立页) 三页；
+    /// EnsureSsoAppMenuSeedData 维护「系统管理 - 应用接入」页及其按钮权限，
+    /// 该方法由 ProModuleInitProvider 调度：应用接入页随专业版交付，开源版无此页面，不能写入菜单。
     /// </summary>
     internal sealed class SystemMenuSeedService
     {
@@ -51,7 +53,7 @@ namespace ZR.ServiceCore.Services
                 new SeedButton("治理策略新增", "ai:governance:add", OrderNum: 12),
                 new SeedButton("治理策略修改", "ai:governance:edit", OrderNum: 13),
                 new SeedButton("治理策略删除", "ai:governance:remove", OrderNum: 14),
-                new SeedButton("Provider 检测", "ai:governance:health", OrderNum: 15),
+                new SeedButton("Provider检测", "ai:governance:health", OrderNum: 15),
                 new SeedButton("模型价格查询", "ai:price:list", OrderNum: 20),
                 new SeedButton("模型价格详情", "ai:price:query", OrderNum: 21),
                 new SeedButton("模型价格新增", "ai:price:add", OrderNum: 22),
@@ -81,6 +83,26 @@ namespace ZR.ServiceCore.Services
             OrderNum: 4,
             Buttons: [],
             Icon: "message");
+
+        /// <summary>
+        /// SSO 应用接入：挂在「系统管理」目录下的页面，用于登记允许跳转本系统登录的外部应用。
+        /// </summary>
+        private static readonly SeedPage SsoAppPage = new(
+            Name: "应用接入",
+            Path: "sso",
+            Component: "system/sso/index",
+            Perms: "system:sso:list",
+            OrderNum: 9,
+            Buttons:
+            [
+                new SeedButton("应用查询", "system:sso:query", OrderNum: 10),
+                new SeedButton("应用新增", "system:sso:add", OrderNum: 11),
+                new SeedButton("应用修改", "system:sso:edit", OrderNum: 12),
+                new SeedButton("应用删除", "system:sso:remove", OrderNum: 13),
+                new SeedButton("重置密钥", "system:sso:resetsecret", OrderNum: 14),
+            ],
+            Icon: "ele-Lock",
+            RouteName: "SsoApp");
 
         /// <summary>
         /// 确保系统模块 AI 能力按钮权限存在（幂等）。
@@ -208,6 +230,57 @@ namespace ZR.ServiceCore.Services
             }
 
             return $"[AI 用量菜单] 新增{inserted}条菜单";
+        }
+
+        /// <summary>
+        /// 确保「系统管理 - 应用接入」菜单及其按钮权限存在（幂等）。
+        /// 父目录固定为「系统管理」目录的 MenuId（初始化数据中为 1）。
+        /// </summary>
+        public string EnsureSsoAppMenuSeedData()
+        {
+            var db = DbScoped.SugarScope;
+            var now = DateTime.Now;
+
+            // 「系统管理」目录在初始化数据中固定为 MenuId = 1
+            const long parentId = 1;
+
+            // SqlSugar 无法解析表达式中的私有静态字段，先取出为局部变量
+            var ssoComponent = SsoAppPage.Component;
+
+            var inserted = 0;
+            var pageMenu = db.Queryable<SysMenu>()
+                .First(x => x.MenuType == "C" && x.Component == ssoComponent);
+            if (pageMenu == null)
+            {
+                pageMenu = new SysMenu
+                {
+                    MenuName = SsoAppPage.Name,
+                    ParentId = parentId,
+                    OrderNum = SsoAppPage.OrderNum,
+                    Path = SsoAppPage.Path,
+                    Component = SsoAppPage.Component,
+                    IsCache = "0",
+                    IsFrame = "0",
+                    MenuType = "C",
+                    Visible = SsoAppPage.Visible,
+                    Status = "0",
+                    Perms = SsoAppPage.Perms,
+                    Icon = SsoAppPage.Icon,
+                    RouteName = string.IsNullOrEmpty(SsoAppPage.RouteName) ? null : SsoAppPage.RouteName,
+                    Create_by = "system",
+                    Create_time = now
+                };
+                pageMenu.MenuId = db.Insertable(pageMenu).ExecuteReturnIdentity();
+                inserted++;
+            }
+
+            foreach (var btn in SsoAppPage.Buttons)
+            {
+                var (_, isNew) = EnsureButton(pageMenu.MenuId, btn, now);
+                if (isNew) inserted++;
+            }
+
+            return $"[SSO 应用接入菜单] 新增{inserted}条菜单";
         }
 
         /// <summary>

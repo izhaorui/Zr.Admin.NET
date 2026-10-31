@@ -81,6 +81,8 @@ namespace ZR.ServiceCore.SqlSugar
             // 第三方账号绑定。数据无 IMainDbEntity，SaaS 下由 BaseRepository 路由到租户库，
             // 因此这里（系统库/单库）与 TenantBusinessEntityTypes（租户库）都要注册。
             typeof(SysThirdAccount),
+            // SSO 应用接入（主库平台级配置）
+            typeof(SysSsoApp),
         };
 
         /// <summary>

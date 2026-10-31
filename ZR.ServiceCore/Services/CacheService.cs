@@ -525,5 +525,76 @@ namespace ZR.ServiceCore.Services
             return payload;
         }
         #endregion
+
+        #region SSO 授权码缓存
+        private static readonly string SsoCodePrefix = "CACHE-SSO-CODE_";
+        private static readonly string SsoTokenFailPrefix = "CACHE-SSO-TOKENFAIL_";
+
+        /// <summary>
+        /// 写入 SSO 一次性授权码。
+        ///
+        /// 刻意不加租户前缀：/sso/token 是匿名接口，请求到达时租户上下文尚未建立
+        /// （租户随授权码载荷携带），加了前缀会永远读不到。授权码为 32 位随机串
+        /// + 短 TTL + 一次性，无前缀不构成越权风险。
+        /// </summary>
+        public static void SetSsoCode(string code, object payload, int seconds)
+        {
+            if (string.IsNullOrEmpty(code) || seconds <= 0) return;
+
+            // ICache 的过期单位是分钟，按秒换算至少保留 1 分钟，避免小于 1 分钟时永不过期
+            CacheStore.For(CacheBackend.Session).Set(SsoCodePrefix + code, payload, Math.Max(1, (seconds + 59) / 60));
+        }
+
+        /// <summary>
+        /// 消费 SSO 授权码：先读再以 TrySet 抢占"已消费"标记（Redis SETNX / 内存锁），
+        /// 并发提交同一授权码只有一个请求能兑换成功，防重放。
+        /// 不存在的授权码不落任何缓存状态，避免匿名端点被灌垃圾键。
+        /// </summary>
+        public static T ConsumeSsoCode<T>(string code, int seconds) where T : class
+        {
+            if (string.IsNullOrEmpty(code)) return null;
+
+            var backend = CacheStore.For(CacheBackend.Session);
+            var key = SsoCodePrefix + code;
+
+            var payload = backend.Get<T>(key);
+            if (payload == null) return null;
+
+            int minutes = Math.Max(1, (seconds + 59) / 60);
+            if (!backend.TrySet(SsoCodePrefix + code + "_used", 1, minutes))
+            {
+                return null;
+            }
+
+            backend.Remove(key);
+            return payload;
+        }
+
+        /// <summary>
+        /// SSO 兑换失败计数 +1（按应用维度，首设 1 分钟过期），返回累加后的次数。
+        /// 用于限制匿名接口 /sso/token 的密钥爆破。
+        /// </summary>
+        public static long IncreaseSsoTokenFail(string appId)
+        {
+            return CacheStore.For(CacheBackend.Cache).Increment(SsoTokenFailPrefix + appId, 1);
+        }
+
+        /// <summary>
+        /// 读取 SSO 兑换失败计数（只读，不累加）。校验前先判断是否已超限，超限请求不必再查库。
+        /// 内存后端对不存在的键取值类型会抛异常，故先 Exists 再取值。
+        /// </summary>
+        public static long GetSsoTokenFail(string appId)
+        {
+            var backend = CacheStore.For(CacheBackend.Cache);
+            var key = SsoTokenFailPrefix + appId;
+            return backend.Exists(key) ? backend.Get<long>(key) : 0L;
+        }
+
+        /// <summary>清除 SSO 兑换失败计数（兑换成功后）。</summary>
+        public static void ClearSsoTokenFail(string appId)
+        {
+            CacheStore.For(CacheBackend.Cache).Remove(SsoTokenFailPrefix + appId);
+        }
+        #endregion
     }
 }
