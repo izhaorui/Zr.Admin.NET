@@ -53,7 +53,9 @@ namespace ZR.ServiceCore.Services
             // 否则 fileDir=../../ 或 fileName=..\..\web.config 就能把文件写到 wwwroot 之外，覆盖配置或 DLL。
             var fileDir = FileUtil.SanitizeRelativePath(dto.FileDir);
             string fileExt = Path.GetExtension(formFile.FileName);
+            ValidateFileSize(formFile);
             ValidateFileExt(fileExt);
+            await ValidateFileSignatureAsync(formFile, fileExt);
             string fileName = BuildFileName(dto.FileName, fileExt);
 
             string filePath = GetdirPath(fileDir);
@@ -120,7 +122,9 @@ namespace ZR.ServiceCore.Services
 
             string fileExt = string.IsNullOrWhiteSpace(file.FileExt) ? Path.GetExtension(formFile.FileName) : file.FileExt;
             file.FileExt = fileExt;
+            ValidateFileSize(formFile);
             ValidateFileExt(fileExt);
+            await ValidateFileSignatureAsync(formFile, fileExt);
             file.FileName = BuildFileName(file.FileName, fileExt);
             file.StorePath = GetdirPath(file.StorePath);
 
@@ -249,18 +253,47 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
-        /// 扩展名黑名单校验：不区分大小写（原先 ".php" 拦不住 ".PHP"）。
+        /// 单文件大小校验：Upload.MaxSize（MB）。0 或未配置表示不限制（仍受 requestLimitSize 请求体上限约束）。
+        /// 原先只有阿里云/S3 分支各查各的 MaxSize，本地存储完全没有单文件上限。
+        /// </summary>
+        private void ValidateFileSize(IFormFile formFile)
+        {
+            var maxMb = OptionsSetting?.Upload?.MaxSize ?? 0;
+            if (maxMb > 0 && formFile.Length > maxMb * 1024L * 1024L)
+            {
+                throw new CustomException(ResultCode.PARAM_ERROR, $"上传失败，文件不能超过 {maxMb} MB");
+            }
+        }
+
+        /// <summary>
+        /// 扩展名校验：先白名单（Upload.AllowedExt，空则不启用），再黑名单（Upload.NotAllowedExt）。
+        /// 均不区分大小写（原先 ".php" 拦不住 ".PHP"）。
         /// 放在服务层，让本地 / OSS 两条链路以及所有调用方都受同一规则约束。
         /// </summary>
         private void ValidateFileExt(string fileExt)
         {
-            var notAllowedExt = OptionsSetting?.Upload?.NotAllowedExt;
-            if (notAllowedExt == null || notAllowedExt.Length == 0 || string.IsNullOrWhiteSpace(fileExt))
+            var ext = fileExt?.Trim() ?? string.Empty;
+
+            // 白名单：配置了才生效，空数组保持历史行为（只走黑名单），避免挡住 .zip/.docx/.mp4 等业务类型
+            var allowedExt = OptionsSetting?.Upload?.AllowedExt;
+            if (allowedExt is { Length: > 0 }
+                && (ext.Length == 0 || !allowedExt.Contains(ext, StringComparer.OrdinalIgnoreCase)))
+            {
+                throw new CustomException(ResultCode.PARAM_ERROR, $"上传失败，不支持的文件类型：{ext}");
+            }
+
+            // 无扩展名且未启用白名单：沿用原行为（黑名单无从匹配），不额外阻断
+            if (ext.Length == 0)
             {
                 return;
             }
 
-            var ext = fileExt.Trim();
+            var notAllowedExt = OptionsSetting?.Upload?.NotAllowedExt;
+            if (notAllowedExt == null || notAllowedExt.Length == 0)
+            {
+                return;
+            }
+
             foreach (var item in notAllowedExt)
             {
                 if (string.Equals(item?.Trim(), ext, StringComparison.OrdinalIgnoreCase))
@@ -268,6 +301,94 @@ namespace ZR.ServiceCore.Services
                     throw new CustomException(ResultCode.PARAM_ERROR, $"上传失败，未经允许上传类型：{ext}");
                 }
             }
+        }
+
+        /// <summary>
+        /// 文件头（魔数）特征表：只收录文件头固定、业务常见且值得防伪的类型。
+        /// 表中没有的扩展名不做魔数校验，避免误伤 .dwg/.psd 等无统一头的格式。
+        /// </summary>
+        private static readonly Dictionary<string, byte[][]> SignatureMap = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [".png"] = [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]],
+            [".jpg"] = [[0xFF, 0xD8, 0xFF]],
+            [".jpeg"] = [[0xFF, 0xD8, 0xFF]],
+            [".gif"] = [Encoding.ASCII.GetBytes("GIF8")],
+            [".bmp"] = [Encoding.ASCII.GetBytes("BM")],
+            [".pdf"] = [Encoding.ASCII.GetBytes("%PDF")],
+            // Office 新格式（docx/xlsx/pptx）本质是 zip 容器
+            [".zip"] = [[0x50, 0x4B, 0x03, 0x04]],
+            [".docx"] = [[0x50, 0x4B, 0x03, 0x04]],
+            [".xlsx"] = [[0x50, 0x4B, 0x03, 0x04]],
+            [".pptx"] = [[0x50, 0x4B, 0x03, 0x04]],
+        };
+
+        /// <summary>
+        /// 校验文件内容与扩展名是否一致，拦截「HTML/脚本改名成 .png」这类只改扩展名的绕过。
+        /// 仅对 SignatureMap 中登记的类型生效，Upload.CheckFileSignature=false 可整体关闭。
+        /// IFormFile.OpenReadStream() 可重复打开，读头不影响后续落盘/上云；读取失败按内容为空拒绝。
+        /// </summary>
+        private async Task ValidateFileSignatureAsync(IFormFile formFile, string fileExt)
+        {
+            if (OptionsSetting?.Upload?.CheckFileSignature != true || string.IsNullOrWhiteSpace(fileExt))
+            {
+                return;
+            }
+
+            var ext = fileExt.Trim().ToLowerInvariant();
+
+            // webp 头是 RIFF + offset 8 处的 WEBP，结构与其他类型不同，单独判断
+            if (ext == ".webp")
+            {
+                var webpHead = await ReadHeadAsync(formFile, 12);
+                if (webpHead.Length < 12
+                    || !webpHead.AsSpan(0, 4).SequenceEqual(Encoding.ASCII.GetBytes("RIFF"))
+                    || !webpHead.AsSpan(8, 4).SequenceEqual(Encoding.ASCII.GetBytes("WEBP")))
+                {
+                    throw new CustomException(ResultCode.PARAM_ERROR, "上传失败，文件内容与扩展名不符");
+                }
+                return;
+            }
+
+            if (!SignatureMap.TryGetValue(ext, out var signatures))
+            {
+                return;
+            }
+
+            var head = await ReadHeadAsync(formFile, 12);
+            if (head.Length == 0)
+            {
+                throw new CustomException(ResultCode.PARAM_ERROR, "上传失败，文件内容为空");
+            }
+
+            foreach (var signature in signatures)
+            {
+                if (head.Length >= signature.Length && head.AsSpan(0, signature.Length).SequenceEqual(signature))
+                {
+                    return;
+                }
+            }
+
+            throw new CustomException(ResultCode.PARAM_ERROR, $"上传失败，文件内容与扩展名（{ext}）不符");
+        }
+
+        /// <summary>
+        /// 读取文件头若干字节；文件短于 length 时返回实际读到的内容。
+        /// </summary>
+        private static async Task<byte[]> ReadHeadAsync(IFormFile formFile, int length)
+        {
+            var buffer = new byte[length];
+            var read = 0;
+            await using var stream = formFile.OpenReadStream();
+            while (read < length)
+            {
+                var n = await stream.ReadAsync(buffer.AsMemory(read, length - read));
+                if (n == 0)
+                {
+                    break;
+                }
+                read += n;
+            }
+            return read == length ? buffer : buffer[..read];
         }
 
         /// <summary>

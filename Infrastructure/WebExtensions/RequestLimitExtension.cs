@@ -19,7 +19,9 @@ namespace ZR.Infrastructure.WebExtensions
             services.Configure<FormOptions>(x =>
             {
                 x.MultipartBodyLengthLimit = sizeM * 1024 * 1024;
-                x.MemoryBufferThreshold = sizeM * 1024 * 1024;
+                // 内存缓冲阈值固定 64KB，超过部分落临时文件：
+                // 原先等于 requestLimitSize（默认 50MB），单个上传请求就能吃掉 50MB 内存，并发上传会打爆内存。
+                x.MemoryBufferThreshold = 64 * 1024;
                 x.ValueLengthLimit = int.MaxValue;
             });
             services.Configure<KestrelServerOptions>(options =>

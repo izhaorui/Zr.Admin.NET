@@ -210,6 +210,19 @@ namespace Infrastructure.Model
         public string UploadUrl { get; set; }
         public string LocalSavePath { get; set; }
         public int MaxSize { get; set; }
+
+        /// <summary>
+        /// 允许上传的扩展名白名单（含点，如 .png），不区分大小写。
+        /// 空数组表示不启用白名单，仅使用 NotAllowedExt 黑名单（保持历史行为）。
+        /// </summary>
+        public string[] AllowedExt { get; set; } = [];
+
+        /// <summary>
+        /// 是否校验文件头（魔数）与扩展名是否一致，默认开启。
+        /// 用于拦截「HTML/脚本改名成 .png」这类只改扩展名的绕过方式。
+        /// </summary>
+        public bool CheckFileSignature { get; set; } = true;
+
         public string[] NotAllowedExt { get; set; } = [];
 
         /// <summary>
