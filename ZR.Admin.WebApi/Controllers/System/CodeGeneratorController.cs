@@ -62,6 +62,43 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// AI 推断表级配置建议（模板类型/模块名/业务名/权限前缀/操作日志/按钮）。
+        /// 只返回建议不写库，采纳与否由用户在配置页勾选后走 ai/apply/{tableId}。
+        /// </summary>
+        [HttpPost("ai/suggestTable/{tableId}")]
+        [ActionPermissionFilter(Permission = "tool:gen:ai")]
+        public async Task<IActionResult> AiSuggestTable([FromRoute] long tableId)
+        {
+            try
+            {
+                return SUCCESS(await SysAiService.SuggestGenTableAsync(tableId));
+            }
+            catch (Exception ex)
+            {
+                return ToResponse(ResultCode.FAIL, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 采纳 AI 建议写回代码生成配置（表级字段 + 列配置）。
+        /// 服务端重新校验全部取值，表与列在同一事务内提交。
+        /// </summary>
+        [HttpPost("ai/apply/{tableId}")]
+        [ActionPermissionFilter(Permission = "tool:gen:edit")]
+        [Log(Title = "代码生成", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false)]
+        public IActionResult AiApply([FromRoute] long tableId, [FromBody] SysAiGenApplyInput dto)
+        {
+            try
+            {
+                return SUCCESS(SysAiService.ApplyGenSuggestion(tableId, dto, HttpContext.GetName()));
+            }
+            catch (Exception ex)
+            {
+                return ToResponse(ResultCode.FAIL, ex.Message);
+            }
+        }
+
+        /// <summary>
         /// 获取所有数据库的信息
         /// </summary>
         /// <returns></returns>
@@ -363,6 +400,30 @@ namespace ZR.Admin.WebApi.Controllers
             CodeGeneratorTool.Generate(dto);
 
             return SUCCESS(dto.GenCodes);
+        }
+
+        /// <summary>
+        /// 导出 AI 契约：把当前表配置整理成结构化描述（字段语义、权限码、接口契约、目标文件等），
+        /// 供 AI / 编码助手作为上下文使用。只读配置，不渲染模板、不写库、不影响原有生成流程。
+        /// </summary>
+        /// <param name="tableId">genTable表id</param>
+        /// <returns>spec：结构化契约；markdown：可直接复制给 AI 的文本</returns>
+        [HttpGet("spec/{tableId}")]
+        [ActionPermissionFilter(Permission = "tool:gen:query")]
+        public IActionResult GetSpec([FromRoute] long tableId)
+        {
+            if (tableId <= 0)
+            {
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "请求参数为空");
+            }
+            var genTable = EnsureAndGetGenTable(tableId);
+            if (genTable == null)
+            {
+                throw new CustomException("代码生成配置不存在");
+            }
+
+            var spec = CodeGenSpecBuilder.Build(genTable, OptionsSetting.CodeGenDbConfig.DbType);
+            return SUCCESS(new { spec, markdown = CodeGenSpecBuilder.ToMarkdown(spec) });
         }
 
         /// <summary>

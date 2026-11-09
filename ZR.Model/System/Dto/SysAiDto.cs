@@ -261,4 +261,106 @@ namespace ZR.Model.System.Dto
         /// <summary>AI 返回非结构化 JSON 时承载原文</summary>
         public string Raw { get; set; }
     }
+
+    /// <summary>
+    /// 代码生成表级配置建议项。值统一用字符串承载，便于前端统一渲染与差异对比。
+    /// </summary>
+    public class SysAiGenFieldSuggestion
+    {
+        /// <summary>字段标识，与采纳接口入参一致，如 tplCategory / checkedBtn</summary>
+        public string Field { get; set; }
+
+        /// <summary>中文名，用于界面展示</summary>
+        public string Label { get; set; }
+
+        /// <summary>库中当前值，布尔用 true/false、按钮用 1,2,3</summary>
+        public string CurrentValue { get; set; }
+
+        /// <summary>建议值</summary>
+        public string SuggestValue { get; set; }
+
+        /// <summary>推断依据，供人工复核</summary>
+        public string Reason { get; set; }
+
+        /// <summary>true 时前端默认不勾选（与当前值相同或置信度低）</summary>
+        public bool SkipByDefault { get; set; }
+    }
+
+    /// <summary>
+    /// 代码生成整表配置建议结果（纯建议，不落库）
+    /// </summary>
+    public class SysAiGenTableResult
+    {
+        public string TableName { get; set; }
+
+        public List<SysAiGenFieldSuggestion> Fields { get; set; } = new();
+
+        /// <summary>AI 返回非结构化 JSON 时承载原文</summary>
+        public string Raw { get; set; }
+    }
+
+    /// <summary>
+    /// 代码生成单列采纳项。为 null 的字段表示不采纳，未提交的列保持原配置。
+    /// </summary>
+    public class SysAiGenColumnApply
+    {
+        /// <summary>数据库列名（对应 gen_table_column.column_name）</summary>
+        public string ColumnName { get; set; }
+
+        /// <summary>中文标签</summary>
+        public string Comment { get; set; }
+
+        /// <summary>控件类型，须在服务端白名单内</summary>
+        public string HtmlType { get; set; }
+
+        public bool? IsRequired { get; set; }
+
+        public bool? IsList { get; set; }
+
+        public bool? IsQuery { get; set; }
+
+        public bool? IsEdit { get; set; }
+    }
+
+    /// <summary>
+    /// 采纳 AI 建议入参。字段/属性为 null 表示不采纳，前端只提交用户勾选项。
+    /// </summary>
+    public class SysAiGenApplyInput
+    {
+        public string TableComment { get; set; }
+
+        public string FunctionName { get; set; }
+
+        /// <summary>业务域模块名，如 system / shop，不能与 BusinessName 相同</summary>
+        public string ModuleName { get; set; }
+
+        /// <summary>业务名，如 Order</summary>
+        public string BusinessName { get; set; }
+
+        /// <summary>模板类型：crud/tree/sub/subNav/subNavMore</summary>
+        public string TplCategory { get; set; }
+
+        /// <summary>权限前缀，小写字母开头，如 order</summary>
+        public string PermissionPrefix { get; set; }
+
+        /// <summary>是否启用在服务层记录数据变更日志</summary>
+        public bool? EnableLog { get; set; }
+
+        /// <summary>按钮集合：1新增 2修改 3删除 4导出 5查看 6清空 7批量删除 8导入</summary>
+        public int[] CheckedBtn { get; set; }
+
+        public List<SysAiGenColumnApply> Columns { get; set; }
+    }
+
+    /// <summary>
+    /// 采纳 AI 建议的结果
+    /// </summary>
+    public class SysAiGenApplyResult
+    {
+        /// <summary>实际更新的表级字段数</summary>
+        public int UpdatedFields { get; set; }
+
+        /// <summary>实际更新的列数</summary>
+        public int UpdatedColumns { get; set; }
+    }
 }

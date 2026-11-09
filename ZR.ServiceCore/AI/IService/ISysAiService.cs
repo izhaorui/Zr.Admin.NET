@@ -40,6 +40,21 @@ namespace ZR.ServiceCore.AI.IService
         Task<SysAiGenColumnResult> SuggestGenColumnsAsync(long tableId);
 
         /// <summary>
+        /// 按代码生成表 id 推断表级配置（模板类型/模块名/业务名/权限前缀/按钮等）。
+        /// 只返回建议不落库，采纳与否由用户勾选后走 ApplyGenSuggestion。
+        /// </summary>
+        Task<SysAiGenTableResult> SuggestGenTableAsync(long tableId);
+
+        /// <summary>
+        /// 采纳 AI 建议写回 gen_table / gen_table_column。
+        /// 服务端重新校验全部取值（不信任前端提交内容），整体走事务，任一失败全部回滚。
+        /// </summary>
+        /// <param name="tableId">代码生成表 id</param>
+        /// <param name="input">用户勾选采纳的字段与列</param>
+        /// <param name="userName">操作人，写入 Update_by</param>
+        SysAiGenApplyResult ApplyGenSuggestion(long tableId, SysAiGenApplyInput input, string userName);
+
+        /// <summary>
         /// 解读登录日志聚合指标生成安全分析报告（Markdown，不落库）
         /// </summary>
         Task<SysAiLogReportResult> AnalyzeLoginSecurityAsync(LoginSecurityMetricsDto metrics);

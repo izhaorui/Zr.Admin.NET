@@ -88,7 +88,10 @@ namespace ZR.CodeGenerator
             dto.ReplaceDto = replaceDto;
         }
 
-        private static CodeGenerateOption GenerateOption(GenTable genTable)
+        /// <summary>
+        /// 推导各层命名空间（代码生成与 AI 契约导出共用）
+        /// </summary>
+        public static CodeGenerateOption GenerateOption(GenTable genTable)
         {
             CodeGenerateOption _option = new()
             {
@@ -110,7 +113,7 @@ namespace ZR.CodeGenerator
         /// </summary>
         /// <param name="genTable">生成表</param>
         /// <returns></returns>
-        private static ReplaceDto BuildReplaceDto(GenTable genTable)
+        public static ReplaceDto BuildReplaceDto(GenTable genTable)
         {
             var options = genTable.Options ?? new CodeOptions();
             ReplaceDto replaceDto = new()
