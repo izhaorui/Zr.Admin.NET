@@ -33,7 +33,7 @@ namespace ZR.Workflow.Service
         private readonly ISysUserMsgService _msgService;
         private readonly IWfWebhookService _webhookService;
         private readonly IWfAiService _aiService;
-        private readonly ISmsSender _smsSender;
+        private readonly WfSmsNotifier _smsNotifier;
         private readonly ZR.ServiceCore.Email.IEmailSendService _emailSendService;
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace ZR.Workflow.Service
             _msgService = msgService;
             _webhookService = webhookService;
             _aiService = aiService;
-            _smsSender = smsSender;
+            _smsNotifier = new WfSmsNotifier(smsSender);
             _emailSendService = emailSendService;
 
             _approverResolvers = new Dictionary<WfApproverType, IApproverResolver>
@@ -237,7 +237,8 @@ namespace ZR.Workflow.Service
                     else
                         logger.Info($"驳回退化：InstanceId={instance.InstanceId} 无回退目标节点 → 直接驳回发起人（策略={usedStrategy}）");
                     instance.Status = (int)WfInstanceStatus.Rejected;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
+                    // 终态须清空活动节点指针（含并行活动集），避免已驳回实例仍显示"当前节点"
+                    ClearActiveNodesAndSave(instance);
                     Context.Updateable<WfFlowTask>()
                         .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
                         .Where(t => t.InstanceId == instance.InstanceId && t.Status == (int)WfTaskStatus.Pending)
@@ -331,7 +332,11 @@ namespace ZR.Workflow.Service
 
         /// <summary>
         /// 将流程回退到指定节点重新审批（可配置驳回策略：驳回到上一步 / 指定节点）。
-        /// 清掉目标节点及其之后所有任务，重置活动集为目标节点，重新触发该节点的进入/任务生成。
+        /// 重置活动集为仅目标节点并重新触发该节点的进入/任务生成：
+        /// ① 目标节点及之后的旧任务（含已办）置 Skipped，避免上一轮 Done 干扰重走时的节点完成判定；
+        /// ② 其它节点（并行兄弟分支的 NodeOrder 可能小于目标节点）的在途 Pending/Waiting 一并作废，
+        ///    防止留下"活动集里没有、却仍可被审批"的孤儿待办；
+        /// ③ 只激活目标节点本身（singleNodeOnly），组内其它分支按已作废=完成处理。
         /// 历史审批轨迹由 WfFlowRecord 保留，任务仅作为"当前待办"快照被清理。
         /// </summary>
         private void RollbackToNode(WfFlowInstance instance, WfFlowNode targetNode, WorkflowTopology topo)
@@ -341,20 +346,43 @@ namespace ZR.Workflow.Service
                 .Select(n => n.NodeId)
                 .ToList();
             logger.Info($"回退重置：InstanceId={instance.InstanceId} 清理节点集 Order>={targetNode.NodeOrder}（{cleanupIds.Count} 个）并重新进入 {targetNode.NodeName}({targetNode.NodeId})");
+
+            // ① 目标节点及之后：整段任务快照置 Skipped（含已办）——重走这些节点时，上一轮 Done 不能参与
+            //    IsNodeComplete 的或签/会签判定，否则新待办尚未审批就会被判成"节点已完成"。
             Context.Updateable<WfFlowTask>()
                 .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
                 .Where(t => t.InstanceId == instance.InstanceId && cleanupIds.Contains(t.NodeId))
                 .ExecuteCommand();
 
-            instance.CurrentNodeId = targetNode.NodeId;
-            instance.CurrentNodeIds = JsonConvert.SerializeObject(new[] { targetNode.NodeId });
+            // ② 其它节点（并行兄弟分支的 NodeOrder 可能小于目标节点）的在途待办一并作废：
+            //    回退后活动集只剩目标节点，若这些 Pending/Waiting 保留，会变成"活动集里没有、却仍可被审批"的孤儿待办；
+            //    审批命中后 AdvanceToNext 因节点不在活动集被并发去重短路，流程会卡在汇聚/后续节点。
+            var now = DateTime.Now;
+            var orphanRows = Context.Updateable<WfFlowTask>()
+                .SetColumns(t => new WfFlowTask
+                {
+                    Status = (int)WfTaskStatus.Skipped,
+                    Opinion = "流程回退，原待办作废",
+                    HandleTime = now
+                })
+                .Where(t => t.InstanceId == instance.InstanceId
+                    && (t.Status == (int)WfTaskStatus.Pending || t.Status == (int)WfTaskStatus.Waiting))
+                .ExecuteCommand();
+            if (orphanRows > 0)
+                logger.Info($"回退作废在途待办：InstanceId={instance.InstanceId} 数量={orphanRows}");
+
+            // 活动集先清空再交给 ArriveNode 重新进入目标节点：
+            // 若直接预置 [target]，ArriveNode 的 groupActive 判定会误认为"并行分组已 fork"而直接 return（目标节点不生成待办）。
+            // singleNodeOnly=true 与 AdminJump 语义一致：只激活目标节点本身，组内其它分支已在上一步作废（视为完成）。
+            SetActiveNodeIds(instance, new List<long>());
             instance.Status = (int)WfInstanceStatus.Approval;
             Context.Updateable(instance)
                 .UpdateColumns(i => new { i.CurrentNodeId, i.CurrentNodeIds, i.Status })
                 .ExecuteCommand();
 
             var formValues = ParseFormValues(instance);
-            ArriveNode(instance, targetNode, topo, formValues);
+            ArriveNode(instance, targetNode, topo, formValues, singleNodeOnly: true);
+            SyncActiveNodeId(instance);
         }
 
         /// <summary>
@@ -447,7 +475,8 @@ namespace ZR.Workflow.Service
 
                 instance.Status = (int)WfInstanceStatus.Withdrawn;
                 logger.Info($"撤回完成：InstanceId={instanceId} → 状态=Withdrawn（已撤回）");
-                Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
+                // 终态须清空活动节点指针，避免已撤回实例仍显示"当前节点"
+                ClearActiveNodesAndSave(instance);
             }, "撤回失败");
         }
 
@@ -784,7 +813,8 @@ namespace ZR.Workflow.Service
                 if (targetNode == null)
                 {
                     instance.Status = (int)WfInstanceStatus.Rejected;
-                    Context.Updateable(instance).UpdateColumns(i => new { i.Status }).ExecuteCommand();
+                    // 终态须清空活动节点指针（含并行活动集），避免已驳回实例仍显示"当前节点"
+                    ClearActiveNodesAndSave(instance);
                     Context.Updateable<WfFlowTask>()
                         .SetColumns(t => new WfFlowTask { Status = (int)WfTaskStatus.Skipped })
                         .Where(t => t.InstanceId == instance.InstanceId && t.Status == (int)WfTaskStatus.Pending)
@@ -1160,6 +1190,19 @@ namespace ZR.Workflow.Service
         private void SyncActiveNodeId(WfFlowInstance instance)
         {
             Context.Updateable(instance).UpdateColumns(i => new { i.CurrentNodeIds, i.CurrentNodeId }).ExecuteCommand();
+        }
+
+        /// <summary>
+        /// 终态收敛：清空活动节点集（含单值指针）并随状态一并落库。
+        /// 驳回发起人 / 撤回等终态流程已无在途节点，若残留 CurrentNodeId(s)，
+        /// 详情页/列表会显示不存在的"当前节点"，与待办已全部作废的事实不一致。
+        /// </summary>
+        private void ClearActiveNodesAndSave(WfFlowInstance instance)
+        {
+            SetActiveNodeIds(instance, new List<long>());
+            Context.Updateable(instance)
+                .UpdateColumns(i => new { i.Status, i.CurrentNodeId, i.CurrentNodeIds })
+                .ExecuteCommand();
         }
 
         /// <summary>

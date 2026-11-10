@@ -305,8 +305,8 @@ namespace Infrastructure.Model
         /// </summary>
         public string Audience { get; set; }
         /// <summary>
-        /// 签名密钥（HS256 要求密钥不少于 32 字节/256 位，不足时签发会抛 IdentityModel 的 IDX10720）。
-        /// JwtUtil 用 Encoding.ASCII 取字节，字符数即字节数，故实际要求为不少于 32 个字符，且建议只用 ASCII 字符。
+        /// 签名密钥（HS256 要求密钥不少于 32 字节/256 位，不足时 JwtUtil 拒绝签发/校验，见其 MinSecretKeyLength）。
+        /// JwtUtil 用 Encoding.UTF8 取字节，纯 ASCII 时字符数即字节数，故实际要求为不少于 32 个字符。
         /// </summary>
         public string SecretKey { get; set; }
         /// <summary>

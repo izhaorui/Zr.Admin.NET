@@ -802,17 +802,21 @@ namespace ZR.ServiceCore.Services
             };
 
             var db = ResolveTenantDb();
+            // SqlSugar 解析表达式时不能读取私有静态字段（会抛 Field "xxx" can't be private），
+            // 故先落到局部变量：编译器会生成闭包，其字段是 public，表达式才能正常翻译成 SQL 参数。
+            var successStatus = LoginAuditSuccess;
+            var failedStatus = LoginAuditFailed;
 
             // 成功/失败总量（sys_logininfor.status：0成功 1失败）
             foreach (var row in BuildRangeQuery(db, begin, end).GroupBy(it => it.Status)
                 .Select(it => new { Status = it.Status, Num = SqlFunc.AggregateCount(it.InfoId) })
                 .ToList())
             {
-                if (row.Status == LoginAuditSuccess)
+                if (row.Status == successStatus)
                 {
                     metrics.SuccessCount = row.Num;
                 }
-                else if (row.Status == LoginAuditFailed)
+                else if (row.Status == failedStatus)
                 {
                     metrics.FailCount = row.Num;
                 }
@@ -824,8 +828,8 @@ namespace ZR.ServiceCore.Services
                 .Select(it => new
                 {
                     Date = it.LoginTime.ToString("yyyy-MM-dd"),
-                    Success = SqlFunc.AggregateSum(SqlFunc.IIF(it.Status == LoginAuditSuccess, 1, 0)),
-                    Fail = SqlFunc.AggregateSum(SqlFunc.IIF(it.Status == LoginAuditFailed, 1, 0))
+                    Success = SqlFunc.AggregateSum(SqlFunc.IIF(it.Status == successStatus, 1, 0)),
+                    Fail = SqlFunc.AggregateSum(SqlFunc.IIF(it.Status == failedStatus, 1, 0))
                 })
                 .ToList()
                 .OrderBy(x => x.Date)
@@ -834,10 +838,10 @@ namespace ZR.ServiceCore.Services
 
             // 凌晨 0-6 点活跃（异常时段信号）
             metrics.NightCount = BuildRangeQuery(db, begin, end).Where(it => it.LoginTime.Hour < 6).Count();
-            metrics.NightFailCount = BuildRangeQuery(db, begin, end).Where(it => it.LoginTime.Hour < 6 && it.Status == LoginAuditFailed).Count();
+            metrics.NightFailCount = BuildRangeQuery(db, begin, end).Where(it => it.LoginTime.Hour < 6 && it.Status == failedStatus).Count();
 
             // 失败账号 Top：按账号+地点分组后在内存归并，才能拿到地点去重数（异地/共享账号信号）
-            var failRows = BuildRangeQuery(db, begin, end).Where(it => it.Status == LoginAuditFailed)
+            var failRows = BuildRangeQuery(db, begin, end).Where(it => it.Status == failedStatus)
                 .GroupBy(it => new { it.UserName, it.LoginLocation })
                 .Select(it => new
                 {
@@ -862,7 +866,7 @@ namespace ZR.ServiceCore.Services
                 .ToList();
 
             // 失败 IP Top
-            metrics.FailedIps = BuildRangeQuery(db, begin, end).Where(it => it.Status == LoginAuditFailed)
+            metrics.FailedIps = BuildRangeQuery(db, begin, end).Where(it => it.Status == failedStatus)
                 .GroupBy(it => new { it.Ipaddr, it.LoginLocation })
                 .Select(it => new
                 {
@@ -936,10 +940,12 @@ namespace ZR.ServiceCore.Services
         {
             const int rapidSwitchHours = 2;
             var maxAccounts = Math.Clamp(limit ?? 15, 1, 50);
+            // 同 GetLoginSecurityMetrics：私有静态字段不能出现在 SqlSugar 表达式里，先落局部变量（闭包字段 public）
+            var successStatus = LoginAuditSuccess;
 
             // 区间内成功登录（sys_logininfor.status：0成功），按 账号+地点 聚合
             var rows = db.Queryable<SysLogininfor>().ApplyScope()
-                .Where(it => it.Status == LoginAuditSuccess && it.LoginTime >= begin && it.LoginTime <= end
+                .Where(it => it.Status == successStatus && it.LoginTime >= begin && it.LoginTime <= end
                     && it.UserName != null && it.UserName != "" && it.LoginLocation != null && it.LoginLocation != "")
                 .GroupBy(it => new { it.UserName, it.LoginLocation })
                 .Select(it => new
@@ -953,7 +959,7 @@ namespace ZR.ServiceCore.Services
 
             // 近 30 天成功历史地点集合（账号"新地点"判定基准，不含本次区间）
             var histRows = db.Queryable<SysLogininfor>().ApplyScope()
-                .Where(it => it.Status == LoginAuditSuccess && it.LoginTime >= begin.AddDays(-30) && it.LoginTime < begin
+                .Where(it => it.Status == successStatus && it.LoginTime >= begin.AddDays(-30) && it.LoginTime < begin
                     && it.UserName != null && it.UserName != "")
                 .GroupBy(it => new { it.UserName, it.LoginLocation })
                 .Select(it => new { it.UserName, it.LoginLocation })
@@ -1010,7 +1016,7 @@ namespace ZR.ServiceCore.Services
                 .ToList();
             var names = top.Select(x => x.UserName).ToList();
             var details = db.Queryable<SysLogininfor>().ApplyScope()
-                .Where(it => it.Status == LoginAuditSuccess && it.LoginTime >= begin && it.LoginTime <= end
+                .Where(it => it.Status == successStatus && it.LoginTime >= begin && it.LoginTime <= end
                     && names.Contains(it.UserName) && it.LoginLocation != null && it.LoginLocation != "")
                 .OrderBy(it => it.UserName).OrderBy(it => it.LoginTime)
                 .Select(it => new { it.UserName, it.LoginTime, it.LoginLocation })

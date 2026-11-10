@@ -497,7 +497,7 @@ namespace ZR.Workflow.Service
             if (notify.EmailEnabled && !string.IsNullOrWhiteSpace(contact.Email))
                 SendNotifyMail(notify, contact.Email, content);
             if (notify.SmsEnabled && !string.IsNullOrWhiteSpace(contact.Phonenumber))
-                Task.Run(() => SendNotifySms(userId, contact.Phonenumber, content));
+                _smsNotifier.Enqueue(userId, contact.Phonenumber, App.OptionsSetting?.SmsOptions?.Templates?.GetValueOrDefault("workflow"), content);
         }
 
         private void SendNotifyMail(WorkflowNotifyOptions notify, string toEmail, string content)
@@ -524,35 +524,6 @@ namespace ZR.Workflow.Service
             catch (Exception ex)
             {
                 logger.Warn(ex, $"工作流邮件通知异常 Content={content}");
-            }
-        }
-
-        private void SendNotifySms(long userId, string phone, string content)
-        {
-            try
-            {
-                var smsOptions = App.OptionsSetting?.SmsOptions;
-                string templateCode = null;
-                smsOptions?.Templates?.TryGetValue("workflow", out templateCode);
-                if (string.IsNullOrWhiteSpace(templateCode))
-                {
-                    logger.Warn($"工作流短信通知跳过：未配置 SmsOptions:Templates:workflow 模板编号");
-                    return;
-                }
-
-                var result = _smsSender.Send(new SmsMessage
-                {
-                    PhoneNum = phone,
-                    TemplateCode = templateCode,
-                    TemplateParams = new Dictionary<string, string> { { "content", content } },
-                    SendType = 6
-                });
-                if (result.Success) logger.Info($"工作流短信通知已发送 userId={userId} Simulated={result.Simulated}");
-                else logger.Warn($"工作流短信通知发送失败 userId={userId} ErrorCode={result.ErrorCode} ErrorMsg={result.ErrorMsg}");
-            }
-            catch (Exception ex)
-            {
-                logger.Warn(ex, $"工作流短信通知异常 userId={userId}");
             }
         }
 

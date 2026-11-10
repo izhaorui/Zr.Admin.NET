@@ -45,7 +45,8 @@ namespace Infrastructure
             var authTime = DateTime.UtcNow;
             var expiresAt = authTime.AddMinutes(jwtSettings.Expire);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+            var key = GetSigningKeyBytes(jwtSettings.SecretKey) ?? throw new InvalidOperationException(
+                $"JwtSettings:SecretKey 未配置，无法签发令牌。请用环境变量 JwtSettings__SecretKey 注入不少于 {MinSecretKeyLength} 字符的随机密钥。");
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -62,6 +63,27 @@ namespace Infrastructure
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+
+        /// <summary>
+        /// 令牌签名密钥最小长度（字符）。短于此的 SecretKey 视为弱密钥（可被离线爆破伪造令牌），拒绝用于签发/校验。
+        /// 注入方式见《配置文件》：环境变量 JwtSettings__SecretKey，两宿主必须不同。
+        /// </summary>
+        private const int MinSecretKeyLength = 32;
+
+        /// <summary>
+        /// 读取签名密钥字节：未配置（空）返回 null；弱密钥（非空但短于 <see cref="MinSecretKeyLength"/>）抛异常拒绝（fail-closed）。
+        /// 用 UTF8 取字节（与 MemberJwt 一致）：ASCII 会把非 ASCII 字符截成 '?'，实际反而弱化密钥。
+        /// </summary>
+        private static byte[]? GetSigningKeyBytes(string secretKey)
+        {
+            if (secretKey.IsEmpty()) return null;
+            if (secretKey.Length < MinSecretKeyLength)
+            {
+                throw new InvalidOperationException(
+                    $"JwtSettings:SecretKey 长度不足 {MinSecretKeyLength} 字符（弱密钥可被离线爆破伪造令牌），已拒绝签发/校验令牌。请用环境变量 JwtSettings__SecretKey 注入不少于 {MinSecretKeyLength} 字符的随机密钥。");
+            }
+            return Encoding.UTF8.GetBytes(secretKey);
+        }
         /// <summary>
         /// 尝试获取后台令牌校验参数；JwtSettings 未配置（SecretKey 为空）时返回 null，不抛异常。
         /// 用于"不校验后台令牌"的宿主（如公网宿主 ZR.Front.WebApi）的优雅降级路径：
@@ -76,7 +98,9 @@ namespace Infrastructure
             {
                 return null;
             }
-            var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+            // 弱密钥（短于 MinSecretKeyLength）会抛 InvalidOperationException：
+            // 校验侧绝不能用弱密钥放行 token（可被离线爆破伪造），由 ParseToken 捕获后按"无有效令牌"降级。
+            var key = GetSigningKeyBytes(jwtSettings.SecretKey);
 
             var tokenDescriptor = new TokenValidationParameters
             {
@@ -100,7 +124,7 @@ namespace Infrastructure
         /// </summary>
         public static TokenValidationParameters ValidParameters()
         {
-            return TryGetValidParameters() ?? throw new Exception("JwtSettings获取失败");
+            return TryGetValidParameters() ?? throw new Exception($"JwtSettings获取失败：SecretKey 未配置或无效（须不少于 {MinSecretKeyLength} 字符），请用环境变量 JwtSettings__SecretKey 注入");
         }
 
         /// <summary>
@@ -113,7 +137,17 @@ namespace Infrastructure
             var tokenHandler = new JwtSecurityTokenHandler();
             // 优雅降级：未配置后台 JwtSettings（如公网宿主）时拿不到校验参数，
             // 视为"没有有效的后台令牌"直接返回 null，避免 JwtSettings获取失败 冒泡成 500。
-            var validateParameter = TryGetValidParameters();
+            // 弱密钥等配置错误同样按"无有效令牌"处理（不冒泡 500）——签发侧 GenerateJwtToken 会抛出明确错误提示修复配置。
+            TokenValidationParameters? validateParameter;
+            try
+            {
+                validateParameter = TryGetValidParameters();
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.Message);
+                return null;
+            }
             if (validateParameter == null) return null;
 
             token = token.Replace("Bearer ", "");

@@ -73,8 +73,9 @@ namespace ZR.Workflow.Service
         {
             var now = DateTime.Now;
             var due = Context.Queryable<WfWebhookDelivery>()
-                .Where(it => (it.Status == (int)WfWebhookDeliveryStatus.Pending)
-                    && (it.NextRetryTime == null || it.NextRetryTime <= now))
+                .Where(it => ((it.Status == (int)WfWebhookDeliveryStatus.Pending)
+                        && (it.NextRetryTime == null || it.NextRetryTime <= now))
+                    || ((it.Status == (int)WfWebhookDeliveryStatus.Processing) && it.LockUntil < now))
                 .OrderBy(it => it.Create_time)
                 .Take(200)
                 .ToList();
@@ -91,7 +92,8 @@ namespace ZR.Workflow.Service
                         LockUntil = DateTime.Now.AddSeconds(60)
                     })
                     .Where(it => it.DeliveryId == id
-                        && it.Status == (int)WfWebhookDeliveryStatus.Pending
+                        && (it.Status == (int)WfWebhookDeliveryStatus.Pending
+                            || it.Status == (int)WfWebhookDeliveryStatus.Processing)
                         && (it.LockUntil == null || it.LockUntil < DateTime.Now))
                     .ExecuteCommand();
                 if (claimed <= 0) continue; // 被其它 Worker 抢占 / 已锁定中，跳过

@@ -37,6 +37,13 @@ namespace Infrastructure.AI
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
 
+        /// <summary>
+        /// 上一次已输出的配置诊断签名。ResolveProvider 是每次请求都会走的路径，
+        /// 按签名去重，只有生效配置发生变化时才再打一条，避免刷日志。
+        /// </summary>
+        private static readonly object ConfigDiagnosticsLock = new();
+        private static string _lastConfigSignature;
+
         public static Uri BuildRequestUri(AiOptions options)
         {
             return BuildRequestUriWith(options, ResolveProvider(options));
@@ -190,6 +197,10 @@ namespace Infrastructure.AI
             var endpoint = (options.ChatEndpoint ?? string.Empty).Trim();
             var model = (options.Model ?? string.Empty).Trim();
             var apiKey = (options.ApiKey ?? string.Empty).Trim();
+            // 顶层 ApiKey 非空时不会再落到 Providers 分项（见下方 if 顺序），
+            // 这种"静默覆盖"是排查 401 时最容易踩的坑，故记录来源并在冲突时告警。
+            var apiKeySource = string.IsNullOrWhiteSpace(apiKey) ? null : "顶层 AiOptions:ApiKey";
+            var apiKeyConflict = string.Empty;
 
             var matched = (options.Providers ?? new List<AiProviderOptions>())
                 .FirstOrDefault(p => string.Equals((p.Provider ?? string.Empty).Trim(), provider, StringComparison.OrdinalIgnoreCase));
@@ -199,15 +210,64 @@ namespace Infrastructure.AI
                 if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = (matched.BaseUrl ?? string.Empty).Trim();
                 if (string.IsNullOrWhiteSpace(endpoint)) endpoint = (matched.ChatEndpoint ?? string.Empty).Trim();
                 if (string.IsNullOrWhiteSpace(model)) model = (matched.Model ?? string.Empty).Trim();
-                if (string.IsNullOrWhiteSpace(apiKey)) apiKey = (matched.ApiKey ?? string.Empty).Trim();
+
+                var providerApiKey = (matched.ApiKey ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    if (providerApiKey.Length > 0)
+                    {
+                        apiKey = providerApiKey;
+                        apiKeySource = $"Providers[{provider}].ApiKey";
+                    }
+                }
+                else if (providerApiKey.Length > 0 && !string.Equals(providerApiKey, apiKey, StringComparison.Ordinal))
+                {
+                    apiKeyConflict = $"顶层 AiOptions:ApiKey={MaskApiKey(apiKey)} 与 Providers[{provider}].ApiKey={MaskApiKey(providerApiKey)} 不一致，本次生效 {MaskApiKey(apiKey)}";
+                }
             }
 
             var profile = AiProviderProfiles.Resolve(provider);
             if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = profile.DefaultBaseUrl;
             if (string.IsNullOrWhiteSpace(endpoint)) endpoint = profile.DefaultEndpoint;
             if (string.IsNullOrWhiteSpace(model)) model = profile.DefaultModel;
-            //Logger.LogInformation($"解析 AI provider：provider={provider}, baseUrl={baseUrl}, endpoint={endpoint}, model={model}");
+            ReportResolvedConfig(provider, baseUrl, endpoint, model, apiKey, apiKeySource, apiKeyConflict);
             return (provider, baseUrl, endpoint, model, apiKey);
+        }
+
+        /// <summary>
+        /// 输出"当前真正生效的 AI 配置"：provider/baseUrl/endpoint/model + ApiKey 来源与掩码，
+        /// 仅在生效配置变化时打一次（签名去重），不会因每轮对话刷屏。
+        /// <para>目的：顶层 <c>AiOptions:ApiKey</c>（常见于 UserSecrets / 环境变量残留）会静默覆盖
+        /// <c>Providers[x].ApiKey</c>，只看到 model 无法判断"到底用了哪把 key"，这里把来源与尾部掩码落日志，
+        /// 排查 401 时不必再靠外部请求反推。</para>
+        /// <para>只记 ApiKey 后 4 位与长度，不落明文。</para>
+        /// </summary>
+        private static void ReportResolvedConfig(string provider, string baseUrl, string endpoint, string model,
+            string apiKey, string apiKeySource, string apiKeyConflict)
+        {
+            var signature = $"{provider}|{baseUrl}|{endpoint}|{model}|{apiKeySource}|{MaskApiKey(apiKey)}|{apiKeyConflict}";
+            lock (ConfigDiagnosticsLock)
+            {
+                if (string.Equals(signature, _lastConfigSignature, StringComparison.Ordinal)) return;
+                _lastConfigSignature = signature;
+            }
+
+            Logger.LogInformation($"AI 生效配置 provider={provider} baseUrl={baseUrl} endpoint={endpoint} model={model} apiKey来源={apiKeySource ?? "未配置"} apiKey={MaskApiKey(apiKey)}");
+            if (!string.IsNullOrEmpty(apiKeyConflict))
+            {
+                Logger.LogWarning($"AI 配置冲突：{apiKeyConflict}；请清理 UserSecrets / 环境变量中残留的 AiOptions:ApiKey（或 AiOptions__ApiKey），"
+                    + "否则 Providers 分项里的 ApiKey 永远不会生效");
+            }
+        }
+
+        /// <summary>
+        /// ApiKey 掩码：仅保留后 4 位与长度，供日志区分"用的是哪把 key"，不泄露密钥本身。
+        /// </summary>
+        private static string MaskApiKey(string apiKey)
+        {
+            var key = (apiKey ?? string.Empty).Trim();
+            if (key.Length == 0) return "未配置";
+            return key.Length <= 8 ? $"****(len={key.Length})" : $"****{key[^4..]}(len={key.Length})";
         }
 
         /// <summary>

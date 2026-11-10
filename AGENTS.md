@@ -50,6 +50,7 @@ ZR.Vue        旧版 Vue2（新功能勿优先改）
   - 脚本尽量幂等（`IF NOT EXISTS ...`）。
 - **禁止 AI 直接操作数据库**：不得连接数据库执行任何语句（**包括只读查询**），也不得通过脚本/命令行（`sqlcmd`、`mysql` 等）绕过。需要改表或查数据时，只输出 **SQL + 影响说明**，由用户自行在客户端执行并回传结果；确需 AI 执行的，必须逐条获得用户明确确认，不得默认授权、不得打包成一条命令顺手执行。
 - **SQL Server 修改后必须明确告知用户**：新增了哪些表/字段/索引、改了什么结构。
+- **表达式树限制**：SqlSugar 解析 `Where/Select/GroupBy/Having/OrderBy`、`SqlFunc.*`、`Expressionable` 时会求值表达式里引用的成员，**私有 static 字段会直接抛 `Field "xxx" can't be private`**（`private static readonly` 与可变 `private static` 都会中招；`SysLoginService` 曾因 `it.Status == LoginAuditSuccess` 导致登录日志 AI 分析整体失败）。可用写法：`const`（编译期内联）、先落局部变量再用（编译器闭包字段为 public）、`public/internal/protected static readonly`、实例字段/属性、静态方法调用。**禁止把 `private static` 字段直接写进查询表达式**。
 
 ## 5. 多租户
 
