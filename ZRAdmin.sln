@@ -1,7 +1,7 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32210.238
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12224.181 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZR.Admin.WebApi", "ZR.Admin.WebApi\ZR.Admin.WebApi.csproj", "{E5497BB4-B0C1-4794-9FAE-163F626EC399}"
 EndProject
@@ -38,10 +38,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "04.Solution Items", "04.Sol
 		AGENTS.md = AGENTS.md
 		CONTRIBUTING.md = CONTRIBUTING.md
 		DockerBuild.bat = DockerBuild.bat
+		bat\init-run.bat = bat\init-run.bat
 		LICENSE = LICENSE
 		README.en.md = README.en.md
 		README.md = README.md
-		bat\init-run.bat = bat\init-run.bat
 		bat\run-mall.bat = bat\run-mall.bat
 		bat\run.bat = bat\run.bat
 		bat\startup.bat = bat\startup.bat
@@ -52,6 +52,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZR.Payment", "ZR.Payment\ZR.Payment.csproj", "{623BFD64-F8C6-4BC7-837A-1A7DAEB5243A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZR.OAuth", "ZR.OAuth\ZR.OAuth.csproj", "{48D7B9BE-2700-4AE5-98E5-79CD8FE65C23}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZR.AiKnowledge", "ZR.AiKnowledge\ZR.AiKnowledge.csproj", "{B74F3AE1-05B0-449A-92DA-650642C297DC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -243,6 +245,18 @@ Global
 		{48D7B9BE-2700-4AE5-98E5-79CD8FE65C23}.Release|x64.Build.0 = Release|Any CPU
 		{48D7B9BE-2700-4AE5-98E5-79CD8FE65C23}.Release|x86.ActiveCfg = Release|Any CPU
 		{48D7B9BE-2700-4AE5-98E5-79CD8FE65C23}.Release|x86.Build.0 = Release|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Debug|x64.Build.0 = Debug|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Debug|x86.Build.0 = Debug|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Release|x64.ActiveCfg = Release|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Release|x64.Build.0 = Release|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Release|x86.ActiveCfg = Release|Any CPU
+		{B74F3AE1-05B0-449A-92DA-650642C297DC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -262,8 +276,8 @@ Global
 		{DAA6C3A8-7251-4775-87B0-0B77483A3A23} = {7C1F0A21-4B3D-4E58-9A62-1D8F0E4B2C11}
 		{ECA32F1E-00BD-42BB-A942-B2EB65D395D4} = {8D2A1B32-5C4E-4F69-8B73-2E9A1F5C3D22}
 		{623BFD64-F8C6-4BC7-837A-1A7DAEB5243A} = {8D2A1B32-5C4E-4F69-8B73-2E9A1F5C3D22}
-		{2749202F-68E7-46CB-8582-0A56881623EA} = {8D2A1B32-5C4E-4F69-8B73-2E9A1F5C3D22}
 		{48D7B9BE-2700-4AE5-98E5-79CD8FE65C23} = {8D2A1B32-5C4E-4F69-8B73-2E9A1F5C3D22}
+		{B74F3AE1-05B0-449A-92DA-650642C297DC} = {8D2A1B32-5C4E-4F69-8B73-2E9A1F5C3D22}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0469FF3A-7322-4053-94C7-881B103A57C5}

@@ -16,6 +16,8 @@
 		<ProjectReference Include="..\ZR.CodeGenerator\ZR.CodeGenerator.csproj" />
 		<ProjectReference Include="..\ZR.Mall\ZR.Mall.csproj" />
 		<ProjectReference Include="..\ZR.Workflow\ZR.Workflow.csproj" />
+		<!-- 外部知识库插件（可选）：不引用即完全不存在；AiKnowledge:Enable 默认 false，不影响任何现有行为。 -->
+		<ProjectReference Include="..\ZR.AiKnowledge\ZR.AiKnowledge.csproj" />
 		<ProjectReference Include="..\ZR.Service\ZR.Service.csproj" />
 		<ProjectReference Include="..\ZR.Tasks\ZR.Tasks.csproj" />
 		<!-- 对象存储实现（含 AWSSDK）。只有需要上传能力的宿主才引用，避免传导给 ZR.Tasks 等无关项目。 -->

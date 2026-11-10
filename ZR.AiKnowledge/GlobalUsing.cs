@@ -1,0 +1,11 @@
+global using Infrastructure;
+global using Infrastructure.AI;
+global using Infrastructure.AI.Knowledge;
+global using Infrastructure.Attribute;
+global using Infrastructure.Controllers;
+global using Infrastructure.Enums;
+global using System.Text;
+global using System.Text.Json;
+global using ZR.Model.AI.Dto;
+global using ZR.ServiceCore.AI.IService;
+global using ZR.ServiceCore.Middleware;

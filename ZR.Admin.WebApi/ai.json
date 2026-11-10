@@ -39,5 +39,30 @@
       }
     ],
     "AttachmentDownloadAllowedHosts": []
+  },
+  // 外部知识库插件（ZR.AiKnowledge，可选模块）：只做检索 + 引用，文档解析/切片/向量化交给外部知识库。
+  // Enable=false（默认）：search_knowledge 工具不下发模型、前端清单不出现、不发任何外部请求。
+  // Provider：generic=自建 HTTP 检索接口；dify=Dify 数据集检索。新增渠道实现 IKnowledgeProvider 即可。
+  // 改 Enable 后从下一个请求生效（工具清单按请求装配，本文件已 reloadOnChange）。
+  "AiKnowledge": {
+    "Enable": false,
+    "Provider": "generic",
+    // generic 填完整检索 URL；dify 填 API 根地址（如 https://api.dify.ai/v1）
+    "Endpoint": "",
+    "ApiKey": "",
+    // 仅 Provider=dify 需要
+    "DatasetId": "",
+    // 知识库标识（generic 原样透传，可留空）
+    "KbId": "",
+    // 回灌给模型时展示的"来源"名称
+    "KbName": "知识库",
+    "TopK": 5,
+    // 相似度下限（0-1，0=不启用）
+    "MinScore": 0,
+    "TimeoutSeconds": 15,
+    // 单个片段回灌给模型的最大字符数（200-4000）
+    "MaxContentChars": 800,
+    // 可选权限码：非空时仅拥有该权限（或管理员）的用户能看到并调用该工具
+    "Permission": ""
   }
 }

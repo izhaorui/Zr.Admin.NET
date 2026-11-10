@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<NoWarn>1701;1702;1591;1570</NoWarn>
+	</PropertyGroup>
+
+	<!--
+	  知识库插件（可选模块）：
+	  1) 只做「检索 + 引用」，文档解析/切片/向量化交给外部知识库（Dify、百炼或自建检索接口）；
+	  2) 不引用任何额外 NuGet 包，宿主删掉本工程引用即完全消失（默认 Enable=false 时不注册工具、不发请求）；
+	  3) 通过 [AppService] 被宿主自动发现，通过 IAiAssistantToolProvider 向 AI 助手注册 search_knowledge。
+	-->
+	<ItemGroup>
+		<ProjectReference Include="..\Infrastructure\ZR.Infrastructure.csproj" />
+		<ProjectReference Include="..\ZR.ServiceCore\ZR.ServiceCore.csproj" />
+	</ItemGroup>
+
+</Project>
