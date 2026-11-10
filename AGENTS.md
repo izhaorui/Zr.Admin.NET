@@ -118,6 +118,7 @@ ZR.Vue        旧版 Vue2（新功能勿优先改）
 - 未授权不得执行 `git reset --hard`/`git clean -fd`/`git push --force`/删远程分支/删大量文件/覆盖用户未提交修改。
 - 改前查 `git status`；已有用户修改**必须保留，不得覆盖**；不因测试失败回滚整个工作区。
 - 提交前查 `git status`/`git diff`，确认无误修改、无无关文件、无敏感信息、无调试/临时代码，再提交。
+- **提交信息不带 AI 署名**：不得追加 `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`、`Co-authored-by: Claude ...` 等 AI/工具联署，也不加 `🤖 Generated with ...` 之类的尾注；只保留 `:emoji:(scope) 描述` 标题与中文正文条目。`.githooks/commit-msg` 只校验格式，署名是提交工具自动追加的，提交前须人工确认 `git log -1` 正文干净。
 
 ## 15. 生成类任务
 
