@@ -13,10 +13,12 @@ namespace ZR.Admin.WebApi.Controllers.AI
     public class AiGovernanceController : BaseController
     {
         private readonly IAiGovernanceService _service;
+        private readonly IAiConfigService _configService;
 
-        public AiGovernanceController(IAiGovernanceService service)
+        public AiGovernanceController(IAiGovernanceService service, IAiConfigService configService)
         {
             _service = service;
+            _configService = configService;
         }
 
         /// <summary>
@@ -140,5 +142,33 @@ namespace ZR.Admin.WebApi.Controllers.AI
         [HttpPost("health")]
         [ActionPermissionFilter(Permission = "ai:governance:health")]
         public async Task<IActionResult> Health() => SUCCESS(await _service.CheckHealthAsync());
+
+        /// <summary>
+        /// 查看当前生效的 AI 运行时配置：库中值优先（密钥掩码），无则回显文件默认值。
+        /// 同时返回配置源策略、当前环境、数据库覆盖是否生效、版本与修改人。
+        /// </summary>
+        [HttpGet("config/current")]
+        [ActionPermissionFilter(Permission = "ai:governance:list")]
+        public IActionResult ConfigCurrent([FromQuery] string section = "AiOptions")
+            => SUCCESS(_configService.GetCurrent(section));
+
+        /// <summary>
+        /// 保存 AI 运行时配置（整段 JSON）。校验格式后加密落库，版本 +1，本进程立即生效。
+        /// 密钥回显为 ****xxxx 时按"未修改"处理，沿用库中已有值。
+        /// </summary>
+        [HttpPost("config")]
+        [ActionPermissionFilter(Permission = "ai:governance:edit")]
+        [Log(Title = "AI运行时配置", BusinessType = BusinessType.UPDATE)]
+        public IActionResult SaveConfig([FromBody] AiConfigSaveDto input, [FromQuery] string section = "AiOptions")
+            => SUCCESS(new { id = _configService.Save(input, section) });
+
+        /// <summary>
+        /// 删除库中 AI 配置，回退到 ai.json 默认值（本地/排障用；线上慎用）。
+        /// </summary>
+        [HttpDelete("config")]
+        [ActionPermissionFilter(Permission = "ai:governance:remove")]
+        [Log(Title = "AI运行时配置", BusinessType = BusinessType.DELETE)]
+        public IActionResult ResetConfig([FromQuery] string section = "AiOptions")
+            => SUCCESS(new { affected = _configService.Reset(section) });
     }
 }

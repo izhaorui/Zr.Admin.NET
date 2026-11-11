@@ -13,6 +13,7 @@ ai.Development.json
 document/doc
 ZRAdmin-test.sln
 publish-check
+.vscode
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

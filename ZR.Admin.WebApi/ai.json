@@ -1,22 +1,18 @@
 {
-  // AI 公共默认。密钥写在各 Provider 的 ApiKey；本地用同结构的 ai.Development.json 覆盖。
-  // TimeoutSeconds：非流式=整请求总时长；流式=空闲超时（连续多久没收到数据才失败）。
-  // MaxStreamDurationSeconds：流式整段输出的硬上限，防慢速滴流长期占用连接与在途额度；0=不限制。
+  // AI 公共默认。只写"与 AiOptions 默认值不同"或"需要运维常调"的项，其余走 C# 默认值。
+  // 字段含义、数据源策略（文件 vs 数据库）、ai_provider 渠道、顶层覆盖顺序、生效延迟、知识库配置：
+  // 官方文档「后端 → AI 功能 → 4.2 配置文件与生效优先级」 https://www.izhaorui.cn/doc/backend/ai.html
   "AiOptions": {
     "Enable": true,
     "Provider": "qwen",
-    "Temperature": 0.7,
     "MaxTokens": 4096,
     "TimeoutSeconds": 60,
     "MaxStreamDurationSeconds": 600,
-    "EnableThinking": false,
-    "EnableRetry": true,
-    "MaxRetries": 3,
-    "InitialRetryDelayMs": 500,
-    "MaxRetryDelayMs": 30000,
     "DefaultUserTotalTokens": 2000000,
     "ChatRateLimitPerMinute": 20,
-    "PromptDir": "",
+    // 附件域名白名单（SSRF / 内网信息泄露防护）：不配置=不限制，显式空数组同样是不限制。
+    // 生产建议按实际附件域名填上："AttachmentDownloadAllowedHosts": ["upload.example.com"]
+    // 渠道真相在 ai_provider 表：启用数据库配置后本段被整份替换，线上请到后台「AI 治理 → 模型渠道」维护。
     "Providers": [
       {
         "Provider": "qwen",
@@ -25,7 +21,8 @@
         "ChatEndpoint": "/chat/completions",
         "ApiKey": "",
         "Model": "qwen3.7-plus",
-        "VisionModel": "qwen3.7-flash",
+        // 看图模型：须是该渠道支持多模态的模型（如 qwen3-vl-plus / qwen3-vl-flash），填错表现为看图被拒或忽略图片。
+        "VisionModel": "qwen3-vl-plus",
         "Models": [
           "qwen-turbo",
           "qwen-plus",
@@ -37,32 +34,19 @@
           "qwen-vl-plus"
         ]
       }
-    ],
-    "AttachmentDownloadAllowedHosts": []
+    ]
   },
-  // 外部知识库插件（ZR.AiKnowledge，可选模块）：只做检索 + 引用，文档解析/切片/向量化交给外部知识库。
-  // Enable=false（默认）：search_knowledge 工具不下发模型、前端清单不出现、不发任何外部请求。
-  // Provider：generic=自建 HTTP 检索接口；dify=Dify 数据集检索。新增渠道实现 IKnowledgeProvider 即可。
-  // 改 Enable 后从下一个请求生效（工具清单按请求装配，本文件已 reloadOnChange）。
+
+  // 数据源策略：auto（默认，Production 读库 / 其它环境读文件）、db（以库为准，读不到即失败关闭）、file（只读本文件）。
+  // 后台入口 GET/POST/DELETE aiGovernance/config；ai_config 为 60 秒进程内缓存，多实例最长 60 秒收敛。
+  "AiConfig": {
+    "Source": "auto"
+  },
+
+  // 外部知识库插件（可选）：Enable=false 时工具不下发、不发任何外部请求。
+  // 启用时至少填 Provider + Endpoint（dify 另需 DatasetId/ApiKey），其余参数见 ZR.AiKnowledge/AiKnowledgeOptions.cs；
+  // 与 AiOptions 同一数据源策略，后台保存过则以库为准。
   "AiKnowledge": {
-    "Enable": false,
-    "Provider": "generic",
-    // generic 填完整检索 URL；dify 填 API 根地址（如 https://api.dify.ai/v1）
-    "Endpoint": "",
-    "ApiKey": "",
-    // 仅 Provider=dify 需要
-    "DatasetId": "",
-    // 知识库标识（generic 原样透传，可留空）
-    "KbId": "",
-    // 回灌给模型时展示的"来源"名称
-    "KbName": "知识库",
-    "TopK": 5,
-    // 相似度下限（0-1，0=不启用）
-    "MinScore": 0,
-    "TimeoutSeconds": 15,
-    // 单个片段回灌给模型的最大字符数（200-4000）
-    "MaxContentChars": 800,
-    // 可选权限码：非空时仅拥有该权限（或管理员）的用户能看到并调用该工具
-    "Permission": ""
+    "Enable": false
   }
 }

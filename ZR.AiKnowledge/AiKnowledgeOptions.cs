@@ -99,10 +99,31 @@ namespace ZR.AiKnowledge
                 try
                 {
                     var resolver = Resolver;
-                    var options = resolver != null
-                        ? resolver()
-                        : AppSettings.Bind(SectionName, new AiKnowledgeOptions());
-                    return (options ?? new AiKnowledgeOptions()).Normalize();
+                    if (resolver != null)
+                    {
+                        return (resolver() ?? new AiKnowledgeOptions()).Normalize();
+                    }
+
+                    // 数据库覆盖遵循与 AiOptions 相同的数据源策略（auto 仅在 Production 读库），
+                    // 避免本地调试时读到线上的知识库地址与密钥。
+                    if (AiOptionsResolver.IsDatabaseEnabled(out var source))
+                    {
+                        var fromDatabase = TryReadFromDatabase(out var readFailed);
+                        if (fromDatabase != null)
+                        {
+                            return fromDatabase.Normalize();
+                        }
+
+                        // 配置源=db 的失败关闭：库“读不到/解不出”与“库里本来就没有该段”必须区别对待，
+                        // 前者绝不能回退文件，否则数据库故障期间会继续用文件里的旧地址与旧密钥。
+                        if (readFailed && string.Equals(source, "db", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Logger.Error("读取数据库知识库配置失败（AiConfig:Source=db），已停止使用知识库，不回退文件配置");
+                            return new AiKnowledgeOptions();
+                        }
+                    }
+
+                    return (AppSettings.Bind(SectionName, new AiKnowledgeOptions()) ?? new AiKnowledgeOptions()).Normalize();
                 }
                 catch (Exception ex)
                 {
@@ -110,6 +131,72 @@ namespace ZR.AiKnowledge
                     Logger.Warn(ex, "读取知识库配置失败，按未启用处理");
                     return new AiKnowledgeOptions();
                 }
+            }
+        }
+
+        /// <summary>
+        /// 读取后台维护的库中配置。
+        /// <para>
+        /// 返回 null 且 <paramref name="readFailed"/>=false：未启用库覆盖，或库中确实没有该段配置（合法空状态）→ 调用方可回退文件；
+        /// 返回 null 且 <paramref name="readFailed"/>=true：读取/解析过程失败 → 严格模式（AiConfig:Source=db）必须失败关闭。
+        /// </para>
+        /// </summary>
+        private static AiKnowledgeOptions TryReadFromDatabase(out bool readFailed)
+        {
+            readFailed = false;
+            if (!AiOptionsResolver.IsDatabaseEnabled(out _))
+            {
+                return null;
+            }
+
+            IAiConfigStore store;
+            try
+            {
+                store = App.GetService<IAiConfigStore>();
+            }
+            catch (Exception ex)
+            {
+                readFailed = true;
+                Logger.Warn(ex, "AI 配置存储未就绪，无法读取库中知识库配置");
+                return null;
+            }
+            if (store == null)
+            {
+                readFailed = true;
+                Logger.Warn("AI 配置存储未注册，无法读取库中知识库配置");
+                return null;
+            }
+
+            try
+            {
+                // 必须用 Try 版：GetSectionJson 把“读取失败”和“库里没有配置”都返回 null，
+                // 无法在 db 模式下区分“应当失败关闭”和“可以回退文件”。
+                if (!store.TryGetSectionJson(SectionName, out var json, out var error))
+                {
+                    readFailed = true;
+                    Logger.Warn($"读取库中知识库配置失败 error={error}");
+                    return null;
+                }
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return null;
+                }
+
+                var options = JsonSerializer.Deserialize<AiKnowledgeOptions>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (options == null)
+                {
+                    readFailed = true;
+                    Logger.Warn("库中知识库配置为空内容，无法解析");
+                    return null;
+                }
+                return options;
+            }
+            catch (Exception ex)
+            {
+                readFailed = true;
+                Logger.Warn(ex, "解析库中知识库配置失败");
+                return null;
             }
         }
     }
