@@ -31,12 +31,11 @@ namespace ZR.ServiceCore.AI.Governance
         // 调用（fail-closed），由后续任一次成功落库自动恢复。多实例下各进程独立判定；若启用多租户分库，
         // 应改为按租户隔离的断路器，避免单个租户 DB 抖动熔断全站。
         private static volatile bool AccountingHealthy = true;
-        private readonly AiOptions _options;
-
-        public AiCallGovernanceService(IOptions<OptionsSetting> options)
-        {
-            _options = options.Value?.AiOptions ?? new AiOptions();
-        }
+        /// <summary>
+        /// 当前生效的 AI 配置：统一走解析器（数据库覆盖优先，否则文件）。
+        /// 不缓存为字段——后台改完配置后无需重启即生效。
+        /// </summary>
+        private static AiOptions Options => AiOptionsResolver.Get();
 
         /// <summary>
         /// 开始一次 AI 调用治理流程，返回租约对象，调用方应在调用完成后调用 CompleteAsync 结算。
@@ -110,7 +109,7 @@ namespace ZR.ServiceCore.AI.Governance
                 ReservedAmount = reservedAmount
             };
 
-            if (!_options.Enable)
+            if (!Options.Enable)
             {
                 await RejectAsync(lease, "disabled", "AI 功能当前已停用");
             }
@@ -308,7 +307,7 @@ namespace ZR.ServiceCore.AI.Governance
                 Currency = "CNY"
             };
 
-            if (!_options.Enable)
+            if (!Options.Enable)
             {
                 snapshot.Allowed = false;
                 snapshot.DeniedReason = "AI 功能当前已停用";
@@ -351,12 +350,12 @@ namespace ZR.ServiceCore.AI.Governance
             var roleLimits = ResolveConstraints(policies, "role", tenantId, roleIds, scene);
             var userLimits = ResolveConstraints(policies, "user", tenantId, [userId], scene);
             var subjectLimits = roleLimits.Concat(userLimits).ToList();
-            if (subjectLimits.Count == 0 && scene == AiSceneCatalog.AiChat && _options.DefaultUserTotalTokens > 0)
+            if (subjectLimits.Count == 0 && scene == AiSceneCatalog.AiChat && Options.DefaultUserTotalTokens > 0)
             {
                 subjectLimits.Add(new PolicyLimit
                 {
                     HasPolicy = true,
-                    MonthlyTokenLimit = _options.DefaultUserTotalTokens,
+                    MonthlyTokenLimit = Options.DefaultUserTotalTokens,
                     SceneFilter = AiSceneCatalog.AiChat
                 });
             }
@@ -570,7 +569,7 @@ namespace ZR.ServiceCore.AI.Governance
         private bool TryAcquireChatRateSlot(string tenantId, long userId, DateTime now, out string message)
         {
             message = null;
-            var limit = _options.ChatRateLimitPerMinute;
+            var limit = Options.ChatRateLimitPerMinute;
             if (limit <= 0) return true;
             long count;
             try

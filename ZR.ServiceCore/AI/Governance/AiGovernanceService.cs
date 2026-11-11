@@ -35,16 +35,19 @@ namespace ZR.ServiceCore.AI.Governance
 
         private readonly IAiCallGovernance _callGovernance;
         private readonly ISysRoleService _roleService;
-        private readonly AiOptions _options;
+
+        /// <summary>
+        /// 当前生效的 AI 配置：统一走解析器（数据库覆盖优先，否则文件）。
+        /// 不缓存为字段——后台改完配置后无需重启即生效。
+        /// </summary>
+        private static AiOptions Options => AiOptionsResolver.Get();
 
         public AiGovernanceService(
             IAiCallGovernance callGovernance,
-            ISysRoleService roleService,
-            IOptions<OptionsSetting> options)
+            ISysRoleService roleService)
         {
             _callGovernance = callGovernance;
             _roleService = roleService;
-            _options = options.Value?.AiOptions ?? new AiOptions();
         }
 
         public PagedInfo<AiPolicyListDto> GetPolicyList(AiPolicyQueryDto query)
@@ -248,12 +251,13 @@ namespace ZR.ServiceCore.AI.Governance
                     labels[provider] = label.Trim();
             }
 
-            Add(_options.Provider, _options.Model);
-            var vision = AiLlmClient.ResolveVisionProvider(_options);
+            var options = AiOptionsResolver.Get();
+            Add(options.Provider, options.Model);
+            var vision = AiLlmClient.ResolveVisionProvider(options);
             Add(vision.Provider, vision.Model);
-            if (_options.Providers != null)
+            if (options.Providers != null)
             {
-                foreach (var item in _options.Providers)
+                foreach (var item in options.Providers)
                 {
                     Add(item?.Provider, item?.Model, item?.Label);
                     Add(item?.Provider, item?.VisionModel, item?.Label);
@@ -285,12 +289,13 @@ namespace ZR.ServiceCore.AI.Governance
         public AiConfigCheckDto CheckConfiguration()
         {
             EnsurePlatformAdmin();
-            var resolved = AiLlmClient.ResolveProvider(_options);
+            var options = AiOptionsResolver.Get();
+            var resolved = AiLlmClient.ResolveProvider(options);
             var key = resolved.ApiKey ?? string.Empty;
-            var vision = AiLlmClient.ResolveVisionProvider(_options);
+            var vision = AiLlmClient.ResolveVisionProvider(options);
             var result = new AiConfigCheckDto
             {
-                Enabled = _options.Enable,
+                Enabled = options.Enable,
                 Provider = resolved.Provider,
                 BaseUrl = MaskUrl(resolved.BaseUrl),
                 Endpoint = resolved.ChatEndpoint,
@@ -300,7 +305,7 @@ namespace ZR.ServiceCore.AI.Governance
                 VisionConfigured = !string.IsNullOrWhiteSpace(vision.Model),
                 VisionModel = vision.Model
             };
-            if (!_options.Enable) result.Warnings.Add("AI 总开关未启用");
+            if (!options.Enable) result.Warnings.Add("AI 总开关未启用");
             if (!Uri.TryCreate(resolved.BaseUrl, UriKind.Absolute, out var uri)
                 || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
                 result.Warnings.Add("Provider BaseUrl 不是有效的 HTTP(S) 地址");
@@ -312,10 +317,10 @@ namespace ZR.ServiceCore.AI.Governance
             {
                 result.Warnings.Add("当前 Provider 未配置 VisionModel，发图提问将失败");
             }
-            if (_options.TimeoutSeconds <= 0) result.Warnings.Add("请求超时时间必须大于 0");
-            var promptDir = string.IsNullOrWhiteSpace(_options.PromptDir)
+            if (options.TimeoutSeconds <= 0) result.Warnings.Add("请求超时时间必须大于 0");
+            var promptDir = string.IsNullOrWhiteSpace(options.PromptDir)
                 ? Path.Combine(AppContext.BaseDirectory, "Prompts")
-                : _options.PromptDir;
+                : options.PromptDir;
             if (!Directory.Exists(promptDir))
             {
                 result.Warnings.Add("Prompt 目录不存在");
@@ -341,11 +346,12 @@ namespace ZR.ServiceCore.AI.Governance
         public async Task<AiHealthCheckDto> CheckHealthAsync()
         {
             EnsurePlatformAdmin();
-            var resolved = AiLlmClient.ResolveProvider(_options);
+            var options = AiOptionsResolver.Get();
+            var resolved = AiLlmClient.ResolveProvider(options);
             var watch = Stopwatch.StartNew();
             try
             {
-                var text = await AiLlmClient.ChatAsync(_options, "仅回复 OK", "ping", AiSceneCatalog.HealthCheck);
+                var text = await AiLlmClient.ChatAsync(options, "仅回复 OK", "ping", AiSceneCatalog.HealthCheck);
                 var log = GetLatestHealthLog();
                 return new AiHealthCheckDto
                 {
