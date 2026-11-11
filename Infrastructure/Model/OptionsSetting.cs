@@ -518,8 +518,10 @@ namespace Infrastructure.Model
 
         /// <summary>
         /// 聊天接口路径，如 /v1/chat/completions。
-        /// 注意：留空才能命中 Providers 分项配置（分项匹配优先级高于顶层默认值），
-        /// 否则 qwen/dashscope 等 BaseUrl 已含 /v1 的提供商会把路径拼成 /v1/v1/chat/completions。
+        /// 注意：顶层值一旦非空就<b>覆盖</b> <see cref="Providers"/> 分项的同名配置（顶层优先、分项兜底，
+        /// 见 AiLlmClient.ResolveProvider），只有留空才会落到分项。所以想把端点配在渠道上，本项必须留空。
+        /// 另：qwen/dashscope 这类 BaseUrl 已含 /v1 的提供商，端点写 /chat/completions 即可，
+        /// 重复写 /v1 会拼成 /v1/v1/chat/completions。
         /// </summary>
         public string ChatEndpoint { get; set; }
 
@@ -529,7 +531,8 @@ namespace Infrastructure.Model
         public string Model { get; set; }
 
         /// <summary>
-        /// API Key。优先用 Providers 分项里的 ApiKey，这里是未匹配到分项时的兜底。
+        /// API Key。顶层非空时优先用本值，留空才落到 <see cref="Providers"/> 分项（顶层优先、分项兜底）。
+        /// 两者不一致时按顶层值生效，并在日志中给出冲突告警，排查 401 先看这条日志。
         /// </summary>
         public string ApiKey { get; set; }
 
@@ -644,6 +647,22 @@ namespace Infrastructure.Model
         /// 最大重试延迟（毫秒）。防止重试等待过长。默认 30000ms (30 秒)
         /// </summary>
         public int MaxRetryDelayMs { get; set; } = 30000;
+
+        /// <summary>
+        /// 运行时渠道候选链（同一 Provider 的多行渠道，按优先级排好序）。
+        /// <para>
+        /// 仅由 <c>AiOptionsResolver</c> 从 ai_provider 表填充，<b>不参与文件持久化</b>：
+        /// ai.json / ai_config 里没有这一项，序列化后为 null，不会影响既有配置。
+        /// 为空表示"无候选"，请求仍按 <see cref="Providers"/> 首条匹配的单渠道解析，行为与改造前一致。
+        /// </para>
+        /// </summary>
+        public List<AiProviderOptions> ProviderChain { get; set; }
+
+        /// <summary>
+        /// 浅拷贝：用于按候选渠道构造临时配置（只替换顶层的 Provider/BaseUrl/ChatEndpoint/Model/ApiKey）。
+        /// Providers / ProviderChain 共享引用，调用方只读、不得改写。
+        /// </summary>
+        public AiOptions CloneShallow() => (AiOptions)MemberwiseClone();
     }
 
     public class AiProviderOptions

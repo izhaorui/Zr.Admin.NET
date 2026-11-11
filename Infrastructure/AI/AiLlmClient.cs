@@ -260,6 +260,56 @@ namespace Infrastructure.AI
             }
         }
 
+        /// <summary>单次请求最多尝试的渠道数（含主渠道）。渠道配得过多时逐条试会把首字延迟成倍放大。</summary>
+        public const int MaxProviderCandidates = 3;
+
+        /// <summary>
+        /// 解析本次请求可用的渠道候选链：首项与 <see cref="ResolveProvider"/> 完全一致（保证首选不变），
+        /// 其后是同厂商的备用渠道（渠道表同一 Provider 配了多行时才有）。
+        /// <para>
+        /// 无 <see cref="AiOptions.ProviderChain"/>（文件配置模式或库中只有一条）时只返回单元素，
+        /// 调用方按单渠道处理，行为与改造前完全一致。
+        /// </para>
+        /// </summary>
+        public static IReadOnlyList<(string Provider, string BaseUrl, string ChatEndpoint, string Model, string ApiKey)> ResolveProviderChain(AiOptions options)
+        {
+            var primary = ResolveProvider(options);
+            var chain = new List<(string Provider, string BaseUrl, string ChatEndpoint, string Model, string ApiKey)> { primary };
+
+            var candidates = options?.ProviderChain;
+            if (candidates == null || candidates.Count == 0) return chain;
+
+            // 同一地址 + 同一把 Key 重复出现时不重复尝试（只有换 Key/换地址才有意义）
+            var seen = new HashSet<string>(StringComparer.Ordinal) { CandidateSignature(primary) };
+            foreach (var candidate in candidates)
+            {
+                if (chain.Count >= MaxProviderCandidates) break;
+
+                var provider = (candidate.Provider ?? string.Empty).Trim().ToLowerInvariant();
+                // 不同厂商的地址与鉴权互不通用，不能互相顶替
+                if (provider.Length == 0 || !string.Equals(provider, primary.Provider, StringComparison.OrdinalIgnoreCase)) continue;
+
+                var profile = AiProviderProfiles.Resolve(provider);
+                var baseUrl = (string.IsNullOrWhiteSpace(candidate.BaseUrl) ? primary.BaseUrl : candidate.BaseUrl).Trim();
+                var endpoint = (string.IsNullOrWhiteSpace(candidate.ChatEndpoint) ? primary.ChatEndpoint : candidate.ChatEndpoint).Trim();
+                var model = (string.IsNullOrWhiteSpace(candidate.Model) ? primary.Model : candidate.Model).Trim();
+                var apiKey = (candidate.ApiKey ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = profile.DefaultBaseUrl;
+                if (string.IsNullOrWhiteSpace(endpoint)) endpoint = profile.DefaultEndpoint;
+                if (string.IsNullOrWhiteSpace(model)) model = profile.DefaultModel;
+
+                var item = (provider, baseUrl, endpoint, model, apiKey);
+                if (!seen.Add(CandidateSignature(item))) continue;
+                chain.Add(item);
+            }
+
+            return chain;
+        }
+
+        /// <summary>候选去重签名：地址/端点/模型/Key 全同视为同一渠道。仅内存比较，不落日志。</summary>
+        private static string CandidateSignature((string Provider, string BaseUrl, string ChatEndpoint, string Model, string ApiKey) item)
+            => $"{item.Provider}|{item.BaseUrl}|{item.ChatEndpoint}|{item.Model}|{item.ApiKey}";
+
         /// <summary>
         /// ApiKey 掩码：仅保留后 4 位与长度，供日志区分"用的是哪把 key"，不泄露密钥本身。
         /// </summary>

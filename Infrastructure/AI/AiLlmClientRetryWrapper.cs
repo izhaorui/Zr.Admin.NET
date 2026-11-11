@@ -1,4 +1,5 @@
 using Infrastructure.Model;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -12,12 +13,15 @@ namespace Infrastructure.AI
     /// 
     /// 设计目标：
     /// - 对网络抖动、限流(429)、临时服务不可用(503)等可恢复错误自动重试
+    /// - 同一厂商配了多条渠道（生产 Key / 备用 Key）时，当前渠道重试耗尽后换下一条再试
     /// - 将底层 HttpRequestException 等转换为标准的 AiException 体系
     /// - 上层调用者可统一捕获 AiException 进行错误分类与国际化提示
     /// - 保持与原 AiLlmClient 的 API 兼容性
     /// </summary>
     public static class AiLlmClientRetryWrapper
     {
+        /// <summary>配置诊断日志出口（与 AiLlmClient 同一套：宿主优先、控制台兜底）。</summary>
+        private static ILogger Logger => AiLog.GetLogger("Infrastructure.AI.AiLlmClientRetryWrapper");
         /// <summary>
         /// 构建重试策略（基于 AiOptions 配置）。
         /// </summary>
@@ -43,70 +47,46 @@ namespace Infrastructure.AI
         }
 
         /// <summary>
-        /// 非流式对话（自动重试）。
+        /// 非流式对话（自动重试；失败时按渠道候选链换 Key 重试）。
         /// </summary>
-        public static async Task<string> ChatAsyncWithRetry(
+        public static Task<string> ChatAsyncWithRetry(
             AiOptions options,
             string systemPrompt,
             string userPrompt,
             string scene = null,
             CancellationToken cancellationToken = default)
         {
-            var retryPolicy = BuildRetryPolicy(options);
-            var result = await retryPolicy.ExecuteAsync(
-                async () =>
-                {
-                    try
-                    {
-                        return await AiLlmClient.ChatAsync(options, systemPrompt, userPrompt, scene, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw ConvertException(ex);
-                    }
-                },
-                operationName: $"Chat (scene={scene}, model={options?.Model})",
-                cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return result;
+            return ExecuteWithFailoverAsync(
+                options,
+                scene,
+                $"Chat (scene={scene})",
+                config => AiLlmClient.ChatAsync(config, systemPrompt, userPrompt, scene, cancellationToken),
+                cancellationToken);
         }
 
         /// <summary>
-        /// 多轮对话（自动重试）。
+        /// 多轮对话（自动重试；失败时按渠道候选链换 Key 重试）。
         /// </summary>
-        public static async Task<string> ChatWithMessagesAsyncWithRetry(
+        public static Task<string> ChatWithMessagesAsyncWithRetry(
             AiOptions options,
             object[] messages,
             string scene = null,
             CancellationToken cancellationToken = default)
         {
-            var retryPolicy = BuildRetryPolicy(options);
-            var result = await retryPolicy.ExecuteAsync(
-                async () =>
-                {
-                    try
-                    {
-                        return await AiLlmClient.ChatWithMessagesAsync(options, messages, scene, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw ConvertException(ex);
-                    }
-                },
-                operationName: $"ChatWithMessages (scene={scene}, model={options?.Model})",
-                cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return result;
+            return ExecuteWithFailoverAsync(
+                options,
+                scene,
+                $"ChatWithMessages (scene={scene})",
+                config => AiLlmClient.ChatWithMessagesAsync(config, messages, scene, cancellationToken),
+                cancellationToken);
         }
 
         /// <summary>
         /// 多模态对话（自动重试）。
+        /// <para>不参与渠道换 Key：视觉模型与其密钥是独立配置（VisionProvider/VisionApiKey），
+        /// 用文本渠道的备用 Key 顶替没有意义，只做同渠道重试。</para>
         /// </summary>
-        public static async Task<AiLlmClient.ChatToolResult> ChatWithImagesAsyncWithRetry(
+        public static Task<AiLlmClient.ChatToolResult> ChatWithImagesAsyncWithRetry(
             AiOptions options,
             string systemPrompt,
             string textPrompt,
@@ -114,56 +94,136 @@ namespace Infrastructure.AI
             string scene = null,
             CancellationToken cancellationToken = default)
         {
-            var retryPolicy = BuildRetryPolicy(options);
-            var result = await retryPolicy.ExecuteAsync(
-                async () =>
-                {
-                    try
-                    {
-                        return await AiLlmClient.ChatWithImagesAsync(options, systemPrompt, textPrompt, imageUrls, scene, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw ConvertException(ex);
-                    }
-                },
-                operationName: $"ChatWithImages (scene={scene}, model={options?.Model}, images={imageUrls?.Count ?? 0})",
-                cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return result;
+            return ExecuteOnceAsync(
+                options,
+                $"ChatWithImages (scene={scene}, model={options?.Model}, images={imageUrls?.Count ?? 0})",
+                config => AiLlmClient.ChatWithImagesAsync(config, systemPrompt, textPrompt, imageUrls, scene, cancellationToken),
+                cancellationToken);
         }
 
         /// <summary>
-        /// Function Calling（非流式，自动重试）。
+        /// Function Calling（非流式，自动重试；失败时按渠道候选链换 Key 重试）。
         /// </summary>
-        public static async Task<AiLlmClient.ChatToolResult> ChatWithToolsAsyncWithRetry(
+        public static Task<AiLlmClient.ChatToolResult> ChatWithToolsAsyncWithRetry(
             AiOptions options,
             object[] messages,
             object[] tools,
             string scene = null,
             CancellationToken cancellationToken = default)
         {
+            return ExecuteWithFailoverAsync(
+                options,
+                scene,
+                $"ChatWithTools (scene={scene}, tools={tools?.Length ?? 0})",
+                config => AiLlmClient.ChatWithToolsAsync(config, messages, tools, scene, cancellationToken),
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// 单渠道执行：构建重试策略、调用、把底层异常标准化为 <see cref="AiException"/>。
+        /// </summary>
+        private static async Task<T> ExecuteOnceAsync<T>(
+            AiOptions options,
+            string operationName,
+            Func<AiOptions, Task<T>> call,
+            CancellationToken cancellationToken)
+        {
             var retryPolicy = BuildRetryPolicy(options);
-            var result = await retryPolicy.ExecuteAsync(
+            return await retryPolicy.ExecuteAsync(
                 async () =>
                 {
                     try
                     {
-                        return await AiLlmClient.ChatWithToolsAsync(options, messages, tools, scene, cancellationToken)
-                            .ConfigureAwait(false);
+                        return await call(options).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
                         throw ConvertException(ex);
                     }
                 },
-                operationName: $"ChatWithTools (scene={scene}, model={options?.Model}, tools={tools?.Length ?? 0})",
+                operationName: $"{operationName}, model={options?.Model}",
                 cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
+        }
 
-            return result;
+        /// <summary>
+        /// 按渠道候选链执行：先试当前生效渠道（同渠道内按策略重试），
+        /// 遇到“换 Key 有意义”的错误（鉴权失败/限流/超时/5xx）再换下一条同厂商渠道。
+        /// <para>
+        /// 只有一条候选（文件配置模式、库中单行）时等价于原来的单渠道重试，行为不变；
+        /// 用户取消（<see cref="OperationCanceledException"/>/<see cref="AiCancelledException"/>）
+        /// 与环境无关的配置错误不触发换渠道，避免把用户的取消拖成多次请求。
+        /// </para>
+        /// </summary>
+        private static async Task<T> ExecuteWithFailoverAsync<T>(
+            AiOptions options,
+            string scene,
+            string operationName,
+            Func<AiOptions, Task<T>> call,
+            CancellationToken cancellationToken)
+        {
+            var chain = AiLlmClient.ResolveProviderChain(options);
+            Exception lastError = null;
+
+            for (var index = 0; index < chain.Count; index++)
+            {
+                var candidate = chain[index];
+                var candidateOptions = WithCandidate(options, candidate);
+
+                try
+                {
+                    return await ExecuteOnceAsync(
+                        candidateOptions,
+                        $"{operationName}, provider={candidate.Provider}, 候选={index + 1}/{chain.Count}",
+                        call,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (index < chain.Count - 1 && ShouldFailover(ex, cancellationToken))
+                {
+                    lastError = ex;
+                    Logger.LogWarning($"AI 渠道失败，切换备用渠道 候选={index + 1}/{chain.Count} provider={candidate.Provider} model={candidate.Model} 错误={ex.GetType().Name}:{ex.Message}");
+                }
+            }
+
+            throw lastError ?? new AiGenericException("no_available_channel", $"AI 渠道均不可用（scene={scene}）");
+        }
+
+        /// <summary>按候选渠道构造临时配置：只接管顶层文本字段，其它全局参数（温度/超时/重试）原样沿用。</summary>
+        private static AiOptions WithCandidate(AiOptions options, (string Provider, string BaseUrl, string ChatEndpoint, string Model, string ApiKey) candidate)
+        {
+            var copy = options.CloneShallow();
+            copy.Provider = candidate.Provider;
+            copy.BaseUrl = candidate.BaseUrl;
+            copy.ChatEndpoint = candidate.ChatEndpoint;
+            copy.Model = candidate.Model;
+            copy.ApiKey = candidate.ApiKey;
+            return copy;
+        }
+
+        /// <summary>
+        /// 判断该错误是否值得换一条渠道重试：换 Key 能解决的（鉴权、限流、超时、服务端错误）才换；
+        /// 用户取消与配置错误换渠道也没用，直接抛出。
+        /// </summary>
+        private static bool ShouldFailover(Exception ex, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested) return false;
+
+            return ex switch
+            {
+                AiCancelledException => false,
+                AiConfigurationException => false,
+                AiRateLimitException => true,
+                AiTimeoutException => true,
+                AiResponseException => true,
+                AiHttpException http => http.HttpStatusCode is null
+                                         || http.HttpStatusCode == 401
+                                         || http.HttpStatusCode == 403
+                                         || http.HttpStatusCode == 404
+                                         || http.HttpStatusCode == 408
+                                         || http.HttpStatusCode == 429
+                                         || http.HttpStatusCode >= 500,
+                _ => false
+            };
         }
 
         /// <summary>

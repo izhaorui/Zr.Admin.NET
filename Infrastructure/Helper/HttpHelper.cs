@@ -243,6 +243,38 @@ namespace Infrastructure
         }
 
         /// <summary>
+        /// 带状态码的 GET 详细版：供 AI 拉取模型列表等需要区分 401/404 的场景使用。
+        /// 与 <see cref="HttpPostDetailedAsync"/> 对齐——请求级 header 只写本次请求，超时用独立 CTS 控制，
+        /// 不污染共享的 <see cref="SharedClient"/>。
+        /// </summary>
+        public static async Task<HttpTextResponse> HttpGetDetailedAsync(
+            string url, int timeOut = 30, Dictionary<string, string> headers = null,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                }
+            }
+
+            using var timeoutCts = new CancellationTokenSource(Math.Max(1, timeOut) * 1000);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
+            using var response = await SharedClient.SendAsync(request, linkedCts.Token);
+            var body = await response.Content.ReadAsStringAsync(linkedCts.Token);
+            return new HttpTextResponse
+            {
+                Content = body,
+                StatusCode = (int)response.StatusCode,
+                IsSuccessStatusCode = response.IsSuccessStatusCode,
+                RequestId = ReadRequestId(response),
+                RetryAfterSeconds = ReadRetryAfterSeconds(response)
+            };
+        }
+
+        /// <summary>
         /// 下载文件为二进制字节数组，带大小上限与超时保护。用于 AI 附件（图片/文档）解析前的取数。
         /// 超出 maxBytes 或下载失败/超时抛出 InvalidOperationException，由调用方降级处理（如"仅列文件名"）。
         /// </summary>

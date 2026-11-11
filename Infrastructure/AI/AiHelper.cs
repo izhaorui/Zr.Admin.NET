@@ -11,7 +11,10 @@ namespace Infrastructure.AI
     /// </summary>
     public static class AiHelper
     {
-        /// <summary>提示词加载器：从磁盘 Prompts 目录读取 .md（目录可经 AiOptions.PromptDir 配置）。</summary>
+        /// <summary>
+        /// 提示词加载器：从磁盘 Prompts 目录读取 .md（目录可经 AiOptions.PromptDir 配置）。
+        /// PromptDir 属部署路径而非运行时配置，固定读文件（数据库配置层不接管它）。
+        /// </summary>
         private static readonly PromptLoader PromptLoader =
             new(AppSettings.Get<AiOptions>("AiOptions")?.PromptDir);
 
@@ -21,7 +24,8 @@ namespace Infrastructure.AI
         /// </summary>
         public static AiOptions EnsureAiEnabled()
         {
-            var options = AppSettings.Get<AiOptions>("AiOptions");
+            // 统一走解析器：数据库覆盖（按环境）优先，否则回退文件，避免各模块各读一份出现口径不一致
+            var options = AiOptionsResolver.Get();
             if (options == null || !options.Enable)
             {
                 throw new Exception("AI 功能未启用，请在 appsettings.json 配置 AiOptions.Enable");
