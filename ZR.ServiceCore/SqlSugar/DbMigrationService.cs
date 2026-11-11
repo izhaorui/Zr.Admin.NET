@@ -74,6 +74,10 @@ namespace ZR.ServiceCore.SqlSugar
             typeof(AiCallLog),
             typeof(AiAccessPolicy),
             typeof(AiModelPrice),
+            // AI 运行时配置覆盖（后台维护的模型/密钥/知识库配置）
+            typeof(AiConfig),
+            // AI 模型渠道（后台维护的供应商渠道行）
+            typeof(AiProvider),
             // 行政区划字典（主库）：公共参考数据，运费模板的「不配送地区/包邮」按它匹配。
             // 注册进主库迁移链路后，后台「数据库同步」页也能看到并手工补建这张表。
             // 数据由 MainDbReferenceSeed.EnsureAreas 灌入（种子内嵌在 ZR.ServiceCore）。
