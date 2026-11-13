@@ -57,10 +57,12 @@ namespace ZR.ServiceCore.AI.Governance
                 ? actor.RoleIds
                 : user?.Roles?.Select(x => x.RoleId).ToArray() ?? Array.Empty<long>();
             var scene = Normalize(request.Scene, "unknown").ToLowerInvariant();
-            // 结算幂等键：RequestId 每租约生成一次，ai_call_log 上建有唯一索引 uk_ai_call_request。
-            // 因此"重试"必须复用同一租约（重试落在 AiLlmClient 内部、BeginGovernedCallAsync 之后），
-            // 若把重试提到网关 AiChatLlmGateway 层，每次重试都会重新 BeginAsync 生成新 GUID，
-            // 唯一索引就挡不住重复落库与重复计费。
+            // 结算幂等键：RequestId 每租约生成一次，ai_call_log 上建有唯一索引 uk_ai_call_request，
+            // 作用是防止"同一租约"在并发/重入结算时重复落库（CompleteAsync 先查后插 + 唯一索引兜底）。
+            // 粒度是"每次 HTTP 尝试一条流水"：重试/换渠道在 AiLlmClientRetryWrapper（AiLlmClient 外层），
+            // 每次尝试都重新 BeginGovernedCallAsync → 新 RequestId → 新租约，各自归属实际渠道与单价
+            // （failover 会换 provider/model），唯一索引不去重重试——这是设计而非缺陷。
+            // 失败尝试无 usage 时仅按输入估值记账（见 CompleteAsync），避免重试重复扣满额估值。
             var requestId = Guid.NewGuid().ToString("N");
 
             AiModelPrice price = null;
@@ -89,6 +91,9 @@ namespace ZR.ServiceCore.AI.Governance
             var estimatedCompletion = Math.Max(0, request.MaxCompletionTokens);
             var reservedTokens = (long)estimatedPrompt + estimatedCompletion;
             var reservedAmount = CalculateAmount(price, estimatedPrompt, estimatedCompletion);
+            // 输入-only 预留：失败调用（超时/取消等）无 usage 时只按输入估值记账，
+            // 输出未知不计满额上界，避免高估与重试重复扣额（见 CompleteAsync）。
+            var reservedPromptAmount = CalculateAmount(price, estimatedPrompt, 0);
 
             var lease = new AiCallLease
             {
@@ -106,7 +111,9 @@ namespace ZR.ServiceCore.AI.Governance
                 OutputPricePerMillion = price?.OutputPricePerMillion ?? 0,
                 Currency = Normalize(price?.Currency, "CNY"),
                 ReservedTokens = reservedTokens,
-                ReservedAmount = reservedAmount
+                ReservedAmount = reservedAmount,
+                ReservedPromptTokens = estimatedPrompt,
+                ReservedPromptAmount = reservedPromptAmount
             };
 
             if (!Options.Enable)
@@ -193,21 +200,33 @@ namespace ZR.ServiceCore.AI.Governance
 
             var totalTokens = outcome.TotalTokens;
             var estimatedAmount = 0m;
-            var useReservation = !outcome.HasUsage
+            // 无 usage 时的兜底记账分两档：
+            //  - 成功：模型已产出但 Provider 未回 usage，按完整预留（输入+满额输出）保守记账；
+            //  - 失败（超时/取消/流中断）：输出未知，只计必然已发送的输入估值，避免按输出上界高估，
+            //    也避免重试"每尝试一条流水"时重复扣满额（每尝试独立租约，见 BeginAsync 注释）。
+            var fallbackWithoutUsage = !outcome.HasUsage
                 && (outcome.Success || outcome.Status is "timeout" or "cancelled"
                     || outcome.ErrorType is "stream_interrupted" or "client_cancelled");
-            if (useReservation)
+            if (fallbackWithoutUsage)
             {
-                totalTokens = (int)Math.Min(int.MaxValue, lease.ReservedTokens);
-                estimatedAmount = lease.ReservedAmount;
+                string usageNote;
                 if (outcome.Success)
                 {
+                    totalTokens = (int)Math.Min(int.MaxValue, lease.ReservedTokens);
+                    estimatedAmount = lease.ReservedAmount;
                     outcome.Status = "metering_incomplete";
                     outcome.ErrorType = "usage_missing";
+                    usageNote = "Provider 未返回 usage，按调用前预估值记账";
+                }
+                else
+                {
+                    totalTokens = (int)Math.Min(int.MaxValue, lease.ReservedPromptTokens);
+                    estimatedAmount = lease.ReservedPromptAmount;
+                    usageNote = "Provider 未返回 usage，失败调用仅按输入估值记账";
                 }
                 outcome.ErrorMessage = string.IsNullOrWhiteSpace(outcome.ErrorMessage)
-                    ? "Provider 未返回 usage，按调用前预估值记账"
-                    : $"{outcome.ErrorMessage}；Provider 未返回 usage，按预估值记账";
+                    ? usageNote
+                    : $"{outcome.ErrorMessage}；{usageNote}";
             }
             var inputAmount = lease.InputPricePerMillion * outcome.PromptTokens / 1_000_000m;
             var outputAmount = lease.OutputPricePerMillion * outcome.CompletionTokens / 1_000_000m;

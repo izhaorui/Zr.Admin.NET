@@ -42,6 +42,10 @@ namespace Infrastructure.AI
         public IReadOnlyList<string> ReservationScopeKeys { get; set; } = Array.Empty<string>();
         public long ReservedTokens { get; set; }
         public decimal ReservedAmount { get; set; }
+        /// <summary>预留中的输入 token 部分（EstimatedPromptTokens）。失败调用无 usage 时仅按它记账。</summary>
+        public long ReservedPromptTokens { get; set; }
+        /// <summary>预留中的输入金额部分（输入单价×输入 token）。失败调用无 usage 时仅按它记账，避免按满额输出高估。</summary>
+        public decimal ReservedPromptAmount { get; set; }
     }
 
     /// <summary>模型调用结束状态。</summary>

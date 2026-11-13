@@ -3,10 +3,10 @@ namespace ZR.Model.AI
     /// <summary>
     /// AI 调用 token 用量审计流水（每次模型 HTTP 调用一条，供审计/统计）。
     /// <para>
-    /// 幂等约束：RequestId 上建有唯一索引 uk_ai_call_request，保证同一调用租约在并发/重入结算时只落一行。
-    /// 其生效前提是"重试复用同一租约"——重试必须落在 Infrastructure.AI.AiLlmClient 内部
-    /// （BeginGovernedCallAsync 之后、发送 HTTP 之前）。若把重试提到网关 AiChatLlmGateway，
-    /// 每次重试都会重新 BeginAsync 生成新的 RequestId，唯一约束即形同虚设。
+    /// 幂等约束：RequestId 上建有唯一索引 uk_ai_call_request，保证"同一调用租约"在并发/重入结算时只落一行。
+    /// 粒度是"每次 HTTP 尝试一条流水"：重试/换渠道在 Infrastructure.AI.AiLlmClientRetryWrapper（AiLlmClient 外层），
+    /// 每次尝试都重新 BeginAsync 生成新 RequestId、各自归属实际渠道与单价，唯一索引不去重重试（设计而非缺陷）。
+    /// 失败尝试（超时/取消等）无 usage 时仅按输入估值记账，避免按满额输出高估、也避免重试重复扣满额。
     /// </para>
     /// </summary>
     [SugarTable("ai_call_log")]
