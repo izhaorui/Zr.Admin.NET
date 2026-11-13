@@ -58,12 +58,12 @@ namespace ZR.AiKnowledge.Providers
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 throw new KnowledgeProviderException($"知识库请求超时 url={url} timeout={timeout}s",
-                    $"知识库响应超时（{timeout}s），请稍后重试。");
+                    $"知识库响应超时（{timeout}s），请稍后重试。", "timeout");
             }
             catch (HttpRequestException ex)
             {
                 throw new KnowledgeProviderException($"知识库请求失败 url={url} err={ex.Message}",
-                    "知识库服务连接失败，请稍后重试或联系管理员。");
+                    "知识库服务连接失败，请稍后重试或联系管理员。", "unreachable");
             }
 
             using (response)
@@ -76,7 +76,7 @@ namespace ZR.AiKnowledge.Providers
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
                     throw new KnowledgeProviderException($"读取知识库响应超时 url={url}",
-                        "知识库响应超时，请稍后重试。");
+                        "知识库响应超时，请稍后重试。", "timeout");
                 }
 
                 if (!response.IsSuccessStatusCode)
@@ -84,7 +84,7 @@ namespace ZR.AiKnowledge.Providers
                     // 只记状态码与截断后的报文，绝不记录 ApiKey
                     Logger.Warn($"知识库返回非成功状态 status={(int)response.StatusCode} url={url} body={Truncate(body, 300)}");
                     throw new KnowledgeProviderException($"知识库 HTTP {(int)response.StatusCode} url={url} body={Truncate(body, 500)}",
-                        MapUserMessage((int)response.StatusCode));
+                        MapUserMessage((int)response.StatusCode), MapErrorCode((int)response.StatusCode));
                 }
 
                 try
@@ -94,7 +94,7 @@ namespace ZR.AiKnowledge.Providers
                 catch (JsonException ex)
                 {
                     Logger.Error(ex, $"知识库响应不是合法 JSON url={url} body={Truncate(body, 300)}");
-                    throw new KnowledgeProviderException("知识库响应格式非法", "知识库返回内容无法识别，请检查接口配置。");
+                    throw new KnowledgeProviderException("知识库响应格式非法", "知识库返回内容无法识别，请检查接口配置。", "parse");
                 }
             }
         }
@@ -107,6 +107,19 @@ namespace ZR.AiKnowledge.Providers
             429 => "知识库调用过于频繁，请稍后再试。",
             >= 500 => "知识库服务暂时不可用，请稍后重试。",
             _ => "知识库调用失败，请稍后重试或联系管理员。"
+        };
+
+        /// <summary>
+        /// HTTP 状态码 → 审计用错误分类（与 <see cref="KnowledgeProviderException.Code"/> 同一口径）。
+        /// 单独于用户提示存在：提示文案会调整，统计口径要稳定。
+        /// </summary>
+        public static string MapErrorCode(int statusCode) => statusCode switch
+        {
+            401 or 403 => "auth",
+            404 => "not_found",
+            429 => "rate_limited",
+            >= 500 => "server_error",
+            _ => "http_error"
         };
 
         /// <summary>从对象中按候选字段名读取字符串（数字按原文返回）；缺失返回 null。</summary>
@@ -172,6 +185,10 @@ namespace ZR.AiKnowledge.Providers
             if (string.IsNullOrWhiteSpace(text)) return string.Empty;
             return text.Length <= maxLen ? text : text[..maxLen] + "…";
         }
+
+        /// <summary>多库连接取值：库级值为空时回落全局配置（避免"漏配一项就整体不可用"）。</summary>
+        public static string FirstNonEmpty(params string[] values)
+            => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim();
     }
 
     /// <summary>
@@ -188,17 +205,27 @@ namespace ZR.AiKnowledge.Providers
     {
         public string Name => AiKnowledgeOptions.GenericProvider;
 
-        public async Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, CancellationToken cancellationToken = default)
+        public Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, CancellationToken cancellationToken = default)
+            => SearchAsync(query, null, cancellationToken);
+
+        public async Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, KnowledgeConnection connection,
+            CancellationToken cancellationToken = default)
         {
             var options = AiKnowledgeSettings.Current;
-            if (string.IsNullOrWhiteSpace(options.Endpoint))
+            // 库级连接优先：多库场景下每个库有自己的地址/密钥/超时，缺省项才回落全局配置
+            var endpoint = ExternalKnowledgeHttp.FirstNonEmpty(connection?.Endpoint, options.Endpoint);
+            var apiKey = connection == null ? options.ApiKey : connection.ApiKey;
+            var timeout = connection?.TimeoutSeconds > 0 ? connection.TimeoutSeconds : options.TimeoutSeconds;
+            if (string.IsNullOrWhiteSpace(endpoint))
             {
-                throw new KnowledgeProviderException("AiKnowledge:Endpoint 未配置", "知识库地址未配置，请联系管理员。");
+                throw new KnowledgeProviderException("AiKnowledge:Endpoint 未配置", "知识库地址未配置，请联系管理员。", "config");
             }
 
             var question = query?.Question ?? string.Empty;
             var topK = Math.Clamp(query?.TopK ?? options.TopK, 1, 20);
-            var minScore = query?.MinScore > 0 ? query.MinScore : options.MinScore;
+            // MinScore 已由调用方按"库级 ?? 全局"归一化：显式 0 表示不启用阈值，
+            // 不能再按 >0 回落全局，否则库级关阈值会被全局阈值静默覆盖
+            var minScore = query != null ? query.MinScore : options.MinScore;
 
             var body = JsonSerializer.Serialize(new Dictionary<string, object>
             {
@@ -210,7 +237,7 @@ namespace ZR.AiKnowledge.Providers
             }, ExternalKnowledgeHttp.PayloadJson);
 
             using var doc = await ExternalKnowledgeHttp.PostJsonAsync(
-                options.Endpoint.Trim(), body, options.ApiKey, options.TimeoutSeconds, cancellationToken).ConfigureAwait(false);
+                endpoint, body, apiKey, timeout, cancellationToken).ConfigureAwait(false);
 
             var hits = new List<KnowledgeHit>();
             foreach (var item in ExternalKnowledgeHttp.FindArray(doc.RootElement, "hits", "results", "data", "documents"))
@@ -228,7 +255,7 @@ namespace ZR.AiKnowledge.Providers
                 });
             }
 
-            return new KnowledgeSearchResult { KbName = options.KbName, Hits = Filter(hits, minScore) };
+            return new KnowledgeSearchResult { KbName = connection?.KbName ?? options.KbName, Hits = Filter(hits, minScore) };
         }
 
         /// <summary>按相似度降序；配置了阈值时丢弃明确低于阈值的片段（Score 缺失的片段保留）。</summary>
@@ -253,25 +280,36 @@ namespace ZR.AiKnowledge.Providers
     {
         public string Name => AiKnowledgeOptions.DifyProvider;
 
-        public async Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, CancellationToken cancellationToken = default)
+        public Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, CancellationToken cancellationToken = default)
+            => SearchAsync(query, null, cancellationToken);
+
+        public async Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, KnowledgeConnection connection,
+            CancellationToken cancellationToken = default)
         {
             var options = AiKnowledgeSettings.Current;
-            if (string.IsNullOrWhiteSpace(options.Endpoint))
+            // 库级连接优先：同一个 Dify 实例下不同数据集可以各自成库
+            var endpoint = ExternalKnowledgeHttp.FirstNonEmpty(connection?.Endpoint, options.Endpoint);
+            var datasetId = ExternalKnowledgeHttp.FirstNonEmpty(connection?.DatasetId, options.DatasetId);
+            // 不用 FirstNonEmpty：空串=该库显式未配密钥（Dify 密钥必填，不能静默继承顶层密钥去打别的数据集）
+            var apiKey = connection == null ? options.ApiKey : connection.ApiKey;
+            var timeout = connection?.TimeoutSeconds > 0 ? connection.TimeoutSeconds : options.TimeoutSeconds;
+            if (string.IsNullOrWhiteSpace(endpoint))
             {
-                throw new KnowledgeProviderException("AiKnowledge:Endpoint 未配置", "知识库地址未配置，请联系管理员。");
+                throw new KnowledgeProviderException("AiKnowledge:Endpoint 未配置", "知识库地址未配置，请联系管理员。", "config");
             }
-            if (string.IsNullOrWhiteSpace(options.DatasetId))
+            if (string.IsNullOrWhiteSpace(datasetId))
             {
-                throw new KnowledgeProviderException("AiKnowledge:DatasetId 未配置", "知识库数据集未配置，请联系管理员。");
+                throw new KnowledgeProviderException("AiKnowledge:DatasetId 未配置", "知识库数据集未配置，请联系管理员。", "config");
             }
-            if (string.IsNullOrWhiteSpace(options.ApiKey))
+            if (string.IsNullOrWhiteSpace(apiKey))
             {
-                throw new KnowledgeProviderException("AiKnowledge:ApiKey 未配置", "知识库访问密钥未配置，请联系管理员。");
+                throw new KnowledgeProviderException("AiKnowledge:ApiKey 未配置", "知识库访问密钥未配置，请联系管理员。", "config");
             }
 
             var topK = Math.Clamp(query?.TopK ?? options.TopK, 1, 20);
-            var minScore = query?.MinScore > 0 ? query.MinScore : options.MinScore;
-            var url = $"{options.Endpoint.TrimEnd('/')}/datasets/{Uri.EscapeDataString(options.DatasetId.Trim())}/retrieve";
+            // 同上：库级显式 0 就是"该库不启用阈值"，不得回落全局
+            var minScore = query != null ? query.MinScore : options.MinScore;
+            var url = $"{endpoint.TrimEnd('/')}/datasets/{Uri.EscapeDataString(datasetId)}/retrieve";
 
             var body = JsonSerializer.Serialize(new Dictionary<string, object>
             {
@@ -287,7 +325,7 @@ namespace ZR.AiKnowledge.Providers
             }, ExternalKnowledgeHttp.PayloadJson);
 
             using var doc = await ExternalKnowledgeHttp.PostJsonAsync(
-                url, body, options.ApiKey, options.TimeoutSeconds, cancellationToken).ConfigureAwait(false);
+                url, body, apiKey, timeout, cancellationToken).ConfigureAwait(false);
 
             var hits = new List<KnowledgeHit>();
             if (doc.RootElement.ValueKind == JsonValueKind.Object
@@ -323,7 +361,7 @@ namespace ZR.AiKnowledge.Providers
             }
             return new KnowledgeSearchResult
             {
-                KbName = options.KbName,
+                KbName = connection?.KbName ?? options.KbName,
                 Hits = hits.OrderByDescending(h => h.Score).ToList()
             };
         }

@@ -46,7 +46,21 @@
   // 外部知识库插件（可选）：Enable=false 时工具不下发、不发任何外部请求。
   // 启用时至少填 Provider + Endpoint（dify 另需 DatasetId/ApiKey），其余参数见 ZR.AiKnowledge/AiKnowledgeOptions.cs；
   // 与 AiOptions 同一数据源策略，后台保存过则以库为准。
+  // 多库：KnowledgeBases 每项只写与顶层不同的字段即可，留空继承顶层（ApiKey 写空串表示该库不鉴权）；
+  // Permission 为空继承上面的权限码，IsDefault=true 的库作为模型未指定 kbId 时的默认库。
+  // 此时 search_knowledge 多一个 kbId 参数（取值=库的 Id），审计可按库统计：GET ai/knowledge/query/stat → byBase。
   "AiKnowledge": {
     "Enable": false
+    // 单库（旧写法，保持兼容；取消注释时记得给上一行 Enable 补逗号）：
+    // "Provider": "generic",
+    // "Endpoint": "https://kb.example.com/api/search",
+    // "KbName": "公司制度库",
+    // "TopK": 5,
+    // "MinScore": 0.3,
+    // 多库（配了 KnowledgeBases 就忽略上面单库字段的兜底作用）：
+    // "KnowledgeBases": [
+    //   { "Id": "hr", "Name": "人事库", "Endpoint": "https://kb-hr.example.com/api/search", "Description": "考勤、假期、员工手册" },
+    //   { "Id": "fin", "Name": "财务库", "Endpoint": "https://kb-fin.example.com/api/search", "IsDefault": true, "Permission": "ai:kb:fin" }
+    // ]
   }
 }

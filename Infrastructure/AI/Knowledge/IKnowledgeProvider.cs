@@ -19,6 +19,42 @@ namespace Infrastructure.AI.Knowledge
 
         /// <summary>按自然语言问题检索片段。可预期失败请抛 <see cref="KnowledgeProviderException"/>。</summary>
         Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 多库检索：带库级连接信息（地址/密钥/数据集/展示名）。
+        /// <para>
+        /// 默认实现忽略 <paramref name="connection"/> 直接转调旧方法——已有自定义渠道无需改造即可继续工作，
+        /// 只有需要"一套代码接多个库"的渠道（generic / dify）才重写本方法。
+        /// </para>
+        /// </summary>
+        Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, KnowledgeConnection connection,
+            CancellationToken cancellationToken = default)
+            => SearchAsync(query, cancellationToken);
+    }
+
+    /// <summary>
+    /// 一次检索使用的库连接信息：由调用方（工具/控制器）按配置解析后填入，渠道不再自己读全局配置。
+    /// <para>整份对象只在内存中传递，<see cref="ApiKey"/> 禁止写入日志或审计。</para>
+    /// </summary>
+    public sealed class KnowledgeConnection
+    {
+        /// <summary>渠道名（generic / dify …）</summary>
+        public string Provider { get; set; }
+
+        /// <summary>库展示名，用于回灌文本的"来源"</summary>
+        public string KbName { get; set; }
+
+        /// <summary>接口地址（generic 为完整检索 URL；dify 为 API 根地址）</summary>
+        public string Endpoint { get; set; }
+
+        /// <summary>访问密钥（Bearer）；空表示不传鉴权头</summary>
+        public string ApiKey { get; set; }
+
+        /// <summary>Dify 数据集 ID</summary>
+        public string DatasetId { get; set; }
+
+        /// <summary>单次检索超时（秒，1-120）</summary>
+        public int TimeoutSeconds { get; set; } = 15;
     }
 
     /// <summary>一次知识库检索请求。TopK/MinScore 已由调用方按配置归一化。</summary>
@@ -75,12 +111,20 @@ namespace Infrastructure.AI.Knowledge
     /// </summary>
     public class KnowledgeProviderException : Exception
     {
-        public KnowledgeProviderException(string message, string userMessage) : base(message)
+        public KnowledgeProviderException(string message, string userMessage, string code = "provider_error") : base(message)
         {
             UserMessage = userMessage;
+            Code = string.IsNullOrWhiteSpace(code) ? "provider_error" : code;
         }
 
         /// <summary>面向用户/模型的友好提示（不含地址与密钥）</summary>
         public string UserMessage { get; }
+
+        /// <summary>
+        /// 机器可读的错误分类：timeout / unreachable / auth / not_found / rate_limited /
+        /// server_error / http_error / parse / config。
+        /// 用于审计统计，不参与提示词；新增渠道按同一口径填。
+        /// </summary>
+        public string Code { get; }
     }
 }

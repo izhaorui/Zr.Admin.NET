@@ -16,6 +16,19 @@ namespace ZR.AiKnowledge
         public bool Enable { get; set; }
 
         /// <summary>
+        /// 是否记录检索审计（默认开启）。
+        /// <para>
+        /// 开启后每次 <c>search_knowledge</c> 调用在 <c>ai_knowledge_query_log</c> 落一行：
+        /// 问题（截断 500 字）、渠道、命中数、耗时、错误分类。用于回答"知识库到底有没有用、
+        /// 没答上来是因为没命中还是因为上游故障"。只记检索行为，不复制片段正文。
+        /// </para>
+        /// <para>
+        /// 关闭后不写任何审计行，检索链路本身不受影响；表不存在或写入失败也只记日志。
+        /// </para>
+        /// </summary>
+        public bool AuditEnabled { get; set; } = true;
+
+        /// <summary>
         /// 渠道名：generic = 自建 HTTP 检索接口；dify = Dify 数据集检索。
         /// 新增渠道时实现 <see cref="IKnowledgeProvider"/> 并标注 [AppService] 即可，无需改本插件。
         /// </summary>
@@ -58,6 +71,83 @@ namespace ZR.AiKnowledge
         /// </summary>
         public string Permission { get; set; }
 
+        /// <summary>
+        /// 多知识库注册。为空时由上面的顶层字段合成一个 <see cref="DefaultBaseId"/> 库（旧配置零改动）。
+        /// <para>数组顺序即默认优先级；<see cref="AiKnowledgeBaseOptions.IsDefault"/>=true 的作为默认库，都未标记时取第一个。</para>
+        /// </summary>
+        public List<AiKnowledgeBaseOptions> KnowledgeBases { get; set; }
+
+        /// <summary>
+        /// 解析实际生效的库列表：过滤 Enabled=false、补 Id、去重、库级字段回落顶层、标记默认库。
+        /// <para>每次调用重新计算（配置可热更新）；数量有上限，实现为纯内存运算，无需缓存。</para>
+        /// </summary>
+        public List<AiKnowledgeBaseOptions> BuildBases()
+        {
+            var declared = (KnowledgeBases ?? new List<AiKnowledgeBaseOptions>()).Where(b => b != null).ToList();
+            var configured = declared.Where(b => b.Enabled).Take(MaxBases).ToList();
+
+            // 完全没声明 KnowledgeBases：顶层字段本身就是唯一一个库（旧配置零改动）。
+            // 声明了但全部 Enabled=false 时不回落：那是"主动下线所有库"，应表现为无可用库，而不是悄悄用顶层配置。
+            if (declared.Count == 0)
+            {
+                configured.Add(new AiKnowledgeBaseOptions { Id = DefaultBaseId });
+            }
+
+            var result = new List<AiKnowledgeBaseOptions>();
+            var usedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < configured.Count; i++)
+            {
+                var item = configured[i];
+                var id = string.IsNullOrWhiteSpace(item.Id) ? $"kb{i + 1}" : item.Id.Trim();
+                // 重复 Id 只保留第一个：模型按 Id 选库，重名会导致目标不唯一
+                if (!usedIds.Add(id)) continue;
+
+                item.Id = id;
+                item.Name = FirstNonEmpty(item.Name, KbName, id);
+                item.Provider = FirstNonEmpty(item.Provider, Provider, GenericProvider);
+                item.Endpoint = FirstNonEmpty(item.Endpoint, Endpoint);
+                // 密钥：null 表示继承顶层，空串表示"该库确实不需要鉴权"
+                item.ApiKey ??= ApiKey;
+                item.DatasetId = FirstNonEmpty(item.DatasetId, DatasetId);
+                item.KbId = FirstNonEmpty(item.KbId, KbId);
+                item.TopK = Math.Clamp(item.TopK ?? TopK, 1, 20);
+                item.MinScore = Math.Clamp(item.MinScore ?? MinScore, 0, 1);
+                item.TimeoutSeconds = Math.Clamp(item.TimeoutSeconds ?? TimeoutSeconds, 1, 120);
+                // 库级权限码为空 = 继承工具级权限：单库旧配置下两者天然一致，不会额外收紧
+                item.Permission = FirstNonEmpty(item.Permission, Permission);
+                result.Add(item);
+            }
+
+            if (result.Count == 0)
+            {
+                return result;
+            }
+
+            var defaultIndex = result.FindIndex(b => b.IsDefault);
+            if (defaultIndex < 0) defaultIndex = 0;
+            for (var i = 0; i < result.Count; i++)
+            {
+                result[i].IsDefault = i == defaultIndex;
+            }
+            // 默认库排第一：工具描述与前端选择器的首项即"不指定时用哪个"
+            if (defaultIndex > 0)
+            {
+                var defaultBase = result[defaultIndex];
+                result.RemoveAt(defaultIndex);
+                result.Insert(0, defaultBase);
+            }
+            return result;
+        }
+
+        private static string FirstNonEmpty(params string[] values)
+            => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim();
+
+        /// <summary>未配置 KnowledgeBases 时合成库的 Id（模型与前端都用它指定"默认库"）。</summary>
+        public const string DefaultBaseId = "default";
+
+        /// <summary>生效库数量上限：防配置膨胀后工具描述过长、模型选择困难。</summary>
+        public const int MaxBases = 20;
+
         /// <summary>generic 渠道名常量</summary>
         public const string GenericProvider = "generic";
 
@@ -74,6 +164,55 @@ namespace ZR.AiKnowledge
             Provider = string.IsNullOrWhiteSpace(Provider) ? GenericProvider : Provider.Trim().ToLowerInvariant();
             return this;
         }
+    }
+
+    /// <summary>
+    /// 单个知识库配置。除 <see cref="Id"/> 外全部可省略：省略即继承 <see cref="AiKnowledgeOptions"/> 的同名顶层字段，
+    /// 因此"只配库地址"就能新增一个库，不会因为漏填 topK / 密钥把默认值打穿。
+    /// </summary>
+    public class AiKnowledgeBaseOptions
+    {
+        /// <summary>库标识（模型通过 kbId 指定、审计记录用）；留空自动补 kb1/kb2…，生产配置建议显式填写。</summary>
+        public string Id { get; set; }
+
+        /// <summary>展示名（回灌文本的"来源"，也是前端选择器的显示值）</summary>
+        public string Name { get; set; }
+
+        /// <summary>是否启用；默认启用，下线一个库只需把 Enabled 改为 false</summary>
+        public bool Enabled { get; set; } = true;
+
+        /// <summary>给模型看的一句话用途，如"公司制度、报销规范"；留空则只显示库名</summary>
+        public string Description { get; set; }
+
+        /// <summary>是否默认库：模型未指定 kbId 时使用。都未标记时取配置中的第一个。</summary>
+        public bool IsDefault { get; set; }
+
+        /// <summary>渠道名；空=继承顶层 Provider</summary>
+        public string Provider { get; set; }
+
+        /// <summary>接口地址；空=继承顶层 Endpoint</summary>
+        public string Endpoint { get; set; }
+
+        /// <summary>访问密钥；null=继承顶层，空串=该库不使用密钥</summary>
+        public string ApiKey { get; set; }
+
+        /// <summary>Dify 数据集 ID；空=继承顶层</summary>
+        public string DatasetId { get; set; }
+
+        /// <summary>上游库标识（generic 原样透传）；空=继承顶层</summary>
+        public string KbId { get; set; }
+
+        /// <summary>返回条数；null=继承顶层</summary>
+        public int? TopK { get; set; }
+
+        /// <summary>相似度下限；null=继承顶层，0=不启用阈值</summary>
+        public double? MinScore { get; set; }
+
+        /// <summary>超时秒数；null=继承顶层</summary>
+        public int? TimeoutSeconds { get; set; }
+
+        /// <summary>库级权限码；空=继承工具级权限（不做额外限制）</summary>
+        public string Permission { get; set; }
     }
 
     /// <summary>

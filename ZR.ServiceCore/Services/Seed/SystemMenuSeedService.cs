@@ -62,6 +62,16 @@ namespace ZR.ServiceCore.Services
             ],
             Icon: "system");
 
+        private static readonly SeedPage AiKnowledgePage = new(
+            Name: "知识库",
+            Path: "aiKnowledge",
+            Component: "Ai/knowledge/index",
+            RouteName: "AiKnowledge",
+            Perms: "ai:governance:list",
+            OrderNum: 8,
+            Buttons: [],
+            Icon: "education");
+
         private static readonly SeedPage AiUsageMinePage = new(
             Name: "我的用量",
             Path: "myUsage",
@@ -171,6 +181,7 @@ namespace ZR.ServiceCore.Services
                 AiGovernancePage,
                 AiUsageMinePage,
                 AiChatPage,
+                AiKnowledgePage,
             };
 
             var inserted = 0;
