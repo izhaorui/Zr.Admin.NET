@@ -649,6 +649,13 @@ namespace Infrastructure.Model
         public int MaxRetryDelayMs { get; set; } = 30000;
 
         /// <summary>
+        /// 单次用户请求跨渠道的总 HTTP 尝试上限（含同渠道重试与换渠道 failover）。默认 4。
+        /// 收口"重试×换渠道"放大：最坏耗时≈本值×单次超时；0/负数按默认 4 处理。
+        /// 超时类错误不再同渠道重试（直接换渠道），本预算对全部尝试统一封顶。
+        /// </summary>
+        public int MaxTotalAttempts { get; set; } = 4;
+
+        /// <summary>
         /// 运行时渠道候选链（同一 Provider 的多行渠道，按优先级排好序）。
         /// <para>
         /// 仅由 <c>AiOptionsResolver</c> 从 ai_provider 表填充，<b>不参与文件持久化</b>：

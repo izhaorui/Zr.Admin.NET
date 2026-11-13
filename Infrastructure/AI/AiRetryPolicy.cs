@@ -40,7 +40,7 @@ namespace Infrastructure.AI
     /// - 指数退避：延迟 = initialDelayMs * (2 ^ attemptNumber) + 随机抖动
     /// - 自动检测明确不可重试的错误（如 401、403、404）
     /// - 限流(429) 支持：读取 Retry-After 响应头
-    /// - 超时递进策略：递进延迟尝试后重新拉长超时
+    /// - 超时默认不重试（RetryOnTimeout=false）：交由上层换渠道，避免同渠道反复等待超时
     /// </summary>
     public sealed class ExponentialBackoffRetryPolicy : IAiRetryPolicy
     {
@@ -131,10 +131,14 @@ namespace Infrastructure.AI
         /// <summary>
         /// 判断是否应该重试该异常。
         /// </summary>
-        private static bool ShouldRetry(AiException ex) => ex switch
+        private bool ShouldRetry(AiException ex) => ex switch
         {
-            // 限流与超时：总是可重试
-            AiRateLimitException or AiTimeoutException => true,
+            // 限流：总是可重试
+            AiRateLimitException => true,
+
+            // 超时：默认不重试（RetryOnTimeout=false），交由上层换渠道，
+            // 避免同一慢渠道反复等待超时把首字延迟成倍放大
+            AiTimeoutException => _options.RetryOnTimeout,
 
             // HTTP 异常：根据状态码判断
             AiHttpException http => http.IsRetryable,
@@ -186,6 +190,12 @@ namespace Infrastructure.AI
 
         /// <summary>最大重试延迟（毫秒），防止延迟过长。默认 30000ms (30s)</summary>
         public int MaxDelayMs { get; set; } = 30000;
+
+        /// <summary>
+        /// 超时是否同渠道重试。默认 false：超时通常意味着该渠道慢/不可用，
+        /// 同渠道反复重试只会成倍放大等待，应交由上层换渠道（failover）。
+        /// </summary>
+        public bool RetryOnTimeout { get; set; } = false;
 
         /// <summary>
         /// 验证配置的合理性。

@@ -25,18 +25,20 @@ namespace Infrastructure.AI
         /// <summary>
         /// 构建重试策略（基于 AiOptions 配置）。
         /// </summary>
-        private static IAiRetryPolicy BuildRetryPolicy(AiOptions options)
+        private static IAiRetryPolicy BuildRetryPolicy(AiOptions options, int maxAttempts)
         {
-            if (options == null || !options.EnableRetry || options.MaxRetries <= 0)
+            if (options == null || !options.EnableRetry || maxAttempts <= 1)
             {
                 return new NoRetryPolicy(AiLog.GetLogger<NoRetryPolicy>());
             }
 
             var retryOptions = new ExponentialBackoffOptions
             {
-                MaxRetries = options.MaxRetries,
+                MaxRetries = maxAttempts,
                 InitialDelayMs = Math.Max(100, options.InitialRetryDelayMs),
-                MaxDelayMs = Math.Max(1000, options.MaxRetryDelayMs)
+                MaxDelayMs = Math.Max(1000, options.MaxRetryDelayMs),
+                // 超时不重试：直接换渠道，避免同渠道反复等待超时（总耗时由 MaxTotalAttempts 封顶）
+                RetryOnTimeout = false
             };
 
             retryOptions.Validate();
@@ -45,6 +47,13 @@ namespace Infrastructure.AI
                 AiLog.GetLogger<ExponentialBackoffRetryPolicy>(),
                 retryOptions);
         }
+
+        /// <summary>总尝试预算默认值：与 AiOptions.MaxTotalAttempts 默认一致。</summary>
+        private const int DefaultTotalAttempts = 4;
+
+        /// <summary>解析单次请求的总 HTTP 尝试预算（跨渠道共享）；0/负数回落默认。</summary>
+        private static int ResolveTotalAttemptBudget(AiOptions options)
+            => options == null || options.MaxTotalAttempts <= 0 ? DefaultTotalAttempts : options.MaxTotalAttempts;
 
         /// <summary>
         /// 非流式对话（自动重试；失败时按渠道候选链换 Key 重试）。
@@ -94,11 +103,14 @@ namespace Infrastructure.AI
             string scene = null,
             CancellationToken cancellationToken = default)
         {
+            // 视觉无换渠道：总预算与单渠道上限取小；超时同样不重试（策略内 RetryOnTimeout=false）。
+            var maxAttempts = Math.Min(Math.Max(1, options?.MaxRetries ?? 1), ResolveTotalAttemptBudget(options));
             return ExecuteOnceAsync(
                 options,
                 $"ChatWithImages (scene={scene}, model={options?.Model}, images={imageUrls?.Count ?? 0})",
                 config => AiLlmClient.ChatWithImagesAsync(config, systemPrompt, textPrompt, imageUrls, scene, cancellationToken),
-                cancellationToken);
+                cancellationToken,
+                maxAttempts);
         }
 
         /// <summary>
@@ -126,9 +138,10 @@ namespace Infrastructure.AI
             AiOptions options,
             string operationName,
             Func<AiOptions, Task<T>> call,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            int maxAttempts)
         {
-            var retryPolicy = BuildRetryPolicy(options);
+            var retryPolicy = BuildRetryPolicy(options, maxAttempts);
             return await retryPolicy.ExecuteAsync(
                 async () =>
                 {
@@ -163,25 +176,36 @@ namespace Infrastructure.AI
             CancellationToken cancellationToken)
         {
             var chain = AiLlmClient.ResolveProviderChain(options);
+            // 总尝试预算：跨渠道共享，封顶"重试×换渠道"放大（最坏耗时≈预算×单次超时）。
+            var remaining = ResolveTotalAttemptBudget(options);
             Exception lastError = null;
 
-            for (var index = 0; index < chain.Count; index++)
+            for (var index = 0; index < chain.Count && remaining > 0; index++)
             {
                 var candidate = chain[index];
                 var candidateOptions = WithCandidate(options, candidate);
+                // 本渠道尝试上限受剩余预算约束；超时不重试（策略内 RetryOnTimeout=false），失败即换渠道。
+                var maxAttempts = Math.Min(Math.Max(1, options?.MaxRetries ?? 1), remaining);
+                var consumed = 0;
 
                 try
                 {
                     return await ExecuteOnceAsync(
                         candidateOptions,
                         $"{operationName}, provider={candidate.Provider}, 候选={index + 1}/{chain.Count}",
-                        call,
-                        cancellationToken).ConfigureAwait(false);
+                        async cfg =>
+                        {
+                            consumed++; // 每次 HTTP 尝试计数，用于扣减总预算
+                            return await call(cfg).ConfigureAwait(false);
+                        },
+                        cancellationToken,
+                        maxAttempts).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (index < chain.Count - 1 && ShouldFailover(ex, cancellationToken))
+                catch (Exception ex) when (index < chain.Count - 1 && remaining > consumed && ShouldFailover(ex, cancellationToken))
                 {
                     lastError = ex;
-                    Logger.LogWarning($"AI 渠道失败，切换备用渠道 候选={index + 1}/{chain.Count} provider={candidate.Provider} model={candidate.Model} 错误={ex.GetType().Name}:{ex.Message}");
+                    remaining -= consumed;
+                    Logger.LogWarning($"AI 渠道失败，切换备用渠道 候选={index + 1}/{chain.Count} provider={candidate.Provider} model={candidate.Model} 剩余尝试预算={remaining} 错误={ex.GetType().Name}:{ex.Message}");
                 }
             }
 

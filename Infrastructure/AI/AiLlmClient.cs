@@ -591,6 +591,8 @@ namespace Infrastructure.AI
             var timeoutSeconds = ResolveTimeoutSeconds(options, resolved.Provider);
             var lease = await BeginGovernedCallAsync(scene, resolved.Provider, resolved.Model, json, options.MaxTokens, true);
             AiCallOutcome outcome = null;
+            // SSE 事件载荷（含已解析 JsonDocument）：声明在 try 外，便于 finally 统一释放未处理事件的 doc。
+            var sseEvents = new List<SseEvent>();
             try
             {
                 HttpHelper.HttpStreamResponse streamResp;
@@ -674,7 +676,6 @@ namespace Infrastructure.AI
                 await using var stream = await response.Content.ReadAsStreamAsync(token);
                 var buffer = new byte[8192];
                 var lineBytes = new MemoryStream();
-                var sseEvents = new List<string>();      // 本条消息内产出的完整 SSE 事件载荷
                 var eventData = new StringBuilder();     // 当前事件累积的 data（多行 data: 以 \n 连接）
                 var sseDone = false;                     // 是否已收到 [DONE]
 
@@ -781,7 +782,7 @@ namespace Infrastructure.AI
                     // 统一分发点：逐事件处理用量/终止原因/增量/工具分片（字节循环与流结束冲刷共用同一段逻辑）
                     for (var e = 0; e < sseEvents.Count && !sseDone; e++)
                     {
-                        var data = sseEvents[e];
+                        var data = sseEvents[e].Raw;
                         if (data == "[DONE]")
                         {
                             sseDone = true;
@@ -790,15 +791,20 @@ namespace Infrastructure.AI
 
                         if (data.StartsWith("{") || data.StartsWith("["))
                         {
-                            JsonDocument doc;
-                            try
+                            // 复用完整性判定时已解析的 JsonDocument，避免二次解析；
+                            // 冲刷出的不完整片段无缓存 doc，回退解析（失败则忽略，行为同旧）。
+                            var doc = sseEvents[e].Doc;
+                            if (doc == null)
                             {
-                                doc = JsonDocument.Parse(data);
-                            }
-                            catch (JsonException)
-                            {
-                                // 个别不完整块忽略（多行 data: 未收齐时也会走到这里）
-                                continue;
+                                try
+                                {
+                                    doc = JsonDocument.Parse(data);
+                                }
+                                catch (JsonException)
+                                {
+                                    // 个别不完整块忽略（多行 data: 未收齐时也会走到这里）
+                                    continue;
+                                }
                             }
                             using (doc)
                             {
@@ -905,7 +911,7 @@ namespace Infrastructure.AI
                             yield return new AiStreamChunk { Type = "delta", Text = data };
                         }
                     }
-                    sseEvents.Clear();
+                    DisposeSseEvents(sseEvents);
 
                     if (reachedEnd) break;
                 }
@@ -959,6 +965,8 @@ namespace Infrastructure.AI
             }
             finally
             {
+                // 释放未处理事件携带的 JsonDocument（正常路径已逐轮清空，此处兜底异常/提前退出）。
+                DisposeSseEvents(sseEvents);
                 outcome ??= Failed(cancellationToken.IsCancellationRequested ? "cancelled" : "failed",
                     cancellationToken.IsCancellationRequested ? "client_cancelled" : "stream_interrupted",
                     cancellationToken.IsCancellationRequested ? "客户端取消了 AI 流式请求" : "AI 流式请求未正常完成");
@@ -974,6 +982,25 @@ namespace Infrastructure.AI
             public string Id { get; set; }
             public string Name { get; set; }
             public readonly StringBuilder Args = new StringBuilder();
+        }
+
+        /// <summary>
+        /// SSE 事件载荷：Raw 原文 + 可选的已解析 JsonDocument。
+        /// 完整性判定（TryParseCompleteJson）解析一次后即把 doc 随事件传递，主循环复用，避免二次解析。
+        /// doc 由 <see cref="DisposeSseEvents"/> 统一释放（JsonDocument.Dispose 可重复调用，处理过的再释放无副作用）。
+        /// </summary>
+        private sealed class SseEvent
+        {
+            public string Raw { get; }
+            public JsonDocument Doc { get; }
+            public SseEvent(string raw, JsonDocument doc) { Raw = raw; Doc = doc; }
+        }
+
+        /// <summary>释放并清空事件列表携带的 JsonDocument（含未处理项），防止异常/提前退出路径泄漏池化内存。</summary>
+        private static void DisposeSseEvents(List<SseEvent> events)
+        {
+            foreach (var e in events) e.Doc?.Dispose();
+            events.Clear();
         }
 
         /// <summary>SSE 单行长度上限（按字节计，1MB）：正常响应远小于此值；超限即视为异常响应，中断而不是继续吃内存。</summary>
@@ -1006,7 +1033,7 @@ namespace Infrastructure.AI
         /// <param name="line">一行 SSE 文本（不含换行符，行尾 \r 已去除）</param>
         /// <param name="eventData">当前事件的 data 累积缓冲，跨调用保持</param>
         /// <param name="completed">产出的完整事件载荷（追加）</param>
-        private static void PushSseLine(string line, StringBuilder eventData, List<string> completed)
+        private static void PushSseLine(string line, StringBuilder eventData, List<SseEvent> completed)
         {
             if (line.Length == 0)
             {
@@ -1029,7 +1056,7 @@ namespace Infrastructure.AI
             {
                 // 结束标记：先把没发完的事件吐出来，再产出 [DONE]（上层据此结束读取）
                 FlushSseEvent(eventData, completed);
-                completed.Add("[DONE]");
+                completed.Add(new SseEvent("[DONE]", null));
                 return;
             }
 
@@ -1037,7 +1064,7 @@ namespace Infrastructure.AI
             {
                 // 非 JSON 片段：按原行为立即作为独立事件产出
                 FlushSseEvent(eventData, completed);
-                completed.Add(payload);
+                completed.Add(new SseEvent(payload, null));
                 return;
             }
 
@@ -1048,9 +1075,11 @@ namespace Infrastructure.AI
                 throw new HttpRequestException($"AI 流式响应单个事件超过上限（{MaxSseEventChars} 字节）");
             }
 
-            if (LooksCompleteJson(eventData.ToString()))
+            // 完整 JSON 立即产出，并携带已解析的 doc 供主循环复用（避免二次解析）；doc 所有权移交事件列表。
+            var raw = eventData.ToString();
+            if (TryParseCompleteJson(raw, out var doc))
             {
-                completed.Add(eventData.ToString());
+                completed.Add(new SseEvent(raw, doc));
                 eventData.Clear();
             }
         }
@@ -1058,22 +1087,27 @@ namespace Infrastructure.AI
         /// <summary>
         /// 把尚未以空行收尾的事件冲刷为一个完整事件。流结束时必须调用，
         /// 否则"写完事件直接断开连接"的响应会丢掉最后一段增量。
+        /// 冲刷出的多为不完整片段，不携带 doc，主循环回退解析（失败忽略）。
         /// </summary>
-        private static void FlushSseEvent(StringBuilder eventData, List<string> completed)
+        private static void FlushSseEvent(StringBuilder eventData, List<SseEvent> completed)
         {
             if (eventData.Length == 0) return;
-            completed.Add(eventData.ToString());
+            completed.Add(new SseEvent(eventData.ToString(), null));
             eventData.Clear();
         }
 
-        /// <summary>累积内容是否已是完整 JSON（用于即时产出，不依赖空行分隔）。</summary>
-        private static bool LooksCompleteJson(string text)
+        /// <summary>
+        /// 累积内容是否已是完整 JSON（用于即时产出，不依赖空行分隔）。
+        /// 是则输出已解析的 JsonDocument（调用方负责 Dispose），主循环据此复用、免二次解析。
+        /// </summary>
+        private static bool TryParseCompleteJson(string text, out JsonDocument doc)
         {
+            doc = null;
             if (string.IsNullOrEmpty(text)) return false;
             if (text[0] != '{' && text[0] != '[') return false;
             try
             {
-                using var doc = JsonDocument.Parse(text);
+                doc = JsonDocument.Parse(text);
                 return true;
             }
             catch (JsonException)

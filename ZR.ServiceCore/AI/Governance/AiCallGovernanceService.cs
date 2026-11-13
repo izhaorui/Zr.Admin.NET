@@ -80,7 +80,7 @@ namespace ZR.ServiceCore.AI.Governance
             catch (Exception ex)
             {
                 // 读价失败（DB 或缓存后端异常）不再继续：金额额度会失去校验依据，用量还会被记成 0。
-                // 与 GetPolicies / GetUsageAsync 同口径：记日志 + 置不健康 + 抛治理异常（fail-closed）。
+                // 与 GetPolicies / GetUsagePairAsync 同口径：记日志 + 置不健康 + 抛治理异常（fail-closed）。
                 // 健康标志由后续任一次成功落库自动恢复（见 CompleteAsync）。
                 Logger.Warn(ex, "读取 AI 模型价格失败，暂停普通 AI 调用");
                 AccountingHealthy = false;
@@ -155,14 +155,13 @@ namespace ZR.ServiceCore.AI.Governance
             CollectProbes(probes, subjectLimits, $"user:{tenantId}:{userId}");
             foreach (var probe in probes)
             {
-                if (probe.Limit.DailyTokenLimit.HasValue || probe.Limit.DailyAmountLimit.HasValue)
-                {
-                    probe.Day = await GetUsageAsync(lease, probe.ScopeKey, probe.Limit.SceneFilter, dayBegin);
-                }
-                if (probe.Limit.MonthlyTokenLimit.HasValue || probe.Limit.MonthlyAmountLimit.HasValue)
-                {
-                    probe.Month = await GetUsageAsync(lease, probe.ScopeKey, probe.Limit.SceneFilter, monthBegin);
-                }
+                var needDay = probe.Limit.DailyTokenLimit.HasValue || probe.Limit.DailyAmountLimit.HasValue;
+                var needMonth = probe.Limit.MonthlyTokenLimit.HasValue || probe.Limit.MonthlyAmountLimit.HasValue;
+                if (!needDay && !needMonth) continue;
+                // 日/月合并为一条条件聚合查询（日窗口是月窗口子集），按需裁剪周期，减少往返。
+                var (day, month) = await GetUsagePairAsync(lease, probe.ScopeKey, probe.Limit.SceneFilter, dayBegin, monthBegin, needDay, needMonth);
+                probe.Day = day;
+                probe.Month = month;
             }
 
             var concurrencyKeys = new List<(string Key, int Limit)>();
@@ -233,11 +232,8 @@ namespace ZR.ServiceCore.AI.Governance
             if (outcome.HasUsage) estimatedAmount = inputAmount + outputAmount;
             try
             {
-                if (await Context.Queryable<AiCallLog>().AnyAsync(x => x.RequestId == lease.RequestId))
-                {
-                    AccountingHealthy = true;
-                    return;
-                }
+                // 直接插入：重入/并发双写由唯一索引 uk_ai_call_request 拦截，下方 catch 复查 RequestId
+                // 命中即按幂等处理，省掉每次结算前的 AnyAsync 预查往返（重入本就罕见）。
                 await Context.Insertable(new AiCallLog
                 {
                     Scene = AiHelper.Truncate(lease.Scene, 64),
@@ -273,7 +269,7 @@ namespace ZR.ServiceCore.AI.Governance
                 // 该租约已落库属于"幂等命中"，不能当作计量故障 —— 否则一次并发写失败会把全局会计标记
                 // 置为不健康，熔断全站普通 AI 调用（要到下一次成功落库才恢复）。
                 // 判定刻意不匹配各库各异的唯一键错误码，改为复查该 RequestId 是否已存在：与数据库无关，
-                // 且能覆盖"第一次 AnyAsync 快路径本身失败"的回退场景。
+                // 插入前不再预查，唯一键冲突即幂等命中（复查自身失败则走不健康分支兜底）。
                 var persisted = false;
                 try
                 {
@@ -351,8 +347,7 @@ namespace ZR.ServiceCore.AI.Governance
                 : "*";
             var lease = new AiCallLease { TenantId = tenantId, UserId = userId };
             var now = DateTime.Now;
-            var dayUsage = await GetUsageAsync(lease, $"user:{tenantId}:{userId}", sceneFilter, now.Date);
-            var monthUsage = await GetUsageAsync(lease, $"user:{tenantId}:{userId}", sceneFilter, new DateTime(now.Year, now.Month, 1));
+            var (dayUsage, monthUsage) = await GetUsagePairAsync(lease, $"user:{tenantId}:{userId}", sceneFilter, now.Date, new DateTime(now.Year, now.Month, 1), true, true);
             snapshot.DailyTokenUsed = dayUsage.Tokens;
             snapshot.DailyAmountUsed = dayUsage.Amount;
             snapshot.MonthlyTokenUsed = monthUsage.Tokens;
@@ -419,11 +414,18 @@ namespace ZR.ServiceCore.AI.Governance
             }
         }
 
-        private async Task<UsageValue> GetUsageAsync(AiCallLease lease, string scopeKey, string sceneFilter, DateTime begin)
+        /// <summary>
+        /// 一条 SQL 取回某 scope 的「当天/当月」用量：日窗口是月窗口子集，故取月窗口 SUM，
+        /// 再用 IIF(CreateTime&gt;=dayBegin) 条件 SUM 同场取日，把原来日/月两条查询合并为一条。
+        /// 按需裁剪窗口：仅日→日窗口；含月→月窗口。调用方只取自己需要的周期。
+        /// </summary>
+        private async Task<(UsageValue Day, UsageValue Month)> GetUsagePairAsync(
+            AiCallLease lease, string scopeKey, string sceneFilter, DateTime dayBegin, DateTime monthBegin, bool needDay, bool needMonth)
         {
             try
             {
                 // 全局额度要跨租户汇总，必须清掉 AiCallLog 的租户 QueryFilter。
+                var begin = needMonth ? monthBegin : dayBegin;
                 var query = Context.Queryable<AiCallLog>().ClearFilter()
                     .Where(x => x.CreateTime >= begin && x.Status != "rejected");
                 if (scopeKey.StartsWith("tenant:", StringComparison.OrdinalIgnoreCase))
@@ -438,20 +440,19 @@ namespace ZR.ServiceCore.AI.Governance
                 {
                     query = query.Where(x => x.Scene == sceneFilter);
                 }
-                // 同一次过滤条件只用一条 SQL 取回 Token 与金额两个合计
-                // （原先 SUM(TotalTokens)、SUM(EstimatedAmount) 各发一条，同样的 WHERE 跑了两遍）
-                var sum = await query
-                    .Select(x => new UsageSumRow
+                // 月合计 + 日条件合计同场返回（IIF 条件聚合写法与 SysAiUsageService 等一致）。
+                var row = await query
+                    .Select(x => new UsagePairRow
                     {
-                        Tokens = SqlFunc.AggregateSum(x.TotalTokens),
-                        Amount = SqlFunc.AggregateSum(x.EstimatedAmount)
+                        MonthTokens = SqlFunc.AggregateSum(x.TotalTokens),
+                        MonthAmount = SqlFunc.AggregateSum(x.EstimatedAmount),
+                        DayTokens = SqlFunc.AggregateSum(SqlFunc.IIF(x.CreateTime >= dayBegin, x.TotalTokens, 0)),
+                        DayAmount = SqlFunc.AggregateSum(SqlFunc.IIF(x.CreateTime >= dayBegin, x.EstimatedAmount, 0m))
                     })
                     .FirstAsync();
-                return new UsageValue
-                {
-                    Tokens = sum?.Tokens ?? 0,
-                    Amount = sum?.Amount ?? 0
-                };
+                var day = new UsageValue { Tokens = row?.DayTokens ?? 0, Amount = row?.DayAmount ?? 0 };
+                var month = new UsageValue { Tokens = row?.MonthTokens ?? 0, Amount = row?.MonthAmount ?? 0 };
+                return (day, month);
             }
             catch (Exception ex)
             {
@@ -743,14 +744,16 @@ namespace ZR.ServiceCore.AI.Governance
         }
 
         /// <summary>
-        /// 用量聚合查询投影：一条 SQL 同时返回 Token / 金额合计。
+        /// 用量聚合查询投影：一条 SQL 同时返回「当天/当月」的 Token / 金额合计。
         /// 属性可空——区间内没有记录时 SUM 返回 NULL（SqlSugar 会把 NULL 映射为 null）。
         /// 公开类型：SqlSugar 构造投影对象需要类型可访问。
         /// </summary>
-        public sealed class UsageSumRow
+        public sealed class UsagePairRow
         {
-            public long? Tokens { get; set; }
-            public decimal? Amount { get; set; }
+            public long? DayTokens { get; set; }
+            public decimal? DayAmount { get; set; }
+            public long? MonthTokens { get; set; }
+            public decimal? MonthAmount { get; set; }
         }
     }
 }

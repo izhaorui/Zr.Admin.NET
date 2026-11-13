@@ -77,7 +77,7 @@ namespace ZR.ServiceCore.SqlSugar
 
         /// <summary>
         /// AI 调用流水 — 主库共享。主租户看全部（含历史空 TenantId），普通租户只看本租户。
-        /// 平台级额度汇总须 ClearFilter，见 AiCallGovernanceService.GetUsageAsync。
+        /// 平台级额度汇总须 ClearFilter，见 AiCallGovernanceService.GetUsagePairAsync。
         /// </summary>
         public static Expression<Func<AiCallLog, bool>> AiCallLogTenantFilter() => it =>
             it.TenantId == App.GetCurrentTenantId()
