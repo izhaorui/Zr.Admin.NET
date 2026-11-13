@@ -58,7 +58,9 @@ namespace ZR.ServiceCore.SqlSugar
             {
                 iocList.ForEach(iocConfig =>
                 {
-                    SetSugarAop(db, iocConfig, cache);
+                    // 每个连接包一层带作用域的缓存：SqlSugar 的缓存 key 不含连接/租户标识，
+                    // 不区分会让不同租户库、主库共享表按 TenantId 过滤的查询互相读到对方数据
+                    SetSugarAop(db, iocConfig, new TenantScopedCache(iocConfig.ConfigId, cache));
 
                     var conn = db.GetConnectionScope(iocConfig.ConfigId);
 
