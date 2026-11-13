@@ -9,6 +9,13 @@ namespace ZR.Model.AI
     /// </summary>
     [SugarTable("ai_chat_message")]
     [Tenant("0")]
+    // 热查询索引：历史回灌(ResolveHistoryAsync)/GetMessagesAsync/删除会话都按 SessionId+UserId 等值过滤、
+    // 再按 CreateTime 排序。等值前缀(SessionId,UserId)+CreateTime 可定位到单会话并免排序，
+    // 防止消息表随使用量增长退化为全表扫描；MessageId 是聚集主键(隐含在索引行中)，仅作同刻排序兜底。
+    // 注意：SugarIndex 只在建表时生效，存量库需手工补建（幂等 DDL 见交付说明）。
+    [SugarIndex("idx_ai_chat_msg_session", nameof(SessionId), OrderByType.Asc)]
+    [SugarIndex("idx_ai_chat_msg_session", nameof(UserId), OrderByType.Asc)]
+    [SugarIndex("idx_ai_chat_msg_session", nameof(CreateTime), OrderByType.Asc)]
     public class AiChatMessage
     {
         [SugarColumn(IsPrimaryKey = true, IsIdentity = false)]
