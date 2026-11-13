@@ -26,6 +26,9 @@ namespace ZR.Model.AI.Dto
         /// <summary>库中配置是否密文存储</summary>
         public bool Encrypted { get; set; }
 
+        /// <summary>本次运行时实际生效的全局来源：ai_config / ai.json</summary>
+        public string EffectiveSource { get; set; }
+
         /// <summary>最近修改人</summary>
         public string UpdatedBy { get; set; }
 
@@ -34,6 +37,9 @@ namespace ZR.Model.AI.Dto
 
         /// <summary>配置 JSON：库中有值时为库中内容（密钥掩码），否则为文件默认值（密钥掩码）</summary>
         public string ConfigJson { get; set; }
+
+        /// <summary>库中记录的变更说明（首次创建或未填写时为空）</summary>
+        public string Remark { get; set; }
 
         /// <summary>库表不可用等可提示问题（为空表示正常）</summary>
         public string Warning { get; set; }

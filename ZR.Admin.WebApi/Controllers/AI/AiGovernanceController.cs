@@ -137,6 +137,14 @@ namespace ZR.Admin.WebApi.Controllers.AI
         public IActionResult ConfigCheck() => SUCCESS(_service.CheckConfiguration());
 
         /// <summary>
+        /// 查看配置的实际生效来源：本次读的是 ai_config 还是 ai.json、渠道来自 ai_provider 还是文件，
+        /// 并返回合并优先级与回退告警，用于排查“本地正常、线上异常”。
+        /// </summary>
+        [HttpGet("config/effective")]
+        [ActionPermissionFilter(Permission = "ai:governance:health,ai:governance:list")]
+        public IActionResult ConfigEffective() => SUCCESS(_service.GetConfigDiagnostics());
+
+        /// <summary>
         /// 执行 AI 服务健康检查。
         /// </summary>
         [HttpPost("health")]
@@ -170,5 +178,14 @@ namespace ZR.Admin.WebApi.Controllers.AI
         [Log(Title = "AI运行时配置", BusinessType = BusinessType.DELETE)]
         public IActionResult ResetConfig([FromQuery] string section = "AiOptions")
             => SUCCESS(new { affected = _configService.Reset(section) });
+
+        /// <summary>
+        /// 手动清理本进程的 AI 配置缓存（直接改库、或多实例发布后使用）。
+        /// 多实例部署下其它实例仍按 60 秒 TTL 自然过期。
+        /// </summary>
+        [HttpPost("config/refresh")]
+        [ActionPermissionFilter(Permission = "ai:governance:edit")]
+        public IActionResult RefreshConfig()
+            => SUCCESS(new { refreshed = _configService.RefreshCache(), at = DateTime.Now });
     }
 }

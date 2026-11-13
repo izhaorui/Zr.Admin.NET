@@ -85,6 +85,57 @@ namespace ZR.Model.AI.Dto
         public List<string> Warnings { get; set; } = new();
     }
 
+    /// <summary>
+    /// AI 配置的“实际生效来源”诊断：明确当前读的是 ai_config 还是 ai.json、
+    /// 渠道来自 ai_provider 还是文件，并给出合并优先级与告警（密钥一律掩码）。
+    /// </summary>
+    public class AiConfigDiagnosticsDto
+    {
+        /// <summary>配置源策略：auto / db / file。</summary>
+        public string Source { get; set; }
+
+        /// <summary>当前宿主环境名（auto 仅 Production 读库）。</summary>
+        public string Environment { get; set; }
+
+        /// <summary>本次是否读库。</summary>
+        public bool DatabaseEnabled { get; set; }
+
+        /// <summary>全局参数权威来源：ai_config / ai.json。</summary>
+        public string GlobalSource { get; set; }
+
+        /// <summary>渠道权威来源：ai_provider / ai.json。</summary>
+        public string ProviderSource { get; set; }
+
+        /// <summary>生效渠道数量。</summary>
+        public int ProviderCount { get; set; }
+
+        /// <summary>生效渠道展示名（如“主渠道”）。</summary>
+        public string ActiveProviderName { get; set; }
+
+        public bool Enable { get; set; }
+        public string Provider { get; set; }
+
+        /// <summary>BaseUrl（已掩码路径参数）。</summary>
+        public string BaseUrl { get; set; }
+
+        public string Endpoint { get; set; }
+        public string Model { get; set; }
+
+        /// <summary>ApiKey 掩码值，仅用于确认“是否配置”，不可还原。</summary>
+        public string ApiKeyMasked { get; set; }
+
+        public bool ApiKeyConfigured { get; set; }
+        public string VisionProvider { get; set; }
+        public string VisionModel { get; set; }
+        public int TimeoutSeconds { get; set; }
+
+        /// <summary>合并优先级说明（从高到低），排查时直接看这里。</summary>
+        public List<string> Precedence { get; set; } = new();
+
+        /// <summary>回退 / 覆盖 / 环境不一致等需要关注的提示。</summary>
+        public List<string> Warnings { get; set; } = new();
+    }
+
     public class AiGovernanceCapabilitiesDto
     {
         public string TenantId { get; set; }

@@ -1,5 +1,7 @@
 {
   // AI 公共默认。只写"与 AiOptions 默认值不同"或"需要运维常调"的项，其余走 C# 默认值。
+  // 权威来源：db / auto(Production) 下全局参数以 ai_config 为准、渠道以 ai_provider 为准，本文件只作首次种子与库不可用时的兜底。
+  // 实际生效来源可查 GET /aiGovernance/config/effective；启动日志在 Enable=true 时打印「AI 配置启动自检」，Enable=false 时跳过。
   // 字段含义、数据源策略（文件 vs 数据库）、ai_provider 渠道、顶层覆盖顺序、生效延迟、知识库配置：
   // 官方文档「后端 → AI 功能 → 4.2 配置文件与生效优先级」 https://www.izhaorui.cn/doc/backend/ai.html
   "AiOptions": {

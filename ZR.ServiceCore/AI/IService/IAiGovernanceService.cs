@@ -26,6 +26,10 @@ namespace ZR.ServiceCore.AI.IService
         AiGovernanceCapabilitiesDto GetCapabilities();
         AiModelCatalogDto GetCatalog();
         AiConfigCheckDto CheckConfiguration();
+
+        /// <summary>配置实际生效来源（ai_config / ai.json / ai_provider）与合并优先级诊断。</summary>
+        AiConfigDiagnosticsDto GetConfigDiagnostics();
+
         Task<AiHealthCheckDto> CheckHealthAsync();
     }
 }

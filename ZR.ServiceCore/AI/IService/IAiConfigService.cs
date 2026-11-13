@@ -19,5 +19,8 @@ namespace ZR.ServiceCore.AI.IService
 
         /// <summary>删除库中该段配置（回退到文件配置），返回影响行数。</summary>
         int Reset(string section = "AiOptions");
+
+        /// <summary>手动清理本进程的配置/渠道缓存（直接改库或多实例发布后使用），返回 1。</summary>
+        int RefreshCache();
     }
 }

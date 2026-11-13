@@ -400,7 +400,8 @@ namespace ZR.ServiceCore.SqlSugar
 
         /// <summary>
         /// 确保单个实体对应的表结构：表不存在则建表；表已存在则补齐实体模型中新增的列。
-        /// 幂等 —— 不会删除列，也不会修改已有列的类型/长度（避免破坏存量数据）。
+        /// 幂等 —— 不会删除列，也不会修改已有列的类型/长度（避免破坏存量数据）；
+        /// 唯一例外是 <see cref="WidenTextColumnRepairs"/> 白名单内的长文本列：只加宽、不缩窄。
         /// 兼容 SQL Server / MySQL：列类型优先取 SqlSugar 按当前 DbType 推导的权威类型，
         /// 兜底按 .NET 属性类型映射。NOT NULL 判定与 SqlsugarSetup.EntityService 约定一致。
         /// <paramref name="onColumnError"/> 非空时，单列补列失败会额外回调上报（用于汇入迁移报告）；
@@ -422,9 +423,13 @@ namespace ZR.ServiceCore.SqlSugar
             }
 
             // 表已存在：拉取现有列，逐列补齐模型中存在但库中缺失的列
-            var existingColumns = db.DbMaintenance.GetColumnInfosByTableName(tableName, false)
+            var dbColumns = db.DbMaintenance.GetColumnInfosByTableName(tableName, false);
+            var existingColumns = dbColumns
                 .Select(c => c.DbColumnName.ToLowerInvariant())
                 .ToHashSet();
+
+            // 白名单长文本列：模型已声明为 CodeFirst_BigString、库中却还是限长列时加宽（见清单注释）
+            WidenLimitedTextColumns(db, entityType, tableName, entityInfo, dbColumns);
 
             foreach (var col in entityInfo.Columns)
             {
@@ -512,6 +517,90 @@ namespace ZR.ServiceCore.SqlSugar
             if (type == typeof(bool) || type.IsEnum) return "int";
             if (type == typeof(Guid)) return "char(36)";
             return "varchar(255)";
+        }
+
+        /// <summary>
+        /// 存量库“长文本列被建成限长列”的定向加宽清单（实体 → 属性名）。
+        /// <para>
+        /// 背景：<c>ai_config.ConfigJson</c> 与 <c>ai_provider</c> 的密文/JSON 列早期按默认长度建列，
+        /// 实体后来改成 <c>CodeFirst_BigString</c>，而本类的补列逻辑只加缺失列、不改已有列类型，
+        /// 导致老库保存 AI 配置时抛“String or binary data would be truncated”（SQL Server 2628）。
+        /// </para>
+        /// <para>只处理此清单、只加宽不缩窄；其余列类型依旧不动。</para>
+        /// </summary>
+        private static readonly Dictionary<Type, string[]> WidenTextColumnRepairs = new()
+        {
+            [typeof(AiConfig)] = new[] { nameof(AiConfig.ConfigJson) },
+            [typeof(AiProvider)] = new[]
+            {
+                nameof(AiProvider.ApiKeyCipher),
+                nameof(AiProvider.ModelsJson),
+                nameof(AiProvider.OverrideJson),
+                nameof(AiProvider.ModelMappingJson)
+            }
+        };
+
+        /// <summary>
+        /// 把清单内仍为限长字符串类型的列加宽为长文本（幂等：已是长文本直接跳过）。
+        /// SQL Server 统一用 <c>nvarchar(max)</c>：从 nvarchar(n) 改成 varchar 会在非中文排序规则下丢中文
+        /// （渠道名/Label 含中文）；MySQL 用 <c>longtext</c>。失败只告警、不阻断迁移。
+        /// </summary>
+        private static void WidenLimitedTextColumns(ISqlSugarClient db, Type entityType, string tableName,
+            EntityInfo entityInfo, List<DbColumnInfo> dbColumns)
+        {
+            if (dbColumns == null || dbColumns.Count == 0) return;
+            if (!WidenTextColumnRepairs.TryGetValue(entityType, out var propertyNames)) return;
+
+            var dbType = db.CurrentConnectionConfig.DbType;
+            if (dbType != DbType.SqlServer && dbType != DbType.MySql) return;
+
+            foreach (var propertyName in propertyNames)
+            {
+                var column = entityInfo.Columns.FirstOrDefault(c => c.PropertyName == propertyName);
+                if (column == null || column.IsIgnore) continue;
+
+                var existing = dbColumns.FirstOrDefault(c =>
+                    string.Equals(c.DbColumnName, column.DbColumnName, StringComparison.OrdinalIgnoreCase));
+                if (existing == null) continue;                         // 缺列由 AddColumn 按实体类型补，不用管
+                if (!IsLimitedTextColumn(dbType, existing)) continue;    // 已是长文本或非字符类型，跳过
+
+                var dataType = dbType == DbType.SqlServer ? "nvarchar(max)" : "longtext";
+                var nullability = existing.IsNullable ? "NULL" : "NOT NULL";
+                var sql = dbType == DbType.SqlServer
+                    ? $"ALTER TABLE [{tableName}] ALTER COLUMN [{column.DbColumnName}] {dataType} {nullability}"
+                    : $"ALTER TABLE `{tableName}` MODIFY COLUMN `{column.DbColumnName}` {dataType} {nullability}";
+
+                try
+                {
+                    db.Ado.ExecuteCommand(sql);
+                    Log.WriteLine(ConsoleColor.Green,
+                        $"[DbMigration] 表 {tableName} 列 {column.DbColumnName} 已加宽为 {dataType}（原类型 {existing.DataType}，长度 {existing.Length}）");
+                }
+                catch (Exception ex)
+                {
+                    // 列上存在默认约束/索引时 DDL 可能被拒：提示手工执行，管理员据此修复后即可保存 AI 配置
+                    Log.WriteLine(ConsoleColor.Yellow,
+                        $"[DbMigration] 表 {tableName} 列 {column.DbColumnName} 加宽失败: {ex.Message}；如需手工修复请执行：{sql}");
+                }
+            }
+        }
+
+        /// <summary>库列是否为“限长字符串类型”（需要加宽）。已是长文本或非字符类型返回 false。</summary>
+        private static bool IsLimitedTextColumn(DbType dbType, DbColumnInfo column)
+        {
+            var type = (column.DataType ?? string.Empty).Trim().ToLowerInvariant();
+            var bracket = type.IndexOf('(');
+            if (bracket > 0) type = type[..bracket];    // varchar(max) / nvarchar(500) 之类只取类型名
+
+            if (dbType == DbType.SqlServer)
+            {
+                // Length = -1 表示 (max)；text/ntext 本身已是长文本
+                if (column.Length < 0 || type is "text" or "ntext") return false;
+                return type is "varchar" or "nvarchar" or "char" or "nchar";
+            }
+
+            // MySQL：longtext 已是长文本；text/mediumtext 只有 64KB/16MB，一并加宽
+            return type is "varchar" or "char" or "tinytext" or "text" or "mediumtext";
         }
 
         /// <summary>

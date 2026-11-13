@@ -7,6 +7,7 @@ using ZR.Model.AI;
 using ZR.Model.AI.Dto;
 using ZR.ServiceCore.AI.IService;
 // ServiceCore 全局引入了 Newtonsoft.Json，这里显式指向 System.Text.Json，避免 JsonSerializer/JsonException 二义性
+using JsonDocument = System.Text.Json.JsonDocument;
 using JsonException = System.Text.Json.JsonException;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -66,9 +67,12 @@ namespace ZR.ServiceCore.AI.Governance
             }
 
             dto.HasDbConfig = row != null;
+            // 有库配置但策略是 file / auto 非生产时，运行时并不会读库，这里必须回显真实生效来源
+            dto.EffectiveSource = databaseEnabled && row != null ? "ai_config" : "ai.json";
             dto.Version = row?.Version ?? 0;
             dto.UpdatedBy = row?.Update_by;
             dto.UpdatedTime = row?.Update_time;
+            dto.Remark = row?.Remark;
             dto.Encrypted = row?.ConfigJson?.StartsWith("enc:v1:", StringComparison.Ordinal) == true;
 
             string rawJson;
@@ -143,6 +147,8 @@ namespace ZR.ServiceCore.AI.Governance
             }
 
             var normalized = NormalizeJson(section, json);
+            // 变更摘要只记字段名（add/update/remove），不记值，避免密钥进日志
+            var changeSummary = DescribeChanges(mergeSource, normalized, row == null);
             // 生产环境 fail-closed：整段配置含密钥，加密能力不可用时直接拒绝保存（Protect 内部还有一次兜底）
             AiConfigProtector.EnsureCanProtect("AI 配置");
             var protectedJson = AiConfigProtector.Protect(normalized);
@@ -172,6 +178,12 @@ namespace ZR.ServiceCore.AI.Governance
                     // 并发首次保存：另一个请求已插入同一 (Environment, Section)，撞 uk_ai_config_env_section
                     Logger.Warn(ex, $"AI 配置并发插入冲突 section={section} env={environment} operator={operatorName}");
                     throw new CustomException("该环境下的 AI 配置已被其他管理员创建，请刷新页面后重新编辑，避免覆盖他人改动");
+                }
+                catch (Exception ex) when (IsTruncation(ex))
+                {
+                    // 老库把 ConfigJson 建成 nvarchar(n)：加密后的配置必然超长，给出可执行的修复指引
+                    Logger.Error(ex, $"AI 配置写入失败：ConfigJson 列长度不足 section={section} env={environment} operator={operatorName}");
+                    throw new CustomException(ConfigJsonTruncationHint);
                 }
 
                 row = entity;
@@ -211,9 +223,18 @@ namespace ZR.ServiceCore.AI.Governance
                     update = update.SetColumns(x => x.Update_by == operatorName);
                 }
 
-                var affected = update
-                    .Where(x => x.Id == row.Id && x.Version == expectedVersion)
-                    .ExecuteCommand();
+                int affected;
+                try
+                {
+                    affected = update
+                        .Where(x => x.Id == row.Id && x.Version == expectedVersion)
+                        .ExecuteCommand();
+                }
+                catch (Exception ex) when (IsTruncation(ex))
+                {
+                    Logger.Error(ex, $"AI 配置写入失败：ConfigJson 列长度不足 section={section} env={environment} operator={operatorName}");
+                    throw new CustomException(ConfigJsonTruncationHint);
+                }
 
                 if (affected == 0)
                 {
@@ -229,8 +250,20 @@ namespace ZR.ServiceCore.AI.Governance
             }
 
             AiConfigStore.Invalidate();
-            Logger.Info($"AI 配置已保存 section={section} env={environment} version={row.Version} operator={operatorName} encrypted={protectedJson.StartsWith("enc:v1:", StringComparison.Ordinal)}");
+            Logger.Info($"AI 配置已保存 section={section} env={environment} version={row.Version} operator={operatorName} changes={changeSummary} remark={input.Remark} encrypted={protectedJson.StartsWith("enc:v1:", StringComparison.Ordinal)}");
             return row.Id;
+        }
+
+        /// <summary>
+        /// 手动清理本进程的 AI 配置缓存（配置表被直接改库、或多实例滚动发布后使用）。
+        /// 多实例部署下各实例仍是各自 60 秒 TTL，本接口只影响当前进程。
+        /// </summary>
+        public int RefreshCache()
+        {
+            AiConfigStore.Invalidate();
+            AiProviderStore.Invalidate();
+            Logger.Info($"AI 配置缓存已手动刷新 env={AiConfigStore.ResolveEnvironment()} operator={App.HttpContext?.GetName()}");
+            return 1;
         }
 
         public int Reset(string section = AiOptionsResolver.SectionName)
@@ -301,6 +334,35 @@ namespace ZR.ServiceCore.AI.Governance
                 Logger.Warn(ex, $"读取 AI 配置最新版本失败 id={id}");
                 return fallback;
             }
+        }
+
+        /// <summary>
+        /// ConfigJson 列长度不足（老库建成 nvarchar(n)）时的修复指引：
+        /// 加密后的整段配置约 2~3KB，直接写会抛 SQL Server 2628 / MySQL 1406。
+        /// </summary>
+        private const string ConfigJsonTruncationHint =
+            "AI 配置保存失败：ai_config.ConfigJson 列长度不足以存放加密后的配置（写入被截断）。" +
+            "请执行 ALTER TABLE ai_config ALTER COLUMN ConfigJson nvarchar(max) NULL 后重试；" +
+            "或重启时带 --initdb / 在后台「数据库同步」执行一次结构同步，会自动把该列加宽为长文本";
+
+        /// <summary>
+        /// 是否“字符串超长被截断”（SQL Server 2628 / MySQL 1406）。命中后转成带修复 SQL 的提示，
+        /// 避免管理员只看到一句数据库原始错误无从下手。
+        /// </summary>
+        private static bool IsTruncation(Exception ex)
+        {
+            for (var current = ex; current != null; current = current.InnerException)
+            {
+                var message = current.Message ?? string.Empty;
+                if (message.Contains("truncated", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("Data too long", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("2628")
+                    || message.Contains("1406"))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -403,6 +465,52 @@ namespace ZR.ServiceCore.AI.Governance
 
         private static bool IsAiOptions(string section)
             => string.Equals(section, AiOptionsResolver.SectionName, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 配置变更摘要：只输出变化的字段名与操作类型，绝不输出字段值（含密钥）。
+        /// </summary>
+        private static string DescribeChanges(string beforeJson, string afterJson, bool isNew)
+        {
+            if (isNew) return "首次创建";
+            if (string.IsNullOrWhiteSpace(beforeJson)) return "旧配置不可读";
+            try
+            {
+                using var before = JsonDocument.Parse(beforeJson);
+                using var after = JsonDocument.Parse(afterJson);
+                if (before.RootElement.ValueKind != JsonValueKind.Object || after.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    return "非对象配置";
+                }
+
+                var changed = new List<string>();
+                foreach (var property in after.RootElement.EnumerateObject())
+                {
+                    if (!before.RootElement.TryGetProperty(property.Name, out var oldValue))
+                    {
+                        changed.Add(property.Name + ":add");
+                    }
+                    else if (!string.Equals(oldValue.GetRawText(), property.Value.GetRawText(), StringComparison.Ordinal))
+                    {
+                        changed.Add(property.Name + ":update");
+                    }
+                }
+                foreach (var property in before.RootElement.EnumerateObject())
+                {
+                    if (!after.RootElement.TryGetProperty(property.Name, out _))
+                    {
+                        changed.Add(property.Name + ":remove");
+                    }
+                }
+
+                if (changed.Count == 0) return "无字段变化";
+                return string.Join(",", changed.Take(20))
+                    + (changed.Count > 20 ? $",...共{changed.Count}项" : string.Empty);
+            }
+            catch (Exception)
+            {
+                return "无法比较";
+            }
+        }
 
         private static string NormalizeSection(string section)
             => string.IsNullOrWhiteSpace(section) ? AiOptionsResolver.SectionName : section.Trim();

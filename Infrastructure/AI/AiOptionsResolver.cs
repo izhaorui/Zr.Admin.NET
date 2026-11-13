@@ -42,23 +42,114 @@ namespace Infrastructure.AI
         /// <summary>
         /// 取当前生效的 AI 配置：全局参数取数据库（按来源策略）否则回退文件；
         /// 渠道（Providers）优先取 ai_provider 表，库中无渠道时沿用文件里的 Providers。
+        /// <para>只关心取值用本方法；排查“到底读了哪一层”请用 <see cref="Resolve"/>。</para>
         /// </summary>
-        public static AiOptions Get()
+        public static AiOptions Get() => Resolve().Options;
+
+        /// <summary>
+        /// 解析当前生效配置，并带回来源、渠道数与告警（诊断接口 / 启动自检使用）。
+        /// </summary>
+        /// <param name="logSource">
+        /// 是否在来源变化时打印“AI 配置生效来源”日志。启动自检传 false，
+        /// 由自检自己决定打印内容，避免 AI 未启用时也往 Info 里刷一条来源日志。
+        /// </param>
+        /// <remarks>
+        /// 权威来源约定（与文档「配置来源与优先级」一致）：
+        /// <list type="bullet">
+        /// <item>全局参数：<c>ai_config</c> 是权威来源，<c>ai.json</c> 只作首次部署种子与库不可用时的兜底；</item>
+        /// <item>模型渠道：<c>ai_provider</c> 是唯一权威来源，库中无渠道时才回退文件 <c>Providers</c>；</item>
+        /// <item><c>appsettings</c>/环境变量只提供 <c>AiConfig:Source</c> 与 <c>PromptDir</c>，不承载模型密钥。</item>
+        /// </list>
+        /// </remarks>
+        public static AiOptionsResolution Resolve(bool logSource = true)
         {
-            var fromDatabase = TryGetFromDatabase(out var sourceDescription);
+            var warnings = new List<string>();
+            var source = ResolveSource();
+            var environment = ResolveEnvironment();
+            var databaseEnabled = IsDatabaseSourceEnabled(source);
+
+            var fromDatabase = TryGetFromDatabase(out var sourceDescription, warnings);
             var options = fromDatabase ?? GetFromFile();
-            ApplyDatabaseProviders(options);
-            LogSourceOnce(sourceDescription, fromDatabase != null, options);
-            return options;
+            var providerFromDatabase = ApplyDatabaseProviders(options, warnings);
+
+            if (!databaseEnabled && string.Equals(source, "auto", StringComparison.Ordinal))
+            {
+                warnings.Add($"配置源=auto 且当前环境={environment}（非 Production）：本次只读文件，不读 ai_config / ai_provider；如需与线上一致请显式设置 AiConfig:Source=db。");
+            }
+            if (databaseEnabled && fromDatabase == null && warnings.Count == 0)
+            {
+                warnings.Add($"配置源={source} 已启用数据库，但库中无 {SectionName} 段配置，本次整份使用 ai.json 兜底；建议在后台保存一次以固化为权威配置。");
+            }
+            if (databaseEnabled && !providerFromDatabase)
+            {
+                warnings.Add("ai_provider 中当前环境没有启用的渠道，本次使用 ai.json 的 Providers；线上请在后台「AI 治理 → 模型渠道」维护。");
+            }
+
+            var resolution = new AiOptionsResolution
+            {
+                Options = options,
+                Source = source,
+                Environment = environment,
+                DatabaseEnabled = databaseEnabled,
+                GlobalFromDatabase = fromDatabase != null,
+                GlobalSource = fromDatabase != null ? "ai_config" : "ai.json",
+                ProviderSource = providerFromDatabase ? "ai_provider" : "ai.json",
+                ProviderCount = options?.Providers?.Count ?? 0,
+                ActiveProviderName = options?.Providers?
+                    .FirstOrDefault(x => string.Equals(x?.Provider, options.Provider, StringComparison.OrdinalIgnoreCase))?.Label,
+                Warnings = warnings
+            };
+
+            if (logSource)
+            {
+                LogSourceOnce(sourceDescription, resolution);
+            }
+            return resolution;
+        }
+
+        /// <summary>
+        /// 打印一次“本次实际生效的配置来源”，用于启动自检与排查“本地正常、线上异常”。
+        /// <para>
+        /// AI 未启用（<c>AiOptions.Enable=false</c>）时只写一条 Debug 后跳过：未启用 AI 的站点
+        /// 不应被“渠道表中没有启用渠道”“非 Production 只读文件”这类与它无关的告警刷屏。
+        /// 需要看配置来源时，后台诊断接口 <c>GET aiGovernance/config/effective</c> 不受此开关影响。
+        /// </para>
+        /// <para>失败不阻断启动（严格 db 模式下由首次请求把错误回显给管理员）。</para>
+        /// </summary>
+        public static void LogStartupBanner()
+        {
+            try
+            {
+                // 传 false：Info 级别的“AI 配置生效来源”由本方法按启用状态决定是否输出，避免重复/误报
+                var resolution = Resolve(logSource: false);
+                if (resolution.Options?.Enable != true)
+                {
+                    Logger.LogDebug(
+                        $"AI 功能未启用（AiOptions.Enable=false），跳过配置自检 source={resolution.Source} env={resolution.Environment} global={resolution.GlobalSource} channels={resolution.ProviderSource}");
+                    return;
+                }
+
+                Logger.LogInformation(
+                    $"AI 配置启动自检 source={resolution.Source} env={resolution.Environment} databaseEnabled={resolution.DatabaseEnabled} global={resolution.GlobalSource} channels={resolution.ProviderSource} channelCount={resolution.ProviderCount} provider={resolution.Options?.Provider} model={resolution.Options?.Model}");
+                foreach (var warning in resolution.Warnings)
+                {
+                    Logger.LogWarning($"AI 配置启动自检：{warning}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "AI 配置启动自检失败（不影响站点启动）");
+            }
         }
 
         /// <summary>
         /// 用库中渠道覆盖 Providers：同一 Provider 可能有多行（生产/备用），
         /// 存储层已按优先级排序，这里取第一条即“优先级路由”的最小可用版本。
         /// </summary>
-        private static void ApplyDatabaseProviders(AiOptions options)
+        /// <returns>true 表示 Providers 来自 ai_provider；false 表示沿用文件或未启用数据库。</returns>
+        private static bool ApplyDatabaseProviders(AiOptions options, List<string> warnings)
         {
-            if (options == null || !IsDatabaseEnabled(out _)) return;
+            if (options == null || !IsDatabaseEnabled(out _)) return false;
 
             IReadOnlyList<AiProviderSnapshot> snapshots;
             try
@@ -68,9 +159,13 @@ namespace Infrastructure.AI
             catch (Exception ex)
             {
                 Logger.LogDebug(ex, "AI 渠道存储未就绪，沿用文件中的 Providers");
-                return;
+                warnings?.Add("AI 渠道存储未就绪（容器未初始化或 AI 模块未加载），沿用 ai.json 的 Providers。");
+                return false;
             }
-            if (snapshots == null || snapshots.Count == 0) return;
+            if (snapshots == null || snapshots.Count == 0)
+            {
+                return false;
+            }
 
             options.Providers = snapshots.Select(ToProviderOptions).ToList();
 
@@ -83,6 +178,7 @@ namespace Infrastructure.AI
                 if (!string.IsNullOrWhiteSpace(options.Provider))
                 {
                     Logger.LogWarning($"AI 全局 Provider={options.Provider} 在渠道表中不存在，已回退使用渠道 {selected.Provider}（{selected.Name}）");
+                    warnings?.Add($"全局 Provider={options.Provider} 在 ai_provider 中不存在，已回退使用渠道 {selected.Provider}（{selected.Name}）。");
                 }
                 options.Provider = selected.Provider;
             }
@@ -105,6 +201,7 @@ namespace Infrastructure.AI
                 && !snapshots.Any(x => string.Equals(x.Provider, visionProvider, StringComparison.OrdinalIgnoreCase)))
             {
                 Logger.LogWarning($"AI 视觉 Provider={visionProvider} 在渠道表中不存在，已回退使用主渠道 {selected.Provider}");
+                warnings?.Add($"视觉 Provider={visionProvider} 在 ai_provider 中不存在，已回退使用主渠道 {selected.Provider}。");
                 options.VisionProvider = null;
             }
 
@@ -113,6 +210,8 @@ namespace Infrastructure.AI
             options.ProviderChain = options.Providers
                 .Where(x => string.Equals(x.Provider, options.Provider, StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
+            return true;
         }
 
         /// <summary>渠道投影 → 现有 AiProviderOptions，下游 ResolveProvider 无需改动。</summary>
@@ -169,7 +268,7 @@ namespace Infrastructure.AI
         /// </list>
         /// </para>
         /// </summary>
-        private static AiOptions TryGetFromDatabase(out string sourceDescription)
+        private static AiOptions TryGetFromDatabase(out string sourceDescription, List<string> warnings)
         {
             sourceDescription = null;
             var source = ResolveSource();
@@ -188,11 +287,13 @@ namespace Infrastructure.AI
             {
                 Logger.LogDebug(ex, "AI 配置存储未就绪，使用文件配置");
                 if (strict) throw ReadFailed(source, "AI 配置存储未就绪（容器未初始化）");
+                warnings?.Add("AI 配置存储未就绪（容器未初始化或 AI 模块未加载），本次全局配置使用 ai.json。");
                 return null;
             }
             if (store == null)
             {
                 if (strict) throw ReadFailed(source, "AI 配置存储未注册（AI 模块可能未加载）");
+                warnings?.Add("AI 配置存储未注册（AI 模块可能未加载），本次全局配置使用 ai.json。");
                 return null;
             }
 
@@ -203,6 +304,7 @@ namespace Infrastructure.AI
                     // 关键区别：这里不是“没有配置”，而是“读不到” —— 严格模式下不能回退文件
                     Logger.LogError($"读取数据库 AI 配置失败 source={source} error={error}");
                     if (strict) throw ReadFailed(source, error ?? "读取数据库失败");
+                    warnings?.Add($"读取 ai_config 失败（{error}），本次回退 ai.json；请检查数据库连接。");
                     return null;
                 }
 
@@ -218,6 +320,7 @@ namespace Infrastructure.AI
                 {
                     Logger.LogWarning($"数据库中的 {SectionName} 缺少 Provider，已回退文件配置 source={source}");
                     if (strict) throw ReadFailed(source, "数据库中的配置缺少 Provider");
+                    warnings?.Add($"ai_config 中的 {SectionName} 缺少 Provider，本次回退 ai.json。");
                     return null;
                 }
                 return options;
@@ -231,6 +334,7 @@ namespace Infrastructure.AI
                 // 数据库抖动/密文无法解密：严格模式失败关闭，宽松模式回退文件保证 AI 不整体不可用
                 Logger.LogError(ex, $"读取数据库 AI 配置失败 source={source}");
                 if (strict) throw ReadFailed(source, ex.Message);
+                warnings?.Add($"读取 ai_config 异常（{ex.Message}），本次回退 ai.json。");
                 return null;
             }
         }
@@ -259,9 +363,10 @@ namespace Infrastructure.AI
             => InternalApp.WebHostEnvironment?.EnvironmentName ?? "Production";
 
         /// <summary>来源变化时打一条日志（每次请求都会走本方法，不能刷屏）。</summary>
-        private static void LogSourceOnce(string sourceDescription, bool fromDatabase, AiOptions options)
+        private static void LogSourceOnce(string sourceDescription, AiOptionsResolution resolution)
         {
-            var signature = $"{sourceDescription ?? "file"}|{ResolveEnvironment()}|{fromDatabase}|{options?.Provider}|{options?.Model}";
+            var options = resolution?.Options;
+            var signature = $"{sourceDescription ?? "file"}|{resolution?.Environment}|{resolution?.GlobalFromDatabase}|{resolution?.ProviderSource}|{resolution?.ProviderCount}|{options?.Provider}|{options?.Model}";
             lock (SyncRoot)
             {
                 if (string.Equals(signature, _lastSourceSignature, StringComparison.Ordinal)) return;
@@ -269,7 +374,44 @@ namespace Infrastructure.AI
             }
 
             Logger.LogInformation(
-                $"AI 配置生效来源={(fromDatabase ? sourceDescription : "file")} env={ResolveEnvironment()} provider={options?.Provider} model={options?.Model} enable={options?.Enable}");
+                $"AI 配置生效来源={(resolution?.GlobalFromDatabase == true ? sourceDescription : "file")} global={resolution?.GlobalSource} channels={resolution?.ProviderSource}({resolution?.ProviderCount}) env={resolution?.Environment} provider={options?.Provider} model={options?.Model} enable={options?.Enable}");
         }
+    }
+
+    /// <summary>
+    /// 一次 <see cref="AiOptionsResolver.Resolve"/> 的结果：生效值 + 来源 + 告警。
+    /// 只用于诊断与日志，业务代码继续用 <see cref="AiOptionsResolver.Get"/> 即可。
+    /// </summary>
+    public sealed class AiOptionsResolution
+    {
+        /// <summary>最终生效的配置（已合并文件 / ai_config / ai_provider）。</summary>
+        public AiOptions Options { get; init; }
+
+        /// <summary>配置源策略：auto / db / file。</summary>
+        public string Source { get; init; }
+
+        /// <summary>当前宿主环境名（决定 auto 是否读库）。</summary>
+        public string Environment { get; init; }
+
+        /// <summary>本次是否允许读取数据库（auto 仅 Production 为 true）。</summary>
+        public bool DatabaseEnabled { get; init; }
+
+        /// <summary>全局参数是否来自 ai_config（false 表示来自 ai.json）。</summary>
+        public bool GlobalFromDatabase { get; init; }
+
+        /// <summary>全局参数权威来源：ai_config / ai.json。</summary>
+        public string GlobalSource { get; init; }
+
+        /// <summary>渠道权威来源：ai_provider / ai.json。</summary>
+        public string ProviderSource { get; init; }
+
+        /// <summary>生效渠道数量。</summary>
+        public int ProviderCount { get; init; }
+
+        /// <summary>当前 Provider 对应渠道的展示名（如“主渠道”）。</summary>
+        public string ActiveProviderName { get; init; }
+
+        /// <summary>回退、覆盖、环境不一致等需要管理员关注的提示。</summary>
+        public List<string> Warnings { get; init; } = new();
     }
 }

@@ -343,6 +343,53 @@ namespace ZR.ServiceCore.AI.Governance
             return result;
         }
 
+        /// <summary>
+        /// 配置“实际生效来源”诊断：明确本次读的是 ai_config 还是 ai.json、渠道来自 ai_provider 还是文件，
+        /// 并把合并优先级与回退告警一并返回，避免靠猜排查“本地正常、线上异常”。
+        /// </summary>
+        public AiConfigDiagnosticsDto GetConfigDiagnostics()
+        {
+            EnsurePlatformAdmin();
+            var resolution = AiOptionsResolver.Resolve();
+            var options = resolution.Options;
+            var resolved = AiLlmClient.ResolveProvider(options);
+            var vision = AiLlmClient.ResolveVisionProvider(options);
+            var key = resolved.ApiKey ?? string.Empty;
+
+            return new AiConfigDiagnosticsDto
+            {
+                Source = resolution.Source,
+                Environment = resolution.Environment,
+                DatabaseEnabled = resolution.DatabaseEnabled,
+                GlobalSource = resolution.GlobalSource,
+                ProviderSource = resolution.ProviderSource,
+                ProviderCount = resolution.ProviderCount,
+                ActiveProviderName = resolution.ActiveProviderName,
+                Enable = options.Enable,
+                Provider = resolved.Provider,
+                BaseUrl = MaskUrl(resolved.BaseUrl),
+                Endpoint = resolved.ChatEndpoint,
+                Model = resolved.Model,
+                ApiKeyMasked = AiConfigMasking.MaskValue(key),
+                ApiKeyConfigured = AiLlmClient.AllowsEmptyApiKey(resolved.Provider)
+                    || (!string.IsNullOrWhiteSpace(key) && !key.Contains("xxx", StringComparison.OrdinalIgnoreCase)),
+                VisionProvider = vision.Provider,
+                VisionModel = vision.Model,
+                TimeoutSeconds = options.TimeoutSeconds,
+                Precedence =
+                [
+                    "文件层（高→低）：命令行 / 环境变量 > ai.{环境}.json > ai.json",
+                    "Source=db：全局参数只认 ai_config，读不到或残缺时失败关闭，不回退文件旧值",
+                    "Source=auto（默认）：仅 Production 读 ai_config；其它环境只读文件，库抖动时回退文件",
+                    "Source=file：只读文件，完全不读 ai_config / ai_provider",
+                    "渠道层：ai_provider 有启用渠道时覆盖 Providers，并把顶层 BaseUrl/ApiKey/Model 对齐到选中渠道",
+                    "ai_provider 无启用渠道时才使用 ai.json 的 Providers",
+                    "PromptDir 固定读文件（不属于后台可改的运行时参数）"
+                ],
+                Warnings = resolution.Warnings
+            };
+        }
+
         public async Task<AiHealthCheckDto> CheckHealthAsync()
         {
             EnsurePlatformAdmin();

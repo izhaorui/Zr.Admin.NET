@@ -6,7 +6,8 @@ namespace ZR.ServiceCore.Services
     /// <summary>
     /// 系统菜单种子：为 data.xlsx 之外的系统级菜单/按钮权限补种（与具体业务模块无关）。
     /// 注意：EnsureAiPermSeedData 只补挂在 data.xlsx 系统页下的 F 按钮；
-    /// EnsureAiUsageMenuSeedData 维护「用量管理」(管理员) +「我的用量」(个人) +「AI 办公助手」(独立页) 三页；
+    /// EnsureAiUsageMenuSeedData 维护「用量管理」(管理员) +「AI治理」(Provider 检测 / 运行时配置)
+    /// +「我的用量」(个人) +「AI 办公助手」(独立页) + AI 治理拆出的独立页（权限与额度 / 模型价格 / 模型渠道 / 知识库）；
     /// EnsureSsoAppMenuSeedData 维护「系统管理 - 应用接入」页及其按钮权限，
     /// 该方法由 ProModuleInitProvider 调度：应用接入页随专业版交付，开源版无此页面，不能写入菜单。
     /// </summary>
@@ -40,6 +41,10 @@ namespace ZR.ServiceCore.Services
             ],
             Icon: "chart");
 
+        /// <summary>
+        /// 治理策略与模型价格的按钮权限仍挂在「AI治理」页下：这些权限码被拆分后的多个页面共用，
+        /// 保持父级不变可让既有角色的按钮授权继续生效。
+        /// </summary>
         private static readonly SeedPage AiGovernancePage = new(
             Name: "AI治理",
             Path: "aiGovernance",
@@ -61,6 +66,41 @@ namespace ZR.ServiceCore.Services
                 new SeedButton("模型价格删除", "ai:price:remove", OrderNum: 24),
             ],
             Icon: "system");
+
+        /// <summary>
+        /// AI 治理下的独立页面：原来挂在「AI治理」页签里，拆成独立菜单便于按角色分别授权。
+        /// 按钮权限仍保留在「AI治理」页下（ai:governance:* / ai:price:* 已被多页共用），
+        /// 避免拆分后既有角色的按钮授权失效。
+        /// </summary>
+        private static readonly SeedPage AiPolicyPage = new(
+            Name: "权限与额度",
+            Path: "aiPolicy",
+            Component: "Ai/policy/index",
+            RouteName: "AiPolicy",
+            Perms: "ai:governance:list",
+            OrderNum: 5,
+            Buttons: [],
+            Icon: "password");
+
+        private static readonly SeedPage AiPricePage = new(
+            Name: "模型价格",
+            Path: "aiPrice",
+            Component: "Ai/price/index",
+            RouteName: "AiPrice",
+            Perms: "ai:price:list",
+            OrderNum: 6,
+            Buttons: [],
+            Icon: "money");
+
+        private static readonly SeedPage AiProviderPage = new(
+            Name: "模型渠道",
+            Path: "aiProvider",
+            Component: "Ai/provider/index",
+            RouteName: "AiProvider",
+            Perms: "ai:governance:list",
+            OrderNum: 7,
+            Buttons: [],
+            Icon: "server");
 
         private static readonly SeedPage AiKnowledgePage = new(
             Name: "知识库",
@@ -181,6 +221,9 @@ namespace ZR.ServiceCore.Services
                 AiGovernancePage,
                 AiUsageMinePage,
                 AiChatPage,
+                AiPolicyPage,
+                AiPricePage,
+                AiProviderPage,
                 AiKnowledgePage,
             };
 

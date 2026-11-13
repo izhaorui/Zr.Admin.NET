@@ -21,6 +21,7 @@ using ZR.Model;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
 using Infrastructure.Captcha;
+using Infrastructure.AI;
 
 var builder = WebApplication.CreateBuilder(args);
 // NLog: Setup NLog for Dependency injection
@@ -160,6 +161,12 @@ if (initDbRequested)
     InitTable.RunInitDb(app.Environment);
     return;
 }
+
+// AI 配置启动自检：明确打印本次实际生效的来源（ai_config / ai.json / ai_provider）与回退告警，
+// 避免“本地正常、线上异常”靠猜。放后台执行，库不可达时不会拖慢启动；方法内部已吞异常。
+// AI 未启用（AiOptions.Enable=false）时自检自动跳过，只留一条 Debug，不产生告警刷屏。
+_ = Task.Run(AiOptionsResolver.LogStartupBanner);
+
 var workId = builder.Configuration["workId"].ParseToInt();
 if (app.Environment.IsDevelopment())
 {

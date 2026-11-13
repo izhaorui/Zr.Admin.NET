@@ -658,11 +658,15 @@ namespace Infrastructure.Model
         /// <summary>
         /// 运行时渠道候选链（同一 Provider 的多行渠道，按优先级排好序）。
         /// <para>
-        /// 仅由 <c>AiOptionsResolver</c> 从 ai_provider 表填充，<b>不参与文件持久化</b>：
-        /// ai.json / ai_config 里没有这一项，序列化后为 null，不会影响既有配置。
+        /// 仅由 <c>AiOptionsResolver</c> 从 ai_provider 表填充，<b>不参与任何持久化</b>：
+        /// 已用 <see cref="System.Text.Json.Serialization.JsonIgnoreAttribute"/> 强制排除，
+        /// 即使误把整个 AiOptions 序列化写库/写文件也不会落盘。
+        /// </para>
+        /// <para>
         /// 为空表示"无候选"，请求仍按 <see cref="Providers"/> 首条匹配的单渠道解析，行为与改造前一致。
         /// </para>
         /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore]
         public List<AiProviderOptions> ProviderChain { get; set; }
 
         /// <summary>
