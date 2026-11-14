@@ -37,6 +37,14 @@ namespace ZR.ServiceCore.Services
         public int UpdateUser(SysUserDto user);
 
         public int ChangeUser(SysUser user);
+
+        /// <summary>
+        /// 个人中心修改本人资料：按 <see cref="SysUser.UserId"/> 更新昵称/邮箱/性别/备注白名单，
+        /// 不改手机号、状态、部门、岗位、上级（否则改他人手机号后可走短信验证码登录接管账号）。
+        /// </summary>
+        /// <param name="user">UserId 必须由服务端取自当前登录用户</param>
+        public int UpdateProfile(SysUser user);
+
         /// <summary>
         /// 
         /// </summary>

@@ -260,6 +260,34 @@ namespace ZR.ServiceCore.Services
         }
 
         /// <summary>
+        /// 个人中心修改本人资料：列白名单 + 按主键 UserId 更新。
+        /// 与 <see cref="ChangeUser"/> 的区别：不含 Phonenumber/Status/DeptId/PostIds/LeaderId，
+        /// 避免"改自己的资料"顺手改掉手机号（进而走短信验证码登录接管账号）或提权改部门岗位。
+        /// </summary>
+        public int UpdateProfile(SysUser user)
+        {
+            if (user == null || user.UserId <= 0)
+            {
+                throw new CustomException(ResultCode.PARAM_ERROR, "用户不存在");
+            }
+            if (string.IsNullOrWhiteSpace(user.NickName))
+            {
+                throw new CustomException(ResultCode.PARAM_ERROR, "昵称不能为空");
+            }
+            user.Update_time = DateTime.Now;
+
+            return Update(user, t => new
+            {
+                t.NickName,
+                t.Email,
+                t.Sex,
+                t.Remark,
+                t.Update_by,
+                t.Update_time
+            }, f => f.UserId == user.UserId);
+        }
+
+        /// <summary>
         /// 重置密码
         /// </summary>
         /// <param name="userid"></param>

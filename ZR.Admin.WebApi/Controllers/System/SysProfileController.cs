@@ -76,9 +76,36 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 throw new CustomException(ResultCode.PARAM_ERROR, "请求参数错误");
             }
-            var user = userDto.Adapt<SysUser>().ToUpdate(HttpContext);
 
-            int result = UserService.ChangeUser(user);
+            // 主键必须取自令牌，不能取请求体：此前直接 Adapt 请求体后按主键更新，
+            // 任意登录用户把 userId 改成管理员 id 即可改其手机号，再走"手机号+短信码"登录接管账号。
+            long userId = HttpContext.GetUId();
+            if (userId <= 0)
+            {
+                return ToResponse(ResultCode.DENY);
+            }
+
+            // 手机号是登录凭据（手机号+短信码可直接登录），不能在资料接口里改：
+            // 需走短信验证换绑，否则等于给越权改号留了个"改完就能接管"的口子。
+            var current = UserService.GetFirst(f => f.UserId == userId);
+            if (!string.IsNullOrEmpty(userDto.Phonenumber) && current != null && userDto.Phonenumber != current.Phonenumber)
+            {
+                return ToResponse(ApiResult.Error("手机号需通过短信验证后换绑，请到安全设置操作"));
+            }
+
+            // 只取资料类字段；状态/部门/岗位/上级由管理员在用户管理维护。
+            var user = new SysUser
+            {
+                UserId = userId,
+                NickName = userDto.NickName,
+                Email = userDto.Email,
+                Sex = userDto.Sex,
+                Remark = userDto.Remark,
+                Update_by = HttpContext.GetName(),
+                Update_time = DateTime.Now
+            };
+
+            int result = UserService.UpdateProfile(user);
             return ToResponse(result);
         }
 
