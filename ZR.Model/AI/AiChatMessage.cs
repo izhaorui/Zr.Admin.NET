@@ -49,6 +49,20 @@ namespace ZR.Model.AI
         [SugarColumn(IsNullable = true)]
         public int? TotalTokens { get; set; }
 
+        /// <summary>
+        /// 回答反馈：1=赞，-1=踩，NULL=未评价。只有 assistant 消息会被写值，用于评估提示词与模型效果。
+        /// </summary>
+        [SugarColumn(IsNullable = true)]
+        public int? Feedback { get; set; }
+
+        /// <summary>点踩原因（用户可填，入库前截断 200 字）；点赞或未填为 NULL。</summary>
+        [SugarColumn(Length = 200, IsNullable = true)]
+        public string FeedbackNote { get; set; }
+
+        /// <summary>反馈时间；取消评价时清空</summary>
+        [SugarColumn(IsNullable = true)]
+        public DateTime? FeedbackTime { get; set; }
+
         [SugarColumn(InsertServerTime = true)]
         public DateTime? CreateTime { get; set; }
     }

@@ -26,6 +26,16 @@ namespace ZR.ServiceCore.AI.IService
         Task<SysAiChatDetailDto> GetMessagesAsync(long sessionId, long userId, int limit = 0);
 
         /// <summary>
+        /// 设置回答反馈（1=赞，-1=踩，0=取消）。仅允许评价自己的 assistant 消息，
+        /// 越权或消息不存在时抛异常；同一条消息可反复修改，评价值以最后一次为准。
+        /// </summary>
+        /// <param name="messageId">助手消息 ID</param>
+        /// <param name="userId">当前用户（用于归属校验，防越权评价他人消息）</param>
+        /// <param name="rating">1=赞，-1=踩，0=取消</param>
+        /// <param name="note">点踩原因（可选，超长截断入库）</param>
+        Task<bool> SetFeedbackAsync(long messageId, long userId, int rating, string note = null);
+
+        /// <summary>
         /// 当前用户可见的工具展示名清单（供前端渲染"正在调用 XX"，避免前端硬编码工具中文名）。
         /// 声明了 Permission 的工具仅对有权限用户返回；Label 未登记时前端应降级显示 Name。
         /// </summary>

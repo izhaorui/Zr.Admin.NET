@@ -124,6 +124,23 @@ namespace ZR.Admin.WebApi.Controllers.AI
         }
 
         /// <summary>
+        /// 回答反馈：1=赞，-1=踩，0=取消。只能评价自己的助手消息，可反复修改（以最后一次为准）。
+        /// 落库到 ai_chat_message 的 Feedback/FeedbackNote/FeedbackTime，供后续按模型与提示词评估回答质量。
+        /// </summary>
+        [HttpPost("message/feedback")]
+        [ActionPermissionFilter(Permission = "common")]
+        public async Task<IActionResult> Feedback([FromBody] SysAiChatFeedbackDto parm)
+        {
+            // 手工兜底校验：本控制器未走 ApiController 自动模型校验，避免非法 rating 直接进服务层抛异常
+            if (parm == null || parm.MessageId <= 0 || (parm.Rating != -1 && parm.Rating != 0 && parm.Rating != 1))
+            {
+                return ToResponse(ResultCode.FAIL, "反馈参数不合法");
+            }
+            var userId = HttpContext.GetUId();
+            return SUCCESS(await _aiChatService.SetFeedbackAsync(parm.MessageId, userId, parm.Rating, parm.Note));
+        }
+
+        /// <summary>
         /// 发送对话消息（SessionId 传 0 自动新建会话；内部自动调用工具）
         /// </summary>
         [HttpPost("chat")]

@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using NLog;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using System.Text.RegularExpressions;
 using ZR.Model.AI;
 using ZR.Model.AI.Dto;
@@ -58,6 +59,8 @@ namespace ZR.ServiceCore.AI
         private const int SummaryCacheMinutes = 1440;
         /// <summary>单条工具结果回灌给模型的最大长度</summary>
         private const int ToolResultMaxLen = 8000;
+        /// <summary>推给前端的工具失败原因最大长度（只用于展示，完整原因在日志与审计表）</summary>
+        private const int ToolErrorMaxLen = 200;
         /// <summary>单条用户消息最大长度（与请求 DTO 校验一致，服务端兜底防超长文本烧 token）</summary>
         private const int MaxUserMessageLength = 2000;
 
@@ -184,15 +187,14 @@ namespace ZR.ServiceCore.AI
         }
 
         /// <summary>
-        /// 获取会话的消息列表
+        /// 会话历史消息（升序）。limit&gt;0 时只返回最近 limit 条（仍为升序），并用 HasMore 标识更早消息；limit≤0 返回全部。
+        /// 每条消息带 Feedback/FeedbackNote，供前端回显已有点赞/点踩状态。
         /// </summary>
         /// <param name="sessionId">会话ID</param>
-        /// <param name="userId">用户ID</param>
+        /// <param name="userId">用户ID（归属校验）</param>
+        /// <param name="limit">最多返回最近多少条，0 表示全部</param>
         /// <returns>会话详情</returns>
-        /// <exception cref="Exception"></exception>
-        /// <summary>
-        /// 会话历史消息（升序）。limit&gt;0 时只返回最近 limit 条（仍为升序），并用 HasMore 标识更早消息；limit≤0 返回全部。
-        /// </summary>
+        /// <exception cref="Exception">会话不存在或不属于当前用户</exception>
         public async Task<SysAiChatDetailDto> GetMessagesAsync(long sessionId, long userId, int limit = 0)
         {
             var session = await Queryable()
@@ -239,7 +241,9 @@ namespace ZR.ServiceCore.AI
                 TotalTokens = m.TotalTokens,
                 Charts = m.Role == "assistant" ? AiChartAssembler.FromDataJson(m.DataJson) : null,
                 ImageUrls = m.Role == "user" ? AiChatImageHelper.FromImagesDataJson(m.DataJson) : null,
-                Tools = m.Role == "assistant" ? AiChartAssembler.FromToolsDataJson(m.DataJson) : null
+                Tools = m.Role == "assistant" ? AiChartAssembler.FromToolsDataJson(m.DataJson) : null,
+                Feedback = m.Role == "assistant" ? m.Feedback : null,
+                FeedbackNote = m.Role == "assistant" ? m.FeedbackNote : null
             }).ToList();
 
             return new SysAiChatDetailDto
@@ -250,6 +254,45 @@ namespace ZR.ServiceCore.AI
                 Messages = list,
                 HasMore = hasMore
             };
+        }
+
+        /// <summary>
+        /// 设置回答反馈（1=赞，-1=踩，0=取消），写入 ai_chat_message 的 Feedback/FeedbackNote/FeedbackTime，
+        /// 供后续按模型、按提示词版本评估回答质量。
+        /// <para>
+        /// 归属校验按 UserId 过滤：消息 ID 由前端传入，必须防越权评价他人消息；
+        /// 只允许评价 assistant 消息，用户提问本身没有"回答质量"可言。
+        /// </para>
+        /// </summary>
+        public async Task<bool> SetFeedbackAsync(long messageId, long userId, int rating, string note = null)
+        {
+            if (rating != -1 && rating != 0 && rating != 1)
+            {
+                throw new Exception("反馈类型不合法");
+            }
+
+            var msg = await Context.Queryable<AiChatMessage>()
+                .Where(m => m.MessageId == messageId && m.UserId == userId)
+                .FirstAsync();
+            if (msg == null)
+            {
+                throw new Exception("消息不存在或无权操作");
+            }
+            if (msg.Role != "assistant")
+            {
+                throw new Exception("只能评价助手的回答");
+            }
+
+            int? value = rating == 0 ? null : rating;
+            // 点赞与取消都清空原因：避免上一次的踩原因残留在新状态下造成误读
+            var noteText = value == -1 && !string.IsNullOrWhiteSpace(note) ? AiHelper.Truncate(note.Trim(), 200) : null;
+            var feedbackTime = value == null ? (DateTime?)null : DateTime.Now;
+
+            var affected = await Context.Updateable<AiChatMessage>()
+                .SetColumns(m => new AiChatMessage { Feedback = value, FeedbackNote = noteText, FeedbackTime = feedbackTime })
+                .Where(m => m.MessageId == messageId && m.UserId == userId)
+                .ExecuteCommandAsync();
+            return affected > 0;
         }
 
         #endregion 会话 CRUD
@@ -387,6 +430,8 @@ namespace ZR.ServiceCore.AI
             for (var round = 0; round < MaxToolRounds; round++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                // 本轮已下发过 start 的工具名：模型逐块吐工具名时先发 start，执行前不再重复发同一个工具
+                var startedTools = new HashSet<string>(StringComparer.Ordinal);
                 AiLlmClient.ChatToolResult turn = null;
                 var bufferDeltas = st.LastRoundAllFailed;
                 var buffered = bufferDeltas ? new List<string>() : null;
@@ -407,7 +452,12 @@ namespace ZR.ServiceCore.AI
                     }
                     else if (chunk.Type == "tool" && !string.IsNullOrWhiteSpace(chunk.Text))
                     {
-                        yield return new SysAiChatStreamDto { Type = "tool", ToolName = chunk.Text, ToolStatus = "start" };
+                        // 模型刚开始生成工具参数：提前下发 start，前端立刻显示"正在调用 XX"。
+                        // 同名工具本轮只发一次——执行前还会再补齐 start，重复发会让前端多出一个 pending chip。
+                        if (startedTools.Add(chunk.Text))
+                        {
+                            yield return new SysAiChatStreamDto { Type = "tool", ToolName = chunk.Text, ToolStatus = "start" };
+                        }
                     }
                     else if (chunk.Type == "finish")
                     {
@@ -447,18 +497,44 @@ namespace ZR.ServiceCore.AI
                     }
                 }
 
-                // 先统一下发 start 事件，再并行执行，最后统一 done：事件顺序与前端契约不变，且降首字延迟
+                // 补齐尚未 start 的工具（模型流里已提前发过的同名工具不再重复），再并行执行
                 cancellationToken.ThrowIfCancellationRequested();
                 foreach (var call in turn.ToolCalls)
                 {
-                    yield return new SysAiChatStreamDto { Type = "tool", ToolName = call.Name, ToolStatus = "start" };
+                    if (startedTools.Add(call.Name))
+                    {
+                        yield return new SysAiChatStreamDto { Type = "tool", ToolName = call.Name, ToolStatus = "start" };
+                    }
                 }
-                var streamExecs = await ExecuteRoundToolsAsync(st, turn, context.Messages, userId, context.Session.SessionId);
-                for (var i = 0; i < turn.ToolCalls.Count; i++)
+
+                // 完成即推：工具并行执行，谁先结束谁先发 done（含耗时/失败原因），前端 chip 随即由
+                // pending 变为成功或失败，不必等本轮最慢的那个工具——旧实现要等 WhenAll 全部结束才发。
+                // 用无界通道把"后台任务完成"转成"迭代器可 yield 的事件"，迭代器内不能直接从回调 yield。
+                var toolEvents = Channel.CreateUnbounded<SysAiChatStreamDto>(new UnboundedChannelOptions { SingleReader = true });
+                var execTask = ExecuteRoundToolsAsync(st, turn, context.Messages, userId, context.Session.SessionId,
+                    (index, outcome) =>
+                    {
+                        var executed = turn.ToolCalls[index];
+                        var ok = outcome.Result?.Ok == true;
+                        toolEvents.Writer.TryWrite(new SysAiChatStreamDto
+                        {
+                            Type = "tool",
+                            ToolName = executed.Name,
+                            ToolStatus = "done",
+                            ToolOk = ok,
+                            ToolDurationMs = outcome.Log?.DurationMs,
+                            // 失败原因取已对外口径的文案（不含堆栈/内部细节），完整原因在日志与审计表
+                            ToolError = ok ? null : AiHelper.Truncate(outcome.Result?.Content, ToolErrorMaxLen)
+                        });
+                        return Task.CompletedTask;
+                    });
+                _ = execTask.ContinueWith(_ => toolEvents.Writer.TryComplete(), TaskScheduler.Default);
+                await foreach (var toolEvent in toolEvents.Reader.ReadAllAsync(cancellationToken))
                 {
-                    var call = turn.ToolCalls[i];
-                    yield return new SysAiChatStreamDto { Type = "tool", ToolName = call.Name, ToolStatus = "done", ToolOk = streamExecs[i].Ok };
+                    yield return toolEvent;
                 }
+                // 通道读完再取结果：execTask 抛异常时在此重新抛出，由调用方转 error 事件
+                await execTask;
             }
 
             if (string.IsNullOrWhiteSpace(reply))
@@ -492,11 +568,12 @@ namespace ZR.ServiceCore.AI
                 CompletionTokens = result.CompletionTokens,
                 TotalTokens = result.TotalTokens,
                 Charts = result.Charts,
-                Tools = result.Tools
+                Tools = result.Tools,
+                MessageId = result.MessageId
             };
         }
 
-        private async Task SaveMessageAsync(long sessionId, long userId, string role, string content, string model,
+        private async Task<long> SaveMessageAsync(long sessionId, long userId, string role, string content, string model,
             int promptTokens = 0, int completionTokens = 0, int totalTokens = 0, string dataJson = null)
         {
             var msg = new AiChatMessage
@@ -517,6 +594,7 @@ namespace ZR.ServiceCore.AI
                 msg.TotalTokens = totalTokens;
             }
             msg.MessageId = await Context.Insertable(msg).ExecuteReturnSnowflakeIdAsync();
+            return msg.MessageId;
         }
 
         /// <summary>
@@ -545,11 +623,12 @@ namespace ZR.ServiceCore.AI
             }
 
             // 用户/助手消息与标题更新必须同成败，否则会留下没有回复的孤立用户消息
+            long assistantMessageId;
             await Context.Ado.BeginTranAsync();
             try
             {
                 await SaveMessageAsync(session.SessionId, userId, "user", userMessage, model, dataJson: userJson);
-                await SaveMessageAsync(session.SessionId, userId, "assistant", reply, model, totalPromptTokens, totalCompletionTokens, totalTokens, dataJson);
+                assistantMessageId = await SaveMessageAsync(session.SessionId, userId, "assistant", reply, model, totalPromptTokens, totalCompletionTokens, totalTokens, dataJson);
                 await UpdateAsync(s => s.SessionId == session.SessionId,
                     s => new AiChatSession { Title = newTitle, UpdateTime = DateTime.Now });
                 await Context.Ado.CommitTranAsync();
@@ -572,7 +651,8 @@ namespace ZR.ServiceCore.AI
                 CompletionTokens = hasUsage ? totalCompletionTokens : null,
                 TotalTokens = hasUsage ? totalTokens : null,
                 Charts = charts,
-                Tools = tools
+                Tools = tools,
+                MessageId = assistantMessageId
             };
         }
 
@@ -1104,11 +1184,41 @@ namespace ZR.ServiceCore.AI
         /// 前提：现有工具均为只读查询、不开事务，且连接 IsAutoCloseConnection=true（每次操作独立开关连接）；
         /// 若新增工具写库/开事务，或关闭自动关闭连接，必须改回串行执行。
         /// </summary>
+        /// <param name="st">本轮累积状态（工具轨迹、图表查询、token 用量）</param>
+        /// <param name="turn">模型返回的助手消息与工具调用列表</param>
+        /// <param name="messages">回灌给模型的消息列表（会追加工具结果）</param>
+        /// <param name="userId">当前用户（工具鉴权与审计）</param>
+        /// <param name="sessionId">会话 ID（审计关联）</param>
+        /// <param name="onToolFinished">
+        /// 每完成一个工具即回调（参数为 ToolCalls 下标与执行结果），流式路径据此即时推送 done 事件；
+        /// 为 null 时等价于原 WhenAll 语义。回调需轻量且不得抛异常，否则会中断本轮编排。
+        /// </param>
         private async Task<AiToolExecResult[]> ExecuteRoundToolsAsync(ChatRoundState st, AiLlmClient.ChatToolResult turn,
-            List<object> messages, long userId, long sessionId)
+            List<object> messages, long userId, long sessionId, Func<int, ToolCallOutcome, Task> onToolFinished = null)
         {
             AppendAssistantToolCalls(messages, turn);
-            var outcomes = await Task.WhenAll(turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, sessionId)));
+
+            var tasks = turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, sessionId)).ToArray();
+            var outcomes = new ToolCallOutcome[tasks.Length];
+            if (onToolFinished == null)
+            {
+                var all = await Task.WhenAll(tasks);
+                Array.Copy(all, outcomes, all.Length);
+            }
+            else
+            {
+                // 并行启动、完成一个通知一个：先完成的工具先给前端反馈，慢查询不再拖住其他 chip 的状态
+                var pending = tasks.ToList();
+                while (pending.Count > 0)
+                {
+                    var done = await Task.WhenAny(pending);
+                    pending.Remove(done);
+                    var index = Array.IndexOf(tasks, done);
+                    outcomes[index] = await done;
+                    await onToolFinished(index, outcomes[index]);
+                }
+            }
+
             var execs = new AiToolExecResult[outcomes.Length];
             var allFailed = true;
             for (var i = 0; i < turn.ToolCalls.Count; i++)
@@ -1116,7 +1226,7 @@ namespace ZR.ServiceCore.AI
                 var call = turn.ToolCalls[i];
                 var exec = outcomes[i].Result;
                 execs[i] = exec;
-                st.ToolTrace.Add(new AiChatToolCallDto { Name = call.Name, Ok = exec.Ok });
+                st.ToolTrace.Add(new AiChatToolCallDto { Name = call.Name, Ok = exec.Ok, DurationMs = outcomes[i].Log?.DurationMs });
                 if (exec.Ok) allFailed = false;
                 AppendToolResult(messages, call.Id, exec, st.ChartQueries);
             }

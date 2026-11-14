@@ -37,6 +37,12 @@ namespace ZR.Model.AI.Dto
 
         /// <summary>本条助手消息本轮调用过的工具（用户消息为空）</summary>
         public List<AiChatToolCallDto> Tools { get; set; }
+
+        /// <summary>回答反馈：1=赞，-1=踩，null=未评价（仅 assistant 消息有值），用于前端回显当前评价</summary>
+        public int? Feedback { get; set; }
+
+        /// <summary>点踩原因（用户可填），点赞或未填为 null</summary>
+        public string FeedbackNote { get; set; }
     }
 
     /// <summary>
@@ -96,6 +102,31 @@ namespace ZR.Model.AI.Dto
 
         /// <summary>本轮调用过的工具摘要</summary>
         public List<AiChatToolCallDto> Tools { get; set; }
+
+        /// <summary>
+        /// 本轮助手消息落库后的 MessageId（雪花主键，JSON 序列化为字符串）。
+        /// 前端据此提交点赞/点踩；历史消息接口返回的 MessageId 与之同源。
+        /// </summary>
+        [JsonConverter(typeof(ValueToStringConverter))]
+        public long MessageId { get; set; }
+    }
+
+    /// <summary>
+    /// 回答反馈请求。Rating：1=赞，-1=踩，0=取消评价（用于前端再次点击同一按钮时撤销）。
+    /// </summary>
+    public class SysAiChatFeedbackDto
+    {
+        /// <summary>被评价的助手消息 ID（雪花主键，前端以字符串传递）</summary>
+        [JsonConverter(typeof(ValueToStringConverter))]
+        public long MessageId { get; set; }
+
+        /// <summary>1=赞，-1=踩，0=取消</summary>
+        [Range(-1, 1, ErrorMessage = "反馈类型不合法")]
+        public int Rating { get; set; }
+
+        /// <summary>点踩原因（可选，最多 200 字）；点赞或取消时忽略</summary>
+        [StringLength(200, ErrorMessage = "反馈内容不能超过 200 字")]
+        public string Note { get; set; }
     }
 
     /// <summary>
@@ -219,6 +250,15 @@ namespace ZR.Model.AI.Dto
         /// <summary>tool(done)：工具是否执行成功</summary>
         public bool ToolOk { get; set; }
 
+        /// <summary>tool(done)：本次执行耗时（毫秒），用于前端展示"已调用 XX · 120ms"</summary>
+        public long? ToolDurationMs { get; set; }
+
+        /// <summary>
+        /// tool(done)：失败原因（仅失败时有值，取已对外口径的错误文案并截断，不含内部异常与堆栈）。
+        /// 成功时为 null。
+        /// </summary>
+        public string ToolError { get; set; }
+
         /// <summary>done：会话 ID</summary>
         [JsonConverter(typeof(ValueToStringConverter))]
         public long SessionId { get; set; }
@@ -250,6 +290,10 @@ namespace ZR.Model.AI.Dto
         /// <summary>done：本轮工具调用摘要</summary>
         public List<AiChatToolCallDto> Tools { get; set; }
 
+        /// <summary>done：本轮助手消息落库后的 MessageId，前端据此提交点赞/点踩</summary>
+        [JsonConverter(typeof(ValueToStringConverter))]
+        public long MessageId { get; set; }
+
         /// <summary>error：错误描述（可展示给用户）</summary>
         public string Error { get; set; }
     }
@@ -259,5 +303,7 @@ namespace ZR.Model.AI.Dto
     {
         public string Name { get; set; }
         public bool Ok { get; set; }
+        /// <summary>执行耗时（毫秒）；用于历史消息回显"已调用 XX · 120ms"，未知时为 null</summary>
+        public long? DurationMs { get; set; }
     }
 }
