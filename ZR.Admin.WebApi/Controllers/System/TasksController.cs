@@ -172,6 +172,9 @@ namespace ZR.Admin.WebApi.Controllers
         /// <param name="id">编码</param>
         /// <returns></returns>
         [HttpGet("get")]
+        // 与 list/runtime 同权限：此前漏了功能权限，任意登录用户（common）即可拿到任务整行配置
+        // （SQL 文本、存储过程参数、API 地址、程序集类名），据此可推断内部接口与库结构。
+        [ActionPermissionFilter(Permission = "monitor:job:list")]
         public IActionResult Get(string id)
         {
             if (!string.IsNullOrEmpty(id))

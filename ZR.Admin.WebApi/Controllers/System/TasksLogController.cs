@@ -29,6 +29,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <param name="pager"></param>
         /// <returns></returns>
         [HttpGet("list")]
+        // 任务日志与任务管理同权限：此前无权限过滤器，任何登录用户可按 jobId 翻执行日志（含异常堆栈）
+        [ActionPermissionFilter(Permission = "monitor:job:list")]
         public IActionResult GetList([FromQuery] PagerInfo pager, [FromQuery] TasksLogQueryDto queryDto)
         {
             queryDto.BeginTime = DateTimeHelper.GetBeginTime(queryDto.BeginTime, -7);
