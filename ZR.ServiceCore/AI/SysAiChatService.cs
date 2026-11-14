@@ -47,12 +47,15 @@ namespace ZR.ServiceCore.AI
         private const int MaxToolRounds = 5;
         private const string ToolRetryReminder =
             "上一轮工具全部失败。请根据错误与工具 schema 修正参数后再次调用；若确实无法调用，再向用户简要说明原因，不要复述内部错误原文。";
-        /// <summary>回灌历史消息最近窗口条数（窗口内保留原文，窗口外用摘要锚点压缩）</summary>
+        /// <summary>回灌历史消息最近窗口条数（窗口内保留原文，窗口之前的内容由增量摘要压缩）</summary>
         private const int MaxHistoryMessages = 20;
-        /// <summary>历史摘要单次最多纳入的旧消息条数（防超长会话一次性摘要烧 token）</summary>
-        private const int SummaryMaxOlderMessages = 100;
-        /// <summary>历史摘要缓存分钟数（窗口边界每约 20 轮才移动，期间命中缓存）</summary>
-        private const int SummaryCacheMinutes = 30;
+        /// <summary>
+        /// 单轮摘要最多纳入的旧消息条数，也是历史读取上限。正常增量时水位线之后滑出窗口的只有几条；
+        /// 水位线丢失（缓存过期/清理）时按此步长逐轮追赶，既不一次塞爆模型也不丢历史。
+        /// </summary>
+        private const int SummaryChunkMessages = 100;
+        /// <summary>历史摘要缓存分钟数：续聊同一会话（含隔天）时复用增量摘要，避免水位线过期后退化为全量重算</summary>
+        private const int SummaryCacheMinutes = 1440;
         /// <summary>单条工具结果回灌给模型的最大长度</summary>
         private const int ToolResultMaxLen = 8000;
         /// <summary>单条用户消息最大长度（与请求 DTO 校验一致，服务端兜底防超长文本烧 token）</summary>
@@ -899,56 +902,92 @@ namespace ZR.ServiceCore.AI
         }
 
         /// <summary>
-        /// 解析回灌历史：最近 <see cref="MaxHistoryMessages"/> 条保留原文，更早的消息用一次 LLM 调用
-        /// 聚合成「历史摘要」锚点（结果按窗口边界指纹缓存，避免每轮重算）。摘要失败自动降级为仅窗口，不阻断对话。
+        /// 解析回灌历史：最近 <see cref="MaxHistoryMessages"/> 条保留原文，窗口之前的消息由「水位线 + 增量摘要」压缩。
+        /// <para>
+        /// 不再按固定条数 <c>Take</c> 截断历史（超出部分曾会被静默丢弃）：只读水位线之后的消息，
+        /// 每轮把新滑出窗口的少量旧消息并入上次摘要，摘要随会话持续推进，覆盖全部历史。
+        /// 摘要失败自动降级为仅窗口，不阻断对话。
+        /// </para>
         /// </summary>
         /// <returns>(recent 正序消息列表, summaryAnchor 摘要文本，无摘要时为 null)</returns>
         private async Task<(List<AiChatMessage> Recent, string SummaryAnchor)> ResolveHistoryAsync(long sessionId, long userId)
         {
+            var watermark = GetSummaryWatermark(sessionId);
+            var queryLimit = MaxHistoryMessages + SummaryChunkMessages;
+
+            // 按雪花主键排序：与水位线同源，且 CreateTime 同秒落库时顺序稳定
             var history = await Context.Queryable<AiChatMessage>()
-                .Where(m => m.SessionId == sessionId && m.UserId == userId && m.Role != "tool")
-                .OrderBy(m => m.CreateTime, OrderByType.Desc)
-                .Take(MaxHistoryMessages + SummaryMaxOlderMessages)
+                .Where(m => m.SessionId == sessionId && m.UserId == userId && m.Role != "tool" && m.MessageId > watermark)
+                .OrderBy(m => m.MessageId, OrderByType.Desc)
+                .Take(queryLimit)
                 .ToListAsync();
             history.Reverse();// 正序
 
             if (history.Count <= MaxHistoryMessages)
             {
-                return (history, null);
+                // 窗口装得下：无需新增摘要，但仍要带上水位线之前累积的摘要
+                return (history, watermark > 0 ? ReadStoredSummary(sessionId, watermark) : null);
             }
 
             var recent = history.TakeLast(MaxHistoryMessages).ToList();
-            var older = history.Take(history.Count - MaxHistoryMessages).ToList();
-            var summary = await BuildHistorySummaryAsync(sessionId, userId, older);
+            List<AiChatMessage> older;
+            if (history.Count < queryLimit)
+            {
+                // 未读满：窗口外的就是全部未摘要内容，天然与窗口连续
+                older = history.Take(history.Count - MaxHistoryMessages).ToList();
+            }
+            else
+            {
+                // 读满：说明水位线之后还有更多历史（缓存过期、或首次摘要就是超长会话），
+                // 从水位线正序取一段接力摘要，保证摘要连续推进不跳段；本次没覆盖到的留待后续轮次续上
+                older = await Context.Queryable<AiChatMessage>()
+                    .Where(m => m.SessionId == sessionId && m.UserId == userId && m.Role != "tool" && m.MessageId > watermark)
+                    .OrderBy(m => m.MessageId)
+                    .Take(SummaryChunkMessages)
+                    .ToListAsync();
+                // 丢弃与最近窗口重叠的尾部（按主键判断，两边都已正序）
+                var windowStart = recent[0].MessageId;
+                older = older.Where(m => m.MessageId < windowStart).ToList();
+            }
+
+            var summary = await BuildHistorySummaryAsync(sessionId, userId, watermark, older);
             return (recent, summary);
         }
 
         /// <summary>
-        /// 生成（或复用缓存的）历史摘要。缓存指纹取窗口外旧消息的首尾 MessageId，
-        /// 窗口边界每约 <see cref="MaxHistoryMessages"/> 轮才移动，期间命中缓存不重复调用模型。
+        /// 生成（或更新）历史摘要。水位线 = 已摘要到的最后一条 MessageId，它把摘要从「每次全量重算」变成增量更新：
+        /// 输入 = 上次摘要 + 本轮新滑出窗口的旧消息，输出覆盖此前全部历史；同一水位线重复请求直接命中缓存、零模型调用。
+        /// <para>
+        /// 缓存键按水位线分而不是按「窗口外首尾消息」，因为尾消息每轮都会变，旧实现等价于每轮全量重算。
+        /// </para>
         /// </summary>
-        private async Task<string> BuildHistorySummaryAsync(long sessionId, long userId, List<AiChatMessage> older)
+        private async Task<string> BuildHistorySummaryAsync(long sessionId, long userId, long watermark, List<AiChatMessage> older)
         {
-            if (older.Count == 0) return null;
-
-            var tenantId = App.GetCurrentTenantId() ?? "0";
-            var cacheKey = $"ai:history:summary:{tenantId}:{sessionId}:{older[0].MessageId}-{older[^1].MessageId}";
-            var cache = CacheStore.For(CacheBackend.Cache);
-            var cached = cache.Get<string>(cacheKey);
-            if (!string.IsNullOrWhiteSpace(cached))
+            if (older.Count == 0)
             {
-                return cached;
+                return watermark > 0 ? ReadStoredSummary(sessionId, watermark) : null;
             }
+
+            var cache = CacheStore.For(CacheBackend.Cache);
+            var previous = watermark > 0 ? ReadStoredSummary(sessionId, watermark) : null;
 
             var summaryPrompt = AiHelper.LoadPrompt("system/ai-chat-history-summary.md");
             if (string.IsNullOrWhiteSpace(summaryPrompt))
             {
                 // 提示词缺失时静默降级为仅窗口，不影响本轮对话
                 _logger.Warn($"AI 历史摘要提示词缺失已跳过摘要：system/ai-chat-history-summary.md sessionId={sessionId}");
-                return null;
+                return previous;
             }
 
             var sb = new System.Text.StringBuilder();
+            if (!string.IsNullOrWhiteSpace(previous))
+            {
+                // 增量合并：把「已有摘要」和「新增对话」一起压缩，避免每轮重读整段历史
+                sb.AppendLine("【已有摘要（更早的对话要点）】");
+                sb.AppendLine(previous);
+                sb.AppendLine();
+                sb.AppendLine("【新增对话】");
+            }
             foreach (var m in older)
             {
                 sb.AppendLine($"{m.Role}: {AiHelper.ClipText(m.Content, 800)}");
@@ -957,22 +996,63 @@ namespace ZR.ServiceCore.AI
             try
             {
                 var options = AiHelper.EnsureAiEnabled();
-                var summary = await AiLlmClient.ChatAsync(options, summaryPrompt, sb.ToString(), AiSceneCatalog.AiChat);
+                var summary = await _llm.ChatAsync(options, summaryPrompt, sb.ToString(), AiSceneCatalog.AiChat);
                 summary = (summary ?? "").Trim();
                 if (!string.IsNullOrWhiteSpace(summary))
                 {
-                    cache.Set(cacheKey, summary, SummaryCacheMinutes);
-                    _logger.Info($"AI 历史摘要已生成 sessionId={sessionId} userId={userId} olderCount={older.Count} len={summary.Length}");
+                    var covered = older[^1].MessageId;
+                    cache.Set(SummaryCacheKey(sessionId, covered), summary, SummaryCacheMinutes);
+                    cache.Set(SummaryHeadKey(sessionId), covered, SummaryCacheMinutes);
+                    // 只保留最新水位线的摘要文本，避免长会话在缓存里堆积一串历史版本
+                    if (watermark > 0 && watermark != covered) cache.Remove(SummaryCacheKey(sessionId, watermark));
+                    _logger.Info($"AI 历史摘要已更新 sessionId={sessionId} userId={userId} 本轮旧消息={older.Count} 覆盖到={covered} 增量={!string.IsNullOrWhiteSpace(previous)} len={summary.Length}");
                     return summary;
                 }
             }
             catch (Exception ex)
             {
-                // 摘要失败绝不阻断本轮对话，降级为仅窗口
-                _logger.Warn(ex, $"AI 历史摘要生成失败已降级为仅窗口 sessionId={sessionId} userId={userId} olderCount={older.Count}");
+                // 摘要失败绝不阻断本轮对话，降级为仅窗口（有旧摘要时继续沿用）
+                _logger.Warn(ex, $"AI 历史摘要生成失败已降级为仅窗口 sessionId={sessionId} userId={userId} 本轮旧消息={older.Count}");
             }
-            return null;
+            return previous;
         }
+
+        /// <summary>摘要水位线（已摘要到的最后一条 MessageId）；读取失败按无摘要处理，不影响对话</summary>
+        private static long GetSummaryWatermark(long sessionId)
+        {
+            try
+            {
+                return CacheStore.For(CacheBackend.Cache).Get<long?>(SummaryHeadKey(sessionId)) ?? 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn(ex, $"AI 历史摘要水位线读取失败，按无摘要处理 sessionId={sessionId}");
+                return 0;
+            }
+        }
+
+        /// <summary>读水位线对应的摘要文本；缺失（缓存过期/被清理）返回 null</summary>
+        private static string ReadStoredSummary(long sessionId, long coveredId)
+        {
+            if (coveredId <= 0) return null;
+            try
+            {
+                return CacheStore.For(CacheBackend.Cache).Get<string>(SummaryCacheKey(sessionId, coveredId));
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn(ex, $"AI 历史摘要读取失败 sessionId={sessionId} covered={coveredId}");
+                return null;
+            }
+        }
+
+        /// <summary>摘要文本键：按水位线分键，同一水位线（重试/重放）稳定命中</summary>
+        private static string SummaryCacheKey(long sessionId, long coveredId)
+            => $"ai:history:summary:{App.GetCurrentTenantId() ?? "0"}:{sessionId}:{coveredId}";
+
+        /// <summary>水位线键：指向当前摘要覆盖到的 MessageId</summary>
+        private static string SummaryHeadKey(long sessionId)
+            => $"ai:history:head:{App.GetCurrentTenantId() ?? "0"}:{sessionId}";
 
         private static void AccumulateRoundUsage(AiLlmClient.ChatToolResult turn, int round, List<string> roundDiag,
             ref bool hasUsage, ref int totalPromptTokens, ref int totalCompletionTokens, ref int totalTokens)

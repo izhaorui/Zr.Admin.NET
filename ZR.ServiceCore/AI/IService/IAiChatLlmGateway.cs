@@ -26,6 +26,18 @@ namespace ZR.ServiceCore.AI.IService
         Task<AiLlmClient.ChatToolResult> ChatWithImagesAsync(AiOptions options, string systemPrompt, string textPrompt, List<string> imageUrls, string scene = null);
 
         /// <summary>
+        /// 纯文本一问一答（无工具、无重试，与 <c>AiLlmClient.ChatAsync</c> 同语义）。
+        /// 供编排层的内部辅助调用使用（历史摘要等）：这类调用不应绕过网关，否则单元测试无法替换，
+        /// 且会把真实 HTTP 带进测试进程。
+        /// </summary>
+        /// <param name="options">AI 配置</param>
+        /// <param name="systemPrompt">system 提示</param>
+        /// <param name="userPrompt">user 内容</param>
+        /// <param name="scene">调用场景（用于用量统计）</param>
+        /// <returns>模型返回的文本（失败时由底层抛 AiException）</returns>
+        Task<string> ChatAsync(AiOptions options, string systemPrompt, string userPrompt, string scene = null);
+
+        /// <summary>
         /// 非流式（stream=false）function calling 单轮调用
         /// </summary>
         /// <param name="options">AI 配置</param>

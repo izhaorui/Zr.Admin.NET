@@ -24,6 +24,10 @@ namespace ZR.ServiceCore.AI
         public Task<AiLlmClient.ChatToolResult> ChatWithImagesAsync(AiOptions options, string systemPrompt, string textPrompt, List<string> imageUrls, string scene = null)
             => AiLlmClientRetryWrapper.ChatWithImagesAsyncWithRetry(options, systemPrompt, textPrompt, imageUrls, scene);
 
+        /// <summary>纯文本一问一答（原样转发，不额外加重试，保持既有语义）</summary>
+        public Task<string> ChatAsync(AiOptions options, string systemPrompt, string userPrompt, string scene = null)
+            => AiLlmClient.ChatAsync(options, systemPrompt, userPrompt, scene);
+
         /// <summary>非流式 function calling 单轮调用（通过重试包装层转发）</summary>
         public Task<AiLlmClient.ChatToolResult> ChatWithToolsAsync(AiOptions options, object[] messages, object[] tools, string scene = null)
             => AiLlmClientRetryWrapper.ChatWithToolsAsyncWithRetry(options, messages, tools, scene);
