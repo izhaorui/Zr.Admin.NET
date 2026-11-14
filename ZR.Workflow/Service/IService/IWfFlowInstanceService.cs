@@ -6,7 +6,11 @@ namespace ZR.Workflow.Service.IService
     public interface IWfFlowInstanceService
     {
         PagedInfo<WfFlowInstanceDto> GetMyList(WfFlowInstanceQueryDto parm, long userId, bool allUser = false);
-        WfFlowInstanceDto GetInfo(long instanceId, long? viewerId = null);
+        /// <summary>
+        /// 实例详情。viewerId 为当前登录用户，adminView 为管理员视角；
+        /// 非申请人/审批人/代审人/抄送人且非管理员时抛异常（不能只靠字段权限做访问控制）。
+        /// </summary>
+        WfFlowInstanceDto GetInfo(long instanceId, long? viewerId = null, bool adminView = false);
         long Start(WfFlowInstanceDto dto, LoginUser user);
         /// <summary>
         /// 驳回后重新提交：申请人修改内容再次发起，回到首节点重新审批。

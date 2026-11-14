@@ -15,12 +15,22 @@ namespace ZR.Workflow.Service
             _aiService = aiService;
         }
 
-        public PagedInfo<WfFlowRecordDto> GetList(WfFlowRecordQueryDto parm)
+        public PagedInfo<WfFlowRecordDto> GetList(WfFlowRecordQueryDto parm, long? viewerId = null, bool adminView = false)
         {
             var query = BuildRecordQuery()
                 .WhereIF(parm.InstanceId != null, (r, n, i, d) => r.InstanceId == parm.InstanceId)
-                .WhereIF(!string.IsNullOrEmpty(parm.Title), (r, n, i, d) => i.Title.Contains(parm.Title))
-                .OrderByDescending(r => r.RecordId)
+                .WhereIF(!string.IsNullOrEmpty(parm.Title), (r, n, i, d) => i.Title.Contains(parm.Title));
+
+            if (!adminView)
+            {
+                // 数据范围：本人发起的 + 本人操作过/被抄送的记录。
+                // 此前完全没有范围过滤，任何登录用户都能顺次翻出全公司审批流水（标题、审批人、意见）。
+                // 审批人打开单个实例时走详情接口 GetInfo（已按参与人校验）拿 Records，不依赖此列表。
+                var uid = viewerId.GetValueOrDefault();
+                query = query.Where((r, n, i, d) => i.ApplyUserId == uid || r.OperatorId == uid);
+            }
+
+            var pageQuery = query.OrderByDescending(r => r.RecordId)
                 .Select((r, n, i, d) => new WfFlowRecordDto
                 {
                     RecordId = r.RecordId,
@@ -41,7 +51,7 @@ namespace ZR.Workflow.Service
                     Summary = r.Summary,
                     Create_time = r.Create_time
                 });
-            return query.ToPage(parm);
+            return pageQuery.ToPage(parm);
         }
 
         /// <summary>

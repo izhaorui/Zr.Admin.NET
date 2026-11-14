@@ -52,9 +52,11 @@ namespace ZR.Workflow.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public IActionResult GetInfo(long instanceId)
         {
-            // viewerId=当前登录用户，用于详情页按节点字段权限过滤表单（申请人/历史实例全放开）
+            // viewerId=当前登录用户：服务层据此校验读取权限（申请人/审批人/代审人/抄送人），
+            // 并按节点字段权限过滤表单；管理员视角跳过参与人校验。
             var viewerId = HttpContext.GetUId();
-            return SUCCESS(_service.GetInfo(instanceId, viewerId));
+            var adminView = HttpContext.IsAdmin();
+            return SUCCESS(_service.GetInfo(instanceId, viewerId, adminView));
         }
 
         /// <summary>

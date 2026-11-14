@@ -167,13 +167,15 @@ namespace ZR.Workflow.Service
         /// <c>Queryable().Includes(t => t.Tasks).Includes(r => r.Records)</c> 一次拉取。
         ///
         /// 表单字段权限：按查看者视角（viewerId）对 FormContent 做字段级过滤。
-        /// - 申请人为本人、实例非审批中（已通过/驳回/撤回/结束）或节点未配置权限 → 全放开；
-        /// - 当前审批人 → 按该节点 FieldPermission 剔除隐藏字段，并返回权限视图供前端控制只读/可编辑。
+        /// - 申请人为本人、审批人/代审人/抄送人、管理员 → 按节点权限过滤（字段权限只控制可编辑性，不是访问控制）；
+        /// - 其他任何人 → 直接拒绝。此前只按 InstanceId 查询、字段权限又对"非审批中/未配置节点"全放开，
+        ///   导致任意登录用户凭自增 InstanceId 就能读走他人申请单全文。
         /// </summary>
-        public WfFlowInstanceDto GetInfo(long instanceId, long? viewerId = null)
+        public WfFlowInstanceDto GetInfo(long instanceId, long? viewerId = null, bool adminView = false)
         {
             var inst = Queryable().First(i => i.InstanceId == instanceId);
             if (inst == null) return null;
+            EnsureInstanceReadable(inst, viewerId, adminView);
             var dto = inst.Adapt<WfFlowInstanceDto>();
             if (string.IsNullOrEmpty(dto.FlowName))
             {
@@ -242,7 +244,7 @@ namespace ZR.Workflow.Service
             var inst = await Queryable().FirstAsync(i => i.InstanceId == instanceId)
                 ?? throw new CustomException("流程实例不存在");
 
-            await EnsureInstanceReadable(inst, viewerId, adminView);
+            EnsureInstanceReadable(inst, viewerId, adminView);
 
             var records = await Context.Queryable<WfFlowRecord>()
                 .LeftJoin<WfFlowNode>((r, n) => r.NodeId == n.NodeId)
@@ -310,17 +312,30 @@ namespace ZR.Workflow.Service
         }
 
         /// <summary>
-        /// 实例 AI 视角读取权限：管理员、申请人或该实例任务的审批人/被委托人可读，防止凭 Id 越权拉取他人申请内容。
+        /// 实例读取权限：管理员、申请人、该实例任务的审批人/被委托人、抄送接收人可读，
+        /// 防止凭自增 InstanceId 越权拉取他人申请内容。
         /// </summary>
-        private async Task EnsureInstanceReadable(WfFlowInstance inst, long viewerId, bool adminView)
+        private void EnsureInstanceReadable(WfFlowInstance inst, long? viewerId, bool adminView)
         {
-            if (adminView || inst.ApplyUserId == viewerId) return;
-
-            var involved = await Context.Queryable<WfFlowTask>()
-                .AnyAsync(t => t.InstanceId == inst.InstanceId && (t.AssigneeId == viewerId || t.DelegateId == viewerId));
-            if (!involved)
+            if (adminView) return;
+            if (inst == null || !viewerId.HasValue || viewerId.Value <= 0)
             {
-                throw new CustomException("无权查看该流程实例的 AI 分析");
+                throw new CustomException("无权查看该流程实例");
+            }
+
+            var uid = viewerId.Value;
+            if (inst.ApplyUserId == uid) return;
+
+            var involved = Context.Queryable<WfFlowTask>()
+                .Any(t => t.InstanceId == inst.InstanceId && (t.AssigneeId == uid || t.DelegateId == uid));
+            if (involved) return;
+
+            // 抄送接收人同样可打开详情（抄送记录的 OperatorId 为接收人）
+            var isCc = Context.Queryable<WfFlowRecord>()
+                .Any(r => r.InstanceId == inst.InstanceId && r.Action == (int)WfAction.Cc && r.OperatorId == uid);
+            if (!isCc)
+            {
+                throw new CustomException("无权查看该流程实例");
             }
         }
 

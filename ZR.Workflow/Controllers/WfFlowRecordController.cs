@@ -24,7 +24,10 @@ namespace ZR.Workflow.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public IActionResult QueryList([FromQuery] WfFlowRecordQueryDto parm)
         {
-            return SUCCESS(_service.GetList(parm));
+            // 普通用户只能看本人参与的实例记录，管理员可看全部（保留原审计/运维场景）
+            var userId = HttpContext.GetUId();
+            var allUser = HttpContext.IsAdmin();
+            return SUCCESS(_service.GetList(parm, userId, allUser));
         }
 
         /// <summary>
