@@ -123,7 +123,13 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public IActionResult Top([FromBody] Article parm)
         {
-            var response = _ArticleService.TopArticle(parm);
+            if (parm == null || parm.Cid <= 0) { return ToResponse(ResultCode.PARAM_ERROR, "缺少内容Id"); }
+            var userId = HttpContext.GetUId();
+            if (userId <= 0) { return ToResponse(ResultCode.DENY); }
+
+            // 归属校验下沉到 Service 的更新条件（where Cid=? and UserId=?），
+            // 不能只比对请求体里的 userId —— 那等于没有校验。
+            var response = _ArticleService.TopArticle(parm, userId);
 
             return SUCCESS(response);
         }
@@ -136,13 +142,11 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public IActionResult ChangePublic([FromBody] Article parm)
         {
-            if (parm == null) { return ToResponse(ResultCode.CUSTOM_ERROR); }
+            if (parm == null || parm.Cid <= 0) { return ToResponse(ResultCode.PARAM_ERROR, "缺少内容Id"); }
             var userId = HttpContext.GetUId();
-            if (userId != parm.UserId)
-            {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "操作失败");
-            }
-            var response = _ArticleService.ChangeArticlePublic(parm);
+            if (userId <= 0) { return ToResponse(ResultCode.DENY); }
+
+            var response = _ArticleService.ChangeArticlePublic(parm, userId);
 
             return SUCCESS(response);
         }
@@ -155,13 +159,11 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "common")]
         public IActionResult ChangeComment([FromBody] Article parm)
         {
-            if (parm == null) { return ToResponse(ResultCode.CUSTOM_ERROR); }
+            if (parm == null || parm.Cid <= 0) { return ToResponse(ResultCode.PARAM_ERROR, "缺少内容Id"); }
             var userId = HttpContext.GetUId();
-            if (userId != parm.UserId)
-            {
-                return ToResponse(ResultCode.CUSTOM_ERROR, "操作失败");
-            }
-            var response = _ArticleService.ChangeComment(parm);
+            if (userId <= 0) { return ToResponse(ResultCode.DENY); }
+
+            var response = _ArticleService.ChangeComment(parm, userId);
 
             return SUCCESS(response);
         }

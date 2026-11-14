@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq.Expressions;
+using System.Net;
 using System.Text.RegularExpressions;
 using Infrastructure;
 using Infrastructure.Attribute;
@@ -399,40 +400,66 @@ namespace ZR.Service.Content
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public int TopArticle(Article model)
+        public int TopArticle(Article model, long? ownerUserId = null)
         {
-            var response = Update(w => w.Cid == model.Cid, it => new Article()
+            return UpdateOwnedColumn(model, ownerUserId, it => new Article()
             {
                 IsTop = model.IsTop,
             });
-            return response;
         }
 
         /// <summary>
         /// 评论权限
         /// </summary>
         /// <param name="model"></param>
+        /// <param name="ownerUserId">前台传当前登录用户：只允许改本人内容；后台管理传 null（由接口权限控制）</param>
         /// <returns></returns>
-        public int ChangeComment(Article model)
+        public int ChangeComment(Article model, long? ownerUserId = null)
         {
-            var response = Update(w => w.Cid == model.Cid, it => new Article()
+            return UpdateOwnedColumn(model, ownerUserId, it => new Article()
             {
                 CommentSwitch = model.CommentSwitch,
             });
-            return response;
         }
 
         /// <summary>
         /// 是否公开
         /// </summary>
         /// <param name="model"></param>
+        /// <param name="ownerUserId">前台传当前登录用户：只允许改本人内容；后台管理传 null（由接口权限控制）</param>
         /// <returns></returns>
-        public int ChangeArticlePublic(Article model)
+        public int ChangeArticlePublic(Article model, long? ownerUserId = null)
         {
-            var response = Update(w => w.Cid == model.Cid, it => new Article()
+            return UpdateOwnedColumn(model, ownerUserId, it => new Article()
             {
                 IsPublic = model.IsPublic,
             });
+        }
+
+        /// <summary>
+        /// 按 Cid 更新单个开关列，传入 ownerUserId 时把"作者=本人"写进 where 条件。
+        /// 归属校验必须落在更新条件里：此前仅由 Controller 比对请求体 userId，攻击者填自己的 id 即可绕过，
+        /// 把他人内容改成公开后再匿名读全文。
+        /// </summary>
+        private int UpdateOwnedColumn(Article model, long? ownerUserId, Expression<Func<Article, Article>> columns)
+        {
+            if (model == null || model.Cid <= 0)
+            {
+                throw new CustomException(ResultCode.PARAM_ERROR, "缺少内容Id");
+            }
+
+            int response;
+            if (ownerUserId.HasValue)
+            {
+                var uid = ownerUserId.Value;
+                if (uid <= 0) throw new CustomException(ResultCode.DENY, "登录状态已失效");
+                response = Update(w => w.Cid == model.Cid && w.UserId == uid, columns);
+                if (response <= 0) throw new CustomException(ResultCode.DENY, "无权操作他人内容");
+            }
+            else
+            {
+                response = Update(w => w.Cid == model.Cid, columns);
+            }
             return response;
         }
 
@@ -510,9 +537,17 @@ namespace ZR.Service.Content
         {
             var response = GetId(cid);
             var model = response.Adapt<ArticleDto>() ?? throw new CustomException(ResultCode.FAIL, "内容不存在");
-            if (model.IsPublic == 0 && userId != model.UserId)
+            // userId<=0 为匿名（也会命中历史无作者的 UserId=0 内容），不能当成本人
+            if (userId <= 0 || userId != model.UserId)
             {
-                throw new CustomException(ResultCode.CUSTOM_ERROR, "访问失败");
+                // 匿名/他人视角与列表口径一致：仅"已发布 + 公开 + 审核通过"可读。
+                // 此前只判断 IsPublic，草稿、下线、待审/驳回内容只要猜到 Cid 就能读到全文。
+                if (model.IsPublic == 0
+                    || model.Status != "1"
+                    || model.AuditStatus != AuditStatusEnum.Passed)
+                {
+                    throw new CustomException(ResultCode.CUSTOM_ERROR, "访问失败");
+                }
             }
             if (model != null)
             {

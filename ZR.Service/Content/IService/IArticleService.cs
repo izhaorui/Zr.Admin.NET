@@ -15,9 +15,12 @@ namespace ZR.Service.Content.IService
         /// 查询圈子内容列表（文章+动态混合，按分类含子分类）
         /// </summary>
         PagedInfo<ArticleDto> GetCircleList(ArticleQueryDto parm);
-        int TopArticle(Article model);
-        int ChangeComment(Article model);
-        int ChangeArticlePublic(Article model);
+        /// <summary>
+        /// 置顶开关。前台必须传 ownerUserId（作者本人），后台管理传 null。
+        /// </summary>
+        int TopArticle(Article model, long? ownerUserId = null);
+        int ChangeComment(Article model, long? ownerUserId = null);
+        int ChangeArticlePublic(Article model, long? ownerUserId = null);
         int UpdateArticleHit(long cid);
         int PraiseArticle(long cid);
         int CancelPraise(long cid);
