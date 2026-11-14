@@ -81,6 +81,9 @@ namespace ZR.ServiceCore.SqlSugar
             // 知识库检索审计（可选插件写）：表不存在时插件只记日志不报错，
             // 但管理端要看命中率就必须建表，因此纳入主库迁移清单。
             typeof(AiKnowledgeQueryLog),
+            // AI 工具调用审计（对话编排每次工具执行一条）：与 ai_call_log 同级的主库审计表，
+            // 治理页按它排查越权/误调用，表不存在时落库只记 Warn、不影响对话。
+            typeof(AiToolCallLog),
             // 行政区划字典（主库）：公共参考数据，运费模板的「不配送地区/包邮」按它匹配。
             // 注册进主库迁移链路后，后台「数据库同步」页也能看到并手工补建这张表。
             // 数据由 MainDbReferenceSeed.EnsureAreas 灌入（种子内嵌在 ZR.ServiceCore）。
@@ -140,6 +143,7 @@ namespace ZR.ServiceCore.SqlSugar
         private static readonly HashSet<Type> StartupTenantColumnExcludedTypes = new()
         {
             typeof(AiCallLog),
+            typeof(AiToolCallLog),
             typeof(AiAccessPolicy),
             // SaaS 平台级表：TenantId 是业务主字段（租户标识 / 被绑定的租户），不是"租户隔离列"，
             // 不需要每次启动做补列检查。结构由 --initdb / SaaS 模块初始化维护。

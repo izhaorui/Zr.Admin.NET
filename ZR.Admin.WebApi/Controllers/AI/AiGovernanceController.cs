@@ -14,11 +14,14 @@ namespace ZR.Admin.WebApi.Controllers.AI
     {
         private readonly IAiGovernanceService _service;
         private readonly IAiConfigService _configService;
+        private readonly IAiToolCallLogService _toolCallLogService;
 
-        public AiGovernanceController(IAiGovernanceService service, IAiConfigService configService)
+        public AiGovernanceController(IAiGovernanceService service, IAiConfigService configService,
+            IAiToolCallLogService toolCallLogService)
         {
             _service = service;
             _configService = configService;
+            _toolCallLogService = toolCallLogService;
         }
 
         /// <summary>
@@ -187,5 +190,15 @@ namespace ZR.Admin.WebApi.Controllers.AI
         [ActionPermissionFilter(Permission = "ai:governance:edit")]
         public IActionResult RefreshConfig()
             => SUCCESS(new { refreshed = _configService.RefreshCache(), at = DateTime.Now });
+
+        /// <summary>
+        /// 查询 AI 工具调用明细（审计）：谁在什么时候调用了哪个工具、参数摘要、结果状态、耗时。
+        /// 用于排查越权尝试（status=denied）与误调用（unknown_tool/failed/exception）。
+        /// 数据范围由服务按登录身份收窄，不信任前端传入的租户/用户。
+        /// </summary>
+        [HttpGet("toolLog/list")]
+        [ActionPermissionFilter(Permission = "ai:governance:list")]
+        public IActionResult ToolLogList([FromQuery] AiToolCallQueryDto query)
+            => SUCCESS(_toolCallLogService.GetList(query, isAdmin: true));
     }
 }

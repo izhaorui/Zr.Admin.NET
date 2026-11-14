@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using NLog;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using ZR.Model.AI;
 using ZR.Model.AI.Dto;
 using ZR.Model.System.Dto;
@@ -31,7 +33,13 @@ namespace ZR.ServiceCore.AI
         private readonly IReadOnlyList<IAiAssistantToolProvider> _toolProviders;
         private readonly IReadOnlyList<AiToolDef> _providerToolDefs;
         private readonly Dictionary<string, IAiAssistantToolProvider> _toolProviderMap;
+        private readonly Dictionary<string, AiToolDef> _toolDefMap;
+        private readonly IAiToolCallLogService _toolCallLogService;
         private readonly IWebHostEnvironment _env;
+
+        /// <summary>执行期工具鉴权用的权限快照（本实例 = 单次请求，按需加载一次）</summary>
+        private List<string> _callPerms;
+        private bool _callPermsLoaded;
 
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
@@ -53,17 +61,20 @@ namespace ZR.ServiceCore.AI
         /// <param name="llm">大模型调用网关（封装静态 AiLlmClient，便于测试替换）</param>
         /// <param name="toolProviders">各模块注册的工具提供者（内置办工工具也已实现该接口，见 AiOfficeToolProvider）</param>
         /// <param name="permissionService">权限服务（工具清单按用户权限过滤）</param>
+        /// <param name="toolCallLogService">工具调用审计（每次工具执行落一条，用于排查越权/误调用）</param>
         /// <param name="env">宿主环境（本机上传图片转 data URI 时定位 wwwroot）</param>
         public SysAiChatService(IAiChatLlmGateway llm, IEnumerable<IAiAssistantToolProvider> toolProviders,
-            ISysPermissionService permissionService, IWebHostEnvironment env)
+            ISysPermissionService permissionService, IAiToolCallLogService toolCallLogService, IWebHostEnvironment env)
         {
             _llm = llm;
             _permissionService = permissionService;
+            _toolCallLogService = toolCallLogService;
             _env = env;
             _toolProviders = (toolProviders ?? []).ToList();
 
             var defs = new List<AiToolDef>();
             _toolProviderMap = new Dictionary<string, IAiAssistantToolProvider>(StringComparer.OrdinalIgnoreCase);
+            _toolDefMap = new Dictionary<string, AiToolDef>(StringComparer.OrdinalIgnoreCase);
             foreach (var provider in _toolProviders)
             {
                 var providerDefs = provider.GetToolDefs();
@@ -80,6 +91,7 @@ namespace ZR.ServiceCore.AI
                     }
                     defs.Add(def);
                     _toolProviderMap.Add(def.Name, provider);
+                    _toolDefMap.Add(def.Name, def);
                 }
             }
             _providerToolDefs = defs;
@@ -1016,17 +1028,23 @@ namespace ZR.ServiceCore.AI
             List<object> messages, long userId, long sessionId)
         {
             AppendAssistantToolCalls(messages, turn);
-            var execs = await Task.WhenAll(turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, sessionId)));
+            var outcomes = await Task.WhenAll(turn.ToolCalls.Select(c => ExecuteToolSafelyAsync(c, userId, sessionId)));
+            var execs = new AiToolExecResult[outcomes.Length];
             var allFailed = true;
             for (var i = 0; i < turn.ToolCalls.Count; i++)
             {
                 var call = turn.ToolCalls[i];
-                var exec = execs[i];
+                var exec = outcomes[i].Result;
+                execs[i] = exec;
                 st.ToolTrace.Add(new AiChatToolCallDto { Name = call.Name, Ok = exec.Ok });
                 if (exec.Ok) allFailed = false;
                 AppendToolResult(messages, call.Id, exec, st.ChartQueries);
             }
             st.LastRoundAllFailed = allFailed;
+
+            // 审计落库串行放在并行执行之后：同一 SqlSugar 连接不支持并发命令，且审计失败不能
+            // 影响已经回灌给模型的工具结果（RecordAsync 内部吞异常只记 Warn）。
+            await _toolCallLogService.RecordAsync(outcomes.Select(o => o.Log).ToList());
             return execs;
         }
 
@@ -1087,25 +1105,141 @@ namespace ZR.ServiceCore.AI
         }
 
         /// <summary>
-        /// 安全执行工具：捕获异常并记录日志，避免内部异常细节透给前端。
+        /// 安全执行工具：执行前按工具粒度的权限码二次拦截，捕获异常并记录日志，
+        /// 同时产出一条可落库的审计记录（参数摘要/结果状态/耗时）。
+        /// <para>
+        /// 为什么执行期还要再判一次权限：工具清单虽已按权限过滤后再下发给模型，但提示词注入或模型幻觉
+        /// 仍可能直接点名未下发的受限工具；Controller 只能按接口授权，无法表达"工具粒度"。
+        /// 这里是唯一能拦住的收口点，拦下时状态记为 denied，治理页据此排查越权尝试。
+        /// </para>
         /// </summary>
         /// <param name="call"></param>
         /// <param name="userId"></param>
         /// <param name="sessionId"></param>
-        /// <returns></returns>
-        private async Task<AiToolExecResult> ExecuteToolSafelyAsync(AiLlmClient.ToolCall call, long userId, long sessionId)
+        /// <returns>工具执行结果 + 对应审计记录</returns>
+        private async Task<ToolCallOutcome> ExecuteToolSafelyAsync(AiLlmClient.ToolCall call, long userId, long sessionId)
         {
+            var toolName = call.Name ?? string.Empty;
+            _toolDefMap.TryGetValue(toolName, out var def);
+            _toolProviderMap.TryGetValue(toolName, out var provider);
+            var log = NewToolCallLog(toolName, def, provider, call.Arguments, userId, sessionId);
+
+            var stopwatch = Stopwatch.StartNew();
+            AiToolExecResult result;
             try
             {
-                return await ExecuteToolAsync(call.Name, call.Arguments, userId, sessionId);
+                var denyMessage = CheckToolPermission(def, userId, out var permCalcFailed);
+                if (denyMessage != null)
+                {
+                    result = AiToolExecResult.Error(denyMessage);
+                    log.Status = "denied";
+                    log.Success = 0;
+                    log.ErrorMsg = permCalcFailed ? "权限计算失败，按无权限处理" : $"缺少权限：{def.Permission}";
+                }
+                else
+                {
+                    result = await ExecuteToolAsync(toolName, call.Arguments, userId, sessionId);
+                    log.Status = ResolveToolStatus(provider, result);
+                    log.Success = result?.Ok == true ? 1 : 0;
+                    if (result?.Ok != true) log.ErrorMsg = AiHelper.Truncate(result?.Content ?? "", 1000);
+                }
             }
             catch (Exception ex)
             {
                 // 详情只写后端日志便于排查；回灌给模型的是通用失败提示，
                 // 避免把内部异常细节经模型转述暴露给前端。
-                _logger.Error($"AI 工具执行异常 tool={call.Name} args={AiHelper.ClipText(call.Arguments ?? "", 300)} err={ex}");
-                return AiToolExecResult.Error("该操作执行失败，请告知用户稍后重试");
+                _logger.Error($"AI 工具执行异常 tool={toolName} args={AiHelper.ClipText(MaskSensitiveArgs(call.Arguments), 300)} err={ex}");
+                result = AiToolExecResult.Error("该操作执行失败，请告知用户稍后重试");
+                log.Status = "exception";
+                log.Success = 0;
+                log.ErrorMsg = AiHelper.Truncate(ex.Message, 1000);
             }
+            finally
+            {
+                stopwatch.Stop();
+                log.DurationMs = stopwatch.ElapsedMilliseconds;
+            }
+
+            return new ToolCallOutcome { Result = result, Log = log };
+        }
+
+        /// <summary>
+        /// 执行期工具鉴权：只有声明了 Permission 的工具才判（未声明的靠 Provider 内部按 userId 隔离数据）。
+        /// 权限计算失败按"不可用"处理（fail-closed），并通过 <paramref name="permCalcFailed"/> 区分
+        /// "无权限"（联系管理员授权）与"无法校验"（稍后重试）——两者给用户的行动指引不同。
+        /// </summary>
+        /// <returns>null 表示放行；非 null 为回灌给模型的拒绝提示</returns>
+        private string CheckToolPermission(AiToolDef def, long userId, out bool permCalcFailed)
+        {
+            permCalcFailed = false;
+            var permission = def?.Permission;
+            if (string.IsNullOrWhiteSpace(permission)) return null;
+
+            // 本实例 = 单次请求（Transient），同一请求内工具调用共享一次权限查询
+            if (!_callPermsLoaded)
+            {
+                _callPerms = AiPermissionHelper.TryLoadPerms(_permissionService, userId);
+                _callPermsLoaded = true;
+            }
+            if (AiPermissionHelper.HasPerm(_callPerms, permission)) return null;
+
+            permCalcFailed = _callPerms == null;
+            return permCalcFailed
+                ? "暂时无法校验当前账号权限，请稍后重试"
+                : "当前账号无权调用该工具，请联系管理员授权后重试";
+        }
+
+        /// <summary>结果状态归类：工具未注册为 unknown_tool，执行成功 success，业务失败 failed</summary>
+        private static string ResolveToolStatus(IAiAssistantToolProvider provider, AiToolExecResult result)
+        {
+            if (provider == null) return "unknown_tool";
+            return result?.Ok == true ? "success" : "failed";
+        }
+
+        /// <summary>构造一条工具调用审计（身份只取可信来源：登录上下文优先，回退编排入参的 userId）</summary>
+        private static AiToolCallLog NewToolCallLog(string toolName, AiToolDef def, IAiAssistantToolProvider provider,
+            string arguments, long userId, long sessionId)
+        {
+            var user = App.HttpContext?.GetCurrentUser();
+            return new AiToolCallLog
+            {
+                Scene = "ai_chat",
+                SessionId = sessionId,
+                // 入库字段用 Truncate（精确截断，不追加省略号），保证不超过列宽
+                ToolName = AiHelper.Truncate(toolName, 100),
+                Provider = AiHelper.Truncate(provider?.ProviderName, 64),
+                Permission = AiHelper.Truncate(def?.Permission, 128),
+                ArgsSummary = AiHelper.Truncate(MaskSensitiveArgs(arguments), 500),
+                // 占位值，所有分支都会在落库前覆盖（异常分支 = exception）
+                Status = "unknown",
+                Success = 0,
+                UserId = user?.UserId > 0 ? user.UserId : userId,
+                UserName = AiHelper.Truncate(user?.UserName, 64),
+                TenantId = AiHelper.Truncate(App.GetCurrentTenantId(), 64),
+                TraceId = AiHelper.Truncate(App.HttpContext?.TraceIdentifier, 64)
+            };
+        }
+
+        /// <summary>
+        /// 参数敏感字段掩码：工具参数由模型生成，可能夹带密码/令牌/手机号等，落库前统一打码，
+        /// 只保留"调用了什么工具、带了哪些字段"的排查价值。
+        /// </summary>
+        private static string MaskSensitiveArgs(string argsJson)
+        {
+            if (string.IsNullOrWhiteSpace(argsJson)) return argsJson;
+            return SensitiveArgRegex.Replace(argsJson, m => $"\"{m.Groups["key"].Value}\":\"***\"");
+        }
+
+        /// <summary>匹配 JSON 中 key 含敏感词（password/token/mobile 等）的字符串值</summary>
+        private static readonly Regex SensitiveArgRegex = new(
+            "\"(?<key>[A-Za-z0-9_]*(?:password|pwd|passwd|token|secret|apikey|api_key|mobile|phone|email|idcard|cardno)[A-Za-z0-9_]*)\"\\s*:\\s*\"(?:[^\"\\\\]|\\\\.)*\"",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        /// <summary>工具执行结果 + 对应审计记录（审计统一在并行执行结束后串行落库）</summary>
+        private sealed class ToolCallOutcome
+        {
+            public AiToolExecResult Result { get; init; }
+            public AiToolCallLog Log { get; init; }
         }
 
         private static bool ShouldForceToolRetry(bool lastRoundAllFailed, bool forceRetryUsed, int round)
