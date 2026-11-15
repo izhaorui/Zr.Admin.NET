@@ -27,7 +27,7 @@ namespace ZR.AiKnowledge
         /// <summary>审计落库（可空：宿主未注册实现时按"不审计"降级）。</summary>
         private readonly IKnowledgeQueryAuditor _auditor;
 
-        /// <summary>权限服务（可空：单库未配权限码时用不到；缺失时库级权限按失败关闭处理）。</summary>
+        /// <summary>权限服务（可空：所有库都未配权限码时用不到；缺失时库级权限按失败关闭处理）。</summary>
         private readonly ISysPermissionService _permissionService;
 
         public AiKnowledgeSearchToolProvider(IEnumerable<IKnowledgeProvider> providers, IKnowledgeQueryAuditor auditor = null,
@@ -175,8 +175,8 @@ namespace ZR.AiKnowledge
             var query = new KnowledgeQuery
             {
                 Question = question.Trim(),
-                TopK = topK.HasValue ? Math.Clamp(topK.Value, 1, 20) : selected.TopK ?? options.TopK,
-                MinScore = selected.MinScore ?? options.MinScore,
+                TopK = topK.HasValue ? Math.Clamp(topK.Value, 1, 20) : selected.TopK,
+                MinScore = selected.MinScore,
                 KbId = selected.KbId
             };
 
@@ -216,7 +216,7 @@ namespace ZR.AiKnowledge
         }
 
         /// <summary>
-        /// 库级权限校验：未配置权限码直接放行（继承工具级口径，与单库旧配置一致）。
+        /// 库级权限校验：未配置权限码直接放行（工具级权限在下发工具时已统一校验）。
         /// 权限计算失败按失败关闭处理——宁可让用户重试，也不能把无权限用户放进库。
         /// </summary>
         private (bool Ok, string Message) CheckBasePermission(AiKnowledgeBaseOptions selected, long userId)
@@ -265,9 +265,9 @@ namespace ZR.AiKnowledge
                     Question = query?.Question,
                     // 记配置项 Id（多库下唯一稳定）；未选到库时退化为模型传入的原始标识
                     KbId = selected?.Id ?? requestedBaseId,
-                    KbName = selected?.Name ?? options.KbName,
-                    Provider = selected?.Provider ?? options.Provider,
-                    TopK = query?.TopK ?? selected?.TopK ?? options.TopK,
+                    KbName = selected?.Name,
+                    Provider = selected?.Provider,
+                    TopK = query?.TopK ?? selected?.TopK ?? 0,
                     HitCount = hitCount,
                     TopScore = topScore,
                     DurationMs = durationMs,
@@ -367,8 +367,8 @@ namespace ZR.AiKnowledge
             }
 
             var builder = new StringBuilder();
-            // 库名优先级：渠道返回 → 本次选中的库 → 顶层配置，避免多库时把来源标成默认库
-            builder.AppendLine($"知识库检索结果（来源：{result?.KbName ?? selectedBaseName ?? options.KbName}，共 {hits.Count} 条，按相关度排序）：");
+            // 库名优先级：渠道返回 → 本次选中的库
+            builder.AppendLine($"知识库检索结果（来源：{result?.KbName ?? selectedBaseName}，共 {hits.Count} 条，按相关度排序）：");
             for (var i = 0; i < hits.Count; i++)
             {
                 var hit = hits[i];

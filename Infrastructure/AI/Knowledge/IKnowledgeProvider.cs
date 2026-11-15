@@ -14,22 +14,15 @@ namespace Infrastructure.AI.Knowledge
     /// </summary>
     public interface IKnowledgeProvider
     {
-        /// <summary>渠道名（配置 AiKnowledge:Provider 的值），如 generic / dify。</summary>
+        /// <summary>渠道名（配置 AiKnowledge:KnowledgeBases[].Provider 的值），如 generic / dify。</summary>
         string Name { get; }
 
-        /// <summary>按自然语言问题检索片段。可预期失败请抛 <see cref="KnowledgeProviderException"/>。</summary>
-        Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, CancellationToken cancellationToken = default);
-
         /// <summary>
-        /// 多库检索：带库级连接信息（地址/密钥/数据集/展示名）。
-        /// <para>
-        /// 默认实现忽略 <paramref name="connection"/> 直接转调旧方法——已有自定义渠道无需改造即可继续工作，
-        /// 只有需要"一套代码接多个库"的渠道（generic / dify）才重写本方法。
-        /// </para>
+        /// 按自然语言问题检索片段：<paramref name="connection"/> 提供该库的地址/密钥/数据集/展示名/超时。
+        /// <para>可预期失败请抛 <see cref="KnowledgeProviderException"/>。</para>
         /// </summary>
         Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, KnowledgeConnection connection,
-            CancellationToken cancellationToken = default)
-            => SearchAsync(query, cancellationToken);
+            CancellationToken cancellationToken = default);
     }
 
     /// <summary>

@@ -32,7 +32,7 @@ namespace ZR.AiKnowledge
                     && string.Equals(b.KbId, id, StringComparison.OrdinalIgnoreCase));
         }
 
-        /// <summary>把生效库配置转成渠道连接信息（字段已在 BuildBases 中回落，直接透传）。</summary>
+        /// <summary>把生效库配置转成渠道连接信息（字段已在 BuildBases 中归一化，直接透传）。</summary>
         public static KnowledgeConnection ToConnection(AiKnowledgeBaseOptions selected) => new()
         {
             Provider = selected.Provider,
@@ -40,7 +40,7 @@ namespace ZR.AiKnowledge
             Endpoint = selected.Endpoint,
             ApiKey = selected.ApiKey,
             DatasetId = selected.DatasetId,
-            TimeoutSeconds = selected.TimeoutSeconds ?? 15
+            TimeoutSeconds = selected.TimeoutSeconds
         };
 
         /// <summary>

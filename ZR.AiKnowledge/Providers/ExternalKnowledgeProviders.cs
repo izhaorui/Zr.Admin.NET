@@ -185,10 +185,6 @@ namespace ZR.AiKnowledge.Providers
             if (string.IsNullOrWhiteSpace(text)) return string.Empty;
             return text.Length <= maxLen ? text : text[..maxLen] + "…";
         }
-
-        /// <summary>多库连接取值：库级值为空时回落全局配置（避免"漏配一项就整体不可用"）。</summary>
-        public static string FirstNonEmpty(params string[] values)
-            => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim();
     }
 
     /// <summary>
@@ -205,39 +201,35 @@ namespace ZR.AiKnowledge.Providers
     {
         public string Name => AiKnowledgeOptions.GenericProvider;
 
-        public Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, CancellationToken cancellationToken = default)
-            => SearchAsync(query, null, cancellationToken);
-
         public async Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, KnowledgeConnection connection,
             CancellationToken cancellationToken = default)
         {
-            var options = AiKnowledgeSettings.Current;
-            // 库级连接优先：多库场景下每个库有自己的地址/密钥/超时，缺省项才回落全局配置
-            var endpoint = ExternalKnowledgeHttp.FirstNonEmpty(connection?.Endpoint, options.Endpoint);
-            var apiKey = connection == null ? options.ApiKey : connection.ApiKey;
-            var timeout = connection?.TimeoutSeconds > 0 ? connection.TimeoutSeconds : options.TimeoutSeconds;
+            if (connection == null)
+            {
+                throw new KnowledgeProviderException("知识库连接信息为空", "知识库配置有误，请联系管理员。", "config");
+            }
+            var endpoint = connection.Endpoint?.Trim();
             if (string.IsNullOrWhiteSpace(endpoint))
             {
-                throw new KnowledgeProviderException("AiKnowledge:Endpoint 未配置", "知识库地址未配置，请联系管理员。", "config");
+                throw new KnowledgeProviderException("知识库未配置接口地址（Endpoint）", "知识库地址未配置，请联系管理员。", "config");
             }
 
             var question = query?.Question ?? string.Empty;
-            var topK = Math.Clamp(query?.TopK ?? options.TopK, 1, 20);
-            // MinScore 已由调用方按"库级 ?? 全局"归一化：显式 0 表示不启用阈值，
-            // 不能再按 >0 回落全局，否则库级关阈值会被全局阈值静默覆盖
-            var minScore = query != null ? query.MinScore : options.MinScore;
+            var topK = Math.Clamp(query?.TopK ?? 5, 1, 20);
+            // 调用方已把库级 TopK/MinScore 归一化进 query，这里只做兜底，不读任何全局配置
+            var minScore = query?.MinScore ?? 0;
 
             var body = JsonSerializer.Serialize(new Dictionary<string, object>
             {
                 ["query"] = question,
                 ["topK"] = topK,
                 ["minScore"] = minScore,
-                ["kbId"] = query?.KbId ?? options.KbId ?? string.Empty,
+                ["kbId"] = query?.KbId ?? string.Empty,
                 ["filters"] = query?.Filters ?? new Dictionary<string, string>()
             }, ExternalKnowledgeHttp.PayloadJson);
 
             using var doc = await ExternalKnowledgeHttp.PostJsonAsync(
-                endpoint, body, apiKey, timeout, cancellationToken).ConfigureAwait(false);
+                endpoint, body, connection.ApiKey, connection.TimeoutSeconds, cancellationToken).ConfigureAwait(false);
 
             var hits = new List<KnowledgeHit>();
             foreach (var item in ExternalKnowledgeHttp.FindArray(doc.RootElement, "hits", "results", "data", "documents"))
@@ -255,7 +247,7 @@ namespace ZR.AiKnowledge.Providers
                 });
             }
 
-            return new KnowledgeSearchResult { KbName = connection?.KbName ?? options.KbName, Hits = Filter(hits, minScore) };
+            return new KnowledgeSearchResult { KbName = connection.KbName, Hits = Filter(hits, minScore) };
         }
 
         /// <summary>按相似度降序；配置了阈值时丢弃明确低于阈值的片段（Score 缺失的片段保留）。</summary>
@@ -280,35 +272,30 @@ namespace ZR.AiKnowledge.Providers
     {
         public string Name => AiKnowledgeOptions.DifyProvider;
 
-        public Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, CancellationToken cancellationToken = default)
-            => SearchAsync(query, null, cancellationToken);
-
         public async Task<KnowledgeSearchResult> SearchAsync(KnowledgeQuery query, KnowledgeConnection connection,
             CancellationToken cancellationToken = default)
         {
-            var options = AiKnowledgeSettings.Current;
-            // 库级连接优先：同一个 Dify 实例下不同数据集可以各自成库
-            var endpoint = ExternalKnowledgeHttp.FirstNonEmpty(connection?.Endpoint, options.Endpoint);
-            var datasetId = ExternalKnowledgeHttp.FirstNonEmpty(connection?.DatasetId, options.DatasetId);
-            // 不用 FirstNonEmpty：空串=该库显式未配密钥（Dify 密钥必填，不能静默继承顶层密钥去打别的数据集）
-            var apiKey = connection == null ? options.ApiKey : connection.ApiKey;
-            var timeout = connection?.TimeoutSeconds > 0 ? connection.TimeoutSeconds : options.TimeoutSeconds;
+            if (connection == null)
+            {
+                throw new KnowledgeProviderException("知识库连接信息为空", "知识库配置有误，请联系管理员。", "config");
+            }
+            var endpoint = connection.Endpoint?.Trim();
+            var datasetId = connection.DatasetId?.Trim();
             if (string.IsNullOrWhiteSpace(endpoint))
             {
-                throw new KnowledgeProviderException("AiKnowledge:Endpoint 未配置", "知识库地址未配置，请联系管理员。", "config");
+                throw new KnowledgeProviderException("知识库未配置接口地址（Endpoint）", "知识库地址未配置，请联系管理员。", "config");
             }
             if (string.IsNullOrWhiteSpace(datasetId))
             {
-                throw new KnowledgeProviderException("AiKnowledge:DatasetId 未配置", "知识库数据集未配置，请联系管理员。", "config");
+                throw new KnowledgeProviderException("知识库未配置数据集（DatasetId）", "知识库数据集未配置，请联系管理员。", "config");
             }
-            if (string.IsNullOrWhiteSpace(apiKey))
+            if (string.IsNullOrWhiteSpace(connection.ApiKey))
             {
-                throw new KnowledgeProviderException("AiKnowledge:ApiKey 未配置", "知识库访问密钥未配置，请联系管理员。", "config");
+                throw new KnowledgeProviderException("知识库未配置访问密钥（ApiKey）", "知识库访问密钥未配置，请联系管理员。", "config");
             }
 
-            var topK = Math.Clamp(query?.TopK ?? options.TopK, 1, 20);
-            // 同上：库级显式 0 就是"该库不启用阈值"，不得回落全局
-            var minScore = query != null ? query.MinScore : options.MinScore;
+            var topK = Math.Clamp(query?.TopK ?? 5, 1, 20);
+            var minScore = query?.MinScore ?? 0;
             var url = $"{endpoint.TrimEnd('/')}/datasets/{Uri.EscapeDataString(datasetId)}/retrieve";
 
             var body = JsonSerializer.Serialize(new Dictionary<string, object>
@@ -325,7 +312,7 @@ namespace ZR.AiKnowledge.Providers
             }, ExternalKnowledgeHttp.PayloadJson);
 
             using var doc = await ExternalKnowledgeHttp.PostJsonAsync(
-                url, body, apiKey, timeout, cancellationToken).ConfigureAwait(false);
+                url, body, connection.ApiKey, connection.TimeoutSeconds, cancellationToken).ConfigureAwait(false);
 
             var hits = new List<KnowledgeHit>();
             if (doc.RootElement.ValueKind == JsonValueKind.Object
@@ -361,7 +348,7 @@ namespace ZR.AiKnowledge.Providers
             }
             return new KnowledgeSearchResult
             {
-                KbName = connection?.KbName ?? options.KbName,
+                KbName = connection.KbName,
                 Hits = hits.OrderByDescending(h => h.Score).ToList()
             };
         }

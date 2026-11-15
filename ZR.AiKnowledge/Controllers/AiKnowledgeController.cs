@@ -55,8 +55,8 @@ namespace ZR.AiKnowledge.Controllers
                 Description = b.Description,
                 Provider = b.Provider,
                 IsDefault = b.IsDefault,
-                TopK = b.TopK ?? options.TopK,
-                MinScore = b.MinScore ?? options.MinScore,
+                TopK = b.TopK,
+                MinScore = b.MinScore,
                 KbId = b.KbId,
                 Permission = b.Permission,
                 CanUse = AiKnowledgeBaseResolver.CanUse(b, perms),
@@ -126,8 +126,8 @@ namespace ZR.AiKnowledge.Controllers
             var query = new KnowledgeQuery
             {
                 Question = question,
-                TopK = Math.Clamp(input?.TopK ?? selected.TopK ?? options.TopK, 1, 20),
-                MinScore = selected.MinScore ?? options.MinScore,
+                TopK = Math.Clamp(input?.TopK ?? selected.TopK, 1, 20),
+                MinScore = selected.MinScore,
                 KbId = selected.KbId
             };
             var connection = AiKnowledgeBaseResolver.ToConnection(selected);
