@@ -133,6 +133,25 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 批量更新参数配置（按 ConfigId 批量保存，仅更新请求中传入的字段，参数键名不支持批量修改）
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("batch")]
+        [ActionPermissionFilter(Permission = "system:config:update")]
+        [Log(Title = "参数配置批量修改", BusinessType = BusinessType.UPDATE)]
+        public IActionResult BatchUpdateSysConfig([FromBody] List<SysConfigDto> parms)
+        {
+            if (parms == null || parms.Count == 0)
+            {
+                throw new CustomException("请求实体不能为空");
+            }
+
+            var response = _SysConfigService.BatchUpdateSysConfig(parms, HttpContext.GetName());
+
+            return SUCCESS(response);
+        }
+
+        /// <summary>
         /// 删除参数配置
         /// </summary>
         /// <returns></returns>
