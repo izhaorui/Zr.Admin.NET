@@ -154,8 +154,11 @@ namespace Infrastructure.AI
         /// <summary>字段名含这些片段（忽略大小写）时视为敏感值。</summary>
         private static readonly string[] SecretKeyTokens = { "apikey", "secret", "token", "password", "credential" };
 
-        /// <summary>数组项的稳定标识字段（按优先级）：用于掩码回填时跨版本对齐同一条目。</summary>
-        private static readonly string[] IdentityKeys = { "provider", "id", "code", "name", "key", "model" };
+        /// <summary>
+        /// 数组项的稳定标识字段（按优先级）：用于掩码回填时跨版本对齐同一条目。
+        /// Id 优先于 Provider：知识库多个库可以同为 generic/dify，只有 Id 能唯一定位一条配置。
+        /// </summary>
+        private static readonly string[] IdentityKeys = { "id", "provider", "code", "name", "key", "model" };
 
         /// <summary>把 JSON 中所有敏感字段替换为 <c>****后4位</c>；解析失败原样返回。</summary>
         public static string MaskSecrets(string json)
@@ -335,14 +338,20 @@ namespace Infrastructure.AI
             var identity = TryGetIdentity(item);
             if (identity != null)
             {
+                JsonNode matched = null;
+                var matchCount = 0;
                 foreach (var candidate in existingArray)
                 {
                     if (candidate == null) continue;
-                    if (string.Equals(TryGetIdentity(candidate), identity, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return candidate;
-                    }
+                    if (!string.Equals(TryGetIdentity(candidate), identity, StringComparison.OrdinalIgnoreCase)) continue;
+                    matched = candidate;
+                    if (++matchCount > 1) break;
                 }
+
+                // 唯一命中才可信。同一标识命中多项（如多个知识库都是 Provider=generic 且没填 Id）
+                // 说明标识定位不到具体条目，退回下标对齐，避免把 A 库的密钥回填到 B 库。
+                if (matchCount == 1) return matched;
+                if (matchCount > 1) return index < existingArray.Count ? existingArray[index] : null;
 
                 // 有稳定标识但旧数据里没有同一项：视为新增项，不回填，
                 // 否则会按位置取到别的条目，把别人的密钥抄过来

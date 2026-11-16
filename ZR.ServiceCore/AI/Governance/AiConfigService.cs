@@ -40,6 +40,13 @@ namespace ZR.ServiceCore.AI.Governance
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
 
+        /// <summary>回显与校验用的解析选项：允许注释与尾逗号（落库前统一重新序列化，注释不会进库）。</summary>
+        private static readonly JsonDocumentOptions DocOptions = new()
+        {
+            CommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true
+        };
+
         public AiConfigCurrentDto GetCurrent(string section = AiOptionsResolver.SectionName)
         {
             section = NormalizeSection(section);
@@ -95,7 +102,7 @@ namespace ZR.ServiceCore.AI.Governance
                 rawJson = GetFileJson(section);
                 if (rawJson == null)
                 {
-                    dto.Warning = $"该配置段（{section}）在库中不存在，且暂不支持从文件回显";
+                    dto.Warning = $"该配置段（{section}）在库与 ai.json 中均未找到，可按字段说明填写后保存";
                 }
             }
 
@@ -402,7 +409,11 @@ namespace ZR.ServiceCore.AI.Governance
             }
         }
 
-        /// <summary>配置段校验：AiOptions 需能映射到结构；其它段只要求是合法 JSON 对象。</summary>
+        /// <summary>
+        /// 配置段校验：AiOptions 需能映射到结构；AiKnowledge 额外做语义校验
+        /// （字段类型写错会让运行时绑定静默失败、渠道/地址写错要到模型调用时才暴露）；
+        /// 其它段只要求是合法 JSON。
+        /// </summary>
         private static void ValidateJson(string section, string json)
         {
             if (IsAiOptions(section))
@@ -421,13 +432,142 @@ namespace ZR.ServiceCore.AI.Governance
 
             try
             {
-                using var _ = JsonDocument.Parse(json);
+                using var doc = JsonDocument.Parse(json, DocOptions);
+                if (IsKnowledge(section))
+                {
+                    ValidateKnowledgeSection(doc.RootElement);
+                }
             }
             catch (JsonException ex)
             {
                 throw new CustomException($"配置 JSON 格式不正确：{ex.Message}");
             }
         }
+
+        /// <summary>
+        /// AiKnowledge 段语义校验：只拦截“必然导致运行期不可用”的错误。
+        /// 数值越界（TopK / TimeoutSeconds / MinScore）由运行时按区间收敛，停用的库也不校验地址，
+        /// 避免为了“配置整洁”把可用的库拦在保存之外。
+        /// </summary>
+        private static void ValidateKnowledgeSection(JsonElement root)
+        {
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                throw new CustomException("知识库配置（AiKnowledge）必须是 JSON 对象");
+            }
+
+            EnsureBool(root, "Enable");
+            EnsureBool(root, "AuditEnabled");
+            EnsureNumber(root, "MaxContentChars");
+            EnsureString(root, "Permission");
+
+            if (!TryGetProp(root, "KnowledgeBases", out var bases) || bases.ValueKind == JsonValueKind.Null)
+            {
+                return;
+            }
+            if (bases.ValueKind != JsonValueKind.Array)
+            {
+                throw new CustomException("知识库配置 KnowledgeBases 必须是数组");
+            }
+
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var index = 0;
+            foreach (var item in bases.EnumerateArray())
+            {
+                index++;
+                var path = $"KnowledgeBases[{index}]";
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    throw new CustomException($"知识库配置 {path} 必须是对象");
+                }
+
+                var enabled = ReadBool(item, "Enabled", path) ?? true;
+                foreach (var field in new[] { "Id", "Name", "Provider", "Endpoint", "ApiKey", "DatasetId", "KbId", "Description", "Permission" })
+                {
+                    EnsureString(item, field, path);
+                }
+                EnsureBool(item, "IsDefault", path);
+                EnsureNumber(item, "TopK", path);
+                EnsureNumber(item, "MinScore", path);
+                EnsureNumber(item, "TimeoutSeconds", path);
+
+                var id = ReadString(item, "Id", path);
+                if (!string.IsNullOrWhiteSpace(id) && !ids.Add(id.Trim()))
+                {
+                    throw new CustomException($"知识库配置 {path}.Id={id} 重复：模型按 Id 选库，重名会导致目标不唯一");
+                }
+
+                // 停用的库不参与运行，不强制连接信息
+                if (!enabled) continue;
+
+                var provider = (ReadString(item, "Provider", path) ?? "generic").Trim().ToLowerInvariant();
+                if (provider != "generic" && provider != "dify")
+                {
+                    throw new CustomException($"知识库配置 {path}.Provider={provider} 不是有效渠道，可选值：generic / dify");
+                }
+
+                var endpoint = ReadString(item, "Endpoint", path)?.Trim();
+                if (string.IsNullOrWhiteSpace(endpoint))
+                {
+                    throw new CustomException($"知识库配置 {path}.Endpoint 不能为空（generic 填完整检索 URL，dify 填 API 根地址）");
+                }
+                if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var uri)
+                    || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                {
+                    throw new CustomException($"知识库配置 {path}.Endpoint={endpoint} 不是有效的 HTTP(S) 地址");
+                }
+
+                if (provider == "dify" && string.IsNullOrWhiteSpace(ReadString(item, "DatasetId", path)))
+                {
+                    throw new CustomException($"知识库配置 {path}.DatasetId 不能为空（Provider=dify 时必须填写数据集 ID）");
+                }
+            }
+        }
+
+        /// <summary>大小写不敏感取属性（与运行时 PropertyNameCaseInsensitive 的反序列化口径一致）。</summary>
+        private static bool TryGetProp(JsonElement obj, string name, out JsonElement value)
+        {
+            foreach (var property in obj.EnumerateObject())
+            {
+                if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+            value = default;
+            return false;
+        }
+
+        private static bool? ReadBool(JsonElement obj, string name, string path)
+        {
+            if (!TryGetProp(obj, name, out var value) || value.ValueKind == JsonValueKind.Null) return null;
+            if (value.ValueKind is JsonValueKind.True or JsonValueKind.False) return value.GetBoolean();
+            throw new CustomException($"知识库配置 {JoinPath(path, name)} 必须是布尔值（true/false）");
+        }
+
+        private static string ReadString(JsonElement obj, string name, string path)
+        {
+            if (!TryGetProp(obj, name, out var value) || value.ValueKind == JsonValueKind.Null) return null;
+            if (value.ValueKind == JsonValueKind.String) return value.GetString();
+            throw new CustomException($"知识库配置 {JoinPath(path, name)} 必须是字符串");
+        }
+
+        private static void EnsureBool(JsonElement obj, string name, string path = null) => _ = ReadBool(obj, name, path);
+
+        private static void EnsureString(JsonElement obj, string name, string path = null) => _ = ReadString(obj, name, path);
+
+        private static void EnsureNumber(JsonElement obj, string name, string path = null)
+        {
+            if (!TryGetProp(obj, name, out var value) || value.ValueKind == JsonValueKind.Null) return;
+            if (value.ValueKind != JsonValueKind.Number)
+            {
+                throw new CustomException($"知识库配置 {JoinPath(path, name)} 必须是数字");
+            }
+        }
+
+        private static string JoinPath(string path, string name)
+            => string.IsNullOrEmpty(path) ? name : $"{path}.{name}";
 
         /// <summary>反序列化再序列化：统一字段顺序/缩进，并剔除注释与多余空白。</summary>
         private static string NormalizeJson(string section, string json)
@@ -436,7 +576,7 @@ namespace ZR.ServiceCore.AI.Governance
             {
                 if (!IsAiOptions(section))
                 {
-                    using var doc = JsonDocument.Parse(json);
+                    using var doc = JsonDocument.Parse(json, DocOptions);
                     return JsonSerializer.Serialize(doc.RootElement, JsonOptions);
                 }
 
@@ -452,19 +592,78 @@ namespace ZR.ServiceCore.AI.Governance
             }
         }
 
-        /// <summary>文件兜底 JSON：目前仅 AiOptions 有强类型回显；其它段返回 null。</summary>
+        /// <summary>
+        /// 文件兜底 JSON：AiOptions 走强类型回显（渠道由 ai_provider 维护，剔除 Providers）；
+        /// 其它段（如 AiKnowledge）直接抽取 ai.json 中该段原文，保留字段类型与嵌套结构 ——
+        /// 用 IConfiguration 递归生成会把数字/布尔变成字符串，回显后原样保存就会解析失败。
+        /// </summary>
         private static string GetFileJson(string section)
         {
-            if (!IsAiOptions(section)) return null;
+            if (IsAiOptions(section))
+            {
+                var options = AiOptionsResolver.GetFromFile();
+                // 渠道只在 ai_provider 维护，回显时不展示文件里的 Providers（避免管理员误以为可在此改）
+                options.Providers = null;
+                return JsonSerializer.Serialize(options, JsonOptions);
+            }
 
-            var options = AiOptionsResolver.GetFromFile();
-            // 渠道只在 ai_provider 维护，回显时不展示文件里的 Providers（避免管理员误以为可在此改）
-            options.Providers = null;
-            return JsonSerializer.Serialize(options, JsonOptions);
+            var raw = TryReadSectionFromFile(section);
+            // 原文可能带注释：先规范化一次，掩码回填（MergeMaskedSecrets）按严格 JSON 解析时会失败
+            return raw == null ? null : NormalizeJson(section, raw);
+        }
+
+        /// <summary>
+        /// 从 ai.json 原文取指定配置段（ContentRoot 优先，与 AddJsonFile 的加载目录一致）。
+        /// 只读主文件，不合并 ai.{Environment}.json 的覆盖值：这里展示的是“文件默认值”。
+        /// </summary>
+        private static string TryReadSectionFromFile(string section)
+        {
+            foreach (var path in ResolveConfigFileCandidates())
+            {
+                try
+                {
+                    if (!File.Exists(path)) continue;
+                    using var doc = JsonDocument.Parse(File.ReadAllText(path), DocOptions);
+                    if (doc.RootElement.ValueKind != JsonValueKind.Object) continue;
+                    foreach (var property in doc.RootElement.EnumerateObject())
+                    {
+                        if (string.Equals(property.Name, section, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return property.Value.GetRawText();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, $"读取配置文件失败 path={path}，继续尝试下一个候选路径");
+                }
+            }
+            return null;
+        }
+
+        /// <summary>ai.json 候选路径：宿主 ContentRoot → 程序目录 → 当前目录，去重后依次尝试。</summary>
+        private static IEnumerable<string> ResolveConfigFileCandidates()
+        {
+            const string fileName = "ai.json";
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var root in new[]
+            {
+                App.WebHostEnvironment?.ContentRootPath,
+                AppContext.BaseDirectory,
+                Directory.GetCurrentDirectory()
+            })
+            {
+                if (string.IsNullOrWhiteSpace(root)) continue;
+                var path = Path.Combine(root, fileName);
+                if (seen.Add(path)) yield return path;
+            }
         }
 
         private static bool IsAiOptions(string section)
             => string.Equals(section, AiOptionsResolver.SectionName, StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsKnowledge(string section)
+            => string.Equals(section, "AiKnowledge", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// 配置变更摘要：只输出变化的字段名与操作类型，绝不输出字段值（含密钥）。
